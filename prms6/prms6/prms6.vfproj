@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioProject ProjectCreator="Intel Fortran" Keyword="Console Application" Version="11.0" ProjectIdGuid="{C326902C-4BF2-448C-BBA7-90DB55EB4665}">
+	<Platforms>
+		<Platform Name="Win32"/></Platforms>
+	<Configurations>
+		<Configuration Name="Debug|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" DebugInformationFormat="debugEnabled" Optimization="optimizeDisabled" Traceback="true" BoundsCheck="true" StackFrameCheck="true" RuntimeLibrary="rtMultiThreadedDebugDLL"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" GenerateDebugInformation="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration>
+		<Configuration Name="Release|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" RuntimeLibrary="rtMultiThreadedDLL"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration></Configurations>
+	<Files>
+		<Filter Name="Header Files" Filter="fi;fd;h;inc"/>
+		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"/>
+		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
+		<File RelativePath="..\..\src\basin.f90"/>
+		<File RelativePath="..\..\src\basin_summary.f90"/>
+		<File RelativePath="..\..\src\climate_hru.f90"/>
+		<File RelativePath="..\..\src\climateflow.f90"/>
+		<File RelativePath="..\..\src\ddsolrad.f90"/>
+		<File RelativePath="..\..\src\mmf_utils.f90"/>
+		<File RelativePath="..\..\src\nhru_summary.f90"/>
+		<File RelativePath="..\..\src\obs.f90"/>
+		<File RelativePath="..\..\src\potet_jh.f90"/>
+		<File RelativePath="..\..\src\prms6.f90"/>
+		<File RelativePath="..\..\src\prms_time.f90"/>
+		<File RelativePath="..\..\src\read_control_file.f90"/>
+		<File RelativePath="..\..\src\read_data_file.f90"/>
+		<File RelativePath="..\..\src\read_parameter_file.f90"/>
+		<File RelativePath="..\..\src\soltab.f90"/>
+		<File RelativePath="..\..\src\transp_tindex.f90"/>
+		<File RelativePath="..\..\src\utils_prms.f90"/></Filter></Files>
+	<Globals/></VisualStudioProject>
