@@ -13,7 +13,7 @@ nhru                  14
 ====================================================================
 
                Precipitation-Runoff Modeling System (PRMS)
-                       Version 6.0.0 09/22/2017
+                       Version 6.0.0 09/26/2017
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -32,7 +32,7 @@ Transpiration Dist: transp_tindex
 
         Process                   Module                Version Date
 ====================================================================
-PRMS6 Computation Order        prms6                      2017-09-21
+PRMS6 Computation Order        prms6                      2017-09-26
 Read Control File              read_control_file          2017-07-10
 Read Parameter File            read_parameter_file        2017-07-07
 Read Data File                 read_data_file             2017-09-22
@@ -82,5 +82,5 @@ Model domain area:       419193.44    Active basin area:    419193.44
 Fraction impervious:       0.00005    Fraction pervious:      0.99995
 
 
-Execution elapsed time    2 minutes  5.84 seconds
+Execution elapsed time    0 minutes  0.05 seconds
 

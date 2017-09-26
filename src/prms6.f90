@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=5), PARAMETER :: MODNAME = 'prms6'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/22/2017'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/26/2017'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Number_timesteps
@@ -64,8 +64,8 @@
       INTRINSIC :: DATE_AND_TIME, INT
       INTEGER, EXTERNAL :: basin, climateflow, prms_time
       INTEGER, EXTERNAL :: obs, soltab, transp_tindex
-      INTEGER, EXTERNAL :: climate_hru, ddsolrad, potet_jh
-      EXTERNAL :: module_error
+      INTEGER, EXTERNAL :: climate_hru, ddsolrad, potet_jh, numchars
+      EXTERNAL :: module_error, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, basin_summary
       EXTERNAL :: nhru_summary, module_doc, read_error
       EXTERNAL :: get_dims, setdims, read_prms_data_file
@@ -83,11 +83,11 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Process_flag = 1
-        PRMS_versn = 'prms6.f90 2017-09-21 12:31:00Z'
+        PRMS_versn = 'prms6.f90 2017-09-26 15:29:00Z'
         CALL get_dims()
         CALL PRMS_header()
         CALL read_prms_data_file()
-
+        IF ( Init_vars_from_file==1 ) CALL call_modules_restart(1)
       ELSEIF ( Process(:4)=='init' ) THEN
         Process_flag = 2
         CALL PRMS_init()
@@ -103,6 +103,13 @@
 
       ELSE !IF ( Process(:5)=='clean' ) THEN
         Process_flag = 3
+        IF ( Init_vars_from_file==1 ) CLOSE ( Restart_inunit )
+        IF ( Save_vars_to_file==1 ) THEN
+          nc = numchars(Var_save_file)
+          CALL PRMS_open_output_file(Restart_outunit, Var_save_file(:nc), 'var_save_file', 1, iret)
+          IF ( iret/=0 ) STOP
+          CALL call_modules_restart(0)
+        ENDIF
       ENDIF
 
       IF ( Model==99 ) THEN
@@ -210,7 +217,7 @@
 ! Functions
       INTEGER, EXTERNAL :: decldim, declfix, control_integer_array
       INTEGER, EXTERNAL :: control_string, control_integer, compute_julday
-      EXTERNAL :: read_error, PRMS_open_output_file
+      EXTERNAL :: read_error, PRMS_open_output_file, PRMS_open_input_file
       EXTERNAL :: read_control_file, setup_dimens, read_parameter_file_dimens, get_control_arguments, module_error
 ! Local Variables
       ! Maximum values are no longer limits
@@ -537,7 +544,7 @@
       ! Local Variables
       INTEGER :: nhru_test, temp_test, ierr
       CHARACTER(LEN=MAXCONTROL_LENGTH) :: model_test
-      CHARACTER(LEN=12) :: module_name
+      CHARACTER(LEN=5) :: module_name
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME

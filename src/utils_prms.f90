@@ -720,7 +720,8 @@
       IF ( Ftype==0 ) THEN
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios )
       ELSE
-        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios )
+        !OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios ) ! for linux
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='BINARY', IOSTAT=ios ) ! for windows
       ENDIF
       IF ( ios/=0 ) THEN
         WRITE ( *, '(/,2A,/,A,/,2A,/)' ) 'ERROR opening input file: ', Fname(:nchars), &
@@ -751,7 +752,8 @@
       IF ( Ftype==0 ) THEN
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios )
       ELSE
-        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' )
+        !OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' ) ! for linux
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='BINARY' ) ! for windows
       ENDIF
 
       IF ( ios/=0 ) THEN
