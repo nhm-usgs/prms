@@ -193,7 +193,8 @@
 !***********************************************************************
       SUBROUTINE check_data_variables(Varname, Numvalues, Values, Iflag, Iret)
       USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs
-      USE PRMS_OBS, ONLY: Tmin, Tmax, Precip, Runoff
+      USE PRMS_OBS, ONLY: Tmin, Tmax, Precip, Runoff, Streamflow_cfs, Streamflow_cms, Runoff_units
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Varname
@@ -247,6 +248,17 @@
           DO i = 1, Numvalues
             Runoff(i) = Values(i)
           ENDDO
+          IF ( Runoff_units==1 ) THEN
+            DO i = 1, Nobs
+              Streamflow_cms(i) = DBLE( Runoff(i) )
+              Streamflow_cfs(i) = Streamflow_cms(i)/CFS2CMS_CONV
+            ENDDO
+          ELSE
+            DO i = 1, Nobs
+              Streamflow_cfs(i) = DBLE( Runoff(i) )
+              Streamflow_cms(i) = Streamflow_cfs(i)*CFS2CMS_CONV
+            ENDDO
+          ENDIF
         ENDIF
       ELSE
         PRINT *, 'ERROR, data variable: ', Varname, ' is not valid'

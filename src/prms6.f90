@@ -126,13 +126,13 @@
 
         call_modules = soltab()
         IF ( call_modules/=0 ) CALL module_error('soltab', Arg, call_modules)
+
+        call_modules = obs() ! functionality of readvar is in read_data_file, check_data_variables routine
+        IF ( call_modules/=0 ) CALL module_error('obs', Arg, call_modules)
       ENDIF
 
       call_modules = prms_time()
       IF ( call_modules/=0 ) CALL module_error('prms_time', Arg, call_modules)
-
-      call_modules = obs()
-      IF ( call_modules/=0 ) CALL module_error('obs', Arg, call_modules)
 
       call_modules = climate_hru()
       IF ( call_modules/=0 ) CALL module_error('climate_hru', Arg, call_modules)

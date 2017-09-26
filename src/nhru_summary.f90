@@ -223,7 +223,7 @@
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL read_error
+      EXTERNAL read_error, getvar_real
 ! Local Variables
       INTEGER :: j, i, jj, write_month, write_year, last_day
 !***********************************************************************
@@ -239,8 +239,7 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NhruOutVars
         IF ( Nhru_var_type(jj)==2 ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(1, jj))/=0 ) &
-     &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
+          CALL getvar_real(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, Nhru_var_daily(1, jj))
         ELSEIF ( Nhru_var_type(jj)==3 ) THEN  ! probably don't need double
           IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))

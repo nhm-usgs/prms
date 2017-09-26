@@ -60,13 +60,14 @@ Simulation time period: 2014/12/01 00:00:00 to 2014/12/31 00:00:00
 Basin Definition               basin                      2017-08-17
 Common States and Fluxes       climateflow                2017-09-22
 Potential Solar Radiation      soltab                     2016-09-09
-PRMS Set Time Variables        prms_time                  2017-07-06
 Time Series Data               obs                        2017-09-22
+PRMS Set Time Variables        prms_time                  2017-07-06
 Temperature Distribution       climate_hru                2017-03-20
 Precipitation Distribution     climate_hru                2017-03-20
 Solar Radiation Distribution   ddsolrad                   2016-11-03
 Transpiration Distribution     transp_tindex              2015-01-06
 Potential Evapotranspiration   potet_jh                   2016-05-10
+Nhru Output Summary            nhru_summary               2017-08-03
 Basin Output Summary           basin_summary              2017-08-03
 ====================================================================
 
@@ -81,5 +82,5 @@ Model domain area:       419193.44    Active basin area:    419193.44
 Fraction impervious:       0.00005    Fraction pervious:      0.99995
 
 
-Execution elapsed time    0 minutes 32.91 seconds
+Execution elapsed time    2 minutes  5.84 seconds
 

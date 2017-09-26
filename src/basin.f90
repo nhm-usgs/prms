@@ -56,8 +56,8 @@
       USE PRMS_MODULE, ONLY: Model, Nhru, Et_flag, Precip_flag
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      INTEGER, EXTERNAL :: declparam
+      EXTERNAL read_error, print_module, declvar_real
 !***********************************************************************
       basdecl = 0
 
@@ -67,19 +67,16 @@
 
 ! Declared Variables
       ALLOCATE ( Hru_imperv(Nhru) )
-      IF ( declvar(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', &
-     &     'Area of HRU that is impervious', &
-     &     'acres', Hru_imperv)/=0 ) CALL read_error(3, 'hru_imperv')
+      CALL declvar_real(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', &
+     &     'Area of HRU that is impervious', 'acres', Hru_imperv)
 
       ALLOCATE ( Hru_perv(Nhru) )
-      IF ( declvar(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', &
-     &     'Area of HRU that is pervious', &
-     &     'acres', Hru_perv)/=0 ) CALL read_error(3, 'hru_perv')
+      CALL declvar(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', &
+     &     'Area of HRU that is pervious', 'acres', Hru_perv)
 
       ALLOCATE ( Hru_frac_perv(Nhru) )
-      IF ( declvar(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', &
-     &     'Fraction of HRU that is pervious', &
-     &     'decimal fraction', Hru_frac_perv)/=0 ) CALL read_error(3, 'hru_frac_perv')
+      CALL declvar_real(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', &
+     &     'Fraction of HRU that is pervious', 'decimal fraction', Hru_frac_perv)
 
       ! local arrays
       ALLOCATE ( Hru_route_order(Nhru) )

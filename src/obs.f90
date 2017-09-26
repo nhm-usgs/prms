@@ -20,14 +20,14 @@
       USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: obsdecl, obsinit, obsrun
+      INTEGER, EXTERNAL :: obsdecl, obsinit
       EXTERNAL :: obs_restart
 !***********************************************************************
       obs = 0
 
-      IF ( Process(:3)=='run' ) THEN
-        obs = obsrun()
-      ELSEIF ( Process(:4)=='decl' ) THEN
+!      IF ( Process(:3)=='run' ) THEN
+!        obs = obsrun()
+      IF ( Process(:4)=='decl' ) THEN
         obs = obsdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
         IF ( Init_vars_from_file==1 ) CALL obs_restart(1)
@@ -48,8 +48,8 @@
       USE PRMS_MODULE, ONLY: Precip_flag, Model, Ntemp, Nrain, Nobs
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: declvar, getdim, declparam
-      EXTERNAL read_error, print_module
+      INTEGER, EXTERNAL :: getdim, declparam
+      EXTERNAL read_error, print_module, declvar_real, declvar_dble
 ! Local Variable
       CHARACTER(LEN=80), SAVE :: Version_obs
 !***********************************************************************
@@ -62,17 +62,14 @@
 !   Declared Variables
       IF ( Nobs>0 ) THEN
         ALLOCATE ( Runoff(Nobs) )
-        IF ( declvar(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
-     &       'Streamflow at each measurement station', &
-     &       'runoff_units', Runoff)/=0 ) CALL read_error(8, 'runoff')
+        CALL declvar_real(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
+     &       'Streamflow at each measurement station', 'runoff_units', Runoff)
         ALLOCATE ( Streamflow_cfs(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
-     &       'Streamflow at each measurement station', &
-     &       'cfs', Streamflow_cfs)/=0 ) CALL read_error(8, 'streamflow_cfs')
+        CALL declvar_dble(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
+     &       'Streamflow at each measurement station', 'cfs', Streamflow_cfs)
         ALLOCATE ( Streamflow_cms(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
-     &       'Streamflow at each measurement station', &
-     &       'cms', Streamflow_cms)/=0 ) CALL read_error(8, 'streamflow_cms')
+        CALL declvar_dble(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
+     &       'Streamflow at each measurement station', 'cms', Streamflow_cms)
         IF ( declparam(MODNAME, 'runoff_units', 'one', 'integer', &
      &       '0', '0', '1', &
      &       'Measured streamflow units', 'Measured streamflow units (0=cfs; 1=cms)', &
@@ -81,20 +78,17 @@
 
       IF ( Nrain>0 ) THEN
         ALLOCATE ( Precip(Nrain) )
-        IF ( declvar(MODNAME, 'precip', 'nrain', Nrain, 'real', &
-     &       'Precipitation at each measurement station', &
-     &       'precip_units', Precip)/=0 ) CALL read_error(8, 'precip')
+        CALL declvar_real(MODNAME, 'precip', 'nrain', Nrain, 'real', &
+     &       'Precipitation at each measurement station', 'precip_units', Precip)
       ENDIF
 
       IF ( Ntemp>0 ) THEN
         ALLOCATE ( Tmin(Ntemp) )
-        IF ( declvar(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
-     &       'Minimum air temperature at each measurement station', &
-     &       'temp_units', Tmin)/=0 ) CALL read_error(8, 'tmin')
+        CALL declvar_real(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
+     &       'Minimum air temperature at each measurement station', 'temp_units', Tmin)
         ALLOCATE ( Tmax(Ntemp) )
-        IF ( declvar(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
-     &       'Maximum air temperature at each measurement station', &
-     &       'temp_units', Tmax)/=0 ) CALL read_error(8, 'tmax')
+        CALL declvar_real(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
+     &       'Maximum air temperature at each measurement station', 'temp_units', Tmax)
       ENDIF
 
       END FUNCTION obsdecl
@@ -130,51 +124,7 @@
         ENDIF
       ENDIF
 
-      END FUNCTION obsinit
-
-! **********************************************************************
-!     obsrun - runs obs module
-! **********************************************************************
-      INTEGER FUNCTION obsrun()
-      USE PRMS_OBS
-      USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
-      USE PRMS_SET_TIME, ONLY: Nowmonth
-      IMPLICIT NONE
-! Functions
-      INTRINSIC DBLE
-      INTEGER, EXTERNAL :: readvar
-      EXTERNAL :: read_error
-! Local Variables
-      INTEGER :: i
-! **********************************************************************
-      obsrun = 0
-
-      IF ( Nobs>0 ) THEN
-        IF ( readvar(MODNAME, 'runoff')/=0 ) CALL read_error(9, 'runoff')
-        IF ( Runoff_units==1 ) THEN
-          DO i = 1, Nobs
-            Streamflow_cms(i) = DBLE( Runoff(i) )
-            Streamflow_cfs(i) = Streamflow_cms(i)/CFS2CMS_CONV
-          ENDDO
-        ELSE
-          DO i = 1, Nobs
-            Streamflow_cfs(i) = DBLE( Runoff(i) )
-            Streamflow_cms(i) = Streamflow_cfs(i)*CFS2CMS_CONV
-          ENDDO
-        ENDIF
-      ENDIF
-
-      IF ( Nrain>0 ) THEN
-        IF ( readvar(MODNAME, 'precip')/=0 ) CALL read_error(9, 'precip')
-      ENDIF
-
-      IF ( Ntemp>0 ) THEN
-        IF ( readvar(MODNAME, 'tmax')/=0 ) CALL read_error(9, 'tmax')
-        IF ( readvar(MODNAME, 'tmin')/=0 ) CALL read_error(9, 'tmin')
-      ENDIF
-
-      END FUNCTION obsrun
+    END FUNCTION obsinit
 
 !***********************************************************************
 !     obs_restart - write or read obs restart file

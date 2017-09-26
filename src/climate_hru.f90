@@ -34,7 +34,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, DBLE, SNGL
-      INTEGER, EXTERNAL :: declparam, getparam, control_string, declvar
+      INTEGER, EXTERNAL :: declparam, getparam, control_string
       EXTERNAL :: read_error, precip_form, temp_set, find_header_end, find_current_time
       EXTERNAL :: read_cbh_date, check_cbh_value, check_cbh_intvalue, print_module
 ! Local Variables
