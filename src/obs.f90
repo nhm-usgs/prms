@@ -44,8 +44,8 @@
 !     rain_code
 !***********************************************************************
       INTEGER FUNCTION obsdecl()
-      USE PRMS_OBS
-      USE PRMS_MODULE, ONLY: Precip_flag, Model, Ntemp, Nrain, Nobs
+      USE PRMS_OBS, ONLY: Runoff, Streamflow_cfs, Streamflow_cms, Precip, Tmin, Tmax, MODNAME
+      USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getdim, declparam
@@ -55,7 +55,7 @@
 !***********************************************************************
       obsdecl = 0
 
-      Version_obs = 'obs.f90 2017-09-22 12:39:00Z'
+      Version_obs = 'obs.f90 2017-09-29 13:50:00Z'
       CALL print_module(Version_obs, 'Time Series Data            ', 90)
       MODNAME = 'obs'
 

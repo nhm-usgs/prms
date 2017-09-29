@@ -17,10 +17,10 @@
         INTEGER, SAVE :: Num_control_parameters
         INTEGER, SAVE :: Param_file_control_parameter_id
         CHARACTER(LEN=MAXCONTROL_LENGTH), ALLOCATABLE, SAVE :: param_file_names(:)
-        ! read_flag: 0 = not set, 1 = set from control file, 2 = set to default, 3 = means variably dimension, 4 = variably dimension set from Control File
+        ! read_flag: 0 = not set, 1 = set from control file, 2 = set to default
         TYPE PRMS_control_parameter
              CHARACTER(LEN=MAXCONTROL_LENGTH) :: name
-             INTEGER :: numvals, read_flag, data_type, index
+             INTEGER :: numvals, read_flag, data_type, index, allocate_flag
              INTEGER, ALLOCATABLE :: values_int(:)
              REAL, ALLOCATABLE :: values_real(:)
              CHARACTER(LEN=MAXFILE_LENGTH), ALLOCATABLE :: values_character(:)
@@ -39,16 +39,16 @@
       ! Local Variables
       CHARACTER(LEN=MAXCONTROL_LENGTH) :: paramname
       CHARACTER(LEN=4) :: string
-      INTEGER nchars, ios, numvalues, param_type, control_unit, j
+      INTEGER ios, numvalues, param_type, control_unit, j
       INTEGER, ALLOCATABLE :: int_parameter_values(:)
       CHARACTER(LEN=MAXFILE_LENGTH), ALLOCATABLE :: parameter_values(:)
       CHARACTER(LEN=MAXCONTROL_LENGTH) :: paramstring
       REAL, ALLOCATABLE :: real_parameter_values(:)
 !***********************************************************************
-      Version_read_control_file = 'read_control_file.f90 2017-07-10 11:30:00Z'
+      Version_read_control_file = 'read_control_file.f90 2017-09-29 13:48:00Z'
 
       ! control filename cannot include blanks
-      CALL get_control_filename(Model_control_file, nchars)
+      CALL get_control_filename()
       CALL PRMS_open_input_file(control_unit, Model_control_file, 'model_control_file', 0, ios)
       IF ( ios/=0 ) CALL read_error(10, TRIM(Model_control_file))
       ! read header
@@ -104,8 +104,9 @@
       ! allocate and store parameter data
       ALLOCATE ( Control_parameter_data(Num_control_parameters) )
       DO i = 1, Num_control_parameters
-        Control_parameter_data(i)%read_flag = 2 ! set to default
+        Control_parameter_data(i)%read_flag = 2 ! 2 = set to default; 1 = read from Control File
         Control_parameter_data(i)%data_type = 1 ! 1 = integer, 2 = real, 4 = string
+        Control_parameter_data(i)%allocate_flag = 0 ! set to 1 if allocatable
         Control_parameter_data(i)%numvals = 1
         Control_parameter_data(i)%name = ' '
         ! WARNING, parameter index is set based on order defaults defined
@@ -180,11 +181,11 @@
       ! parameters that get allocated if in Control File
       Control_parameter_data(i)%name = 'basinOutVar_names'
       Control_parameter_data(i)%data_type = 4
-      Control_parameter_data(i)%read_flag = 3 ! need to allocate
+      Control_parameter_data(i)%allocate_flag = 1 ! need to allocate
       i = i + 1
       Control_parameter_data(i)%name = 'nhruOutVar_names'
       Control_parameter_data(i)%data_type = 4
-      Control_parameter_data(i)%read_flag = 3 ! need to allocate
+      Control_parameter_data(i)%allocate_flag = 1 ! need to allocate
       i = i + 1
 
       ! assign default value for character parameters
@@ -227,7 +228,7 @@
       Param_file = 'prms.params'
       Control_parameter_data(i)%values_character(1) = Param_file
       Control_parameter_data(i)%data_type = 4
-      Control_parameter_data(i)%read_flag = 3 ! need to allocate
+      Control_parameter_data(i)%allocate_flag = 1 ! need to allocate
       Param_file_control_parameter_id = i
       i = i + 1
       Control_parameter_data(i)%name = 'model_output_file'
@@ -434,7 +435,7 @@
           found = i
           dtype = Control_parameter_data(i)%data_type
           Control_parameter_data(i)%numvals = Numvalues
-          IF ( Control_parameter_data(i)%read_flag > 2 ) THEN ! one of variably sized parameters
+          IF ( Control_parameter_data(i)%allocate_flag == 1 ) THEN ! one of variably sized parameters
             IF ( dtype==1 ) THEN
               DEALLOCATE ( Control_parameter_data(i)%values_int )
               ALLOCATE ( Control_parameter_data(i)%values_int(Numvalues) )

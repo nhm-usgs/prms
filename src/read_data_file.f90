@@ -6,7 +6,6 @@
         CHARACTER(LEN=16), ALLOCATABLE, SAVE :: Data_varname(:)
         INTEGER, ALLOCATABLE, SAVE :: Data_varnum(:)
         REAL, ALLOCATABLE, SAVE :: Data_line_values(:)
-        CHARACTER(LEN=1), ALLOCATABLE :: data_transfer(:)
       END MODULE PRMS_DATA_FILE
 
       SUBROUTINE read_prms_data_file
@@ -26,7 +25,7 @@
       REAL, ALLOCATABLE :: var(:)
       CHARACTER(LEN=80), SAVE :: Version_read_data_file
 !***********************************************************************
-      Version_read_data_file = 'read_data_file.f90 2017-09-22 12:37:00Z'
+      Version_read_data_file = 'read_data_file.f90 2017-09-29 13:49:00Z'
       CALL print_module(Version_read_data_file, 'Read Data File              ', 90)
 
       IF ( control_string(data_filename, 'data_file')/=0 ) CALL read_error(5, 'data_file')

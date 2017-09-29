@@ -2,12 +2,6 @@
 ! DONE:
 !  getdim, declfix, declmodule, decldim, declparam, getparam
 !  control_string, control_integer, control_string_array, getvartype
-!
-! Place holders:
-!  deltim - need (need time step increment in hours, hard-coded to 24)
-!
-! TO DO:
-! get rid of getvar
 !***********************************************************************
       MODULE PRMS_MMFAPI
         USE PRMS_MODULE, ONLY: MAXCONTROL_LENGTH, MAXFILE_LENGTH
@@ -462,16 +456,6 @@
         Values = transfer(dtemp, Values)
         DEALLOCATE ( dtemp )
       ENDIF
-      
-
-      !Values = TRANSFER(Variable_data(var_id)%values_dble,Values)
-      !do i = 1, Numvalues
-      !    !Values(i) = SNGL(Variable_data(var_id)%values_dble(i))
-      !    Values(i) = temp(i)
-      !    IF ( values(i)<0.0 ) values(i) = 0.0
-      !    !print *, Variable_data(var_id)%values_dble(i)
-      !ENDDO
-      !values = temp
 
       getvar = 0
       END FUNCTION getvar
@@ -729,7 +713,7 @@
 ! dattim - get start, end, or current date and time
 !***********************************************************************
       SUBROUTINE dattim(String, Datetime)
-      USE PRMS_MODULE, ONLY: Timestep, Endtime, Starttime
+      USE PRMS_MODULE, ONLY: Endtime, Starttime
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Julian_day_absolute
       IMPLICIT NONE
       ! Arguments
@@ -999,12 +983,12 @@
 ! control parameters are read and verified this
 ! function checks to be sure a required parameter has a value (read or default)
 !***********************************************************************
-      INTEGER FUNCTION getparamstring(Module_name, Paramname, Numvalues, Data_type, Array_index, String)
+      INTEGER FUNCTION getparamstring(Paramname, Numvalues, Data_type, String)
       USE PRMS_MMFAPI, ONLY: Num_parameters
       IMPLICIT NONE
       ! Arguments
-      CHARACTER(LEN=*), INTENT(IN) :: Module_name, Paramname, Data_type
-      INTEGER, INTENT(IN) :: Numvalues, Array_index
+      CHARACTER(LEN=*), INTENT(IN) :: Paramname, Data_type
+      INTEGER, INTENT(IN) :: Numvalues
       CHARACTER(LEN=*), INTENT(OUT) :: String
       ! Functions
       INTRINSIC INDEX
@@ -1172,11 +1156,10 @@
 !***********************************************************************
 ! getvarsize - return the number of values for a parameter
 !***********************************************************************
-      INTEGER FUNCTION getvarsize(Varname, Numvalues)
+      INTEGER FUNCTION getvarsize(Varname)
       USE PRMS_MMFAPI
       IMPLICIT NONE
       ! Arguments
-      INTEGER, INTENT(OUT) :: Numvalues
       CHARACTER(LEN=*), INTENT(IN) :: Varname
       ! Functions
       INTRINSIC TRIM
@@ -1188,7 +1171,6 @@
         IF ( Varname==TRIM(Variable_data(i)%variable_name) ) THEN
           found = i
           getvarsize = Variable_data(i)%numvals
-          Numvalues = getvarsize
           EXIT
         ENDIF
       ENDDO

@@ -52,7 +52,7 @@
       INTEGER :: i
       CHARACTER(LEN=80), SAVE :: Version_basin_summary
 !***********************************************************************
-      Version_basin_summary = 'basin_summary.f90 2017-08-03 13:48:00Z'
+      Version_basin_summary = 'basin_summary.f90 2017-09-29 13:49:00Z'
       CALL print_module(Version_basin_summary, 'Basin Output Summary        ', 90)
       MODNAME = 'basin_summary'
 
@@ -90,7 +90,7 @@
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL read_error, PRMS_open_output_file
 ! Local Variables
-      INTEGER :: ios, ierr, size, dum, jj
+      INTEGER :: ios, ierr, size, jj
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 !***********************************************************************
       Begin_results = 1
@@ -110,7 +110,7 @@
           PRINT *, '       only double variables allowed'
           ierr = 1
         ENDIF
-        size = getvarsize(BasinOutVar_names(jj)(:Nc_vars(jj)), dum )
+        size = getvarsize(BasinOutVar_names(jj)(:Nc_vars(jj)) )
         IF ( size/=1 ) THEN
           PRINT *, 'ERROR, invalid Basin_summary variable:', BasinOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only scalar variables are allowed'

@@ -65,9 +65,8 @@
 !***********************************************************************
       INTEGER FUNCTION climateflow_decl()
       USE PRMS_CLIMATEVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Model, Nhru, &
-     &    Temp_module, Ntemp, Precip_module, Transp_module, Et_module, Init_vars_from_file, &
-     &    Nrain, Et_flag, Solrad_flag, Solrad_module
+      USE PRMS_MODULE, ONLY: Model, Nhru, Temp_module, Precip_module, Transp_module, Et_module, &
+     &    Solrad_flag, Solrad_module
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
@@ -77,7 +76,7 @@
 !***********************************************************************
       climateflow_decl = 0
 
-      Version_climateflow = 'climateflow.f90 2017-09-22 12:11:00Z'
+      Version_climateflow = 'climateflow.f90 2017-09-29 13:47:00Z'
       CALL print_module(Version_climateflow, 'Common States and Fluxes    ', 90)
       MODNAME = 'climateflow'
 
@@ -114,10 +113,10 @@
       CALL declvar_dble(Temp_module, 'basin_temp', 'one', 1, 'double', &
      &     'Basin area-weighted average air temperature', 'temp_units', Basin_temp)
 
-      CALL declvar_dble(Temp_module, 'solrad_tmax', 'one', 1, 'real', &
+      CALL declvar_real(Temp_module, 'solrad_tmax', 'one', 1, 'real', &
      &     'Basin daily maximum temperature for use with solar radiation calculations', 'temp_units', Solrad_tmax)
 
-      CALL declvar_dble(Temp_module, 'solrad_tmin', 'one', 1, 'real', &
+      CALL declvar_real(Temp_module, 'solrad_tmin', 'one', 1, 'real', &
      &     'Basin daily minimum temperature for use with solar radiation calculations', 'temp_units', Solrad_tmin)
 
 ! PRECIPITATION VARIABLES AND PARAMETERS
@@ -225,7 +224,7 @@
 
       ALLOCATE ( Adjmix_rain(Nhru,12) )
       IF ( declparam(Precip_module, 'adjmix_rain', 'nhru,nmonths', 'real', &
-     &     '1.0', '0.6', '1.4', &
+     &     '1.0', '0.0', '3.0', &
      &     'Adjustment factor for rain in a rain/snow mix', &
      &     'Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'adjmix_rain')
@@ -279,16 +278,14 @@
 !***********************************************************************
       INTEGER FUNCTION climateflow_init()
       USE PRMS_CLIMATEVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Nhru, Temp_module, Precip_module, &
-     &    Solrad_module, Ntemp, Nrain, Init_vars_from_file, Inputerror_flag, Solrad_flag, Et_flag
-      USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order
+      USE PRMS_MODULE, ONLY: Nhru, Temp_module, Precip_module, &
+     &    Solrad_module, Init_vars_from_file, Solrad_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: checkdim_param_limits
       REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
-      INTEGER :: i, j, ierr
+      INTEGER :: i, j
 !***********************************************************************
       climateflow_init = 0
 
@@ -493,7 +490,7 @@
 !     Write or read restart file
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Solrad_flag, Et_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Solrad_flag
       USE PRMS_CLIMATEVARS
       IMPLICIT NONE
       ! Argument

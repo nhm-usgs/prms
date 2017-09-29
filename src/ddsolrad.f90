@@ -21,7 +21,7 @@
 
       INTEGER FUNCTION ddsolrad()
       USE PRMS_DDSOLRAD
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
      &    Basin_horad, Basin_swrad, Hru_ppt, Tmax_allrain, &
@@ -34,7 +34,7 @@
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
-      INTEGER :: j, jj, k, kp, kp1
+      INTEGER :: j, jj, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi
 ! Save Variables
       CHARACTER(LEN=80), SAVE :: Version_ddsolrad
@@ -95,7 +95,7 @@
         Basin_swrad = Basin_swrad*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ddsolrad = 'ddsolrad.f90 2016-11-03 17:48:00Z'
+        Version_ddsolrad = 'ddsolrad.f90 2017-09-29 13:50:00Z'
         CALL print_module(Version_ddsolrad, 'Solar Radiation Distribution', 90)
         MODNAME = 'ddsolrad'
 

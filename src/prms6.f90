@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=5), PARAMETER :: MODNAME = 'prms6'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/26/2017'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/29/2017'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Number_timesteps
@@ -71,7 +71,7 @@
       EXTERNAL :: get_dims, setdims, read_prms_data_file
       EXTERNAL :: check_parameters, read_parameter_file_dimens, PRMS_header, PRMS_init
 ! Local Variables
-      INTEGER :: i, iret, nc, call_modules, dmy
+      INTEGER :: i, iret, nc, call_modules
 !***********************************************************************
       call_modules = 1
 
@@ -83,7 +83,7 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Process_flag = 1
-        PRMS_versn = 'prms6.f90 2017-09-26 15:29:00Z'
+        PRMS_versn = 'prms6.f90 2017-09-29 13:51:00Z'
         CALL get_dims()
         CALL PRMS_header()
         CALL read_prms_data_file()
@@ -211,7 +211,7 @@
 !***********************************************************************
 !     declare the dimensions
 !***********************************************************************
-      INTEGER FUNCTION setdims()
+      SUBROUTINE setdims()
       USE PRMS_MODULE
       IMPLICIT NONE
 ! Functions
@@ -222,11 +222,8 @@
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
-      INTEGER :: idim, iret, j
-      INTEGER :: test, mf_timestep, startday, endday, mf_nowtime
+      INTEGER :: iret, j,startday, endday
 !***********************************************************************
-      setdims = 1
-
       Inputerror_flag = 0
 
       CALL read_control_file()
@@ -388,8 +385,7 @@
         STOP
       ENDIF
 
-      setdims = 0
-      END FUNCTION setdims
+      END SUBROUTINE setdims
 
 !***********************************************************************
 !     Get dimensions

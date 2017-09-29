@@ -52,8 +52,10 @@
 !     lake_hru_id
 !***********************************************************************
       INTEGER FUNCTION basdecl()
-      USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Model, Nhru, Et_flag, Precip_flag
+      USE PRMS_BASIN, ONLY: Hru_imperv, Hru_perv, Hru_frac_perv, MODNAME, Version_basin, &
+     &    Hru_route_order, Hru_area, Hru_elev, Hru_lat, Hru_percent_imperv, Hru_type, Cov_type, &
+     &    Covden_sum, Covden_win
+      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
@@ -61,22 +63,25 @@
 !***********************************************************************
       basdecl = 0
 
-      Version_basin = 'basin.f90 2017-08-17 16:48:00Z'
+      Version_basin = 'basin.f90 2017-09-29 13:50:00Z'
       CALL print_module(Version_basin, 'Basin Definition            ', 90)
       MODNAME = 'basin'
 
 ! Declared Variables
       ALLOCATE ( Hru_imperv(Nhru) )
       CALL declvar_real(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', &
-     &     'Area of HRU that is impervious', 'acres', Hru_imperv)
+     &     'Area of HRU that is impervious', &
+     &     'acres', Hru_imperv)
 
       ALLOCATE ( Hru_perv(Nhru) )
-      CALL declvar(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', &
-     &     'Area of HRU that is pervious', 'acres', Hru_perv)
+      CALL declvar_real(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', &
+     &     'Area of HRU that is pervious', &
+     &     'acres', Hru_perv)
 
       ALLOCATE ( Hru_frac_perv(Nhru) )
       CALL declvar_real(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', &
-     &     'Fraction of HRU that is pervious', 'decimal fraction', Hru_frac_perv)
+     &     'Fraction of HRU that is pervious', &
+     &     'decimal fraction', Hru_frac_perv)
 
       ! local arrays
       ALLOCATE ( Hru_route_order(Nhru) )
@@ -148,8 +153,7 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Model, PRMS_VERSION, Starttime, Endtime, &
-     &    Et_flag, Precip_flag, Prms_output_unit
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, PRMS_VERSION, Starttime, Endtime, Prms_output_unit
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam

@@ -57,7 +57,7 @@
       INTEGER :: i
       CHARACTER(LEN=80), SAVE :: Version_nhru_summary
 !***********************************************************************
-      Version_nhru_summary = 'nhru_summary.f90 2017-08-03 13:49:00Z'
+      Version_nhru_summary = 'nhru_summary.f90 2017-09-29 13:49:00Z'
       CALL print_module(Version_nhru_summary, 'Nhru Output Summary         ', 90)
       MODNAME = 'nhru_summary'
 
@@ -103,7 +103,7 @@
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL read_error, PRMS_open_output_file
 ! Local Variables
-      INTEGER :: ios, ierr, size, dim, jj, j
+      INTEGER :: ios, ierr, size, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 !***********************************************************************
       Begin_results = 1
@@ -125,7 +125,7 @@
           PRINT *, '       only real or double variables allowed'
           ierr = 1
         ENDIF
-        size = getvarsize(NhruOutVar_names(jj)(:Nc_vars(jj)), dim )
+        size = getvarsize(NhruOutVar_names(jj)(:Nc_vars(jj)) )
         IF ( size/=Nhru ) THEN
           PRINT *, 'ERROR, invalid nhru_summary variable:', NhruOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only variables dimensioned by nhru, nssr, or ngw allowed'
@@ -222,8 +222,7 @@
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC SNGL, DBLE
-      INTEGER, EXTERNAL :: getvar
-      EXTERNAL read_error, getvar_real
+      EXTERNAL read_error, getvar_real, getvar_dble
 ! Local Variables
       INTEGER :: j, i, jj, write_month, write_year, last_day
 !***********************************************************************
@@ -241,8 +240,7 @@
         IF ( Nhru_var_type(jj)==2 ) THEN
           CALL getvar_real(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, Nhru_var_daily(1, jj))
         ELSEIF ( Nhru_var_type(jj)==3 ) THEN  ! probably don't need double
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
-     &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
+          CALL getvar_dble(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, Nhru_var_dble(1, jj))
         ENDIF
       ENDDO
 

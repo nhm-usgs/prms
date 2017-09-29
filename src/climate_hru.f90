@@ -26,11 +26,8 @@
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
      &    Tavgc, Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
      &    Precip_units, Tmax_allrain_f, Adjmix_rain, &
-     &    Basin_ppt, Basin_potet, Potet, Basin_snow, Basin_rain, &
-     &    Swrad, Basin_swrad, Basin_obs_ppt, &
-     &    Transp_on, Basin_transp_on, Tmax_allsnow_f
-      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
-      USE PRMS_SOLTAB, ONLY: Soltab_basinpotsw, Hru_cossl, Soltab_potsw
+     &    Basin_ppt, Basin_snow, Basin_rain, Basin_obs_ppt, Tmax_allsnow_f
+      USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, DBLE, SNGL
@@ -144,7 +141,7 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_hru = 'climate_hru.f90 2017-03-20 15:34:00Z'
+        Version_climate_hru = 'climate_hru.f90 2017-09-29 13:49:00Z'
         MODNAME = 'climate_hru'
 
         IF ( Climate_temp_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Temperature Distribution    ', 90)

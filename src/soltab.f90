@@ -53,7 +53,8 @@
 !     hru_aspect, hru_lat, hru_slope
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
-      USE PRMS_SOLTAB
+      USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_horad_potsw, MODNAME, Hru_cossl, Soltab_sunhrs, &
+     &    Hru_slope, Hru_aspect
       USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
 ! Functions
@@ -65,17 +66,19 @@
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = 'soltab.f90 2016-09-09 12:53:00Z'
+      Version_soltab = 'soltab.f90 2016-09-29 13:48:00Z'
       CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
       MODNAME = 'soltab'
 
       ALLOCATE ( Soltab_potsw(366, Nhru) )
       CALL declvar_dble(MODNAME, 'soltab_potsw', 'ndays,nhru', 366*Nhru, 'double', &
-     &     'Potential solar radiation for each Julian Day, for each HRU', 'Langleys', Soltab_potsw)
+     &     'Potential solar radiation for each Julian Day, for each HRU', &
+     &     'Langleys', Soltab_potsw)
 
       ALLOCATE ( Soltab_horad_potsw(366, Nhru) )
       CALL declvar_dble(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', 366*Nhru, 'double', &
-     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', 'Langleys', Soltab_horad_potsw)
+     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', &
+     &     'Langleys', Soltab_horad_potsw)
 
       ALLOCATE ( Hru_cossl(Nhru), Soltab_sunhrs(366, Nhru) )
 
