@@ -1,561 +1,682 @@
-!***********************************************************************
-! Defines globals
-!***********************************************************************
-      MODULE PRMS_MODULE
-      IMPLICIT NONE
-      INTEGER, PARAMETER :: MAXFILE_LENGTH = 256, MAXCONTROL_LENGTH = 32
-      INTEGER, PARAMETER :: MAXDIM = 500
-      CHARACTER(LEN=68), PARAMETER :: &
-     &  EQULS = '===================================================================='
-      CHARACTER(LEN=5), PARAMETER :: MODNAME = 'prms6'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/29/2017'
-      CHARACTER(LEN=8), SAVE :: Process
-      CHARACTER(LEN=80), SAVE :: PRMS_versn
-      INTEGER, SAVE :: Model, Process_flag, Number_timesteps
-      INTEGER, SAVE :: Nhru, Ntemp, Nrain, Nobs
-      INTEGER, SAVE :: Starttime(6), Endtime(6)
-      INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
-      INTEGER, SAVE :: Transp_flag, Solrad_flag, Et_flag, Temp_flag, Precip_flag
-      INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag
-      INTEGER, SAVE :: Inputerror_flag, Timestep, Prms_warmup
-      INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
-      INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      CHARACTER(LEN=80), SAVE :: Version_read_control_file, Version_read_parameter_file
-      REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
-! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
-! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
-! Control parameters
-      INTEGER, SAVE :: Print_debug, Parameter_check_flag, Cbh_check_flag, Cbh_binary_flag
-      INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file
-      INTEGER, SAVE :: NhruOutON_OFF, BasinOutON_OFF
-      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
-      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Param_file, Model_control_file
-      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Et_module, Transp_module
-      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Model_mode, Precip_module, Solrad_module
-      END MODULE PRMS_MODULE
 
-!***********************************************************************
-! Main program
-!***********************************************************************
-      PROGRAM prms6
-        USE PRMS_MODULE, ONLY: Number_timesteps
-        IMPLICIT NONE
-        EXTERNAL :: computation_order
-        INTEGER :: i
-!***********************************************************************
-        CALL computation_order('setdims')
-        CALL computation_order('declare')
-        CALL computation_order('init')
-        DO i = 1, Number_timesteps
-          CALL computation_order('run')
-        ENDDO
-        CALL computation_order('clean')
-      END PROGRAM prms6
 
-!***********************************************************************
-! Defines the computational sequence, valid modules, and dimensions
-!***********************************************************************
-      SUBROUTINE computation_order(Arg)
-      USE PRMS_MODULE
-      IMPLICIT NONE
-! Arguments
-      CHARACTER(LEN=*), INTENT(IN) :: Arg
-! Functions
-      INTRINSIC :: DATE_AND_TIME, INT
-      INTEGER, EXTERNAL :: basin, climateflow, prms_time
-      INTEGER, EXTERNAL :: obs, soltab, transp_tindex
-      INTEGER, EXTERNAL :: climate_hru, ddsolrad, potet_jh, numchars
-      EXTERNAL :: module_error, PRMS_open_output_file
-      EXTERNAL :: call_modules_restart, basin_summary
-      EXTERNAL :: nhru_summary, module_doc, read_error
-      EXTERNAL :: get_dims, setdims, read_prms_data_file
-      EXTERNAL :: check_parameters, read_parameter_file_dimens, PRMS_header, PRMS_init
-! Local Variables
-      INTEGER :: i, iret, nc, call_modules
-!***********************************************************************
-      call_modules = 1
 
-      Process = Arg
-
-      ! Process_flag (0=run, 1=declare, 2=init, 3=clean, 4=setdims)
-      IF ( Process(:3)=='run' ) THEN
-        Process_flag = 0
-
-      ELSEIF ( Process(:4)=='decl' ) THEN
-        Process_flag = 1
-        PRMS_versn = 'prms6.f90 2017-09-29 13:51:00Z'
-        CALL get_dims()
-        CALL PRMS_header()
-        CALL read_prms_data_file()
-        IF ( Init_vars_from_file==1 ) CALL call_modules_restart(1)
-      ELSEIF ( Process(:4)=='init' ) THEN
-        Process_flag = 2
-        CALL PRMS_init()
-
-      ELSEIF ( Process(:7)=='setdims' ) THEN
-        Process_flag = 4
-        CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
-        Execution_time_start = Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
-     &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
-        CALL setdims()
-        CALL setup_params()
-        CALL read_parameter_file_dimens()
-
-      ELSE !IF ( Process(:5)=='clean' ) THEN
-        Process_flag = 3
-        IF ( Init_vars_from_file==1 ) CLOSE ( Restart_inunit )
-        IF ( Save_vars_to_file==1 ) THEN
-          nc = numchars(Var_save_file)
-          CALL PRMS_open_output_file(Restart_outunit, Var_save_file(:nc), 'var_save_file', 1, iret)
-          IF ( iret/=0 ) STOP
-          CALL call_modules_restart(0)
-        ENDIF
-      ENDIF
-
-      IF ( Model==99 ) THEN
-        IF ( Process_flag==4 .OR. Process_flag<2 ) THEN
-          Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
-          CALL module_doc()
-          call_modules = 0
-          RETURN
-        ELSE
-          STOP
-        ENDIF
-      ENDIF
-
-! All modules must be called for setdims, declare, initialize, and cleanup
-      IF ( Process_flag/=0 ) THEN
-        call_modules = basin()
-        IF ( call_modules/=0 ) CALL module_error('basin', Arg, call_modules)
-
-        call_modules = climateflow()
-        IF ( call_modules/=0 ) CALL module_error('climateflow', Arg, call_modules)
-
-        call_modules = soltab()
-        IF ( call_modules/=0 ) CALL module_error('soltab', Arg, call_modules)
-
-        call_modules = obs() ! functionality of readvar is in read_data_file, check_data_variables routine
-        IF ( call_modules/=0 ) CALL module_error('obs', Arg, call_modules)
-      ENDIF
-
-      call_modules = prms_time()
-      IF ( call_modules/=0 ) CALL module_error('prms_time', Arg, call_modules)
-
-      call_modules = climate_hru()
-      IF ( call_modules/=0 ) CALL module_error('climate_hru', Arg, call_modules)
-
-      call_modules = ddsolrad()
-      IF ( call_modules/=0 ) CALL module_error(Solrad_module, Arg, call_modules)
-
-      call_modules = transp_tindex()
-      IF ( call_modules/=0 ) CALL module_error(Transp_module, Arg, call_modules)
-
-      call_modules = potet_jh()
-      IF ( call_modules/=0 ) CALL module_error(Et_module, Arg, call_modules)
-
-      IF ( NhruOutON_OFF>0 ) CALL nhru_summary()
-
-      IF ( BasinOutON_OFF==1 ) CALL basin_summary()
-
-      IF ( Process_flag==0 ) RETURN
-
-      IF ( Print_debug>-1 ) THEN
-        IF ( Process_flag==3 ) THEN
-          CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
-          PRINT 9001
-          PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
-          PRINT 9003, 'end', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
-          Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
-     &                         Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
-          Elapsed_time = Execution_time_end - Execution_time_start
-          Elapsed_time_minutes = INT(Elapsed_time/60.0)
-          PRINT '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                               Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
-        ELSEIF ( Process_flag==2 ) THEN
-          IF ( Inputerror_flag==1 ) THEN
-            PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
-     &            '  Set control parameter parameter_check_flag to 0 after', &
-     &            '  all parameter values are valid.'
-            PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
-     &            'If input errors are related to paramters used for automated', &
-     &            'calibration processes, with CAUTION, set control parameter', &
-     &            'parameter_check_flag to 0. After calibration set the', &
-     &            'parameter_check_flag to 1 to verify that those calibration', &
-     &            'parameters have valid and compatible values.'
-            STOP
-          ENDIF
-        ENDIF
-      ENDIF
-      IF ( Process_flag==1 ) THEN
-        CALL read_parameter_file_params()
-        IF ( Print_debug>-2 ) THEN
-          PRINT '(A)', EQULS
-          WRITE ( PRMS_output_unit, '(A)' ) EQULS
-        ENDIF
-      ELSEIF ( Process_flag==2 ) THEN
-        IF ( Parameter_check_flag==2 ) STOP
-        IF ( Print_debug>-1 ) CALL check_parameters()
-        PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day, EQULS
-      ELSEIF ( Process_flag==3 ) THEN
-        IF ( Print_debug>-2 ) &
-     &    WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                                                  Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
-      ENDIF
-
-    4 FORMAT (/, 2(A, I5, 2('/',I2.2)), //, A, /)
- 9001 FORMAT (/, 26X, 27('='), /, 26X, 'Normal completion of PRMS', /, 26X, 27('='), /)
- 9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
-
-      END SUBROUTINE computation_order
-
-!***********************************************************************
-!     declare the dimensions
-!***********************************************************************
-      SUBROUTINE setdims()
-      USE PRMS_MODULE
-      IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: decldim, declfix, control_integer_array
-      INTEGER, EXTERNAL :: control_string, control_integer, compute_julday
-      EXTERNAL :: read_error, PRMS_open_output_file, PRMS_open_input_file
-      EXTERNAL :: read_control_file, setup_dimens, read_parameter_file_dimens, get_control_arguments, module_error
-! Local Variables
-      ! Maximum values are no longer limits
-! Local Variables
-      INTEGER :: iret, j,startday, endday
-!***********************************************************************
-      Inputerror_flag = 0
-
-      CALL read_control_file()
-      CALL get_control_arguments()
-
-      ! debug print flag:
-      ! -1=quiet - reduced screen output
-      ! 0=none; 1=water balances; 2=basin;
-      ! 4=basin_sum; 5=soltab; 7=soil zone;
-      ! 9=snowcomp; 13=cascade; 14=subbasin tree
-      IF ( control_integer(Print_debug, 'print_debug')/=0 ) Print_debug = 0
-
-      IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
-      IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = 1
-      IF ( control_integer(Cbh_binary_flag, 'cbh_binary_flag')/=0 ) Cbh_binary_flag = 0
-
-      IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
-      IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='    ' .OR. Model_mode(:5)=='DAILY' ) THEN
-        Model = 1
-      ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
-        Model = 4
-      ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
-        Model = 99
-      ELSE
-        PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
-        STOP
-      ENDIF
-
-      ! get simulation start_time and end_time
-      Starttime = -1
-      DO j = 1, 6
-        IF ( control_integer_array(Starttime(j), j, 'start_time')/=0 ) THEN
-          PRINT *, 'ERROR, start_time, index:', j, 'value: ', Starttime(j)
-          STOP
-        ENDIF
-      ENDDO
-      Start_year = Starttime(1)
-      IF ( Start_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
-      Start_month = Starttime(2)
-      Start_day = Starttime(3)
-      Endtime = -1
-      DO j = 1, 6
-        IF ( control_integer_array(Endtime(j), j, 'end_time')/=0 ) THEN
-          PRINT *, 'ERROR, end_time, index:', j, 'value: ', Endtime(j)
-          STOP
-        ENDIF
-      ENDDO
-      End_year = Endtime(1)
-      IF ( End_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
-      End_month = Endtime(2)
-      End_day = Endtime(3)
-
-      IF ( control_integer(Init_vars_from_file, 'init_vars_from_file')/=0 ) Init_vars_from_file = 0
-      IF ( control_integer(Save_vars_to_file, 'save_vars_to_file')/=0 ) Save_vars_to_file = 0
-
-      startday = compute_julday(Start_year, Start_month, Start_day)
-      endday = compute_julday(End_year, End_month, End_day)
-      Number_timesteps = endday - startday + 1
-
-      CALL setup_dimens()
-
-      ! Open PRMS module output file
-      IF ( control_string(Model_output_file, 'model_output_file')/=0 ) CALL read_error(5, 'model_output_file')
-      IF ( Print_debug>-2 ) THEN
-        CALL PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
-        IF ( iret/=0 ) STOP
-      ENDIF
-      IF ( control_string(Param_file, 'param_file')/=0 ) CALL read_error(5, 'param_file')
-
-      ! Check for restart files
-      IF ( Init_vars_from_file==1 ) THEN
-        IF ( control_string(Var_init_file, 'var_init_file')/=0 ) CALL read_error(5, 'var_init_file')
-        CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
-        IF ( iret/=0 ) STOP
-      ENDIF
-      IF ( Save_vars_to_file==1 ) THEN
-        IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
-      ENDIF
-
-      Temp_module = ' '
-      IF ( control_string(Temp_module, 'temp_module')/=0 ) CALL read_error(5, 'temp_module')
-      Precip_module = ' '
-      IF ( control_string(Precip_module, 'precip_module')/=0 ) CALL read_error(5, 'precip_module')
-      Transp_module = ' '
-      IF ( control_string(Transp_module, 'transp_module')/=0 ) CALL read_error(5, 'transp_module')
-      Et_module = ' '
-      IF ( control_string(Et_module, 'et_module')/=0 ) CALL read_error(5, 'et_module')
-      Solrad_module = ' '
-      IF ( control_string(Solrad_module, 'solrad_module')/=0 ) CALL read_error(5, 'solrad_module')
-
-      Climate_precip_flag = 0
-      Climate_temp_flag = 0
-
-      IF ( Precip_module(:11)=='climate_hru' ) THEN
-        Precip_flag = 7
-        Climate_precip_flag = 1
-      ELSE
-        PRINT '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
-        Inputerror_flag = 1
-      ENDIF
-
-      IF ( Temp_module(:11)=='climate_hru' ) THEN
-        Temp_flag = 7
-        Climate_temp_flag = 1
-      ELSE
-        PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
-        Inputerror_flag = 1
-      ENDIF
-
-      IF ( Transp_module(:13)/='transp_tindex' ) THEN
-        PRINT '(/,2A)', 'ERROR, invalid transp_module value: ', Transp_module
-        Inputerror_flag = 1
-      ENDIF
-
-      IF ( Et_module(:8)=='potet_jh' ) THEN
-        Et_flag = 1
-      ELSE
-        PRINT '(/,2A)', 'ERROR, invalid et_module value: ', Et_module
-        Inputerror_flag = 1
-      ENDIF
-
-      IF ( Solrad_module(:8)=='ddsolrad' ) THEN
-        Solrad_flag = 1
-      ELSE
-        PRINT '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
-        Inputerror_flag = 1
-      ENDIF
-
-! nhru_summary
-      IF ( control_integer(NhruOutON_OFF, 'nhruOutON_OFF')/=0 ) NhruOutON_OFF = 0
-
-! basin_summary
-      IF ( control_integer(BasinOutON_OFF, 'basinOutON_OFF')/=0 ) BasinOutON_OFF = 0
-
-      IF ( control_integer(Prms_warmup, 'prms_warmup')/=0 ) Prms_warmup = 0
-      IF ( NhruOutON_OFF==1 .OR. BasinOutON_OFF==1 ) THEN
-        IF ( Start_year+Prms_warmup>End_year ) THEN ! change to start full date ???
-          PRINT *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
-          Inputerror_flag = 1
-        ENDIF
-      ENDIF
-
-! spatial units
-      IF ( decldim('nhru', 1, MAXDIM, 'Number of HRUs')/=0 ) CALL read_error(7, 'nhru')
-
-! Time-series data stations, need to know if in Data File
-      IF ( decldim('nrain', 0, MAXDIM, 'Number of precipitation-measurement stations')/=0 ) CALL read_error(7, 'nrain')
-      IF ( decldim('ntemp', 0, MAXDIM, 'Number of air-temperature-measurement stations')/=0 ) CALL read_error(7, 'ntemp')
-      IF ( decldim('nobs', 0, MAXDIM, 'Number of streamflow-measurement stations')/=0 ) CALL read_error(7, 'nobs')
-
-! fixed dimensions
-      IF ( declfix('ndays', 366, 366, 'Maximum number of days in a year ')/=0 ) CALL read_error(7, 'ndays')
-      IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
-      IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
-
-      IF ( Inputerror_flag==1 ) THEN
-        PRINT '(//,A,/,A)', '**FIX input errors in your Control File to continue**', &
-     &        'NOTE: some errors may be due to use of defalut values'
-        STOP
-      ENDIF
-
-      END SUBROUTINE setdims
-
-!***********************************************************************
-!     Get dimensions
-!***********************************************************************
-      SUBROUTINE get_dims()
-      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Nobs, Model
-      IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: getdim
-      EXTERNAL :: read_error
-!***********************************************************************
-
-      Nhru = getdim('nhru')
-      IF ( Nhru==-1 ) CALL read_error(7, 'nhru')
-
-      Ntemp = getdim('ntemp')
-      IF ( Ntemp==-1 ) CALL read_error(6, 'ntemp')
-
-      Nrain = getdim('nrain')
-      IF ( Nrain==-1 ) CALL read_error(6, 'nrain')
-
-      Nobs = getdim('nobs')
-      IF ( Nobs==-1 ) CALL read_error(6, 'nobs')
-
-      IF ( Model==99 ) THEN
-        IF ( Ntemp==0 ) Ntemp = 1
-        IF ( Nrain==0 ) Nrain = 1
-        IF ( Nobs==0 ) Nobs = 1
-      ENDIF
-
-      END SUBROUTINE get_dims
-
-!**********************************************************************
-!     Module documentation
-!**********************************************************************
-      SUBROUTINE module_doc()
-      IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: basin, climateflow, prms_time
-      INTEGER, EXTERNAL :: obs, soltab, transp_tindex
-      INTEGER, EXTERNAL :: climate_hru, ddsolrad, potet_jh
-      EXTERNAL :: nhru_summary, basin_summary
-! Local variable
-      INTEGER :: test
-!**********************************************************************
-      test = basin()
-      test = climateflow()
-      test = soltab()
-      test = prms_time()
-      test = obs()
-      test = climate_hru()
-      test = ddsolrad()
-      test = transp_tindex()
-      test = potet_jh()
-      CALL nhru_summary()
-      CALL basin_summary()
-
-      PRINT 9001
- 9001 FORMAT (//, ' All available modules have been called.', /, &
-     &        ' All parameters have been declared.', /, &
-     &        ' Note, no simulation was computed.', /)
-
-      END SUBROUTINE module_doc
 
 !***********************************************************************
 !     Code piece from main subroutine for declare procedure
 !***********************************************************************
-      SUBROUTINE PRMS_header()
-      USE PRMS_MODULE, ONLY: Print_debug, PRMS_output_unit, PRMS_VERSION, EQULS, PRMS_versn, &
-     &    Version_read_control_file, Version_read_parameter_file
-      IMPLICIT NONE
-! Functions
-      EXTERNAL :: print_module
-!***********************************************************************
-      IF ( Print_debug>-2 ) THEN
-        PRINT 10, PRMS_VERSION
-        WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION
-        PRINT 15
-        PRINT 9002
-        WRITE ( PRMS_output_unit, 15 )
-        PRINT 16, EQULS
-        WRITE ( PRMS_output_unit, 16 ) EQULS
-      ENDIF
-  10  FORMAT (/, 15X, 'Precipitation-Runoff Modeling System (PRMS)', /, 23X, A)
-  15  FORMAT (/, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
-     &        '  Basin Definition: basin', /, &
-     &        '  Time Series Data: obs', /, &
-     &        '   Potet Solar Rad: soltab', /, &
-     &        '  Temperature Dist: climate_hru', /, &
-     &        '       Precip Dist: climate_hru', /, &
-     &        '    Solar Rad Dist: ddsolrad', /, &
-     &        'Transpiration Dist: transp_tindex', /, &
-     &        '    Output Summary: nhru_summary, basin_summary', /, 68('-'))
-  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 19X, &
-     &        'Module', 16X, 'Version Date', /, A)
+subroutine PRMS_header()
+    use PRMS_MODULE, only: Print_debug, PRMS_output_unit, PRMS_VERSION, PRMS_versn, &
+                           Version_read_control_file, Version_read_parameter_file, print_module
+    use prms_constants, only: EQULS
+    implicit none
 
-      CALL print_module(PRMS_versn, 'PRMS6 Computation Order     ', 90)
-      CALL print_module(Version_read_control_file, 'Read Control File           ', 90)
-      CALL print_module(Version_read_parameter_file, 'Read Parameter File         ', 90)
+    !***********************************************************************
+    if (Print_debug > -2) then
+        print 10, PRMS_VERSION
+        write (PRMS_output_unit, 10) PRMS_VERSION
+        print 15
+        print 9002
+        write (PRMS_output_unit, 15)
+        print 16, EQULS
+        write (PRMS_output_unit, 16) EQULS
+    endif
 
- 9002 FORMAT (//, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='), /)
-      END SUBROUTINE PRMS_header
+    10  FORMAT (/, 15X, 'Precipitation-Runoff Modeling System (PRMS)', /, 23X, A)
+    15  FORMAT (/, 8X, 'Process', 12X, 'Available Modules', /, 68('-'), /, &
+            &        '  Basin Definition: basin', /, &
+            &        '  Time Series Data: obs', /, &
+            &        '   Potet Solar Rad: soltab', /, &
+            &        '  Temperature Dist: climate_hru', /, &
+            &        '       Precip Dist: climate_hru', /, &
+            &        '    Solar Rad Dist: ddsolrad', /, &
+            &        'Transpiration Dist: transp_tindex', /, &
+            &        '    Output Summary: nhru_summary, basin_summary', /, 68('-'))
+    16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 19X, &
+            &        'Module', 16X, 'Version Date', /, A)
+
+    call print_module(PRMS_versn, 'PRMS6 Computation Order     ', 90)
+    call print_module(Version_read_control_file, 'Read Control File           ', 90)
+    call print_module(Version_read_parameter_file, 'Read Parameter File         ', 90)
+
+    9002 FORMAT (//, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', &
+            /, 74('='), /)
+end subroutine PRMS_header
 
 !***********************************************************************
 !     Code piece from main subroutine for initialize procedure
 !***********************************************************************
-      SUBROUTINE PRMS_init()
-      USE PRMS_MODULE, ONLY: Print_debug, PRMS_output_unit, Param_file, &
-     &    Model_output_file, Init_vars_from_file, Var_init_file, Save_vars_to_file, Var_save_file
-      IMPLICIT NONE
-! Arguments
-! Functions
-      INTEGER, EXTERNAL :: numchars
-! Local Variables
-      INTEGER :: nc, nc2, nc3
+subroutine PRMS_init()
+    use PRMS_MODULE, only : Print_debug, PRMS_output_unit, Param_file, &
+                            Model_output_file, Init_vars_from_file, &
+                            Var_init_file, Save_vars_to_file, Var_save_file
+    use UTILS_PRMS, only: numchars
+    implicit none
+
+    if (Print_debug > -1) then
+        print 9004, 'Using Parameter File: ', Param_file
+        print 9004, 'Writing PRMS Water Budget File: ', Model_output_file
+    endif
+
+    if (Print_debug > -2) then
+        write (PRMS_output_unit, 9004) 'Using Parameter File: ', Param_file
+        write (PRMS_output_unit, 9004) 'Writing PRMS Water Budget File: ', Model_output_file
+    endif
+
+    if (Init_vars_from_file == 1) then
+        if (Print_debug > -1) print 9004, 'Using var_init_file: ', Var_init_file
+    endif
+    if (Save_vars_to_file == 1) then
+        if (Print_debug > -1) print 9004, 'Using var_save_file: ', Var_save_file
+    endif
+
+    9004 FORMAT (/, 2A)
+end subroutine PRMS_init
+
+
+subroutine init_control(ctl_data)
+    use kinds_mod, only: i4
+    use control_ll_mod, only: control_list
+    use PRMS_MODULE
+    use time_mod, only: compute_julday
+    use UTILS_PRMS, only: read_error, PRMS_open_output_file, PRMS_open_input_file, module_error
+    use PRMS_CONTROL_FILE, only: read_control_file, init_control_defaults
+
+    implicit none
+
+    type(control_list), intent(inout) :: ctl_data
+
+    ! Local Variables
+    integer(i4) :: iret, startday, endday
+
+    !***********************************************************************
+    Inputerror_flag = 0
+
+    ! Set general defaults for control parameters
+    call init_control_defaults(ctl_data)
+
+    ! Set default values for some control parameters
+    ! These will be overridden if found in the control file
+    ! key, value, datatype
+    call ctl_data%set('print_debug', [0], 1)
+    call ctl_data%set('parameter_check_flag', [1], 1)
+    call ctl_data%set('cbh_check_flag', [1], 1)
+    call ctl_data%set('cbh_binary_flag', [0], 1)
+    call ctl_data%set('init_vars_from_file', [0], 1)
+    call ctl_data%set('save_vars_to_file', [0], 1)
+    call ctl_data%set('nhruOutON_OFF', [0], 1)
+    call ctl_data%set('basinOutON_OFF', [0], 1)
+    call ctl_data%set('prms_warmup', [0], 1)
+
+    call read_control_file(ctl_data)
+
+    ! call ctl_data%traverse(print_key)
+
+    ! Set program variables based on control parameters
+    call ctl_data%get_data('print_debug', Print_debug)
+    call ctl_data%get_data('parameter_check_flag', Parameter_check_flag)
+    call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
+    call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
+    call ctl_data%get_data('init_vars_from_file', Init_vars_from_file)
+    call ctl_data%get_data('save_vars_to_file', Save_vars_to_file)
+    call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
+    call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
+    call ctl_data%get_data('prms_warmup', Prms_warmup)
+
+    ! 2017-12-05 PAN: what is this used for? overriding control parameters?
+    ! call get_control_arguments()
+
+    ! debug print flag:
+    ! -1=quiet - reduced screen output
+    ! 0=none; 1=water balances; 2=basin;
+    ! 4=basin_sum; 5=soltab; 7=soil zone;
+    ! 9=snowcomp; 13=cascade; 14=subbasin tree
+
+    call ctl_data%get_data('model_mode', Model_mode, missing_stop=.true.)
+
+    if (Model_mode == 'PRMS' .OR. Model_mode== '    ' .OR. Model_mode == 'DAILY') then
+        Model = 1
+    elseif (Model_mode == 'WRITE_CLIMATE') then
+        Model = 4
+    elseif (Model_mode == 'DOCUMENTATION') then
+        Model = 99
+    else
+        print '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
+        STOP
+    endif
+
+    ! get simulation start_time and end_time
+    call ctl_data%get_data('start_time', Starttime, missing_stop=.true.)
+
+    Start_year = Starttime(1)
+    if (Start_year < 0) STOP 'ERROR, control parameter start_time must be specified'
+    Start_month = Starttime(2)
+    Start_day = Starttime(3)
+
+    call ctl_data%get_data('end_time', Endtime, missing_stop=.true.)
+
+    End_year = Endtime(1)
+    if (End_year < 0) STOP 'ERROR, control parameter start_time must be specified'
+    End_month = Endtime(2)
+    End_day = Endtime(3)
+
+    startday = compute_julday(Start_year, Start_month, Start_day)
+    endday = compute_julday(End_year, End_month, End_day)
+    Number_timesteps = endday - startday + 1
+
+    ! Open PRMS module output file
+    call ctl_data%get_data('model_output_file', Model_output_file, missing_stop=.true.)
+
+    if (Print_debug > -2) then
+        call PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
+        if (iret /= 0) STOP
+    endif
+
+    call ctl_data%get_data('param_file', Param_file, missing_stop=.true.)
+
+    ! Check for restart files
+    if (Init_vars_from_file == 1) then
+        call ctl_data%get_data('var_init_file', Var_init_file, missing_stop=.true.)
+        call PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
+        if (iret /= 0) STOP
+    endif
+
+    if (Save_vars_to_file == 1) then
+        call ctl_data%get_data('var_save_file', Var_save_file, missing_stop=.true.)
+    endif
+
+    call ctl_data%get_data('temp_module', Temp_module, missing_stop=.true.)
+
+    call ctl_data%get_data('precip_module', Precip_module, missing_stop=.true.)
+
+    call ctl_data%get_data('transp_module', Transp_module, missing_stop=.true.)
+
+    call ctl_data%get_data('et_module', Et_module, missing_stop=.true.)
+
+    call ctl_data%get_data('solrad_module', Solrad_module, missing_stop=.true.)
+
+    Climate_precip_flag = 0
+    Climate_temp_flag = 0
+
+    if (Precip_module == 'climate_hru') then
+        Precip_flag = 7
+        Climate_precip_flag = 1
+    else
+        print '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
+        Inputerror_flag = 1
+    endif
+
+    if (Temp_module == 'climate_hru') then
+        Temp_flag = 7
+        Climate_temp_flag = 1
+    else
+        print '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
+        Inputerror_flag = 1
+    endif
+
+    if (Transp_module /= 'transp_tindex') then
+        print '(/,2A)', 'ERROR, invalid transp_module value: ', Transp_module
+        Inputerror_flag = 1
+    endif
+
+    if (Et_module == 'potet_jh') then
+        Et_flag = 1
+    else
+        print '(/,2A)', 'ERROR, invalid et_module value: ', Et_module
+        Inputerror_flag = 1
+    endif
+
+    if (Solrad_module == 'ddsolrad') then
+        Solrad_flag = 1
+    else
+        print '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
+        Inputerror_flag = 1
+    endif
+
+    if (NhruOutON_OFF == 1 .OR. BasinOutON_OFF == 1) then
+        if (Start_year + Prms_warmup > End_year) then ! change to start full date ???
+            print *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
+            Inputerror_flag = 1
+        endif
+    endif
+
+    if (Inputerror_flag == 1) then
+        print '(//,A,/,A)', '**FIX input errors in your Control File to continue**', &
+                &        'NOTE: some errors may be due to use of default values'
+        STOP
+    endif
+
+    contains
+        subroutine print_key(key, value, datatype, done)  ! print the key for this node
+            use iso_fortran_env, only: output_unit
+            use arr_mod, only: array_1D_t
+            implicit none
+
+            character(len=*), intent(in) :: key
+            type(array_1D_t), intent(in) :: value
+            integer(i4), intent(in) :: datatype
+            logical,intent(out) :: done
+
+            print *, ''
+            print *, '**** Control variable ****'
+            print *, 'Name: ', key
+            print *, 'num_elem:', value%length()
+            print *, 'datatype:', datatype
+            print *, '*values*'
+            call value%print()
+
+            done = .false.
+        end subroutine print_key
+end subroutine init_control
+
 !***********************************************************************
-      nc2 = numchars(Param_file)
-      nc3 = numchars(Model_output_file)
-      IF ( Print_debug>-1 ) THEN
-        PRINT 9004, 'Using Parameter File: ', Param_file(:nc2)
-        PRINT 9004, 'Writing PRMS Water Budget File: ', Model_output_file(:nc3)
-      ENDIF
+!     declare the dimensions
+!***********************************************************************
+subroutine setdims(dim_data)
+    use dimensions_mod, only: dimension_list
+    ! use PRMS_READ_PARAM_FILE, only: read_parameter_file_dimens
+    implicit none
 
-      IF ( Print_debug>-2 ) THEN
-        WRITE ( PRMS_output_unit, 9004 ) 'Using Parameter File: ', Param_file(:nc2)
-        WRITE ( PRMS_output_unit, 9004 ) 'Writing PRMS Water Budget File: ', Model_output_file(:nc3)
-      ENDIF
+    type(dimension_list), intent(inout) :: dim_data
 
-      IF ( Init_vars_from_file==1 ) THEN
-        nc = numchars(Var_init_file)
-        IF ( Print_debug>-1 ) PRINT 9004, 'Using var_init_file: ', Var_init_file(:nc)
-      ENDIF
-      IF ( Save_vars_to_file==1 ) THEN
-        nc = numchars(Var_save_file)
-        IF ( Print_debug>-1 ) PRINT 9004, 'Using var_save_file: ', Var_save_file(:nc)
-      ENDIF
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Dimension section
 
- 9004 FORMAT (/, 2A)
-      END SUBROUTINE PRMS_init
+    ! key, value, description, default, maximum
+    call dim_data%set_dimension('nhru', 1, 'Number of HRUs', 1, 1)
+    call dim_data%set_dimension('nrain', 0, 'Number of precipitation-measurement stations', 0, 0)
+    call dim_data%set_dimension('ntemp', 0, 'Number of air-temperature-measurement stations', 0, 0)
+    call dim_data%set_dimension('nobs', 0, 'Number of streamflow-measurement stations', 0, 0)
+
+    ! Fixed dimensions
+    call dim_data%set_dimension('ndays', 366, 'Maximum number of days in a year', 366, 366)
+    call dim_data%set_dimension('nmonths', 12, 'Number of months in a year', 12, 12)
+    call dim_data%set_dimension('one', 1, 'Number of values for scalar array', 1, 1)
+    ! --------------------------------------------------------------------------
+end subroutine setdims
+
+!***********************************************************************
+!     Get dimensions
+!***********************************************************************
+subroutine get_dims(dim_data)
+    use UTILS_PRMS, only: read_error
+    use PRMS_MODULE, only : Nhru, Ntemp, Nrain, Nobs, Model
+    use dimensions_mod, only: dimension_list
+    implicit none
+
+    type(dimension_list), intent(in) :: dim_data
+
+    !***********************************************************************
+    call dim_data%get_data('nhru', Nhru)
+    call dim_data%get_data('ntemp', Ntemp)
+    call dim_data%get_data('nrain', Nrain)
+    call dim_data%get_data('nobs', Nobs)
+
+    ! Nhru = getdim('nhru')
+    if (Nhru == -1) call read_error(7, 'nhru')
+
+    ! Ntemp = getdim('ntemp')
+    if (Ntemp == -1) call read_error(6, 'ntemp')
+
+    ! Nrain = getdim('nrain')
+    if (Nrain == -1) call read_error(6, 'nrain')
+
+    ! Nobs = getdim('nobs')
+    if (Nobs == -1) call read_error(6, 'nobs')
+
+    if (Model == 99) then
+        if (Ntemp == 0) Ntemp = 1
+        if (Nrain == 0) Nrain = 1
+        if (Nobs == 0) Nobs = 1
+    endif
+end subroutine get_dims
+
+!**********************************************************************
+!     Module documentation
+!**********************************************************************
+subroutine module_doc(dim_data, ctl_data)
+    use kinds_mod, only: i4
+    use PRMS_BASIN, only: basin, Hemisphere, Basin_area_inv
+    use PRMS_OBS, only: obs
+    use PRMS_POTET_JH, only: potet_jh
+    use PRMS_CLIMATEVARS, only: climateflow
+    use PRMS_CLIMATE_HRU, only: climate_hru
+    use PRMS_SOLTAB, only: soltab
+    use PRMS_DDSOLRAD, only: ddsolrad
+    use PRMS_TRANSP_TINDEX, only: transp_tindex
+    use PRMS_BASIN_SUMMARY, only: basin_summary
+    use PRMS_NHRU_SUMMARY, only: nhru_summary
+    use PRMS_SET_TIME, only: prms_time
+    use dimensions_mod, only: dimension_list
+    use control_ll_mod, only: control_list
+    implicit none
+
+    type(dimension_list), intent(in) :: dim_data
+    type(control_list), intent(in) :: ctl_data
+
+    ! Local variable
+    integer(i4) :: test
+
+    !**********************************************************************
+    test = basin(dim_data)
+    test = climateflow(dim_data)
+    test = soltab(dim_data)
+    test = prms_time(Hemisphere, Basin_area_inv)
+    test = obs(dim_data)
+    test = climate_hru(dim_data, ctl_data)
+    test = ddsolrad(dim_data)
+    test = transp_tindex(dim_data)
+    test = potet_jh(dim_data)
+    call nhru_summary(dim_data, ctl_data)
+    call basin_summary(ctl_data)
+
+    print 9001
+    9001 FORMAT (//, ' All available modules have been called.', /, &
+            &        ' All parameters have been declared.', /, &
+            &        ' Note, no simulation was computed.', /)
+
+end subroutine module_doc
+
 
 !***********************************************************************
 !     call_modules_restart - write or read restart file
 !***********************************************************************
-      SUBROUTINE call_modules_restart(In_out)
-      USE PRMS_MODULE
-      IMPLICIT NONE
-      ! Argument
-      INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart, check_restart_dimen
-      ! Functions
-      INTRINSIC TRIM
-      ! Local Variables
-      INTEGER :: nhru_test, temp_test, ierr
-      CHARACTER(LEN=MAXCONTROL_LENGTH) :: model_test
-      CHARACTER(LEN=5) :: module_name
-!***********************************************************************
-      IF ( In_out==0 ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Timestep, Nhru, Temp_flag, Model_mode
-      ELSE
+subroutine call_modules_restart(In_out)
+    use kinds_mod, only: i4
+    use prms_constants, only: MAXCONTROL_LENGTH
+    use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, Temp_flag, &
+                           Restart_inunit, Restart_outunit
+    use UTILS_PRMS, only: check_restart, check_restart_dimen
+    implicit none
+
+    ! Argument
+    integer(i4), intent(in) :: In_out
+
+    ! Functions
+    INTRINSIC TRIM
+
+    ! Local Variables
+    integer(i4) :: nhru_test
+    integer(i4) :: temp_test
+    integer(i4) :: ierr
+    character(LEN=MAXCONTROL_LENGTH) :: model_test
+    character(LEN=5) :: module_name
+
+    !***********************************************************************
+    if (In_out == 0) then
+        write (Restart_outunit) MODNAME
+        write (Restart_outunit) Timestep, Nhru, Temp_flag, Model_mode
+    else
         ierr = 0
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Timestep, nhru_test, temp_test, model_test
-        IF ( TRIM(Model_mode)/=TRIM(model_test) ) THEN
-          PRINT *, 'ERROR, Initial Conditions File saved for model_mode=', model_test
-          PRINT *, '       Current model has model_mode=', Model_mode, ' they must be equal'
-          ierr = 1
-        ENDIF
-        CALL check_restart_dimen('nhru', nhru_test, Nhru, ierr)
-        IF ( ierr==1 ) STOP
-      ENDIF
-      END SUBROUTINE call_modules_restart
+        read (Restart_inunit) module_name
+        call check_restart(MODNAME, module_name)
+        read (Restart_inunit) Timestep, nhru_test, temp_test, model_test
+
+        if (Model_mode /= TRIM(model_test)) then
+            print *, 'ERROR, Initial Conditions File saved for model_mode=', TRIM(model_test)
+            print *, '       Current model has model_mode=', Model_mode, ' they must be equal'
+            ierr = 1
+        endif
+
+        call check_restart_dimen('nhru', nhru_test, Nhru, ierr)
+        if (ierr == 1) STOP
+    endif
+end subroutine call_modules_restart
+
+!***********************************************************************
+! Defines the computational sequence, valid modules, and dimensions
+!***********************************************************************
+subroutine computation_order(Arg, dim_data, ctl_data)
+    use kinds_mod, only: i4
+    use prms_constants, only: EQULS
+    use UTILS_PRMS, only: numchars, module_error, PRMS_open_output_file, read_error
+    use PRMS_MODULE, only: Process, BasinOutON_OFF, Elapsed_time, Elapsed_time_start, &
+                           Elapsed_time_end, Elapsed_time_minutes, End_day, End_month, End_year, &
+                           Start_day, Start_month, Start_year, &
+                           Execution_time_start, Execution_time_end, &
+                           Init_vars_from_file, Inputerror_flag, Parameter_check_flag, &
+                           Model, Print_debug, PRMS_output_unit, PRMS_versn, &
+                           Restart_inunit, Restart_outunit, Save_vars_to_file,&
+                           NhruOutON_OFF, Et_module, Solrad_module, Transp_module, &
+                           Var_save_file
+    use PRMS_BASIN, only: basin, Hemisphere, Basin_area_inv
+    use PRMS_OBS, only: obs
+    use PRMS_POTET_JH, only: potet_jh
+    use PRMS_SET_TIME, only: prms_time
+    use PRMS_DATA_FILE, only: read_prms_data_file
+    use PRMS_READ_PARAM_FILE, only: read_parameter_file_dimens, read_parameter_file_params, check_parameters
+    use parameter_mod, only: setup_params
+    ! use PRMS_MMFAPI, only: setup_params
+    use PRMS_CLIMATEVARS, only: climateflow
+    use PRMS_CLIMATE_HRU, only: climate_hru
+    use PRMS_SOLTAB, only: soltab
+    use PRMS_DDSOLRAD, only: ddsolrad
+    use PRMS_TRANSP_TINDEX, only: transp_tindex
+    use PRMS_BASIN_SUMMARY, only: basin_summary
+    use PRMS_NHRU_SUMMARY, only: nhru_summary
+    use dimensions_mod, only: dimension_list
+    use control_ll_mod, only: control_list
+    implicit none
+
+    ! Arguments
+    character(len=*), intent(in) :: Arg
+    type(dimension_list), intent(inout) :: dim_data
+    type(control_list), intent(inout) :: ctl_data
+
+    ! Functions
+    INTRINSIC :: DATE_AND_TIME, INT
+
+    ! Local Variables
+    integer(i4) :: i
+    integer(i4) :: iret
+    integer(i4) :: nc
+    integer(i4) :: call_modules
+    character(:), allocatable :: data_filename
+
+    !***********************************************************************
+    call_modules = 1
+
+    Process = Arg
+
+    ! Process_flag (0=run, 1=declare, 2=init, 3=clean, 4=setdims)
+    ! if (Process == 'run') then
+        ! Process_flag = 0
+    ! elseif (Process == 'declare') then
+    if (Process == 'declare') then
+        ! Process_flag = 1
+        PRMS_versn = 'prms6.f90 2017-09-29 13:51:00Z'
+
+        call get_dims(dim_data)
+        call PRMS_header()
+
+        call ctl_data%get_data('data_file', data_filename, missing_stop=.true.)
+        call read_prms_data_file(data_filename)
+
+        if (Init_vars_from_file == 1) call call_modules_restart(1)
+    elseif (Process == 'init') then
+        ! Process_flag = 2
+        call PRMS_init()
+    elseif (Process == 'setdims') then
+        ! Process_flag = 4
+        call DATE_AND_TIME(VALUES=Elapsed_time_start)
+        Execution_time_start = Elapsed_time_start(5) * 3600 + Elapsed_time_start(6) * 60 + &
+                &              Elapsed_time_start(7) + Elapsed_time_start(8) * 0.001
+
+        print *, '    ---- init_control()'
+        call init_control(ctl_data)
+
+        print *, '    ---- setdims()'
+        call setdims(dim_data)
+
+        print *, '    ---- setup_params()'
+        call setup_params()
+
+        print *, '    ---- read_parameter_file_dimens()'
+        call read_parameter_file_dimens(dim_data)
+    else !if ( Process(:5)=='clean' ) then
+        ! Process_flag = 3
+        if (Init_vars_from_file == 1) CLOSE (Restart_inunit)
+
+        if (Save_vars_to_file == 1) then
+            nc = numchars(Var_save_file)
+            call PRMS_open_output_file(Restart_outunit, Var_save_file(: nc), 'var_save_file', 1, iret)
+            if (iret /= 0) STOP
+            call call_modules_restart(0)
+        endif
+    endif
+
+    if (Model == 99) then
+        if (Process == 'setdims' .or. Process == 'declare' .or. Process == 'run') then
+        ! if (Process_flag == 4 .OR. Process_flag < 2) then
+            Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
+
+            call module_doc(dim_data, ctl_data)
+            call_modules = 0
+            RETURN
+        else
+            STOP
+        endif
+    endif
+
+    ! All modules must be called for setdims, declare, initialize, and cleanup
+    if (Process /= 'run') then
+    ! if (Process_flag /= 0) then
+        ! All stages but the run stage
+        call_modules = basin(dim_data)
+        if (call_modules /= 0) call module_error('basin', Arg, call_modules)
+
+        call_modules = climateflow(dim_data)
+        if (call_modules /= 0) call module_error('climateflow', Arg, call_modules)
+
+        call_modules = soltab(dim_data)
+        if (call_modules /= 0) call module_error('soltab', Arg, call_modules)
+
+        call_modules = obs(dim_data) ! functionality of readvar is in read_data_file, check_data_variables routine
+        if (call_modules /= 0) call module_error('obs', Arg, call_modules)
+    endif
+
+    ! Run model for current timestep - execute for all stages
+    call_modules = prms_time(Hemisphere, Basin_area_inv )
+    if (call_modules /= 0) call module_error('prms_time', Arg, call_modules)
+
+    call_modules = climate_hru(dim_data, ctl_data)
+    if (call_modules /= 0) call module_error('climate_hru', Arg, call_modules)
+
+    call_modules = ddsolrad(dim_data)
+    if (call_modules /= 0) call module_error(Solrad_module, Arg, call_modules)
+
+    call_modules = transp_tindex(dim_data)
+    if (call_modules /= 0) call module_error(Transp_module, Arg, call_modules)
+
+    call_modules = potet_jh(dim_data)
+    if (call_modules /= 0) call module_error(Et_module, Arg, call_modules)
+
+    if (NhruOutON_OFF > 0) call nhru_summary(dim_data, ctl_data)
+
+    if (BasinOutON_OFF == 1) call basin_summary(ctl_data)
+
+    if (Process == 'run') return
+    ! if (Process_flag == 0) RETURN   ! For run stage only
+
+
+    if (Print_debug > -1) then
+        if (Process == 'clean') then
+        ! if (Process_flag == 3) then
+            ! For clean stage only
+            call DATE_AND_TIME(VALUES = Elapsed_time_end)
+
+            print 9001
+            print 9003, 'start', (Elapsed_time_start(i), i = 1, 3), (Elapsed_time_start(i), i = 5, 7)
+            print 9003, 'end', (Elapsed_time_end(i), i = 1, 3), (Elapsed_time_end(i), i = 5, 7)
+
+            Execution_time_end = Elapsed_time_end(5) * 3600 + &
+                                 Elapsed_time_end(6) * 60 + Elapsed_time_end(7) + &
+                                 Elapsed_time_end(8) * 0.001
+            Elapsed_time = Execution_time_end - Execution_time_start
+            Elapsed_time_minutes = INT(Elapsed_time / 60.0)
+
+            print '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
+                                       Elapsed_time - Elapsed_time_minutes * 60.0, ' seconds'
+        elseif (Process == 'init') then
+        ! elseif (Process_flag == 2) then
+            ! For init stage only
+            if (Inputerror_flag == 1) then
+                print '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
+                                             '  Set control parameter parameter_check_flag to 0 after', &
+                                             '  all parameter values are valid.'
+                print '(/,A,/,A,/,A,/,A,/,A,/)', 'If input errors are related to paramters used for automated', &
+                                                 'calibration processes, with CAUTION, set control parameter', &
+                                                 'parameter_check_flag to 0. After calibration set the', &
+                                                 'parameter_check_flag to 1 to verify that those calibration', &
+                                                 'parameters have valid and compatible values.'
+                STOP
+            endif
+        endif
+    endif
+
+    if (Process == 'declare') then
+        ! For declare stage only
+        call read_parameter_file_params(dim_data, ctl_data)
+        if (Print_debug > -2) then
+            print '(A)', EQULS
+            write (PRMS_output_unit, '(A)') EQULS
+        endif
+    elseif (Process == 'init') then
+        ! For init stage only
+        if (Parameter_check_flag == 2) STOP
+        if (Print_debug > -1) call check_parameters()
+        print 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, &
+                End_month, End_day, EQULS
+    elseif (Process == 'clean') then
+        ! For clean stage only
+        if (Print_debug > -2) then
+            write (PRMS_output_unit, '(A,I5,A,F6.2,A,/)') 'Execution elapsed time', &
+                    Elapsed_time_minutes, ' minutes', Elapsed_time - Elapsed_time_minutes * 60.0, ' seconds'
+        endif
+    endif
+
+    4 FORMAT (/, 2(A, I5, 2('/', I2.2)), //, A, /)
+    9001 FORMAT (/, 26X, 27('='), /, 26X, 'Normal completion of PRMS', /, 26X, 27('='), /)
+    9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/', I2.2), I3, 2(':', I2.2), /)
+end subroutine computation_order
+
+
+!***********************************************************************
+! Main program
+!***********************************************************************
+program prms6
+    use kinds_mod, only: i4
+    use PRMS_MODULE, only : Number_timesteps
+    use dimensions_mod
+    use control_ll_mod, only: control_list
+    ! use PRMS_MMFAPI, only: PRMS_parameter
+    implicit none
+
+    type(control_list) :: Control_data
+    type(dimension_list) :: Dimension_data
+
+    integer(i4) :: ii
+
+    !***********************************************************************
+    ! type(PRMS_parameter), ALLOCATABLE :: Parameter_data(:)
+    ! type(PRMS_variable), ALLOCATABLE :: Variable_data(:)
+    Dimension_data = dimension_list()
+    Control_data = control_list()
+
+    print *, '---- setdims'
+    call computation_order('setdims', Dimension_data, Control_data)
+
+    print *, '---- declare'
+    call computation_order('declare', Dimension_data, Control_data)
+
+    print *, '---- init'
+    call computation_order('init', Dimension_data, Control_data)
+
+    print *, '---- run'
+    do ii = 1, Number_timesteps
+        call computation_order('run', Dimension_data, Control_data)
+    enddo
+
+    print *, '---- clean'
+    call computation_order('clean', Dimension_data, Control_data)
+end program prms6
