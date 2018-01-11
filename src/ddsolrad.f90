@@ -25,7 +25,7 @@ MODULE PRMS_DDSOLRAD
     public :: ddsolrad
 
     contains
-        INTEGER FUNCTION ddsolrad(dim_data)
+        INTEGER FUNCTION ddsolrad(dim_data, param_data)
             USE PRMS_MODULE, ONLY: Process, Nhru, print_module
             USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
             USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
@@ -34,12 +34,14 @@ MODULE PRMS_DDSOLRAD
             USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
             USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag, print_date
             use UTILS_PRMS, only: read_error
-            use parameter_mod, only: declparam, getparam
+            ! use parameter_mod, only: declparam, getparam
             ! use PRMS_MMFAPI, only: declparam, getparam
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Functions
             INTRINSIC INT, FLOAT, DBLE, SNGL
@@ -116,34 +118,34 @@ MODULE PRMS_DDSOLRAD
 
                 ! Declare Parameters
                 ALLOCATE (Dday_slope(Nhru, 12))
-                IF (declparam(MODNAME, 'dday_slope', 'nhru,nmonths', 'real', &
+                IF (param_data%declparam(MODNAME, 'dday_slope', 'nhru,nmonths', 'real', &
                         &       '0.4', '0.2', '0.9', &
                         &       'Slope in temperature degree-day relationship', &
                         &       'Monthly (January to December) slope in degree-day equation for each HRU', &
                         &       'dday/temp_units', dim_data) /= 0) CALL read_error(1, 'dday_slope')
 
                 ALLOCATE (Dday_intcp(Nhru, 12))
-                IF (declparam(MODNAME, 'dday_intcp', 'nhru,nmonths', 'real', &
+                IF (param_data%declparam(MODNAME, 'dday_intcp', 'nhru,nmonths', 'real', &
                         &       '-40.0', '-60.0', '10.0', &
                         &       'Intercept in temperature degree-day relationship', &
                         &       'Monthly (January to December) intercept in degree-day equation for each HRU', &
                         &       'dday', dim_data) /= 0) CALL read_error(1, 'dday_intcp')
 
                 ALLOCATE (Radadj_slope(Nhru, 12))
-                IF (declparam(MODNAME, 'radadj_slope', 'nhru,nmonths', 'real', '0.0', '0.0', '1.0', &
+                IF (param_data%declparam(MODNAME, 'radadj_slope', 'nhru,nmonths', 'real', '0.0', '0.0', '1.0', &
                         'Slope in air temperature range adjustment to degree-day equation', &
                         'Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU', &
                         'dday/temp_units', dim_data) /= 0) CALL read_error(1, 'radadj_slope')
 
                 ALLOCATE (Radadj_intcp(Nhru, 12))
-                IF (declparam(MODNAME, 'radadj_intcp', 'nhru,nmonths', 'real', &
+                IF (param_data%declparam(MODNAME, 'radadj_intcp', 'nhru,nmonths', 'real', &
                         &       '1.0', '0.0', '1.0', &
                         &       'Intercept in air temperature range adjustment to degree-day equation', &
                         &       'Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU', &
                         &       'dday', dim_data) /= 0) CALL read_error(1, 'radadj_intcp')
 
                 ALLOCATE (Tmax_index(Nhru, 12))
-                IF (declparam(MODNAME, 'tmax_index', 'nhru,nmonths', 'real', &
+                IF (param_data%declparam(MODNAME, 'tmax_index', 'nhru,nmonths', 'real', &
                         &       '50.0', '-10.0', '110.0', &
                         &       'Monthly index temperature', &
                         &       'Monthly (January to December) index temperature used' // &
@@ -151,11 +153,11 @@ MODULE PRMS_DDSOLRAD
                         &       'temp_units', dim_data) /= 0) CALL read_error(1, 'tmax_index')
             ELSEIF (Process == 'init') THEN
                 ! Get parameters
-                IF (getparam(MODNAME, 'dday_slope', Nhru * 12, 'real', Dday_slope) /= 0) CALL read_error(2, 'dday_slope')
-                IF (getparam(MODNAME, 'dday_intcp', Nhru * 12, 'real', Dday_intcp) /= 0) CALL read_error(2, 'dday_intcp')
-                IF (getparam(MODNAME, 'radadj_slope', Nhru * 12, 'real', Radadj_slope) /= 0) CALL read_error(2, 'radadj_slope')
-                IF (getparam(MODNAME, 'radadj_intcp', Nhru * 12, 'real', Radadj_intcp) /= 0) CALL read_error(2, 'radadj_intcp')
-                IF (getparam(MODNAME, 'tmax_index', Nhru * 12, 'real', Tmax_index) /= 0) CALL read_error(2, 'tmax_index')
+                IF (param_data%getparam(MODNAME, 'dday_slope', Nhru * 12, 'real', Dday_slope) /= 0) CALL read_error(2, 'dday_slope')
+                IF (param_data%getparam(MODNAME, 'dday_intcp', Nhru * 12, 'real', Dday_intcp) /= 0) CALL read_error(2, 'dday_intcp')
+                IF (param_data%getparam(MODNAME, 'radadj_slope', Nhru * 12, 'real', Radadj_slope) /= 0) CALL read_error(2, 'radadj_slope')
+                IF (param_data%getparam(MODNAME, 'radadj_intcp', Nhru * 12, 'real', Radadj_intcp) /= 0) CALL read_error(2, 'radadj_intcp')
+                IF (param_data%getparam(MODNAME, 'tmax_index', Nhru * 12, 'real', Tmax_index) /= 0) CALL read_error(2, 'tmax_index')
 
             ENDIF
 

@@ -28,7 +28,7 @@ module PRMS_CLIMATE_HRU
 
     contains
 
-        integer function climate_hru(dim_data, ctl_data)
+        integer function climate_hru(dim_data, ctl_data, param_data)
             use prms_constants, only: MM2INCH, MINTEMP, MAXTEMP
             use PRMS_MODULE, only: Process, Nhru, Model, Climate_precip_flag, Climate_temp_flag, &
                     Start_year, Start_month, Start_day, Cbh_check_flag, Cbh_binary_flag, print_module, &
@@ -41,15 +41,17 @@ module PRMS_CLIMATE_HRU
             use PRMS_SET_TIME, only: Nowmonth, print_date
             use UTILS_PRMS, only: read_error, find_current_time
             ! use PRMS_CONTROL_FILE, only: control_string
-            use parameter_mod, only: declparam, getparam
+            ! use parameter_mod, only: declparam, getparam
             ! use PRMS_MMFAPI, only: declparam, getparam
             use PRMS_CLIMATEVARS, only: precip_form, temp_set
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
+            use parameter_arr_mod, only: parameter_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
             type(control_list), intent(in) :: ctl_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Functions
             INTRINSIC ABS, DBLE, SNGL
@@ -175,7 +177,7 @@ module PRMS_CLIMATE_HRU
                 !   Declared Parameters
                 if (Climate_temp_flag == 1 .OR. Model == 99) then
                     allocate (Tmax_cbh_adj(Nhru, 12))
-                    if (declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
+                    if (param_data%declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
                                            '0.0', '-10.0', '10.0', &
                                            'Monthly maximum temperature adjustment factor for each HRU', &
                                            'Monthly (January to December) adjustment factor to maximum air temperature for each HRU,' // &
@@ -183,7 +185,7 @@ module PRMS_CLIMATE_HRU
                                            'temp_units', dim_data) /= 0) call read_error(1, 'tmax_cbh_adj')
 
                     allocate (Tmin_cbh_adj(Nhru, 12))
-                    if (declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
+                    if (param_data%declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
                                            '0.0', '-10.0', '10.0', &
                                            'Monthly minimum temperature adjustment factor for each HRU', &
                                            'Monthly (January to December) adjustment factor to minimum air temperature for each HRU,' // &
@@ -193,7 +195,7 @@ module PRMS_CLIMATE_HRU
 
                 if (Climate_precip_flag == 1 .OR. Model == 99) then
                     allocate (Rain_cbh_adj(Nhru, 12))
-                    if (declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
+                    if (param_data%declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
                                            '1.0', '0.5', '2.0', &
                                            'Rain adjustment factor, by month for each HRU', &
                                            'Monthly (January to December) adjustment factor to' // &
@@ -202,7 +204,7 @@ module PRMS_CLIMATE_HRU
                                            'decimal fraction', dim_data) /= 0) call read_error(1, 'rain_cbh_adj')
 
                     allocate (Snow_cbh_adj(Nhru, 12))
-                    if (declparam(MODNAME, 'snow_cbh_adj', 'nhru,nmonths', 'real', &
+                    if (param_data%declparam(MODNAME, 'snow_cbh_adj', 'nhru,nmonths', 'real', &
                                            '1.0', '0.5', '2.0', &
                                            'Snow adjustment factor, by month for each HRU', &
                                            'Monthly (January to December) adjustment factor to' // &
@@ -217,8 +219,8 @@ module PRMS_CLIMATE_HRU
                 ierr = 0
 
                 if (Climate_precip_flag == 1) then
-                    if (getparam(MODNAME, 'rain_cbh_adj', Nhru * 12, 'real', Rain_cbh_adj) /= 0) call read_error(2, 'rain_cbh_adj')
-                    if (getparam(MODNAME, 'snow_cbh_adj', Nhru * 12, 'real', Snow_cbh_adj) /= 0) call read_error(2, 'snow_cbh_adj')
+                    if (param_data%getparam(MODNAME, 'rain_cbh_adj', Nhru * 12, 'real', Rain_cbh_adj) /= 0) call read_error(2, 'rain_cbh_adj')
+                    if (param_data%getparam(MODNAME, 'snow_cbh_adj', Nhru * 12, 'real', Snow_cbh_adj) /= 0) call read_error(2, 'snow_cbh_adj')
 
                     call ctl_data%get_data('precip_day', Precip_day, missing_stop=.true.)
 
@@ -235,8 +237,8 @@ module PRMS_CLIMATE_HRU
                 endif
 
                 if (Climate_temp_flag == 1) then
-                    if (getparam(MODNAME, 'tmax_cbh_adj', Nhru * 12, 'real', Tmax_cbh_adj) /= 0) call read_error(2, 'tmax_cbh_adj')
-                    if (getparam(MODNAME, 'tmin_cbh_adj', Nhru * 12, 'real', Tmin_cbh_adj) /= 0) call read_error(2, 'tmin_cbh_adj')
+                    if (param_data%getparam(MODNAME, 'tmax_cbh_adj', Nhru * 12, 'real', Tmax_cbh_adj) /= 0) call read_error(2, 'tmax_cbh_adj')
+                    if (param_data%getparam(MODNAME, 'tmin_cbh_adj', Nhru * 12, 'real', Tmin_cbh_adj) /= 0) call read_error(2, 'tmin_cbh_adj')
 
                     call ctl_data%get_data('tmax_day', Tmax_day, missing_stop=.true.)
                     call ctl_data%get_data('tmin_day', Tmin_day, missing_stop=.true.)

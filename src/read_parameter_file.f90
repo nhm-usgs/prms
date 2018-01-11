@@ -4,6 +4,7 @@ module PRMS_READ_PARAM_FILE
     use prms_constants, only: EQULS, DIM_HEADER, PARAM_HEADER, ENTRY_DELIMITER
     use PRMS_MODULE, only: Print_debug, Param_file
     use control_ll_mod, only: control_list
+    implicit none
 
     integer(i4), SAVE :: Param_unit, Read_parameters
 
@@ -14,29 +15,25 @@ module PRMS_READ_PARAM_FILE
         !***********************************************************************
         ! Check for parameters declared but not in Parameter File
         !***********************************************************************
-        subroutine check_parameters
-            ! use PRMS_CONTROL_FILE, only: control_string
-            use parameter_mod, only: Num_parameters, Parameter_data
-            ! use PRMS_MMFAPI, only: Num_parameters, Parameter_data ! , getdim, setparam
-            ! use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file
+        subroutine check_parameters(param_data)
+            use parameter_arr_mod, only: parameter_arr_t
             implicit none
 
-            ! Functions
-            ! INTRINSIC :: TRIM
+            type(parameter_arr_t), intent(in) :: param_data
 
             ! Local Variables
             integer(i4) :: i
 
             !***********************************************************************
-            do i = 1, Num_parameters
-                if (Parameter_data(i)%decl_flag == 1 .AND. Parameter_data(i)%read_flag == 0) then
-                    print *, 'Parameter: ', Parameter_data(i)%param_name, ' is not specified'
+            do i = 1, param_data%Num_parameters
+                if (param_data%Parameter_data(i)%decl_flag == 1 .AND. param_data%Parameter_data(i)%read_flag == 0) then
+                    print *, 'Parameter: ', param_data%Parameter_data(i)%param_name, ' is not specified'
                     ! print *, 'Parameter: ', TRIM(Parameter_data(i)%param_name), ' is not specified'
 
-                    if (Parameter_data(i)%data_flag == 1) then
-                        print *, '           Set to default value:', Parameter_data(i)%default_int
-                    elseif (Parameter_data(i)%data_flag == 2) then
-                        print *, '           Set to default value:', Parameter_data(i)%default_real
+                    if (param_data%Parameter_data(i)%data_flag == 1) then
+                        print *, '           Set to default value:', param_data%Parameter_data(i)%default_int
+                    elseif (param_data%Parameter_data(i)%data_flag == 2) then
+                        print *, '           Set to default value:', param_data%Parameter_data(i)%default_real
                     endif
                 endif
             enddo
@@ -49,7 +46,6 @@ module PRMS_READ_PARAM_FILE
             use PRMS_MODULE, only: Version_read_parameter_file
             use fileio_mod, only: write_outfile
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file
-            ! use PRMS_MMFAPI, only: setdimension
             use dimensions_mod, only: dimension_list
             implicit none
 
@@ -148,17 +144,16 @@ module PRMS_READ_PARAM_FILE
         !***********************************************************************
         ! Read Parameter File Dimensions
         !***********************************************************************
-        subroutine read_parameter_file_params(dim_data, ctl_data)
-            ! use PRMS_CONTROL_FILE, only: Param_file_control_parameter_id  ! , control_string, Control_parameter_data
-            use parameter_mod, only: Num_parameters, Parameter_data, setparam
-            ! use PRMS_MMFAPI, only:Num_parameters, Parameter_data, setparam !, getdim
+        subroutine read_parameter_file_params(dim_data, ctl_data, param_data)
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             use data_mod, only: str_arr_type
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
             type(control_list), intent(in) :: ctl_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Functions
             INTRINSIC :: TRIM
@@ -234,11 +229,11 @@ module PRMS_READ_PARAM_FILE
                     ! check to see if parameter already read
                     duplicate = 0
                     found = 0
-                    do ii = 1, Num_parameters
-                        if (paramstring(:nchars) == TRIM(Parameter_data(ii)%param_name)) then
+                    do ii = 1, param_data%Num_parameters
+                        if (paramstring(:nchars) == param_data%Parameter_data(ii)%param_name) then
                             found = ii
 
-                            if (Parameter_data(ii)%read_flag == 1) then
+                            if (param_data%Parameter_data(ii)%read_flag == 1) then
                                 print '(/,3A)', 'WARNING, parameter: ', TRIM(paramstring), ' specified more than once'
                                 inum = MIN (num_param_values, 5)
                                 print *, '        Ignoring previous value(s)'
@@ -269,9 +264,9 @@ module PRMS_READ_PARAM_FILE
                     endif
 
                     if (duplicate > 0) print *, ' '
-                    call setparam(paramstring(:nchars), num_param_values, param_type, num_dims, dim_string, dmy, idmy)
+                    call param_data%setparam(paramstring(:nchars), num_param_values, param_type, num_dims, dim_string, dmy, idmy)
                     Read_parameters = Read_parameters + 1
-                    Parameter_data(found)%read_flag = 1
+                    param_data%Parameter_data(found)%read_flag = 1
                     deallocate (dmy, idmy)
                 enddo
             enddo

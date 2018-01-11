@@ -63,9 +63,6 @@ MODULE PRMS_BASIN_SUMMARY
         SUBROUTINE basin_summarydecl(ctl_data)
             USE PRMS_MODULE, ONLY: Model, Inputerror_flag, print_module
             USE UTILS_PRMS, only: read_error
-            ! use PRMS_CONTROL_FILE, only: control_string, control_string_array, control_integer
-            use parameter_mod, only: declparam
-            ! use PRMS_MMFAPI, only: declparam
             use control_ll_mod, only: control_list
             IMPLICIT NONE
 
@@ -122,7 +119,6 @@ MODULE PRMS_BASIN_SUMMARY
             USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_output_file
             use variables_mod, only: getvartype, getvarsize
-            ! use PRMS_MMFAPI, only: getvartype, getvarsize
             IMPLICIT NONE
 
             INTRINSIC ABS
@@ -231,7 +227,6 @@ MODULE PRMS_BASIN_SUMMARY
             USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
             USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
             use variables_mod, only: getvar_dble
-            ! use PRMS_MMFAPI, only: getvar_dble
             IMPLICIT NONE
 
             ! FUNCTIONS AND SUBROUTINES

@@ -37,20 +37,22 @@ module PRMS_SOLTAB
         !***********************************************************************
         !     Main soltab routine
         !***********************************************************************
-        integer function soltab(dim_data)
+        integer function soltab(dim_data, param_data)
             use PRMS_MODULE, only: Process
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             !***********************************************************************
             soltab = 0
 
             if (Process == 'declare') then
-                soltab = sthdecl(dim_data)
+                soltab = sthdecl(dim_data, param_data)
             elseif (Process == 'init') then
-                soltab = sthinit()
+                soltab = sthinit(param_data)
             endif
         end function soltab
 
@@ -59,16 +61,18 @@ module PRMS_SOLTAB
         !   Declared Parameters
         !     hru_aspect, hru_lat, hru_slope
         !***********************************************************************
-        integer function sthdecl(dim_data)
+        integer function sthdecl(dim_data, param_data)
             use PRMS_MODULE, only:Nhru, print_module
             use UTILS_PRMS, only: read_error
-            use parameter_mod, only: declparam
+            ! use parameter_mod, only: declparam
             use variables_mod, only: declvar_dble
             ! use PRMS_MMFAPI, only: declvar_dble  ! , declparam
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Functions
             INTRINSIC INDEX
@@ -97,14 +101,14 @@ module PRMS_SOLTAB
 
             !   Declared Parameters
             allocate (Hru_slope(Nhru))
-            if (declparam(MODNAME, 'hru_slope', 'nhru', 'real', &
+            if (param_data%declparam(MODNAME, 'hru_slope', 'nhru', 'real', &
                     &     '0.0', '0.0', '10.0', &
                     &     'HRU slope', &
                     &     'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
                     &     'decimal fraction', dim_data) /= 0) call read_error(1, 'hru_slope')
 
             allocate (Hru_aspect(Nhru))
-            if (declparam(MODNAME, 'hru_aspect', 'nhru', 'real', &
+            if (param_data%declparam(MODNAME, 'hru_aspect', 'nhru', 'real', &
                     &     '0.0', '0.0', '360.0', &
                     &     'HRU aspect', 'Aspect of each HRU', &
                     &     'angular degrees', dim_data) /= 0) call read_error(1, 'hru_aspect')
@@ -117,13 +121,16 @@ module PRMS_SOLTAB
         !               and soltab_sunhrs (hours between sunrise and sunset)
         !               for each HRU for each day of the year.
         !***********************************************************************
-        integer function sthinit()
+        integer function sthinit(param_data)
             use PRMS_MODULE, only:Nhru, Print_debug
             use PRMS_BASIN, only:Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
             use UTILS_PRMS, only: read_error, PRMS_open_module_file
-            use parameter_mod, only: getparam
+            use parameter_arr_mod, only: parameter_arr_t
+            ! use parameter_mod, only: getparam
             ! use PRMS_MMFAPI, only: getparam
             implicit none
+
+            type(parameter_arr_t), intent(in) :: param_data
 
             ! Functions
             INTRINSIC SIN, COS, DBLE
@@ -150,8 +157,8 @@ module PRMS_SOLTAB
             !***********************************************************************
             sthinit = 0
 
-            if (getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope) /= 0) call read_error(2, 'hru_slope')
-            if (getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect) /= 0) call read_error(2, 'hru_aspect')
+            if (param_data%getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope) /= 0) call read_error(2, 'hru_slope')
+            if (param_data%getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect) /= 0) call read_error(2, 'hru_aspect')
 
             do jd = 1, 366
                 jddbl = DBLE(jd)

@@ -47,42 +47,46 @@ MODULE PRMS_NHRU_SUMMARY
         !     ******************************************************************
         !     nhru results module
         !     ******************************************************************
-        SUBROUTINE nhru_summary(dim_data, ctl_data)
+        SUBROUTINE nhru_summary(dim_data, ctl_data, param_data)
             USE PRMS_MODULE, ONLY: Process
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(control_list), intent(in) :: ctl_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             !***********************************************************************
             IF (Process == 'run') THEN
                 CALL nhru_summaryrun()
             ELSEIF (Process == 'declare') THEN
-                CALL nhru_summarydecl(dim_data, ctl_data)
+                CALL nhru_summarydecl(dim_data, ctl_data, param_data)
             ELSEIF (Process == 'init') THEN
-                CALL nhru_summaryinit()
+                CALL nhru_summaryinit(param_data)
             ENDIF
         END SUBROUTINE nhru_summary
 
         !***********************************************************************
         !     declare parameters and variables
         !***********************************************************************
-        SUBROUTINE nhru_summarydecl(dim_data, ctl_data)
+        SUBROUTINE nhru_summarydecl(dim_data, ctl_data, param_data)
             USE PRMS_MODULE, ONLY: Model, Inputerror_flag, NhruOutON_OFF, Nhru, print_module, &
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, NhruOutBaseFileName
             use UTILS_PRMS, only: read_error
             ! use PRMS_CONTROL_FILE, only: control_string_array, control_integer, control_string
-            use parameter_mod, only: declparam
+            ! use parameter_mod, only: declparam
             ! use PRMS_MMFAPI, only: declparam
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
+            use parameter_arr_mod, only: parameter_arr_t
 
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(control_list), intent(in) :: ctl_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Functions
             INTRINSIC CHAR
@@ -126,7 +130,7 @@ MODULE PRMS_NHRU_SUMMARY
 
             IF (NhruOutON_OFF == 2) THEN
                 ALLOCATE (Nhm_id(Nhru))
-                IF (declparam(MODNAME, 'nhm_id', 'nhru', 'integer', '1', '1', '9999999', &
+                IF (param_data%declparam(MODNAME, 'nhm_id', 'nhru', 'integer', '1', '1', '9999999', &
                               'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
                               'none', dim_data) /= 0) CALL read_error(1, 'nhm_id')
             ENDIF
@@ -135,18 +139,21 @@ MODULE PRMS_NHRU_SUMMARY
         !***********************************************************************
         !     Initialize module values
         !***********************************************************************
-        SUBROUTINE nhru_summaryinit()
+        SUBROUTINE nhru_summaryinit(param_data)
             use prms_constants, only: MAXFILE_LENGTH
             USE PRMS_MODULE, ONLY: Nhru, Start_year, NhruOutON_OFF, Prms_warmup, &
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, &
                                    NhruOutBaseFileName
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_output_file
-            use parameter_mod, only: getparam
+            use parameter_arr_mod, only: parameter_arr_t
+            ! use parameter_mod, only: getparam
             use variables_mod, only: getvartype, getvarsize
             ! use PRMS_MMFAPI, only: getvartype, getvarsize  ! , getparam
             IMPLICIT NONE
 
             INTRINSIC ABS
+
+            type(parameter_arr_t), intent(in) :: param_data
 
             ! Local Variables
             INTEGER(i4) :: ios, ierr, size, jj, j
@@ -255,7 +262,7 @@ MODULE PRMS_NHRU_SUMMARY
             ENDDO
 
             IF (NhruOutON_OFF == 2) THEN
-                IF (getparam(MODNAME, 'nhm_id', Nhru, 'integer', Nhm_id) /= 0) CALL read_error(2, 'nhm_id')
+                IF (param_data%getparam(MODNAME, 'nhm_id', Nhru, 'integer', Nhm_id) /= 0) CALL read_error(2, 'nhm_id')
 
                 DO jj = 1, NhruOutVars
                     IF (Daily_flag == 1) WRITE (Dailyunit(jj), Output_fmt2) (Nhm_id(j), j = 1, Nhru)

@@ -26,12 +26,14 @@ MODULE PRMS_OBS
         !***********************************************************************
         !     main obs routine
         !***********************************************************************
-        INTEGER FUNCTION obs(dim_data)
+        INTEGER FUNCTION obs(dim_data, param_data)
             USE PRMS_MODULE, ONLY:Process, Save_vars_to_file, Init_vars_from_file
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             !***********************************************************************
             obs = 0
@@ -39,10 +41,10 @@ MODULE PRMS_OBS
             !      IF ( Process(:3)=='run' ) THEN
             !        obs = obsrun()
             IF (Process == 'declare') THEN
-                obs = obsdecl(dim_data)
+                obs = obsdecl(dim_data, param_data)
             ELSEIF (Process == 'init') THEN
                 IF (Init_vars_from_file == 1) CALL obs_restart(1)
-                obs = obsinit()
+                obs = obsinit(param_data)
             ELSEIF (Process == 'clean') THEN
                 IF (Save_vars_to_file == 1) CALL obs_restart(0)
             ENDIF
@@ -53,17 +55,19 @@ MODULE PRMS_OBS
         !   Declared Parameters
         !     rain_code
         !***********************************************************************
-        INTEGER FUNCTION obsdecl(dim_data)
+        INTEGER FUNCTION obsdecl(dim_data, param_data)
 !            USE PRMS_OBS, ONLY:Runoff, Streamflow_cfs, Streamflow_cms, Precip, Tmin, Tmax, MODNAME
             USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs, print_module
             use UTILS_PRMS, only: read_error
-            use parameter_mod, only: declparam
+            ! use parameter_mod, only: declparam
             use variables_mod, only: declvar_real, declvar_dble
             ! use PRMS_MMFAPI, only: declvar_real, declvar_dble ! , declparam, getdim
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Local Variable
             CHARACTER(LEN=:), allocatable, SAVE :: Version_obs
@@ -86,7 +90,7 @@ MODULE PRMS_OBS
                 ALLOCATE (Streamflow_cms(Nobs))
                 CALL declvar_dble(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
                         &       'Streamflow at each measurement station', 'cms', Streamflow_cms)
-                IF (declparam(MODNAME, 'runoff_units', 'one', 'integer', &
+                IF (param_data%declparam(MODNAME, 'runoff_units', 'one', 'integer', &
                         &       '0', '0', '1', &
                         &       'Measured streamflow units', 'Measured streamflow units (0=cfs; 1=cms)', &
                         &       'none', dim_data) /= 0) CALL read_error(1, 'runoff_units')
@@ -112,19 +116,21 @@ MODULE PRMS_OBS
         !***********************************************************************
         !     obsinit - initializes obs module
         !***********************************************************************
-        INTEGER FUNCTION obsinit()
+        INTEGER FUNCTION obsinit(param_data)
             USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs, Init_vars_from_file
             use UTILS_PRMS, only: read_error
-            use parameter_mod, only: getparam
+            use parameter_arr_mod, only: parameter_arr_t
+            ! use parameter_mod, only: getparam
             ! use PRMS_MMFAPI, only: getparam
             IMPLICIT NONE
 
+            type(parameter_arr_t), intent(in) :: param_data
             !***********************************************************************
             obsinit = 0
 
             Runoff_units = 0
             IF (Nobs > 0) THEN
-                IF (getparam(MODNAME, 'runoff_units', 1, 'integer', Runoff_units) /= 0) CALL read_error(2, 'runoff_units')
+                IF (param_data%getparam(MODNAME, 'runoff_units', 1, 'integer', Runoff_units) /= 0) CALL read_error(2, 'runoff_units')
             ENDIF
 
             IF (Init_vars_from_file == 0) THEN

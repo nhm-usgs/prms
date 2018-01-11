@@ -54,20 +54,23 @@ MODULE PRMS_CLIMATEVARS
         !***********************************************************************
         !     Main climateflow routine
         !***********************************************************************
-        INTEGER FUNCTION climateflow(dim_data)
+        INTEGER FUNCTION climateflow(dim_data, param_data)
             USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
+
             !***********************************************************************
             climateflow = 0
 
             IF (Process == 'declare') THEN
-                climateflow = climateflow_decl(dim_data)
+                climateflow = climateflow_decl(dim_data, param_data)
             ELSEIF (Process == 'init') THEN
                 IF (Init_vars_from_file == 1) CALL climateflow_restart(1)
-                climateflow = climateflow_init()
+                climateflow = climateflow_init(param_data)
             ELSEIF (Process == 'clean') THEN
                 IF (Save_vars_to_file == 1) CALL climateflow_restart(0)
             ENDIF
@@ -76,17 +79,19 @@ MODULE PRMS_CLIMATEVARS
         !***********************************************************************
         !     climateflow_decl - declare climate and flow variables and parameters
         !***********************************************************************
-        INTEGER FUNCTION climateflow_decl(dim_data)
+        INTEGER FUNCTION climateflow_decl(dim_data, param_data)
             USE PRMS_MODULE, ONLY: Model, Nhru, Temp_module, Precip_module, Transp_module, Et_module, &
                     &    Solrad_flag, Solrad_module, print_module
             use UTILS_PRMS, only: read_error
-            use parameter_mod, only: declparam
+            ! use parameter_mod, only: declparam
             use variables_mod, only: declvar_real, declvar_dble, declvar_int
-            ! use PRMS_MMFAPI, only: declvar_real, declvar_dble, declvar_int 
+            ! use PRMS_MMFAPI, only: declvar_real, declvar_dble, declvar_int
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Local Variables
             CHARACTER(LEN=80), SAVE :: Version_climateflow
@@ -224,7 +229,7 @@ MODULE PRMS_CLIMATEVARS
 
             ! Declare Parameters
             ALLOCATE (Tmax_allrain_offset(Nhru, 12), Tmax_allrain(Nhru, 12))
-            IF (declparam(Precip_module, 'tmax_allrain_offset', 'nhru,nmonths', 'real', &
+            IF (param_data%declparam(Precip_module, 'tmax_allrain_offset', 'nhru,nmonths', 'real', &
                     &     '1.0', '0.0', '50.0', &
                     &     'Precipitation is rain if HRU max temperature >= tmax_allsnow + this value', &
                     &     'Monthly (January to December) maximum air temperature' // &
@@ -233,7 +238,7 @@ MODULE PRMS_CLIMATEVARS
                     &     'temp_units', dim_data) /= 0) CALL read_error(1, 'tmax_allrain_offset')
 
             ALLOCATE (Tmax_allsnow(Nhru, 12))
-            IF (declparam(Precip_module, 'tmax_allsnow', 'nhru,nmonths', 'real', &
+            IF (param_data%declparam(Precip_module, 'tmax_allsnow', 'nhru,nmonths', 'real', &
                     &     '32.0', '-10.0', '40.0', &
                     &     'Maximum temperature when precipitation is all snow', &
                     &     'Maximum air temperature when precipitation is assumed' // &
@@ -241,47 +246,47 @@ MODULE PRMS_CLIMATEVARS
                     &     'temp_units', dim_data) /= 0) CALL read_error(1, 'tmax_allsnow')
 
             ALLOCATE (Adjmix_rain(Nhru, 12))
-            IF (declparam(Precip_module, 'adjmix_rain', 'nhru,nmonths', 'real', &
+            IF (param_data%declparam(Precip_module, 'adjmix_rain', 'nhru,nmonths', 'real', &
                     &     '1.0', '0.0', '3.0', &
                     &     'Adjustment factor for rain in a rain/snow mix', &
                     &     'Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event', &
                     &     'decimal fraction', dim_data) /= 0) CALL read_error(1, 'adjmix_rain')
 
-            IF (declparam(Temp_module, 'temp_units', 'one', 'integer', &
+            IF (param_data%declparam(Temp_module, 'temp_units', 'one', 'integer', &
                     &     '0', '0', '1', &
                     &     'Units flag for measured temperature', &
                     &     'Flag to indicate the units of measured air-temperature values (0=Fahrenheit; 1=Celsius)', &
                     &     'none', dim_data) /= 0) CALL read_error(1, 'temp_units')
 
-            IF (declparam(Precip_module, 'precip_units', 'one', 'integer', &
+            IF (param_data%declparam(Precip_module, 'precip_units', 'one', 'integer', &
                     &     '0', '0', '1', &
                     &     'Units for measured precipitation', &
                     &     'Units for measured precipitation (0=inches; 1=mm)', &
                     &     'none', dim_data) /= 0) CALL read_error(1, 'precip_units')
 
             ALLOCATE (Ppt_rad_adj(Nhru, 12))
-            IF (declparam(Solrad_module, 'ppt_rad_adj', 'nhru,nmonths', 'real', &
+            IF (param_data%declparam(Solrad_module, 'ppt_rad_adj', 'nhru,nmonths', 'real', &
                     &     '0.02', '0.0', '0.5', &
                     &     'Radiation reduced if HRU precipitation above this value', &
                     &     'Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is' // &
                             &     ' multiplied by radj_sppt or radj_wppt adjustment factor', &
                     &     'inches', dim_data) /= 0) CALL read_error(1, 'ppt_rad_adj')
             ALLOCATE (Radj_sppt(Nhru))
-            IF (declparam(Solrad_module, 'radj_sppt', 'nhru', 'real', &
+            IF (param_data%declparam(Solrad_module, 'radj_sppt', 'nhru', 'real', &
                     &     '0.44', '0.0', '1.0', &
                     &     'Adjustment to solar radiation on precipitation day - summer', &
                     &     'Adjustment factor for computed solar radiation for summer day with greater than' // &
                             &     ' ppt_rad_adj inches of precipitation for each HRU', &
                     &     'decimal fraction', dim_data) /= 0) CALL read_error(1, 'radj_sppt')
             ALLOCATE (Radj_wppt(Nhru))
-            IF (declparam(Solrad_module, 'radj_wppt', 'nhru', 'real', &
+            IF (param_data%declparam(Solrad_module, 'radj_wppt', 'nhru', 'real', &
                     &     '0.5', '0.0', '1.0', &
                     &     'Adjustment to solar radiation on precipitation day - winter', &
                     &     'Adjustment factor for computed solar radiation for winter day with greater than' // &
                             &     ' ppt_rad_adj inches of precipitation for each HRU', &
                     &     'decimal fraction', dim_data) /= 0) CALL read_error(1, 'radj_wppt')
             ALLOCATE (Radmax(Nhru, 12))
-            IF (declparam(Solrad_module, 'radmax', 'nhru,nmonths', 'real', &
+            IF (param_data%declparam(Solrad_module, 'radmax', 'nhru,nmonths', 'real', &
                     &     '0.8', '0.1', '1.0', &
                     &     'Maximum fraction of potential solar radiation', &
                     &     'Monthly (January to December) maximum fraction of the potential solar radiation' // &
@@ -294,14 +299,17 @@ MODULE PRMS_CLIMATEVARS
         !     climateflow_init - Initialize module - get parameter values,
         !                        set initial values and check parameter values
         !***********************************************************************
-        INTEGER FUNCTION climateflow_init()
+        INTEGER FUNCTION climateflow_init(param_data)
             ! USE PRMS_CLIMATEVARS
             USE PRMS_MODULE, ONLY: Nhru, Temp_module, Precip_module, Solrad_module, Init_vars_from_file, Solrad_flag
             use UTILS_PRMS, only: read_error
             use conversions_mod, only: c_to_f, f_to_c
-            use parameter_mod, only: getparam
+            use parameter_arr_mod, only: parameter_arr_t
+            ! use parameter_mod, only: getparam
             ! use PRMS_MMFAPI, only: getparam
             IMPLICIT NONE
+
+            type(parameter_arr_t), intent(in) :: param_data
 
             ! Local variables
             INTEGER(i4) :: i, j
@@ -309,11 +317,11 @@ MODULE PRMS_CLIMATEVARS
             !***********************************************************************
             climateflow_init = 0
 
-            IF (getparam(Temp_module, 'temp_units', 1, 'integer', Temp_units) /= 0) CALL read_error(2, 'temp_units')
+            IF (param_data%getparam(Temp_module, 'temp_units', 1, 'integer', Temp_units) /= 0) CALL read_error(2, 'temp_units')
 
-            IF (getparam(Precip_module, 'tmax_allsnow', Nhru * 12, 'real', Tmax_allsnow) /= 0) CALL read_error(2, 'tmax_allsnow')
+            IF (param_data%getparam(Precip_module, 'tmax_allsnow', Nhru * 12, 'real', Tmax_allsnow) /= 0) CALL read_error(2, 'tmax_allsnow')
 
-            IF (getparam(Precip_module, 'tmax_allrain_offset', Nhru * 12, 'real', Tmax_allrain_offset) /= 0) &
+            IF (param_data%getparam(Precip_module, 'tmax_allrain_offset', Nhru * 12, 'real', Tmax_allrain_offset) /= 0) &
                     &              CALL read_error(2, 'tmax_allrain_offset')
 
             ! Set tmax_allrain in units of the input values
@@ -338,15 +346,15 @@ MODULE PRMS_CLIMATEVARS
                 ENDDO
             ENDIF
 
-            IF (getparam(Precip_module, 'adjmix_rain', Nhru * 12, 'real', Adjmix_rain) /= 0) CALL read_error(2, 'adjmix_rain')
+            IF (param_data%getparam(Precip_module, 'adjmix_rain', Nhru * 12, 'real', Adjmix_rain) /= 0) CALL read_error(2, 'adjmix_rain')
 
-            IF (getparam(Precip_module, 'precip_units', 1, 'integer', Precip_units) /= 0) CALL read_error(2, 'precip_units')
+            IF (param_data%getparam(Precip_module, 'precip_units', 1, 'integer', Precip_units) /= 0) CALL read_error(2, 'precip_units')
 
             IF (Solrad_flag == 1 .OR. Solrad_flag == 2) THEN
-                IF (getparam(Solrad_module, 'radj_sppt', Nhru, 'real', Radj_sppt) /= 0) CALL read_error(2, 'radj_sppt')
-                IF (getparam(Solrad_module, 'radj_wppt', Nhru, 'real', Radj_wppt) /= 0) CALL read_error(2, 'radj_wppt')
-                IF (getparam(Solrad_module, 'ppt_rad_adj', Nhru * 12, 'real', Ppt_rad_adj) /= 0) CALL read_error(2, 'ppt_rad_adj')
-                IF (getparam(Solrad_module, 'radmax', Nhru * 12, 'real', Radmax) /= 0) CALL read_error(2, 'radmax')
+                IF (param_data%getparam(Solrad_module, 'radj_sppt', Nhru, 'real', Radj_sppt) /= 0) CALL read_error(2, 'radj_sppt')
+                IF (param_data%getparam(Solrad_module, 'radj_wppt', Nhru, 'real', Radj_wppt) /= 0) CALL read_error(2, 'radj_wppt')
+                IF (param_data%getparam(Solrad_module, 'ppt_rad_adj', Nhru * 12, 'real', Ppt_rad_adj) /= 0) CALL read_error(2, 'ppt_rad_adj')
+                IF (param_data%getparam(Solrad_module, 'radmax', Nhru * 12, 'real', Radmax) /= 0) CALL read_error(2, 'radmax')
             ENDIF
 
             ! FLOW VARIABLES AND PARAMETERS

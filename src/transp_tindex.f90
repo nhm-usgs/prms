@@ -19,7 +19,7 @@ MODULE PRMS_TRANSP_TINDEX
     public :: transp_tindex
 
     contains
-        integer function transp_tindex(dim_data)
+        integer function transp_tindex(dim_data, param_data)
             use PRMS_MODULE, only: Process, Nhru, Save_vars_to_file, Init_vars_from_file, &
                     Start_month, Start_day, print_module
             use PRMS_BASIN, only: Active_hrus, Hru_route_order
@@ -27,12 +27,12 @@ MODULE PRMS_TRANSP_TINDEX
             use PRMS_SET_TIME, only: Nowmonth, Nowday
             use UTILS_PRMS, only: read_error
             use conversions_mod, only: c_to_f
-            use parameter_mod, only: declparam, getparam
-            ! use PRMS_MMFAPI, only: declparam, getparam
             use dimensions_mod, only: dimension_list
+            use parameter_arr_mod, only: parameter_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
+            type(parameter_arr_t), intent(inout) :: param_data
 
             ! Local Variables
             integer(i4) :: i, j, motmp, new_values
@@ -89,7 +89,7 @@ MODULE PRMS_TRANSP_TINDEX
                 allocate (Tmax_sum(Nhru), Transp_check(Nhru), Transp_tmax_f(Nhru))
 
                 allocate (Transp_beg(Nhru))
-                if (declparam(MODNAME, 'transp_beg', 'nhru', 'integer', &
+                if (param_data%declparam(MODNAME, 'transp_beg', 'nhru', 'integer', &
                         &       '1', '1', '12', &
                         &       'Month to begin testing for transpiration', &
                         &       'Month to begin summing the maximum air temperature for each HRU; when sum is greater than or' // &
@@ -97,14 +97,14 @@ MODULE PRMS_TRANSP_TINDEX
                         &       'month', dim_data) /= 0) call read_error(1, 'transp_beg')
 
                 allocate (Transp_end(Nhru))
-                if (declparam(MODNAME, 'transp_end', 'nhru', 'integer', &
+                if (param_data%declparam(MODNAME, 'transp_end', 'nhru', 'integer', &
                         &       '13', '1', '13', &
                         &       'Month to stop transpiration period', &
                         &       'Month to stop transpiration computations; transpiration is computed thru end of previous month', &
                         &       'month', dim_data) /= 0) call read_error(1, 'transp_end')
 
                 allocate (Transp_tmax(Nhru))
-                if (declparam(MODNAME, 'transp_tmax', 'nhru', 'real', &
+                if (param_data%declparam(MODNAME, 'transp_tmax', 'nhru', 'real', &
                         &       '1.0', '0.0', '1000.0', &
                         &       'Tmax index to determine start of transpiration', &
                         &       'Temperature index to determine the specific date of the start of the transpiration period;' // &
@@ -114,9 +114,9 @@ MODULE PRMS_TRANSP_TINDEX
 
             elseif (Process == 'init') then
 
-                if (getparam(MODNAME, 'transp_beg', Nhru, 'integer', Transp_beg) /= 0) call read_error(2, 'transp_beg')
-                if (getparam(MODNAME, 'transp_end', Nhru, 'integer', Transp_end) /= 0) call read_error(2, 'transp_end')
-                if (getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax) /= 0) call read_error(2, 'transp_tmax')
+                if (param_data%getparam(MODNAME, 'transp_beg', Nhru, 'integer', Transp_beg) /= 0) call read_error(2, 'transp_beg')
+                if (param_data%getparam(MODNAME, 'transp_end', Nhru, 'integer', Transp_end) /= 0) call read_error(2, 'transp_end')
+                if (param_data%getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax) /= 0) call read_error(2, 'transp_tmax')
 
                 new_values = 0
                 if (Init_vars_from_file == 1) then
