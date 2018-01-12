@@ -44,19 +44,21 @@ MODULE PRMS_BASIN
         !***********************************************************************
         !     Main basin routine
         !***********************************************************************
-        INTEGER FUNCTION basin(dim_data, param_data)
+        INTEGER FUNCTION basin(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Process
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             !***********************************************************************
             basin = 0
 
             IF (Process == 'declare') THEN
-                basin = basdecl(dim_data, param_data)
+                basin = basdecl(dim_data, param_data, var_data)
             ELSEIF (Process == 'init') THEN
                 basin = basinit(param_data)
             ENDIF
@@ -69,16 +71,17 @@ MODULE PRMS_BASIN
         !     cov_type, hru_lat, dprst_frac_open, dprst_frac, basin_area
         !     lake_hru_id
         !***********************************************************************
-        INTEGER FUNCTION basdecl(dim_data, param_data)
+        INTEGER FUNCTION basdecl(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Nhru, print_module
             use UTILS_PRMS, only: read_error
-            use variables_mod, only: declvar_real
+            ! use variables_mod, only: declvar_real
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
-
+            type(variables_arr_t), intent(inout) :: var_data
             !***********************************************************************
             basdecl = 0
 
@@ -88,13 +91,13 @@ MODULE PRMS_BASIN
 
             ! Declared Variables
             ALLOCATE (Hru_imperv(Nhru))
-            CALL declvar_real(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', 'Area of HRU that is impervious', 'acres', Hru_imperv)
+            CALL var_data%declvar_real(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', 'Area of HRU that is impervious', 'acres', Hru_imperv)
 
             ALLOCATE (Hru_perv(Nhru))
-            CALL declvar_real(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', 'Area of HRU that is pervious', 'acres', Hru_perv)
+            CALL var_data%declvar_real(MODNAME, 'hru_perv', 'nhru', Nhru, 'real', 'Area of HRU that is pervious', 'acres', Hru_perv)
 
             ALLOCATE (Hru_frac_perv(Nhru))
-            CALL declvar_real(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', 'Fraction of HRU that is pervious', 'decimal fraction', Hru_frac_perv)
+            CALL var_data%declvar_real(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', 'Fraction of HRU that is pervious', 'decimal fraction', Hru_frac_perv)
 
             ! local arrays
             ALLOCATE (Hru_route_order(Nhru))

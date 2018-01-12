@@ -35,11 +35,6 @@ MODULE PRMS_NHRU_SUMMARY
     ! Parameters
     INTEGER(i4), ALLOCATABLE :: Nhm_id(:)
 
-!    ! Control Parameters
-!    INTEGER, SAVE :: NhruOutVars, NhruOut_freq
-!    CHARACTER(LEN = 36), SAVE, ALLOCATABLE :: NhruOutVar_names(:)
-!    CHARACTER(LEN = MAXFILE_LENGTH), SAVE :: NhruOutBaseFileName
-
     private :: nhru_summarydecl, nhru_summaryinit, nhru_summaryrun
     public :: nhru_summary
 
@@ -47,24 +42,26 @@ MODULE PRMS_NHRU_SUMMARY
         !     ******************************************************************
         !     nhru results module
         !     ******************************************************************
-        SUBROUTINE nhru_summary(dim_data, ctl_data, param_data)
+        SUBROUTINE nhru_summary(dim_data, ctl_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Process
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(control_list), intent(in) :: ctl_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(in) :: var_data
 
-            !***********************************************************************
+            !*******************************************************************
             IF (Process == 'run') THEN
-                CALL nhru_summaryrun()
+                CALL nhru_summaryrun(var_data)
             ELSEIF (Process == 'declare') THEN
                 CALL nhru_summarydecl(dim_data, ctl_data, param_data)
             ELSEIF (Process == 'init') THEN
-                CALL nhru_summaryinit(param_data)
+                CALL nhru_summaryinit(param_data, var_data)
             ENDIF
         END SUBROUTINE nhru_summary
 
@@ -75,9 +72,6 @@ MODULE PRMS_NHRU_SUMMARY
             USE PRMS_MODULE, ONLY: Model, Inputerror_flag, NhruOutON_OFF, Nhru, print_module, &
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, NhruOutBaseFileName
             use UTILS_PRMS, only: read_error
-            ! use PRMS_CONTROL_FILE, only: control_string_array, control_integer, control_string
-            ! use parameter_mod, only: declparam
-            ! use PRMS_MMFAPI, only: declparam
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
             use parameter_arr_mod, only: parameter_arr_t
@@ -139,21 +133,20 @@ MODULE PRMS_NHRU_SUMMARY
         !***********************************************************************
         !     Initialize module values
         !***********************************************************************
-        SUBROUTINE nhru_summaryinit(param_data)
+        SUBROUTINE nhru_summaryinit(param_data, var_data)
             use prms_constants, only: MAXFILE_LENGTH
             USE PRMS_MODULE, ONLY: Nhru, Start_year, NhruOutON_OFF, Prms_warmup, &
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, &
                                    NhruOutBaseFileName
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_output_file
             use parameter_arr_mod, only: parameter_arr_t
-            ! use parameter_mod, only: getparam
-            use variables_mod, only: getvartype, getvarsize
-            ! use PRMS_MMFAPI, only: getvartype, getvarsize  ! , getparam
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             INTRINSIC ABS
 
             type(parameter_arr_t), intent(in) :: param_data
+            type(variables_arr_t), intent(in) :: var_data
 
             ! Local Variables
             INTEGER(i4) :: ios, ierr, size, jj, j
@@ -176,7 +169,7 @@ MODULE PRMS_NHRU_SUMMARY
             DO jj = 1, NhruOutVars
                 ! Nc_vars(jj) = numchars(NhruOutVar_names(jj))
                 ! Nhru_var_type(jj) = getvartype(NhruOutVar_names(jj)(:Nc_vars(jj)))
-                Nhru_var_type(jj) = getvartype(NhruOutVar_names(jj)%str)
+                Nhru_var_type(jj) = var_data%getvartype(NhruOutVar_names(jj)%str)
                 IF (Nhru_var_type(jj) == 3) Double_vars = 1
 
                 IF (Nhru_var_type(jj) /= 2 .AND. Nhru_var_type(jj) /= 3) THEN
@@ -185,7 +178,7 @@ MODULE PRMS_NHRU_SUMMARY
                     ierr = 1
                 ENDIF
 
-                size = getvarsize(NhruOutVar_names(jj)%str)
+                size = var_data%getvarsize(NhruOutVar_names(jj)%str)
                 IF (size /= Nhru) THEN
                     PRINT *, 'ERROR, invalid nhru_summary variable:', NhruOutVar_names(jj)
                     PRINT *, '       only variables dimensioned by nhru, nssr, or ngw allowed'
@@ -283,15 +276,16 @@ MODULE PRMS_NHRU_SUMMARY
         !***********************************************************************
         !     Output set of declared variables in R compatible format
         !***********************************************************************
-        SUBROUTINE nhru_summaryrun()
+        SUBROUTINE nhru_summaryrun(var_data)
             USE PRMS_MODULE, ONLY: Nhru, Start_month, Start_day, End_year, End_month, End_day, &
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names ! , NhruOutBaseFileName
             USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
             USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
             use UTILS_PRMS, only: read_error
-            use variables_mod, only: getvar_real, getvar_dble
-            ! use PRMS_MMFAPI, only: getvar_real, getvar_dble
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
+
+            type(variables_arr_t), intent(in) :: var_data
 
             ! FUNCTIONS AND SUBROUTINES
             INTRINSIC SNGL, DBLE
@@ -312,9 +306,9 @@ MODULE PRMS_NHRU_SUMMARY
             ! need getvars for each variable (only can have short string)
             DO jj = 1, NhruOutVars
                 IF (Nhru_var_type(jj) == 2) THEN
-                    CALL getvar_real(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_daily(1, jj))
+                    CALL var_data%getvar_real(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_daily(1, jj))
                 ELSEIF (Nhru_var_type(jj) == 3) THEN  ! probably don't need double
-                    CALL getvar_dble(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_dble(1, jj))
+                    CALL var_data%getvar_dble(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_dble(1, jj))
                 ENDIF
             ENDDO
 

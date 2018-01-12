@@ -334,7 +334,7 @@ end subroutine get_dims
 !**********************************************************************
 !     Module documentation
 !**********************************************************************
-subroutine module_doc(dim_data, ctl_data, param_data)
+subroutine module_doc(dim_data, ctl_data, param_data, var_data)
     use kinds_mod, only: i4
     use PRMS_BASIN, only: basin, Hemisphere, Basin_area_inv
     use PRMS_OBS, only: obs
@@ -350,27 +350,29 @@ subroutine module_doc(dim_data, ctl_data, param_data)
     use dimensions_mod, only: dimension_list
     use control_ll_mod, only: control_list
     use parameter_arr_mod, only: parameter_arr_t
+    use variables_arr_mod, only: variables_arr_t
     implicit none
 
     type(dimension_list), intent(in) :: dim_data
     type(control_list), intent(in) :: ctl_data
     type(parameter_arr_t), intent(inout) :: param_data
+    type(variables_arr_t), intent(inout) :: var_data  ! should be intent(in)
 
     ! Local variable
     integer(i4) :: test
 
     !**********************************************************************
-    test = basin(dim_data, param_data)
-    test = climateflow(dim_data, param_data)
-    test = soltab(dim_data, param_data)
-    test = prms_time(Hemisphere, Basin_area_inv)
-    test = obs(dim_data, param_data)
+    test = basin(dim_data, param_data, var_data)
+    test = climateflow(dim_data, param_data, var_data)
+    test = soltab(dim_data, param_data, var_data)
+    test = prms_time(Hemisphere, Basin_area_inv, var_data)
+    test = obs(dim_data, param_data, var_data)
     test = climate_hru(dim_data, ctl_data, param_data)
     test = ddsolrad(dim_data, param_data)
     test = transp_tindex(dim_data, param_data)
     test = potet_jh(dim_data, param_data)
-    call nhru_summary(dim_data, ctl_data, param_data)
-    call basin_summary(ctl_data)
+    call nhru_summary(dim_data, ctl_data, param_data, var_data)
+    call basin_summary(ctl_data, var_data)
 
     print 9001
     9001 FORMAT (//, ' All available modules have been called.', /, &
@@ -428,7 +430,7 @@ end subroutine call_modules_restart
 !***********************************************************************
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
-subroutine computation_order(Arg, dim_data, ctl_data, param_data)
+subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
     use kinds_mod, only: i4
     use prms_constants, only: EQULS
     use UTILS_PRMS, only: numchars, module_error, PRMS_open_output_file, read_error
@@ -457,6 +459,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data)
     use dimensions_mod, only: dimension_list
     use control_ll_mod, only: control_list
     use parameter_arr_mod, only: parameter_arr_t
+    use variables_arr_mod, only: variables_arr_t
     implicit none
 
     ! Arguments
@@ -464,6 +467,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data)
     type(dimension_list), intent(inout) :: dim_data
     type(control_list), intent(inout) :: ctl_data
     type(parameter_arr_t), intent(inout) :: param_data
+    type(variables_arr_t), intent(inout) :: var_data
 
     ! Functions
     INTRINSIC :: DATE_AND_TIME, INT
@@ -532,7 +536,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data)
         ! if (Process_flag == 4 .OR. Process_flag < 2) then
             Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
 
-            call module_doc(dim_data, ctl_data, param_data)
+            call module_doc(dim_data, ctl_data, param_data, var_data)
             call_modules = 0
             RETURN
         else
@@ -544,21 +548,21 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data)
     if (Process /= 'run') then
     ! if (Process_flag /= 0) then
         ! All stages but the run stage
-        call_modules = basin(dim_data, param_data)
+        call_modules = basin(dim_data, param_data, var_data)
         if (call_modules /= 0) call module_error('basin', Arg, call_modules)
 
-        call_modules = climateflow(dim_data, param_data)
+        call_modules = climateflow(dim_data, param_data, var_data)
         if (call_modules /= 0) call module_error('climateflow', Arg, call_modules)
 
-        call_modules = soltab(dim_data, param_data)
+        call_modules = soltab(dim_data, param_data, var_data)
         if (call_modules /= 0) call module_error('soltab', Arg, call_modules)
 
-        call_modules = obs(dim_data, param_data) ! functionality of readvar is in read_data_file, check_data_variables routine
+        call_modules = obs(dim_data, param_data, var_data) ! functionality of readvar is in read_data_file, check_data_variables routine
         if (call_modules /= 0) call module_error('obs', Arg, call_modules)
     endif
 
     ! Run model for current timestep - execute for all stages
-    call_modules = prms_time(Hemisphere, Basin_area_inv )
+    call_modules = prms_time(Hemisphere, Basin_area_inv, var_data)
     if (call_modules /= 0) call module_error('prms_time', Arg, call_modules)
 
     call_modules = climate_hru(dim_data, ctl_data, param_data)
@@ -573,9 +577,9 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data)
     call_modules = potet_jh(dim_data, param_data)
     if (call_modules /= 0) call module_error(Et_module, Arg, call_modules)
 
-    if (NhruOutON_OFF > 0) call nhru_summary(dim_data, ctl_data, param_data)
+    if (NhruOutON_OFF > 0) call nhru_summary(dim_data, ctl_data, param_data, var_data)
 
-    if (BasinOutON_OFF == 1) call basin_summary(ctl_data)
+    if (BasinOutON_OFF == 1) call basin_summary(ctl_data, var_data)
 
     if (Process == 'run') return
     ! if (Process_flag == 0) RETURN   ! For run stage only
@@ -651,6 +655,7 @@ program prms6
     use PRMS_MODULE, only : Number_timesteps
     use dimensions_mod
     use parameter_arr_mod, only: parameter_arr_t
+    use variables_arr_mod, only: variables_arr_t
     use control_ll_mod, only: control_list
     ! use PRMS_MMFAPI, only: PRMS_parameter
     implicit none
@@ -658,30 +663,30 @@ program prms6
     type(control_list) :: Control_data
     type(dimension_list) :: Dimension_data
     type(parameter_arr_t) :: Param_data
+    type(variables_arr_t) :: Var_data
 
     integer(i4) :: ii
 
     !***********************************************************************
-    ! type(PRMS_parameter), ALLOCATABLE :: Parameter_data(:)
-    ! type(PRMS_variable), ALLOCATABLE :: Variable_data(:)
+    Var_data = variables_arr_t()
     Param_data = parameter_arr_t()
     Dimension_data = dimension_list()
     Control_data = control_list()
 
     print *, '---- setdims'
-    call computation_order('setdims', Dimension_data, Control_data, Param_data)
+    call computation_order('setdims', Dimension_data, Control_data, Param_data, Var_data)
 
     print *, '---- declare'
-    call computation_order('declare', Dimension_data, Control_data, Param_data)
+    call computation_order('declare', Dimension_data, Control_data, Param_data, Var_data)
 
     print *, '---- init'
-    call computation_order('init', Dimension_data, Control_data, Param_data)
+    call computation_order('init', Dimension_data, Control_data, Param_data, Var_data)
 
     print *, '---- run'
     do ii = 1, Number_timesteps
-        call computation_order('run', Dimension_data, Control_data, Param_data)
+        call computation_order('run', Dimension_data, Control_data, Param_data, Var_data)
     enddo
 
     print *, '---- clean'
-    call computation_order('clean', Dimension_data, Control_data, Param_data)
+    call computation_order('clean', Dimension_data, Control_data, Param_data, Var_data)
 end program prms6

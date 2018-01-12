@@ -54,20 +54,22 @@ MODULE PRMS_CLIMATEVARS
         !***********************************************************************
         !     Main climateflow routine
         !***********************************************************************
-        INTEGER FUNCTION climateflow(dim_data, param_data)
+        INTEGER FUNCTION climateflow(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             !***********************************************************************
             climateflow = 0
 
             IF (Process == 'declare') THEN
-                climateflow = climateflow_decl(dim_data, param_data)
+                climateflow = climateflow_decl(dim_data, param_data, var_data)
             ELSEIF (Process == 'init') THEN
                 IF (Init_vars_from_file == 1) CALL climateflow_restart(1)
                 climateflow = climateflow_init(param_data)
@@ -79,19 +81,21 @@ MODULE PRMS_CLIMATEVARS
         !***********************************************************************
         !     climateflow_decl - declare climate and flow variables and parameters
         !***********************************************************************
-        INTEGER FUNCTION climateflow_decl(dim_data, param_data)
+        INTEGER FUNCTION climateflow_decl(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Model, Nhru, Temp_module, Precip_module, Transp_module, Et_module, &
                     &    Solrad_flag, Solrad_module, print_module
             use UTILS_PRMS, only: read_error
             ! use parameter_mod, only: declparam
-            use variables_mod, only: declvar_real, declvar_dble, declvar_int
+            ! use variables_mod, only: declvar_real, declvar_dble, declvar_int
             ! use PRMS_MMFAPI, only: declvar_real, declvar_dble, declvar_int
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             ! Local Variables
             CHARACTER(LEN=80), SAVE :: Version_climateflow
@@ -104,64 +108,64 @@ MODULE PRMS_CLIMATEVARS
             MODNAME = 'climateflow'
 
             ALLOCATE (Tmaxf(Nhru))
-            CALL declvar_real(Temp_module, 'tmaxf', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tmaxf', 'nhru', Nhru, 'real', &
                     &     'Maximum air temperature distributed to each HRU', 'degrees Fahrenheit', Tmaxf)
 
             ALLOCATE (Tminf(Nhru))
-            CALL declvar_real(Temp_module, 'tminf', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tminf', 'nhru', Nhru, 'real', &
                     &     'Minimum air temperature distributed to each HRU', 'degrees Fahrenheit', Tminf)
 
             ALLOCATE (Tavgf(Nhru))
-            CALL declvar_real(Temp_module, 'tavgf', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tavgf', 'nhru', Nhru, 'real', &
                     &     'Average air temperature distributed to each HRU', 'degrees Fahrenheit', Tavgf)
 
             ALLOCATE (Tmaxc(Nhru))
-            CALL declvar_real(Temp_module, 'tmaxc', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tmaxc', 'nhru', Nhru, 'real', &
                     &     'Maximum air temperature distributed to each HRU', 'degrees Celsius', Tmaxc)
 
             ALLOCATE (Tminc(Nhru))
-            CALL declvar_real(Temp_module, 'tminc', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tminc', 'nhru', Nhru, 'real', &
                     &     'Minimum air temperature distributed to each HRU', 'degrees Celsius', Tminc)
 
             ALLOCATE (Tavgc(Nhru))
-            CALL declvar_real(Temp_module, 'tavgc', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'tavgc', 'nhru', Nhru, 'real', &
                     &     'Average air temperature distributed to each HRU', 'degrees Celsius', Tavgc)
 
-            CALL declvar_dble(Temp_module, 'basin_tmax', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Temp_module, 'basin_tmax', 'one', 1, 'double', &
                     &     'Basin area-weighted average maximum air temperature', 'temp_units', Basin_tmax)
 
-            CALL declvar_dble(Temp_module, 'basin_tmin', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Temp_module, 'basin_tmin', 'one', 1, 'double', &
                     &     'Basin area-weighted average minimum air temperature', 'temp_units', Basin_tmin)
 
-            CALL declvar_dble(Temp_module, 'basin_temp', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Temp_module, 'basin_temp', 'one', 1, 'double', &
                     &     'Basin area-weighted average air temperature', 'temp_units', Basin_temp)
 
-            CALL declvar_real(Temp_module, 'solrad_tmax', 'one', 1, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'solrad_tmax', 'one', 1, 'real', &
                     &     'Basin daily maximum temperature for use with solar radiation calculations', 'temp_units', Solrad_tmax)
 
-            CALL declvar_real(Temp_module, 'solrad_tmin', 'one', 1, 'real', &
+            CALL var_data%declvar_real(Temp_module, 'solrad_tmin', 'one', 1, 'real', &
                     &     'Basin daily minimum temperature for use with solar radiation calculations', 'temp_units', Solrad_tmin)
 
             ! PRECIPITATION VARIABLES AND PARAMETERS
             ALLOCATE (Pptmix(Nhru))
-            CALL declvar_int(Precip_module, 'pptmix', 'nhru', Nhru, 'integer', &
+            CALL var_data%declvar_int(Precip_module, 'pptmix', 'nhru', Nhru, 'integer', &
                     &     'Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)', 'none', Pptmix)
 
             ALLOCATE (Newsnow(Nhru))
-            CALL declvar_int(Precip_module, 'newsnow', 'nhru', Nhru, 'integer', &
+            CALL var_data%declvar_int(Precip_module, 'newsnow', 'nhru', Nhru, 'integer', &
                     &    'Flag to indicate if new snow fell on each HRU (0=no; 1=yes)', 'none', Newsnow)
 
             ALLOCATE (Prmx(Nhru))
-            CALL declvar_real(Precip_module, 'prmx', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Precip_module, 'prmx', 'nhru', Nhru, 'real', &
                     &     'Fraction of rain in a mixed precipitation event for each HRU', 'decimal fraction', Prmx)
 
-            CALL declvar_dble(Precip_module, 'basin_rain', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Precip_module, 'basin_rain', 'one', 1, 'double', &
                     &     'Basin area-weighted average rainfall', 'inches', Basin_rain)
 
-            CALL declvar_dble(Precip_module, 'basin_snow', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Precip_module, 'basin_snow', 'one', 1, 'double', &
                     &     'Basin area-weighted average snowfall for basin', 'inches', Basin_snow)
 
-            CALL declvar_dble(Precip_module, 'basin_ppt', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Precip_module, 'basin_ppt', 'one', 1, 'double', &
                     &     'Basin area-weighted average precipitation', 'inches', Basin_ppt)
 
             ! DANGER - Not sure what to do about this one.  For right now
@@ -171,55 +175,55 @@ MODULE PRMS_CLIMATEVARS
             !          the correction factor is applied.  In other modules,
             !          the correction "error" is applied to the station
             !          precipitation rather than the hru precipitation.
-            CALL declvar_dble(Precip_module, 'basin_obs_ppt', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Precip_module, 'basin_obs_ppt', 'one', 1, 'double', &
                     &     'Basin area-weighted average measured precipitation', 'inches', Basin_obs_ppt)
 
             ALLOCATE (Hru_ppt(Nhru))
-            CALL declvar_real(Precip_module, 'hru_ppt', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Precip_module, 'hru_ppt', 'nhru', Nhru, 'real', &
                     &     'Precipitation distributed to each HRU', 'inches', Hru_ppt)
 
             ALLOCATE (Hru_rain(Nhru))
-            CALL declvar_real(Precip_module, 'hru_rain', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Precip_module, 'hru_rain', 'nhru', Nhru, 'real', &
                     &     'Rain distributed to each HRU', 'inches', Hru_rain)
 
             ALLOCATE (Hru_snow(Nhru))
-            CALL declvar_real(Precip_module, 'hru_snow', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Precip_module, 'hru_snow', 'nhru', Nhru, 'real', &
                     &     'Snow distributed to each HRU', 'inches', Hru_snow)
 
             ! Solar Radiation variables
             ALLOCATE (Swrad(Nhru))
-            CALL declvar_real(Solrad_module, 'swrad', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Solrad_module, 'swrad', 'nhru', Nhru, 'real', &
                     &     'Shortwave radiation distributed to each HRU', 'Langleys', Swrad)
 
-            CALL declvar_dble(Solrad_module, 'basin_horad', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Solrad_module, 'basin_horad', 'one', 1, 'double', &
                     &     'Potential shortwave radiation for the basin centroid', 'Langleys', Basin_horad)
 
-            CALL declvar_dble(Solrad_module, 'basin_swrad', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Solrad_module, 'basin_swrad', 'one', 1, 'double', &
                     &     'Basin area-weighted average shortwave radiation', 'Langleys', Basin_swrad)
 
             IF (Solrad_flag == 1 .OR. Solrad_flag == 2 .OR. Model == 99) THEN
-                CALL declvar_dble(Solrad_module, 'basin_orad', 'one', 1, 'double', &
+                CALL var_data%declvar_dble(Solrad_module, 'basin_orad', 'one', 1, 'double', &
                         &       'Basin area-weighted average solar radiation on a horizontal surface', 'Langleys', Basin_orad)
 
                 ALLOCATE (Orad_hru(Nhru))
-                CALL declvar_real(Solrad_module, 'orad_hru', 'nhru', Nhru, 'real', &
+                CALL var_data%declvar_real(Solrad_module, 'orad_hru', 'nhru', Nhru, 'real', &
                         &       'Solar radiation on a horizontal surface for each HRU', 'Langleys', Orad_hru)
             ENDIF
 
             ! Transpiration Variables
             ALLOCATE (Transp_on(Nhru))
-            CALL declvar_int(Transp_module, 'transp_on', 'nhru', Nhru, 'integer', &
+            CALL var_data%declvar_int(Transp_module, 'transp_on', 'nhru', Nhru, 'integer', &
                     &     'Flag indicating whether transpiration is occurring (0=no; 1=yes)', 'none', Transp_on)
 
-            CALL declvar_int(Transp_module, 'basin_transp_on', 'one', 1, 'integer', &
+            CALL var_data%declvar_int(Transp_module, 'basin_transp_on', 'one', 1, 'integer', &
                     &     'Flag indicating whether transpiration is occurring anywhere in the basin (0=no; 1=yes)', 'none', Basin_transp_on)
 
             ! Potential ET Variables
             ALLOCATE (Potet(Nhru))
-            CALL declvar_real(Et_module, 'potet', 'nhru', Nhru, 'real', &
+            CALL var_data%declvar_real(Et_module, 'potet', 'nhru', Nhru, 'real', &
                     &     'Potential ET for each HRU', 'inches', Potet)
 
-            CALL declvar_dble(Et_module, 'basin_potet', 'one', 1, 'double', &
+            CALL var_data%declvar_dble(Et_module, 'basin_potet', 'one', 1, 'double', &
                     &     'Basin area-weighted average potential ET', 'inches', Basin_potet)
 
 

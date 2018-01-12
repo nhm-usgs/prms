@@ -41,19 +41,21 @@ MODULE PRMS_BASIN_SUMMARY
         ! ******************************************************************
         ! Basin results module
         ! ******************************************************************
-        SUBROUTINE basin_summary(ctl_data)
+        SUBROUTINE basin_summary(ctl_data, var_data)
             USE PRMS_MODULE, ONLY: Process
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(control_list), intent(in) :: ctl_data
+            type(variables_arr_t), intent(in) :: var_data
 
             !***********************************************************************
             IF (Process == 'run') THEN
-                CALL basin_summaryrun()
+                CALL basin_summaryrun(var_data)
             ELSEIF (Process == 'declare') THEN
                 CALL basin_summarydecl(ctl_data)
             ELSEIF (Process == 'init') THEN
-                CALL basin_summaryinit()
+                CALL basin_summaryinit(var_data)
             ENDIF
         END SUBROUTINE basin_summary
 
@@ -114,14 +116,17 @@ MODULE PRMS_BASIN_SUMMARY
         !***********************************************************************
         !     Initialize module values
         !***********************************************************************
-        SUBROUTINE basin_summaryinit()
+        SUBROUTINE basin_summaryinit(var_data)
             use prms_constants, only: MAXFILE_LENGTH
             USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
             use UTILS_PRMS, only: numchars, read_error, PRMS_open_output_file
-            use variables_mod, only: getvartype, getvarsize
+            ! use variables_mod, only: getvartype, getvarsize
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             INTRINSIC ABS
+
+            type(variables_arr_t), intent(in) :: var_data
 
             ! Local Variables
             INTEGER(i4) :: ios, ierr, size, jj
@@ -140,7 +145,7 @@ MODULE PRMS_BASIN_SUMMARY
             ierr = 0
             DO jj = 1, BasinOutVars
                 ! Nc_vars(jj) = numchars(BasinOutVar_names(jj))
-                Basin_var_type = getvartype(BasinOutVar_names(jj)%str)
+                Basin_var_type = var_data%getvartype(BasinOutVar_names(jj)%str)
 
                 IF (Basin_var_type /= 3) THEN
                     PRINT *, 'ERROR, invalid basin_summary variable:', BasinOutVar_names(jj)
@@ -148,7 +153,7 @@ MODULE PRMS_BASIN_SUMMARY
                     ierr = 1
                 ENDIF
 
-                size = getvarsize(BasinOutVar_names(jj)%str)
+                size = var_data%getvarsize(BasinOutVar_names(jj)%str)
 
                 IF (size /= 1) THEN
                     PRINT *, 'ERROR, invalid Basin_summary variable:', BasinOutVar_names(jj)
@@ -223,11 +228,14 @@ MODULE PRMS_BASIN_SUMMARY
         !***********************************************************************
         !     Output set of declared variables in CSV format
         !***********************************************************************
-        SUBROUTINE basin_summaryrun()
+        SUBROUTINE basin_summaryrun(var_data)
             USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
             USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
-            use variables_mod, only: getvar_dble
+            ! use variables_mod, only: getvar_dble
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
+
+            type(variables_arr_t), intent(in) :: var_data
 
             ! FUNCTIONS AND SUBROUTINES
             INTRINSIC SNGL, DBLE
@@ -246,7 +254,7 @@ MODULE PRMS_BASIN_SUMMARY
 
             !-----------------------------------------------------------------------
             DO jj = 1, BasinOutVars
-                CALL getvar_dble(MODNAME, BasinOutVar_names(jj)%str, 1, Basin_var_daily(jj))
+                CALL var_data%getvar_dble(MODNAME, BasinOutVar_names(jj)%str, 1, Basin_var_daily(jj))
             ENDDO
 
             write_month = 0

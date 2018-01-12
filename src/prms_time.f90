@@ -225,16 +225,18 @@ module PRMS_SET_TIME
 
         !***********************************************************************
         !***********************************************************************
-        integer function prms_time(hemisphere, basin_area_inv)
+        integer function prms_time(hemisphere, basin_area_inv, var_data)
             use prms_constants, only: FT2_PER_ACRE
             use time_mod, only: compute_julday, leap_day
             use PRMS_MODULE, only : Process, Timestep, Starttime, print_module
             use PRMS_DATA_FILE, only: read_data_line
+            use variables_arr_mod, only: variables_arr_t
             implicit none
 
             ! Arguments
             integer(i4), intent(in) :: hemisphere
             real(r8), intent(in) :: basin_area_inv
+            type(variables_arr_t), intent(inout) :: var_data
 
             ! Functions
             INTRINSIC SNGL
@@ -256,7 +258,7 @@ module PRMS_SET_TIME
                     Jsol = julian_day('now', 'solar')
                     Julwater = julian_day('now', 'water')
                     Julian_day_absolute = Julian_day_absolute + 1
-                    call read_data_line(Nowtime)
+                    call read_data_line(Nowtime, var_data)
 
                 else ! initialize
                     Modays(1) = 31

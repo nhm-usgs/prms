@@ -105,15 +105,15 @@ module PRMS_DATA_FILE
         !***********************************************************************
         ! Read PRMS Data File line
         !***********************************************************************
-        subroutine read_data_line(curr_time)
+        subroutine read_data_line(curr_time, var_data)
             use iso_fortran_env
-            use variables_mod, only: Variable_data, getvarnvals, getvar_id
-            ! use PRMS_MMFAPI, only: Variable_data, getvarnvals, getvar_id
+            use variables_arr_mod, only: variables_arr_t
             use UTILS_PRMS, only: read_error
             implicit none
 
             ! Arguments
             integer(i4), intent(in) :: curr_time(6)
+            type(variables_arr_t), intent(inout) :: var_data
 
             ! Functions
             INTRINSIC TRANSFER
@@ -140,11 +140,11 @@ module PRMS_DATA_FILE
             column = 1
 
             do jj = 1, Num_datafile_types
-                nvals = getvarnvals(Data_varname(jj))
-                var_id = getvar_id(Data_varname(jj))
+                nvals = var_data%getvarnvals(Data_varname(jj))
+                var_id = var_data%getvar_id(Data_varname(jj))
                 column_end = column_end + nvals
 
-                Variable_data(var_id)%values_real = TRANSFER(Data_line_values(column:column_end), Variable_data(var_id)%values_real)
+                var_data%Variable_data(var_id)%values_real = TRANSFER(Data_line_values(column:column_end), var_data%Variable_data(var_id)%values_real)
 
                 call check_data_variables(Data_varname(jj), nvals, Data_line_values(column:column_end), 1, ios)
                 if (ios /= 0) then

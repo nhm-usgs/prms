@@ -32,6 +32,7 @@ module prms_constants
     ! DANGER, DANGER, hard coded maximum number of paraemters and dimensions, DANGER, DANGER
     ! INTEGER, PARAMETER :: MAXDIMENSIONS = 50
     integer(i4), parameter :: MAXPARAMETERS = 200
+    integer(i4), parameter :: MAXVARIABLES = 100
 
     ! from read_control_file.f90
     INTEGER(i4), PARAMETER :: Max_num_control_parameters = 150 ! WARNING, hard coded, DANGER, DANGER

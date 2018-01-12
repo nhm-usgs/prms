@@ -37,20 +37,22 @@ module PRMS_SOLTAB
         !***********************************************************************
         !     Main soltab routine
         !***********************************************************************
-        integer function soltab(dim_data, param_data)
+        integer function soltab(dim_data, param_data, var_data)
             use PRMS_MODULE, only: Process
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             !***********************************************************************
             soltab = 0
 
             if (Process == 'declare') then
-                soltab = sthdecl(dim_data, param_data)
+                soltab = sthdecl(dim_data, param_data, var_data)
             elseif (Process == 'init') then
                 soltab = sthinit(param_data)
             endif
@@ -61,18 +63,20 @@ module PRMS_SOLTAB
         !   Declared Parameters
         !     hru_aspect, hru_lat, hru_slope
         !***********************************************************************
-        integer function sthdecl(dim_data, param_data)
+        integer function sthdecl(dim_data, param_data, var_data)
             use PRMS_MODULE, only:Nhru, print_module
             use UTILS_PRMS, only: read_error
             ! use parameter_mod, only: declparam
-            use variables_mod, only: declvar_dble
+            ! use variables_mod, only: declvar_dble
             ! use PRMS_MMFAPI, only: declvar_dble  ! , declparam
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             implicit none
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             ! Functions
             INTRINSIC INDEX
@@ -88,12 +92,12 @@ module PRMS_SOLTAB
             MODNAME = 'soltab'
 
             allocate (Soltab_potsw(366, Nhru))
-            call declvar_dble(MODNAME, 'soltab_potsw', 'ndays,nhru', 366 * Nhru, 'double', &
+            call var_data%declvar_dble(MODNAME, 'soltab_potsw', 'ndays,nhru', 366 * Nhru, 'double', &
                     &     'Potential solar radiation for each Julian Day, for each HRU', &
                     &     'Langleys', Soltab_potsw)
 
             allocate (Soltab_horad_potsw(366, Nhru))
-            call declvar_dble(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', 366 * Nhru, 'double', &
+            call var_data%declvar_dble(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', 366 * Nhru, 'double', &
                     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', &
                     &     'Langleys', Soltab_horad_potsw)
 

@@ -26,14 +26,16 @@ MODULE PRMS_OBS
         !***********************************************************************
         !     main obs routine
         !***********************************************************************
-        INTEGER FUNCTION obs(dim_data, param_data)
+        INTEGER FUNCTION obs(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY:Process, Save_vars_to_file, Init_vars_from_file
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             !***********************************************************************
             obs = 0
@@ -41,7 +43,7 @@ MODULE PRMS_OBS
             !      IF ( Process(:3)=='run' ) THEN
             !        obs = obsrun()
             IF (Process == 'declare') THEN
-                obs = obsdecl(dim_data, param_data)
+                obs = obsdecl(dim_data, param_data, var_data)
             ELSEIF (Process == 'init') THEN
                 IF (Init_vars_from_file == 1) CALL obs_restart(1)
                 obs = obsinit(param_data)
@@ -55,19 +57,21 @@ MODULE PRMS_OBS
         !   Declared Parameters
         !     rain_code
         !***********************************************************************
-        INTEGER FUNCTION obsdecl(dim_data, param_data)
+        INTEGER FUNCTION obsdecl(dim_data, param_data, var_data)
 !            USE PRMS_OBS, ONLY:Runoff, Streamflow_cfs, Streamflow_cms, Precip, Tmin, Tmax, MODNAME
             USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nobs, print_module
             use UTILS_PRMS, only: read_error
             ! use parameter_mod, only: declparam
-            use variables_mod, only: declvar_real, declvar_dble
+            ! use variables_mod, only: declvar_real, declvar_dble
             ! use PRMS_MMFAPI, only: declvar_real, declvar_dble ! , declparam, getdim
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
+            use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             type(dimension_list), intent(in) :: dim_data
             type(parameter_arr_t), intent(inout) :: param_data
+            type(variables_arr_t), intent(inout) :: var_data
 
             ! Local Variable
             CHARACTER(LEN=:), allocatable, SAVE :: Version_obs
@@ -82,13 +86,13 @@ MODULE PRMS_OBS
             !   Declared Variables
             IF (Nobs > 0) THEN
                 ALLOCATE (Runoff(Nobs))
-                CALL declvar_real(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
+                CALL var_data%declvar_real(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
                         &       'Streamflow at each measurement station', 'runoff_units', Runoff)
                 ALLOCATE (Streamflow_cfs(Nobs))
-                CALL declvar_dble(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
+                CALL var_data%declvar_dble(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
                         &       'Streamflow at each measurement station', 'cfs', Streamflow_cfs)
                 ALLOCATE (Streamflow_cms(Nobs))
-                CALL declvar_dble(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
+                CALL var_data%declvar_dble(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
                         &       'Streamflow at each measurement station', 'cms', Streamflow_cms)
                 IF (param_data%declparam(MODNAME, 'runoff_units', 'one', 'integer', &
                         &       '0', '0', '1', &
@@ -98,16 +102,16 @@ MODULE PRMS_OBS
 
             IF (Nrain > 0) THEN
                 ALLOCATE (Precip(Nrain))
-                CALL declvar_real(MODNAME, 'precip', 'nrain', Nrain, 'real', &
+                CALL var_data%declvar_real(MODNAME, 'precip', 'nrain', Nrain, 'real', &
                         &       'Precipitation at each measurement station', 'precip_units', Precip)
             ENDIF
 
             IF (Ntemp > 0) THEN
                 ALLOCATE (Tmin(Ntemp))
-                CALL declvar_real(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
+                CALL var_data%declvar_real(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
                         &       'Minimum air temperature at each measurement station', 'temp_units', Tmin)
                 ALLOCATE (Tmax(Ntemp))
-                CALL declvar_real(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
+                CALL var_data%declvar_real(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
                         &       'Maximum air temperature at each measurement station', 'temp_units', Tmax)
             ENDIF
 
