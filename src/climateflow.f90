@@ -6,17 +6,23 @@ MODULE PRMS_CLIMATEVARS
     IMPLICIT NONE
 
     !   Local Variables
-    CHARACTER(LEN = 11), SAVE :: MODNAME
+    CHARACTER(LEN=11), SAVE :: MODNAME
 
     ! Tmax_hru and Tmin_hru are in temp_units
-    REAL(r4), SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
-    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allsnow_f(:, :), Tmax_allsnow_c(:, :)
-    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :), Tmax_allrain(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_hru(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmin_hru(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allsnow_f(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allsnow_c(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allrain(:, :)
 
     !   Declared Variables - Precip
     INTEGER(i4), SAVE, ALLOCATABLE :: Newsnow(:), Pptmix(:)
     real(r8), SAVE :: Basin_ppt(1), Basin_rain(1), Basin_snow(1), Basin_obs_ppt(1)
-    REAL(r4), SAVE, ALLOCATABLE :: Hru_ppt(:), Hru_rain(:), Hru_snow(:), Prmx(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Hru_ppt(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Hru_rain(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Hru_snow(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Prmx(:)
 
     !   Declared Variables - Temp
     real(r8), SAVE :: Basin_temp(1), Basin_tmax(1), Basin_tmin(1)
@@ -309,8 +315,6 @@ MODULE PRMS_CLIMATEVARS
             use UTILS_PRMS, only: read_error
             use conversions_mod, only: c_to_f, f_to_c
             use parameter_arr_mod, only: parameter_arr_t
-            ! use parameter_mod, only: getparam
-            ! use PRMS_MMFAPI, only: getparam
             IMPLICIT NONE
 
             type(parameter_arr_t), intent(in) :: param_data

@@ -29,11 +29,6 @@ MODULE PRMS_BASIN_SUMMARY
     real(r8), SAVE, ALLOCATABLE :: Basin_var_monthly(:)
     real(r8), SAVE, ALLOCATABLE :: Basin_var_yearly(:)
 
-    ! Control Parameters
-!    INTEGER, SAVE :: BasinOutVars, BasinOut_freq
-!    CHARACTER(LEN = 36), SAVE, ALLOCATABLE :: BasinOutVar_names(:)
-!    CHARACTER(LEN = MAXFILE_LENGTH), SAVE :: BasinOutBaseFileName
-
     private :: basin_summarydecl, basin_summaryinit, basin_summaryrun
     public :: basin_summary
 
@@ -74,7 +69,6 @@ MODULE PRMS_BASIN_SUMMARY
             INTRINSIC CHAR
 
             ! Local Variables
-            ! INTEGER :: i
             CHARACTER(LEN=:), allocatable, SAVE :: Version_basin_summary
 
             !***********************************************************************
@@ -84,7 +78,6 @@ MODULE PRMS_BASIN_SUMMARY
 
             BasinOutVars = 0
             if (ctl_data%exists('basinOutVars')) call ctl_data%get_data('basinOutVars', BasinOutVars)
-            ! IF (control_integer(BasinOutVars, 'basinOutVars') /= 0) BasinOutVars = 0
 
             ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
             BasinOut_freq = 0
@@ -94,21 +87,14 @@ MODULE PRMS_BASIN_SUMMARY
             IF (BasinOutVars == 0) THEN
                 IF (Model /= 99) THEN
                     PRINT *, 'ERROR, basin_summary requested with basinOutVars equal 0'
-                    !          PRINT *, 'no basin_summary output is produced'
-                    !          BasinOutON_OFF = 0
                     Inputerror_flag = 1
                     RETURN
                 ENDIF
             ELSE
                 ALLOCATE (BasinOutVar_names(BasinOutVars), Nc_vars(BasinOutVars))
-                ! BasinOutVar_names = ' '
 
                 call ctl_data%get_data('basinOutVar_names', BasinOutVar_names, missing_stop=.true.)
-                ! DO i = 1, BasinOutVars
-                !     IF (control_string_array(BasinOutVar_names(i), 'basinOutVar_names', i) /= 0) CALL read_error(5, 'basinOutVar_names')
-                ! ENDDO
                 call ctl_data%get_data('basinOutBaseFileName', BasinOutBaseFileName, missing_stop=.true.)
-                ! IF (control_string(BasinOutBaseFileName, 'basinOutBaseFileName') /= 0) CALL read_error(5, 'basinOutBaseFileName')
             ENDIF
 
         END SUBROUTINE basin_summarydecl
@@ -119,8 +105,7 @@ MODULE PRMS_BASIN_SUMMARY
         SUBROUTINE basin_summaryinit(var_data)
             use prms_constants, only: MAXFILE_LENGTH
             USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
-            use UTILS_PRMS, only: numchars, read_error, PRMS_open_output_file
-            ! use variables_mod, only: getvartype, getvarsize
+            use UTILS_PRMS, only: read_error, PRMS_open_output_file
             use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
@@ -129,7 +114,10 @@ MODULE PRMS_BASIN_SUMMARY
             type(variables_arr_t), intent(in) :: var_data
 
             ! Local Variables
-            INTEGER(i4) :: ios, ierr, size, jj
+            INTEGER(i4) :: ios
+            INTEGER(i4) :: ierr
+            INTEGER(i4) :: size
+            INTEGER(i4) :: jj
             CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 
             !***********************************************************************
@@ -144,7 +132,6 @@ MODULE PRMS_BASIN_SUMMARY
 
             ierr = 0
             DO jj = 1, BasinOutVars
-                ! Nc_vars(jj) = numchars(BasinOutVar_names(jj))
                 Basin_var_type = var_data%getvartype(BasinOutVar_names(jj)%str)
 
                 IF (Basin_var_type /= 3) THEN
@@ -187,8 +174,8 @@ MODULE PRMS_BASIN_SUMMARY
             WRITE (Output_fmt2, 9002) BasinOutVars
 
             IF (Daily_flag == 1) THEN
-                fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName)) // '.csv'
-                !print *, fileName
+                fileName = BasinOutBaseFileName // '.csv'
+
                 CALL PRMS_open_output_file(Dailyunit, fileName, 'xxx', 0, ios)
                 IF (ios /= 0) STOP 'in basin_summary, daily'
 
@@ -196,24 +183,24 @@ MODULE PRMS_BASIN_SUMMARY
             ENDIF
 
             IF (BasinOut_freq == 5) THEN
-                fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName)) // '_meanyearly.csv'
+                fileName = BasinOutBaseFileName // '_meanyearly.csv'
                 CALL PRMS_open_output_file(Yearlyunit, fileName, 'xxx', 0, ios)
                 IF (ios /= 0) STOP 'in basin_summary, mean yearly'
 
                 WRITE (Yearlyunit, Output_fmt2) (BasinOutVar_names(jj)%str, jj = 1, BasinOutVars)
             ELSEIF (BasinOut_freq == 6) THEN
-                fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName)) // '_yearly.csv'
+                fileName = BasinOutBaseFileName // '_yearly.csv'
                 CALL PRMS_open_output_file(Yearlyunit, fileName, 'xxx', 0, ios)
                 IF (ios /= 0) STOP 'in basin_summary, yearly'
 
                 WRITE (Yearlyunit, Output_fmt2) (BasinOutVar_names(jj)%str, jj = 1, BasinOutVars)
             ELSEIF (Monthly_flag == 1) THEN
                 IF (BasinOut_freq == 4) THEN
-                    fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName)) // '_meanmonthly.csv'
+                    fileName = BasinOutBaseFileName // '_meanmonthly.csv'
                 ELSE
-                    fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName)) // '_monthly.csv'
+                    fileName = BasinOutBaseFileName // '_monthly.csv'
                 ENDIF
-                !print *, fileName
+
                 CALL PRMS_open_output_file(Monthlyunit, fileName, 'xxx', 0, ios)
                 IF (ios /= 0) STOP 'in basin_summary, monthly'
 
@@ -230,8 +217,7 @@ MODULE PRMS_BASIN_SUMMARY
         !***********************************************************************
         SUBROUTINE basin_summaryrun(var_data)
             USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
-            USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
-            ! use variables_mod, only: getvar_dble
+            USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, last_day_of_month ! , Modays
             use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
@@ -241,7 +227,10 @@ MODULE PRMS_BASIN_SUMMARY
             INTRINSIC SNGL, DBLE
 
             ! Local Variables
-            INTEGER(i4) :: jj, write_month, write_year, last_day
+            INTEGER(i4) :: jj
+            INTEGER(i4) :: write_month
+            INTEGER(i4) :: write_year
+            INTEGER(i4) :: last_day
 
             !***********************************************************************
             IF (Begin_results == 0) THEN
@@ -278,7 +267,7 @@ MODULE PRMS_BASIN_SUMMARY
                 Yeardays = Yeardays + 1
             ELSEIF (Monthly_flag == 1) THEN
                 ! check for last day of month and simulation
-                IF (Nowday == Modays(Nowmonth)) THEN
+                if (Nowday == last_day_of_month(Nowmonth)) then
                     write_month = 1
                 ELSEIF (Nowyear == End_year) THEN
                     IF (Nowmonth == End_month) THEN
@@ -298,6 +287,7 @@ MODULE PRMS_BASIN_SUMMARY
             IF (Monthly_flag == 1) THEN
                 DO jj = 1, BasinOutVars
                     Basin_var_monthly(jj) = Basin_var_monthly(jj) + Basin_var_daily(jj)
+
                     IF (write_month == 1) THEN
                         IF (BasinOut_freq == 4) Basin_var_monthly(jj) = Basin_var_monthly(jj) / Monthdays
                     ENDIF

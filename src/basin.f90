@@ -74,7 +74,6 @@ MODULE PRMS_BASIN
         INTEGER FUNCTION basdecl(dim_data, param_data, var_data)
             USE PRMS_MODULE, ONLY: Nhru, print_module
             use UTILS_PRMS, only: read_error
-            ! use variables_mod, only: declvar_real
             use parameter_arr_mod, only: parameter_arr_t
             use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE

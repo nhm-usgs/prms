@@ -107,8 +107,10 @@ contains
         ! Local Variables
         character(len=:), allocatable :: command_line_arg
         character(len=256) :: buffer    ! contains user-supplied input for filename
-        logical exists
-        integer(i4) status, nchars, numargs
+        logical :: exists
+        integer(i4) :: status
+        integer(i4) :: nchars
+        integer(i4) :: numargs
 
         !***********************************************************************
         ! Subroutine GET_COMMAND_ARGUMENT may not be available with all compilers-it is a Fortran 2003 routine
@@ -158,7 +160,7 @@ contains
         use PRMS_MODULE, only: Version_read_control_file, Model_control_file
                                ! , Print_debug, Model_output_file
         ! use fileio_mod, only: write_outfile
-        use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file, PRMS_open_output_file
+        use UTILS_PRMS, only: read_error, PRMS_open_input_file, PRMS_open_output_file  ! , numchars
         use control_ll_mod, only: control_list
         use data_mod, only: str_arr_type
 

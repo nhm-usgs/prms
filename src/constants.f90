@@ -37,6 +37,11 @@ module prms_constants
     ! from read_control_file.f90
     INTEGER(i4), PARAMETER :: Max_num_control_parameters = 150 ! WARNING, hard coded, DANGER, DANGER
 
+    real(r8), PARAMETER :: SECS_PER_DAY = 86400D0
+    real(r8), PARAMETER :: SECS_PER_HOUR = 3600D0
+    real(r4), PARAMETER :: MIN_PER_HOUR = 60
+    real(r4), PARAMETER :: HOUR_PER_DAY = 24
+
     REAL(r4), PARAMETER :: NEARZERO = EPSILON(0.0)
     real(r8), PARAMETER :: FT2_PER_ACRE = 43560.0D0
     real(r8), parameter :: DNEARZERO = EPSILON(0.0D0)

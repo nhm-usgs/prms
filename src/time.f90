@@ -2,6 +2,8 @@ module time_mod
     use kinds_mod, only: r4, r8, i4, i8
     implicit none
 
+    integer(i4), parameter :: daypmo(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
     contains
 
         !***********************************************************************
@@ -15,39 +17,40 @@ module time_mod
             integer(i4), intent(in) :: Year, Month, Day
 
             ! Local Variables
-            integer(i4) :: daypmo(12), i
-            DATA daypmo/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/
+            integer(i4) :: i
 
             !***********************************************************************
-            daypmo(2) = 28
-            if (leap_day(Year) == 1) daypmo(2) = 29
-
             julday_in_year = Day
 
             do i = 1, Month - 1
                 julday_in_year = julday_in_year + daypmo(i)
             enddo
+
+            ! Add additional day if the day is in a leap year after February
+            if (leap_day(Year) .and. Month > 2) julday_in_year = julday_in_year + 1
         end function julday_in_year
 
         !***********************************************************************
         ! leap_day - is the year a leap year: (1=yes; 0=no)
         !***********************************************************************
-        integer function leap_day(Year)
+        function leap_day(Year)
             implicit none
 
             ! Arguments
+            logical :: leap_day
             integer(i4), intent(in) :: Year
 
             ! Functions
             INTRINSIC MOD
 
             !***********************************************************************
-            leap_day = 0
+            leap_day = .false.
+
             ! Check if leapyear - Start by identifying all years not divisible by 4
             if (MOD(Year, 4) == 0) then
-                leap_day = 1
+                leap_day = .true.
                 if (MOD(Year, 100) == 0) then
-                    if (MOD(Year, 400) /= 0) leap_day = 0
+                    if (MOD(Year, 400) /= 0) leap_day = .false.
                 endif
             endif
         end function leap_day
@@ -65,9 +68,8 @@ module time_mod
             integer(i4), intent(OUT) :: Month
             integer(i4), intent(OUT) :: Day
 
-
             ! Functions
-            INTRINSIC FLOOR, NINT
+            ! INTRINSIC FLOOR, NINT
 
             ! Local Variables
             integer(i4) :: m, n
@@ -83,25 +85,6 @@ module time_mod
             m = Month / 11
             Month = Month + 2 - 12 * m
             Year = 100 * (n - 49) + Year + m
-
-            !
-            !Z = Julday + 0.5
-            !W = FLOOR((Z - 1867216.25)/36524.25)
-            !X = FLOOR(W/4.0)
-            !A = Z + 1.0 + W - X
-            !B = A + 1524.0
-            !C = FLOOR((B - 122.1)/365.25)
-            !D = FLOOR(365.25*C)
-            !E = FLOOR((B - D)/30.6001)
-            !F = FLOOR(30.6001*E)
-            !Day = NINT(B - D -F)
-            !Month = NINT(E - 1)
-            !if ( Month>12 ) Month = Month - 12
-            !if ( Month<3 ) then
-            !  Year = NINT(C - 4715)
-            !ELSE
-            !  Year = NINT(C - 4716)
-            !endif
         end subroutine compute_gregorian
 
         !***********************************************************************
@@ -116,16 +99,7 @@ module time_mod
             integer(i4), intent(in) :: Month
             integer(i4), intent(in) :: Day
 
-            ! Local Variables
-            !integer yr, mo
-            !!***********************************************************************
-            !      mo = Month
-            !      yr = Year
-            !      if ( Month < 3 ) then
-            !        mo = mo + 12
-            !        yr = yr - 1
-            !      endif
-            !      compute_julday = Day + (153*mo - 457) / 5 + 365*yr + (yr/4) - (yr/100) + (yr/400) + 1721118.5
+            !***********************************************************************
             compute_julday = Day - 32075 + 1461 * (Year + 4800 + (Month - 14) / 12) / 4 &
                              + 367 * (Month - 2 - (Month - 14) / 12 * 12) &
                              / 12 - 3 * ((Year + 4900 + (Month - 14) / 12) / 100) / 4

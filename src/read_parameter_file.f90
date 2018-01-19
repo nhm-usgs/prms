@@ -6,7 +6,8 @@ module PRMS_READ_PARAM_FILE
     use control_ll_mod, only: control_list
     implicit none
 
-    integer(i4), SAVE :: Param_unit, Read_parameters
+    integer(i4), SAVE :: Param_unit
+    integer(i4), SAVE :: Read_parameters
 
     private
     public :: check_parameters, read_parameter_file_dimens, read_parameter_file_params
@@ -45,7 +46,7 @@ module PRMS_READ_PARAM_FILE
         subroutine read_parameter_file_dimens(dim_data)
             use PRMS_MODULE, only: Version_read_parameter_file
             use fileio_mod, only: write_outfile
-            use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file
+            use UTILS_PRMS, only: read_error, PRMS_open_input_file  ! ,numchars
             use dimensions_mod, only: dimension_list
             implicit none
 
@@ -58,7 +59,8 @@ module PRMS_READ_PARAM_FILE
             character(len=16) :: string, dimname
             character(len=150) :: line
             character(len=24) :: dimstring
-            integer(i4) nchars, ios, dimen_value
+            !integer(i4) ::nchars
+            integer(i4) :: ios, dimen_value
 
             ! TODO: 20171208 PAN: add code to check for initialized dim_data
 
@@ -118,8 +120,8 @@ module PRMS_READ_PARAM_FILE
                 endif
 
                 read(Param_unit, *, IOSTAT = ios) dimname
-                nchars = numchars(dimname)
-                if (ios /= 0) call read_error(11, 'missing dimension name: ' // dimname(:nchars))
+                ! nchars = numchars(dimname)
+                if (ios /= 0) call read_error(11, 'missing dimension name: ' // trim(dimname))
 
                 read(Param_unit, *, IOSTAT = ios) dimen_value
                 if (ios /= 0) call read_error(11, 'missing dimension value')
@@ -129,7 +131,7 @@ module PRMS_READ_PARAM_FILE
                 ! call setdimension(dimname, dimen_value)
 
                 if (dimen_value == 0) then
-                    if (Print_debug > -1) print *, 'Warning, dimension: ', dimname(:nchars), ' is not needed as value specified as 0'
+                    if (Print_debug > -1) print *, 'Warning, dimension: ', trim(dimname), ' is not needed as value specified as 0'
                 endif
 
                 if (Print_debug > -1) then
@@ -145,7 +147,7 @@ module PRMS_READ_PARAM_FILE
         ! Read Parameter File Dimensions
         !***********************************************************************
         subroutine read_parameter_file_params(dim_data, ctl_data, param_data)
-            use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file
+            use UTILS_PRMS, only: read_error, PRMS_open_input_file  ! , numchars
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
             use data_mod, only: str_arr_type
@@ -162,7 +164,7 @@ module PRMS_READ_PARAM_FILE
             character(len=16) :: string
             character(len=32) :: paramstring
             character(len=12) :: dim_string(2)
-            integer(i4) nchars, ios, num_dims, num_param_values, i, j, k, param_type, num, inum, numfiles, ii, duplicate, found
+            integer(i4) :: ios, num_dims, num_param_values, i, j, k, param_type, num, inum, numfiles, ii, duplicate, found  ! ,nchars
             integer(i4), allocatable :: idmy(:)
             real(r4), allocatable :: dmy(:)
 
@@ -201,16 +203,16 @@ module PRMS_READ_PARAM_FILE
 
                     read (Param_unit, '(A)', IOSTAT = ios) paramstring ! parameter name
                     if (ios /= 0) call read_error(11, 'missing parameter name')
-                    nchars = numchars(paramstring)
+                    ! nchars = numchars(paramstring)
 
                     read (Param_unit, *, IOSTAT = ios) num_dims
-                    if (ios /= 0) call read_error(11, 'invalid number of dimensions: ' // paramstring(:nchars))
-                    if (num_dims > 2) call read_error(11, 'number of dimensions > 3: ' // paramstring(:nchars))
+                    if (ios /= 0) call read_error(11, 'invalid number of dimensions: ' // trim(paramstring))
+                    if (num_dims > 2) call read_error(11, 'number of dimensions > 3: ' // trim(paramstring))
 
                     num = 1
                     do i = 1, num_dims
                         read (Param_unit, '(A)', IOSTAT = ios) dim_string(i)
-                        if (ios /= 0) call read_error(11, 'invalid dimension for parameter: ' // paramstring(:nchars))
+                        if (ios /= 0) call read_error(11, 'invalid dimension for parameter: ' // trim(paramstring))
 
                         ! inum = getdim(dim_string(i))
                         call dim_data%get_data(dim_string(i), inum)
@@ -219,18 +221,18 @@ module PRMS_READ_PARAM_FILE
                     enddo
 
                     read (Param_unit, *, IOSTAT = ios) num_param_values
-                    if (ios /= 0) call read_error(11, 'invalid number of parameter values: ' // paramstring(:nchars))
+                    if (ios /= 0) call read_error(11, 'invalid number of parameter values: ' // trim(paramstring))
                     !        if ( num/=num_param_values ) call read_error(11, 'invalid number of parameter values based on specified dimensions '//paramstring(:nchars))
 
                     read (Param_unit, *, IOSTAT = ios) param_type
-                    if (ios /= 0) call read_error(11, 'invalid parameter type ' // paramstring(:nchars))
-                    if (param_type < 1 .OR. param_type > 3) call read_error(11, 'invalid parameter type: ' // paramstring(:nchars))
+                    if (ios /= 0) call read_error(11, 'invalid parameter type ' // trim(paramstring))
+                    if (param_type < 1 .OR. param_type > 3) call read_error(11, 'invalid parameter type: ' // trim(paramstring))
 
                     ! check to see if parameter already read
                     duplicate = 0
                     found = 0
                     do ii = 1, param_data%Num_parameters
-                        if (paramstring(:nchars) == param_data%Parameter_data(ii)%param_name) then
+                        if (trim(paramstring) == param_data%Parameter_data(ii)%param_name) then
                             found = ii
 
                             if (param_data%Parameter_data(ii)%read_flag == 1) then
@@ -252,19 +254,19 @@ module PRMS_READ_PARAM_FILE
                     if (param_type == 1) then
                         allocate (idmy(num_param_values), dmy(1))
                         read (Param_unit, *, IOSTAT = ios) (idmy(j), j = 1, num_param_values)
-                        if (ios /= 0) call read_error(11, 'incorrect number of parameter values: ' // paramstring(:nchars))
+                        if (ios /= 0) call read_error(11, 'incorrect number of parameter values: ' // trim(paramstring))
                         if (duplicate > 0) &
                                 &         print '(A,5I8)', '         Using (up to 5 values printed):', (idmy(j), j = 1, inum)
                     ELSE
                         allocate (dmy(num_param_values), idmy(1))
                         read (Param_unit, *, IOSTAT = ios) (dmy(j), j = 1, num_param_values)
-                        if (ios /= 0) call read_error(11, 'incorrect number of parameter values: ' // paramstring(:nchars))
+                        if (ios /= 0) call read_error(11, 'incorrect number of parameter values: ' // trim(paramstring))
                         if (duplicate > 0) &
                                 &         print '(A,5F8.2)', '         Using (up to 5 values printed): ', (dmy(j), j = 1, inum)
                     endif
 
                     if (duplicate > 0) print *, ' '
-                    call param_data%setparam(paramstring(:nchars), num_param_values, param_type, num_dims, dim_string, dmy, idmy)
+                    call param_data%setparam(trim(paramstring), num_param_values, param_type, num_dims, dim_string, dmy, idmy)
                     Read_parameters = Read_parameters + 1
                     param_data%Parameter_data(found)%read_flag = 1
                     deallocate (dmy, idmy)

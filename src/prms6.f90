@@ -50,7 +50,7 @@ subroutine PRMS_init()
     use PRMS_MODULE, only : Print_debug, PRMS_output_unit, Param_file, &
                             Model_output_file, Init_vars_from_file, &
                             Var_init_file, Save_vars_to_file, Var_save_file
-    use UTILS_PRMS, only: numchars
+    ! use UTILS_PRMS, only: numchars
     implicit none
 
     if (Print_debug > -1) then
@@ -433,7 +433,7 @@ end subroutine call_modules_restart
 subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
     use kinds_mod, only: i4
     use prms_constants, only: EQULS
-    use UTILS_PRMS, only: numchars, module_error, PRMS_open_output_file, read_error
+    use UTILS_PRMS, only: module_error, PRMS_open_output_file, read_error   ! , numchars
     use PRMS_MODULE, only: Process, BasinOutON_OFF, Elapsed_time, Elapsed_time_start, &
                            Elapsed_time_end, Elapsed_time_minutes, End_day, End_month, End_year, &
                            Start_day, Start_month, Start_year, &
@@ -475,7 +475,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
     ! Local Variables
     integer(i4) :: i
     integer(i4) :: iret
-    integer(i4) :: nc
+    ! integer(i4) :: nc
     integer(i4) :: call_modules
     character(:), allocatable :: data_filename
 
@@ -524,8 +524,8 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
         if (Init_vars_from_file == 1) CLOSE (Restart_inunit)
 
         if (Save_vars_to_file == 1) then
-            nc = numchars(Var_save_file)
-            call PRMS_open_output_file(Restart_outunit, Var_save_file(: nc), 'var_save_file', 1, iret)
+            ! nc = numchars(Var_save_file)
+            call PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
             if (iret /= 0) STOP
             call call_modules_restart(0)
         endif

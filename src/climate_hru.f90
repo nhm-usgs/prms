@@ -11,11 +11,10 @@ module PRMS_CLIMATE_HRU
     implicit none
 
     ! Local Variables
-    integer(i4), save :: Precip_unit, Tmax_unit, Tmin_unit
+    integer(i4), save :: Precip_unit
+    integer(i4), save :: Tmax_unit
+    integer(i4), save :: Tmin_unit
     character(len=11), save :: MODNAME
-
-!    ! Control Parameters
-!    character(len = MAXFILE_LENGTH), save :: Tmin_day, Tmax_day, Precip_day
 
     ! Declared Parameters
     real(r4), save, allocatable :: Rain_cbh_adj(:, :)
@@ -40,9 +39,6 @@ module PRMS_CLIMATE_HRU
                     Tmax_allsnow_f
             use PRMS_SET_TIME, only: Nowmonth, print_date
             use UTILS_PRMS, only: read_error, find_current_time
-            ! use PRMS_CONTROL_FILE, only: control_string
-            ! use parameter_mod, only: declparam, getparam
-            ! use PRMS_MMFAPI, only: declparam, getparam
             use PRMS_CLIMATEVARS, only: precip_form, temp_set
             use dimensions_mod, only: dimension_list
             use control_ll_mod, only: control_list
@@ -116,7 +112,7 @@ module PRMS_CLIMATE_HRU
                         tmax_hru = Tmaxf(i) + Tmax_cbh_adj(i, Nowmonth)
                         tmin_hru = Tminf(i) + Tmin_cbh_adj(i, Nowmonth)
                         call temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i), &
-                                &                    Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
+                                      Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
                     endif
 
                     if (Climate_precip_flag == 1) then
@@ -212,9 +208,7 @@ module PRMS_CLIMATE_HRU
                                            ' each HRU to account for differences in elevation, and so forth', &
                                            'decimal fraction', dim_data) /= 0) call read_error(1, 'snow_cbh_adj')
                 endif
-
             elseif (Process == 'init') then
-
                 istop = 0
                 ierr = 0
 

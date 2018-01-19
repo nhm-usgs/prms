@@ -8,7 +8,7 @@ module parameter_mod
     type PRMS_parameter
         character(len=:), allocatable :: param_name
         character(len=:), allocatable :: short_description, long_description
-        integer(i4) :: numvals, data_flag, decl_flag, read_flag, nchars
+        integer(i4) :: numvals, data_flag, decl_flag, read_flag !, nchars
         ! integer :: id_num   ! what is this?
         integer(i4) :: default_int, maximum_int, minimum_int, num_dimens
         character(len=:), allocatable :: max_value, min_value, def_value, data_type
@@ -74,7 +74,7 @@ contains
             init%Parameter_data(i)%data_flag = 0
             init%Parameter_data(i)%decl_flag = 0
             init%Parameter_data(i)%read_flag = 0
-            init%Parameter_data(i)%nchars = 0
+            ! init%Parameter_data(i)%nchars = 0
             ! Parameter_data(i)%id_num = 0
             init%Parameter_data(i)%max_value = ' '
             init%Parameter_data(i)%min_value = ' '
@@ -100,7 +100,7 @@ contains
     ! check_parameters_declared - check for parameters being declared more than once
     !***********************************************************************
     subroutine check_parameters_declared(this, Parmname, Modname, Iret)
-        use UTILS_PRMS, only: numchars
+        ! use UTILS_PRMS, only: numchars
         USE PRMS_MODULE, only: Print_debug
         implicit none
 
@@ -115,24 +115,37 @@ contains
 
         !***********************************************************************
         Iret = 0
-        nchars = numchars(Parmname)
+        ! nchars = numchars(Parmname)
 
         do i = 1, this%Num_parameters
-            if (nchars == this%Parameter_data(i)%nchars) then
-                if (Parmname(:nchars) == this%Parameter_data(i)%param_name(:nchars)) then
-                    if (this%Parameter_data(i)%decl_flag == 1) then
-                        if (Print_debug > -1) then
-                            print *, 'Parameter: ', Parmname, ' declared more than once'
-                            print *, 'First declared by module: ', this%Parameter_data(this%Num_parameters)%module_name
-                            print *, 'Also declared by module: ', Modname
-                            print *, 'Model uses values based on first declare'
-                        endif
-                        Iret = 1
+            if (Parmname == this%Parameter_data(i)%param_name) then
+                if (this%Parameter_data(i)%decl_flag == 1) then
+                    if (Print_debug > -1) then
+                        print *, 'Parameter: ', Parmname, ' declared more than once'
+                        print *, 'First declared by module: ', this%Parameter_data(i)%module_name
+                        print *, 'Also declared by module: ', Modname
+                        print *, 'Model uses values based on first declare'
                     endif
-
-                    EXIT
+                    Iret = 1
                 endif
+
+                EXIT
             endif
+            ! if (nchars == this%Parameter_data(i)%nchars) then
+            !     if (Parmname(:nchars) == this%Parameter_data(i)%param_name(:nchars)) then
+            !         if (this%Parameter_data(i)%decl_flag == 1) then
+            !             if (Print_debug > -1) then
+            !                 print *, 'Parameter: ', Parmname, ' declared more than once'
+            !                 print *, 'First declared by module: ', this%Parameter_data(this%Num_parameters)%module_name
+            !                 print *, 'Also declared by module: ', Modname
+            !                 print *, 'Model uses values based on first declare'
+            !             endif
+            !             Iret = 1
+            !         endif
+            !
+            !         EXIT
+            !     endif
+            ! endif
         enddo
     end subroutine check_parameters_declared
 
@@ -143,7 +156,7 @@ contains
             &                  Defvalue, Minvalue, Maxvalue, Descshort, &
                                Desclong, Units, dim_data)
         use prms_constants, only: MAXPARAMETERS, MAXCONTROL_LENGTH
-        use UTILS_PRMS, only: numchars, read_error, set_data_type
+        use UTILS_PRMS, only: read_error, set_data_type  ! , numchars
         use dimensions_mod, only: dimension_list
         implicit none
 
@@ -165,7 +178,7 @@ contains
         INTRINSIC INDEX, TRIM
 
         ! Local Variables
-        integer(i4) :: comma, ndimen, nval, nvals, nvals2, declared, numvalues, type_flag, iset
+        integer(i4) :: comma, nval, nvals, nvals2, declared, numvalues, type_flag, iset  ! , ndimen
         !    character(len = :), allocatable :: dimen1, dimen2
         character(len=MAXCONTROL_LENGTH) dimen1, dimen2
 
@@ -191,7 +204,7 @@ contains
         this%Parameter_data(this%Num_parameters)%units = Units
 
         this%Parameter_data(this%Num_parameters)%decl_flag = 1
-        this%Parameter_data(this%Num_parameters)%nchars = numchars(Paramname)
+        ! this%Parameter_data(this%Num_parameters)%nchars = numchars(Paramname)
         ! Parameter_data(Num_parameters)%id_num = Num_dimensions
 
         call set_data_type(Datatype, type_flag)
@@ -200,15 +213,18 @@ contains
 
         ! get dimension number of values
         dimen2 = ' '
-        ndimen = numchars(Dimenname)
+        ! ndimen = numchars(Dimenname)
         comma = INDEX(Dimenname, ',')
 
         if (comma == 0) then
-            dimen1 = Dimenname(:ndimen)
+            dimen1 = Dimenname
+            ! dimen1 = Dimenname(:ndimen)
             this%Parameter_data(this%Num_parameters)%num_dimens = 1
         else
             dimen1 = Dimenname(:(comma - 1))
-            dimen2 = Dimenname((comma + 1):ndimen)
+            dimen2 = Dimenname((comma + 1):)
+            ! dimen1 = Dimenname(:(comma - 1))
+            ! dimen2 = Dimenname((comma + 1):ndimen)
             this%Parameter_data(this%Num_parameters)%num_dimens = 2
         endif
 

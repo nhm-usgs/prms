@@ -276,32 +276,6 @@ module UTILS_PRMS
         end subroutine module_error
 
         !***********************************************************************
-        !     Determine number of characters in a string
-        !***********************************************************************
-        integer function numchars(String)
-            implicit none
-
-            ! Arguments
-            character(len=*), intent(in) :: String
-
-            ! Functions
-            INTRINSIC INDEX, CHAR, LEN_TRIM
-
-            !***********************************************************************
-            numchars = INDEX(String, CHAR(0))
-            if (numchars == 0) numchars = INDEX(String, ' ')
-
-            numchars = numchars - 1
-            if (numchars == -1) numchars = LEN_TRIM(String)
-            ! if (numchars > MAXFILE_LENGTH) then
-            !    print *, 'PRMS code error, string longer than:', MAXFILE_LENGTH, ' referenced'
-            !    print *, 'string length:', numchars, ' value: ', String
-            !    print *, 'Contact PRMS program support'
-            !    STOP
-            !endif
-        end function numchars
-
-        !***********************************************************************
         !     Open PRMS input File and assign unit number
         !***********************************************************************
         subroutine PRMS_open_input_file(Iunit, Fname, Paramname, Ftype, Iret)
@@ -348,14 +322,14 @@ module UTILS_PRMS
             character(len=*), intent(in) :: Fname
 
             ! Local Variables
-            integer(i4) :: ios, nchars
+            integer(i4) :: ios  ! , nchars
 
             !***********************************************************************
             ! Iunit = get_ftnunit(888)
-            nchars = numchars(Fname)
-            open (newunit=Iunit, FILE = Fname(:nchars), STATUS = 'REPLACE', IOSTAT = ios)
+            ! nchars = numchars(Fname)
+            open (newunit=Iunit, FILE = Fname, STATUS = 'REPLACE', IOSTAT = ios)
             if (ios /= 0) then
-                write (*, '(/,A,/,A,/)') 'ERROR opening water balance output file:', Fname(:nchars), &
+                write (*, '(/,A,/,A,/)') 'ERROR opening water balance output file:', Fname, &
                         &                             'check to be sure the pathname is valid and the file is not open'
                 STOP
             endif
@@ -376,22 +350,21 @@ module UTILS_PRMS
 
 
             ! Local Variables
-            integer(i4) :: ios, nchars
+            integer(i4) :: ios
 
             !***********************************************************************
             Iret = 0
             ! Iunit = get_ftnunit(888)
-            nchars = numchars(Fname)
 
             if (Ftype == 0) then
-                open (newunit=Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios)
+                open (newunit=Iunit, FILE=Fname, STATUS='REPLACE', IOSTAT=ios)
             else
-                open (newunit=Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' ) ! for linux
+                open (newunit=Iunit, FILE=Fname, STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' ) ! for linux
                 ! open (Iunit, FILE = Fname(:nchars), STATUS = 'REPLACE', IOSTAT = ios, FORM = 'BINARY') ! for windows
             endif
 
             if (ios /= 0) then
-                write (*, '(/,A,/,A,/)') 'ERROR opening output file:', Fname(:nchars), &
+                write (*, '(/,A,/,A,/)') 'ERROR opening output file:', Fname, &
                         &                             'check to be sure the pathname is valid and the file is not open'
                 write (*, '(2A,/)') 'file specified by control parameter: ', Paramname
                 Iret = 1
@@ -606,23 +579,37 @@ module UTILS_PRMS
             integer(i4), intent(out) :: Type_flag
 
             ! Local Variables
-            integer(i4) :: string_length
+            ! integer(i4) :: string_length
 
             !***********************************************************************
-            string_length = numchars(Data_type)
-            if (string_length > 3 .AND. Data_type == 'real') then
-                Type_flag = 2
-            elseif (string_length > 5 .AND. Data_type == 'double') then
-                Type_flag = 3
-            elseif (string_length > 5 .AND. Data_type == 'string') then
-                Type_flag = 4
-            elseif (string_length > 6 .AND. Data_type == 'integer') then
+            ! string_length = numchars(Data_type)
+            ! if (string_length > 3 .AND. Data_type == 'real') then
+            !     Type_flag = 2
+            ! elseif (string_length > 5 .AND. Data_type == 'double') then
+            !     Type_flag = 3
+            ! elseif (string_length > 5 .AND. Data_type == 'string') then
+            !     Type_flag = 4
+            ! elseif (string_length > 6 .AND. Data_type == 'integer') then
+            !     Type_flag = 1
+            ! else
+            !     print *, 'ERROR, invalid data type: ', Data_type
+            !     print *, '       valid values are real, double, string, integer'
+            !     STOP
+            ! endif
+            if (trim(Data_type) == 'integer') then
                 Type_flag = 1
+            elseif (trim(Data_type) == 'real') then
+                Type_flag = 2
+            elseif (trim(Data_type) == 'double') then
+                Type_flag = 3
+            elseif (trim(Data_type) == 'string') then
+                Type_flag = 4
             else
                 print *, 'ERROR, invalid data type: ', Data_type
                 print *, '       valid values are real, double, string, integer'
                 STOP
             endif
+
         end subroutine set_data_type
 
 end module UTILS_PRMS

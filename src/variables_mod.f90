@@ -7,7 +7,12 @@ MODULE variables_mod
     type PRMS_variable
         character(len=:), allocatable :: variable_name
         character(len=:), allocatable :: description
-        integer(i4) :: numvals, data_flag, decl_flag, get_flag, var_name_nchars, id_num
+        integer(i4) :: numvals
+        integer(i4) :: data_flag
+        integer(i4) :: decl_flag
+        integer(i4) :: get_flag
+        ! integer(i4) :: var_name_nchars
+        integer(i4) :: id_num
         character(len=:), allocatable :: data_type, dimen_names, module_name, units
         integer(i4), pointer :: values_int(:)
         real(r4), pointer :: values_real(:)
@@ -70,7 +75,7 @@ contains
     ! declvar - set up memory for variables
     !***********************************************************************
     subroutine declvar(this, Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
-        use UTILS_PRMS, only: numchars, set_data_type
+        use UTILS_PRMS, only: set_data_type  ! ,numchars
         implicit none
 
         ! Arguments
@@ -92,7 +97,7 @@ contains
         this%Variable_data(this%Num_variables)%get_flag = 0
         this%Variable_data(this%Num_variables)%decl_flag = 1
         this%Variable_data(this%Num_variables)%variable_name = Varname
-        this%Variable_data(this%Num_variables)%var_name_nchars = numchars(Varname)
+        ! this%Variable_data(this%Num_variables)%var_name_nchars = numchars(Varname)
         this%Variable_data(this%Num_variables)%description = Desc
         this%Variable_data(this%Num_variables)%units = Units
         this%Variable_data(this%Num_variables)%dimen_names = Dimenname
@@ -103,8 +108,8 @@ contains
         call set_data_type(Data_type, type_flag)
 
         if (type_flag < 1 .OR. type_flag > 3) then
-            print *, 'ERROR, data type not implemented: ', Data_type, ' Variable: ', &
-                    &           Varname(:this%Variable_data(this%Num_variables)%var_name_nchars)
+            print *, 'ERROR, data type not implemented: ', Data_type, ' Variable: ', Varname
+                    ! &           Varname(:this%Variable_data(this%Num_variables)%var_name_nchars)
             STOP
         endif
 

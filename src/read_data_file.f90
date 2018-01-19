@@ -3,10 +3,12 @@
 !***********************************************************************
 module PRMS_DATA_FILE
     use kinds_mod, only: r4, r8, i4, i8
+    use data_mod, only: str_arr_type
     implicit none
 
     integer(i4), save :: Num_datafile_types, Num_datafile_columns, Datafile_unit
-    character(len=16), allocatable, save :: Data_varname(:)
+    type(str_arr_type), allocatable, save :: Data_varname(:)
+    ! character(len=:), allocatable, save :: Data_varname(:)
     integer(i4), allocatable, save :: Data_varnum(:)
     real(r4), allocatable, save :: Data_line_values(:)
 
@@ -119,12 +121,19 @@ module PRMS_DATA_FILE
             INTRINSIC TRANSFER
 
             ! Local Variables
-            integer(i4) datatime(6), jj, ios, column_end, column, nvals, var_id
+            integer(i4) :: datatime(6)
+            integer(i4) :: jj
+            integer(i4) :: ios
+            integer(i4) :: column_end
+            integer(i4) :: column
+            integer(i4) :: nvals
+            integer(i4) :: var_id
 
             !***********************************************************************
-            read (Datafile_unit, *, IOSTAT = ios) datatime, (Data_line_values(jj), jj = 1, Num_datafile_columns)
+            read (Datafile_unit, *, IOSTAT=ios) datatime, (Data_line_values(jj), jj=1, Num_datafile_columns)
             if (ios /= 0) then
                 print *, 'ERROR on:', curr_time(1), curr_time(2), curr_time(3)
+
                 if (ios /= 0) then
                     if (ios == IOSTAT_END) call read_error(13, 'hit end of file')
                     call read_error(13, 'invalid line')
@@ -140,13 +149,13 @@ module PRMS_DATA_FILE
             column = 1
 
             do jj = 1, Num_datafile_types
-                nvals = var_data%getvarnvals(Data_varname(jj))
-                var_id = var_data%getvar_id(Data_varname(jj))
+                nvals = var_data%getvarnvals(Data_varname(jj)%str)
+                var_id = var_data%getvar_id(Data_varname(jj)%str)
                 column_end = column_end + nvals
 
                 var_data%Variable_data(var_id)%values_real = TRANSFER(Data_line_values(column:column_end), var_data%Variable_data(var_id)%values_real)
 
-                call check_data_variables(Data_varname(jj), nvals, Data_line_values(column:column_end), 1, ios)
+                call check_data_variables(Data_varname(jj)%str, nvals, Data_line_values(column:column_end), 1, ios)
                 if (ios /= 0) then
                     print *, 'ERROR, Data File corrupted. Reading variable: ', Data_varname(jj)
                     print *, 'Date:', curr_time(1), curr_time(2), curr_time(3)
@@ -160,8 +169,8 @@ module PRMS_DATA_FILE
             use iso_fortran_env
             use prms_constants, only: EQULS, MAXFILE_LENGTH
             use fileio_mod, only: write_outfile
-            use PRMS_MODULE, only:PRMS_output_unit, Print_debug, Starttime, Endtime, print_module
-            use UTILS_PRMS, only: numchars, read_error, PRMS_open_input_file, find_current_time
+            use PRMS_MODULE, only: PRMS_output_unit, Print_debug, Starttime, Endtime, print_module
+            use UTILS_PRMS, only: read_error, PRMS_open_input_file, find_current_time   ! , numchars
             ! use PRMS_CONTROL_FILE, only: control_string
             implicit none
 
@@ -180,6 +189,10 @@ module PRMS_DATA_FILE
             integer(i4) :: endyr, endmo, enddy, endhr, endmn, endsec, num_vars
             real(r4), allocatable :: var(:)
             character(len=80), save :: Version_read_data_file
+            integer(i4) :: vnum_tmp
+            character(len=:), allocatable :: vline_tmp
+            character(len=:), allocatable :: vname_tmp
+            integer(i4) :: idx1, idx2
 
             !***********************************************************************
             Version_read_data_file = 'read_data_file.f90 2017-09-29 13:49:00Z'
@@ -204,6 +217,7 @@ module PRMS_DATA_FILE
             num_vars = 0
 
             do
+                ! Output each comment line
                 read (Datafile_unit, FMT = '(A)', IOSTAT = ios) line
                 if (ios == IOSTAT_END) call read_error(13, 'invalid Data File, end of file reached')
                 if (ios /= 0) call read_error(13, 'comment')
@@ -220,33 +234,48 @@ module PRMS_DATA_FILE
             ! read variables and number
             rewind (Datafile_unit)
             read (Datafile_unit, FMT = '(A)') line ! skip first line
+
+            ! 2018-01-12 PAN: num_vars as computed results in an array of
+            !                 strings that is larger than the actual number
+            !                 of variables in the data file.
             allocate (Data_varname(num_vars), Data_varnum(num_vars))
-            Data_varname = '                '
+            ! Data_varname = '                '
             Data_varnum = 0
             Num_datafile_columns = 0
             Num_datafile_types = 0
             ierr = 0
 
+            ! This gets each type of variable (e.g. runoff) and how many
+            ! entries are in the data section
             do
-                read (Datafile_unit, FMT = '(A)') line
+                read (Datafile_unit, FMT='(A)') line
                 if (line(:4) == '    ' .OR. line(:2) == '//') CYCLE
                 if (line(:4) == '####') EXIT
-                length = LEN_TRIM(line)
-                call write_outfile(line(:length))
-                numchrs = numchars(line(:length))
 
-                read (line(numchrs + 1:length), *) n
-                if (n == 0) then
-                    if (Print_debug > -1) print *, 'Varaible: ', line(:numchrs), ' ignored as number of values = 0'
+                vline_tmp = trim(line)  ! create version of line without trailing spaces
+
+                ! Output the line to the outfile
+                call write_outfile(vline_tmp)
+
+                idx1 = index(vline_tmp, ' ')    ! index to first space in line
+
+                vname_tmp = vline_tmp(:idx1-1)  ! name of variable
+
+                read(vline_tmp(idx1:), *) vnum_tmp  ! number of columns for the variable
+
+                if (vnum_tmp == 0) then
+                    if (Print_debug > -1) print *, 'Variable: ', vname_tmp, ' ignored as number of values = 0'
                     CYCLE
                 endif
 
                 Num_datafile_types = Num_datafile_types + 1
-                Data_varname(Num_datafile_types) = line(:numchrs)
-                Data_varnum(Num_datafile_types) = n
-                Num_datafile_columns = Num_datafile_columns + n
-                allocate (var(n))
-                call check_data_variables(Data_varname(Num_datafile_types), n, var, 0, ios)
+                Data_varname(Num_datafile_types)%str = vname_tmp
+                ! Data_varname(Num_datafile_types) = line(:numchrs)
+                Data_varnum(Num_datafile_types) = vnum_tmp
+                Num_datafile_columns = Num_datafile_columns + vnum_tmp
+
+                allocate (var(vnum_tmp))
+                call check_data_variables(Data_varname(Num_datafile_types)%str, vnum_tmp, var, 0, ios)
                 DEALLOCATE (var)
                 if (ios /= 0) ierr = ios
             enddo
@@ -255,17 +284,17 @@ module PRMS_DATA_FILE
             call write_outfile(EQULS)
             allocate (Data_line_values(Num_datafile_columns))
 
-            read (Datafile_unit, *, IOSTAT = ios) startyr, startmo, startdy, starthr, startmn, startsec
+            read (Datafile_unit, *, IOSTAT=ios) startyr, startmo, startdy, starthr, startmn, startsec
             if (ios /= 0) call read_error(13, 'first data line')
 
             do
-                read (Datafile_unit, '(A)', IOSTAT = ios) dmy
+                read (Datafile_unit, '(A)', IOSTAT=ios) dmy
                 if (ios == -1) EXIT ! found end of file
                 if (ios /= 0) call read_error(13, 'data line')
                 data_line = dmy
             enddo
 
-            read (data_line, *, IOSTAT = ios) endyr, endmo, enddy, endhr, endmn, endsec
+            read (data_line, *, IOSTAT=ios) endyr, endmo, enddy, endhr, endmn, endsec
             write (PRMS_output_unit, 10) ' Data File', startyr, startmo, startdy, starthr, startmn, startsec, &
                                                        endyr, endmo, enddy, endhr, endmn, endsec
             10   FORMAT (A, ' time period:', I5.4, 2('/', I2.2), I3.2, 2(':', I2.2), ' to', I5.4, 2('/', I2.2), I3.2, 2(':', I2.2))
@@ -303,7 +332,7 @@ module PRMS_DATA_FILE
             rewind Datafile_unit
 
             do
-                read (Datafile_unit, FMT = '(A)') data_line
+                read (Datafile_unit, FMT='(A)') data_line
                 if (data_line(:4) == '####') EXIT
             enddo
 
