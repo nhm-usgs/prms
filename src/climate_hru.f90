@@ -11,6 +11,9 @@ module PRMS_CLIMATE_HRU
     implicit none
 
     ! Local Variables
+    integer(i4) :: Cbh_check_flag         !> Flag to indicate if CBH values should be validate at each timestep (0=no; 1=yes)
+    integer(i4) :: Cbh_binary_flag        !> Flag to specify whether input CBH files are in a binary format (0=no; 1=yes)
+
     integer(i4), save :: Precip_unit
     integer(i4), save :: Tmax_unit
     integer(i4), save :: Tmin_unit
@@ -22,15 +25,15 @@ module PRMS_CLIMATE_HRU
     real(r4), save, allocatable :: Tmax_cbh_adj(:, :)
     real(r4), save, allocatable :: Tmin_cbh_adj(:, :)
 
-    private :: find_header_end, read_cbh_date, check_cbh_value  ! , check_cbh_intvalue
+    private :: find_header_end, read_cbh_date, check_cbh_value
     public :: climate_hru
 
     contains
 
         integer function climate_hru(dim_data, ctl_data, param_data)
             use prms_constants, only: MM2INCH, MINTEMP, MAXTEMP
-            use PRMS_MODULE, only: Process, Nhru, Model, Climate_precip_flag, Climate_temp_flag, &
-                    Start_year, Start_month, Start_day, Cbh_check_flag, Cbh_binary_flag, print_module, &
+            use PRMS_MODULE, only: Process, Nhru, Model, Temp_module, Precip_module, &
+                    Start_year, Start_month, Start_day, print_module, &
                     Tmin_day, Tmax_day, Precip_day
             use PRMS_BASIN, only: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
             use PRMS_CLIMATEVARS, only: Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, Basin_tmin, &
@@ -53,16 +56,21 @@ module PRMS_CLIMATE_HRU
             INTRINSIC ABS, DBLE, SNGL
 
             ! Local Variables
-            integer(i4) :: yr, mo, dy, i, hr, mn, sec, jj, ierr, istop, missing, ios
+            integer(i4) :: yr, mo, dy, hr, mn, sec
+            integer(i4) :: i, jj
+            integer(i4) :: ierr, istop, missing, ios
             real(r8) :: sum_obs
-            real(r4) :: tmax_hru, tmin_hru, ppt, harea
+            real(r4) :: tmax_hru
+            real(r4) :: tmin_hru
+            real(r4) :: ppt, harea
             character(len=80), save :: Version_climate_hru
 
             !***********************************************************************
             climate_hru = 0
             ierr = 0
+
             if (Process == 'run') then
-                if (Climate_temp_flag == 1) then
+                if (Temp_module == 'climate_hru') then
                     if (Cbh_binary_flag == 0) then
                         read (Tmax_unit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Tmaxf(i), i = 1, Nhru)
                     else
@@ -83,7 +91,7 @@ module PRMS_CLIMATE_HRU
                     Basin_temp = 0.0D0
                 endif
 
-                if (Climate_precip_flag == 1) then
+                if (Precip_module == 'climate_hru') then
                     if (Cbh_binary_flag == 0) then
                         read (Precip_unit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Hru_ppt(i), i = 1, Nhru)
                     else
@@ -104,7 +112,7 @@ module PRMS_CLIMATE_HRU
                     i = Hru_route_order(jj)
                     harea = Hru_area(i)
 
-                    if (Climate_temp_flag == 1) then
+                    if (Temp_module == 'climate_hru') then
                         if (Cbh_check_flag == 1) then
                             call check_cbh_value('Tmaxf', Tmaxf(i), MINTEMP, MAXTEMP, missing)
                             call check_cbh_value('Tminf', Tminf(i), MINTEMP, MAXTEMP, missing)
@@ -115,7 +123,7 @@ module PRMS_CLIMATE_HRU
                                       Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
                     endif
 
-                    if (Climate_precip_flag == 1) then
+                    if (Precip_module == 'climate_hru') then
                         if (Cbh_check_flag == 1) call check_cbh_value('Hru_ppt', Hru_ppt(i), 0.0, 30.0, missing)
 
                         !******Initialize HRU variables
@@ -148,7 +156,7 @@ module PRMS_CLIMATE_HRU
                     STOP
                 endif
 
-                if (Climate_temp_flag == 1) then
+                if (Temp_module == 'climate_hru') then
                     Basin_tmax = Basin_tmax * Basin_area_inv
                     Basin_tmin = Basin_tmin * Basin_area_inv
                     Basin_temp = Basin_temp * Basin_area_inv
@@ -156,7 +164,7 @@ module PRMS_CLIMATE_HRU
                     Solrad_tmin = real(Basin_tmin, r4)
                 endif
 
-                if (Climate_precip_flag == 1) then
+                if (Precip_module == 'climate_hru') then
                     Basin_ppt = Basin_ppt * Basin_area_inv
                     Basin_obs_ppt = sum_obs * Basin_area_inv
                     Basin_rain = Basin_rain * Basin_area_inv
@@ -167,11 +175,13 @@ module PRMS_CLIMATE_HRU
                 Version_climate_hru = 'climate_hru.f90 2017-09-29 13:49:00Z'
                 MODNAME = 'climate_hru'
 
-                if (Climate_temp_flag == 1 .OR. Model == 99) call print_module(Version_climate_hru, 'Temperature Distribution    ', 90)
-                if (Climate_precip_flag == 1 .OR. Model == 99) call print_module(Version_climate_hru, 'Precipitation Distribution  ', 90)
+                call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
+                call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
 
                 !   Declared Parameters
-                if (Climate_temp_flag == 1 .OR. Model == 99) then
+                if (Temp_module == 'climate_hru' .or. Model == 99) then
+                    call print_module(Version_climate_hru, 'Temperature Distribution    ', 90)
+
                     allocate (Tmax_cbh_adj(Nhru, 12))
                     if (param_data%declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
                                            '0.0', '-10.0', '10.0', &
@@ -189,7 +199,9 @@ module PRMS_CLIMATE_HRU
                                            'temp_units', dim_data) /= 0) call read_error(1, 'tmin_cbh_adj')
                 endif
 
-                if (Climate_precip_flag == 1 .OR. Model == 99) then
+                if (Precip_module == 'climate_hru' .or. Model == 99) then
+                    call print_module(Version_climate_hru, 'Precipitation Distribution  ', 90)
+
                     allocate (Rain_cbh_adj(Nhru, 12))
                     if (param_data%declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
                                            '1.0', '0.5', '2.0', &
@@ -212,7 +224,7 @@ module PRMS_CLIMATE_HRU
                 istop = 0
                 ierr = 0
 
-                if (Climate_precip_flag == 1) then
+                if (Precip_module == 'climate_hru') then
                     if (param_data%getparam(MODNAME, 'rain_cbh_adj', Nhru * 12, 'real', Rain_cbh_adj) /= 0) call read_error(2, 'rain_cbh_adj')
                     if (param_data%getparam(MODNAME, 'snow_cbh_adj', Nhru * 12, 'real', Snow_cbh_adj) /= 0) call read_error(2, 'snow_cbh_adj')
 
@@ -230,7 +242,7 @@ module PRMS_CLIMATE_HRU
                     endif
                 endif
 
-                if (Climate_temp_flag == 1) then
+                if (Temp_module == 'climate_hru') then
                     if (param_data%getparam(MODNAME, 'tmax_cbh_adj', Nhru * 12, 'real', Tmax_cbh_adj) /= 0) call read_error(2, 'tmax_cbh_adj')
                     if (param_data%getparam(MODNAME, 'tmin_cbh_adj', Nhru * 12, 'real', Tmin_cbh_adj) /= 0) call read_error(2, 'tmin_cbh_adj')
 

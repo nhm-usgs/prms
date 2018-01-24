@@ -17,18 +17,29 @@ MODULE PRMS_CLIMATEVARS
     REAL(r4), SAVE, ALLOCATABLE :: Tmax_allrain(:, :)
 
     !   Declared Variables - Precip
-    INTEGER(i4), SAVE, ALLOCATABLE :: Newsnow(:), Pptmix(:)
-    real(r8), SAVE :: Basin_ppt(1), Basin_rain(1), Basin_snow(1), Basin_obs_ppt(1)
+    INTEGER(i4), SAVE, ALLOCATABLE :: Newsnow(:)
+    INTEGER(i4), SAVE, ALLOCATABLE :: Pptmix(:)
+    real(r8), SAVE :: Basin_ppt(1)
+    real(r8), SAVE :: Basin_rain(1)
+    real(r8), SAVE :: Basin_snow(1)
+    real(r8), SAVE :: Basin_obs_ppt(1)
     REAL(r4), SAVE, ALLOCATABLE :: Hru_ppt(:)
     REAL(r4), SAVE, ALLOCATABLE :: Hru_rain(:)
     REAL(r4), SAVE, ALLOCATABLE :: Hru_snow(:)
     REAL(r4), SAVE, ALLOCATABLE :: Prmx(:)
 
     !   Declared Variables - Temp
-    real(r8), SAVE :: Basin_temp(1), Basin_tmax(1), Basin_tmin(1)
-    REAL(r4), SAVE :: Solrad_tmax(1), Solrad_tmin(1)
-    REAL(r4), SAVE, ALLOCATABLE :: Tmaxf(:), Tminf(:), Tavgf(:)
-    REAL(r4), SAVE, ALLOCATABLE :: Tmaxc(:), Tminc(:), Tavgc(:)
+    real(r8), SAVE :: Basin_temp(1)
+    real(r8), SAVE :: Basin_tmax(1)
+    real(r8), SAVE :: Basin_tmin(1)
+    REAL(r4), SAVE :: Solrad_tmax(1)
+    REAL(r4), SAVE :: Solrad_tmin(1)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmaxf(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tminf(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tavgf(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmaxc(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tminc(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Tavgc(:)
 
     !   Declared Variables - Transp
     INTEGER(i4), SAVE :: Basin_transp_on
@@ -43,15 +54,22 @@ MODULE PRMS_CLIMATEVARS
     real(r8), SAVE :: Basin_swrad(1)
     real(r8), save :: Basin_orad(1), Basin_horad(1)
     REAL(r4), SAVE, ALLOCATABLE :: Swrad(:), Orad_hru(:)
-    REAL(r4), SAVE, ALLOCATABLE :: Ppt_rad_adj(:, :), Radmax(:, :), Radj_sppt(:), Radj_wppt(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Ppt_rad_adj(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Radmax(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Radj_sppt(:)
+    REAL(r4), SAVE, ALLOCATABLE :: Radj_wppt(:)
 
     !   Declared Parameters - Temp
     INTEGER(i4), SAVE :: Temp_units
-    REAL(r4), SAVE, ALLOCATABLE :: Tmax_aspect_adjust(:, :), Tmin_aspect_adjust(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_aspect_adjust(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmin_aspect_adjust(:, :)
 
     !   Declared Parameters - Precip
     INTEGER(i4), SAVE :: Precip_units
-    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allsnow(:, :), Adjmix_rain(:, :), Tmax_allrain_offset(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allsnow(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Adjmix_rain(:, :)
+    REAL(r4), SAVE, ALLOCATABLE :: Tmax_allrain_offset(:, :)
+
 
     private :: climateflow_decl, climateflow_init, climateflow_restart
     public :: climateflow, precip_form, temp_set
@@ -88,12 +106,9 @@ MODULE PRMS_CLIMATEVARS
         !     climateflow_decl - declare climate and flow variables and parameters
         !***********************************************************************
         INTEGER FUNCTION climateflow_decl(dim_data, param_data, var_data)
-            USE PRMS_MODULE, ONLY: Model, Nhru, Temp_module, Precip_module, Transp_module, Et_module, &
-                    &    Solrad_flag, Solrad_module, print_module
+            USE PRMS_MODULE, ONLY: Model, Nhru, print_module, &
+                                   Temp_module, Precip_module, Transp_module, Et_module, Solrad_module
             use UTILS_PRMS, only: read_error
-            ! use parameter_mod, only: declparam
-            ! use variables_mod, only: declvar_real, declvar_dble, declvar_int
-            ! use PRMS_MMFAPI, only: declvar_real, declvar_dble, declvar_int
             use dimensions_mod, only: dimension_list
             use parameter_arr_mod, only: parameter_arr_t
             use variables_arr_mod, only: variables_arr_t
@@ -112,6 +127,7 @@ MODULE PRMS_CLIMATEVARS
             Version_climateflow = 'climateflow.f90 2017-09-29 13:47:00Z'
             CALL print_module(Version_climateflow, 'Common States and Fluxes    ', 90)
             MODNAME = 'climateflow'
+
 
             ALLOCATE (Tmaxf(Nhru))
             CALL var_data%declvar_real(Temp_module, 'tmaxf', 'nhru', Nhru, 'real', &
@@ -207,7 +223,8 @@ MODULE PRMS_CLIMATEVARS
             CALL var_data%declvar_dble(Solrad_module, 'basin_swrad', 'one', 1, 'double', &
                     &     'Basin area-weighted average shortwave radiation', 'Langleys', Basin_swrad)
 
-            IF (Solrad_flag == 1 .OR. Solrad_flag == 2 .OR. Model == 99) THEN
+            if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module) .or. Model==99) then
+            ! if (Solrad_module == 'ddsolrad' .or. Solrad_module == 'ccsolrad' .or. Model == 99) then
                 CALL var_data%declvar_dble(Solrad_module, 'basin_orad', 'one', 1, 'double', &
                         &       'Basin area-weighted average solar radiation on a horizontal surface', 'Langleys', Basin_orad)
 
@@ -311,7 +328,7 @@ MODULE PRMS_CLIMATEVARS
         !***********************************************************************
         INTEGER FUNCTION climateflow_init(param_data)
             ! USE PRMS_CLIMATEVARS
-            USE PRMS_MODULE, ONLY: Nhru, Temp_module, Precip_module, Solrad_module, Init_vars_from_file, Solrad_flag
+            USE PRMS_MODULE, ONLY: Nhru, Temp_module, Precip_module, Solrad_module, Init_vars_from_file ! , Solrad_flag
             use UTILS_PRMS, only: read_error
             use conversions_mod, only: c_to_f, f_to_c
             use parameter_arr_mod, only: parameter_arr_t
@@ -355,10 +372,9 @@ MODULE PRMS_CLIMATEVARS
             ENDIF
 
             IF (param_data%getparam(Precip_module, 'adjmix_rain', Nhru * 12, 'real', Adjmix_rain) /= 0) CALL read_error(2, 'adjmix_rain')
-
             IF (param_data%getparam(Precip_module, 'precip_units', 1, 'integer', Precip_units) /= 0) CALL read_error(2, 'precip_units')
 
-            IF (Solrad_flag == 1 .OR. Solrad_flag == 2) THEN
+            if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) then
                 IF (param_data%getparam(Solrad_module, 'radj_sppt', Nhru, 'real', Radj_sppt) /= 0) CALL read_error(2, 'radj_sppt')
                 IF (param_data%getparam(Solrad_module, 'radj_wppt', Nhru, 'real', Radj_wppt) /= 0) CALL read_error(2, 'radj_wppt')
                 IF (param_data%getparam(Solrad_module, 'ppt_rad_adj', Nhru * 12, 'real', Ppt_rad_adj) /= 0) CALL read_error(2, 'ppt_rad_adj')
@@ -400,14 +416,14 @@ MODULE PRMS_CLIMATEVARS
             Potet = 0.0
             Basin_orad = 0.0D0
 
-            IF (Solrad_flag == 1 .OR. Solrad_flag == 2) Orad_hru = 0.0
+            if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) Orad_hru = 0.0
         END FUNCTION climateflow_init
 
         !***********************************************************************
         !     Write or read restart file
         !***********************************************************************
         SUBROUTINE climateflow_restart(In_out)
-            USE PRMS_MODULE, ONLY:Restart_outunit, Restart_inunit, Solrad_flag
+            USE PRMS_MODULE, ONLY:Restart_outunit, Restart_inunit, Solrad_module
             use UTILS_PRMS, only: check_restart
             IMPLICIT NONE
 
@@ -440,7 +456,8 @@ MODULE PRMS_CLIMATEVARS
                 WRITE (Restart_outunit) Transp_on
                 WRITE (Restart_outunit) Potet
                 WRITE (Restart_outunit) Swrad
-                IF (Solrad_flag == 1 .OR. Solrad_flag == 2) WRITE (Restart_outunit) Orad_hru
+
+                if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) write(Restart_outunit) Orad_hru
             ELSE
                 READ (Restart_inunit) module_name
                 CALL check_restart(MODNAME, module_name)
@@ -464,7 +481,8 @@ MODULE PRMS_CLIMATEVARS
                 READ (Restart_inunit) Transp_on
                 READ (Restart_inunit) Potet
                 READ (Restart_inunit) Swrad
-                IF (Solrad_flag == 1 .OR. Solrad_flag == 2) READ (Restart_inunit) Orad_hru
+                
+                if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) read(Restart_inunit) Orad_hru
             ENDIF
         END SUBROUTINE climateflow_restart
 

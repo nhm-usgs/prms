@@ -13,7 +13,6 @@ module PRMS_MODULE
     character(len=:), allocatable, save :: Process   ! one of: setdims, declare, init, run, or clean
     character(len=:), allocatable, save :: PRMS_versn
     integer(i4), save :: Model
-    ! integer, save :: Process_flag   ! one of: 4, 1, 2, 0, or 3 based on Process
     integer(i4), save :: Number_timesteps
     integer(i4), save :: Nhru
     integer(i4), save :: Ntemp
@@ -28,18 +27,6 @@ module PRMS_MODULE
     integer(i4), save :: End_month
     integer(i4), save :: End_day
 
-    integer(i4), save :: Transp_flag
-    integer(i4), save :: Solrad_flag
-    integer(i4), save :: Et_flag
-
-    ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
-    integer(i4), save :: Temp_flag
-
-    ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
-    integer(i4), save :: Precip_flag
-
-    integer(i4), save :: Climate_temp_flag
-    integer(i4), save :: Climate_precip_flag
     integer(i4), save :: Inputerror_flag
     integer(i4), save :: Timestep
     integer(i4), save :: Prms_warmup
@@ -68,8 +55,7 @@ module PRMS_MODULE
                                                 !!  14=subbasin module)
     integer(i4), save :: Parameter_check_flag   !> Flag to indicate if selected parameter values validations checks
                                                 !! are treated as warning or errors (0=no; 1=yes; 2=check parameters then stop)
-    integer(i4), save :: Cbh_check_flag         !> Flag to indicate if CBH values should be validate at each timestep (0=no; 1=yes)
-    integer(i4), save :: Cbh_binary_flag        !> Flag to specify whether input CBH files are in a binary format (0=no; 1=yes)
+
     integer(i4), save :: Init_vars_from_file    !> Flag to specify whether the Initial Conditons File is
                                                 !! specified as an input file (0=no; 1=yes;
                                                 !! 2=yes and us parameter values in Parameter File instead of values in the Initial Conditions File)

@@ -269,7 +269,7 @@ contains
                 Init_vars_from_file, Save_vars_to_file, Parameter_check_flag, Param_file, Model_output_file, &
                 Precip_module, Temp_module, Et_module, Solrad_module, Transp_module, Print_debug, &
                 Model_mode, Endtime, Starttime, Prms_warmup, NhruOutON_OFF, BasinOutON_OFF, &
-                Cbh_check_flag, Cbh_binary_flag, &
+                ! Cbh_check_flag, Cbh_binary_flag, &
                 BasinOutVars, BasinOut_freq, BasinOutBaseFileName, &
                 NhruOutVars, NhruOut_freq, NhruOutBaseFileName, &
                 Precip_day, Tmax_day, Tmin_day, &
@@ -304,10 +304,10 @@ contains
         call ctl_data%get_data('parameter_check_flag', Parameter_check_flag)
 
         call ctl_data%set('cbh_check_flag', zero, 1)
-        call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
+        ! call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
 
         call ctl_data%set('cbh_binary_flag', zero, 1)
-        call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
+        ! call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
 
         call ctl_data%set('save_vars_to_file', zero, 1)
         call ctl_data%get_data('save_vars_to_file', Save_vars_to_file)

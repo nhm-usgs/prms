@@ -168,6 +168,7 @@ module UTILS_PRMS
                         if (Month_file >= Month .OR. Year_file /= Year) i = 1
                     enddo
                 endif
+                
                 if (Year_file == Year .AND. Month_file == Month) then
                     if (Day_file < Day) then
                         i = 0

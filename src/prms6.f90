@@ -50,7 +50,6 @@ subroutine PRMS_init()
     use PRMS_MODULE, only : Print_debug, PRMS_output_unit, Param_file, &
                             Model_output_file, Init_vars_from_file, &
                             Var_init_file, Save_vars_to_file, Var_save_file
-    ! use UTILS_PRMS, only: numchars
     implicit none
 
     if (Print_debug > -1) then
@@ -79,7 +78,7 @@ subroutine init_control(ctl_data)
     use control_ll_mod, only: control_list
     use PRMS_MODULE
     use time_mod, only: compute_julday
-    use UTILS_PRMS, only: PRMS_open_output_file, PRMS_open_input_file, module_error  ! ,read_error
+    use UTILS_PRMS, only: PRMS_open_output_file, PRMS_open_input_file, module_error
     use PRMS_CONTROL_FILE, only: read_control_file, init_control_defaults
 
     implicit none
@@ -117,13 +116,16 @@ subroutine init_control(ctl_data)
     ! Set program variables based on control parameters
     call ctl_data%get_data('print_debug', Print_debug)
     call ctl_data%get_data('parameter_check_flag', Parameter_check_flag)
-    call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
-    call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
+
     call ctl_data%get_data('init_vars_from_file', Init_vars_from_file)
     call ctl_data%get_data('save_vars_to_file', Save_vars_to_file)
     call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
     call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
     call ctl_data%get_data('prms_warmup', Prms_warmup)
+
+    ! call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
+    ! call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
+
 
     ! 2017-12-05 PAN: what is this used for? overriding control parameters?
     ! call get_control_arguments()
@@ -193,21 +195,12 @@ subroutine init_control(ctl_data)
     call ctl_data%get_data('et_module', Et_module, missing_stop=.true.)
     call ctl_data%get_data('solrad_module', Solrad_module, missing_stop=.true.)
 
-    Climate_precip_flag = 0
-    Climate_temp_flag = 0
-
-    if (Precip_module == 'climate_hru') then
-        Precip_flag = 7
-        Climate_precip_flag = 1
-    else
+    if (Precip_module /= 'climate_hru') then
         print '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
         Inputerror_flag = 1
     endif
 
-    if (Temp_module == 'climate_hru') then
-        Temp_flag = 7
-        Climate_temp_flag = 1
-    else
+    if (Temp_module /= 'climate_hru') then
         print '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
     endif
@@ -217,16 +210,12 @@ subroutine init_control(ctl_data)
         Inputerror_flag = 1
     endif
 
-    if (Et_module == 'potet_jh') then
-        Et_flag = 1
-    else
+    if (Et_module /= 'potet_jh') then
         print '(/,2A)', 'ERROR, invalid et_module value: ', Et_module
         Inputerror_flag = 1
     endif
 
-    if (Solrad_module == 'ddsolrad') then
-        Solrad_flag = 1
-    else
+    if (Solrad_module /= 'ddsolrad') then
         print '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
         Inputerror_flag = 1
     endif
@@ -304,10 +293,10 @@ subroutine get_dims(dim_data)
     type(dimension_list), intent(in) :: dim_data
 
     !***********************************************************************
-    call dim_data%get_data('nhru', Nhru, missing_stop = .true.)
-    call dim_data%get_data('ntemp', Ntemp, missing_stop = .true.)
-    call dim_data%get_data('nrain', Nrain, missing_stop = .true.)
-    call dim_data%get_data('nobs', Nobs, missing_stop = .true.)
+    call dim_data%get_data('nhru', Nhru, missing_stop=.true.)
+    call dim_data%get_data('ntemp', Ntemp, missing_stop=.true.)
+    call dim_data%get_data('nrain', Nrain, missing_stop=.true.)
+    call dim_data%get_data('nobs', Nobs, missing_stop=.true.)
 
     if (Model == 99) then
         if (Ntemp == 0) Ntemp = 1
@@ -373,7 +362,7 @@ end subroutine module_doc
 subroutine call_modules_restart(In_out)
     use kinds_mod, only: i4
     use prms_constants, only: MAXCONTROL_LENGTH
-    use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, Temp_flag, &
+    use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, & ! Temp_flag, &
                            Restart_inunit, Restart_outunit
     use UTILS_PRMS, only: check_restart, check_restart_dimen
     implicit none
@@ -394,7 +383,11 @@ subroutine call_modules_restart(In_out)
     !***********************************************************************
     if (In_out == 0) then
         write (Restart_outunit) MODNAME
-        write (Restart_outunit) Timestep, Nhru, Temp_flag, Model_mode
+
+        ! TODO: 2018-01-24 PAN: How should Temp_flag be handled now that it has
+        !                       been removed from the program? Hardcoded for now.
+        ! write (Restart_outunit) Timestep, Nhru, Temp_flag, Model_mode
+        write (Restart_outunit) Timestep, Nhru, 7, Model_mode
     else
         ierr = 0
         read (Restart_inunit) module_name
