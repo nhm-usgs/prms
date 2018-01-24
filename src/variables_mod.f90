@@ -7,13 +7,17 @@ MODULE variables_mod
     type PRMS_variable
         character(len=:), allocatable :: variable_name
         character(len=:), allocatable :: description
+        character(len=:), allocatable :: data_type
+        character(len=:), allocatable :: dimen_names
+        character(len=:), allocatable :: module_name
+        character(len=:), allocatable :: units
+
         integer(i4) :: numvals
         integer(i4) :: data_flag
         integer(i4) :: decl_flag
         integer(i4) :: get_flag
-        ! integer(i4) :: var_name_nchars
         integer(i4) :: id_num
-        character(len=:), allocatable :: data_type, dimen_names, module_name, units
+
         integer(i4), pointer :: values_int(:)
         real(r4), pointer :: values_real(:)
         real(r8), pointer :: values_dble(:)
@@ -63,8 +67,6 @@ contains
         implicit none
         type(variables_arr_t) :: init
 
-        integer(i4) :: ii
-
         allocate(init%Variable_data(MAXVARIABLES))
 
         init%Num_variables = 0
@@ -75,7 +77,7 @@ contains
     ! declvar - set up memory for variables
     !***********************************************************************
     subroutine declvar(this, Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
-        use UTILS_PRMS, only: set_data_type  ! ,numchars
+        use UTILS_PRMS, only: set_data_type
         implicit none
 
         ! Arguments
@@ -89,7 +91,7 @@ contains
         integer, intent(in) :: Numvalues
 
         ! Local Variables
-        integer(i4) type_flag
+        integer(i4) :: type_flag
 
         this%Num_variables = this%Num_variables + 1
         if (this%Num_variables > 400) STOP 'PRMS ERROR, maximum number of declared variables (400) exceeded'
@@ -97,7 +99,6 @@ contains
         this%Variable_data(this%Num_variables)%get_flag = 0
         this%Variable_data(this%Num_variables)%decl_flag = 1
         this%Variable_data(this%Num_variables)%variable_name = Varname
-        ! this%Variable_data(this%Num_variables)%var_name_nchars = numchars(Varname)
         this%Variable_data(this%Num_variables)%description = Desc
         this%Variable_data(this%Num_variables)%units = Units
         this%Variable_data(this%Num_variables)%dimen_names = Dimenname
@@ -109,7 +110,6 @@ contains
 
         if (type_flag < 1 .OR. type_flag > 3) then
             print *, 'ERROR, data type not implemented: ', Data_type, ' Variable: ', Varname
-                    ! &           Varname(:this%Variable_data(this%Num_variables)%var_name_nchars)
             STOP
         endif
 
@@ -133,7 +133,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        real(r8), target :: Values
+        real(r8), target, intent(in) :: Values
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -157,7 +157,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        real(r8), TARGET :: Values(*)
+        real(r8), TARGET, intent(in) :: Values(*)
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -181,7 +181,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        real(r8), TARGET, contiguous :: Values(:, :)
+        real(r8), TARGET, contiguous, intent(in) :: Values(:, :)
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -205,7 +205,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        integer(i4), target :: Values
+        integer(i4), target, intent(in) :: Values
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -229,7 +229,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        integer(i4), TARGET :: Values(*)
+        integer(i4), TARGET, intent(in) :: Values(*)
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -252,7 +252,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        real(r4), TARGET :: Values
+        real(r4), TARGET, intent(in) :: Values
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -276,7 +276,7 @@ contains
         character(len=*), intent(in) :: Desc
         character(len=*), intent(in) :: Units
         integer(i4), intent(in) :: Numvalues
-        real(r4), TARGET :: Values(*)
+        real(r4), TARGET, intent(in) :: Values(*)
 
         !***********************************************************************
         call this%declvar(Modname, Varname, Dimenname, Numvalues, Data_type, Desc, Units)
@@ -297,26 +297,28 @@ contains
         character(len=*), intent(in) :: Data_type
         integer(i4), intent(in) :: Numvalues
 
-        ! Functions
-        ! INTRINSIC TRIM
-
         ! Local Variables
-        integer(i4) :: found, i, ierr
+        integer(i4) :: i
+        logical :: ierr
+        logical :: found
 
         !***********************************************************************
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
         find_variable = 1
+
         do i = 1, this%Num_variables
             if (Varname == this%Variable_data(i)%variable_name) then
-                found = 1
+                found = .true.
+
                 if (this%Variable_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Variable: ', Varname, &
                             &               ' number of values in getvar does not match declared number of values'
                 endif
+
                 if (this%Variable_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Variable: ', Varname, &
                             ' data type does in getvar not match declared data type'
                 endif
@@ -325,11 +327,12 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Variable: ', Varname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+
+        if (ierr) STOP
     end function find_variable
 
     !***********************************************************************
@@ -414,19 +417,20 @@ contains
         character(len=*), intent(in) :: Varname
 
         ! Local Variables
-        integer(i4) :: found, i
+        integer(i4) :: i
+        logical :: found
 
         !***********************************************************************
-        found = 0
+        found = .false.
         do i = 1, this%Num_variables
             if (Varname == this%Variable_data(i)%variable_name) then
-                found = i
+                found = .true.
                 getvarsize = this%Variable_data(i)%numvals
                 EXIT
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR, Variable: ', Varname, ' not declared'
             STOP
         endif
@@ -443,9 +447,6 @@ contains
         class(variables_arr_t), intent(in) :: this
         character(len=*), intent(in) :: Varname
 
-        ! Functions
-        ! INTRINSIC TRIM
-
         ! Local Variables
         integer :: i
 
@@ -454,10 +455,10 @@ contains
         do i = 1, this%Num_variables
             if (Varname == this%Variable_data(i)%variable_name) then
                 getvartype = this%Variable_data(i)%data_flag
-                ! getvartype = getvartype
                 return
             endif
         enddo
+
         print *, 'ERROR variable: ', Varname, ' not available'
         STOP
     end function getvartype
@@ -493,20 +494,19 @@ contains
         class(variables_arr_t), intent(in) :: this
         character(len=*), intent(in) :: Varname
 
-        ! Functions
-        ! INTRINSIC TRIM
-
         ! Local Variables
         integer(i4) :: i
 
         !***********************************************************************
         getvar_id = 1
+
         do i = 1, this%Num_variables
             if (Varname == this%Variable_data(i)%variable_name) then
                 getvar_id = this%Variable_data(i)%id_num
                 return
             endif
         enddo
+
         print *, 'ERROR variable: ', Varname, ' not available'
         STOP
     end function getvar_id

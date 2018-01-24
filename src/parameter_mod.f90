@@ -3,19 +3,38 @@ module parameter_mod
     ! use data_mod, only: str_arr_type
     implicit none
 
-    ! integer(i4), save :: Num_parameters  ! Total_parameters
-
     type PRMS_parameter
         character(len=:), allocatable :: param_name
-        character(len=:), allocatable :: short_description, long_description
-        integer(i4) :: numvals, data_flag, decl_flag, read_flag !, nchars
+        character(len=:), allocatable :: short_description
+        character(len=:), allocatable :: long_description
+        integer(i4) :: numvals
+        integer(i4) :: data_flag
+        integer(i4) :: decl_flag
+        integer(i4) :: read_flag
         ! integer :: id_num   ! what is this?
-        integer(i4) :: default_int, maximum_int, minimum_int, num_dimens
-        character(len=:), allocatable :: max_value, min_value, def_value, data_type
-        character(len=:), allocatable :: dimen_names, module_name, units
-        real(r4), pointer :: values(:)
+
+        integer(i4) :: num_dimens
+        character(len=:), allocatable :: data_type
+        character(len=:), allocatable :: dimen_names
+        character(len=:), allocatable :: module_name
+        character(len=:), allocatable :: units
+
+        ! Used for string parameters
+        character(len=:), allocatable :: max_value
+        character(len=:), allocatable :: min_value
+        character(len=:), allocatable :: def_value
+
+        ! Used for integer parameters
         integer(i4), pointer :: int_values(:)
-        real(r4) :: maximum, minimum, default_real
+        integer(i4) :: default_int
+        integer(i4) :: maximum_int
+        integer(i4) :: minimum_int
+
+        ! Used for real parameters
+        real(r4), pointer :: values(:)
+        real(r4) :: default_real
+        real(r4) :: maximum
+        real(r4) :: minimum
     end type PRMS_parameter
 end module parameter_mod
 
@@ -31,8 +50,9 @@ module parameter_arr_mod
 
     contains
         private
-        procedure :: check_parameters_declared
+        procedure :: is_declared
         procedure, public :: declparam
+
         procedure :: getparamstring
         procedure :: getparam_dbl
         procedure :: getparam_int_0D
@@ -97,10 +117,9 @@ contains
 
 
     !***********************************************************************
-    ! check_parameters_declared - check for parameters being declared more than once
+    ! is_declared - check for parameters being declared more than once
     !***********************************************************************
-    subroutine check_parameters_declared(this, Parmname, Modname, Iret)
-        ! use UTILS_PRMS, only: numchars
+    logical function is_declared(this, Parmname, Modname)
         USE PRMS_MODULE, only: Print_debug
         implicit none
 
@@ -108,14 +127,12 @@ contains
         class(parameter_arr_t), intent(in) :: this
         character(len=*), intent(in) :: Parmname
         character(len=*), intent(in) :: Modname
-        integer(i4), intent(out) :: Iret
 
         ! Local Variables
-        integer(i4) :: i, nchars
+        integer(i4) :: i
 
         !***********************************************************************
-        Iret = 0
-        ! nchars = numchars(Parmname)
+        is_declared = .false.
 
         do i = 1, this%Num_parameters
             if (Parmname == this%Parameter_data(i)%param_name) then
@@ -126,37 +143,23 @@ contains
                         print *, 'Also declared by module: ', Modname
                         print *, 'Model uses values based on first declare'
                     endif
-                    Iret = 1
+
+                    is_declared = .true.
                 endif
 
                 EXIT
             endif
-            ! if (nchars == this%Parameter_data(i)%nchars) then
-            !     if (Parmname(:nchars) == this%Parameter_data(i)%param_name(:nchars)) then
-            !         if (this%Parameter_data(i)%decl_flag == 1) then
-            !             if (Print_debug > -1) then
-            !                 print *, 'Parameter: ', Parmname, ' declared more than once'
-            !                 print *, 'First declared by module: ', this%Parameter_data(this%Num_parameters)%module_name
-            !                 print *, 'Also declared by module: ', Modname
-            !                 print *, 'Model uses values based on first declare'
-            !             endif
-            !             Iret = 1
-            !         endif
-            !
-            !         EXIT
-            !     endif
-            ! endif
         enddo
-    end subroutine check_parameters_declared
+    end function is_declared
 
     !***********************************************************************
     ! declparam - set up memory for parameters
     !***********************************************************************
     integer function declparam(this, Modname, Paramname, Dimenname, Datatype, &
-            &                  Defvalue, Minvalue, Maxvalue, Descshort, &
+                               Defvalue, Minvalue, Maxvalue, Descshort, &
                                Desclong, Units, dim_data)
         use prms_constants, only: MAXPARAMETERS, MAXCONTROL_LENGTH
-        use UTILS_PRMS, only: read_error, set_data_type  ! , numchars
+        use UTILS_PRMS, only: set_data_type
         use dimensions_mod, only: dimension_list
         implicit none
 
@@ -178,38 +181,51 @@ contains
         INTRINSIC INDEX, TRIM
 
         ! Local Variables
-        integer(i4) :: comma, nval, nvals, nvals2, declared, numvalues, type_flag, iset  ! , ndimen
+        integer(i4) :: comma
+        integer(i4) :: nvals
+        integer(i4) :: nvals2
+        integer(i4) :: numvalues
+        integer(i4) :: type_flag
+        integer(i4) :: iset
+        integer(i4) :: cidx     ! copy of current index for new parameter
+
         !    character(len = :), allocatable :: dimen1, dimen2
         character(len=MAXCONTROL_LENGTH) dimen1, dimen2
 
         !***********************************************************************
         !!!!!!!!!!!! check to see if already in data structure
         ! doesn't check to see if declared the same, uses first values
-        call this%check_parameters_declared(Paramname, Modname, declared)
-        if (declared == 1) return   ! 2017-10-30 PAN: Warning: control reaches end of non-void function
+        if (this%is_declared(Paramname, Modname)) return
 
         ! current value of Num_parameters is the number that have been declared
         this%Num_parameters = this%Num_parameters + 1
-        if (this%Num_parameters > MAXPARAMETERS) STOP 'ERROR, hard-coded number of parameters exceeded, report to developers'
+        cidx = this%Num_parameters
 
-        this%Parameter_data(this%Num_parameters)%module_name = Modname
-        this%Parameter_data(this%Num_parameters)%param_name = Paramname
-        this%Parameter_data(this%Num_parameters)%dimen_names = Dimenname
-        this%Parameter_data(this%Num_parameters)%data_type = Datatype
-        this%Parameter_data(this%Num_parameters)%def_value = Defvalue
-        this%Parameter_data(this%Num_parameters)%min_value = Minvalue
-        this%Parameter_data(this%Num_parameters)%max_value = Maxvalue
-        this%Parameter_data(this%Num_parameters)%short_description = Descshort
-        this%Parameter_data(this%Num_parameters)%long_description = Desclong
-        this%Parameter_data(this%Num_parameters)%units = Units
+        if (cidx > MAXPARAMETERS) STOP 'ERROR, hard-coded number of parameters exceeded, report to developers'
 
-        this%Parameter_data(this%Num_parameters)%decl_flag = 1
+        this%Parameter_data(cidx)%module_name = Modname
+        this%Parameter_data(cidx)%param_name = Paramname
+        this%Parameter_data(cidx)%dimen_names = Dimenname
+        this%Parameter_data(cidx)%data_type = Datatype
+        this%Parameter_data(cidx)%def_value = Defvalue
+        this%Parameter_data(cidx)%min_value = Minvalue
+        this%Parameter_data(cidx)%max_value = Maxvalue
+        this%Parameter_data(cidx)%short_description = Descshort
+        this%Parameter_data(cidx)%long_description = Desclong
+        this%Parameter_data(cidx)%units = Units
+
+        this%Parameter_data(cidx)%decl_flag = 1
         ! this%Parameter_data(this%Num_parameters)%nchars = numchars(Paramname)
         ! Parameter_data(Num_parameters)%id_num = Num_dimensions
 
         call set_data_type(Datatype, type_flag)
-        if (type_flag < 1 .OR. type_flag > 2) call read_error(16, Paramname // ': data type not implemented: ' // Datatype)
-        this%Parameter_data(this%Num_parameters)%data_flag = type_flag
+
+        if (.not. ANY([1, 2]==type_flag)) then
+            print *, 'ERROR: ', Paramname, '; datatype, ', Datatype, ', not implemented.'
+            STOP
+        endif
+
+        this%Parameter_data(cidx)%data_flag = type_flag
 
         ! get dimension number of values
         dimen2 = ' '
@@ -218,63 +234,54 @@ contains
 
         if (comma == 0) then
             dimen1 = Dimenname
-            ! dimen1 = Dimenname(:ndimen)
-            this%Parameter_data(this%Num_parameters)%num_dimens = 1
+            this%Parameter_data(cidx)%num_dimens = 1
         else
             dimen1 = Dimenname(:(comma - 1))
             dimen2 = Dimenname((comma + 1):)
-            ! dimen1 = Dimenname(:(comma - 1))
-            ! dimen2 = Dimenname((comma + 1):ndimen)
-            this%Parameter_data(this%Num_parameters)%num_dimens = 2
+            this%Parameter_data(cidx)%num_dimens = 2
         endif
 
-        call dim_data%get_data(trim(dimen1), numvalues)
-        ! numvalues = getdim(TRIM(dimen1))
-        if (numvalues == -1) call read_error(11, TRIM(dimen1))
-        if (comma > 0) then
-            call dim_data%get_data(trim(dimen2), nvals2)
-            ! nvals2 = getdim(TRIM(dimen2))
+        call dim_data%get_data(trim(dimen1), numvalues, missing_stop=.true.)
 
-            if (nvals2 == -1) call read_error(11, TRIM(dimen2))
+        if (comma > 0) then
+            call dim_data%get_data(trim(dimen2), nvals2, missing_stop=.true.)
             numvalues = numvalues * nvals2
         endif
-        this%Parameter_data(this%Num_parameters)%numvals = numvalues
+        this%Parameter_data(cidx)%numvals = numvalues
 
         ! could add string and double
         if (type_flag == 1) then
-            read (Defvalue, *) this%Parameter_data(this%Num_parameters)%default_int
-            allocate (this%Parameter_data(this%Num_parameters)%int_values(numvalues))
-            this%Parameter_data(this%Num_parameters)%int_values = this%Parameter_data(this%Num_parameters)%default_int
+            read (Defvalue, *) this%Parameter_data(cidx)%default_int
+            allocate (this%Parameter_data(cidx)%int_values(numvalues))
+            this%Parameter_data(cidx)%int_values = this%Parameter_data(cidx)%default_int
         elseif (type_flag == 2) then
-            read (Defvalue, *) this%Parameter_data(this%Num_parameters)%default_real
-            allocate (this%Parameter_data(this%Num_parameters)%values(numvalues))
-            this%Parameter_data(this%Num_parameters)%values = this%Parameter_data(this%Num_parameters)%default_real
+            read (Defvalue, *) this%Parameter_data(cidx)%default_real
+            allocate (this%Parameter_data(cidx)%values(numvalues))
+            this%Parameter_data(cidx)%values = this%Parameter_data(cidx)%default_real
         endif
 
         iset = 0
-        nval = len(Minvalue)
-        if (nval > 6) then
-            if (Minvalue(:7) == 'bounded') iset = 1
-        endif
+        if (Minvalue == 'bounded') iset = 1
 
         if (iset == 1) then
             if (type_flag == 1) then  ! bounded parameters should all be integer
-                call dim_data%get_data(Maxvalue, nvals)
-                ! nvals = getdim(Maxvalue)
+                call dim_data%get_data(Maxvalue, nvals, missing_stop=.true.)
 
-                if (nvals == -1) call read_error(11, Maxvalue)
-                this%Parameter_data(this%Num_parameters)%maximum_int = nvals
-                this%Parameter_data(this%Num_parameters)%minimum_int = this%Parameter_data(this%Num_parameters)%default_int
+                this%Parameter_data(cidx)%maximum_int = nvals
+                this%Parameter_data(cidx)%minimum_int = this%Parameter_data(cidx)%default_int
             else
-                STOP 'ERROR, bounded parameter not real type'
+                print *, 'ERROR: Bounded parameter, ', Paramname, ', not real type'
+                stop
             endif
         else
             if (type_flag == 1) then
-                read (Maxvalue, *) this%Parameter_data(this%Num_parameters)%maximum_int
-                read (Minvalue, *) this%Parameter_data(this%Num_parameters)%minimum_int
+                ! Integer datatype
+                read (Maxvalue, *) this%Parameter_data(cidx)%maximum_int
+                read (Minvalue, *) this%Parameter_data(cidx)%minimum_int
             else
-                read (Maxvalue, *) this%Parameter_data(this%Num_parameters)%maximum
-                read (Minvalue, *) this%Parameter_data(this%Num_parameters)%minimum
+                ! Real datatype
+                read (Maxvalue, *) this%Parameter_data(cidx)%maximum
+                read (Minvalue, *) this%Parameter_data(cidx)%minimum
             endif
         endif
 
@@ -292,7 +299,8 @@ contains
 
         ! Arguments
         class(parameter_arr_t), intent(in) :: this
-        character(len=*), intent(in) :: Paramname, Data_type
+        character(len=*), intent(in) :: Paramname
+        character(len=*), intent(in) :: Data_type
         integer(i4), intent(in) :: Numvalues
         character(len=*), intent(out) :: String
 
@@ -300,8 +308,13 @@ contains
         INTRINSIC INDEX
 
         ! Local Variables
-        integer(i4) nchars, nchars_param, type_flag, num_values, i, j
-        character(len = 16) :: dimenname
+        integer(i4) :: nchars
+        integer(i4) :: nchars_param
+        integer(i4) :: type_flag
+        integer(i4) :: num_values
+        integer(i4) :: i
+        integer(i4) :: j
+        character(len=16) :: dimenname
 
         !***********************************************************************
         String = ' '
@@ -310,12 +323,14 @@ contains
         ! Paramname(:nchars_param)
         nchars = INDEX(Dimenname, ' ') - 1
         num_values = -2
+
         if (num_values /= Numvalues) then
             print *, 'ERROR, number of values does not equal values for the dimension'
             print *, '       parameter: ', Dimenname(:nchars), ' dimension value:', num_values
             print *, '       dimension: ', Paramname(:nchars_param), ' number of values:', Numvalues
             STOP
         endif
+
         nchars = INDEX(Data_type, ' ') - 1
         ! Data_type(:nchars)
         call set_data_type(Data_type, type_flag)
@@ -339,7 +354,6 @@ contains
     ! getparam_dbl - get parameter values for double precision datatype
     !***********************************************************************
     integer function getparam_dbl(this, Modname, Paramname, Numvalues, Data_type, Values)
-        ! USE PRMS_MODULE, only: Parameter_check_flag
         implicit none
 
         ! Arguments
@@ -356,23 +370,29 @@ contains
         INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
+        logical :: ierr     ! indicates an error condition has occurred
+        logical :: found
 
         !***********************************************************************
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
+
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             &               ' number of values in getparam does not match declared number of values'
                 endif
+
                 if (this%Parameter_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' data type does in getparam not match declared data type'
                 endif
@@ -381,11 +401,12 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -420,25 +441,29 @@ contains
         ! INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
+        logical :: found
+        logical :: ierr     ! indicates error condition
 
         !***********************************************************************
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
 
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                              ' number of values in getparam does not match declared number of values'
                 endif
 
                 if (this%Parameter_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                              ' data type does in getparam not match declared data type'
                 endif
@@ -447,11 +472,11 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -484,26 +509,30 @@ contains
         ! INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
+        logical :: found
+        logical :: ierr
 
         !***********************************************************************
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
 
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' number of values in getparam does not match declared number of values'
                 endif
 
                 if (Data_type /= this%Parameter_data(i)%data_type) then
                 ! if (TRIM(Parameter_data(i)%data_type) /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' data type does in getparam not match declared data type'
                 endif
@@ -512,11 +541,11 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -551,23 +580,27 @@ contains
         ! INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
+        logical :: found
+        logical :: ierr
 
         !***********************************************************************
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             &               ' number of values in getparam does not match declared number of values'
                 endif
                 if (this%Parameter_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' data type does in getparam not match declared data type'
                 endif
@@ -576,11 +609,11 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -629,23 +662,28 @@ contains
         ! INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
+        logical :: found
+        logical :: ierr
 
         !***********************************************************************
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             &               ' number of values in getparam does not match declared number of values'
                 endif
+
                 if (this%Parameter_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' data type does in getparam not match declared data type'
                 endif
@@ -654,11 +692,11 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -707,25 +745,32 @@ contains
         ! INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: type_flag, found, param_id, i, ierr
+        integer(i4) :: type_flag
+        integer(i4) :: param_id
+        integer(i4) :: i
         integer(i4) :: shp(2)   ! Array to hold shape information for the Values array
+
+        logical :: found
+        logical :: ierr
+
 
         !***********************************************************************
         shp = shape(Values)
         Values = 0.0
-        ierr = 0
-        found = 0
+        ierr = .false.
+        found = .false.
 
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
-                found = 1
+                found = .true.
                 if (this%Parameter_data(i)%numvals /= Numvalues) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             &               ' number of values in getparam does not match declared number of values'
                 endif
+
                 if (this%Parameter_data(i)%data_type /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, &
                             ' data type does in getparam not match declared data type'
                 endif
@@ -734,11 +779,11 @@ contains
             endif
         enddo
 
-        if (found == 0) then
+        if (.not. found) then
             print *, 'ERROR in: ', Modname, ', Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
 
         type_flag = this%Parameter_data(param_id)%data_flag
 
@@ -790,19 +835,27 @@ contains
         INTRINSIC TRIM, INDEX
 
         ! Local Variables
-        integer(i4) :: found, i, ii, j, k, ierr, iflg, comma, nvals
+        integer(i4) :: i
+        integer(i4) :: ii
+        integer(i4) :: j
+        integer(i4) :: k
+        integer(i4) :: iflg
+        integer(i4) :: comma
+        integer(i4) :: nvals
         character(len=:), allocatable :: dimen1
-        ! character(len = MAXCONTROL_LENGTH) dimen1
+        integer(i4) :: found    ! used to indicate parameter was found, but also for the index of the found parameter
+        logical :: ierr
 
         !***********************************************************************
-        ierr = 0
+        ierr = .false.
         found = 0
+
         do i = 1, this%Num_parameters
             if (Paramname == this%Parameter_data(i)%param_name) then
                 found = i
 
                 if (this%Parameter_data(i)%data_flag /= Data_type) then
-                    ierr = 1
+                    ierr = .true.
                     print *, 'ERROR, Parameter: ', Paramname, ' data type does not match declared data type'
                 endif
 
@@ -893,7 +946,7 @@ contains
                             !                  enddo
                             !                enddo
                             !!!!!! add parameter expansion !!!!!!!!!! for nsub
-                            ierr = 1
+                            ierr = .true.
                             print *, 'ERROR, Parameter: ', Paramname, &
                                     ' number of values in getparam does not match declared number of values'
                         endif
@@ -905,9 +958,9 @@ contains
 
         if (found == 0) then
             print *, 'ERROR, Parameter: ', Paramname, ' not declared'
-            ierr = 1
+            ierr = .true.
         endif
-        if (ierr == 1) STOP
+        if (ierr) STOP
     end subroutine setparam
 
 end module parameter_arr_mod

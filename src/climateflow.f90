@@ -330,7 +330,7 @@ MODULE PRMS_CLIMATEVARS
             IF (param_data%getparam(Precip_module, 'tmax_allsnow', Nhru * 12, 'real', Tmax_allsnow) /= 0) CALL read_error(2, 'tmax_allsnow')
 
             IF (param_data%getparam(Precip_module, 'tmax_allrain_offset', Nhru * 12, 'real', Tmax_allrain_offset) /= 0) &
-                    &              CALL read_error(2, 'tmax_allrain_offset')
+                                    CALL read_error(2, 'tmax_allrain_offset')
 
             ! Set tmax_allrain in units of the input values
             ! tmax_allsnow must be in the units of the input values

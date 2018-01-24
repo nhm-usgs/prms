@@ -30,7 +30,7 @@ module PRMS_DATA_FILE
             character(len=*), intent(in) :: Varname
             integer(i4), intent(in) :: Numvalues
             integer(i4), intent(in) :: Iflag
-            integer(i4), intent(OUT) :: Iret
+            integer(i4), intent(out) :: Iret
             real(r4), intent(in) :: Values(Numvalues)
 
             ! Local Variables
@@ -170,8 +170,7 @@ module PRMS_DATA_FILE
             use prms_constants, only: EQULS, MAXFILE_LENGTH
             use fileio_mod, only: write_outfile
             use PRMS_MODULE, only: PRMS_output_unit, Print_debug, Starttime, Endtime, print_module
-            use UTILS_PRMS, only: read_error, PRMS_open_input_file, find_current_time   ! , numchars
-            ! use PRMS_CONTROL_FILE, only: control_string
+            use UTILS_PRMS, only: read_error, PRMS_open_input_file, find_current_time
             implicit none
 
             character(:), allocatable, intent(in) :: data_filename
@@ -180,11 +179,9 @@ module PRMS_DATA_FILE
             INTRINSIC LEN_TRIM, TRIM
 
             ! Local Variables
-
             character(len=MAXFILE_LENGTH) :: data_line, dmy
-            ! character(len = MAXFILE_LENGTH) :: data_filename, data_line, dmy
             character(len=80) :: line
-            integer(i4) :: n, ierr, ios, numchrs, length
+            integer(i4) :: ierr, ios    ! , n, numchrs, length
             integer(i4) :: startyr, startmo, startdy, starthr, startmn, startsec
             integer(i4) :: endyr, endmo, enddy, endhr, endmn, endsec, num_vars
             real(r4), allocatable :: var(:)
@@ -192,13 +189,11 @@ module PRMS_DATA_FILE
             integer(i4) :: vnum_tmp
             character(len=:), allocatable :: vline_tmp
             character(len=:), allocatable :: vname_tmp
-            integer(i4) :: idx1, idx2
+            integer(i4) :: idx1 ! , idx2
 
             !***********************************************************************
             Version_read_data_file = 'read_data_file.f90 2017-09-29 13:49:00Z'
             call print_module(Version_read_data_file, 'Read Data File              ', 90)
-
-            ! if (control_string(data_filename, 'data_file') /= 0) call read_error(5, 'data_file')
 
             call PRMS_open_input_file(Datafile_unit, data_filename, 'data_file', 0, ios)
             if (ios /= 0) STOP
@@ -270,7 +265,6 @@ module PRMS_DATA_FILE
 
                 Num_datafile_types = Num_datafile_types + 1
                 Data_varname(Num_datafile_types)%str = vname_tmp
-                ! Data_varname(Num_datafile_types) = line(:numchrs)
                 Data_varnum(Num_datafile_types) = vnum_tmp
                 Num_datafile_columns = Num_datafile_columns + vnum_tmp
 

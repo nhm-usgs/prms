@@ -413,8 +413,8 @@ module UTILS_PRMS
                 print *, 'Control parameter not found: ', Name
             elseif (Iflag == 15) then
                 print *, 'ERROR, control ', Name, ' expected and is not available in PRMS'
-            elseif (Iflag == 16) then
-                print *, 'ERROR, declared parameter ', Name
+            ! elseif (Iflag == 16) then
+            !     print *, 'ERROR, declared parameter ', Name
             endif
             STOP
         end subroutine read_error
@@ -571,31 +571,12 @@ module UTILS_PRMS
         !***********************************************************************
         subroutine set_data_type(Data_type, Type_flag)
             use kinds_mod, only: i4
-            ! use UTILS_PRMS, only: numchars
             implicit none
 
             ! Arguments
             character(len=*), intent(in) :: Data_type
             integer(i4), intent(out) :: Type_flag
 
-            ! Local Variables
-            ! integer(i4) :: string_length
-
-            !***********************************************************************
-            ! string_length = numchars(Data_type)
-            ! if (string_length > 3 .AND. Data_type == 'real') then
-            !     Type_flag = 2
-            ! elseif (string_length > 5 .AND. Data_type == 'double') then
-            !     Type_flag = 3
-            ! elseif (string_length > 5 .AND. Data_type == 'string') then
-            !     Type_flag = 4
-            ! elseif (string_length > 6 .AND. Data_type == 'integer') then
-            !     Type_flag = 1
-            ! else
-            !     print *, 'ERROR, invalid data type: ', Data_type
-            !     print *, '       valid values are real, double, string, integer'
-            !     STOP
-            ! endif
             if (trim(Data_type) == 'integer') then
                 Type_flag = 1
             elseif (trim(Data_type) == 'real') then

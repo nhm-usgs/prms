@@ -102,9 +102,10 @@ MODULE PRMS_BASIN
             ALLOCATE (Hru_route_order(Nhru))
 
             ! Declared Parameters
+            ! Modname, Paramname, Dimenname, Datatype, Defvalue, Minvalue, Maxvalue, Descshort, Desclong, Units, dim_data
             ALLOCATE (Hru_area(Nhru))
             IF (param_data%declparam(MODNAME, 'hru_area', 'nhru', 'real', '1.0', '0.0001', '1.0E9', &
-                    &     'HRU area', 'Area of each HRU', 'acres', dim_data) /= 0) CALL read_error(1, 'hru_area')
+                                     'HRU area', 'Area of each HRU', 'acres',  dim_data) /= 0) CALL read_error(1, 'hru_area')
 
             IF (param_data%declparam(MODNAME, 'elev_units', 'one', 'integer', '0', '0', '1', &
                     &     'Elevation units flag', 'Flag to indicate the units of the elevation values (0=feet; 1=meters)', &

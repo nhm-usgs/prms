@@ -59,7 +59,7 @@ MODULE PRMS_BASIN_SUMMARY
         !***********************************************************************
         SUBROUTINE basin_summarydecl(ctl_data)
             USE PRMS_MODULE, ONLY: Model, Inputerror_flag, print_module
-            USE UTILS_PRMS, only: read_error
+            ! USE UTILS_PRMS, only: read_error
             use control_ll_mod, only: control_list
             IMPLICIT NONE
 
@@ -105,7 +105,7 @@ MODULE PRMS_BASIN_SUMMARY
         SUBROUTINE basin_summaryinit(var_data)
             use prms_constants, only: MAXFILE_LENGTH
             USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
-            use UTILS_PRMS, only: read_error, PRMS_open_output_file
+            use UTILS_PRMS, only: PRMS_open_output_file
             use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 

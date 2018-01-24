@@ -136,7 +136,10 @@ module PRMS_MODULE
             INTRINSIC INDEX, TRIM
 
             ! Local Variables
-            integer(i4) :: nc, n, nb, is
+            integer(i4) :: nc
+            integer(i4) :: n
+            integer(i4) :: nb
+            integer(i4) :: is
             character(len=28) :: blanks
             character(len=80) :: string
 

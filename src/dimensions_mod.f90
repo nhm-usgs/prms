@@ -281,22 +281,28 @@ contains
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     !  Returns a pointer to the data stored in the list.
-    subroutine get_data(this, key, value)
+    subroutine get_data(this, key, value, missing_stop)
         implicit none
 
         class(dimension_list), intent(in) :: this
         character(len=*), intent(in) :: key
         integer(i4), intent(out) :: value
+        logical, optional, intent(in) :: missing_stop
 
         type(dimension_t), pointer :: ptr
+
+        ! PAN: Not sure what value should be set to by default
+        value = -1
 
         call this%get_node(key, ptr)
 
         if (associated(ptr)) then
             value = ptr%value
         else
-            write (*,*) 'Dimension does not exist'
-            value = -1
+            if (present(missing_stop) .and. missing_stop) then
+                write (*, *) 'ERROR: Dimension, ', key, ', does not exist'
+                stop
+            end if
         endif
     end subroutine get_data
 

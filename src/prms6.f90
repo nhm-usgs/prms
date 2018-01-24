@@ -79,7 +79,7 @@ subroutine init_control(ctl_data)
     use control_ll_mod, only: control_list
     use PRMS_MODULE
     use time_mod, only: compute_julday
-    use UTILS_PRMS, only: read_error, PRMS_open_output_file, PRMS_open_input_file, module_error
+    use UTILS_PRMS, only: PRMS_open_output_file, PRMS_open_input_file, module_error  ! ,read_error
     use PRMS_CONTROL_FILE, only: read_control_file, init_control_defaults
 
     implicit none
@@ -87,7 +87,9 @@ subroutine init_control(ctl_data)
     type(control_list), intent(inout) :: ctl_data
 
     ! Local Variables
-    integer(i4) :: iret, startday, endday
+    integer(i4) :: iret
+    integer(i4) :: startday
+    integer(i4) :: endday
 
     !***********************************************************************
     Inputerror_flag = 0
@@ -186,13 +188,9 @@ subroutine init_control(ctl_data)
     endif
 
     call ctl_data%get_data('temp_module', Temp_module, missing_stop=.true.)
-
     call ctl_data%get_data('precip_module', Precip_module, missing_stop=.true.)
-
     call ctl_data%get_data('transp_module', Transp_module, missing_stop=.true.)
-
     call ctl_data%get_data('et_module', Et_module, missing_stop=.true.)
-
     call ctl_data%get_data('solrad_module', Solrad_module, missing_stop=.true.)
 
     Climate_precip_flag = 0
@@ -274,7 +272,6 @@ end subroutine init_control
 !***********************************************************************
 subroutine setdims(dim_data)
     use dimensions_mod, only: dimension_list
-    ! use PRMS_READ_PARAM_FILE, only: read_parameter_file_dimens
     implicit none
 
     type(dimension_list), intent(inout) :: dim_data
@@ -282,6 +279,7 @@ subroutine setdims(dim_data)
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Dimension section
 
+    ! Set default values for some dimensions
     ! key, value, description, default, maximum
     call dim_data%set_dimension('nhru', 1, 'Number of HRUs', 1, 1)
     call dim_data%set_dimension('nrain', 0, 'Number of precipitation-measurement stations', 0, 0)
@@ -299,7 +297,6 @@ end subroutine setdims
 !     Get dimensions
 !***********************************************************************
 subroutine get_dims(dim_data)
-    use UTILS_PRMS, only: read_error
     use PRMS_MODULE, only : Nhru, Ntemp, Nrain, Nobs, Model
     use dimensions_mod, only: dimension_list
     implicit none
@@ -307,22 +304,10 @@ subroutine get_dims(dim_data)
     type(dimension_list), intent(in) :: dim_data
 
     !***********************************************************************
-    call dim_data%get_data('nhru', Nhru)
-    call dim_data%get_data('ntemp', Ntemp)
-    call dim_data%get_data('nrain', Nrain)
-    call dim_data%get_data('nobs', Nobs)
-
-    ! Nhru = getdim('nhru')
-    if (Nhru == -1) call read_error(7, 'nhru')
-
-    ! Ntemp = getdim('ntemp')
-    if (Ntemp == -1) call read_error(6, 'ntemp')
-
-    ! Nrain = getdim('nrain')
-    if (Nrain == -1) call read_error(6, 'nrain')
-
-    ! Nobs = getdim('nobs')
-    if (Nobs == -1) call read_error(6, 'nobs')
+    call dim_data%get_data('nhru', Nhru, missing_stop = .true.)
+    call dim_data%get_data('ntemp', Ntemp, missing_stop = .true.)
+    call dim_data%get_data('nrain', Nrain, missing_stop = .true.)
+    call dim_data%get_data('nobs', Nobs, missing_stop = .true.)
 
     if (Model == 99) then
         if (Ntemp == 0) Ntemp = 1
@@ -433,7 +418,7 @@ end subroutine call_modules_restart
 subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
     use kinds_mod, only: i4
     use prms_constants, only: EQULS
-    use UTILS_PRMS, only: module_error, PRMS_open_output_file, read_error   ! , numchars
+    use UTILS_PRMS, only: module_error, PRMS_open_output_file  ! , read_error, numchars
     use PRMS_MODULE, only: Process, BasinOutON_OFF, Elapsed_time, Elapsed_time_start, &
                            Elapsed_time_end, Elapsed_time_minutes, End_day, End_month, End_year, &
                            Start_day, Start_month, Start_year, &
