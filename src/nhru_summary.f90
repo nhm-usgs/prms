@@ -69,7 +69,7 @@ MODULE PRMS_NHRU_SUMMARY
         !     declare parameters and variables
         !***********************************************************************
         SUBROUTINE nhru_summarydecl(dim_data, ctl_data, param_data)
-            USE PRMS_MODULE, ONLY: Model, Inputerror_flag, NhruOutON_OFF, Nhru, print_module, &
+            USE PRMS_MODULE, ONLY: Model, NhruOutON_OFF, Nhru, print_module, &  ! , Inputerror_flag
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, NhruOutBaseFileName
             use UTILS_PRMS, only: read_error
             use dimensions_mod, only: dimension_list
@@ -103,9 +103,10 @@ MODULE PRMS_NHRU_SUMMARY
             IF (NhruOutVars == 0) THEN
                 IF (Model /= 99) THEN
                     PRINT *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
+                    STOP
                     !          PRINT *, 'no nhru_summary output is produced'
                     !          NhruOutON_OFF = 0
-                    Inputerror_flag = 1
+                    ! Inputerror_flag = 1
                     RETURN
                 ENDIF
             ELSE
@@ -117,7 +118,7 @@ MODULE PRMS_NHRU_SUMMARY
 
             IF (NhruOutON_OFF == 2) THEN
                 ALLOCATE (Nhm_id(Nhru))
-                
+
                 IF (param_data%declparam(MODNAME, 'nhm_id', 'nhru', 'integer', '1', '1', '9999999', &
                               'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
                               'none', dim_data) /= 0) CALL read_error(1, 'nhm_id')

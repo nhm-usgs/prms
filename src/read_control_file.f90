@@ -268,7 +268,8 @@ contains
         use PRMS_MODULE, ONLY : Print_debug, &
                 Init_vars_from_file, Save_vars_to_file, Parameter_check_flag, Param_file, Model_output_file, &
                 Precip_module, Temp_module, Et_module, Solrad_module, Transp_module, Print_debug, &
-                Model_mode, Endtime, Starttime, Prms_warmup, NhruOutON_OFF, BasinOutON_OFF, &
+                ! Model_mode,
+                Endtime, Starttime, Prms_warmup, NhruOutON_OFF, BasinOutON_OFF, &
                 ! Cbh_check_flag, Cbh_binary_flag, &
                 BasinOutVars, BasinOut_freq, BasinOutBaseFileName, &
                 NhruOutVars, NhruOut_freq, NhruOutBaseFileName, &
@@ -342,9 +343,9 @@ contains
 
         call ctl_data%set('nhruOutVar_names', str_values, 4)
 
-        str_values(1)%str = 'GSFLOW'
+        str_values(1)%str = 'PRMS'
         call ctl_data%set('model_mode', str_values, 4)
-        call ctl_data%get_data('model_mode', Model_mode)
+        ! call ctl_data%get_data('model_mode', Model_mode)
 
         str_values(1)%str = 'precip_1sta'
         call ctl_data%set('precip_module', str_values, 4)

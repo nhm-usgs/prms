@@ -8,8 +8,14 @@ MODULE PRMS_BASIN_SUMMARY
     use control_ll_mod, only: control_list
     IMPLICIT NONE
 
+    ! integer(i4) :: BasinOutVars
+    ! integer(i4) :: BasinOut_freq
+    ! ! character(len=:), save, ALLOCATABLE :: BasinOutVar_names(:)
+    ! type(str_arr_type), allocatable :: BasinOutVar_names(:)
+    ! character(len=:), allocatable :: BasinOutBaseFileName
+
     ! Module Variables
-    INTEGER(i4), SAVE :: Begin_results
+    logical :: Begin_results
     INTEGER(i4), SAVE :: Begyr
     INTEGER(i4), SAVE :: Lastyear
     INTEGER(i4), SAVE :: Dailyunit
@@ -58,8 +64,7 @@ MODULE PRMS_BASIN_SUMMARY
         !     declare parameters and variables
         !***********************************************************************
         SUBROUTINE basin_summarydecl(ctl_data)
-            USE PRMS_MODULE, ONLY: Model, Inputerror_flag, print_module
-            ! USE UTILS_PRMS, only: read_error
+            USE PRMS_MODULE, ONLY: Model, print_module  !, Inputerror_flag
             use control_ll_mod, only: control_list
             IMPLICIT NONE
 
@@ -76,6 +81,10 @@ MODULE PRMS_BASIN_SUMMARY
             CALL print_module(Version_basin_summary, 'Basin Output Summary        ', 90)
             MODNAME = 'basin_summary'
 
+
+            ! call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
+
+
             BasinOutVars = 0
             if (ctl_data%exists('basinOutVars')) call ctl_data%get_data('basinOutVars', BasinOutVars)
 
@@ -87,8 +96,8 @@ MODULE PRMS_BASIN_SUMMARY
             IF (BasinOutVars == 0) THEN
                 IF (Model /= 99) THEN
                     PRINT *, 'ERROR, basin_summary requested with basinOutVars equal 0'
-                    Inputerror_flag = 1
-                    RETURN
+                    ! Inputerror_flag = 1
+                    STOP
                 ENDIF
             ELSE
                 ALLOCATE (BasinOutVar_names(BasinOutVars), Nc_vars(BasinOutVars))
@@ -121,9 +130,9 @@ MODULE PRMS_BASIN_SUMMARY
             CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 
             !***********************************************************************
-            Begin_results = 1
+            Begin_results = .true.
             Begyr = Start_year
-            IF (Prms_warmup > 0) Begin_results = 0
+            IF (Prms_warmup > 0) Begin_results = .false.
 
             Begyr = Begyr + Prms_warmup
             Lastyear = Begyr
@@ -233,9 +242,9 @@ MODULE PRMS_BASIN_SUMMARY
             INTEGER(i4) :: last_day
 
             !***********************************************************************
-            IF (Begin_results == 0) THEN
+            IF (.not. Begin_results) THEN
                 IF (Nowyear == Begyr .AND. Nowmonth == Start_month .AND. Nowday == Start_day) THEN
-                    Begin_results = 1
+                    Begin_results = .true.
                 ELSE
                     RETURN
                 ENDIF

@@ -89,9 +89,9 @@ subroutine init_control(ctl_data)
     integer(i4) :: iret
     integer(i4) :: startday
     integer(i4) :: endday
-
+    logical :: ierror = .false.     ! Used to indicate an error
     !***********************************************************************
-    Inputerror_flag = 0
+    ! Inputerror_flag = 0
 
     ! Set general defaults for control parameters
     call init_control_defaults(ctl_data)
@@ -197,37 +197,37 @@ subroutine init_control(ctl_data)
 
     if (Precip_module /= 'climate_hru') then
         print '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
-        Inputerror_flag = 1
+        ierror = .true.
     endif
 
     if (Temp_module /= 'climate_hru') then
         print '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
-        Inputerror_flag = 1
+        ierror = .true.
     endif
 
     if (Transp_module /= 'transp_tindex') then
         print '(/,2A)', 'ERROR, invalid transp_module value: ', Transp_module
-        Inputerror_flag = 1
+        ierror = .true.
     endif
 
     if (Et_module /= 'potet_jh') then
         print '(/,2A)', 'ERROR, invalid et_module value: ', Et_module
-        Inputerror_flag = 1
+        ierror = .true.
     endif
 
     if (Solrad_module /= 'ddsolrad') then
         print '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
-        Inputerror_flag = 1
+        ierror = .true.
     endif
 
     if (NhruOutON_OFF == 1 .OR. BasinOutON_OFF == 1) then
         if (Start_year + Prms_warmup > End_year) then ! change to start full date ???
             print *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
-            Inputerror_flag = 1
+            ierror = .true.
         endif
     endif
 
-    if (Inputerror_flag == 1) then
+    if (ierror) then
         print '(//,A,/,A)', '**FIX input errors in your Control File to continue**', &
                 &        'NOTE: some errors may be due to use of default values'
         STOP
@@ -362,7 +362,7 @@ end subroutine module_doc
 subroutine call_modules_restart(In_out)
     use kinds_mod, only: i4
     use prms_constants, only: MAXCONTROL_LENGTH
-    use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, & ! Temp_flag, &
+    use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, &
                            Restart_inunit, Restart_outunit
     use UTILS_PRMS, only: check_restart, check_restart_dimen
     implicit none
@@ -416,7 +416,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
                            Elapsed_time_end, Elapsed_time_minutes, End_day, End_month, End_year, &
                            Start_day, Start_month, Start_year, &
                            Execution_time_start, Execution_time_end, &
-                           Init_vars_from_file, Inputerror_flag, Parameter_check_flag, &
+                           Init_vars_from_file, Parameter_check_flag, &
                            Model, Print_debug, PRMS_output_unit, PRMS_versn, &
                            Restart_inunit, Restart_outunit, Save_vars_to_file,&
                            NhruOutON_OFF, Et_module, Solrad_module, Transp_module, &
@@ -462,12 +462,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
     Process = Arg
 
-    ! Process_flag (0=run, 1=declare, 2=init, 3=clean, 4=setdims)
-    ! if (Process == 'run') then
-        ! Process_flag = 0
-    ! elseif (Process == 'declare') then
     if (Process == 'declare') then
-        ! Process_flag = 1
         PRMS_versn = 'prms6.f90 2017-09-29 13:51:00Z'
 
         call get_dims(dim_data)
@@ -478,10 +473,8 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
         if (Init_vars_from_file == 1) call call_modules_restart(1)
     elseif (Process == 'init') then
-        ! Process_flag = 2
         call PRMS_init()
     elseif (Process == 'setdims') then
-        ! Process_flag = 4
         call DATE_AND_TIME(VALUES=Elapsed_time_start)
         Execution_time_start = Elapsed_time_start(5) * 3600 + Elapsed_time_start(6) * 60 + &
                 &              Elapsed_time_start(7) + Elapsed_time_start(8) * 0.001
@@ -497,8 +490,7 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
         print *, '    ---- read_parameter_file_dimens()'
         call read_parameter_file_dimens(dim_data)
-    else !if ( Process(:5)=='clean' ) then
-        ! Process_flag = 3
+    else !if ( Process == 'clean' ) then
         if (Init_vars_from_file == 1) CLOSE (Restart_inunit)
 
         if (Save_vars_to_file == 1) then
@@ -511,7 +503,6 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
     if (Model == 99) then
         if (Process == 'setdims' .or. Process == 'declare' .or. Process == 'run') then
-        ! if (Process_flag == 4 .OR. Process_flag < 2) then
             Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
 
             call module_doc(dim_data, ctl_data, param_data, var_data)
@@ -524,7 +515,6 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
     ! All modules must be called for setdims, declare, initialize, and cleanup
     if (Process /= 'run') then
-    ! if (Process_flag /= 0) then
         ! All stages but the run stage
         call_modules = basin(dim_data, param_data, var_data)
         if (call_modules /= 0) call module_error('basin', Arg, call_modules)
@@ -560,12 +550,10 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
     if (BasinOutON_OFF == 1) call basin_summary(ctl_data, var_data)
 
     if (Process == 'run') return
-    ! if (Process_flag == 0) RETURN   ! For run stage only
 
 
     if (Print_debug > -1) then
         if (Process == 'clean') then
-        ! if (Process_flag == 3) then
             ! For clean stage only
             call DATE_AND_TIME(VALUES = Elapsed_time_end)
 
@@ -581,20 +569,19 @@ subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
 
             print '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
                                        Elapsed_time - Elapsed_time_minutes * 60.0, ' seconds'
-        elseif (Process == 'init') then
-        ! elseif (Process_flag == 2) then
-            ! For init stage only
-            if (Inputerror_flag == 1) then
-                print '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
-                                             '  Set control parameter parameter_check_flag to 0 after', &
-                                             '  all parameter values are valid.'
-                print '(/,A,/,A,/,A,/,A,/,A,/)', 'If input errors are related to paramters used for automated', &
-                                                 'calibration processes, with CAUTION, set control parameter', &
-                                                 'parameter_check_flag to 0. After calibration set the', &
-                                                 'parameter_check_flag to 1 to verify that those calibration', &
-                                                 'parameters have valid and compatible values.'
-                STOP
-            endif
+        ! elseif (Process == 'init') then
+        !     ! For init stage only
+        !     if (Inputerror_flag == 1) then
+        !         print '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
+        !                                      '  Set control parameter parameter_check_flag to 0 after', &
+        !                                      '  all parameter values are valid.'
+        !         print '(/,A,/,A,/,A,/,A,/,A,/)', 'If input errors are related to paramters used for automated', &
+        !                                          'calibration processes, with CAUTION, set control parameter', &
+        !                                          'parameter_check_flag to 0. After calibration set the', &
+        !                                          'parameter_check_flag to 1 to verify that those calibration', &
+        !                                          'parameters have valid and compatible values.'
+        !         STOP
+        !     endif
         endif
     endif
 
@@ -635,7 +622,6 @@ program prms6
     use parameter_arr_mod, only: parameter_arr_t
     use variables_arr_mod, only: variables_arr_t
     use control_ll_mod, only: control_list
-    ! use PRMS_MMFAPI, only: PRMS_parameter
     implicit none
 
     type(control_list) :: Control_data

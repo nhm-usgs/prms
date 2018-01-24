@@ -27,7 +27,7 @@ module PRMS_MODULE
     integer(i4), save :: End_month
     integer(i4), save :: End_day
 
-    integer(i4), save :: Inputerror_flag
+    ! integer(i4), save :: Inputerror_flag
     integer(i4), save :: Timestep
     integer(i4), save :: Prms_warmup
     integer(i4), save :: PRMS_output_unit
