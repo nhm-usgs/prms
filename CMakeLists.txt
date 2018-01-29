@@ -18,3 +18,4 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 # Compile everything
 file(GLOB_RECURSE sources src/*.f90)
 add_executable(prms6 ${sources})
+
