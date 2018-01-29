@@ -269,7 +269,7 @@ contains
                 Init_vars_from_file, Save_vars_to_file, Parameter_check_flag, Param_file, Model_output_file, &
                 Precip_module, Temp_module, Et_module, Solrad_module, Transp_module, Print_debug, &
                 ! Model_mode,
-                Endtime, Starttime, Prms_warmup, NhruOutON_OFF, BasinOutON_OFF, &
+                Endtime, Starttime, Prms_warmup,  &  ! NhruOutON_OFF, BasinOutON_OFF, &
                 ! Cbh_check_flag, Cbh_binary_flag, &
                 BasinOutVars, BasinOut_freq, BasinOutBaseFileName, &
                 NhruOutVars, NhruOut_freq, NhruOutBaseFileName, &
@@ -294,6 +294,7 @@ contains
         allocate(str_values(1))
 
         ! assign default value for integer flags
+        ! set(key, value, datatype)
         ! note: default value for all parameters set to 0, only need to reset if other than 0
         call ctl_data%set('print_debug', zero, 1)
         call ctl_data%get_data('print_debug', Print_debug)
@@ -317,7 +318,7 @@ contains
         call ctl_data%get_data('init_vars_from_file', Init_vars_from_file)
 
         call ctl_data%set('nhruOutON_OFF', zero, 1)
-        call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
+        ! call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
 
         call ctl_data%set('nhruOut_freq', one, 1)
         call ctl_data%get_data('nhruOut_freq', NhruOut_freq)
@@ -326,7 +327,7 @@ contains
         call ctl_data%get_data('nhruOutVars', NhruOutVars)
 
         call ctl_data%set('basinOutON_OFF', zero, 1)
-        call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
+        ! call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
 
         call ctl_data%set('basinOutVars', zero, 1)
         call ctl_data%get_data('basinOutVars', BasinOutVars)

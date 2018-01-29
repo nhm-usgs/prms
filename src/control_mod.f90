@@ -386,7 +386,7 @@ contains
 
         class(control_list), intent(in) :: this
         character(len=*), intent(in) :: key
-        integer(i4), intent(out) :: value
+        integer(i4), intent(inout) :: value
         logical, optional, intent(in) :: missing_stop
 
         type(control_t), pointer :: ptr

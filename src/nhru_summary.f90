@@ -61,7 +61,7 @@ MODULE PRMS_NHRU_SUMMARY
             ELSEIF (Process == 'declare') THEN
                 CALL nhru_summarydecl(dim_data, ctl_data, param_data)
             ELSEIF (Process == 'init') THEN
-                CALL nhru_summaryinit(param_data, var_data)
+                CALL nhru_summaryinit(ctl_data, param_data, var_data)
             ENDIF
         END SUBROUTINE nhru_summary
 
@@ -69,7 +69,7 @@ MODULE PRMS_NHRU_SUMMARY
         !     declare parameters and variables
         !***********************************************************************
         SUBROUTINE nhru_summarydecl(dim_data, ctl_data, param_data)
-            USE PRMS_MODULE, ONLY: Model, NhruOutON_OFF, Nhru, print_module, &  ! , Inputerror_flag
+            USE PRMS_MODULE, ONLY: Model, Nhru, print_module, &  ! , Inputerror_flag, NhruOutON_OFF
                                    NhruOutVars, NhruOut_freq, NhruOutVar_names, NhruOutBaseFileName
             use UTILS_PRMS, only: read_error
             use dimensions_mod, only: dimension_list
@@ -86,12 +86,15 @@ MODULE PRMS_NHRU_SUMMARY
             INTRINSIC CHAR
 
             ! Local Variables
+            integer(i4) :: NhruOutON_OFF
             CHARACTER(LEN=:), allocatable, SAVE :: Version_nhru_summary
 
             !***********************************************************************
             Version_nhru_summary = 'nhru_summary.f90 2017-09-29 13:49:00Z'
             CALL print_module(Version_nhru_summary, 'Nhru Output Summary         ', 90)
             MODNAME = 'nhru_summary'
+
+            call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
 
             NhruOutVars = 0
             if (ctl_data%exists('nhruOutVars')) call ctl_data%get_data('nhruOutVars', NhruOutVars)
@@ -128,26 +131,36 @@ MODULE PRMS_NHRU_SUMMARY
         !***********************************************************************
         !     Initialize module values
         !***********************************************************************
-        SUBROUTINE nhru_summaryinit(param_data, var_data)
+        SUBROUTINE nhru_summaryinit(ctl_data, param_data, var_data)
             use prms_constants, only: MAXFILE_LENGTH
-            USE PRMS_MODULE, ONLY: Nhru, Start_year, NhruOutON_OFF, Prms_warmup, &
-                                   NhruOutVars, NhruOut_freq, NhruOutVar_names, &
+            USE PRMS_MODULE, ONLY: Nhru, Start_year, Prms_warmup, &
+                                   NhruOutVars, NhruOut_freq, NhruOutVar_names, &  ! , NhruOutON_OFF
                                    NhruOutBaseFileName
             use UTILS_PRMS, only: read_error, PRMS_open_output_file
+            use control_ll_mod, only: control_list
             use parameter_arr_mod, only: parameter_arr_t
             use variables_arr_mod, only: variables_arr_t
             IMPLICIT NONE
 
             INTRINSIC ABS
 
+            type(control_list), intent(in) :: ctl_data
             type(parameter_arr_t), intent(in) :: param_data
             type(variables_arr_t), intent(in) :: var_data
 
             ! Local Variables
-            INTEGER(i4) :: ios, ierr, size, jj, j
+            integer(i4) :: NhruOutON_OFF
+
+            INTEGER(i4) :: ios
+            INTEGER(i4) :: ierr
+            INTEGER(i4) :: size
+            INTEGER(i4) :: jj
+            INTEGER(i4) :: j
             CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 
             !***********************************************************************
+            call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
+
             Begin_results = 1
             Begyr = Start_year
 

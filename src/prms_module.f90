@@ -61,8 +61,8 @@ module PRMS_MODULE
                                                 !! 2=yes and us parameter values in Parameter File instead of values in the Initial Conditions File)
     integer(i4), save :: Save_vars_to_file      !> Flag to determine if an Initial Conditions File will be generated at
                                                 !! the end of the simulation (0=no; 1=yes)
-    integer(i4), save :: NhruOutON_OFF          !> Switch to specify whether nhru summary output files are generated (0=no; 1=yes)
-    integer(i4), save :: BasinOutON_OFF         !> Switch to specify whether basin summary output files are generated (0=no; 1=yes)
+    ! integer(i4), save :: NhruOutON_OFF          !> Switch to specify whether nhru summary output files are generated (0=no; 1=yes)
+    ! integer(i4), save :: BasinOutON_OFF         !> Switch to specify whether basin summary output files are generated (0=no; 1=yes)
     character(len=:), allocatable, save :: Model_output_file    !> Full path for Water-Budget File for results from module basin_sum
     character(len=:), allocatable, save :: Var_init_file    !> Pathname for Initial Conditions input file
     character(len=:), allocatable, save :: Var_save_file    !> Pathname for the Initial Conditions File to be generated at end of simulation
