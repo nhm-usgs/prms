@@ -1,0 +1,9 @@
+target_sources(${libName}
+	PUBLIC
+        "${CMAKE_CURRENT_LIST_DIR}/Abc_class.f90"
+        "${CMAKE_CURRENT_LIST_DIR}/Object_class.f90"
+        "${CMAKE_CURRENT_LIST_DIR}/m_kinds.f90"
+        "${CMAKE_CURRENT_LIST_DIR}/m_str_arr.f90"
+        "${CMAKE_CURRENT_LIST_DIR}/rArray_class.f90"
+        "${CMAKE_CURRENT_LIST_DIR}/rVariable_class.f90"
+)

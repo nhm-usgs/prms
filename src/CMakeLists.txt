@@ -52,6 +52,7 @@ target_sources(${libName}
         "${CMAKE_CURRENT_LIST_DIR}/variables_mod.f90"
 )
 
+include(classes/CMakeLists.txt)
 
 
 
