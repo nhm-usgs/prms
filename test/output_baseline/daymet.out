@@ -1,0 +1,86 @@
+====================================================================
+Using PRMS Parameter File: ./input/pipestem.params
+Description: pipestem test
+====================================================================
+Comment lines:
+2017/09/22
+====================================================================
+Using dimensions    number
+nmonths               12
+one                    1
+nobs                   1
+nhru                  14
+====================================================================
+
+               Precipitation-Runoff Modeling System (PRMS)
+                       Version 6.0.0 09/29/2017
+
+        Process            Available Modules
+--------------------------------------------------------------------
+  Basin Definition: basin
+  Time Series Data: obs
+   Potet Solar Rad: soltab
+  Temperature Dist: climate_hru
+       Precip Dist: climate_hru
+    Solar Rad Dist: ddsolrad
+Transpiration Dist: transp_tindex
+    Output Summary: nhru_summary, basin_summary
+--------------------------------------------------------------------
+
+
+    Active modules listed in the order in which they are called
+
+        Process                   Module                Version Date
+====================================================================
+PRMS6 Computation Order        prms6                      2017-09-29
+Read Control File              read_control_file          2017-09-29
+Read Parameter File            read_parameter_file        2017-07-07
+Read Data File                 read_data_file             2017-09-29
+
+
+====================================================================
+Using PRMS Data File: ./input/NWIS.prms
+Title: Written by class gov.usgs.trinli.ft.point.writer.PrmsWriter
+====================================================================
+Comment lines:
+////////////////////////////////////////////////////////////
+// Station metadata (listed in the same order as the data):
+// ID    Type Latitude Longitude Elevation
+// 06469400   runoff 47.1675  -98.969  1500.63
+////////////////////////////////////////////////////////////
+// Unit: runoff = ft3 per sec, elevation = feet
+////////////////////////////////////////////////////////////
+====================================================================
+measured variables
+runoff 1
+====================================================================
+ Data File time period: 2014/11/25 00:00:00 to 2015/02/28 00:00:00
+Simulation time period: 2014/12/01 00:00:00 to 2014/12/31 00:00:00
+====================================================================
+Basin Definition               basin                      2017-09-29
+Common States and Fluxes       climateflow                2017-09-29
+Potential Solar Radiation      soltab                     2016-09-29
+Time Series Data               obs                        2017-09-29
+PRMS Set Time Variables        prms_time                  2017-07-06
+Temperature Distribution       climate_hru                2017-09-29
+Precipitation Distribution     climate_hru                2017-09-29
+Solar Radiation Distribution   ddsolrad                   2017-09-29
+Transpiration Distribution     transp_tindex              2015-01-06
+Potential Evapotranspiration   potet_jh                   2016-05-10
+Nhru Output Summary            nhru_summary               2017-09-29
+Basin Output Summary           basin_summary              2017-09-29
+====================================================================
+
+Using Parameter File: ./input/pipestem.params
+
+Writing PRMS Water Budget File: output/daymet.out
+
+Start time: 2014/12/01 00:00:00
+End time:   2014/12/31 00:00:00
+
+Model domain area:       419193.44    Active basin area:    419193.44
+Fraction impervious:       0.00005    Fraction pervious:      0.99995
+
+
+Execution elapsed time    0 minutes  0.01 seconds
+
