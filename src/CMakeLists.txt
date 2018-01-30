@@ -8,8 +8,16 @@ include(../../coretran/myCMakeFiles/FortranEnvironment.cmake)
 # Initialize the library with no files added yet
 set(libName prmslib)
 
+link_directories(../../coretran/lib)
+
 # Create the library
 add_library(${libName} ${libType} "")
+
+# Link in the library
+target_link_libraries(${libName} coretran)
+
+# Add the include folder that contains the library modules
+target_include_directories(${libName} PUBLIC ../../coretran/include)
 
 # Add files to the library as sources
 # Each CMakeLists.txt simply uses target_sources to add the source files
@@ -46,6 +54,7 @@ target_sources(${libName}
 
 
 
+
 ## Create the PRMS program
 # Add the linking directory
 link_directories(../lib ../../coretran/lib)
@@ -55,6 +64,7 @@ set(programName prms)
 add_executable(${programName} "${CMAKE_CURRENT_LIST_DIR}/Main_prms.f90")
 # Link in the library
 target_link_libraries(${programName} prmslib)
+target_link_libraries(${programName} coretran)
 # Add the include folder that contains the library modules
 target_include_directories(${programName} PUBLIC ../include ../../coretran/include)
 
