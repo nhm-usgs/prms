@@ -39,7 +39,7 @@ module PRMS_DATA_FILE
             !***********************************************************************
             Iret = 0
 
-            if (Varname(:4) == 'tmax') then
+            if (Varname == 'tmax') then
                 if (Iflag == 0) then
                     if (Numvalues /= Ntemp) then
                         Iret = -1
@@ -50,7 +50,7 @@ module PRMS_DATA_FILE
                         Tmax(i) = Values(i)
                     enddo
                 endif
-            elseif (Varname(:4) == 'tmin') then
+            elseif (Varname == 'tmin') then
                 if (Iflag == 0) then
                     if (Numvalues /= Ntemp) then
                         Iret = -1
@@ -61,7 +61,7 @@ module PRMS_DATA_FILE
                         Tmin(i) = Values(i)
                     enddo
                 endif
-            elseif (Varname(:6) == 'precip') then
+            elseif (Varname == 'precip') then
                 if (Iflag == 0) then
                     if (Numvalues /= Nrain) then
                         Iret = -1
@@ -72,7 +72,7 @@ module PRMS_DATA_FILE
                         Precip(i) = Values(i)
                     enddo
                 endif
-            elseif (Varname(:6) == 'runoff') then
+            elseif (Varname == 'runoff') then
                 if (Iflag == 0) then
                     if (Numvalues /= Nobs) then
                         Iret = -1

@@ -94,7 +94,7 @@ MODULE PRMS_NHRU_SUMMARY
             CALL print_module(Version_nhru_summary, 'Nhru Output Summary         ', 90)
             MODNAME = 'nhru_summary'
 
-            call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
+            call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
 
             NhruOutVars = 0
             if (ctl_data%exists('nhruOutVars')) call ctl_data%get_data('nhruOutVars', NhruOutVars)
@@ -159,7 +159,7 @@ MODULE PRMS_NHRU_SUMMARY
             CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 
             !***********************************************************************
-            call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
+            call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
 
             Begin_results = 1
             Begyr = Start_year

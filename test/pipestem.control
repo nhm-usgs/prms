@@ -118,7 +118,7 @@ basinOutON_OFF
 basinOutVars
 1
 1
-2
+4
 ####
 basinOut_freq
 1
@@ -126,10 +126,12 @@ basinOut_freq
 1
 ####
 basinOutVar_names
-2
+4
 4
 basin_potet
 basin_swrad
+basin_temp
+basin_ppt
 ####
 basinOutBaseFileName
 1
@@ -173,7 +175,7 @@ init_vars_from_file
 save_vars_to_file
 1
 1
-1
+0
 ####
 var_save_file
 1

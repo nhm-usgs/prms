@@ -111,8 +111,8 @@ contains
         call ctl_data%set('cbh_binary_flag', [0], 1)
         call ctl_data%set('init_vars_from_file', [0], 1)
         call ctl_data%set('save_vars_to_file', [0], 1)
-        call ctl_data%set('nhruOutON_OFF', [0], 1)
-        call ctl_data%set('basinOutON_OFF', [0], 1)
+        ! call ctl_data%set('nhruOutON_OFF', [0], 1)
+        ! call ctl_data%set('basinOutON_OFF', [0], 1)
         call ctl_data%set('prms_warmup', [0], 1)
 
         call read_control_file(ctl_data)
@@ -129,7 +129,7 @@ contains
         call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
         call ctl_data%get_data('prms_warmup', Prms_warmup)
 
-        print *, '*** init_control():NhruOutON_OFF = ', nhruOutON_OFF
+        ! print *, '*** init_control():NhruOutON_OFF = ', nhruOutON_OFF
         ! call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
         ! call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
 
@@ -488,6 +488,8 @@ contains
 
             print *, '    ---- read_parameter_file_dimens()'
             call read_parameter_file_dimens(dim_data)
+
+
         elseif (Process == 'declare') then
             PRMS_versn = 'prms6.f90 2017-09-29 13:51:00Z'
 
@@ -555,11 +557,11 @@ contains
         call_modules = potet_jh(dim_data, param_data)
         if (call_modules /= 0) call module_error(Et_module, Arg, call_modules)
 
-        call ctl_data%get_data('nhrOutON_OFF', NhruOutON_OFF)
+        call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF, missing_stop=.true.)
         call ctl_data%get_data('basinOutON_OFF', BasinOutON_OFF)
 
-        print *, '***** NhruOutON_OFF: ', NhruOutON_OFF
-        print *, '***** BasinOutON_OFF: ', BasinOutON_OFF
+        ! print *, '***** NhruOutON_OFF: ', NhruOutON_OFF
+        ! print *, '***** BasinOutON_OFF: ', BasinOutON_OFF
         if (NhruOutON_OFF > 0) call nhru_summary(dim_data, ctl_data, param_data, var_data)
         if (BasinOutON_OFF == 1) call basin_summary(ctl_data, var_data)
 
@@ -623,6 +625,28 @@ contains
         4 FORMAT (/, 2(A, I5, 2('/', I2.2)), //, A, /)
         9001 FORMAT (/, 26X, 27('='), /, 26X, 'Normal completion of PRMS', /, 26X, 27('='), /)
         9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/', I2.2), I3, 2(':', I2.2), /)
+
+    contains
+        subroutine print_key(key, value, datatype, done)  ! print the key for this node
+            use iso_fortran_env, only: output_unit
+            use arr_mod, only: array_1D_t
+            implicit none
+
+            character(len=*), intent(in) :: key
+            type(array_1D_t), intent(in) :: value
+            integer(i4), intent(in) :: datatype
+            logical,intent(out) :: done
+
+            print *, ''
+            print *, '**** Control variable ****'
+            print *, 'Name: ', key
+            print *, 'num_elem:', value%length()
+            print *, 'datatype:', datatype
+            print *, '*values*'
+            call value%print()
+
+            done = .false.
+        end subroutine print_key
     end subroutine computation_order
 
 end module m_prms6

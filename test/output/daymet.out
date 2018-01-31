@@ -13,7 +13,7 @@ nhru                  14
 ====================================================================
 
                Precipitation-Runoff Modeling System (PRMS)
-                       Version 6.0.0 09/26/2017
+                       Version 6.0.0 09/29/2017
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -32,10 +32,10 @@ Transpiration Dist: transp_tindex
 
         Process                   Module                Version Date
 ====================================================================
-PRMS6 Computation Order        prms6                      2017-09-26
-Read Control File              read_control_file          2017-07-10
+PRMS6 Computation Order        prms6                      2017-09-29
+Read Control File              read_control_file          2017-09-29
 Read Parameter File            read_parameter_file        2017-07-07
-Read Data File                 read_data_file             2017-09-22
+Read Data File                 read_data_file             2017-09-29
 
 
 ====================================================================
@@ -57,18 +57,18 @@ runoff 1
  Data File time period: 2014/11/25 00:00:00 to 2015/02/28 00:00:00
 Simulation time period: 2014/12/01 00:00:00 to 2014/12/31 00:00:00
 ====================================================================
-Basin Definition               basin                      2017-08-17
-Common States and Fluxes       climateflow                2017-09-22
-Potential Solar Radiation      soltab                     2016-09-09
-Time Series Data               obs                        2017-09-22
+Basin Definition               basin                      2017-09-29
+Common States and Fluxes       climateflow                2017-09-29
+Potential Solar Radiation      soltab                     2016-09-29
+Time Series Data               obs                        2017-09-29
 PRMS Set Time Variables        prms_time                  2017-07-06
-Temperature Distribution       climate_hru                2017-03-20
-Precipitation Distribution     climate_hru                2017-03-20
-Solar Radiation Distribution   ddsolrad                   2016-11-03
+Temperature Distribution       climate_hru                2017-09-29
+Precipitation Distribution     climate_hru                2017-09-29
+Solar Radiation Distribution   ddsolrad                   2017-09-29
 Transpiration Distribution     transp_tindex              2015-01-06
 Potential Evapotranspiration   potet_jh                   2016-05-10
-Nhru Output Summary            nhru_summary               2017-08-03
-Basin Output Summary           basin_summary              2017-08-03
+Nhru Output Summary            nhru_summary               2017-09-29
+Basin Output Summary           basin_summary              2017-09-29
 ====================================================================
 
 Using Parameter File: ./input/pipestem.params
@@ -82,5 +82,5 @@ Model domain area:       419193.44    Active basin area:    419193.44
 Fraction impervious:       0.00005    Fraction pervious:      0.99995
 
 
-Execution elapsed time    0 minutes  0.05 seconds
+Execution elapsed time    0 minutes  0.89 seconds
 

@@ -168,7 +168,7 @@ module UTILS_PRMS
                         if (Month_file >= Month .OR. Year_file /= Year) i = 1
                     enddo
                 endif
-                
+
                 if (Year_file == Year .AND. Month_file == Month) then
                     if (Day_file < Day) then
                         i = 0
@@ -294,13 +294,13 @@ module UTILS_PRMS
 
             !***********************************************************************
             Iret = 0
-            ! Iunit = get_ftnunit(777)
+            Iunit = get_ftnunit(777)
             ! nchars = numchars(Fname)
             if (Ftype == 0) then
-                open (newunit=Iunit, FILE=Fname, STATUS='OLD', IOSTAT=ios)
+                open (unit=Iunit, FILE=Fname, STATUS='OLD', IOSTAT=ios)
                 ! open (Iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios)
             else
-                open (newunit=Iunit, FILE=Fname, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios) ! for linux
+                open (unit=Iunit, FILE=Fname, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios) ! for linux
                 ! open (Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='BINARY', IOSTAT=ios) ! for windows
             endif
 
@@ -376,6 +376,7 @@ module UTILS_PRMS
         !     Parameter or Variable delcare or read error
         !**********************************************************************
         subroutine read_error(Iflag, Name)
+            !! TODO: write a generic error function
             implicit none
 
             ! Arguments
@@ -594,28 +595,26 @@ module UTILS_PRMS
 
         end subroutine set_data_type
 
+        ! ***********************************************************************
+        !     Determine an unopened FORTRAN File Unit
+        ! ***********************************************************************
+        integer function get_ftnunit(Iunit)
+           implicit none
+
+           ! Argument
+           integer, intent(in) :: Iunit
+
+           ! Local Variables
+           integer :: good_unit
+           LOGICAL :: opend
+
+           !***********************************************************************
+           good_unit = Iunit
+           opend = .TRUE.
+           do while (opend)
+               good_unit = good_unit + 1
+               INQUIRE (UNIT = good_unit, OPENED = opend)
+           enddo
+           get_ftnunit = good_unit
+       end function get_ftnunit
 end module UTILS_PRMS
-
-
-!***********************************************************************
-!     Determine an unopened FORTRAN File Unit
-!***********************************************************************
-!integer function get_ftnunit(Iunit)
-!    implicit none
-!
-!    ! Argument
-!    integer, intent(in) :: Iunit
-!
-!    ! Local Variables
-!    integer :: good_unit
-!    LOGICAL :: opend
-!
-!    !***********************************************************************
-!    good_unit = Iunit
-!    opend = .TRUE.
-!    do while (opend)
-!        good_unit = good_unit + 1
-!        INQUIRE (UNIT = good_unit, OPENED = opend)
-!    enddo
-!    get_ftnunit = good_unit
-!end function get_ftnunit

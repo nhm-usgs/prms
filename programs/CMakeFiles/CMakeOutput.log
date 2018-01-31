@@ -1,0 +1,910 @@
+The system is: Darwin - 15.6.0 - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /Users/pnorton/local/gcc-7.2.0/bin/gcc 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is GNU, found in "/Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/3.10.2/CompilerIdC/a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /Users/pnorton/local/gcc-7.2.0/bin/g++ 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is GNU, found in "/Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/3.10.2/CompilerIdCXX/a.out"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_d527c/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_d527c.dir/build.make CMakeFiles/cmTC_d527c.dir/build
+Building C object CMakeFiles/cmTC_d527c.dir/testCCompiler.c.o
+/Users/pnorton/local/gcc-7.2.0/bin/gcc    -o CMakeFiles/cmTC_d527c.dir/testCCompiler.c.o   -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_d527c
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d527c.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_d527c.dir/testCCompiler.c.o  -o cmTC_d527c 
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_866f4/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_866f4.dir/build.make CMakeFiles/cmTC_866f4.dir/build
+Building C object CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o
+/Users/pnorton/local/gcc-7.2.0/bin/gcc    -o CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o   -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_866f4
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_866f4.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o  -o cmTC_866f4 
+Using built-in specs.
+COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/gcc
+COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper
+Target: x86_64-apple-darwin15.6.0
+Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release
+Thread model: posix
+gcc version 7.2.0 (GCC) 
+COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/
+LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../
+COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_866f4' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-mtune=core2'
+ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_866f4 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 7.2.0
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_866f4 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+Library search paths:
+	/Users/pnorton/local/valgrind-3.13.0/lib
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/Users/pnorton/local/libiconv-1.14/lib
+	/Users/pnorton/local/isl-0.18/lib
+	/Users/pnorton/local/mpc-1.0.2/lib
+	/Users/pnorton/local/mpfr-3.1.5/lib
+	/Users/pnorton/local/gmp-6.1.2/lib
+	/Users/pnorton/local/openmpi-1.10.2/lib
+	/Users/pnorton/local/zlib-1.2.8/lib
+	/Users/pnorton/local/libxml2-2.9.3/lib
+	/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/usr/lib
+	/usr/local/lib
+Framework search paths:
+	/Library/Frameworks/
+	/System/Library/Frameworks/
+ /usr/bin/nm -n CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_866f4/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_866f4.dir/build.make CMakeFiles/cmTC_866f4.dir/build]
+  ignore line: [Building C object CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/gcc    -o CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o   -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_866f4]
+  ignore line: [/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_866f4.dir/link.txt --verbose=1]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o  -o cmTC_866f4 ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/gcc]
+  ignore line: [COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper]
+  ignore line: [Target: x86_64-apple-darwin15.6.0]
+  ignore line: [Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 7.2.0 (GCC) ]
+  ignore line: [COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/]
+  ignore line: [LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../]
+  ignore line: [COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_866f4' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-mtune=core2']
+  link line: [ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_866f4 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v]
+    arg [/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2] ==> ignore
+    arg [-dynamic] ==> ignore
+    arg [-arch] ==> ignore
+    arg [x86_64] ==> ignore
+    arg [-macosx_version_min] ==> ignore
+    arg [10.11.6] ==> ignore
+    arg [-weak_reference_mismatches] ==> ignore
+    arg [non-weak] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_866f4] ==> ignore
+    arg [-L/Users/pnorton/local/valgrind-3.13.0/lib] ==> dir [/Users/pnorton/local/valgrind-3.13.0/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib]
+    arg [-L/Users/pnorton/local/libiconv-1.14/lib] ==> dir [/Users/pnorton/local/libiconv-1.14/lib]
+    arg [-L/Users/pnorton/local/isl-0.18/lib] ==> dir [/Users/pnorton/local/isl-0.18/lib]
+    arg [-L/Users/pnorton/local/mpc-1.0.2/lib] ==> dir [/Users/pnorton/local/mpc-1.0.2/lib]
+    arg [-L/Users/pnorton/local/mpfr-3.1.5/lib] ==> dir [/Users/pnorton/local/mpfr-3.1.5/lib]
+    arg [-L/Users/pnorton/local/gmp-6.1.2/lib] ==> dir [/Users/pnorton/local/gmp-6.1.2/lib]
+    arg [-L/Users/pnorton/local/openmpi-1.10.2/lib] ==> dir [/Users/pnorton/local/openmpi-1.10.2/lib]
+    arg [-L/Users/pnorton/local/zlib-1.2.8/lib] ==> dir [/Users/pnorton/local/zlib-1.2.8/lib]
+    arg [-L/Users/pnorton/local/libxml2-2.9.3/lib] ==> dir [/Users/pnorton/local/libxml2-2.9.3/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..]
+    arg [-search_paths_first] ==> ignore
+    arg [-headerpad_max_install_names] ==> ignore
+    arg [-v] ==> ignore
+    arg [CMakeFiles/cmTC_866f4.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-no_compact_unwind] ==> ignore
+    arg [-lSystem] ==> lib [System]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lSystem] ==> lib [System]
+    arg [-v] ==> ignore
+  Library search paths: [;/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/Users/pnorton/local/gcc-7.2.0/lib;/usr/lib;/usr/local/lib]
+  Framework search paths: [;/Library/Frameworks/;/System/Library/Frameworks/]
+  remove lib [System]
+  remove lib [System]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+  collapse framework dir [/Library/Frameworks/] ==> [/Library/Frameworks]
+  collapse framework dir [/System/Library/Frameworks/] ==> [/System/Library/Frameworks]
+  implicit libs: [gcc_ext.10.5;gcc]
+  implicit dirs: [/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/usr/lib;/usr/local/lib]
+  implicit fwks: [/Library/Frameworks;/System/Library/Frameworks]
+
+
+
+
+Detecting C [-std=c11] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_cbbe4/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_cbbe4.dir/build.make CMakeFiles/cmTC_cbbe4.dir/build
+Building C object CMakeFiles/cmTC_cbbe4.dir/feature_tests.c.o
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -std=c11 -o CMakeFiles/cmTC_cbbe4.dir/feature_tests.c.o   -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.c
+Linking C executable cmTC_cbbe4
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cbbe4.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_cbbe4.dir/feature_tests.c.o  -o cmTC_cbbe4 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:1c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c99] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_1325b/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_1325b.dir/build.make CMakeFiles/cmTC_1325b.dir/build
+Building C object CMakeFiles/cmTC_1325b.dir/feature_tests.c.o
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -std=c99 -o CMakeFiles/cmTC_1325b.dir/feature_tests.c.o   -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.c
+Linking C executable cmTC_1325b
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1325b.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_1325b.dir/feature_tests.c.o  -o cmTC_1325b 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c90] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_d7b82/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_d7b82.dir/build.make CMakeFiles/cmTC_d7b82.dir/build
+Building C object CMakeFiles/cmTC_d7b82.dir/feature_tests.c.o
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -std=c90 -o CMakeFiles/cmTC_d7b82.dir/feature_tests.c.o   -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.c
+Linking C executable cmTC_d7b82
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d7b82.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gcc   -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_d7b82.dir/feature_tests.c.o  -o cmTC_d7b82 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:0c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:0c_variadic_macros
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_0aebf/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_0aebf.dir/build.make CMakeFiles/cmTC_0aebf.dir/build
+Building CXX object CMakeFiles/cmTC_0aebf.dir/testCXXCompiler.cxx.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++     -o CMakeFiles/cmTC_0aebf.dir/testCXXCompiler.cxx.o -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_0aebf
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0aebf.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_0aebf.dir/testCXXCompiler.cxx.o  -o cmTC_0aebf 
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_12d38/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_12d38.dir/build.make CMakeFiles/cmTC_12d38.dir/build
+Building CXX object CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++     -o CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_12d38
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_12d38.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_12d38 
+Using built-in specs.
+COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/g++
+COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper
+Target: x86_64-apple-darwin15.6.0
+Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release
+Thread model: posix
+gcc version 7.2.0 (GCC) 
+COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/
+LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../
+COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_12d38' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2'
+ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_12d38 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 7.2.0
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_12d38 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+Library search paths:
+	/Users/pnorton/local/valgrind-3.13.0/lib
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/Users/pnorton/local/libiconv-1.14/lib
+	/Users/pnorton/local/isl-0.18/lib
+	/Users/pnorton/local/mpc-1.0.2/lib
+	/Users/pnorton/local/mpfr-3.1.5/lib
+	/Users/pnorton/local/gmp-6.1.2/lib
+	/Users/pnorton/local/openmpi-1.10.2/lib
+	/Users/pnorton/local/zlib-1.2.8/lib
+	/Users/pnorton/local/libxml2-2.9.3/lib
+	/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/usr/lib
+	/usr/local/lib
+Framework search paths:
+	/Library/Frameworks/
+	/System/Library/Frameworks/
+ /usr/bin/nm -n CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_12d38/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_12d38.dir/build.make CMakeFiles/cmTC_12d38.dir/build]
+  ignore line: [Building CXX object CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/g++     -o CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_12d38]
+  ignore line: [/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_12d38.dir/link.txt --verbose=1]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_12d38 ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/g++]
+  ignore line: [COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper]
+  ignore line: [Target: x86_64-apple-darwin15.6.0]
+  ignore line: [Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 7.2.0 (GCC) ]
+  ignore line: [COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/]
+  ignore line: [LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../]
+  ignore line: [COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_12d38' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2']
+  link line: [ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_12d38 -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v]
+    arg [/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2] ==> ignore
+    arg [-dynamic] ==> ignore
+    arg [-arch] ==> ignore
+    arg [x86_64] ==> ignore
+    arg [-macosx_version_min] ==> ignore
+    arg [10.11.6] ==> ignore
+    arg [-weak_reference_mismatches] ==> ignore
+    arg [non-weak] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_12d38] ==> ignore
+    arg [-L/Users/pnorton/local/valgrind-3.13.0/lib] ==> dir [/Users/pnorton/local/valgrind-3.13.0/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib]
+    arg [-L/Users/pnorton/local/libiconv-1.14/lib] ==> dir [/Users/pnorton/local/libiconv-1.14/lib]
+    arg [-L/Users/pnorton/local/isl-0.18/lib] ==> dir [/Users/pnorton/local/isl-0.18/lib]
+    arg [-L/Users/pnorton/local/mpc-1.0.2/lib] ==> dir [/Users/pnorton/local/mpc-1.0.2/lib]
+    arg [-L/Users/pnorton/local/mpfr-3.1.5/lib] ==> dir [/Users/pnorton/local/mpfr-3.1.5/lib]
+    arg [-L/Users/pnorton/local/gmp-6.1.2/lib] ==> dir [/Users/pnorton/local/gmp-6.1.2/lib]
+    arg [-L/Users/pnorton/local/openmpi-1.10.2/lib] ==> dir [/Users/pnorton/local/openmpi-1.10.2/lib]
+    arg [-L/Users/pnorton/local/zlib-1.2.8/lib] ==> dir [/Users/pnorton/local/zlib-1.2.8/lib]
+    arg [-L/Users/pnorton/local/libxml2-2.9.3/lib] ==> dir [/Users/pnorton/local/libxml2-2.9.3/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..]
+    arg [-search_paths_first] ==> ignore
+    arg [-headerpad_max_install_names] ==> ignore
+    arg [-v] ==> ignore
+    arg [CMakeFiles/cmTC_12d38.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-no_compact_unwind] ==> ignore
+    arg [-lSystem] ==> lib [System]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lSystem] ==> lib [System]
+    arg [-v] ==> ignore
+  Library search paths: [;/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/Users/pnorton/local/gcc-7.2.0/lib;/usr/lib;/usr/local/lib]
+  Framework search paths: [;/Library/Frameworks/;/System/Library/Frameworks/]
+  remove lib [System]
+  remove lib [System]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+  collapse framework dir [/Library/Frameworks/] ==> [/Library/Frameworks]
+  collapse framework dir [/System/Library/Frameworks/] ==> [/System/Library/Frameworks]
+  implicit libs: [stdc++;gcc_ext.10.5;gcc]
+  implicit dirs: [/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/usr/lib;/usr/local/lib]
+  implicit fwks: [/Library/Frameworks;/System/Library/Frameworks]
+
+
+
+
+Detecting CXX [-std=c++1z] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_42651/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_42651.dir/build.make CMakeFiles/cmTC_42651.dir/build
+Building CXX object CMakeFiles/cmTC_42651.dir/feature_tests.cxx.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -std=c++1z -o CMakeFiles/cmTC_42651.dir/feature_tests.cxx.o -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_42651
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_42651.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_42651.dir/feature_tests.cxx.o  -o cmTC_42651 
+
+
+    Feature record: CXX_FEATURE:1cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:1cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:1cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:1cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:1cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:1cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:1cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:1cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:1cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:1cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:1cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++14] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_e2d0c/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_e2d0c.dir/build.make CMakeFiles/cmTC_e2d0c.dir/build
+Building CXX object CMakeFiles/cmTC_e2d0c.dir/feature_tests.cxx.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -std=c++14 -o CMakeFiles/cmTC_e2d0c.dir/feature_tests.cxx.o -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_e2d0c
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e2d0c.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_e2d0c.dir/feature_tests.cxx.o  -o cmTC_e2d0c 
+
+
+    Feature record: CXX_FEATURE:1cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:1cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:1cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:1cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:1cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:1cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:1cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:1cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:1cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:1cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:1cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++11] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_7a6b6/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_7a6b6.dir/build.make CMakeFiles/cmTC_7a6b6.dir/build
+Building CXX object CMakeFiles/cmTC_7a6b6.dir/feature_tests.cxx.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -std=c++11 -o CMakeFiles/cmTC_7a6b6.dir/feature_tests.cxx.o -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_7a6b6
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7a6b6.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_7a6b6.dir/feature_tests.cxx.o  -o cmTC_7a6b6 
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++98] compiler features compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_afee0/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_afee0.dir/build.make CMakeFiles/cmTC_afee0.dir/build
+Building CXX object CMakeFiles/cmTC_afee0.dir/feature_tests.cxx.o
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -std=c++98 -o CMakeFiles/cmTC_afee0.dir/feature_tests.cxx.o -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_afee0
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_afee0.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/g++    -Wl,-search_paths_first -Wl,-headerpad_max_install_names -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib  CMakeFiles/cmTC_afee0.dir/feature_tests.cxx.o  -o cmTC_afee0 
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:0cxx_alias_templates
+    Feature record: CXX_FEATURE:0cxx_alignas
+    Feature record: CXX_FEATURE:0cxx_alignof
+    Feature record: CXX_FEATURE:0cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:0cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:0cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:0cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:0cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:0cxx_default_function_template_args
+    Feature record: CXX_FEATURE:0cxx_defaulted_functions
+    Feature record: CXX_FEATURE:0cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:0cxx_delegating_constructors
+    Feature record: CXX_FEATURE:0cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:0cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:0cxx_explicit_conversions
+    Feature record: CXX_FEATURE:0cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:0cxx_extern_templates
+    Feature record: CXX_FEATURE:0cxx_final
+    Feature record: CXX_FEATURE:0cxx_func_identifier
+    Feature record: CXX_FEATURE:0cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:0cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:0cxx_inline_namespaces
+    Feature record: CXX_FEATURE:0cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:0cxx_local_type_template_args
+    Feature record: CXX_FEATURE:0cxx_long_long_type
+    Feature record: CXX_FEATURE:0cxx_noexcept
+    Feature record: CXX_FEATURE:0cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:0cxx_nullptr
+    Feature record: CXX_FEATURE:0cxx_override
+    Feature record: CXX_FEATURE:0cxx_range_for
+    Feature record: CXX_FEATURE:0cxx_raw_string_literals
+    Feature record: CXX_FEATURE:0cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:0cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:0cxx_rvalue_references
+    Feature record: CXX_FEATURE:0cxx_sizeof_member
+    Feature record: CXX_FEATURE:0cxx_static_assert
+    Feature record: CXX_FEATURE:0cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:0cxx_thread_local
+    Feature record: CXX_FEATURE:0cxx_trailing_return_types
+    Feature record: CXX_FEATURE:0cxx_unicode_literals
+    Feature record: CXX_FEATURE:0cxx_uniform_initialization
+    Feature record: CXX_FEATURE:0cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:0cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:0cxx_variadic_macros
+    Feature record: CXX_FEATURE:0cxx_variadic_templates
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" succeeded.
+Compiler: /Users/pnorton/local/gcc-7.2.0/bin/gfortran 
+Build flags: 
+Id flags: -v 
+
+The output was:
+0
+Driving: /Users/pnorton/local/gcc-7.2.0/bin/gfortran -v CMakeFortranCompilerId.F -mmacosx-version-min=10.11.6 -asm_macosx_version_min=10.11 -l gfortran -shared-libgcc
+Using built-in specs.
+COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/gfortran
+COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper
+Target: x86_64-apple-darwin15.6.0
+Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release
+Thread model: posix
+gcc version 7.2.0 (GCC) 
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2'
+ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccpLfC6N.f90 -quiet -v -D__DYNAMIC__ CMakeFortranCompilerId.F -fPIC -quiet -dumpbase CMakeFortranCompilerId.F -mmacosx-version-min=10.11.6 -mtune=core2 -auxbase CMakeFortranCompilerId -version -fintrinsic-modules-path /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/finclude -o /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccC1srhi.s
+GNU Fortran (GCC) version 7.2.0 (x86_64-apple-darwin15.6.0)
+	compiled by GNU C version 7.2.0, GMP version 6.1.2, MPFR version 3.1.5, MPC version 1.0.2, isl version isl-0.18-GMP
+
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+ignoring nonexistent directory "/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../../x86_64-apple-darwin15.6.0/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/finclude
+ /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/include
+ /usr/local/include
+ /Users/pnorton/local/gcc-7.2.0/include
+ /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/include-fixed
+ /usr/include
+End of search list.
+GNU Fortran2008 (GCC) version 7.2.0 (x86_64-apple-darwin15.6.0)
+	compiled by GNU C version 7.2.0, GMP version 6.1.2, MPFR version 3.1.5, MPC version 1.0.2, isl version isl-0.18-GMP
+
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=10.11.6'  '-shared-libgcc' '-mtune=core2'
+ as -arch x86_64 -v -force_cpusubtype_ALL -mmacosx-version-min=10.11 -o /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccNxCdpG.o /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccC1srhi.s
+Apple LLVM version 8.0.0 (clang-800.0.42.1)
+Target: x86_64-apple-darwin15.6.0
+Thread model: posix
+InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple x86_64-apple-macosx10.11.0 -filetype obj -main-file-name ccC1srhi.s -target-cpu core2 -fdebug-compilation-dir /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/3.10.2/CompilerIdFortran -dwarf-debug-producer Apple LLVM version 8.0.0 (clang-800.0.42.1) -dwarf-version=2 -mrelocation-model pic -o /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccNxCdpG.o /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccC1srhi.s
+Reading specs from /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../libgfortran.spec
+rename spec lib to liborig
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=10.11.6'  '-shared-libgcc' '-mtune=core2'
+COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/
+LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=10.11.6'  '-shared-libgcc' '-mtune=core2'
+ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o a.out -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccNxCdpG.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 7.2.0
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o a.out -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccNxCdpG.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+Library search paths:
+	/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/usr/lib
+	/usr/local/lib
+Framework search paths:
+	/Library/Frameworks/
+	/System/Library/Frameworks/
+ /usr/bin/nm -n /var/folders/_v/bd50ftbj1_s5jcnqh8n43rtm5829sg/T//ccNxCdpG.o
+
+
+Compilation of the Fortran compiler identification source "CMakeFortranCompilerId.F" produced "a.out"
+
+The Fortran compiler identification is GNU, found in "/Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/3.10.2/CompilerIdFortran/a.out"
+
+Determining if the Fortran compiler works passed with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_c42ec/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_c42ec.dir/build.make CMakeFiles/cmTC_c42ec.dir/build
+Building Fortran object CMakeFiles/cmTC_c42ec.dir/testFortranCompiler.f.o
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran    -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp/testFortranCompiler.f -o CMakeFiles/cmTC_c42ec.dir/testFortranCompiler.f.o
+Linking Fortran executable cmTC_c42ec
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c42ec.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran  -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib    CMakeFiles/cmTC_c42ec.dir/testFortranCompiler.f.o  -o cmTC_c42ec 
+
+
+Detecting Fortran compiler ABI info compiled with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_07f2e/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_07f2e.dir/build.make CMakeFiles/cmTC_07f2e.dir/build
+Building Fortran object CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran    -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeFortranCompilerABI.F -o CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o
+Linking Fortran executable cmTC_07f2e
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_07f2e.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran  -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v   CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o  -o cmTC_07f2e 
+Driving: /Users/pnorton/local/gcc-7.2.0/bin/gfortran -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o -o cmTC_07f2e -mmacosx-version-min=10.11.6 -asm_macosx_version_min=10.11 -l gfortran -shared-libgcc
+Using built-in specs.
+COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/gfortran
+COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper
+Target: x86_64-apple-darwin15.6.0
+Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release
+Thread model: posix
+gcc version 7.2.0 (GCC) 
+Reading specs from /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../libgfortran.spec
+rename spec lib to liborig
+COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_07f2e' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2'
+COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/
+LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../
+COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_07f2e' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2'
+ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_07f2e -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -v CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 7.2.0
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_07f2e -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -v CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+@(#)PROGRAM:ld  PROJECT:ld64-274.1
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+Library search paths:
+	/Users/pnorton/local/valgrind-3.13.0/lib
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/Users/pnorton/local/libiconv-1.14/lib
+	/Users/pnorton/local/isl-0.18/lib
+	/Users/pnorton/local/mpc-1.0.2/lib
+	/Users/pnorton/local/mpfr-3.1.5/lib
+	/Users/pnorton/local/gmp-6.1.2/lib
+	/Users/pnorton/local/openmpi-1.10.2/lib
+	/Users/pnorton/local/zlib-1.2.8/lib
+	/Users/pnorton/local/libxml2-2.9.3/lib
+	/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0
+	/Users/pnorton/local/gcc-7.2.0/lib
+	/usr/lib
+	/usr/local/lib
+Framework search paths:
+	/Library/Frameworks/
+	/System/Library/Frameworks/
+ /usr/bin/nm -n CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o
+
+
+Parsed Fortran implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_07f2e/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_07f2e.dir/build.make CMakeFiles/cmTC_07f2e.dir/build]
+  ignore line: [Building Fortran object CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/gfortran    -c /Users/pnorton/local/cmake-3.10.2/share/cmake-3.10/Modules/CMakeFortranCompilerABI.F -o CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o]
+  ignore line: [Linking Fortran executable cmTC_07f2e]
+  ignore line: [/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_07f2e.dir/link.txt --verbose=1]
+  ignore line: [/Users/pnorton/local/gcc-7.2.0/bin/gfortran  -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v   CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o  -o cmTC_07f2e ]
+  ignore line: [Driving: /Users/pnorton/local/gcc-7.2.0/bin/gfortran -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -v -Wl,-v CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o -o cmTC_07f2e -mmacosx-version-min=10.11.6 -asm_macosx_version_min=10.11 -l gfortran -shared-libgcc]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/Users/pnorton/local/gcc-7.2.0/bin/gfortran]
+  ignore line: [COLLECT_LTO_WRAPPER=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/lto-wrapper]
+  ignore line: [Target: x86_64-apple-darwin15.6.0]
+  ignore line: [Configured with: ./configure --prefix=/Users/pnorton/local/gcc-7.2.0 --enable-languages=c,c++,fortran --with-gmp=/Users/pnorton/local/gmp-6.1.2 --with-mpfr=/Users/pnorton/local/mpfr-3.1.5 --with-mpc=/Users/pnorton/local/mpc-1.0.2 --with-isl=/Users/pnorton/local/isl-0.18 --with-libiconv-prefix=/Users/pnorton/local/libiconv-1.14 --disable-nls --enable-checking=release]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 7.2.0 (GCC) ]
+  ignore line: [Reading specs from /Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../libgfortran.spec]
+  ignore line: [rename spec lib to liborig]
+  ignore line: [COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_07f2e' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2']
+  ignore line: [COMPILER_PATH=/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/]
+  ignore line: [LIBRARY_PATH=/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/:/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../../]
+  ignore line: [COLLECT_GCC_OPTIONS='-L/Users/pnorton/local/valgrind-3.13.0/lib' '-L/Users/pnorton/local/gcc-7.2.0/lib' '-L/Users/pnorton/local/libiconv-1.14/lib' '-L/Users/pnorton/local/isl-0.18/lib' '-L/Users/pnorton/local/mpc-1.0.2/lib' '-L/Users/pnorton/local/mpfr-3.1.5/lib' '-L/Users/pnorton/local/gmp-6.1.2/lib' '-L/Users/pnorton/local/openmpi-1.10.2/lib' '-L/Users/pnorton/local/zlib-1.2.8/lib' '-L/Users/pnorton/local/libxml2-2.9.3/lib' '-v' '-o' 'cmTC_07f2e' '-mmacosx-version-min=10.11.6' '-asm_macosx_version_min=10.11' '-shared-libgcc' '-mtune=core2']
+  link line: [ /Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2 -dynamic -arch x86_64 -macosx_version_min 10.11.6 -weak_reference_mismatches non-weak -o cmTC_07f2e -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0 -L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../.. -v CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v]
+    arg [/Users/pnorton/local/gcc-7.2.0/libexec/gcc/x86_64-apple-darwin15.6.0/7.2.0/collect2] ==> ignore
+    arg [-dynamic] ==> ignore
+    arg [-arch] ==> ignore
+    arg [x86_64] ==> ignore
+    arg [-macosx_version_min] ==> ignore
+    arg [10.11.6] ==> ignore
+    arg [-weak_reference_mismatches] ==> ignore
+    arg [non-weak] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_07f2e] ==> ignore
+    arg [-L/Users/pnorton/local/valgrind-3.13.0/lib] ==> dir [/Users/pnorton/local/valgrind-3.13.0/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib]
+    arg [-L/Users/pnorton/local/libiconv-1.14/lib] ==> dir [/Users/pnorton/local/libiconv-1.14/lib]
+    arg [-L/Users/pnorton/local/isl-0.18/lib] ==> dir [/Users/pnorton/local/isl-0.18/lib]
+    arg [-L/Users/pnorton/local/mpc-1.0.2/lib] ==> dir [/Users/pnorton/local/mpc-1.0.2/lib]
+    arg [-L/Users/pnorton/local/mpfr-3.1.5/lib] ==> dir [/Users/pnorton/local/mpfr-3.1.5/lib]
+    arg [-L/Users/pnorton/local/gmp-6.1.2/lib] ==> dir [/Users/pnorton/local/gmp-6.1.2/lib]
+    arg [-L/Users/pnorton/local/openmpi-1.10.2/lib] ==> dir [/Users/pnorton/local/openmpi-1.10.2/lib]
+    arg [-L/Users/pnorton/local/zlib-1.2.8/lib] ==> dir [/Users/pnorton/local/zlib-1.2.8/lib]
+    arg [-L/Users/pnorton/local/libxml2-2.9.3/lib] ==> dir [/Users/pnorton/local/libxml2-2.9.3/lib]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+    arg [-L/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..]
+    arg [-v] ==> ignore
+    arg [CMakeFiles/cmTC_07f2e.dir/CMakeFortranCompilerABI.F.o] ==> ignore
+    arg [-lgfortran] ==> lib [gfortran]
+    arg [-no_compact_unwind] ==> ignore
+    arg [-lSystem] ==> lib [System]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lquadmath] ==> lib [quadmath]
+    arg [-lm] ==> lib [m]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lSystem] ==> lib [System]
+    arg [-v] ==> ignore
+  Library search paths: [;/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/Users/pnorton/local/gcc-7.2.0/lib;/usr/lib;/usr/local/lib]
+  Framework search paths: [;/Library/Frameworks/;/System/Library/Frameworks/]
+  remove lib [System]
+  remove lib [System]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0/../../..] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/valgrind-3.13.0/lib] ==> [/Users/pnorton/local/valgrind-3.13.0/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/Users/pnorton/local/libiconv-1.14/lib] ==> [/Users/pnorton/local/libiconv-1.14/lib]
+  collapse library dir [/Users/pnorton/local/isl-0.18/lib] ==> [/Users/pnorton/local/isl-0.18/lib]
+  collapse library dir [/Users/pnorton/local/mpc-1.0.2/lib] ==> [/Users/pnorton/local/mpc-1.0.2/lib]
+  collapse library dir [/Users/pnorton/local/mpfr-3.1.5/lib] ==> [/Users/pnorton/local/mpfr-3.1.5/lib]
+  collapse library dir [/Users/pnorton/local/gmp-6.1.2/lib] ==> [/Users/pnorton/local/gmp-6.1.2/lib]
+  collapse library dir [/Users/pnorton/local/openmpi-1.10.2/lib] ==> [/Users/pnorton/local/openmpi-1.10.2/lib]
+  collapse library dir [/Users/pnorton/local/zlib-1.2.8/lib] ==> [/Users/pnorton/local/zlib-1.2.8/lib]
+  collapse library dir [/Users/pnorton/local/libxml2-2.9.3/lib] ==> [/Users/pnorton/local/libxml2-2.9.3/lib]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0] ==> [/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0]
+  collapse library dir [/Users/pnorton/local/gcc-7.2.0/lib] ==> [/Users/pnorton/local/gcc-7.2.0/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+  collapse framework dir [/Library/Frameworks/] ==> [/Library/Frameworks]
+  collapse framework dir [/System/Library/Frameworks/] ==> [/System/Library/Frameworks]
+  implicit libs: [gfortran;gcc_ext.10.5;gcc;quadmath;m;gcc_ext.10.5;gcc]
+  implicit dirs: [/Users/pnorton/local/valgrind-3.13.0/lib;/Users/pnorton/local/gcc-7.2.0/lib;/Users/pnorton/local/libiconv-1.14/lib;/Users/pnorton/local/isl-0.18/lib;/Users/pnorton/local/mpc-1.0.2/lib;/Users/pnorton/local/mpfr-3.1.5/lib;/Users/pnorton/local/gmp-6.1.2/lib;/Users/pnorton/local/openmpi-1.10.2/lib;/Users/pnorton/local/zlib-1.2.8/lib;/Users/pnorton/local/libxml2-2.9.3/lib;/Users/pnorton/local/gcc-7.2.0/lib/gcc/x86_64-apple-darwin15.6.0/7.2.0;/usr/lib;/usr/local/lib]
+  implicit fwks: [/Library/Frameworks;/System/Library/Frameworks]
+
+
+Determining if the Fortran compiler supports Fortran 90 passed with the following output:
+Change Dir: /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_e3c17/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_e3c17.dir/build.make CMakeFiles/cmTC_e3c17.dir/build
+Building Fortran object CMakeFiles/cmTC_e3c17.dir/testFortranCompilerF90.f90.o
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran    -c /Users/pnorton/Projects/National_Hydrology_Model/src/fortran/prms6/programs/CMakeFiles/CMakeTmp/testFortranCompilerF90.f90 -o CMakeFiles/cmTC_e3c17.dir/testFortranCompilerF90.f90.o
+Linking Fortran executable cmTC_e3c17
+/Users/pnorton/local/cmake-3.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e3c17.dir/link.txt --verbose=1
+/Users/pnorton/local/gcc-7.2.0/bin/gfortran  -L/Users/pnorton/local/valgrind-3.13.0/lib -L/Users/pnorton/local/gcc-7.2.0/lib -L/Users/pnorton/local/libiconv-1.14/lib -L/Users/pnorton/local/isl-0.18/lib -L/Users/pnorton/local/mpc-1.0.2/lib -L/Users/pnorton/local/mpfr-3.1.5/lib -L/Users/pnorton/local/gmp-6.1.2/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib    CMakeFiles/cmTC_e3c17.dir/testFortranCompilerF90.f90.o  -o cmTC_e3c17 
+
+

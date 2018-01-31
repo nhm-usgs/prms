@@ -129,6 +129,8 @@ contains
 
         if (status /= 0) then
             print *, 'status: ', status
+            write(*, *) command_line_arg
+            write(*, *) '------------------------------------'
             write(*, '(/,A)') 'Enter the name of the PRMS Control File or quit:'
             read(*, '(A)') buffer
             Model_control_file = TRIM(buffer)

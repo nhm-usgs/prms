@@ -8,13 +8,13 @@ module parameter_mod
         character(len=:), allocatable :: short_description
         character(len=:), allocatable :: long_description
         integer(i4) :: numvals
-        integer(i4) :: data_flag
-        integer(i4) :: decl_flag
-        integer(i4) :: read_flag
+        integer(i4) :: data_flag    ! set to 1,2,3,4 for integer, real, double, character
+        integer(i4) :: decl_flag    ! tells user if a declared parameter is not in the parameter file
+        integer(i4) :: read_flag    ! tells user if a parameter in the file is not needed
         ! integer :: id_num   ! what is this?
 
         integer(i4) :: num_dimens
-        character(len=:), allocatable :: data_type
+        character(len=:), allocatable :: data_type  ! string repr of data_flag
         character(len=:), allocatable :: dimen_names
         character(len=:), allocatable :: module_name
         character(len=:), allocatable :: units
@@ -70,6 +70,8 @@ module parameter_arr_mod
     end interface parameter_arr_t
 contains
     function init()
+        ! change to init_parameter_arr_t
+        !! TODO:
         use prms_constants, only: MAXPARAMETERS
         implicit none
 
@@ -86,6 +88,7 @@ contains
         ! DANGER, DANGER, hard coded maximum number of parameters, DANGER, DANGER
         !***********************************************************************
         allocate (init%Parameter_data(MAXPARAMETERS)) ! allow for extra parameters being expected
+        !! TODO: move to constructor for PRMS_parameter
         do i = 1, MAXPARAMETERS
             init%Parameter_data(i)%param_name = ' '
             init%Parameter_data(i)%short_description = ' '
@@ -136,6 +139,7 @@ contains
 
         do i = 1, this%Num_parameters
             if (Parmname == this%Parameter_data(i)%param_name) then
+                !! TODO: create is_declared() in PRMS_parameter class
                 if (this%Parameter_data(i)%decl_flag == 1) then
                     if (Print_debug > -1) then
                         print *, 'Parameter: ', Parmname, ' declared more than once'
