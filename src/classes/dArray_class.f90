@@ -1,4 +1,4 @@
-module rArray_class
+module dArray_class
     !!
     !!
     !!
@@ -20,37 +20,37 @@ module rArray_class
 
     private
 
-    public :: rArray
+    public :: dArray
 
-    type, extends(Abc) :: rArray
+    type, extends(Abc) :: dArray
         private
         !! 1D array of reals that can represent multiple dimensional data
-        real(r32), allocatable :: values(:)
+        real(r64), allocatable :: values(:)
           !! The values of the array
         integer(i32), allocatable :: dims(:)
           !! Size(s) that values should represent. e.g. If values represents 2D data, dims might be [10, 15]
 
     contains
-        procedure, public, pass(this) :: print => print_rArray
+        procedure, public, pass(this) :: print => print_dArray
 
     end type
 
-    interface rArray
-        module procedure :: constructor_rArray
+    interface dArray
+        module procedure :: constructor_dArray
     end interface
 
 contains
     !====================================================================!
-    function constructor_rArray(values) result(this)
-        type(rArray) :: this
+    function constructor_dArray(values) result(this)
+        type(dArray) :: this
 
-        real(r32), intent(in) :: values(:)
+        real(r64), intent(in) :: values(:)
 
     end function
     !====================================================================!
     !====================================================================!
-    subroutine print_rArray(this)
-        class(rArray) :: this
+    subroutine print_dArray(this)
+        class(dArray) :: this
 
         write(output_unit, '(a)') str(this%values)
     end subroutine

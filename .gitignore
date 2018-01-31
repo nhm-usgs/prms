@@ -2,4 +2,6 @@ bin/
 build/
 include/
 lib/
-
+*.mod
+*.swp
+*.o
