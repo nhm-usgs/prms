@@ -1,5 +1,6 @@
 module String_class
     use variableKind
+    use m_strings, only: str
     implicit none
 
     private
@@ -68,7 +69,7 @@ contains
         ! character(len=80) :: buffer
 
         if (iotype == 'LISTDIRECTED') then
-            write(unit, '(A, 1X)', IOSTAT=iostat, IOMSG=iomsg) dtv%s
+            write(unit, '(a)', IOSTAT=iostat, IOMSG=iomsg) str(dtv%s)
         else
             ! Error
             iostat = 1

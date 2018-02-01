@@ -50,7 +50,7 @@ contains
     subroutine print_sArray(this)
         class(sArray) :: this
 
-        write(output_unit, *) this%values
+        write(output_unit, '(DT)') this%values
         ! write(output_unit, '(a)') str(this%values)
     end subroutine
     !====================================================================!

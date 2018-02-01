@@ -13,8 +13,9 @@ module rVariable_class
     !!
     !!
     use variableKind
+    use sArray_class, only: sArray
     use rArray_class, only: rArray
-    
+
 
     implicit none
 
@@ -27,8 +28,8 @@ module rVariable_class
         real(r32) :: max_value
         real(r32) :: default_value
 
-        ! type(str_arr_type), allocatable :: dim_names(:)
-        ! type(str_arr_type), allocatable :: module_names(:)
+        type(sArray) :: dim_names
+        type(sArray) :: module_names
     end type
 
     ! interface rVariable
