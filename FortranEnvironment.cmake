@@ -41,7 +41,7 @@ if (${F90tag} MATCHES "gfortran")
   MESSAGE(STATUS "Getting gfortran flags")
 
   set (GFORTRAN_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -fopenmp -std=f2008ts -funroll-all-loops -finline-functions -static-libgfortran -static-libgcc -ffree-line-length-none -fall-intrinsics")
-  set (GFORTRAN_DEBUG  "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -g -fopenmp -std=f2008 -fbacktrace -fbounds-check -finit-real=nan -ffpe-trap=zero,overflow,underflow -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant -ffree-line-length-none -fall-intrinsics -static-libgfortran -static-libgcc")
+  set (GFORTRAN_DEBUG  "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -fopenmp -std=f2008 -fbacktrace -fbounds-check -finit-real=nan -ffpe-trap=zero,overflow,underflow -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant -ffree-line-length-none -fall-intrinsics -static-libgfortran -static-libgcc")
   
   if (WIN32)
     set (CMAKE_Fortran_FLAGS_RELEASE ${GFORTRAN_RELEASE})
