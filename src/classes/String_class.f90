@@ -38,10 +38,10 @@ contains
     !====================================================================!
     subroutine read_str(dtv, unit, iotype, v_list, iostat, iomsg)
         class(String), intent(inout) ::dtv
-        integer(i4), intent(in) :: unit
+        integer(i32), intent(in) :: unit
         character(len=*), intent(in) :: iotype
-        integer(i4), intent(in) :: v_list(:)
-        integer(i4), intent(out) :: iostat
+        integer(i32), intent(in) :: v_list(:)
+        integer(i32), intent(out) :: iostat
         character(len=*), intent(inout) :: iomsg
 
         ! Private variables
@@ -59,10 +59,10 @@ contains
     !====================================================================!
     subroutine write_str(dtv, unit, iotype, v_list, iostat, iomsg)
         class(String), intent(in) :: dtv
-        integer(i4), intent(in) :: unit
+        integer(i32), intent(in) :: unit
         character(len=*), intent(in) :: iotype
-        integer(i4), intent(in) :: v_list(:)
-        integer(i4), intent(out) :: iostat
+        integer(i32), intent(in) :: v_list(:)
+        integer(i32), intent(out) :: iostat
         character(len=*), intent(inout) :: iomsg
 
         ! character(len=80) :: buffer

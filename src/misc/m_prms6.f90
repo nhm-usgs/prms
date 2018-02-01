@@ -2,6 +2,7 @@
 
 
 module m_prms6
+    use variableKind
     implicit none
 
 contains
@@ -78,7 +79,6 @@ contains
 
 
     subroutine init_control(ctl_data)
-        use kinds_mod, only: i4
         use control_ll_mod, only: control_list
         use PRMS_MODULE
         use time_mod, only: compute_julday
@@ -90,11 +90,11 @@ contains
         type(control_list), intent(inout) :: ctl_data
 
         ! Local Variables
-        integer(i4) :: BasinOutON_OFF
-        integer(i4) :: NhruOutON_OFF
-        integer(i4) :: iret
-        integer(i4) :: startday
-        integer(i4) :: endday
+        integer(i32) :: BasinOutON_OFF
+        integer(i32) :: NhruOutON_OFF
+        integer(i32) :: iret
+        integer(i32) :: startday
+        integer(i32) :: endday
         logical :: ierror = .false.     ! Used to indicate an error
         !***********************************************************************
         ! Inputerror_flag = 0
@@ -248,7 +248,7 @@ contains
 
                 character(len=*), intent(in) :: key
                 type(array_1D_t), intent(in) :: value
-                integer(i4), intent(in) :: datatype
+                integer(i32), intent(in) :: datatype
                 logical,intent(out) :: done
 
                 print *, ''
@@ -316,7 +316,6 @@ contains
     !     Module documentation
     !**********************************************************************
     subroutine module_doc(dim_data, ctl_data, param_data, var_data)
-        use kinds_mod, only: i4
         use PRMS_BASIN, only: basin, Hemisphere, Basin_area_inv
         use PRMS_OBS, only: obs
         use PRMS_POTET_JH, only: potet_jh
@@ -340,7 +339,7 @@ contains
         type(variables_arr_t), intent(inout) :: var_data  ! should be intent(in)
 
         ! Local variable
-        integer(i4) :: test
+        integer(i32) :: test
 
         !**********************************************************************
         test = basin(dim_data, param_data, var_data)
@@ -367,7 +366,6 @@ contains
     !     call_modules_restart - write or read restart file
     !***********************************************************************
     subroutine call_modules_restart(In_out)
-        use kinds_mod, only: i4
         use prms_constants, only: MAXCONTROL_LENGTH
         use PRMS_MODULE, only: MODNAME, Model_mode, Timestep, Nhru, &
                                Restart_inunit, Restart_outunit
@@ -375,15 +373,15 @@ contains
         implicit none
 
         ! Argument
-        integer(i4), intent(in) :: In_out
+        integer(i32), intent(in) :: In_out
 
         ! Functions
         INTRINSIC TRIM
 
         ! Local Variables
-        integer(i4) :: nhru_test
-        integer(i4) :: temp_test
-        integer(i4) :: ierr
+        integer(i32) :: nhru_test
+        integer(i32) :: temp_test
+        integer(i32) :: ierr
         character(LEN=MAXCONTROL_LENGTH) :: model_test
         character(LEN=5) :: module_name
 
@@ -416,7 +414,6 @@ contains
     ! Defines the computational sequence, valid modules, and dimensions
     !***********************************************************************
     subroutine computation_order(Arg, dim_data, ctl_data, param_data, var_data)
-        use kinds_mod, only: i4
         use prms_constants, only: EQULS
         use UTILS_PRMS, only: module_error, PRMS_open_output_file  ! , read_error, numchars
         use PRMS_MODULE, only: Process, Elapsed_time, Elapsed_time_start, &
@@ -458,13 +455,13 @@ contains
         INTRINSIC :: DATE_AND_TIME, INT
 
         ! Local Variables
-        integer(i4) :: BasinOutON_OFF
-        integer(i4) :: NhruOutON_OFF
+        integer(i32) :: BasinOutON_OFF
+        integer(i32) :: NhruOutON_OFF
 
-        integer(i4) :: i
-        integer(i4) :: iret
-        ! integer(i4) :: nc
-        integer(i4) :: call_modules
+        integer(i32) :: i
+        integer(i32) :: iret
+        ! integer(i32) :: nc
+        integer(i32) :: call_modules
         character(:), allocatable :: data_filename
 
         !***********************************************************************
@@ -634,7 +631,7 @@ contains
 
             character(len=*), intent(in) :: key
             type(array_1D_t), intent(in) :: value
-            integer(i4), intent(in) :: datatype
+            integer(i32), intent(in) :: datatype
             logical,intent(out) :: done
 
             print *, ''

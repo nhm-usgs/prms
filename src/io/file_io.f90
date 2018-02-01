@@ -1,13 +1,13 @@
 
 module fileio_mod
-    use kinds_mod, only: r4, r8, i4, i8
+    ! use kinds_mod, only: r4, r8, i4, i8
     implicit none
 
     contains
     !***********************************************************************
     ! write_outfile - print to model output file
     !***********************************************************************
-    SUBROUTINE write_outfile(String)
+    SUBROUTINE write_outfile(out_string)
         USE PRMS_MODULE, ONLY:PRMS_output_unit, Print_debug
         IMPLICIT NONE
 
@@ -15,18 +15,18 @@ module fileio_mod
         INTRINSIC LEN_TRIM
 
         ! Arguments
-        CHARACTER(LEN=*), INTENT(IN) :: String
+        CHARACTER(LEN=*), INTENT(IN) :: out_string
 
         ! Local variable
-        INTEGER(i4) :: nchars
+        ! INTEGER(i4) :: nchars
 
         !***********************************************************************
         IF (Print_debug == -2) RETURN
 
-        nchars = LEN_TRIM(String)
+        ! nchars = LEN_TRIM(String)
 
-        IF (nchars > 0) THEN
-            WRITE (PRMS_output_unit, '(A)') String(:nchars)
+        IF (len_trim(out_string) > 0) THEN
+            WRITE (PRMS_output_unit, '(A)') out_string
         ELSE
             WRITE (PRMS_output_unit, '(/)')
         ENDIF
