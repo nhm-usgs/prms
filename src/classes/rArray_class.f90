@@ -14,8 +14,10 @@ module rArray_class
 
     use iso_fortran_env, only: output_unit
     use variableKind, only: r32, i32
+    use m_errors, only: fErr
     use Abc_class, only: Abc
     use m_allocate, only: allocate
+    use m_deallocate, only: deallocate
     use m_strings, only: str
     
     implicit none
@@ -41,6 +43,9 @@ module rArray_class
           !! Deallocate the memory inside the class
         procedure, public, pass(this) :: print => print_rArray
           !! Print the class to the screen
+        procedure, public, pass(this) :: read => read_rArray
+          !! Read the class from a file
+        procedure, public, pass(this) :: size => size_rArray
 
     end type
 
@@ -107,10 +112,49 @@ contains
 
 
     !====================================================================!
-    subroutine print_rArray(this)
-        class(rArray) :: this
+    subroutine print_rArray(this, delim)
+        class(rArray), intent(in) :: this
+          !! rArray class
+        character(len=*), intent(in), optional :: delim
+          !! Delimiter between values
 
-        write(output_unit, '(a)') str(this%values)
+        write(output_unit, '(a)') str(this%values, delim)
     end subroutine
+    !====================================================================!
+
+    !====================================================================!
+    subroutine read_rArray(this, iUnit, fName)
+        class(rArray), intent(inout) :: this
+          !! rArray Class
+        integer(i32), intent(in) :: iUnit
+          !! Unit number to read from
+        character(len=*), intent(in) :: fName
+          !! Name of the file that was opened
+
+        integer(i32) :: i, istat
+        integer(i32) :: N
+
+        read(iUnit, *) N
+        read(iUnit, *)
+
+        call this%allocate(N)
+
+        do i = 1, N
+            read(iUnit, *, iostat=istat) this%values(i)
+            call fErr(istat, fName, 2)
+        enddo
+    end subroutine
+    !====================================================================!
+
+    !====================================================================!
+    function size_rArray(this) result(res)
+      !! Get the size of the list of strings
+        class(rArray), intent(in) :: this
+          !! sArray Class
+        integer(i32) :: res
+          !! Size of the list
+    
+        res = size(this%values)
+    end function
     !====================================================================!
 end module
