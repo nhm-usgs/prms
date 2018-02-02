@@ -1,99 +1,146 @@
 submodule (Control_class) sm_control
+    use variableKind, only: cLen
+    use m_errors, only: eMsg, fErr
+    use m_strings, only: compact, isString, lowerCase, str
     implicit none
 
 contains
 
-    module procedure read_control_file!(this)
-        ! Procedure arguments
-        !type(Control), intent(inout) :: this
+    !====================================================================!
+    module procedure constructor_Control!(control_filename) result(this)
+        !type(Control) :: this
+        !character(len=*), intent(in) :: control_filename
 
-        ! Local Variables
-        character(len=:), allocatable :: paramname
-        integer(i32) :: numvalues
-        integer(i32) :: param_type
+        this%control_filename = control_filename
 
-        integer(i32) :: ios
-        integer(i32) :: control_unit
-        integer(i32) :: jj
+        call this%read(control_filename)
+    end procedure
+    !====================================================================!
+    !====================================================================!
+    module procedure read_Control!(this, fName)
+        ! class(Control), intent(inout) :: this
+        ! character(len=*) :: fName
 
-        character(len=MAXCONTROL_LENGTH) :: buffer  ! fixed-length buffer for reading
+        integer(i32) :: istat, iUnit
+        integer(i32) :: line
+        character(len = cLen) :: buf
+        character(len=:), allocatable :: last
+        logical :: go
 
-        ! type(sVariable), allocatable :: str_parameter_values
-        integer(i32), allocatable :: int_parameter_values
-        real(r32), allocatable :: real_parameter_values
+        go = .true.
 
+        iUnit = 1
+        !call openFile(fName, iUnit, 'old', istat)
+        open(unit=iUnit, file=fName, status='old', iostat=istat)
+        call fErr(istat, fName, 1)
 
-        !***********************************************************************
-        Version_read_control_file = 'read_control_file.f90 2017-09-29 13:48:00Z'
+        ! Read the Header line
+        read(iUnit, 1) buf
+        line = 1
+        last = 'Header'
 
-        ! control filename cannot include blanks
-        call get_control_filename(Model_control_file)
-        call PRMS_open_input_file(control_unit, Model_control_file, 'model_control_file', 0, ios)
-        if (ios /= 0) call read_error(10, Model_control_file)
+        read(iUnit, 1) buf
+        call compact(buf)
+        line = line + 1
 
-        ! read header
-        read (control_unit, '(A)', IOSTAT = ios) buffer
-        if (ios /= 0) call read_error(12, Model_control_file)
-        Control_description = TRIM(buffer)
+        do while (go)
+            if (isString(buf(1:4), '####', .true.)) then
+                read(iUnit, 1) buf
+                call compact(buf)
+                line = line + 1
 
-        ! call setup_cont() ! set default control parameter values
+                select case(lowercase(buf))
+                    case('cbh_binary_flag')
+                        last = buf
+                        call this%cbh_binary_flag%read(iUnit, fName)
+                        line = line + this%cbh_binary_flag%size() + 2
+                        call this%cbh_binary_flag%print()
 
-        ! Read all Control Parameters
-        do
-            read (control_unit, '(A)', IOSTAT = ios) buffer
-            if (ios == IOSTAT_END) EXIT ! found end of Control File
-            if (ios /= 0) call read_error(12, 'missing #### delimiter')
-            if (buffer(:4) /= ENTRY_DELIMITER) CYCLE ! skip until delimiter found, such as blank of // comment lines
+                    case('cbh_check_flag')
+                        last = buf
+                        call this%cbh_check_flag%read(iUnit, fName)
+                        line = line + this%cbh_check_flag%size() + 2
+                        call this%cbh_check_flag%print()
 
-            ! The line after #### is the parameter name
-            read (control_unit, '(A)', IOSTAT = ios) buffer ! parameter name
-            if (ios /= 0) call read_error(5, 'missing parameter name')
-            paramname = TRIM(buffer)
+                    case('data_file')
+                        last = buf
+                        call this%data_file%read(iUnit, fName)
+                        line = line + this%data_file%size() + 2
+                        call this%data_file%print()
+                    
+                    case('end_time')
+                        last = buf
+                        call this%end_time%read(iUnit, fName)
+                        line = line + this%end_time%size() + 2
+                        call this%end_time%print()
 
-            ! The next line contains the number of values for this control parameter
-            read (control_unit, *, IOSTAT = ios) numvalues
-            if (ios /= 0) call read_error(5, 'invalid number of values: ' // paramname)
+                    case('et_module')
+                        last = buf
+                        call this%et_module%read(iUnit, fName)
+                        line = line + this%et_module%size() + 2
+                        call this%et_module%print()
 
-            ! Next is the parameter type (1=integer, 2=real, 3=double, 4=string)
-            read (control_unit, *, IOSTAT = ios) param_type
-            if (ios /= 0) call read_error(5, 'invalid parameter type: ' // paramname)
-            if (param_type < 1 .OR. param_type > 4 .OR. param_type == 3) &
-                    call read_error(5, 'invalid parameter type: ' // paramname)
+                    case('model_mode')
+                        last = buf
+                        call this%model_mode%read(iUnit, fName)
+                        line = line + this%model_mode%size() + 2
+                        call this%model_mode%print()
 
+                    case('model_output_file')
+                        last = buf
+                        call this%model_output_file%read(iUnit, fName)
+                        line = line + this%model_output_file%size() + 2
+                        call this%model_output_file%print()
 
-            if (param_type == 1) then
-                allocate(int_parameter_values(numvalues))
-                read (Control_unit, *, IOSTAT = ios) (int_parameter_values(jj), jj = 1, numvalues)
-                if (ios /= 0) call read_error(5, 'invalid integer value: ' // paramname)
+                    case('parameter_check_flag')
+                        last = buf
+                        call this%parameter_check_flag%read(iUnit, fName)
+                        line = line + this%parameter_check_flag%size() + 2
+                        call this%parameter_check_flag%print()
 
-                call ctl_data%set(paramname, int_parameter_values, param_type)
+                    case('param_file')
+                        last = buf
+                        call this%param_file%read(iUnit, fName)
+                        line = line + this%param_file%size() + 2
+                        call this%param_file%print()
+                    
+                    case('print_debug')
+                        last = buf
+                        call this%print_debug%read(iUnit, fName)
+                        line = line + this%print_debug%size() + 2
+                        call this%print_debug%print()
 
-                deallocate(int_parameter_values)
-            elseif (param_type == 4) then
-                allocate(str_parameter_values(numvalues))
+                    case('prms_warmup')
+                        last = buf
+                        call this%prms_warmup%read(iUnit, fName)
+                        line = line + this%prms_warmup%size() + 2
+                        call this%prms_warmup%print()
 
-                do jj = 1, numvalues
-                    read (Control_unit, '(A)', IOSTAT = ios) buffer
-                    str_parameter_values(jj)%str = TRIM(buffer)
-                    if (ios /= 0) call read_error(5, 'invalid character value: ' // paramname // TRIM(buffer))
-                enddo
+                    case('start_time')
+                        last = buf
+                        call this%start_time%read(iUnit, fName)
+                        line = line + this%start_time%size() + 2
+                        call this%start_time%print()
 
-                call ctl_data%set(paramname, str_parameter_values, param_type)
+                    
 
-                deallocate(str_parameter_values)
+                case default
+
+                last = buf
+                ! Skip to the next ####
+
+                end select
             else
-                allocate(real_parameter_values(numvalues))
-                read (Control_unit, *, IOSTAT = ios) (real_parameter_values(jj), jj = 1, numvalues)
-                if (ios /= 0) call read_error(5, 'invalid real value: ' // paramname)
-
-                call ctl_data%set(paramname, real_parameter_values, param_type)
-
-                deallocate(real_parameter_values)
+                call eMsg("Could not read from file "//trim(fName)//" for entry "//str(last)//" at line "//str(line))
             endif
+
+            read(iUnit, 1) buf
+            call compact(buf)
+            line = line + 1
         enddo
 
-        ! reset control parameters based on command line
-        close (control_unit)
+        call closeFile(fName, iUnit, '', istat)
+1 format(a)
     end procedure
 
 end submodule
