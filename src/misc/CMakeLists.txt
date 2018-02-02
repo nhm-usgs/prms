@@ -5,7 +5,7 @@ target_sources(${libName}
 "${CMAKE_CURRENT_LIST_DIR}/basin_summary.f90"
 "${CMAKE_CURRENT_LIST_DIR}/constants.f90"
 "${CMAKE_CURRENT_LIST_DIR}/conversions.f90"
-"${CMAKE_CURRENT_LIST_DIR}/m_prms6.f90"
+#"${CMAKE_CURRENT_LIST_DIR}/m_prms6.f90"
 "${CMAKE_CURRENT_LIST_DIR}/nhru_summary.f90"
 "${CMAKE_CURRENT_LIST_DIR}/obs.f90"
 "${CMAKE_CURRENT_LIST_DIR}/prms_module.f90"
