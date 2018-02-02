@@ -28,10 +28,12 @@ module Abc_class
     end type
 
     abstract interface
-        subroutine print_abc(this)
+        subroutine print_abc(this, delim)
             import :: Abc
 
-            class(Abc) :: this
+            class(Abc), intent(in) :: this
+
+            character(len=*), intent(in), optional :: delim
         end subroutine 
     end interface
 
