@@ -1,64 +1,83 @@
 module String_class
     use variableKind
     use m_strings, only: str
+    use m_errors, only: fErr
     implicit none
 
     private
 
     type, public :: String
+      !! A container for an arbitrary length string.  Fortran does not allow an allocatable array of variable
+      !! length strings, so this container must be used instead.
         character(len=:), allocatable :: s
 
     contains
-        procedure :: is_equal
-
         ! NOTE: ifort does not like 'generic, public' for UDIO
-        generic :: read(formatted) => read_str
-            !! UDIO formatted read
+        procedure, public :: read => read_String
+            !! Read the class from a file
         generic :: write(formatted) => write_str
             !! UDIO formatted write
-        procedure, private :: read_str
-        procedure, private :: write_str
+        procedure, private :: write_str => write_String
     end type
 
 contains
+    ! !====================================================================!
+    ! pure function is_equal(this, other)
+    !     ! Returns true if the two keys are equal.
+    !     implicit none
+
+    !     class(String), intent(in) :: this
+    !     character(len=*), intent(in) :: other
+    !     ! character(len=*), intent(in) :: k2
+
+    !     logical :: is_equal
+
+    !     is_equal = (other == this%s)
+    ! end function
     !====================================================================!
-    pure function is_equal(this, k1)
-        ! Returns true if the two keys are equal.
-        implicit none
-
-        class(String), intent(in) :: this
-        character(len=*), intent(in) :: k1
-        ! character(len=*), intent(in) :: k2
-
-        logical :: is_equal
-
-        is_equal = .false.
-        is_equal = k1 == this%s
-    end function is_equal
 
     !====================================================================!
-    subroutine read_str(dtv, unit, iotype, v_list, iostat, iomsg)
-        class(String), intent(inout) ::dtv
-        integer(i32), intent(in) :: unit
-        character(len=*), intent(in) :: iotype
-        integer(i32), intent(in) :: v_list(:)
-        integer(i32), intent(out) :: iostat
-        character(len=*), intent(inout) :: iomsg
+    subroutine read_String(this, iUnit, fName)
+        class(String), intent(inout) ::this
+        integer(i32), intent(in) :: iUnit
+        character(len=*), intent(in) :: fName
 
         ! Private variables
-        ! character(len=1024) :: buffer
+        character(len=1024) :: buffer
+        integer(i32) :: istat
 
-        if (iotype == 'LISTDIRECTED') then
-            read(unit, *, IOSTAT=iostat, IOMSG=iomsg) dtv%s
-        else
-            ! Error
-            iostat = 1
-            iomsg = 'read_str: Unsupported iotype'
-        endif
+        read(iUnit, '(a)', iostat=istat) buffer
+        call fErr(istat, fName, 2)
+
+        this%s = trim(buffer)
     end subroutine
 
+    ! !====================================================================!
+    ! subroutine read_String(dtv, unit, iotype, v_list, iostat, iomsg)
+    !     class(String), intent(inout) ::dtv
+    !     integer(i32), intent(in) :: unit
+    !     character(len=*), intent(in) :: iotype
+    !     integer(i32), intent(in) :: v_list(:)
+    !     integer(i32), intent(out) :: iostat
+    !     character(len=*), intent(inout) :: iomsg
+
+    !     ! Private variables
+    !     character(len=1024) :: buffer
+
+    !     select case(iotype)
+    !         case('LISTDIRECTED', 'DT')
+    !             read(unit, *, IOSTAT=iostat, IOMSG=iomsg) buffer
+    !             dtv%s = trim(buffer)
+    !         case default
+    !             ! Error
+    !             iostat = 1
+    !             iomsg = 'read_String: Unsupported iotype'
+    !     end select
+    ! end subroutine
     !====================================================================!
-    subroutine write_str(dtv, unit, iotype, v_list, iostat, iomsg)
+
+    !====================================================================!
+    subroutine write_String(dtv, unit, iotype, v_list, iostat, iomsg)
         class(String), intent(in) :: dtv
         integer(i32), intent(in) :: unit
         character(len=*), intent(in) :: iotype
@@ -66,15 +85,15 @@ contains
         integer(i32), intent(out) :: iostat
         character(len=*), intent(inout) :: iomsg
 
-        ! character(len=80) :: buffer
-
-        if (iotype == 'LISTDIRECTED') then
-            write(unit, '(a)', IOSTAT=iostat, IOMSG=iomsg) str(dtv%s)
-        else
-            ! Error
-            iostat = 1
-            iomsg = 'write_str: Unsupported iotype'
-        endif
+        select case(iotype)
+            case('LISTDIRECTED', 'DT')
+                write(unit, '(a)', IOSTAT=iostat, IOMSG=iomsg) str(dtv%s)
+            case default
+                ! Error
+                iostat = 1
+                iomsg = 'write_String: Unsupported iotype'
+        end select
     end subroutine
+    !====================================================================!
 
 end module
