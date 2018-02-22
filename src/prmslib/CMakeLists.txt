@@ -1,0 +1,57 @@
+cmake_minimum_required(VERSION 3.6)
+project(prmslib VERSION 0.1 LANGUAGES Fortran)
+
+# Create the library
+# ${PROJECT_NAME} is the name given for the most recent project() call
+add_library(${PROJECT_NAME} "")
+
+find_package(coretran REQUIRED CONFIG)
+target_link_libraries(${PROJECT_NAME} coretran)
+# Find the coretran library or stop
+#find_path(CORETRAN_INC_DIR m_allocate.mod HINTS $ENV{CORETRAN_INC})
+#if(NOT CORETRAN_INC_DIR)
+#    message(FATAL_ERROR "coretran include file not found")
+#else()
+#    message("-- Found coretran include file at: " ${CORETRAN_INC_DIR})
+#endif()
+
+#find_library(CORETRAN_LIB_DIR coretran HINTS $ENV{CORETRAN_LIB})
+#if(NOT CORETRAN_LIB_DIR)
+#    message(FATAL_ERROR "coretran library not found")
+#else()
+#    message("-- Found coretran library at: " ${CORETRAN_LIB_DIR})
+#endif()
+
+#set(LIB_DEP ${LIB_DEP} ${CORETRAN_LIB_DIR})
+
+# Link in the library
+#target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_DEP})
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
+
+# Add the include folder that contains the library modules
+#target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CORETRAN_INC_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                                                  $<INSTALL_INTERFACE:include>
+                                                  $<INSTALL_INTERFACE:lib>
+                                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+include(classes/CMakeLists.txt)
+include(io/CMakeLists.txt)
+include(misc/CMakeLists.txt)
+include(physics/CMakeLists.txt)
+
+# 'make install' to the correct locations (provided by GNUInstallDirs).
+install(TARGETS ${PROJECT_NAME} EXPORT prmslib-config
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    INCLUDES DESTINATION include)
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ DESTINATION include
+    FILES_MATCHING PATTERN "*.mod"
+    PATTERN "CMakeFiles" EXCLUDE)
+
+install(EXPORT prmslib-config DESTINATION lib/cmake)
+export(TARGETS ${PROJECT_NAME} FILE prmslib-config.cmake)
+#    RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
+# This makes the project importable from the build directory
+#export(TARGETS lib FILE MyLibraryConfig.cmake)
