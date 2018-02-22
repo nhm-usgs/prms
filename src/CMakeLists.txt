@@ -1,29 +1,33 @@
+cmake_minimum_required(VERSION 3.6)
+project(prms_project LANGUAGES Fortran)
 
+# SET(VERSION x.x.x)
+message("CMAKE_BINARY_DIR: " ${CMAKE_BINARY_DIR})
+message("CMAKE_SOURCE_DIR: " ${CMAKE_SOURCE_DIR})
 
-cmake_minimum_required (VERSION 3.6)
-project (prms)
-enable_language (Fortran)
+# Add our local modules to the module path
+if(NOT CMAKE_MODULE_PATH)
+  set(CMAKE_MODULE_PATH)
+endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../config/cmake")
+message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-# Setup the Fortran cmake environment
-include(../FortranEnvironment.cmake)
+include("${CMAKE_MODULE_PATH}/BuildType.cmake")
 
+# GNUInstallDirs is used to install libraries into correct locations
+# on all platforms.
+include(GNUInstallDirs)
 
-# Initialize the library with no files added yet
-set(libName prmslib)
+# set the Fortran compile flags
+include(${CMAKE_MODULE_PATH}/FortranEnvironment.cmake)
 
-link_directories(../../coretran/lib)
+# Add the prms library source directory
+add_subdirectory(${CMAKE_SOURCE_DIR}/prmslib)
 
-# Create the library
-add_library(${libName} ${libType} "")
+# Add the directory which contains the source for the prms executable
+add_subdirectory(${CMAKE_SOURCE_DIR}/prms)
 
-# Link in the library
-target_link_libraries(${libName} coretran)
-
-# Add the include folder that contains the library modules
-target_include_directories(${libName} PUBLIC ../../coretran/include)
-
-include(classes/CMakeLists.txt)
-include(io/CMakeLists.txt)
-include(misc/CMakeLists.txt)
-include(physics/CMakeLists.txt)
+# Add a distclean target to the Makefile
+# ADD_CUSTOM_TARGET(distclean 
+#     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/distclean.cmake
 
