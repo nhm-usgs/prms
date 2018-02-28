@@ -71,10 +71,9 @@ module Control_class
   end interface
 
   interface
-    module subroutine read_Control(this)  !, fName)
+    module subroutine read_Control(this)
       class(Control), intent(inout) :: this
         !! Control Class
-      !      character(len=*), intent(in) :: fName
     end subroutine
   end interface
 
