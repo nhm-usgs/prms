@@ -12,7 +12,9 @@ module rVariable_class
     !!
     !!
     !!
+    use iso_fortran_env, only: output_unit
     use variableKind
+    use prms_constants, only: MAXFILE_LENGTH
     use sArray_class, only: sArray
     use rArray_class, only: rArray
 
@@ -32,53 +34,42 @@ module rVariable_class
         type(sArray) :: module_names
 
     contains
-        ! procedure, public :: read
+        procedure, public, pass(this) :: read => read_rVariable
+          !! Read the class from a file
     end type
 
-    ! interface rVariable
-    !     module procedure constructor
-    ! end interface
 contains
-    ! subroutine read(this, iunit)
-    !     use iso_fortran_env
-    !     implicit none
-    !
-    !     class(rVariable), intent(in) :: this
-    !     integer(i32), intent(in) :: iunit
-    !
-    !     integer(r32) :: ios
-    !     character(len=256) :: buf
-    !     ! character(len=16) :: string
-    !     character(len=32) :: paramstring
-    !     character(len=12) :: dim_string(2)
-    !     ! integer(i32) :: iunit
-    !         ! File IO unit for opened parameter file
-    !
-    !     ! integer(i32) :: ios
-    !     integer(i32) :: num_dims
-    !     integer(i32) :: i
-    !     integer(i32) :: num
-    !     integer(i32) :: inum
-    !
-    !
-    !     ! ~~~~~~~~~~~~~~~~~~~~
-    !     ! Number of dimensions
-    !     read (iunit, *, IOSTAT=ios) num_dims
-    !     if (ios /= 0) call read_error(11, 'invalid number of dimensions: ' // trim(paramstring))
-    !     if (num_dims > 2) call read_error(11, 'number of dimensions > 3: ' // trim(paramstring))
-    !
-    !     ! ~~~~~~~~~~~~~~~~~~~~
-    !     ! Dimension names
-    !     num = 1
-    !     do i = 1, num_dims
-    !         read (iunit, '(A)', IOSTAT = ios) dim_string(i)
-    !         if (ios /= 0) call read_error(11, 'invalid dimension for parameter: ' // trim(paramstring))
-    !
-    !         ! inum = getdim(dim_string(i))
-    !         ! call dim_data%get_data(dim_string(i), inum)
-    !         if (inum == IOSTAT_END) call read_error(11, TRIM(dim_string(i)))
-    !         num = num * inum
-    !     enddo
-    !
-    ! end subroutine
+  !====================================================================!
+  subroutine read_rVariable(this, iUnit)
+      class(rVariable), intent(inout) :: this
+        !! iArray Class
+      integer(i32), intent(in) :: iUnit
+        !! Unit number to read from
+
+      integer(i32) :: ii
+      integer(i32) :: istat
+      integer(i32) :: N ! number of values
+      character(len=MAXFILE_LENGTH) :: filename
+
+      ! Read the dimension names
+      call this%dim_names%read(Iunit, has_datatype=.false.)
+
+      read(iUnit, *) N
+      read(iUnit, *)    ! Skip the datatype
+
+      call this%allocate(N)
+
+      do ii = 1, N
+          read(iUnit, *, iostat=istat) this%values(ii)
+
+          if (istat /= 0) then
+            inquire(UNIT=iUnit, NAME=filename)
+            write(output_unit, *) "ERROR: Reading from file: " // trim(filename)
+            close(iUnit)
+            stop
+          endif
+          ! call fErr(istat, fName, 2)
+      enddo
+  end subroutine
+
 end module
