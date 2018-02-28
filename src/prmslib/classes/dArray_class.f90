@@ -13,13 +13,14 @@ module dArray_class
     !!
 
     use iso_fortran_env, only: output_unit
+    use prms_constants, only: MAXFILE_LENGTH
     use variableKind, only: r64, i32
     use m_errors, only: fErr
     use Abc_class, only: Abc
     use m_allocate, only: allocate
     use m_deallocate, only: deallocate
     use m_strings, only: str
-    
+
     implicit none
 
     private
@@ -62,7 +63,7 @@ contains
           !! dArray class
         integer(i32), intent(in) :: N
           !! Size in 1D of the class
-          
+
         call this%allocate(N)
     end function
     !====================================================================!
@@ -83,7 +84,7 @@ contains
           !! dArray class
         integer(i32), intent(in) :: N
           !! Allocate the values to size N, and set the dims array to 1D of length one.
-    
+
         call allocate(this%values, N)
         call allocate(this%dims, 1)
         this%dims(1) = N
@@ -124,25 +125,34 @@ contains
     !====================================================================!
 
     !====================================================================!
-    subroutine read_dArray(this, iUnit, fName)
+    subroutine read_dArray(this, iUnit) !, fName)
         class(dArray), intent(inout) :: this
           !! dArray Class
         integer(i32), intent(in) :: iUnit
           !! Unit number to read from
-        character(len=*), intent(in) :: fName
-          !! Name of the file that was opened
+        ! character(len=*), intent(in) :: fName
+          ! Name of the file that was opened
 
-        integer(i32) :: i, istat
+        integer(i32) :: ii
+        integer(i32) :: istat
         integer(i32) :: N
+        character(len=MAXFILE_LENGTH) :: filename
 
         read(iUnit, *) N
         read(iUnit, *)
 
         call this%allocate(N)
 
-        do i = 1, N
-            read(iUnit, *, iostat=istat) this%values(i)
-            call fErr(istat, fName, 2)
+        do ii = 1, N
+            read(iUnit, *, iostat=istat) this%values(ii)
+
+            if (istat /= 0) then
+              inquire(UNIT=iUnit, NAME=filename)
+              write(output_unit, *) "ERROR: Reading from file: " // trim(filename)
+              close(iUnit)
+              stop
+            endif
+            ! call fErr(istat, fName, 2)
         enddo
     end subroutine
     !====================================================================!
@@ -154,7 +164,7 @@ contains
           !! sArray Class
         integer(i32) :: res
           !! Size of the list
-    
+
         res = size(this%values)
     end function
     !====================================================================!
