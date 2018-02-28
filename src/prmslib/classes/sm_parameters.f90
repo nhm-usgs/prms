@@ -31,7 +31,7 @@ contains
       !! Buffer for reading control file
     character(len=:), allocatable :: last
       !! Previous line read from file
-    type(Abc), pointer :: ptr
+    ! type(Abc), pointer :: ptr
 
     logical :: go
 
@@ -205,13 +205,13 @@ contains
               call this%dprst_seep_rate_open%print()
 
             case('elev_units')
-              ptr => this%elev_units
-              call ptr%read(iUnit)
-              line = line + ptr%size() + 2
-              call ptr%print()
-              ! call this%elev_units%read(iUnit)
-              ! line = line + this%elev_units%size() + 2
-              ! call this%elev_units%print()
+              ! ptr => this%elev_units
+              ! call ptr%read(iUnit)
+              ! line = line + ptr%size() + 2
+              ! call ptr%print()
+              call this%elev_units%read(iUnit)
+              line = line + this%elev_units%size() + 2
+              call this%elev_units%print()
 
             case('emis_noppt')
               call this%emis_noppt%read(iUnit)
