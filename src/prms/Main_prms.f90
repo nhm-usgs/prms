@@ -6,6 +6,8 @@ program prms6
   use variableKind
   !use PRMS_MODULE, only : Number_timesteps
   use Control_class, only: Control
+  use Parameters_class, only: Parameters
+
   ! use dimensions_mod
   ! use parameter_arr_mod, only: parameter_arr_t
   ! use variables_arr_mod, only: variables_arr_t
@@ -18,6 +20,7 @@ program prms6
 
   type(Control) :: Control_data
     !! Class of control file related parameters
+  type(Parameters) :: Parameter_data
 
   ! type(control_list) :: Control_data
   ! type(dimension_list) :: Dimension_data
@@ -29,6 +32,8 @@ program prms6
   call get_control_filename(control_filename)
 
   Control_data = Control(control_filename)
+
+  Parameter_data = Parameters(Control_data)
 
   ! Var_data = variables_arr_t()
   ! Param_data = parameter_arr_t()
