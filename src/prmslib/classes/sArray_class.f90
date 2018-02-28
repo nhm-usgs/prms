@@ -13,6 +13,7 @@ module sArray_class
     !!
 
     use iso_fortran_env, only: output_unit
+    use prms_constants, only: MAXFILE_LENGTH
     use variableKind, only: i32, cLen
     use Abc_class, only: Abc
     use m_allocate, only: allocate
@@ -112,24 +113,34 @@ contains
     !====================================================================!
 
     !====================================================================!
-    subroutine read_sArray(this, iUnit, fName)
+    subroutine read_sArray(this, iUnit, has_datatype)
         class(sArray), intent(inout) :: this
           !! sArray Class
         integer(i32), intent(in) :: iUnit
           !! Unit number to read from
-        character(len=*), intent(in) :: fName
-          !! Name of the file that was opened
+        logical, optional, intent(in) :: has_datatype
 
-        integer(i32) :: i, istat
+        integer(i32) :: ii
+        integer(i32) :: istat
         integer(i32) :: N
 
         read(iUnit, *) N
-        read(iUnit, *) i
+
+        ! A hack to handle control file sArray's and
+        ! parameter file sArray's of dimension names
+        if (.not. present(has_datatype)) then
+          read(iUnit, *) ii
+        else
+          if(has_datatype) then
+            read(iUnit, *) ii
+          endif
+        end if
 
         call this%allocate(N)
 
-        do i = 1, N
-            call this%values(i)%read(iUnit, fName)
+        do ii = 1, N
+            call this%values(ii)%read(iUnit)
+            ! No error check here because String class does it
         enddo
 
     end subroutine
