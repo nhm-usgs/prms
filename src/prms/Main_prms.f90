@@ -7,6 +7,7 @@ program prms6
   !use PRMS_MODULE, only : Number_timesteps
   use Control_class, only: Control
   use Parameters_class, only: Parameters
+  use PRMS_SIMULATION, only: Simulation
 
   ! use dimensions_mod
   ! use parameter_arr_mod, only: parameter_arr_t
@@ -21,6 +22,9 @@ program prms6
   type(Control) :: Control_data
     !! Class of control file related parameters
   type(Parameters) :: Parameter_data
+    !! Class of input parameters
+  type(Simulation) :: model_simulation
+    !! PRMS model simulation class
 
   ! type(control_list) :: Control_data
   ! type(dimension_list) :: Dimension_data
@@ -28,12 +32,35 @@ program prms6
   ! type(variables_arr_t) :: Var_data
 
   integer(i32) :: ii
+  integer(i32) :: ctl_crap
+  real(r32) :: param_crap
+  real(r32) :: param_crap_1D(14)
+  real(r32) :: param_crap_2D(14, 12)
 
   call get_control_filename(control_filename)
 
   Control_data = Control(control_filename)
 
+  ! ctl_crap = Control_data%nhru
+  ! print *, 'nhru: ', ctl_crap
+
+
+  ! TODO: How to handle allocation and reading of parameter variables depending
+  !       on which physics modules are selected?
   Parameter_data = Parameters(Control_data)
+
+  !param_crap_1D = Parameter_data%tmin_cbh_adj
+  !print *, 'tmin_cbh_adj: ', param_crap_1D
+
+  print *, "Initialize Simulation"
+  model_simulation = Simulation(Control_data, Parameter_data)
+
+  call model_simulation%run(Control_data, Parameter_data)
+  ! TODO: Open, position, and read any ancillary data including:
+  !       CBH files,
+
+  ! TODO: Possibly have outermost time loop here and then call physics modules
+  !       for each timestep
 
   ! Var_data = variables_arr_t()
   ! Param_data = parameter_arr_t()

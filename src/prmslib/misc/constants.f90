@@ -32,7 +32,29 @@ module prms_constants
     real(r64), PARAMETER :: CFS2CMS_CONV = 0.028316847D0
     REAL(r32), PARAMETER :: INCH2MM = 25.4
     real(r32), parameter :: INCH2M = 0.0254
+
+    ! TODO: what units are MAXTEMP and MINTEMP?
     real(r32), parameter :: MAXTEMP = 200.0
     real(r32), parameter :: MINTEMP = -150.0
+
     REAL(r32), PARAMETER :: MM2INCH = 1.0 / INCH2MM
+
+    ! Frequency values
+    ! Used for basinOut_freq, nhruOut_freq, and nsubOut_freq
+    integer(i32), parameter :: DAILY = 1
+    integer(i32), parameter :: MONTHLY = 2
+    integer(i32), parameter :: DAILY_MONTHLY = 3
+    integer(i32), parameter :: MEAN_MONTHLY = 4
+    integer(i32), parameter :: MEAN_YEARLY = 5
+    integer(i32), parameter :: YEARLY = 6
+
+    ! Model modes
+    integer(i32), parameter :: PRMS = 1
+    integer(i32), parameter :: WRITE_CLIMATE = 4
+    integer(i32), parameter :: CLIMATE = 6
+    integer(i32), parameter :: POTET = 7
+    integer(i32), parameter :: TRANSPIRE = 8
+    integer(i32), parameter :: FROST = 9
+    integer(i32), parameter :: CONVERT = 10
+    integer(i32), parameter :: DOCUMENTATION = 99
 end module prms_constants

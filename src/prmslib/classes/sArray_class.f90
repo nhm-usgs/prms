@@ -131,7 +131,7 @@ contains
         if (.not. present(has_datatype)) then
           read(iUnit, *) ii
         else
-          if(has_datatype) then
+          if (has_datatype) then
             read(iUnit, *) ii
           endif
         end if

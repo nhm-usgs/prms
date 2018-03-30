@@ -9,158 +9,130 @@
 !RSR: Warning, summer is based on equinox of Julian days 79 to 265 in
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
-MODULE PRMS_DDSOLRAD
-    use kinds_mod, only: r4, r8, i4, i8
-    IMPLICIT NONE
+module PRMS_DDSOLRAD
+  use variableKind
+  implicit none
 
-    ! Local Variables
-    ! INTEGER, SAVE :: Observed_flag
-    CHARACTER(LEN=8), SAVE :: MODNAME
+  ! Local Variables
+  character(len=*), parameter :: MODNAME = 'ddsolrad'
+  character(len=*), parameter :: VERSION = 'ddsolrad.f90 2017-09-29 13:50:00Z'
 
-    ! Declared Parameters
-    REAL(r4), SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
-    REAL(r4), SAVE, ALLOCATABLE :: Dday_slope(:, :), Dday_intcp(:, :), Tmax_index(:, :)
+  real(r32), dimension(26), parameter :: SOLF = [.20, .35, .45, .51, .56, .59, &
+                                                 .62, .64, .655, .67, .682, .69, &
+                                                 .70, .71, .715, .72, .722, .724, &
+                                                 .726, .728, .73, .734, .738, &
+                                                 .742, .746, .75]
+  ! real(r32), SAVE, DIMENSION(26) :: solf
+  ! DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
+  !           .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
+  !           .734, .738, .742, .746, .75/
 
-    private
-    public :: ddsolrad
+  private
+  public :: ddsolrad
 
-    contains
-        INTEGER FUNCTION ddsolrad(dim_data, param_data)
-            USE PRMS_MODULE, ONLY: Process, Nhru, print_module
-            USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
-            USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
-                    &    Basin_horad, Basin_swrad, Hru_ppt, Tmax_allrain, &
-                    &    Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
-            USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
-            USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag, print_date
-            use UTILS_PRMS, only: read_error
-            ! use parameter_mod, only: declparam, getparam
-            ! use PRMS_MMFAPI, only: declparam, getparam
-            use dimensions_mod, only: dimension_list
-            use parameter_arr_mod, only: parameter_arr_t
-            IMPLICIT NONE
+  ! Declared Parameters
+  ! type Ddsolrad
+  ! end type
 
-            type(dimension_list), intent(in) :: dim_data
-            type(parameter_arr_t), intent(inout) :: param_data
+  contains
+    subroutine ddsolrad(ctl_data, param_data, model_time, solt, climate, model_basin)
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
+      use PRMS_BASIN, only: Basin
+      use PRMS_CLIMATEVARS, only: Climateflow
+      use PRMS_SOLTAB, only: Soltab
+      use PRMS_SET_TIME, only: Time
 
-            ! Functions
-            INTRINSIC INT, FLOAT, DBLE, SNGL
+      use PRMS_MODULE, only: print_module
+      use UTILS_PRMS, only: read_error
+      implicit none
 
-            ! Local Variables
-            INTEGER(i4) :: j, jj, kp, kp1
-            REAL(r4) :: pptadj, radadj, dday, ddayi
+      type(Control), intent(in) :: ctl_data
+      type(Parameters), intent(in) :: param_data
+      type(Time), intent(in) :: model_time
+      type(Soltab), intent(in) :: solt
+      type(Climateflow), intent(inout) :: climate
+      type(Basin), intent(inout) :: model_basin
 
-            ! Save Variables
-            CHARACTER(LEN = 80), SAVE :: Version_ddsolrad
-            REAL(r4), SAVE, DIMENSION(26) :: solf
-            DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
-                      .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
-                      .734, .738, .742, .746, .75/
-            !***********************************************************************
-            ddsolrad = 0
 
-            IF (Process == 'run') THEN
-                !rsr using julian day as the soltab arrays are filled by julian day
-                Basin_horad = Soltab_basinpotsw(Jday)
-                Basin_swrad = 0.0D0
-                Basin_orad = 0.0D0
+      ! Functions
+      INTRINSIC INT, FLOAT, DBLE, SNGL
 
-                DO jj = 1, Active_hrus
-                    j = Hru_route_order(jj)
+      ! Local Variables
+      integer(i32) :: chru
+      integer(i32) :: jj
+      integer(i32) :: kp
+      integer(i32) :: kp1
+      integer(i32) :: idx1D
+        !! 1D index from 2D
+      real(r32) :: pptadj
+      real(r32) :: radadj
+      real(r32) :: dday
+      real(r32) :: ddayi
 
-                    ! set degree day and radiation adjustment limited by radmax
-                    dday = Dday_slope(j, Nowmonth) * Tmax_hru(j) + Dday_intcp(j, Nowmonth) + 1.0
-                    IF (dday < 1.0) dday = 1.0
+      !***********************************************************************
 
-                    IF (dday < 26.0) THEN
-                        kp = INT(dday)
-                        ddayi = FLOAT(kp)
-                        kp1 = kp + 1
-                        radadj = solf(kp) + ((solf(kp1) - solf(kp)) * (dday - ddayi))
-                        IF (radadj > Radmax(j, Nowmonth)) radadj = Radmax(j, Nowmonth)
-                    ELSE
-                        radadj = Radmax(j, Nowmonth)
-                    ENDIF
+      !rsr using julian day as the soltab arrays are filled by julian day
+      climate%basin_horad = solt%soltab_basinpotsw(model_time%Jday)
+      climate%basin_swrad = 0.0D0
+      climate%basin_orad = 0.0D0
 
-                    ! Set precipitation adjument factor based on temperature
-                    ! and amount of precipitation
-                    pptadj = 1.0
-                    IF (Hru_ppt(j) > Ppt_rad_adj(j, Nowmonth)) THEN
-                        IF (Tmax_hru(j) < Tmax_index(j, Nowmonth)) THEN
-                            pptadj = Radj_sppt(j)
-                            IF (Tmax_hru(j) >= Tmax_allrain(j, Nowmonth)) THEN
-                                IF (Summer_flag == 0) pptadj = Radj_wppt(j) ! Winter
-                            ELSE
-                                pptadj = Radj_wppt(j)
-                            ENDIF
-                        ELSE
-                            pptadj = Radadj_intcp(j, Nowmonth) + &
-                                    &                 Radadj_slope(j, Nowmonth) * (Tmax_hru(j) - Tmax_index(j, Nowmonth))
-                            IF (pptadj > 1.0) pptadj = 1.0
-                        ENDIF
-                    ENDIF
+      ! TODO: replace chru*Nowmonth with correct 2D indexing
+      do jj = 1, model_basin%active_hrus
+        chru = model_basin%hru_route_order(jj)
+        idx1D = (model_time%Nowmonth - 1) * ctl_data%nhru%values(1) + chru
 
-                    radadj = radadj * pptadj
-                    IF (radadj < 0.2) radadj = 0.2
+        ! set degree day and radiation adjustment limited by radmax
+        dday = param_data%dday_slope%values(idx1D) * climate%tmax_hru(chru) + &
+               param_data%dday_intcp%values(idx1D) + 1.0
+        if (dday < 1.0) dday = 1.0
 
-                    Orad_hru(j) = radadj * SNGL(Soltab_horad_potsw(Jday, j))
-                    Basin_orad = Basin_orad + DBLE(Orad_hru(j) * Hru_area(j))
-                    Swrad(j) = SNGL(Soltab_potsw(Jday, j) / Soltab_horad_potsw(Jday, j) * DBLE(Orad_hru(j)) / Hru_cossl(j))
-                    Basin_swrad = Basin_swrad + DBLE(Swrad(j) * Hru_area(j))
-                ENDDO
+        if (dday < 26.0) then
+          kp = INT(dday)
+          ddayi = FLOAT(kp)
+          kp1 = kp + 1
+          radadj = SOLF(kp) + ((SOLF(kp1) - SOLF(kp)) * (dday - ddayi))
 
-                Basin_orad = Basin_orad * Basin_area_inv
-                Basin_swrad = Basin_swrad * Basin_area_inv
-            ELSEIF (Process == 'declare') THEN
-                Version_ddsolrad = 'ddsolrad.f90 2017-09-29 13:50:00Z'
-                CALL print_module(Version_ddsolrad, 'Solar Radiation Distribution', 90)
-                MODNAME = 'ddsolrad'
+          if (radadj > param_data%radmax%values(idx1D)) then
+            radadj = param_data%radmax%values(idx1D)
+          endif
+        else
+          radadj = param_data%radmax%values(idx1D)
+        endif
 
-                ! Declare Parameters
-                ALLOCATE (Dday_slope(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'dday_slope', 'nhru,nmonths', 'real', &
-                        &       '0.4', '0.2', '0.9', &
-                        &       'Slope in temperature degree-day relationship', &
-                        &       'Monthly (January to December) slope in degree-day equation for each HRU', &
-                        &       'dday/temp_units', dim_data) /= 0) CALL read_error(1, 'dday_slope')
+        ! Set precipitation adjument factor based on temperature
+        ! and amount of precipitation
+        pptadj = 1.0
+        if (climate%hru_ppt(chru) > param_data%ppt_rad_adj%values(idx1D)) then
+          if (climate%tmax_hru(chru) < param_data%tmax_index%values(idx1D)) then
+            pptadj = param_data%radj_sppt%values(chru)
 
-                ALLOCATE (Dday_intcp(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'dday_intcp', 'nhru,nmonths', 'real', &
-                        &       '-40.0', '-60.0', '10.0', &
-                        &       'Intercept in temperature degree-day relationship', &
-                        &       'Monthly (January to December) intercept in degree-day equation for each HRU', &
-                        &       'dday', dim_data) /= 0) CALL read_error(1, 'dday_intcp')
+            if (climate%tmax_hru(chru) >= climate%tmax_allrain(chru, model_time%Nowmonth)) then
+              if (model_time%Summer_flag == 0) pptadj = param_data%radj_wppt%values(chru) ! Winter
+            else
+              pptadj = param_data%radj_wppt%values(chru)
+            endif
+          else
+            pptadj = param_data%radadj_intcp%values(idx1D) + &
+                     param_data%radadj_slope%values(idx1D) * &
+                     (climate%tmax_hru(chru) - param_data%tmax_index%values(idx1D))
+            if (pptadj > 1.0) pptadj = 1.0
+          endif
+        endif
 
-                ALLOCATE (Radadj_slope(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'radadj_slope', 'nhru,nmonths', 'real', '0.0', '0.0', '1.0', &
-                        'Slope in air temperature range adjustment to degree-day equation', &
-                        'Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU', &
-                        'dday/temp_units', dim_data) /= 0) CALL read_error(1, 'radadj_slope')
+        radadj = radadj * pptadj
+        if (radadj < 0.2) radadj = 0.2
 
-                ALLOCATE (Radadj_intcp(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'radadj_intcp', 'nhru,nmonths', 'real', &
-                        &       '1.0', '0.0', '1.0', &
-                        &       'Intercept in air temperature range adjustment to degree-day equation', &
-                        &       'Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU', &
-                        &       'dday', dim_data) /= 0) CALL read_error(1, 'radadj_intcp')
+        climate%orad_hru(chru) = radadj * SNGL(solt%soltab_horad_potsw(model_time%Jday, chru))
+        climate%basin_orad = climate%basin_orad + &
+                             DBLE(climate%orad_hru(chru) * param_data%hru_area%values(chru))
+        climate%swrad(chru) = SNGL(solt%soltab_potsw(model_time%Jday, chru) / solt%soltab_horad_potsw(model_time%Jday, chru) * &
+                              DBLE(climate%orad_hru(chru)) / solt%hru_cossl(chru))
+        climate%basin_swrad = climate%basin_swrad + &
+                              DBLE(climate%swrad(chru) * param_data%hru_area%values(chru))
+      enddo
 
-                ALLOCATE (Tmax_index(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'tmax_index', 'nhru,nmonths', 'real', &
-                        &       '50.0', '-10.0', '110.0', &
-                        &       'Monthly index temperature', &
-                        &       'Monthly (January to December) index temperature used' // &
-                        &       ' to determine precipitation adjustments to solar radiation for each HRU', &
-                        &       'temp_units', dim_data) /= 0) CALL read_error(1, 'tmax_index')
-            ELSEIF (Process == 'init') THEN
-                ! Get parameters
-                IF (param_data%getparam(MODNAME, 'dday_slope', Nhru * 12, 'real', Dday_slope) /= 0) CALL read_error(2, 'dday_slope')
-                IF (param_data%getparam(MODNAME, 'dday_intcp', Nhru * 12, 'real', Dday_intcp) /= 0) CALL read_error(2, 'dday_intcp')
-                IF (param_data%getparam(MODNAME, 'radadj_slope', Nhru * 12, 'real', Radadj_slope) /= 0) CALL read_error(2, 'radadj_slope')
-                IF (param_data%getparam(MODNAME, 'radadj_intcp', Nhru * 12, 'real', Radadj_intcp) /= 0) CALL read_error(2, 'radadj_intcp')
-                IF (param_data%getparam(MODNAME, 'tmax_index', Nhru * 12, 'real', Tmax_index) /= 0) CALL read_error(2, 'tmax_index')
-
-            ENDIF
-
-        END FUNCTION ddsolrad
-
-END MODULE PRMS_DDSOLRAD
+      climate%basin_orad = climate%basin_orad * model_basin%basin_area_inv
+      climate%basin_swrad = climate%basin_swrad * model_basin%basin_area_inv
+    end subroutine
+end module

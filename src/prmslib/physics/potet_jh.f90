@@ -3,86 +3,70 @@
 ! formulation (Jensen and others, 1970)
 !     Potet = Coef_t_mean*(Tavgf-Temp_x_mean)*Swrad/elh
 !***********************************************************************
-MODULE PRMS_POTET_JH
-    use kinds_mod, only: r4, r8, i4, i8
-    IMPLICIT NONE
+module PRMS_POTET_JH
+  use variableKind
+  implicit none
 
-    ! Local Variable
-    CHARACTER(LEN=8), SAVE :: MODNAME
+  ! Local Variable
+  character(len=*), parameter :: MODNAME = 'potet_jh'
+  character(len=*), parameter :: VERSION = 'potet_jh.f90 2016-05-10 15:48:00Z'
 
-    ! Declared Parameters
-    REAL(r4), SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
+  private
+  public :: run_potet_jh
 
-    private
-    public :: potet_jh
+  contains
+    subroutine run_potet_jh(ctl_data, param_data, model_basin, model_time, climate)
+      ! use PRMS_SET_TIME, only: month
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
+      use PRMS_SET_TIME, only: Time
+      use PRMS_BASIN, only: Basin
+      use PRMS_CLIMATEVARS, only: Climateflow
+      implicit none
 
-    contains
-        INTEGER FUNCTION potet_jh(dim_data, param_data)
-            USE PRMS_MODULE, ONLY: Process, Nhru, print_module
-            USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
-            USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tavgf, Swrad
-            USE PRMS_SET_TIME, ONLY: Nowmonth
-            use UTILS_PRMS, only: read_error
-            ! use parameter_mod, only: declparam, getparam
-            ! use PRMS_MMFAPI, only: declparam, getparam
-            use dimensions_mod, only: dimension_list
-            use parameter_arr_mod, only: parameter_arr_t
-            IMPLICIT NONE
+      type(Control), intent(in) :: ctl_data
+      type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
+      type(Time), intent(in) :: model_time
+      type(Climateflow), intent(inout) :: climate
 
-            type(dimension_list), intent(in) :: dim_data
-            type(parameter_arr_t), intent(inout) :: param_data
+      ! Functions
+      INTRINSIC DBLE
 
-            ! Functions
-            INTRINSIC DBLE
+      ! Local Variables
+      integer(i32) :: chru
+        !! Current HRU
+      integer(i32) :: j
+        !! Loop variable
+      integer(i32) :: idx1D
+        !! 1D index from 2D
+      integer(i32) :: month
+        !! Local copy of Time%Nowmonth
+      real(r32) :: elh
+        !! Latent heat of vaporization
 
-            ! Local Variables
-            INTEGER(i4) :: i, j
-            REAL(r4) :: elh
-            CHARACTER(LEN=80), SAVE :: Version_potet_jh
 
-            !***********************************************************************
-            potet_jh = 0
+      !***********************************************************************
+      month = model_time%Nowmonth
 
-            IF (Process == 'run') THEN
-                !***********************************************************************
-                ! 597.3 cal/gm at 0 C is the energy required to change the state of
-                ! water to vapor
-                ! elh is the latent heat of vaporization (not including the *2.54)
-                Basin_potet = 0.0D0
-                DO j = 1, Active_hrus
-                    i = Hru_route_order(j)
-                    elh = (597.3 - (0.5653 * Tavgc(i))) * 2.54
-                    Potet(i) = Jh_coef(i, Nowmonth) * (Tavgf(i) - Jh_coef_hru(i)) * Swrad(i) / elh
-                    IF (Potet(i) < 0.0) Potet(i) = 0.0
-                    Basin_potet = Basin_potet + DBLE(Potet(i) * Hru_area(i))
-                ENDDO
-                Basin_potet = Basin_potet * Basin_area_inv
+      !***********************************************************************
+      ! 597.3 cal/gm at 0 C is the energy required to change the state of
+      ! water to vapor
+      ! elh is the latent heat of vaporization (not including the *2.54)
+      ! Basin_potet = 0.0D0
 
-                !******Declare parameters
-            ELSEIF (Process == 'declare') THEN
-                Version_potet_jh = 'potet_jh.f90 2016-05-10 15:48:00Z'
-                CALL print_module(Version_potet_jh, 'Potential Evapotranspiration', 90)
-                MODNAME = 'potet_jh'
+      ! TODO: fix indexing placeholder chru*month
+      do j = 1, model_basin%active_hrus
+        chru = model_basin%hru_route_order(j)
+        idx1D = (month - 1) * ctl_data%nhru%values(1) + chru
+        elh = (597.3 - (0.5653 * climate%tavgc(chru))) * 2.54
+        climate%potet(chru) = param_data%jh_coef%values(idx1D) * (climate%tavgf(chru) - &
+                              param_data%jh_coef_hru%values(chru)) * climate%swrad(chru) / elh
 
-                ALLOCATE (Jh_coef(Nhru, 12))
-                IF (param_data%declparam(MODNAME, 'jh_coef', 'nhru,nmonths', 'real', '0.014', '0.0', '0.1', &
-                        'Monthly air temperature coefficient for each HRU - Jensen-Haise', &
-                        'Monthly (January to December) air temperature coefficient used in Jensen-Haise ' // &
-                        'potential ET computations for each HRU', &
-                        'per degrees Fahrenheit', dim_data) /= 0) CALL read_error(1, 'jh_coef')
+        if (climate%potet(chru) < 0.0) climate%potet(chru) = 0.0
+        climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * param_data%hru_area%values(chru))
+      enddo
 
-                ALLOCATE (Jh_coef_hru(Nhru))
-                IF (param_data%declparam(MODNAME, 'jh_coef_hru', 'nhru', 'real', '13.0', '-99.0', '150.0', &
-                        &       'HRU air temperature coefficient - Jensen-Haise', &
-                        &       'Air temperature coefficient used in Jensen-Haise potential ET computations for each HRU', &
-                        &       'degrees Fahrenheit', dim_data) /= 0) CALL read_error(1, 'jh_coef_hru')
-
-                !******Get parameters
-            ELSEIF (Process == 'init') THEN
-                IF (param_data%getparam(MODNAME, 'jh_coef', Nhru * 12, 'real', Jh_coef) /= 0) CALL read_error(2, 'jh_coef')
-                IF (param_data%getparam(MODNAME, 'jh_coef_hru', Nhru, 'real', Jh_coef_hru) /= 0) CALL read_error(2, 'jh_coef_hru')
-
-            ENDIF
-        END FUNCTION potet_jh
-
-END MODULE PRMS_POTET_JH
+      climate%basin_potet = climate%basin_potet * model_basin%basin_area_inv
+    end subroutine
+end module

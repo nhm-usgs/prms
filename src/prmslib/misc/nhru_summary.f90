@@ -2,408 +2,399 @@
 !     Output a set of declared variables by HRU for use with R
 !***********************************************************************
 MODULE PRMS_NHRU_SUMMARY
-    use kinds_mod, only: r4, r8, i4, i8
-    USE prms_constants, ONLY:MAXFILE_LENGTH
-    IMPLICIT NONE
+  use variableKind
+  use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
+                            MEAN_MONTHLY, MEAN_YEARLY, YEARLY
+  implicit none
 
+  character(len=*), parameter :: MODNAME = 'nhru_summary'
+  character(len=*), parameter :: VERSION = 'nhru_summary.f90 2017-09-29 13:49:00Z'
+
+  private ! :: nhru_summarydecl, nhru_summaryinit, nhru_summaryrun
+  public :: Nhru_summary
+
+  type Nhru_summary
     ! Module Variables
-    INTEGER(i4) :: Begin_results
-    INTEGER(i4) :: Begyr
-    INTEGER(i4) :: Lastyear
-    INTEGER(i4), ALLOCATABLE :: Dailyunit(:)
-    INTEGER(i4), ALLOCATABLE :: Nc_vars(:)
-    INTEGER(i4), ALLOCATABLE :: Nhru_var_type(:)
-    REAL(r4), ALLOCATABLE :: Nhru_var_daily(:, :)
-    real(r8), ALLOCATABLE :: Nhru_var_dble(:, :)
+    integer(i32) :: begin_results = 1
+    integer(i32) :: begyr
+    integer(i32) :: lastyear
+    integer(i32), allocatable :: dailyunit(:)
+    integer(i32), allocatable :: nc_vars(:)
+    integer(i32), allocatable :: nhru_var_type(:)
+    real(r32), allocatable :: nhru_var_daily(:, :)
+    real(r64), allocatable :: nhru_var_dble(:, :)
 
-    CHARACTER(LEN=48) :: Output_fmt
-    character(len=48) :: Output_fmt2
-    character(len=48) :: Output_fmt3
-    CHARACTER(LEN=12), SAVE :: MODNAME
+    character(len=48) :: output_fmt
+    character(len=48) :: output_fmt2
+    character(len=48) :: output_fmt3
 
-    INTEGER(i4) :: Daily_flag
-    INTEGER(i4) :: Double_vars
-    INTEGER(i4) :: Yeardays
-    INTEGER(i4) :: Monthly_flag
+    integer(i32) :: daily_flag
+    integer(i32) :: double_vars = 0
+    integer(i32) :: yeardays
+    integer(i32) :: monthly_flag
 
-    real(r8) :: Monthdays
-    INTEGER(i4), ALLOCATABLE :: Monthlyunit(:)
-    INTEGER(i4), ALLOCATABLE :: Yearlyunit(:)
-    real(r8), ALLOCATABLE :: Nhru_var_monthly(:, :)
-    real(r8), ALLOCATABLE :: Nhru_var_yearly(:, :)
+    real(r64) :: monthdays
+    integer(i32), allocatable :: monthlyunit(:)
+    integer(i32), allocatable :: yearlyunit(:)
+    real(r64), allocatable :: nhru_var_monthly(:, :)
+    real(r64), allocatable :: nhru_var_yearly(:, :)
+
+    integer(i32), private :: start_time(6)
+      !! Local copy of ctl_data%start_time
+    integer(i32), private :: end_time(6)
+      !! Local copy of ctl_data%start_time
 
     ! Parameters
-    INTEGER(i4), ALLOCATABLE :: Nhm_id(:)
+    ! integer(i32), allocatable :: Nhm_id(:)
+    ! TODO: create run routine
+  end type
 
-    private :: nhru_summarydecl, nhru_summaryinit, nhru_summaryrun
-    public :: nhru_summary
+  interface Nhru_summary
+    !! Climateflow constructor
+    module function constructor_Nhru_summary(ctl_data, param_data) result(this)
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
 
-    contains
-        !     ******************************************************************
-        !     nhru results module
-        !     ******************************************************************
-        SUBROUTINE nhru_summary(dim_data, ctl_data, param_data, var_data)
-            USE PRMS_MODULE, ONLY: Process
-            use dimensions_mod, only: dimension_list
-            use control_ll_mod, only: control_list
-            use parameter_arr_mod, only: parameter_arr_t
-            use variables_arr_mod, only: variables_arr_t
-            IMPLICIT NONE
+      type(Nhru_summary) :: this
+        !! Nhru_summary class
+      class(Control), intent(in) :: ctl_data
+        !! Control file parameters
+      class(Parameters), intent(in) :: param_data
+        !! Parameters
+    end function
+  end interface
 
-            type(dimension_list), intent(in) :: dim_data
-            type(control_list), intent(in) :: ctl_data
-            type(parameter_arr_t), intent(inout) :: param_data
-            type(variables_arr_t), intent(in) :: var_data
+  contains
+    !***********************************************************************
+    ! Climateflow constructor
+    module function constructor_Nhru_summary(ctl_data, param_data) result(this)
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
+      use prms_constants, only: MAXFILE_LENGTH
+      ! USE PRMS_MODULE, ONLY: Start_year
+      use UTILS_PRMS, only: read_error, PRMS_open_output_file
 
-            !*******************************************************************
-            IF (Process == 'run') THEN
-                CALL nhru_summaryrun(var_data)
-            ELSEIF (Process == 'declare') THEN
-                CALL nhru_summarydecl(dim_data, ctl_data, param_data)
-            ELSEIF (Process == 'init') THEN
-                CALL nhru_summaryinit(ctl_data, param_data, var_data)
-            ENDIF
-        END SUBROUTINE nhru_summary
+      implicit none
 
-        !***********************************************************************
-        !     declare parameters and variables
-        !***********************************************************************
-        SUBROUTINE nhru_summarydecl(dim_data, ctl_data, param_data)
-            USE PRMS_MODULE, ONLY: Model, Nhru, print_module, &  ! , Inputerror_flag, NhruOutON_OFF
-                                   NhruOutVars, NhruOut_freq, NhruOutVar_names, NhruOutBaseFileName
-            use UTILS_PRMS, only: read_error
-            use dimensions_mod, only: dimension_list
-            use control_ll_mod, only: control_list
-            use parameter_arr_mod, only: parameter_arr_t
+      type(Nhru_summary) :: this
+      class(Control), intent(in) :: ctl_data
+      class(Parameters), intent(in) :: param_data
 
-            IMPLICIT NONE
+      ! Functions
+      INTRINSIC CHAR
 
-            type(dimension_list), intent(in) :: dim_data
-            type(control_list), intent(in) :: ctl_data
-            type(parameter_arr_t), intent(inout) :: param_data
+      ! Local Variables
+      integer(i32) :: nhru_out_flag
+        !! Local copy of nhruOutON_OFF
+      integer(i32) :: nhru_out_freq
+        !! Local copy of nhruOut_freq
+      integer(i32) :: nhru_out_vars
+        !! Local copy of nhruOutVars
 
-            ! Functions
-            INTRINSIC CHAR
+      integer(i32) :: ios
+      integer(i32) :: ierr = 0
+      integer(i32) :: size
+      integer(i32) :: jj
+      integer(i32) :: j
+      character(len=MAXFILE_LENGTH) :: fileName
 
-            ! Local Variables
-            integer(i4) :: NhruOutON_OFF
-            CHARACTER(LEN=:), allocatable, SAVE :: Version_nhru_summary
+      ! ------------------------------------------------------------------------
+      ! Available parameters
+      ! type(sArray) :: nhruOutBaseFileName
+      ! type(iArray) :: nhruOutON_OFF
+      ! type(sArray) :: nhruOutVar_names
+      ! type(iArray) :: nhruOutVars
+      ! type(iArray) :: nhruOut_freq
 
-            !***********************************************************************
-            Version_nhru_summary = 'nhru_summary.f90 2017-09-29 13:49:00Z'
-            CALL print_module(Version_nhru_summary, 'Nhru Output Summary         ', 90)
-            MODNAME = 'nhru_summary'
+      this%start_time = ctl_data%start_time%values(:)
+      this%end_time = ctl_data%end_time%values(:)
 
-            call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
+      ! NOTE: NhruOutON_OFF=2 is an undocumented feature
+      !       Parameter nhm_id is needed for this.
 
-            NhruOutVars = 0
-            if (ctl_data%exists('nhruOutVars')) call ctl_data%get_data('nhruOutVars', NhruOutVars)
+      nhru_out_flag = ctl_data%nhruOutON_OFF%values(1)
 
-            NhruOut_freq = 0
-            if (ctl_data%exists('nhruOut_freq')) call ctl_data%get_data('nhruOut_freq', NhruOut_freq)
-            ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
+      ! nhruOut_freq
+      ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
+      nhru_out_freq = ctl_data%nhruOut_freq%values(1)
 
-            IF (NhruOutVars == 0) THEN
-                IF (Model /= 99) THEN
-                    PRINT *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
-                    STOP
-                    !          PRINT *, 'no nhru_summary output is produced'
-                    !          NhruOutON_OFF = 0
-                    ! Inputerror_flag = 1
-                    RETURN
-                ENDIF
-            ELSE
-                ALLOCATE (NhruOutVar_names(NhruOutVars), Nhru_var_type(NhruOutVars), Nc_vars(NhruOutVars))
+      ! nhruOutVars - use if present in control file
+      nhru_out_vars = ctl_data%nhruOutVars%values(1)
 
-                call ctl_data%get_data('nhruOutVar_names', NhruOutVar_names, missing_stop=.true.)
-                call ctl_data%get_data('nhruOutBaseFileName', NhruOutBaseFileName, missing_stop=.true.)
-            ENDIF
+      if (nhru_out_vars == 0) then
+        if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
+          print *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
+          STOP
+          !          print *, 'no nhru_summary output is produced'
+          !          NhruOutON_OFF = 0
+          ! Inputerror_flag = 1
+          return
+        endif
+      else
+        allocate(this%nhru_var_type(nhru_out_vars))
+        allocate(this%nc_vars(nhru_out_vars))
+      endif
 
-            IF (NhruOutON_OFF == 2) THEN
-                ALLOCATE (Nhm_id(Nhru))
+      ! begin_results = 1
+      this%begyr = this%start_time(1)
 
-                IF (param_data%declparam(MODNAME, 'nhm_id', 'nhru', 'integer', '1', '1', '9999999', &
-                              'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
-                              'none', dim_data) /= 0) CALL read_error(1, 'nhm_id')
-            ENDIF
-        END SUBROUTINE nhru_summarydecl
+      if (ctl_data%prms_warmup%values(1) > 0) this%begin_results = 0
 
-        !***********************************************************************
-        !     Initialize module values
-        !***********************************************************************
-        SUBROUTINE nhru_summaryinit(ctl_data, param_data, var_data)
-            use prms_constants, only: MAXFILE_LENGTH
-            USE PRMS_MODULE, ONLY: Nhru, Start_year, Prms_warmup, &
-                                   NhruOutVars, NhruOut_freq, NhruOutVar_names, &  ! , NhruOutON_OFF
-                                   NhruOutBaseFileName
-            use UTILS_PRMS, only: read_error, PRMS_open_output_file
-            use control_ll_mod, only: control_list
-            use parameter_arr_mod, only: parameter_arr_t
-            use variables_arr_mod, only: variables_arr_t
-            IMPLICIT NONE
+      this%begyr = this%begyr + ctl_data%prms_warmup%values(1)
+      this%lastyear = this%begyr
 
-            INTRINSIC ABS
+      write (this%output_fmt, 9001) ctl_data%nhru%values(1)
 
-            type(control_list), intent(in) :: ctl_data
-            type(parameter_arr_t), intent(in) :: param_data
-            type(variables_arr_t), intent(in) :: var_data
+      ! double_vars = 0
+      ! ierr = 0
 
-            ! Local Variables
-            integer(i4) :: NhruOutON_OFF
+      do jj = 1, nhru_out_vars
+        ! TODO: Not sure yet how to handle the variables and their datatypes
+        ! this%nhru_var_type(jj) = var_data%getvartype(ctl_data%nhruOutVar_names%values(jj)%s)
+        ! if (this%nhru_var_type(jj) == 3) double_vars = 1
+        !
+        ! if (this%nhru_var_type(jj) /= 2 .AND. this%nhru_var_type(jj) /= 3) then
+        !   print *, 'ERROR, invalid nhru_summary variable:', ctl_data%nhruOutVar_names%values(jj)%s
+        !   print *, '       only real or double variables allowed'
+        !   ierr = 1
+        ! endif
+        !
+        ! size = var_data%getvarsize(ctl_data%nhruOutVar_names%values(jj)%s)
+        ! if (size /= ctl_data%nhru%values(1)) then
+        !   print *, 'ERROR, invalid nhru_summary variable:', ctl_data%nhruOutVar_names%values(jj)%s
+        !   print *, '       only variables dimensioned by nhru, nssr, or ngw allowed'
+        !   ierr = 1
+        ! endif
+      enddo
+      if (ierr == 1) STOP
 
-            INTEGER(i4) :: ios
-            INTEGER(i4) :: ierr
-            INTEGER(i4) :: size
-            INTEGER(i4) :: jj
-            INTEGER(i4) :: j
-            CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
+      if (this%double_vars == 1) then
+        allocate(this%nhru_var_dble(ctl_data%nhru%values(1), nhru_out_vars))
+        this%nhru_var_dble = 0.0D0
+      endif
 
-            !***********************************************************************
-            call ctl_data%get_data('nhruOutON_OFF', NhruOutON_OFF)
+      this%daily_flag = 0
+      if (ANY([DAILY, DAILY_MONTHLY]==nhru_out_freq)) then
+      ! if (nhru_out_freq == DAILY .OR. nhru_out_freq == DAILY_MONTHLY) then
+        this%daily_flag = 1
+        allocate(this%dailyunit(nhru_out_vars))
+      endif
 
-            Begin_results = 1
-            Begyr = Start_year
+      this%monthly_flag = 0
+      if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==nhru_out_freq)) this%monthly_flag = 1
+      ! if (nhru_out_freq == MONTHLY .OR. nhru_out_freq == DAILY_MONTHLY .OR. nhru_out_freq == MEAN_MONTHLY) this%monthly_flag = 1
 
-            IF (Prms_warmup > 0) Begin_results = 0
+      if (ANY([MEAN_YEARLY, YEARLY]==nhru_out_freq)) then
+      ! if (nhru_out_freq == MEAN_YEARLY .or. nhru_out_freq == YEARLY) then
+        this%yeardays = 0
+        allocate(this%nhru_var_yearly(ctl_data%nhru%values(1), nhru_out_vars))
+        this%nhru_var_yearly = 0.0D0
 
-            Begyr = Begyr + Prms_warmup
-            Lastyear = Begyr
+        allocate(this%yearlyunit(nhru_out_vars))
 
-            WRITE (Output_fmt, 9001) Nhru
+        write(this%output_fmt3, 9003) ctl_data%nhru%values(1)
+      elseif (this%monthly_flag == 1) then
+        this%monthdays = 0.0D0
+        allocate(this%nhru_var_monthly(ctl_data%nhru%values(1), nhru_out_vars))
+        this%nhru_var_monthly = 0.0D0
 
-            Double_vars = 0
-            ierr = 0
+        allocate(this%monthlyunit(nhru_out_vars))
+      endif
 
-            DO jj = 1, NhruOutVars
-                Nhru_var_type(jj) = var_data%getvartype(NhruOutVar_names(jj)%str)
-                IF (Nhru_var_type(jj) == 3) Double_vars = 1
+      write(this%output_fmt2, 9002) ctl_data%nhru%values(1)
+      allocate(this%nhru_var_daily(ctl_data%nhru%values(1), nhru_out_vars))
+      this%nhru_var_daily = 0.0
 
-                IF (Nhru_var_type(jj) /= 2 .AND. Nhru_var_type(jj) /= 3) THEN
-                    PRINT *, 'ERROR, invalid nhru_summary variable:', NhruOutVar_names(jj)
-                    PRINT *, '       only real or double variables allowed'
-                    ierr = 1
-                ENDIF
+      do jj = 1, nhru_out_vars
+        if (this%daily_flag == 1) then
+          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                     ctl_data%nhruOutVar_names%values(jj)%s // '.csv'
 
-                size = var_data%getvarsize(NhruOutVar_names(jj)%str)
-                IF (size /= Nhru) THEN
-                    PRINT *, 'ERROR, invalid nhru_summary variable:', NhruOutVar_names(jj)
-                    PRINT *, '       only variables dimensioned by nhru, nssr, or ngw allowed'
-                    ierr = 1
-                ENDIF
-            ENDDO
-            IF (ierr == 1) STOP
+          call PRMS_open_output_file(this%dailyunit(jj), fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in nhru_summary'
 
-            IF (Double_vars == 1) THEN
-                ALLOCATE (Nhru_var_dble(Nhru, NhruOutVars))
-                Nhru_var_dble = 0.0D0
-            ENDIF
+          if (nhru_out_flag < 2) then
+            write (this%dailyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+          endif
+        endif
 
-            Daily_flag = 0
-            IF (NhruOut_freq == 1 .OR. NhruOut_freq == 3) THEN
-                Daily_flag = 1
-                ALLOCATE (Dailyunit(NhruOutVars))
-            ENDIF
+        if (nhru_out_freq == MEAN_YEARLY) then
+          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                     ctl_data%nhruOutVar_names%values(jj)%s // '_meanyearly.csv'
 
-            Monthly_flag = 0
-            IF (NhruOut_freq == 2 .OR. NhruOut_freq == 3 .OR. NhruOut_freq == 4) Monthly_flag = 1
+          call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in nhru_summary, mean yearly'
 
-            IF (NhruOut_freq > 4) THEN
-                Yeardays = 0
-                ALLOCATE (Nhru_var_yearly(Nhru, NhruOutVars), Yearlyunit(NhruOutVars))
-                Nhru_var_yearly = 0.0D0
-                WRITE (Output_fmt3, 9003) Nhru
-            ELSEIF (Monthly_flag == 1) THEN
-                Monthdays = 0.0D0
-                ALLOCATE (Nhru_var_monthly(Nhru, NhruOutVars), Monthlyunit(NhruOutVars))
-                Nhru_var_monthly = 0.0D0
-            ENDIF
+          if (nhru_out_flag < 2) write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+        elseif (nhru_out_freq == YEARLY) then
+          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                     ctl_data%nhruOutVar_names%values(jj)%s // '_yearly.csv'
 
-            WRITE (Output_fmt2, 9002) Nhru
-            ALLOCATE (Nhru_var_daily(Nhru, NhruOutVars))
-            Nhru_var_daily = 0.0
+          call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in nhru_summary, yearly'
 
-            DO jj = 1, NhruOutVars
-                IF (Daily_flag == 1) THEN
-                    fileName = NhruOutBaseFileName // &
-                            NhruOutVar_names(jj)%str // '.csv'
-                    !print *, fileName
-                    CALL PRMS_open_output_file(Dailyunit(jj), fileName, 'xxx', 0, ios)
-                    IF (ios /= 0) STOP 'in nhru_summary'
-                    IF (NhruOutON_OFF < 2) WRITE (Dailyunit(jj), Output_fmt2) (j, j = 1, Nhru)
-                ENDIF
+          write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+        elseif (this%monthly_flag == 1) then
+          if (nhru_out_freq == MEAN_MONTHLY) then
+            fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                       ctl_data%nhruOutVar_names%values(jj)%s // '_meanmonthly.csv'
+          else
+            fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                       ctl_data%nhruOutVar_names%values(jj)%s // '_monthly.csv'
+          endif
+          !print *, fileName
+          call PRMS_open_output_file(this%monthlyunit(jj), fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in nhru_summary, monthly'
 
-                IF (NhruOut_freq == 5) THEN
-                    fileName = NhruOutBaseFileName // &
-                            NhruOutVar_names(jj)%str // '_meanyearly.csv'
-                    CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-                    IF (ios /= 0) STOP 'in nhru_summary, mean yearly'
-                    IF (NhruOutON_OFF < 2) WRITE (Yearlyunit(jj), Output_fmt2) (j, j = 1, Nhru)
-                ELSEIF (NhruOut_freq == 6) THEN
-                    fileName = NhruOutBaseFileName // &
-                            NhruOutVar_names(jj)%str // '_yearly.csv'
-                    CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-                    IF (ios /= 0) STOP 'in nhru_summary, yearly'
-                    WRITE (Yearlyunit(jj), Output_fmt2) (j, j = 1, Nhru)
-                ELSEIF (Monthly_flag == 1) THEN
-                    IF (NhruOut_freq == 4) THEN
-                        fileName = NhruOutBaseFileName // &
-                                NhruOutVar_names(jj)%str // &
-                                &                 '_meanmonthly.csv'
-                    ELSE
-                        fileName = NhruOutBaseFileName // &
-                                NhruOutVar_names(jj)%str // '_monthly.csv'
-                    ENDIF
-                    !print *, fileName
-                    CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-                    IF (ios /= 0) STOP 'in nhru_summary, monthly'
-                    IF (NhruOutON_OFF < 2) WRITE (Monthlyunit(jj), Output_fmt2) (j, j = 1, Nhru)
-                ENDIF
-            ENDDO
+          if (nhru_out_flag < 2) write (this%monthlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+        endif
+      enddo
 
-            IF (NhruOutON_OFF == 2) THEN
-                IF (param_data%getparam(MODNAME, 'nhm_id', Nhru, 'integer', Nhm_id) /= 0) CALL read_error(2, 'nhm_id')
+      if (nhru_out_flag == 2) then
+          do jj = 1, nhru_out_vars
+              if (this%daily_flag == 1) write (this%dailyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
 
-                DO jj = 1, NhruOutVars
-                    IF (Daily_flag == 1) WRITE (Dailyunit(jj), Output_fmt2) (Nhm_id(j), j = 1, Nhru)
-                    IF (NhruOut_freq == 5) THEN
-                        WRITE (Yearlyunit(jj), Output_fmt2) (Nhm_id(j), j = 1, Nhru)
-                    ELSEIF (Monthly_flag == 1) THEN
-                        WRITE (Monthlyunit(jj), Output_fmt2) (Nhm_id(j), j = 1, Nhru)
-                    ENDIF
-                ENDDO
-            ENDIF
+              if (nhru_out_freq == MEAN_YEARLY) then
+                  write (this%yearlyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
+              elseif (this%monthly_flag == 1) then
+                  write (this%monthlyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
+              endif
+          enddo
+      endif
 
-            9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
-            9002 FORMAT ('("Date "', I6, '('',''I6))')
-            9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
+      9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
+      9002 FORMAT ('("Date "', I6, '('',''I6))')
+      9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
 
-        END SUBROUTINE nhru_summaryinit
+    end function
 
-        !***********************************************************************
-        !     Output set of declared variables in R compatible format
-        !***********************************************************************
-        SUBROUTINE nhru_summaryrun(var_data)
-            USE PRMS_MODULE, ONLY: Nhru, Start_month, Start_day, End_year, End_month, End_day, &
-                                   NhruOutVars, NhruOut_freq, NhruOutVar_names ! , NhruOutBaseFileName
-            USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-            USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, last_day_of_month   ! , Modays
-            use UTILS_PRMS, only: read_error
-            use variables_arr_mod, only: variables_arr_t
-            IMPLICIT NONE
 
-            type(variables_arr_t), intent(in) :: var_data
 
-            ! FUNCTIONS AND SUBROUTINES
-            INTRINSIC SNGL, DBLE
-
-            ! Local Variables
-            INTEGER(i4) :: j
-            INTEGER(i4) :: i
-            INTEGER(i4) :: jj
-            INTEGER(i4) :: write_month
-            INTEGER(i4) :: write_year
-            INTEGER(i4) :: last_day
-
-            !***********************************************************************
-            IF (Begin_results == 0) THEN
-                IF (Nowyear == Begyr .AND. Nowmonth == Start_month .AND. Nowday == Start_day) THEN
-                    Begin_results = 1
-                ELSE
-                    RETURN
-                ENDIF
-            ENDIF
-
-            !-----------------------------------------------------------------------
-            ! need getvars for each variable (only can have short string)
-            DO jj = 1, NhruOutVars
-                IF (Nhru_var_type(jj) == 2) THEN
-                    CALL var_data%getvar_real(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_daily(1, jj))
-                ELSEIF (Nhru_var_type(jj) == 3) THEN  ! probably don't need double
-                    CALL var_data%getvar_dble(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_dble(1, jj))
-                ENDIF
-            ENDDO
-
-            write_month = 0
-            write_year = 0
-            IF (NhruOut_freq > 4) THEN
-                last_day = 0
-
-                IF (Nowyear == End_year .AND. Nowmonth == End_month .AND. Nowday == End_day) last_day = 1
-
-                IF (Lastyear /= Nowyear .OR. last_day == 1) THEN
-                    IF ((Nowmonth == Start_month .AND. Nowday == Start_day) .OR. last_day == 1) THEN
-                        DO jj = 1, NhruOutVars
-                            IF (NhruOut_freq == 5) THEN
-                                DO j = 1, Active_hrus
-                                    i = Hru_route_order(j)
-                                    Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) / Yeardays
-                                ENDDO
-                            ENDIF
-                            WRITE (Yearlyunit(jj), Output_fmt3) Lastyear, (Nhru_var_yearly(j, jj), j=1, Nhru)
-                        ENDDO
-
-                        Nhru_var_yearly = 0.0D0
-                        Yeardays = 0
-                        Lastyear = Nowyear
-                    ENDIF
-                ENDIF
-                Yeardays = Yeardays + 1
-            ELSEIF (Monthly_flag == 1) THEN
-                ! check for last day of month and simulation
-                if (Nowday == last_day_of_month(Nowmonth)) then
-                    write_month = 1
-                ELSEIF (Nowyear == End_year) THEN
-                    IF (Nowmonth == End_month) THEN
-                        IF (Nowday == End_day) write_month = 1
-                    ENDIF
-                ENDIF
-                Monthdays = Monthdays + 1.0D0
-            ENDIF
-
-            IF (Double_vars == 1) THEN
-                DO jj = 1, NhruOutVars
-                    IF (Nhru_var_type(jj) == 3) THEN
-                        DO j = 1, Active_hrus
-                            i = Hru_route_order(j)
-                            Nhru_var_daily(i, jj) = SNGL(Nhru_var_dble(i, jj))
-                        ENDDO
-                    ENDIF
-                ENDDO
-            ENDIF
-
-            IF (NhruOut_freq > 4) THEN
-                DO jj = 1, NhruOutVars
-                    DO j = 1, Active_hrus
-                        i = Hru_route_order(j)
-                        Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) + DBLE(Nhru_var_daily(i, jj))
-                    ENDDO
-                ENDDO
-                RETURN
-            ENDIF
-
-            IF (Monthly_flag == 1) THEN
-                DO jj = 1, NhruOutVars
-                    DO j = 1, Active_hrus
-                        i = Hru_route_order(j)
-                        Nhru_var_monthly(i, jj) = Nhru_var_monthly(i, jj) + DBLE(Nhru_var_daily(i, jj))
-                        IF (write_month == 1) THEN
-                            IF (NhruOut_freq == 4) Nhru_var_monthly(i, jj) = Nhru_var_monthly(i, jj) / Monthdays
-                        ENDIF
-                    ENDDO
-                ENDDO
-            ENDIF
-
-            DO jj = 1, NhruOutVars
-                IF (Daily_flag == 1) WRITE (Dailyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
-                        (Nhru_var_daily(j, jj), j = 1, Nhru)
-                IF (write_month == 1) WRITE (Monthlyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
-                        (Nhru_var_monthly(j, jj), j = 1, Nhru)
-            ENDDO
-
-            IF (write_month == 1) THEN
-                Monthdays = 0.0D0
-                Nhru_var_monthly = 0.0D0
-            ENDIF
-        END SUBROUTINE nhru_summaryrun
-
-END MODULE PRMS_NHRU_SUMMARY
+    !***********************************************************************
+    !     Output set of declared variables in R compatible format
+    !***********************************************************************
+    ! subroutine run_nhru_summary(var_data)
+    !   use PRMS_MODULE, only: Start_month, Start_day, End_year, End_month, End_day
+    !                          ! NhruOutVars, NhruOut_freq, NhruOutVar_names
+    !   ! use PRMS_BASIN, only: Active_hrus, Hru_route_order
+    !   use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, last_day_of_month
+    !   use UTILS_PRMS, only: read_error
+    !   ! use variables_arr_mod, only: variables_arr_t
+    !   implicit none
+    !
+    !   type(variables_arr_t), intent(in) :: var_data
+    !
+    !   ! FUNCTIONS AND SUBROUTINES
+    !   INTRINSIC SNGL, DBLE
+    !
+    !   ! Local Variables
+    !   integer(i32) :: j
+    !   integer(i32) :: i
+    !   integer(i32) :: jj
+    !   integer(i32) :: write_month
+    !   integer(i32) :: write_year
+    !   integer(i32) :: last_day
+    !
+    !   !***********************************************************************
+    !   if (Begin_results == 0) then
+    !     if (Nowyear == Begyr .AND. Nowmonth == Start_month .AND. Nowday == Start_day) then
+    !       Begin_results = 1
+    !     else
+    !       RETURN
+    !     endif
+    !   endif
+    !
+    !   !-----------------------------------------------------------------------
+    !   ! need getvars for each variable (only can have short string)
+    !   do jj = 1, NhruOutVars
+    !     if (Nhru_var_type(jj) == 2) then
+    !       call var_data%getvar_real(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_daily(1, jj))
+    !     elseif (Nhru_var_type(jj) == 3) then  ! probably don't need double
+    !       call var_data%getvar_dble(MODNAME, NhruOutVar_names(jj)%str, Nhru, Nhru_var_dble(1, jj))
+    !     endif
+    !   enddo
+    !
+    !   write_month = 0
+    !   write_year = 0
+    !   if (NhruOut_freq > 4) then
+    !     last_day = 0
+    !
+    !     if (Nowyear == End_year .AND. Nowmonth == End_month .AND. Nowday == End_day) last_day = 1
+    !
+    !     if (Lastyear /= Nowyear .OR. last_day == 1) then
+    !       if ((Nowmonth == Start_month .AND. Nowday == Start_day) .OR. last_day == 1) then
+    !         do jj = 1, NhruOutVars
+    !           if (NhruOut_freq == 5) then
+    !             do j = 1, Active_hrus
+    !               i = Hru_route_order(j)
+    !               Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) / Yeardays
+    !             enddo
+    !           endif
+    !           write (Yearlyunit(jj), Output_fmt3) Lastyear, (Nhru_var_yearly(j, jj), j=1, Nhru)
+    !         enddo
+    !
+    !         Nhru_var_yearly = 0.0D0
+    !         Yeardays = 0
+    !         Lastyear = Nowyear
+    !       endif
+    !     endif
+    !     Yeardays = Yeardays + 1
+    !   elseif (Monthly_flag == 1) then
+    !       ! check for last day of month and simulation
+    !       if (Nowday == last_day_of_month(Nowmonth)) then
+    !         write_month = 1
+    !       elseif (Nowyear == End_year) then
+    !         if (Nowmonth == End_month) then
+    !           if (Nowday == End_day) write_month = 1
+    !         endif
+    !       endif
+    !       Monthdays = Monthdays + 1.0D0
+    !   endif
+    !
+    !   if (Double_vars == 1) then
+    !     do jj = 1, NhruOutVars
+    !       if (Nhru_var_type(jj) == 3) then
+    !         do j = 1, Active_hrus
+    !           i = Hru_route_order(j)
+    !           Nhru_var_daily(i, jj) = SNGL(Nhru_var_dble(i, jj))
+    !         enddo
+    !       endif
+    !     enddo
+    !   endif
+    !
+    !   if (NhruOut_freq > 4) then
+    !     do jj = 1, NhruOutVars
+    !       do j = 1, Active_hrus
+    !         i = Hru_route_order(j)
+    !         Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) + DBLE(Nhru_var_daily(i, jj))
+    !       enddo
+    !     enddo
+    !     RETURN
+    !   endif
+    !
+    !   if (Monthly_flag == 1) then
+    !     do jj = 1, NhruOutVars
+    !       do j = 1, Active_hrus
+    !         i = Hru_route_order(j)
+    !         Nhru_var_monthly(i, jj) = Nhru_var_monthly(i, jj) + DBLE(Nhru_var_daily(i, jj))
+    !
+    !         if (write_month == 1) then
+    !           if (NhruOut_freq == 4) Nhru_var_monthly(i, jj) = Nhru_var_monthly(i, jj) / Monthdays
+    !         endif
+    !       enddo
+    !     enddo
+    !   endif
+    !
+    !   do jj = 1, NhruOutVars
+    !     if (Daily_flag == 1) write (Dailyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
+    !             (Nhru_var_daily(j, jj), j = 1, Nhru)
+    !     if (write_month == 1) write (Monthlyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
+    !             (Nhru_var_monthly(j, jj), j = 1, Nhru)
+    !   enddo
+    !
+    !   if (write_month == 1) then
+    !     Monthdays = 0.0D0
+    !     Nhru_var_monthly = 0.0D0
+    !   endif
+    ! end subroutine nhru_summaryrun
+end module

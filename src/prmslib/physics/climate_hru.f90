@@ -5,435 +5,315 @@
 ! PRMS modules
 !***********************************************************************
 module PRMS_CLIMATE_HRU
-    use kinds_mod, only: r4, r8, i4, i8
-    use prms_constants, only: MAXFILE_LENGTH
+    use variableKind
+    ! use prms_constants, only: MAXFILE_LENGTH
 
     implicit none
 
-    ! Local Variables
-    integer(i4) :: Cbh_check_flag         !> Flag to indicate if CBH values should be validate at each timestep (0=no; 1=yes)
-    integer(i4) :: Cbh_binary_flag        !> Flag to specify whether input CBH files are in a binary format (0=no; 1=yes)
+    character(len=*), PARAMETER :: MODNAME = 'climate_hru'
+    character(len=*), PARAMETER :: VERSION = 'climate_hru.f90 2017-09-29 13:49:00Z'
 
-    integer(i4), save :: Precip_unit
-    integer(i4), save :: Tmax_unit
-    integer(i4), save :: Tmin_unit
-    character(len=11), save :: MODNAME
 
-    ! Declared Parameters
-    real(r4), save, allocatable :: Rain_cbh_adj(:, :)
-    real(r4), save, allocatable :: Snow_cbh_adj(:, :)
-    real(r4), save, allocatable :: Tmax_cbh_adj(:, :)
-    real(r4), save, allocatable :: Tmin_cbh_adj(:, :)
+    private
+    public :: Climate_HRU
 
-    private :: find_header_end, read_cbh_date, check_cbh_value
-    public :: climate_hru
+    type Climate_HRU
+      integer(i32), private :: precip_funit
+        !! Precipitation CBH file unit
+      integer(i32), private :: tmax_funit
+        !! Maximum temperature file unit
+      integer(i32), private :: tmin_funit
+        !! Minimum temperature file unit
+
+      integer(i32), private :: nhru
+        !! Internal copy of ctl_data%nhru
+
+      contains
+        procedure, public :: run => run_Climate_HRU
+        procedure, private :: find_header_end
+        procedure, private :: read_cbh_date
+    end type
+
+    interface Climate_HRU
+      !! Climate_HRU constructor
+      module function constructor_Climate_HRU(ctl_data, param_data) result(this)
+        use Control_class, only: Control
+        use Parameters_class, only: Parameters
+
+        type(Climate_HRU) :: this
+          !! Climate_HRU class
+        class(Control), intent(in) :: ctl_data
+          !! Control file parameters
+        class(Parameters), intent(in) :: param_data
+          !! Parameters
+      end function
+    end interface
 
     contains
+      !***********************************************************************
+      ! Climate_HRU constructor
+      module function constructor_Climate_HRU(ctl_data, param_data) result(this)
+        use Control_class, only: Control
+        use Parameters_class, only: Parameters
+        ! use PRMS_MODULE, only: Start_year, Start_month, Start_day
+        use UTILS_PRMS, only: find_current_time
+        implicit none
 
-        integer function climate_hru(dim_data, ctl_data, param_data)
-            use prms_constants, only: MM2INCH, MINTEMP, MAXTEMP
-            use PRMS_MODULE, only: Process, Nhru, Model, Temp_module, Precip_module, &
-                    Start_year, Start_month, Start_day, print_module, &
-                    Tmin_day, Tmax_day, Precip_day
-            use PRMS_BASIN, only: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
-            use PRMS_CLIMATEVARS, only: Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, Basin_tmin, &
-                    Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
-                    Precip_units, Tmax_allrain_f, Adjmix_rain, Basin_ppt, Basin_snow, Basin_rain, Basin_obs_ppt, &
-                    Tmax_allsnow_f
-            use PRMS_SET_TIME, only: Nowmonth, print_date
-            use UTILS_PRMS, only: read_error, find_current_time
-            use PRMS_CLIMATEVARS, only: precip_form, temp_set
-            use dimensions_mod, only: dimension_list
-            use control_ll_mod, only: control_list
-            use parameter_arr_mod, only: parameter_arr_t
-            implicit none
+        type(Climate_HRU) :: this
+        class(Control), intent(in) :: ctl_data
+        class(Parameters), intent(in) :: param_data
 
-            type(dimension_list), intent(in) :: dim_data
-            type(control_list), intent(in) :: ctl_data
-            type(parameter_arr_t), intent(inout) :: param_data
+        ! Local variables
+        integer(i32) :: ierr
+        integer(i32) :: istop = 0
 
-            ! Functions
-            INTRINSIC ABS, DBLE, SNGL
+        ! TODO: Start_year, Start_month, Start_day come from PRMS_MODULE
+        ! ----------------------------------------------------------------------
+        this%nhru = ctl_data%nhru%values(1)
 
-            ! Local Variables
-            integer(i4) :: yr, mo, dy, hr, mn, sec
-            integer(i4) :: i, jj
-            integer(i4) :: ierr, istop, missing, ios
-            real(r8) :: sum_obs
-            real(r4) :: tmax_hru
-            real(r4) :: tmin_hru
-            real(r4) :: ppt, harea
-            character(len=80), save :: Version_climate_hru
+        if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
+          call this%find_header_end(this%precip_funit, ierr, &
+                                    ctl_data%precip_day%values(1)%s, 'precip_day', &
+                                    1, ctl_data%cbh_binary_flag%values(1))
+          if (ierr == 1) then
+            istop = 1
+          else
+            ! iret, iunit, datetime, binary_flag
+            call find_current_time(ierr, this%precip_funit, ctl_data%start_time%values, &
+                                   ctl_data%cbh_binary_flag%values(1))
+          endif
+        endif
 
-            !***********************************************************************
-            climate_hru = 0
-            ierr = 0
+        if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+          call this%find_header_end(this%tmax_funit, ierr, ctl_data%tmax_day%values(1)%s, &
+                                    'tmax_day', 1, ctl_data%cbh_binary_flag%values(1))
+          if (ierr == 1) then
+            istop = 1
+          else
+            call find_current_time(ierr, this%tmax_funit, ctl_data%start_time%values, &
+                                   ctl_data%cbh_binary_flag%values(1))
+          endif
 
-            if (Process == 'run') then
-                if (Temp_module == 'climate_hru') then
-                    if (Cbh_binary_flag == 0) then
-                        read (Tmax_unit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Tmaxf(i), i = 1, Nhru)
-                    else
-                        read (Tmax_unit, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Tmaxf(i), i = 1, Nhru)
-                    endif
+          ! Iunit, Iret, Fname, Paramname, Cbh_flag, Cbh_binary_flag
+          call this%find_header_end(this%tmin_funit, ierr, ctl_data%tmin_day%values(1)%s, &
+                                    'tmin_day', 1, ctl_data%cbh_binary_flag%values(1))
+          if (ierr == 1) then
+            istop = 1
+          else
+            call find_current_time(ierr, this%tmin_funit, ctl_data%start_time%values, &
+                                   ctl_data%cbh_binary_flag%values(1))
+          endif
+        endif
 
-                    if (Cbh_check_flag == 1) call read_cbh_date(yr, mo, dy, 'Tmaxf', ios, ierr)
+        if (istop == 1) STOP 'ERROR in climate_hru'
+      end function
 
-                    if (Cbh_binary_flag == 0) then
-                        read (Tmin_unit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Tminf(i), i = 1, Nhru)
-                    else
-                        read (Tmin_unit, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Tminf(i), i = 1, Nhru)
-                    endif
+      subroutine run_Climate_HRU(this, ctl_data, param_data, model_basin, climate, model_time)
+        use PRMS_BASIN, only: Basin
+        use Control_class, only: Control
+        use Parameters_class, only: Parameters
+        use PRMS_CLIMATEVARS, only: Climateflow
+        use PRMS_SET_TIME, only: Time
+        use prms_constants, only: MM2INCH
+        ! use PRMS_SET_TIME, only: Nowmonth
+        implicit none
 
-                    if (Cbh_check_flag == 1) call read_cbh_date(yr, mo, dy, 'Tminf', ios, ierr)
-                    Basin_tmax = 0.0D0
-                    Basin_tmin = 0.0D0
-                    Basin_temp = 0.0D0
-                endif
+        class(Climate_HRU), intent(inout) :: this
+        class(Control), intent(in) :: ctl_data
+        class(Parameters), intent(in) :: param_data
+        class(Basin), intent(in) :: model_basin
+        class(Climateflow), intent(inout) :: climate
+        class(Time), intent(in) :: model_time
 
-                if (Precip_module == 'climate_hru') then
-                    if (Cbh_binary_flag == 0) then
-                        read (Precip_unit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Hru_ppt(i), i = 1, Nhru)
-                    else
-                        read (Precip_unit, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (Hru_ppt(i), i = 1, Nhru)
-                    endif
+        ! Local variables
+        ! integer(i32) :: yr, mo, dy, hr, mn, sec
+        ! integer(i32) :: istop, missing, ios
+        integer(i32) :: chru
+        integer(i32) :: ierr
+        integer(i32) :: jj
+        real(r32) :: tmax_hru  ! different from what's defined in climateflow.f90
+        real(r32) :: tmin_hru  ! different from what's defined in climateflow.f90
+        real(r32) :: ppt
+        real(r32) :: harea
+        real(r64) :: sum_obs
 
-                    if (Cbh_check_flag == 1) call read_cbh_date(yr, mo, dy, 'Hru_ppt', ios, ierr)
-                    Basin_ppt = 0.0D0
-                    Basin_rain = 0.0D0
-                    Basin_snow = 0.0D0
-                    sum_obs = 0.0D0
-                endif
+        integer(i32) :: cmonth
+          !! Local copy of current Nowmonth value
 
-                if (ierr /= 0) STOP
 
-                missing = 0
-                do jj = 1, Active_hrus
-                    i = Hru_route_order(jj)
-                    harea = Hru_area(i)
+        ! ----------------------------------------------------------------------
+        cmonth = model_time%Nowmonth
+        ! TODO: using chru*Nowmonth as placeholder for correctly handling 2D arrays
+        !       This will provide erroneous results until fixed.
 
-                    if (Temp_module == 'climate_hru') then
-                        if (Cbh_check_flag == 1) then
-                            call check_cbh_value('Tmaxf', Tmaxf(i), MINTEMP, MAXTEMP, missing)
-                            call check_cbh_value('Tminf', Tminf(i), MINTEMP, MAXTEMP, missing)
-                        endif
-                        tmax_hru = Tmaxf(i) + Tmax_cbh_adj(i, Nowmonth)
-                        tmin_hru = Tminf(i) + Tmin_cbh_adj(i, Nowmonth)
-                        call temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i), &
-                                      Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
-                    endif
+        do jj = 1, model_basin%active_hrus
+          chru = model_basin%hru_route_order(jj)
+          harea = param_data%hru_area%values(chru)
 
-                    if (Precip_module == 'climate_hru') then
-                        if (Cbh_check_flag == 1) call check_cbh_value('Hru_ppt', Hru_ppt(i), 0.0, 30.0, missing)
+          if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+            tmax_hru = climate%tmaxf(chru) + param_data%tmax_cbh_adj%values(chru*cmonth)
+            tmin_hru = climate%tminf(chru) + param_data%tmin_cbh_adj%values(chru*cmonth)
+            ! param_data, ihru, hru_area, tmax, tmin
+            call climate%temp_set(param_data, chru, harea, tmax_hru, tmin_hru)
+          endif
 
-                        !******Initialize HRU variables
-                        Pptmix(i) = 0
-                        Newsnow(i) = 0
-                        Prmx(i) = 0.0
-                        Hru_rain(i) = 0.0
-                        Hru_snow(i) = 0.0
+          if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
+            !******Initialize HRU variables
+            climate%pptmix(chru) = 0
+            climate%newsnow(chru) = 0
+            climate%prmx(chru) = 0.0
+            climate%hru_rain(chru) = 0.0
+            climate%hru_snow(chru) = 0.0
 
-                        if (Hru_ppt(i) > 0.0) then
-                            if (Precip_units == 1) Hru_ppt(i) = Hru_ppt(i) * MM2INCH
-                            ppt = Hru_ppt(i)
-                            call precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
-                                    &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
-                                    &                         Prmx(i), Tmax_allrain_f(i, Nowmonth), &
-                                    &                         Rain_cbh_adj(i, Nowmonth), Snow_cbh_adj(i, Nowmonth), &
-                                    &                         Adjmix_rain(i, Nowmonth), harea, sum_obs, Tmax_allsnow_f(i, Nowmonth))
-                        elseif (Hru_ppt(i) < 0.0) then
-                            print *, 'ERROR, negative precipitation value entered in CBH File, HRU:', i
-                            call print_date(0)
-                            ierr = 1
-                            !              Hru_ppt(i) = 0.0
-                        endif
-                    endif
+            if (climate%hru_ppt(chru) > 0.0) then
+              if (param_data%precip_units%values(1) == 1) then
+                climate%hru_ppt(chru) = climate%hru_ppt(chru) * MM2INCH
+              endif
 
-                enddo
+              ppt = climate%hru_ppt(chru)
 
-                if (missing == 1 .OR. ierr == 1) then
-                    call print_date(0)
-                    STOP
-                endif
+              ! ihru, month, hru_area, adjmix_rain, rain_adj, snow_adj, precip, sum_obs
+              call climate%precip_form(chru, cmonth, harea, param_data%adjmix_rain%values(chru*cmonth), &
+                               param_data%rain_cbh_adj%values(chru*cmonth), &
+                               param_data%snow_cbh_adj%values(chru*cmonth), &
+                               ppt, sum_obs)
+            elseif (climate%hru_ppt(chru) < 0.0) then
+              print *, 'ERROR, negative precipitation value entered in CBH File, HRU:', chru
+              ! call print_date(0)
+              ierr = 1
+            endif
+          endif
+        enddo
 
-                if (Temp_module == 'climate_hru') then
-                    Basin_tmax = Basin_tmax * Basin_area_inv
-                    Basin_tmin = Basin_tmin * Basin_area_inv
-                    Basin_temp = Basin_temp * Basin_area_inv
-                    Solrad_tmax = real(Basin_tmax, r4)
-                    Solrad_tmin = real(Basin_tmin, r4)
-                endif
+        if (ierr == 1) then
+          ! call print_date(0)
+          STOP
+        endif
 
-                if (Precip_module == 'climate_hru') then
-                    Basin_ppt = Basin_ppt * Basin_area_inv
-                    Basin_obs_ppt = sum_obs * Basin_area_inv
-                    Basin_rain = Basin_rain * Basin_area_inv
-                    Basin_snow = Basin_snow * Basin_area_inv
-                endif
+        if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+          climate%solrad_tmax = real(climate%basin_tmax, r32)
+          climate%solrad_tmin = real(climate%basin_tmin, r32)
+        endif
+      end subroutine
 
-            elseif (Process == 'declare') then
-                Version_climate_hru = 'climate_hru.f90 2017-09-29 13:49:00Z'
-                MODNAME = 'climate_hru'
 
-                call ctl_data%get_data('cbh_check_flag', Cbh_check_flag)
-                call ctl_data%get_data('cbh_binary_flag', Cbh_binary_flag)
+      !***********************************************************************
+      !     Read File to line before data starts in file
+      !***********************************************************************
+      subroutine find_header_end(this, Iunit, Iret, Fname, Paramname, Cbh_flag, &
+                                 Cbh_binary_flag)
+        use UTILS_PRMS, only: PRMS_open_input_file
+        implicit none
 
-                !   Declared Parameters
-                if (Temp_module == 'climate_hru' .or. Model == 99) then
-                    call print_module(Version_climate_hru, 'Temperature Distribution    ', 90)
+        ! Argument
+        class(Climate_HRU), intent(inout) :: this
+        integer(i32), intent(out) :: Iunit
+        integer(i32), intent(out) :: Iret
+        character(len=*), intent(in) :: Fname
+        character(len=*), intent(in) :: Paramname
+        integer(i32), intent(in) :: Cbh_flag
+        integer(i32), intent(in) :: Cbh_binary_flag
 
-                    allocate (Tmax_cbh_adj(Nhru, 12))
-                    if (param_data%declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
-                                           '0.0', '-10.0', '10.0', &
-                                           'Monthly maximum temperature adjustment factor for each HRU', &
-                                           'Monthly (January to December) adjustment factor to maximum air temperature for each HRU,' // &
-                                           ' estimated on the basis of slope and aspect', &
-                                           'temp_units', dim_data) /= 0) call read_error(1, 'tmax_cbh_adj')
+        ! Local Variables
+        integer(i32) :: i
+        integer(i32) :: ios
+        integer(i32) :: dim
+        character(len=4) :: dum
+        character(len=80) :: dum2
 
-                    allocate (Tmin_cbh_adj(Nhru, 12))
-                    if (param_data%declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
-                                           '0.0', '-10.0', '10.0', &
-                                           'Monthly minimum temperature adjustment factor for each HRU', &
-                                           'Monthly (January to December) adjustment factor to minimum air temperature for each HRU,' // &
-                                           ' estimated on the basis of slope and aspect', &
-                                           'temp_units', dim_data) /= 0) call read_error(1, 'tmin_cbh_adj')
-                endif
+        !***********************************************************************
+        call PRMS_open_input_file(Iunit, Fname, Paramname, Cbh_binary_flag, Iret)
 
-                if (Precip_module == 'climate_hru' .or. Model == 99) then
-                    call print_module(Version_climate_hru, 'Precipitation Distribution  ', 90)
+        if (Iret == 0) then
+          ! read to line before data starts in each file
+          i = 0
 
-                    allocate (Rain_cbh_adj(Nhru, 12))
-                    if (param_data%declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
-                                           '1.0', '0.5', '2.0', &
-                                           'Rain adjustment factor, by month for each HRU', &
-                                           'Monthly (January to December) adjustment factor to' // &
-                                           ' measured precipitation determined to be rain on' // &
-                                           ' each HRU to account for differences in elevation, and so forth', &
-                                           'decimal fraction', dim_data) /= 0) call read_error(1, 'rain_cbh_adj')
-
-                    allocate (Snow_cbh_adj(Nhru, 12))
-                    if (param_data%declparam(MODNAME, 'snow_cbh_adj', 'nhru,nmonths', 'real', &
-                                           '1.0', '0.5', '2.0', &
-                                           'Snow adjustment factor, by month for each HRU', &
-                                           'Monthly (January to December) adjustment factor to' // &
-                                           ' measured precipitation determined to be snow on' // &
-                                           ' each HRU to account for differences in elevation, and so forth', &
-                                           'decimal fraction', dim_data) /= 0) call read_error(1, 'snow_cbh_adj')
-                endif
-            elseif (Process == 'init') then
-                istop = 0
-                ierr = 0
-
-                if (Precip_module == 'climate_hru') then
-                    if (param_data%getparam(MODNAME, 'rain_cbh_adj', Nhru * 12, 'real', Rain_cbh_adj) /= 0) call read_error(2, 'rain_cbh_adj')
-                    if (param_data%getparam(MODNAME, 'snow_cbh_adj', Nhru * 12, 'real', Snow_cbh_adj) /= 0) call read_error(2, 'snow_cbh_adj')
-
-                    call ctl_data%get_data('precip_day', Precip_day, missing_stop=.true.)
-
-                    call find_header_end(Precip_unit, Precip_day, 'precip_day', ierr, 1, Cbh_binary_flag)
-                    if (ierr == 1) then
-                        istop = 1
-                    else
-                        call find_current_time(Precip_unit, Start_year, Start_month, Start_day, ierr, Cbh_binary_flag)
-                        if (ierr == -1) then
-                            print *, 'for first time step, CBH File: ', Precip_day
-                            istop = 1
-                        endif
-                    endif
-                endif
-
-                if (Temp_module == 'climate_hru') then
-                    if (param_data%getparam(MODNAME, 'tmax_cbh_adj', Nhru * 12, 'real', Tmax_cbh_adj) /= 0) call read_error(2, 'tmax_cbh_adj')
-                    if (param_data%getparam(MODNAME, 'tmin_cbh_adj', Nhru * 12, 'real', Tmin_cbh_adj) /= 0) call read_error(2, 'tmin_cbh_adj')
-
-                    call ctl_data%get_data('tmax_day', Tmax_day, missing_stop=.true.)
-                    call ctl_data%get_data('tmin_day', Tmin_day, missing_stop=.true.)
-
-                    call find_header_end(Tmax_unit, Tmax_day, 'tmax_day', ierr, 1, Cbh_binary_flag)
-                    if (ierr == 1) then
-                        istop = 1
-                    else
-                        call find_current_time(Tmax_unit, Start_year, Start_month, Start_day, ierr, Cbh_binary_flag)
-                        if (ierr == -1) then
-                            print *, 'for first time step, CBH File: ', Tmax_day
-                            istop = 1
-                        endif
-                    endif
-                    call find_header_end(Tmin_unit, Tmin_day, 'tmin_day', ierr, 1, Cbh_binary_flag)
-                    if (ierr == 1) then
-                        istop = 1
-                    else
-                        call find_current_time(Tmin_unit, Start_year, Start_month, Start_day, ierr, Cbh_binary_flag)
-                        if (ierr == -1) then
-                            print *, 'for first time step, CBH File: ', Tmin_day
-                            istop = 1
-                        endif
-                    endif
-                endif
-
-                if (istop == 1) STOP 'ERROR in climate_hru'
-
+          do WHILE (i == 0)
+            if (Cbh_binary_flag == 0) then
+              read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+            else
+              read (Iunit, IOSTAT=ios) dum2
+              read (dum2, '(A4)') dum
             endif
 
-        end function climate_hru
+            if (ios /= 0) then
+              WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                      'check to be sure the input file is in correct format'
+              Iret = 1
+              EXIT
+            elseif (dum == '####') then
+              if (Cbh_flag == 0) EXIT
+              BACKSPACE Iunit
+              BACKSPACE Iunit
 
-        !***********************************************************************
-        !     Check CBH integer value limits
-        !***********************************************************************
-        ! subroutine check_cbh_intvalue(Var, Var_value, Lower_val, Upper_val, Missing)
-        !     use PRMS_SET_TIME, only: print_date
-        !     implicit none
-        !
-        !     ! Arguments
-        !     integer, intent(in) :: Var_value, Lower_val, Upper_val
-        !     character(len = *), intent(in) :: Var
-        !     integer, intent(inout) :: Missing
-        !
-        !     !***********************************************************************
-        !     if (Var_value < Lower_val .OR. Var_value > Upper_val) then
-        !         print *, 'ERROR, bad value, variable: ', Var, ' Value:', Var_value
-        !         print *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
-        !         Missing = 1
-        !         call print_date(0)
-        !     endif
-        ! end subroutine check_cbh_intvalue
+              if (Cbh_binary_flag == 0) then
+                read (Iunit, *, IOSTAT=ios) dum, dim
+              else
+                read (Iunit, IOSTAT=ios) dum2
+                read (dum2, *) dum, dim
+              endif
 
-        !***********************************************************************
-        !     Check CBH value limits
-        !***********************************************************************
-        subroutine check_cbh_value(Var, Var_value, Lower_val, Upper_val, Missing)
-            use PRMS_SET_TIME, only: print_date
-            implicit none
-
-            ! Arguments
-            real(r4), intent(in) :: Lower_val, Upper_val
-            real(r4), intent(inout) :: Var_value
-            character(len=*), intent(in) :: Var
-            integer(i4), intent(inout) :: Missing
-
-            ! Functions
-            !INTRINSIC ISNAN
-
-            !***********************************************************************
-            !if ( ISNAN(Var_value) ) then
-            !  print *, 'ERROR, NaN value found for variable: ', Var
-            !  Var_value = 0.0
-            !  Missing = 1
-            !  call print_date(0)
-            !elseif ( Var_value<Lower_val .OR. Var_value>Upper_val ) then
-            if (Var_value < Lower_val .OR. Var_value > Upper_val) then
-                print *, 'ERROR, bad value, variable: ', Var, ' Value:', Var_value
-                print *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
-                Missing = 1
-                call print_date(0)
-            endif
-        end subroutine check_cbh_value
-
-        !***********************************************************************
-        !     Read File to line before data starts in file
-        !***********************************************************************
-        subroutine find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag, Cbh_binary_flag)
-            use PRMS_MODULE, only: Nhru
-            use UTILS_PRMS, only: PRMS_open_input_file
-            use data_mod, only: str_arr_type
-            implicit none
-
-            ! Argument
-            integer(i4), intent(in) :: Cbh_flag, Cbh_binary_flag
-            integer(i4), intent(out) :: Iunit, Iret
-            character(len=*), intent(in) :: Fname
-            character(len=*), intent(in) :: Paramname
-
-            ! Local Variables
-            integer(i4) :: i, ios, dim
-            character(len=4) :: dum
-            character(len=80) :: dum2
-
-            !***********************************************************************
-            call PRMS_open_input_file(Iunit, Fname, Paramname, Cbh_binary_flag, Iret)
-            if (Iret == 0) then
-                ! read to line before data starts in each file
-                i = 0
-                do WHILE (i == 0)
-                    if (Cbh_binary_flag == 0) then
-                        read (Iunit, FMT='(A4)', IOSTAT=ios) dum
-                    else
-                        read (Iunit, IOSTAT=ios) dum2
-                        read (dum2, '(A4)') dum
-                    endif
-
-                    if (ios /= 0) then
-                        WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                                'check to be sure the input file is in correct format'
-                        Iret = 1
-                        EXIT
-                    elseif (dum == '####') then
-                        if (Cbh_flag == 0) EXIT
-                        BACKSPACE Iunit
-                        BACKSPACE Iunit
-
-                        if (Cbh_binary_flag == 0) then
-                            read (Iunit, *, IOSTAT=ios) dum, dim
-                        else
-                            read (Iunit, IOSTAT=ios) dum2
-                            read (dum2, *) dum, dim
-                        endif
-
-                        if (ios /= 0) then
-                            WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                                    'check to be sure dimension line is in correct format'
-                            Iret = 1
-                            EXIT
-                        endif
-
-                        if (dim /= Nhru) then
-                            print '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', Nhru, ' CBH dimension=', &
-                                    dim, ' File: ' // Fname
-                            STOP 'ERROR: update Control File with correct CBH files'
-                        endif
-
-                        if (Cbh_binary_flag == 0) then
-                            read (Iunit, FMT='(A4)', IOSTAT=ios) dum
-                        else
-                            read (Iunit, IOSTAT=ios) dum
-                        endif
-                        i = 1
-                    endif
-                enddo
-            endif
-        end subroutine find_header_end
-
-        !***********************************************************************
-        !     Read a day in the CBH File
-        !***********************************************************************
-        subroutine read_cbh_date(Year, Month, Day, Var, Ios, Iret)
-            use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, print_date
-
-            ! Argument
-            integer(i4), intent(in) :: Year, Month, Day, Ios
-            character(len=*), intent(in) :: Var
-            integer(i4), intent(inout) :: Iret
-
-            ! Local Variables
-            integer(i4) :: right_day
-
-            !***********************************************************************
-            right_day = 1
-            if (Year /= Nowyear .OR. Month /= Nowmonth .OR. Day /= Nowday) right_day = 0
-
-            if (Ios /= 0 .OR. right_day == 0) then
-                print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
-
-                if (Ios == -1) then
-                    print *, '       End-of-File found'
-                elseif (right_day == 0) then
-                    print *, '       Wrong day found'
-                else
-                    print *, '       Invalid data value found'
-                endif
-
-                call print_date(0)
+              if (ios /= 0) then
+                WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                        'check to be sure dimension line is in correct format'
                 Iret = 1
+                EXIT
+              endif
+
+              if (dim /= this%nhru) then
+                print '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', this%nhru, ' CBH dimension=', &
+                        dim, ' File: ' // Fname
+                STOP 'ERROR: update Control File with correct CBH files'
+              endif
+
+              if (Cbh_binary_flag == 0) then
+                read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+              else
+                read (Iunit, IOSTAT=ios) dum
+              endif
+              i = 1
             endif
-        end subroutine read_cbh_date
+          enddo
+        endif
+      end subroutine find_header_end
+
+      !***********************************************************************
+      !     Read a day in the CBH File
+      !***********************************************************************
+      subroutine read_cbh_date(this, model_time, Year, Month, Day, Var, Ios, Iret)
+        ! use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, print_date
+        use PRMS_SET_TIME, only: Time
+
+        ! Argument
+        class(Climate_HRU), intent(inout) :: this
+        class(Time), intent(in) :: model_time
+        integer(i32), intent(in) :: Year
+        integer(i32), intent(in) :: Month
+        integer(i32), intent(in) :: Day
+        integer(i32), intent(in) :: Ios
+        character(len=*), intent(in) :: Var
+        integer(i32), intent(inout) :: Iret
+
+        ! Local Variables
+        integer(i32) :: right_day
+
+        !***********************************************************************
+        right_day = 1
+        if (Year /= model_time%Nowyear .OR. Month /= model_time%Nowmonth .OR. Day /= model_time%Nowday) right_day = 0
+
+        if (Ios /= 0 .OR. right_day == 0) then
+          print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
+
+          if (Ios == -1) then
+            print *, '       End-of-File found'
+          elseif (right_day == 0) then
+            print *, '       Wrong day found'
+          else
+            print *, '       Invalid data value found'
+          endif
+
+          call model_time%print_date(0)
+          Iret = 1
+        endif
+      end subroutine read_cbh_date
 end module PRMS_CLIMATE_HRU

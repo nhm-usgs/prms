@@ -28,26 +28,32 @@ module rArray_class
     public :: rArray
 
     type, extends(Abc) :: rArray
-        !! 1D array of reals that can represent multiple dimensional data
-        real(r32), allocatable :: values(:)
-          !! The values of the array
-        integer(i32), allocatable :: dims(:)
-          !! Size(s) that values should represent. e.g. If values represents 2D data, dims might be [10, 15]
+      !! 1D array of reals that can represent multiple dimensional data
+      real(r32), allocatable :: values(:)
+        !! The values of the array
+      integer(i32), allocatable :: dims(:)
+        !! Size(s) that values should represent. e.g. If values represents 2D data, dims might be [10, 15]
 
     contains
-        generic, public :: allocate => allocate_rArray_i1_, allocate_rArray_i1D_
-          !! Allocate the memory inside the class
-        procedure, private, pass(this) :: allocate_rArray_i1_ => allocate_rArray_i1
-        procedure, private, pass(this) :: allocate_rArray_i1D_ => allocate_rArray_i1D
+      generic, public :: allocate => allocate_rArray_i1_, allocate_rArray_i1D_
+        !! Allocate the memory inside the class
+      procedure, private, pass(this) :: allocate_rArray_i1_ => allocate_rArray_i1
+      procedure, private, pass(this) :: allocate_rArray_i1D_ => allocate_rArray_i1D
 
-        procedure, public, pass(this) :: deallocate => deallocate_rArray
-          !! Deallocate the memory inside the class
-        procedure, public, pass(this) :: print => print_rArray
-          !! Print the class to the screen
-        procedure, public, pass(this) :: read => read_rArray
-          !! Read the class from a file
-        procedure, public, pass(this) :: size => size_rArray
+      procedure, public, pass(this) :: deallocate => deallocate_rArray
+        !! Deallocate the memory inside the class
+      procedure, public, pass(this) :: print => print_rArray
+        !! Print the class to the screen
+      procedure, public, pass(this) :: read => read_rArray
+        !! Read the class from a file
+      procedure, public, pass(this) :: size => size_rArray
 
+      ! procedure, private, pass(rhs) :: get_real_0D
+      ! procedure, private, pass(rhs) :: get_real_1D
+      ! procedure, private, pass(rhs) :: get_real_2D
+      ! ! procedure, pass(this), public :: rval => fget_t_real
+      !
+      ! generic, public :: assignment(=) => get_real_0D, get_real_1D, get_real_2D
     end type
 
     interface rArray
@@ -113,13 +119,44 @@ contains
 
 
     !====================================================================!
+    ! subroutine get_real_0D(lhs, rhs)
+    !   real(r32), allocatable, intent(inout) :: lhs
+    !   class(rArray), intent(in) :: rhs
+    !
+    !   real, allocatable :: rtmp
+    !
+    !   if (.not. allocated(rtmp)) allocate(rtmp)
+    !
+    !   rtmp = rhs%values(1)
+    !
+    !   call move_alloc(rtmp, lhs)
+    !   ! lhs = rhs%values(1)
+    ! end subroutine
+    !
+    ! subroutine get_real_1D(lhs, rhs)
+    !   real(r32), allocatable, intent(inout) :: lhs(:)
+    !   class(rArray), intent(in) :: rhs
+    !
+    !   lhs = rhs%values
+    ! end subroutine
+    !
+    ! subroutine get_real_2D(lhs, rhs)
+    !   real(r32), allocatable, intent(inout) :: lhs(:, :)
+    !   class(rArray), intent(in) :: rhs
+    !
+    !   lhs = reshape(rhs%values, shape(lhs))
+    ! end subroutine
+
+
+    !====================================================================!
     subroutine print_rArray(this, delim)
         class(rArray), intent(in) :: this
           !! rArray class
         character(len=*), intent(in), optional :: delim
           !! Delimiter between values
 
-        write(output_unit, '(a)') str(this%values, delim)
+        write(output_unit, *) this%name, ": ", str(this%values, delim), " :dims= ", str(this%dims, delim)
+        ! write(output_unit, '(a)') str(this%values, delim)
     end subroutine
     !====================================================================!
 

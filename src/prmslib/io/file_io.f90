@@ -8,7 +8,7 @@ module fileio_mod
     ! write_outfile - print to model output file
     !***********************************************************************
     SUBROUTINE write_outfile(out_string)
-        USE PRMS_MODULE, ONLY:PRMS_output_unit, Print_debug
+        USE PRMS_MODULE, ONLY: PRMS_output_unit !, Print_debug
         IMPLICIT NONE
 
         ! Functions
@@ -17,18 +17,13 @@ module fileio_mod
         ! Arguments
         CHARACTER(LEN=*), INTENT(IN) :: out_string
 
-        ! Local variable
-        ! INTEGER(i4) :: nchars
-
         !***********************************************************************
-        IF (Print_debug == -2) RETURN
-
-        ! nchars = LEN_TRIM(String)
+        ! IF (Print_debug == -2) RETURN
 
         IF (len_trim(out_string) > 0) THEN
-            WRITE (PRMS_output_unit, '(A)') out_string
+            WRITE(PRMS_output_unit, '(A)') out_string
         ELSE
-            WRITE (PRMS_output_unit, '(/)')
+            WRITE(PRMS_output_unit, '(/)')
         ENDIF
     END SUBROUTINE write_outfile
 

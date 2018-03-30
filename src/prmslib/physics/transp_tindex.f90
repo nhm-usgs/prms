@@ -3,206 +3,165 @@
 ! based on a temperature index method.
 !***********************************************************************
 MODULE PRMS_TRANSP_TINDEX
-    use kinds_mod, only: r4, r8, i4, i8
-    implicit none
+  use variableKind
+  implicit none
 
+  ! Local Variables
+  character(len=*), PARAMETER :: MODNAME = 'transp_tindex'
+  character(len=*), PARAMETER :: VERSION = 'transp_tindex.f90 2015-01-06 00:09:15Z'
+
+  private
+  public :: transp_tindex
+
+  type Transp_tindex
     ! Local Variables
-    integer(i4), save, allocatable :: Transp_check(:), Transp_beg_restart(:), Transp_end_restart(:)
-    real(r4), save, allocatable :: Tmax_sum(:), Transp_tmax_f(:), Transp_tmax_restart(:)
-    character(len=13), save :: MODNAME
-
-    ! Declared Parameters
-    integer(i4), save, allocatable :: Transp_beg(:), Transp_end(:)
-    real(r4), save, allocatable :: Transp_tmax(:)
-
-    private
-    public :: transp_tindex
+    integer(i32), allocatable :: transp_check(:)
+    integer(i32), allocatable :: transp_beg_restart(:)
+    integer(i32), allocatable :: transp_end_restart(:)
+    real(r32), allocatable :: tmax_sum(:)
+    real(r32), allocatable :: transp_tmax_f(:)
+    real(r32), allocatable :: transp_tmax_restart(:)
 
     contains
-        integer function transp_tindex(dim_data, param_data)
-            use PRMS_MODULE, only: Process, Nhru, Save_vars_to_file, Init_vars_from_file, &
-                    Start_month, Start_day, print_module
-            use PRMS_BASIN, only: Active_hrus, Hru_route_order
-            use PRMS_CLIMATEVARS, only: Tmaxf, Temp_units, Transp_on, Basin_transp_on
-            use PRMS_SET_TIME, only: Nowmonth, Nowday
-            use UTILS_PRMS, only: read_error
-            use conversions_mod, only: c_to_f
-            use dimensions_mod, only: dimension_list
-            use parameter_arr_mod, only: parameter_arr_t
-            implicit none
+      procedure, public :: run => run_Transp_tindex
 
-            type(dimension_list), intent(in) :: dim_data
-            type(parameter_arr_t), intent(inout) :: param_data
+  end type
 
-            ! Local Variables
-            integer(i4) :: i, j, motmp, new_values
-            character(len=80), save :: Version_transp
+  interface Transp_tindex
+    !! Transp_tindex constructor
+    module function constructor_Transp_tindex(ctl_data, param_data) result(this)
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
 
-            !***********************************************************************
-            transp_tindex = 0
+      type(Transp_tindex) :: this
+        !! Transp_tindex class
+      class(Control), intent(in) :: ctl_data
+        !! Control file parameters
+      class(Parameters), intent(in) :: param_data
+        !! Parameters
+    end function
+  end interface
 
-            if (Process == 'run') then
-                !******Set switch for active transpiration period
-                Basin_transp_on = 0
-                do j = 1, Active_hrus
-                    i = Hru_route_order(j)
+  contains
+    !***********************************************************************
+    ! Transp_tindex constructor
+    module function constructor_Transp_tindex(ctl_data, param_data) result(this)
+      use Control_class, only: Control
+      use Parameters_class, only: Parameters
+      implicit none
 
-                    !******check for month to turn check switch on or
-                    !******transpiration switch off
-                    if (Nowday == 1) then
-                        !******check for end of period
-                        if (Nowmonth == Transp_end(i)) then
-                            Transp_on(i) = 0
-                            Transp_check(i) = 0
-                            Tmax_sum(i) = 0.0
-                        endif
-                        !******check for month to turn transpiration switch on or off
-                        if (Nowmonth == Transp_beg(i)) then
-                            Transp_check(i) = 1
-                            Tmax_sum(i) = 0.0
-                        endif
-                    endif
+      type(Transp_tindex) :: this
+      class(Control), intent(in) :: ctl_data
+      class(Parameters), intent(in) :: param_data
 
-                    !******If in checking period, then for each day
-                    !******sum maximum temperature until greater than temperature index parameter,
-                    !******at which time, turn transpiration switch on, check switch off
-                    ! freezing temperature assumed to be 32 degrees Fahrenheit
-                    if (Transp_check(i) == 1) then
-                        if (Tmaxf(i) > 32.0) Tmax_sum(i) = Tmax_sum(i) + Tmaxf(i)
-                        if (Tmax_sum(i) > Transp_tmax_f(i)) then
-                            Transp_on(i) = 1
-                            Transp_check(i) = 0
-                            Tmax_sum(i) = 0.0
-                        endif
-                    endif
+      ! ------------------------------------------------------------------------
+      allocate(this%tmax_sum(ctl_data%nhru%values(1)))
+      allocate(this%transp_check(ctl_data%nhru%values(1)))
+      allocate(this%transp_tmax_f(ctl_data%nhru%values(1)))
+    end function
 
-                    if (Basin_transp_on == 0) then
-                        if (Transp_on(i) == 1) Basin_transp_on = 1
-                    endif
-                enddo
 
-            elseif (Process == 'declare') then
-                Version_transp = 'transp_tindex.f90 2015-01-06 00:09:15Z'
-                call print_module(Version_transp, 'Transpiration Distribution  ', 90)
-                MODNAME = 'transp_tindex'
+    subroutine run_Transp_tindex(this, ctl_data, model_time, model_basin, param_data, climate)
+      use UTILS_PRMS, only: read_error
+      use conversions_mod, only: c_to_f
 
-                allocate (Tmax_sum(Nhru), Transp_check(Nhru), Transp_tmax_f(Nhru))
+      use Control_class, only: Control
+      use PRMS_SET_TIME, only: Time
+      use PRMS_BASIN, only: Basin
+      use Parameters_class, only: Parameters
+      use PRMS_CLIMATEVARS, only: Climateflow
 
-                allocate (Transp_beg(Nhru))
-                if (param_data%declparam(MODNAME, 'transp_beg', 'nhru', 'integer', &
-                        &       '1', '1', '12', &
-                        &       'Month to begin testing for transpiration', &
-                        &       'Month to begin summing the maximum air temperature for each HRU; when sum is greater than or' // &
-                                &       ' equal to transp_tmax, transpiration begins', &
-                        &       'month', dim_data) /= 0) call read_error(1, 'transp_beg')
+      implicit none
 
-                allocate (Transp_end(Nhru))
-                if (param_data%declparam(MODNAME, 'transp_end', 'nhru', 'integer', &
-                        &       '13', '1', '13', &
-                        &       'Month to stop transpiration period', &
-                        &       'Month to stop transpiration computations; transpiration is computed thru end of previous month', &
-                        &       'month', dim_data) /= 0) call read_error(1, 'transp_end')
+      class(Transp_tindex), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Time), intent(in) :: model_time
+      type(Basin), intent(in) :: model_basin
+      type(Parameters), intent(in) :: param_data
+      type(Climateflow), intent(inout) :: climate
 
-                allocate (Transp_tmax(Nhru))
-                if (param_data%declparam(MODNAME, 'transp_tmax', 'nhru', 'real', &
-                        &       '1.0', '0.0', '1000.0', &
-                        &       'Tmax index to determine start of transpiration', &
-                        &       'Temperature index to determine the specific date of the start of the transpiration period;' // &
-                                ' the maximum air temperature for each HRU is summed starting with the first day of ' // &
-                                'month transp_beg; when the sum exceeds this index, transpiration begins', &
-                        &       'temp_units', dim_data) /= 0) call read_error(1, 'transp_tmax')
+      ! Local Variables
+      integer(i32) :: chru
+        !! Current HRU
+      integer(i32) :: j
+        !! Counter
 
-            elseif (Process == 'init') then
+      !***********************************************************************
 
-                if (param_data%getparam(MODNAME, 'transp_beg', Nhru, 'integer', Transp_beg) /= 0) call read_error(2, 'transp_beg')
-                if (param_data%getparam(MODNAME, 'transp_end', Nhru, 'integer', Transp_end) /= 0) call read_error(2, 'transp_end')
-                if (param_data%getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax) /= 0) call read_error(2, 'transp_tmax')
+      !******Set switch for active transpiration period
+      climate%basin_transp_on = 0
+      do j = 1, model_basin%active_hrus
+        chru = model_basin%hru_route_order(j)
 
-                new_values = 0
-                if (Init_vars_from_file == 1) then
-                    allocate (Transp_beg_restart(Nhru), Transp_end_restart(Nhru), Transp_tmax_restart(Nhru))
-                    call transp_tindex_restart(1)
-                    do j = 1, Active_hrus
-                        i = Hru_route_order(j)
-                        if (new_values == 1) EXIT
-                        if (Transp_beg(i) /= Transp_beg_restart(i)) new_values = 1
-                        if (Transp_end(i) /= Transp_end_restart(i)) new_values = 1
-                        if (Transp_tmax(i) /= Transp_tmax_restart(i)) new_values = 1
-                    enddo
-                    deallocate (Transp_beg_restart, Transp_end_restart, Transp_tmax_restart)
-                endif
+        !******check for month to turn transp_check switch on or
+        !******transpiration switch off (transp_on)
+        if (model_time%Nowday == 1) then
+          !******check for end of period
+          if (model_time%Nowmonth == param_data%transp_end%values(chru)) then
+            climate%transp_on(chru) = 0
+            this%transp_check(chru) = 0
+            this%tmax_sum(chru) = 0.0
+          endif
 
-                if (Temp_units == 0) then
-                    Transp_tmax_f = Transp_tmax
-                else
-                    do i = 1, Nhru
-                        Transp_tmax_f(i) = c_to_f(Transp_tmax(i))
-                    enddo
-                endif
-                !deallocate ( Transp_tmax )
+          !******check for month to turn transpiration switch (transp_check) on or off
+          if (model_time%Nowmonth == param_data%transp_beg%values(chru)) then
+            this%transp_check(chru) = 1
+            this%tmax_sum(chru) = 0.0
+          endif
+        endif
 
-                if (Init_vars_from_file == 0 .OR. new_values == 1) then
-                    motmp = Start_month + 12
-                    Tmax_sum = 0.0
-                    Transp_check = 0
-                    Basin_transp_on = 0
-                    do j = 1, Active_hrus
-                        i = Hru_route_order(j)
-                        if (Start_month == Transp_beg(i)) then
-                            if (Start_day > 10) then ! rsr, why 10? if transp_tmax < 300, should be < 10
-                                Transp_on(i) = 1
-                            else
-                                Transp_check(i) = 1
-                            endif
-                        elseif (Transp_end(i) > Transp_beg(i)) then
-                            if (Start_month > Transp_beg(i) .AND. Start_month < Transp_end(i)) Transp_on(i) = 1
-                        else
-                            if (Start_month > Transp_beg(i) .OR. motmp < Transp_end(i) + 12) Transp_on(i) = 1
-                        endif
-                        if (Basin_transp_on == 0) then
-                            if (Transp_on(i) == 1) Basin_transp_on = 1
-                        endif
-                    enddo
-                endif
+        !****** If in checking period, then for each day sum the maximum
+        !****** temperature until it's greater than temperature index parameter,
+        !****** at which time, turn transpiration switch on, check switch off
+        ! freezing temperature assumed to be 32 degrees Fahrenheit
+        if (this%transp_check(chru) == 1) then
+          if (climate%tmaxf(chru) > 32.0) then
+            this%tmax_sum(chru) = this%tmax_sum(chru) + climate%tmaxf(chru)
+          endif
 
-            elseif (Process == 'clean') then
-                if (Save_vars_to_file == 1) call transp_tindex_restart(0)
+          if (this%tmax_sum(chru) > this%transp_tmax_f(chru)) then
+            climate%transp_on(chru) = 1
+            this%transp_check(chru) = 0
+            this%tmax_sum(chru) = 0.0
+          endif
+        endif
 
-            endif
+        if (climate%basin_transp_on == 0) then
+          if (climate%transp_on(chru) == 1) climate%basin_transp_on = 1
+        endif
+      enddo
+    end subroutine
 
-        end function transp_tindex
-
-        !***********************************************************************
-        !     Write to or read from restart file
-        !***********************************************************************
-        subroutine transp_tindex_restart(In_out)
-            use PRMS_MODULE, only: Restart_outunit, Restart_inunit
-            use UTILS_PRMS, only: check_restart
-            implicit none
-
-            ! Argument
-            integer(i4), INTENT(IN) :: In_out
-
-            ! Local Variable
-            character(len=13) :: module_name
-
-            !***********************************************************************
-            if (In_out == 0) then
-                write (Restart_outunit) MODNAME
-                write (Restart_outunit) Transp_check
-                write (Restart_outunit) Tmax_sum
-                write (Restart_outunit) Transp_beg
-                write (Restart_outunit) Transp_end
-                write (Restart_outunit) Transp_tmax
-            else
-                read (Restart_inunit) module_name
-                call check_restart(MODNAME, module_name)
-                read (Restart_inunit) Transp_check
-                read (Restart_inunit) Tmax_sum
-                read (Restart_inunit) Transp_beg_restart
-                read (Restart_inunit) Transp_end_restart
-                read (Restart_inunit) Transp_tmax_restart
-            endif
-        end subroutine transp_tindex_restart
-
-end MODULE PRMS_TRANSP_TINDEX
+    !***********************************************************************
+    !     Write to or read from restart file
+    !***********************************************************************
+    ! subroutine transp_tindex_restart(In_out)
+    !   use PRMS_MODULE, only: Restart_outunit, Restart_inunit
+    !   use UTILS_PRMS, only: check_restart
+    !   implicit none
+    !
+    !   ! Argument
+    !   integer(i32), intent(in) :: In_out
+    !
+    !   ! Local Variable
+    !   character(len=13) :: module_name
+    !
+    !   !***********************************************************************
+    !   if (In_out == 0) then
+    !     write (Restart_outunit) MODNAME
+    !     write (Restart_outunit) Transp_check
+    !     write (Restart_outunit) Tmax_sum
+    !     write (Restart_outunit) Transp_beg
+    !     write (Restart_outunit) Transp_end
+    !     write (Restart_outunit) Transp_tmax
+    !   else
+    !     read (Restart_inunit) module_name
+    !     call check_restart(MODNAME, module_name)
+    !     read (Restart_inunit) Transp_check
+    !     read (Restart_inunit) Tmax_sum
+    !     read (Restart_inunit) Transp_beg_restart
+    !     read (Restart_inunit) Transp_end_restart
+    !     read (Restart_inunit) Transp_tmax_restart
+    !   endif
+    ! end subroutine transp_tindex_restart
+end MODULE

@@ -8,6 +8,7 @@ module iArray_class
   use variableKind, only: i32
   use m_errors, only: fErr, IO_READ
   use Abc_class, only: Abc
+  ! use Array_class, only: Array
   use m_allocate, only: allocate
   use m_deallocate, only: deallocate
   use m_strings, only: str
@@ -76,6 +77,7 @@ module iArray_class
         !! Allocate the values to size N, and set the dims array to 1D of length one.
 
       call allocate(this%values, N)
+      ! call this%dims%allocate(N)
       call allocate(this%dims, 1)
       this%dims(1) = N
     end subroutine allocate_iArray_i1
@@ -89,6 +91,7 @@ module iArray_class
         !! Allocate the values to the same shape defined by dims.
 
       call allocate(this%values, product(dims))
+      ! call this%dims%allocate(dims)
       call allocate(this%dims, size(dims))
       this%dims = dims
     end subroutine allocate_iArray_i1D
@@ -111,7 +114,7 @@ module iArray_class
       character(len=*), intent(in), optional :: delim
         !! Delimiter between values
 
-      write(output_unit, '(a)') str(this%values, delim)
+      write(output_unit, *) str(this%values, delim), " :dims= ", str(this%dims, delim)
     end subroutine print_iArray
     !====================================================================!
 

@@ -28,8 +28,8 @@ module sVariable_class
         ! real(r32) :: max_value
         type(String) :: default_value
 
-        type(String), allocatable :: dim_names(:)
-        type(String), allocatable :: module_names(:)
+        type(sArray), allocatable :: dim_names
+        type(sArray), allocatable :: module_names
     end type
 
     ! interface sVariable

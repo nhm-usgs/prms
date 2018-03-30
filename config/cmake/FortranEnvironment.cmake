@@ -38,14 +38,14 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 
   if(BUILD_SHARED_LIBS)
     # Add any shared library related stuff here
-    
+
     if(NOT WIN32)
       # Taken from: https://cmake.org/Wiki/CMake_RPATH_handling#Mac_OS_X_and_the_RPATH
       # use, i.e. don't skip the full RPATH for the build tree
       set(CMAKE_SKIP_BUILD_RPATH FALSE)
 
       # when building, don't use the install RPATH already (but later on when installing)
-      set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+      set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
       set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
@@ -71,7 +71,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
       message(STATUS "LIB_QUADMATH: ${LIB_QUADMATH}")
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgfortran -static-libgcc -lgfortran -lgcc -lSystem -nodefaultlibs ${LIB_QUADMATH}")
 
-      # Apple's ar and ranlib commands toss out 'no symbols' warnings 
+      # Apple's ar and ranlib commands toss out 'no symbols' warnings
       # The following two lines quiets those warnings
       set(CMAKE_Fortran_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
       set(CMAKE_Fortran_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
@@ -98,7 +98,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -nologo -fpp -O3 -heap-arrays1024 -QaxCORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -Qipo -fp:fast=2 -Qdiag-disable:remark -Qmkl")
     set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -nologo -fpp -g -Od  -heap-arrays1024 -traceback -CB -Qfp-stack-check -Qmkl -warn:all -warn:nounused")
   endif()
-  
+
   if(${LINUX})
     if(BUILD_SHARED_LIBS)
       # Add any shared library related stuff here
@@ -111,7 +111,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -no-prec-div -fp-model fast=2")
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -g -traceback -CB -fp-stack-check -gen-interfaces -warn interfaces")
   endif()
-  
+
   if(APPLE)
     set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -no-prec-div -fp-model fast=2")
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_RELEASE} -O0 -g -traceback -CB -fp-stack-check -gen-interfaces -warn interfaces")
@@ -129,4 +129,3 @@ if(BT STREQUAL "RELEASE")
 elseif(BT STREQUAL "DEBUG")
   message(STATUS "Using the following compile flags ${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
 endif()
-
