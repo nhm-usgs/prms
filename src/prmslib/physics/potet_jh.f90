@@ -7,12 +7,11 @@ module PRMS_POTET_JH
   use variableKind
   implicit none
 
-  ! Local Variable
-  character(len=*), parameter :: MODNAME = 'potet_jh'
-  character(len=*), parameter :: VERSION = 'potet_jh.f90 2016-05-10 15:48:00Z'
-
   private
   public :: run_potet_jh
+
+  character(len=*), parameter :: MODNAME = 'potet_jh'
+  character(len=*), parameter :: MODVERSION = 'potet_jh.f90 2016-05-10 15:48:00Z'
 
   contains
     subroutine run_potet_jh(ctl_data, param_data, model_basin, model_time, climate)
@@ -72,7 +71,7 @@ module PRMS_POTET_JH
           climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * hru_area(chru))
         enddo
       end associate
-      
+
       climate%basin_potet = climate%basin_potet * model_basin%basin_area_inv
     end subroutine
 end module

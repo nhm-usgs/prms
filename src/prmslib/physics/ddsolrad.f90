@@ -13,23 +13,17 @@ module PRMS_DDSOLRAD
   use variableKind
   implicit none
 
-  ! Local Variables
+  private
+  public :: ddsolrad
+
   character(len=*), parameter :: MODNAME = 'ddsolrad'
-  character(len=*), parameter :: VERSION = 'ddsolrad.f90 2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = 'ddsolrad.f90 2017-09-29 13:50:00Z'
 
   real(r32), dimension(26), parameter :: SOLF = [.20, .35, .45, .51, .56, .59, &
                                                  .62, .64, .655, .67, .682, .69, &
                                                  .70, .71, .715, .72, .722, .724, &
                                                  .726, .728, .73, .734, .738, &
                                                  .742, .746, .75]
-  ! real(r32), SAVE, DIMENSION(26) :: solf
-  ! DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
-  !           .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
-  !           .734, .738, .742, .746, .75/
-
-  private
-  public :: ddsolrad
-
   ! Declared Parameters
   ! type Ddsolrad
   ! end type
