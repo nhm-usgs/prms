@@ -38,8 +38,8 @@ module PRMS_SOLTAB
     real(r64), allocatable :: soltab_horad_potsw(:, :)
 
     contains
-      procedure, private :: compute_t
-      procedure, private :: compute_soltab
+      procedure, nopass, private :: compute_t
+      procedure, nopass, private :: compute_soltab
       procedure, nopass, private :: func3
 
   end type
@@ -104,106 +104,110 @@ module PRMS_SOLTAB
       real(r64) :: jddbl
 
       ! ------------------------------------------------------------------------
-      allocate(this%hru_cossl(ctl_data%nhru%values(1)))
-      allocate(this%soltab_sunhrs(366, ctl_data%nhru%values(1)))
-      allocate(this%soltab_potsw(366, ctl_data%nhru%values(1)))
-      allocate(this%soltab_horad_potsw(366, ctl_data%nhru%values(1)))
+      associate(nhru => ctl_data%nhru%values(1), &
+                hru_lat => param_data%hru_lat%values, &
+                hru_type => param_data%hru_type%values, &
+                hru_slope => param_data%hru_slope%values, &
+                hru_aspect => param_data%hru_aspect%values)
 
-      this%hru_cossl = 0.0D0
-      this%soltab_sunhrs = 0.0D0
-      this%soltab_potsw = 0.0D0
-      this%soltab_horad_potsw = 0.0D0
+        allocate(this%hru_cossl(nhru))
+        allocate(this%soltab_sunhrs(366, nhru))
+        allocate(this%soltab_potsw(366, nhru))
+        allocate(this%soltab_horad_potsw(366, nhru))
 
-      do jd = 1, 366
-        jddbl = DBLE(jd)
+        this%hru_cossl = 0.0
+        this%soltab_sunhrs = 0.0
+        this%soltab_potsw = 0.0
+        this%soltab_horad_potsw = 0.0
 
-        ! cosine of the solar zenith angle: http://www.cesm.ucar.edu/models/cesm1.0/cesm/cesmBbrowser/html_code/csm_share/shr_orb_mod.F90.html
-        !    jday   ! Julian cal day (1.xx to 365.xx)
-        !    lat    ! Centered latitude (radians)
-        !    lon    ! Centered longitude (radians)
-        !    declin ! Solar declination (radians)
-        ! shr_orb_cosz = sin(lat)*sin(declin) - &
-        !&              cos(lat)*cos(declin)*cos(jday*2.0_SHR_KIND_R8*pi + lon)
+        do jd = 1, 366
+          jddbl = DBLE(jd)
 
-        ! Eccentricity from equation E-2 (Dingman, S. L., 1994, Physical Hydrology. Englewood Cliffs, NJ: Prentice Hall, 575 p.)
-        ! eccentricity = (r_0/r)^2 = 1.00011+0.034221 cos⁡Γ+0.00128 sin⁡Γ+0.000719 cos⁡2Γ+0.000077 sin⁡2Γ
-        ! Γ = (2π(J-1))/365 = DEGDAYRAD*(jddbl-1.0D0) = day angle
-        ! dayangle = DEGDAYRAD*(jddbl-1.0D0)
-        ! eccentricity = 1.00011D0 + 0.034221D0*COS(dayangle) + 0.00128D0*SIN(dayangle) + 0.000719D0*COS(2.0D0*dayangle) + 0.000077D0*SIN(2.0D0*dayangle)
-        !rsr .0172 = 2PI/365 = RADIAN_YEAR = DEGDAYRAD
-        !rsr01/2006 commented out equations from Llowd W. Swift paper 2/1976
-        !       obliquity(jd) = 1.0D0 - (0.0167D0*COS((jd-3)*0.0172D0))
-        obliquity(jd) = 1.0D0 - (ECCENTRICY * COS((jddbl - 3.0D0) * DEGDAYRAD))
-        !       Solar_declination(jd) = 0.007D0 - (0.4067D0*COS((jd+10)*0.0172D0))
-        !       Solar_declination(jd) = ASIN(0.39785D0 * SIN( (278.9709D0+DEGDAY*jd)*RADIANS + 1.9163D0*RADIANS * SIN((356.6153D0+DEGDAY*jd)*RADIANS )) )
-        ! hour = 12.0D0
-        !       y = DEGDAYRAD*(jddbl-1.0D0 +(hour-12.0D0)/24.0D0)
-        y = DEGDAYRAD * (jddbl - 1.0D0) ! assume noon
-        y2 = 2.0D0 * y
-        y3 = 3.0D0 * y
-        this%solar_declination(jd) = 0.006918D0 - 0.399912D0 * COS(y) + &
-                                     0.070257D0 * SIN(y) - 0.006758D0 * COS(y2) + &
-                                     0.000907D0 * SIN(y2) - 0.002697D0 * COS(y3) + &
-                                     0.00148D0 * SIN(y3)
-      enddo
+          ! cosine of the solar zenith angle: http://www.cesm.ucar.edu/models/cesm1.0/cesm/cesmBbrowser/html_code/csm_share/shr_orb_mod.F90.html
+          !    jday   ! Julian cal day (1.xx to 365.xx)
+          !    lat    ! Centered latitude (radians)
+          !    lon    ! Centered longitude (radians)
+          !    declin ! Solar declination (radians)
+          ! shr_orb_cosz = sin(lat)*sin(declin) - &
+          !&              cos(lat)*cos(declin)*cos(jday*2.0_SHR_KIND_R8*pi + lon)
 
-      do nn = 1, model_basin%active_hrus
-        chru = model_basin%hru_route_order(nn)
-        ! OLD order
-        ! Obliquity, Solar_declination, Slope, Aspect, Latitude, Cossl,
-        ! Soltab, Sunhrs, Hru_type, Id
-        ! NEW order
-        ! Cossl, Soltab, Sunhrs, Obliquity, Solar_declination, Slope, Aspect,
-        ! Latitude, Hru_type, Id
-        call this%compute_soltab(this%hru_cossl(chru), this%soltab_horad_potsw(1, chru), &
-                            this%soltab_sunhrs(1, chru), obliquity, &
-                            this%solar_declination, 0.0, 0.0, &
-                            param_data%hru_lat%values(chru), &
-                            param_data%hru_type%values(chru), chru)
-
-        call this%compute_soltab(this%hru_cossl(chru), this%soltab_potsw(1, chru), &
-                            this%soltab_sunhrs(1, chru), obliquity, &
-                            this%solar_declination, &
-                            param_data%hru_slope%values(chru), &
-                            param_data%hru_aspect%values(chru), &
-                            param_data%hru_lat%values(chru), &
-                            param_data%hru_type%values(chru), chru)
-      enddo
-
-      lat = SNGL(model_basin%basin_lat)
-      call this%compute_soltab(basin_cossl, this%soltab_basinpotsw, basin_sunhrs, &
-                          obliquity, this%solar_declination, 0.0, 0.0, lat, 0, 0)
-
-      if (ctl_data%print_debug%values(1) == 5) then
-        output_path = 'soltab_debug'
-        print *, ''
-        print *, 'soltab debug data written to: ', output_path
-        call PRMS_open_module_file(file_unit, output_path)
-
-        do chru = 1, ctl_data%nhru%values(1)
-          write(file_unit, *) 'HRU:', chru
-          write(file_unit, *) '***Soltab_sunhrs***'
-          write(file_unit, '(13F8.3)') (this%soltab_sunhrs(j, chru), j = 1, 366)
-          write(file_unit, *) '***Soltab_potsw***'
-          write(file_unit, '(13F8.3)') (this%soltab_potsw(j, chru), j = 1, 366)
+          ! Eccentricity from equation E-2 (Dingman, S. L., 1994, Physical Hydrology. Englewood Cliffs, NJ: Prentice Hall, 575 p.)
+          ! eccentricity = (r_0/r)^2 = 1.00011+0.034221 cos⁡Γ+0.00128 sin⁡Γ+0.000719 cos⁡2Γ+0.000077 sin⁡2Γ
+          ! Γ = (2π(J-1))/365 = DEGDAYRAD*(jddbl-1.0D0) = day angle
+          ! dayangle = DEGDAYRAD*(jddbl-1.0D0)
+          ! eccentricity = 1.00011D0 + 0.034221D0*COS(dayangle) + 0.00128D0*SIN(dayangle) + 0.000719D0*COS(2.0D0*dayangle) + 0.000077D0*SIN(2.0D0*dayangle)
+          !rsr .0172 = 2PI/365 = RADIAN_YEAR = DEGDAYRAD
+          !rsr01/2006 commented out equations from Llowd W. Swift paper 2/1976
+          !       obliquity(jd) = 1.0D0 - (0.0167D0*COS((jd-3)*0.0172D0))
+          obliquity(jd) = 1.0D0 - (ECCENTRICY * COS((jddbl - 3.0D0) * DEGDAYRAD))
+          !       Solar_declination(jd) = 0.007D0 - (0.4067D0*COS((jd+10)*0.0172D0))
+          !       Solar_declination(jd) = ASIN(0.39785D0 * SIN( (278.9709D0+DEGDAY*jd)*RADIANS + 1.9163D0*RADIANS * SIN((356.6153D0+DEGDAY*jd)*RADIANS )) )
+          ! hour = 12.0D0
+          !       y = DEGDAYRAD*(jddbl-1.0D0 +(hour-12.0D0)/24.0D0)
+          y = DEGDAYRAD * (jddbl - 1.0D0) ! assume noon
+          y2 = 2.0D0 * y
+          y3 = 3.0D0 * y
+          this%solar_declination(jd) = 0.006918D0 - 0.399912D0 * COS(y) + &
+                                       0.070257D0 * SIN(y) - 0.006758D0 * COS(y2) + &
+                                       0.000907D0 * SIN(y2) - 0.002697D0 * COS(y3) + &
+                                       0.00148D0 * SIN(y3)
         enddo
 
-        !       write ( file_unit, * ) obliquity, Solar_declination
-        write(file_unit, *) 2.0D0 / (obliquity(356) * obliquity(356)), 2.0D0 / (obliquity(10) * obliquity(10)), &
-                            2.0D0 / (obliquity(23) * obliquity(23)), 2.0D0 / (obliquity(38) * obliquity(38)), &
-                            2.0D0 / (obliquity(51) * obliquity(51)), 2.0D0 / (obliquity(66) * obliquity(66)), &
-                            2.0D0 / (obliquity(80) * obliquity(80)), 2.0D0 / (obliquity(94) * obliquity(94)), &
-                            2.0D0 / (obliquity(109) * obliquity(109)), 2.0D0 / (obliquity(123) * obliquity(123)), &
-                            2.0D0 / (obliquity(138) * obliquity(138)), 2.0D0 / (obliquity(152) * obliquity(152)), &
-                            2.0D0 / (obliquity(173) * obliquity(173))
-        write(file_unit, *) this%solar_declination(356), this%solar_declination(10), this%solar_declination(23), &
-                            this%solar_declination(38), this%solar_declination(51), this%solar_declination(66), &
-                            this%solar_declination(80), this%solar_declination(94), this%solar_declination(109), &
-                            this%solar_declination(123), this%solar_declination(138), this%solar_declination(152), &
-                            this%solar_declination(173)
-        close(file_unit)
-      endif
-      ! deallocate (Hru_slope, Hru_aspect)
+        do nn = 1, model_basin%active_hrus
+          chru = model_basin%hru_route_order(nn)
+          ! OLD order
+          ! Obliquity, Solar_declination, Slope, Aspect, Latitude, Cossl,
+          ! Soltab, Sunhrs, Hru_type, Id
+          ! NEW order
+          ! Cossl, Soltab, Sunhrs, Obliquity, Solar_declination, Slope, Aspect,
+          ! Latitude, Hru_type, Id
+          call this%compute_soltab(this%hru_cossl(chru), this%soltab_horad_potsw(1, chru), &
+                              this%soltab_sunhrs(1, chru), obliquity, &
+                              this%solar_declination, 0.0, 0.0, &
+                              hru_lat(chru), hru_type(chru), chru)
+
+          call this%compute_soltab(this%hru_cossl(chru), this%soltab_potsw(1, chru), &
+                              this%soltab_sunhrs(1, chru), obliquity, &
+                              this%solar_declination, &
+                              hru_slope(chru), hru_aspect(chru), &
+                              hru_lat(chru), hru_type(chru), chru)
+        enddo
+
+        lat = SNGL(model_basin%basin_lat)
+        call this%compute_soltab(basin_cossl, this%soltab_basinpotsw, basin_sunhrs, &
+                            obliquity, this%solar_declination, 0.0, 0.0, lat, 0, 0)
+
+        if (ctl_data%print_debug%values(1) == 5) then
+          output_path = 'soltab_debug'
+          print *, ''
+          print *, 'soltab debug data written to: ', output_path
+          call PRMS_open_module_file(file_unit, output_path)
+
+          do chru = 1, nhru
+            write(file_unit, *) 'HRU:', chru
+            write(file_unit, *) '***Soltab_sunhrs***'
+            write(file_unit, '(13F8.3)') (this%soltab_sunhrs(j, chru), j = 1, 366)
+            write(file_unit, *) '***Soltab_potsw***'
+            write(file_unit, '(13F8.3)') (this%soltab_potsw(j, chru), j = 1, 366)
+          enddo
+
+          !       write ( file_unit, * ) obliquity, Solar_declination
+          write(file_unit, *) 2.0D0 / (obliquity(356) * obliquity(356)), 2.0D0 / (obliquity(10) * obliquity(10)), &
+                              2.0D0 / (obliquity(23) * obliquity(23)), 2.0D0 / (obliquity(38) * obliquity(38)), &
+                              2.0D0 / (obliquity(51) * obliquity(51)), 2.0D0 / (obliquity(66) * obliquity(66)), &
+                              2.0D0 / (obliquity(80) * obliquity(80)), 2.0D0 / (obliquity(94) * obliquity(94)), &
+                              2.0D0 / (obliquity(109) * obliquity(109)), 2.0D0 / (obliquity(123) * obliquity(123)), &
+                              2.0D0 / (obliquity(138) * obliquity(138)), 2.0D0 / (obliquity(152) * obliquity(152)), &
+                              2.0D0 / (obliquity(173) * obliquity(173))
+          write(file_unit, *) this%solar_declination(356), this%solar_declination(10), this%solar_declination(23), &
+                              this%solar_declination(38), this%solar_declination(51), this%solar_declination(66), &
+                              this%solar_declination(80), this%solar_declination(94), this%solar_declination(109), &
+                              this%solar_declination(123), this%solar_declination(138), this%solar_declination(152), &
+                              this%solar_declination(173)
+          close(file_unit)
+        endif
+        ! deallocate (Hru_slope, Hru_aspect)
+      end associate
     end function
 
 
@@ -212,7 +216,7 @@ module PRMS_SOLTAB
     !  and soltab_sunhrs (hours between sunrise and sunset)
     !  for each HRU for each day of the year.
     !***********************************************************************
-    subroutine compute_soltab(this, Cossl, Soltab_daily, Sunhrs_daily, Obliquity, &
+    subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, Obliquity, &
                               Solar_declination, Slope, Aspect, Latitude, &
                               Hru_type, Id)
       use prms_constants, only: DNEARZERO
@@ -222,7 +226,6 @@ module PRMS_SOLTAB
       INTRINSIC ASIN, SIN, COS, ATAN, ABS
 
       ! Arguments
-      class(Soltab), intent(inout) :: this
       real(r64), intent(out) :: Cossl
       real(r64), intent(out), dimension(DAYS_PER_YEAR) :: Soltab_daily
       real(r64), intent(out), dimension(DAYS_PER_YEAR) :: Sunhrs_daily
@@ -320,14 +323,14 @@ module PRMS_SOLTAB
         ! compute_t is the sunrise equation.
         ! t7 is the hour angle of sunset on the equivalent slope
         ! t6 is the hour angle of sunrise on the equivalent slope
-        call this%compute_t(x1, d, t)
+        call compute_t(x1, d, t)
         t7 = t - x2
         t6 = -t - x2
 
         ! compute_t is the sunrise equation.
         ! t1 is the hour angle of sunset on a hroizontal surface at the HRU
         ! t0 is the hour angle of sunrise on a hroizontal surface at the HRU
-        call this%compute_t(x0, d, t)
+        call compute_t(x0, d, t)
         t1 = t
         t0 = -t
 
@@ -403,16 +406,18 @@ module PRMS_SOLTAB
 
     !***********************************************************************
     !***********************************************************************
-    subroutine compute_t(this, Lat, Solar_declination, T)
+    subroutine compute_t(Lat, Solar_declination, T)
       implicit none
 
       INTRINSIC TAN, ACOS
 
       ! Arguments
-      class(Soltab), intent(inout) :: this
       real(r64), intent(in) :: Lat
+        !! Latitude
       real(r64), intent(in) :: Solar_declination
+        !! Declination of the sun on a day.
       real(r64), intent(out) :: T
+        !! Angle hour from the local meridian (local solar noon) to the sunrise(negative) or sunset(positive).
 
       ! Local Variables
       real(r64) :: tx
