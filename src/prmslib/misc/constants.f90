@@ -15,11 +15,11 @@ module prms_constants
     ! from mmf_utils.f90
     ! DANGER, DANGER, hard coded maximum number of paraemters and dimensions, DANGER, DANGER
     ! INTEGER, PARAMETER :: MAXDIMENSIONS = 50
-    integer(i32), parameter :: MAXPARAMETERS = 200
-    integer(i32), parameter :: MAXVARIABLES = 100
+    ! integer(i32), parameter :: MAXPARAMETERS = 200
+    ! integer(i32), parameter :: MAXVARIABLES = 100
 
     ! from read_control_file.f90
-    INTEGER(i32), PARAMETER :: Max_num_control_parameters = 150 ! WARNING, hard coded, DANGER, DANGER
+    ! INTEGER(i32), PARAMETER :: Max_num_control_parameters = 150 ! WARNING, hard coded, DANGER, DANGER
 
     real(r64), PARAMETER :: SECS_PER_DAY = 86400D0
     real(r64), PARAMETER :: SECS_PER_HOUR = 3600D0
@@ -57,4 +57,24 @@ module prms_constants
     integer(i32), parameter :: FROST = 9
     integer(i32), parameter :: CONVERT = 10
     integer(i32), parameter :: DOCUMENTATION = 99
+
+    ! Hemisphere constants
+    integer(i32), parameter :: NORTHERN = 0
+    integer(i32), parameter :: SOUTHERN = 0
+
+    ! Date time index constants
+    integer(i32), parameter :: YEAR = 1
+    integer(i32), parameter :: MONTH = 2
+    integer(i32), parameter :: DAY = 3
+    integer(i32), parameter :: HOUR = 4
+    integer(i32), parameter :: MINUTE = 5
+    integer(i32), parameter :: SECOND = 6
+
+    ! Temperature units
+    integer(i32), parameter :: FAHRENHEIT = 0
+    integer(i32), parameter :: CELSIUS = 1
+
+    ! Precipitation units
+    integer(i32), parameter :: INCHES = 0
+    integer(i32), parameter :: MM = 1
 end module prms_constants
