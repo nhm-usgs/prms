@@ -85,7 +85,8 @@ module PRMS_SIMULATION
       print *, '-- ddsolrad() -- no initialization required'
 
       print *, '-- Init transpiration'
-      this%transpiration = Transp_tindex(ctl_data, param_data)
+      ! ctl_data, param_data, model_basin, climate
+      this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin, this%climate)
 
       print *, '-- run_potet_jh() -- no initialization required'
 
@@ -111,27 +112,34 @@ module PRMS_SIMULATION
       class(Control), intent(in) :: ctl_data
       class(Parameters), intent(in) :: param_data
 
+      logical :: crap
+      integer(i32) :: ii
+
       ! ------------------------------------------------------------------------
-      print *, '-- advance timestep'
-      call this%model_time%advance(ctl_data, this%model_basin)
+      print *, '-- run_Simulation()'
+      do
+        if (.not. this%model_time%next(ctl_data, this%model_basin)) exit
 
-      print *, '-- climate_by_hru.run()'
-      ! ctl_data, param_data, the_basin, climate, model_time
-      call this%climate_by_hru%run(ctl_data, param_data, this%model_basin, &
-                                   this%climate, this%model_time)
+        ! print *, '-- climate_by_hru.run()'
+        ! ctl_data, param_data, the_basin, climate, model_time
+        call this%climate_by_hru%run(ctl_data, param_data, this%model_time, &
+                                     this%model_basin, this%climate)
 
-      print *, '-- run ddsolrad'
-      call ddsolrad(ctl_data, param_data, this%model_time, this%solt, this%climate, &
-                    this%model_basin)
+        ! print *, '-- run ddsolrad'
+        call ddsolrad(ctl_data, param_data, this%model_time, this%solt, this%climate, &
+                      this%model_basin)
 
-      print *, '-- transpiration.run()'
-      ! ctl_data, model_time, model_basin, param_data, climate
-      call this%transpiration%run(ctl_data, this%model_time, this%model_basin, &
-                                  param_data, this%climate)
+        ! print *, '-- transpiration.run()'
+        ! ctl_data, model_time, model_basin, param_data, climate
+        call this%transpiration%run(ctl_data, param_data, this%model_time, this%model_basin, &
+                                    this%climate)
 
-      print *, '-- run_potet_jh()'
-      ! ctl_data, param_data, model_basin, model_time, climate
-      call run_potet_jh(ctl_data, param_data, this%model_basin, this%model_time, this%climate)
+        ! print *, '-- run_potet_jh()'
+        ! ctl_data, param_data, model_basin, model_time, climate
+        call run_potet_jh(ctl_data, param_data, this%model_basin, this%model_time, this%climate)
+
+        call this%summary_by_basin%run(ctl_data, this%model_time, this%climate)
+      enddo
 
       ! TODO: write the nhru_summary.run() routine
       ! if (ctl_data%nhruOutON_OFF%values(1) > 0) then
