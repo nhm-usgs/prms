@@ -139,6 +139,7 @@ module PRMS_SIMULATION
         call run_potet_jh(ctl_data, param_data, this%model_basin, this%model_time, this%climate)
 
         call this%summary_by_basin%run(ctl_data, this%model_time, this%climate)
+        call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, this%climate)
       enddo
 
       ! TODO: write the nhru_summary.run() routine
