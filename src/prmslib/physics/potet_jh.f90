@@ -40,14 +40,11 @@ module PRMS_POTET_JH
         !! Loop variable
       integer(i32) :: idx1D
         !! 1D index from 2D
-      integer(i32) :: month
-        !! Local copy of Time%Nowmonth
       real(r32) :: elh
         !! Latent heat of vaporization
 
 
       !***********************************************************************
-      month = model_time%Nowmonth
 
       !***********************************************************************
       ! 597.3 cal/gm at 0 C is the energy required to change the state of
@@ -55,17 +52,26 @@ module PRMS_POTET_JH
       ! elh is the latent heat of vaporization (not including the *2.54)
       ! Basin_potet = 0.0D0
 
-      ! TODO: fix indexing placeholder chru*month
-      do j = 1, model_basin%active_hrus
-        chru = model_basin%hru_route_order(j)
-        idx1D = (month - 1) * ctl_data%nhru%values(1) + chru
-        elh = (597.3 - (0.5653 * climate%tavgc(chru))) * 2.54
-        climate%potet(chru) = param_data%jh_coef%values(idx1D) * (climate%tavgf(chru) - &
-                              param_data%jh_coef_hru%values(chru)) * climate%swrad(chru) / elh
+      associate(curr_month => model_time%Nowmonth, &
+                jh_coef => param_data%jh_coef%values, &
+                jh_coef_hru => param_data%jh_coef_hru%values, &
+                hru_area => param_data%hru_area%values)
 
-        if (climate%potet(chru) < 0.0) climate%potet(chru) = 0.0
-        climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * param_data%hru_area%values(chru))
-      enddo
+        climate%basin_potet = 0.0
+        
+        do j = 1, model_basin%active_hrus
+          chru = model_basin%hru_route_order(j)
+          idx1D = (curr_month - 1) * ctl_data%nhru%values(1) + chru
+
+          elh = (597.3 - (0.5653 * climate%tavgc(chru))) * 2.54
+          climate%potet(chru) = jh_coef(idx1D) * (climate%tavgf(chru) - &
+                                jh_coef_hru(chru)) * climate%swrad(chru) / elh
+
+          if (climate%potet(chru) < 0.0) climate%potet(chru) = 0.0
+
+          climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * hru_area(chru))
+        enddo
+      end associate
 
       climate%basin_potet = climate%basin_potet * model_basin%basin_area_inv
     end subroutine
