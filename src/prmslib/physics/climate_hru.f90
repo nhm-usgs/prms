@@ -108,7 +108,7 @@ module PRMS_CLIMATE_HRU
         if (istop == 1) STOP 'ERROR in climate_hru'
       end function
 
-      subroutine run_Climate_HRU(this, ctl_data, param_data, model_basin, climate, model_time)
+      subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
         use PRMS_BASIN, only: Basin
         use Control_class, only: Control
         use Parameters_class, only: Parameters
@@ -121,79 +121,113 @@ module PRMS_CLIMATE_HRU
         class(Climate_HRU), intent(inout) :: this
         class(Control), intent(in) :: ctl_data
         class(Parameters), intent(in) :: param_data
+        class(Time), intent(in) :: model_time
         class(Basin), intent(in) :: model_basin
         class(Climateflow), intent(inout) :: climate
-        class(Time), intent(in) :: model_time
 
         ! Local variables
-        ! integer(i32) :: yr, mo, dy, hr, mn, sec
-        ! integer(i32) :: istop, missing, ios
         integer(i32) :: chru
-        integer(i32) :: ierr
+        integer(i32) :: ierr = 0
+        integer(i32) :: ios = 0
         integer(i32) :: jj
+        integer(i32) :: yr, mo, dy, hr, mn, sec
+          !! junk vars to hold time info from files
         real(r32) :: tmax_hru  ! different from what's defined in climateflow.f90
         real(r32) :: tmin_hru  ! different from what's defined in climateflow.f90
         real(r32) :: ppt
-        real(r32) :: harea
         real(r64) :: sum_obs
 
-        integer(i32) :: cmonth
-          !! Local copy of current Nowmonth value
-
+        integer(i32) :: idx1D
+          !! 1D index from 2D
 
         ! ----------------------------------------------------------------------
-        cmonth = model_time%Nowmonth
-        ! TODO: using chru*Nowmonth as placeholder for correctly handling 2D arrays
-        !       This will provide erroneous results until fixed.
-
-        do jj = 1, model_basin%active_hrus
-          chru = model_basin%hru_route_order(jj)
-          harea = param_data%hru_area%values(chru)
+        associate(curr_month => model_time%Nowmonth, &
+                  nhru => ctl_data%nhru%values(1), &
+                  hru_area => param_data%hru_area%values, &
+                  tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
+                  tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
+                  rain_cbh_adj => param_data%rain_cbh_adj%values, &
+                  snow_cbh_adj => param_data%snow_cbh_adj%values, &
+                  adjmix_rain => param_data%adjmix_rain%values)
 
           if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
-            tmax_hru = climate%tmaxf(chru) + param_data%tmax_cbh_adj%values(chru*cmonth)
-            tmin_hru = climate%tminf(chru) + param_data%tmin_cbh_adj%values(chru*cmonth)
-            ! param_data, ihru, hru_area, tmax, tmin
-            call climate%temp_set(param_data, chru, harea, tmax_hru, tmin_hru)
+            read(this%tmax_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%tmaxf(jj), jj=1, nhru)
+            read(this%tmin_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%tminf(jj), jj=1, nhru)
+            climate%basin_tmax = 0.0
+            climate%basin_tmin = 0.0
+            climate%basin_temp = 0.0
           endif
 
           if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
-            !******Initialize HRU variables
-            climate%pptmix(chru) = 0
-            climate%newsnow(chru) = 0
-            climate%prmx(chru) = 0.0
-            climate%hru_rain(chru) = 0.0
-            climate%hru_snow(chru) = 0.0
-
-            if (climate%hru_ppt(chru) > 0.0) then
-              if (param_data%precip_units%values(1) == 1) then
-                climate%hru_ppt(chru) = climate%hru_ppt(chru) * MM2INCH
-              endif
-
-              ppt = climate%hru_ppt(chru)
-
-              ! ihru, month, hru_area, adjmix_rain, rain_adj, snow_adj, precip, sum_obs
-              call climate%precip_form(chru, cmonth, harea, param_data%adjmix_rain%values(chru*cmonth), &
-                               param_data%rain_cbh_adj%values(chru*cmonth), &
-                               param_data%snow_cbh_adj%values(chru*cmonth), &
-                               ppt, sum_obs)
-            elseif (climate%hru_ppt(chru) < 0.0) then
-              print *, 'ERROR, negative precipitation value entered in CBH File, HRU:', chru
-              ! call print_date(0)
-              ierr = 1
-            endif
+            read(this%precip_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%hru_ppt(jj), jj=1, nhru)
+            climate%basin_ppt = 0.0
+            climate%basin_rain = 0.0
+            climate%basin_snow = 0.0
+            sum_obs = 0.0
           endif
-        enddo
 
-        if (ierr == 1) then
-          ! call print_date(0)
-          STOP
-        endif
+          do jj = 1, model_basin%active_hrus
+            chru = model_basin%hru_route_order(jj)
+            idx1D = (curr_month - 1) * nhru + chru
+            ! print *, 'idx1D: ', idx1D
 
-        if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
-          climate%solrad_tmax = real(climate%basin_tmax, r32)
-          climate%solrad_tmin = real(climate%basin_tmin, r32)
-        endif
+            ! harea = param_data%hru_area%values(chru)
+
+            if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+              tmax_hru = climate%tmaxf(chru) + tmax_cbh_adj(idx1D)
+              tmin_hru = climate%tminf(chru) + tmin_cbh_adj(idx1D)
+
+              ! param_data, ihru, hru_area, tmax, tmin
+              call climate%temp_set(param_data, chru, hru_area(chru), tmax_hru, tmin_hru)
+            endif
+
+            if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
+              !******Initialize HRU variables
+              climate%pptmix(chru) = 0
+              climate%newsnow(chru) = 0
+              climate%prmx(chru) = 0.0
+              climate%hru_rain(chru) = 0.0
+              climate%hru_snow(chru) = 0.0
+
+              if (climate%hru_ppt(chru) > 0.0) then
+                if (param_data%precip_units%values(1) == 1) then
+                  climate%hru_ppt(chru) = climate%hru_ppt(chru) * MM2INCH
+                endif
+
+                ppt = climate%hru_ppt(chru)
+
+                ! ihru, month, hru_area, adjmix_rain, rain_adj, snow_adj, precip, sum_obs
+                call climate%precip_form(chru, curr_month, hru_area(chru), adjmix_rain(idx1D), &
+                                         rain_cbh_adj(idx1D), snow_cbh_adj(idx1D), &
+                                         ppt, sum_obs)
+              elseif (climate%hru_ppt(chru) < 0.0) then
+                print *, 'ERROR, negative precipitation value entered in CBH File, HRU:', chru
+                ! call print_date(0)
+                ierr = 1
+              endif
+            endif
+          enddo
+
+          if (ierr == 1) then
+            ! call print_date(0)
+            STOP
+          endif
+
+          if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+            climate%basin_tmax = climate%basin_tmax * model_basin%basin_area_inv
+            climate%basin_tmin = climate%basin_tmin * model_basin%basin_area_inv
+            climate%basin_temp = climate%basin_temp * model_basin%basin_area_inv
+            climate%solrad_tmax = real(climate%basin_tmax, r32)
+            climate%solrad_tmin = real(climate%basin_tmin, r32)
+          endif
+
+          if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
+            climate%basin_ppt = climate%basin_ppt * model_basin%basin_area_inv
+            climate%basin_obs_ppt = sum_obs * model_basin%basin_area_inv
+            climate%basin_rain = climate%basin_rain * model_basin%basin_area_inv
+            climate%basin_snow = climate%basin_snow * model_basin%basin_area_inv
+          endif
+        end associate
       end subroutine
 
 
@@ -281,7 +315,6 @@ module PRMS_CLIMATE_HRU
       !     Read a day in the CBH File
       !***********************************************************************
       subroutine read_cbh_date(this, model_time, Year, Month, Day, Var, Ios, Iret)
-        ! use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, print_date
         use PRMS_SET_TIME, only: Time
 
         ! Argument
