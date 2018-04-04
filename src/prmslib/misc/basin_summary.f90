@@ -4,7 +4,7 @@
 module PRMS_BASIN_SUMMARY
     use variableKind
     use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
-                              MEAN_MONTHLY, MEAN_YEARLY, YEARLY
+                              MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
 
     character(len=*), parameter :: MODNAME = 'basin_summary'
@@ -27,23 +27,26 @@ module PRMS_BASIN_SUMMARY
       integer(i32) :: monthlyunit
       integer(i32) :: yearlyunit
       integer(i32) :: basin_var_type
-      integer(i32), allocatable :: nc_vars(:)
+      ! integer(i32), allocatable :: nc_vars(:) ! We don't store number of characters in name anymore
       character(len=48) :: output_fmt
       character(len=48) :: output_fmt2
       character(len=48) :: output_fmt3
 
-      integer(i32) :: daily_flag
-      integer(i32) :: yeardays
-      integer(i32) :: monthly_flag
+      integer(i32) :: daily_flag = 0
+      integer(i32) :: monthly_flag = 0
+      integer(i32) :: yeardays = 0
 
       integer(i32), private :: start_time(6)
         !! Local copy of ctl_data%start_time
       integer(i32), private :: end_time(6)
         !! Local copy of ctl_data%start_time
-      real(r64) :: monthdays
+      real(r64) :: monthdays = 0.0
       real(r64), allocatable :: basin_var_daily(:)
       real(r64), allocatable :: basin_var_monthly(:)
       real(r64), allocatable :: basin_var_yearly(:)
+
+      contains
+        procedure, public :: run => run_Basin_summary
     end type
 
     interface Basin_summary
@@ -89,7 +92,6 @@ module PRMS_BASIN_SUMMARY
         integer(i32) :: jj
         character(len=MAXFILE_LENGTH) :: fileName
 
-
         ! ----------------------------------------------------------------------
         this%start_time = ctl_data%start_time%values(:)
         this%end_time = ctl_data%end_time%values(:)
@@ -105,10 +107,7 @@ module PRMS_BASIN_SUMMARY
                 ! Inputerror_flag = 1
                 STOP
             endif
-        else
-            allocate(this%nc_vars(basin_out_vars))
         endif
-
 
         ! Initialize everything
         this%begin_results = .true.
@@ -120,82 +119,61 @@ module PRMS_BASIN_SUMMARY
 
         write (this%output_fmt, 9001) basin_out_vars
 
-        ! ierr = 0
-        ! TODO: convert this
-        do jj = 1, basin_out_vars
-            ! this%basin_var_type = var_data%getvartype(ctl_data%basinOutVar_names%values(jj)%s)
-            !
-            ! if (this%basin_var_type /= 3) then
-            !     print *, 'ERROR, invalid basin_summary variable:', ctl_data%basinOutVar_names%values(jj)%s
-            !     print *, '       only double variables allowed'
-            !     ierr = 1
-            ! endif
-            !
-            ! size = var_data%getvarsize(ctl_data%basinOutVar_names%values(jj)%s)
-            !
-            ! if (size /= 1) then
-            !     print *, 'ERROR, invalid Basin_summary variable:', ctl_data%basinOutVar_names%values(jj)%s
-            !     print *, '       only scalar variables are allowed'
-            !     ierr = 1
-            ! endif
-        enddo
-        if (ierr == 1) STOP
+        ! The header for output - common to all frequencies
+        write(this%output_fmt2, 9002) basin_out_vars
 
+        ! Always allocate and intialize the daily array
         allocate(this%basin_var_daily(basin_out_vars))
         this%basin_var_daily = 0.0D0
 
-        this%daily_flag = 0
-        if (ANY([DAILY, DAILY_MONTHLY]==basin_out_freq)) this%daily_flag = 1
+        if (ANY([DAILY, DAILY_MONTHLY]==basin_out_freq)) then
+          this%daily_flag = 1
 
-        this%monthly_flag = 0
-        if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==basin_out_freq)) this%monthly_flag = 1
+          fileName = ctl_data%basinOutBaseFileName%values(1)%s // '.csv'
 
+          call PRMS_open_output_file(this%dailyunit, fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in basin_summary, daily'
+
+          write(this%dailyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
+        endif
+
+        ! Allocate/intialize monthly array for month-based frequencies
+        if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==basin_out_freq)) then
+          this%monthly_flag = 1
+
+          allocate(this%basin_var_monthly(basin_out_vars))
+          this%basin_var_monthly = 0.0D0
+
+          if (basin_out_freq == MEAN_MONTHLY) then
+              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanmonthly.csv'
+          else
+              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_monthly.csv'
+          endif
+
+          call PRMS_open_output_file(this%monthlyunit, fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in basin_summary, monthly or meanmonthly'
+
+          write (this%monthlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
+        endif
+
+        ! Allocate/initialize the yearly array for year-based frequencies
         if (ANY([MEAN_YEARLY, YEARLY]==basin_out_freq)) then
-            this%yeardays = 0
-            allocate(this%basin_var_yearly(basin_out_vars))
-            this%basin_var_yearly = 0.0D0
-            write(this%output_fmt3, 9003) basin_out_vars
-        endif
-        if (this%monthly_flag == 1) then
-            this%monthdays = 0.0D0
-            allocate(this%basin_var_monthly(basin_out_vars))
-            this%basin_var_monthly = 0.0D0
-        endif
+          allocate(this%basin_var_yearly(basin_out_vars))
+          this%basin_var_yearly = 0.0D0
 
-        write(this%output_fmt2, 9002) basin_out_vars
+          write(this%output_fmt3, 9003) basin_out_vars
 
-        if (this%daily_flag == 1) then
-            fileName = ctl_data%basinOutBaseFileName%values(1)%s // '.csv'
-
-            call PRMS_open_output_file(this%dailyunit, fileName, 'xxx', 0, ios)
-            if (ios /= 0) STOP 'in basin_summary, daily'
-
-            write(this%dailyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        endif
-
-        if (basin_out_freq == MEAN_YEARLY) then
+          if (basin_out_freq == MEAN_YEARLY) then
             fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanyearly.csv'
-            call PRMS_open_output_file(this%yearlyunit, fileName, 'xxx', 0, ios)
-            if (ios /= 0) STOP 'in basin_summary, mean yearly'
-
-            write(this%yearlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        elseif (basin_out_freq == YEARLY) then
+          elseif (basin_out_freq == YEARLY) then
             fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_yearly.csv'
-            call PRMS_open_output_file(this%yearlyunit, fileName, 'xxx', 0, ios)
-            if (ios /= 0) STOP 'in basin_summary, yearly'
+          endif
 
-            write (this%yearlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        elseif (this%monthly_flag == 1) then
-            if (basin_out_freq == MEAN_MONTHLY) then
-                fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanmonthly.csv'
-            else
-                fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_monthly.csv'
-            endif
+          call PRMS_open_output_file(this%yearlyunit, fileName, 'xxx', 0, ios)
+          if (ios /= 0) STOP 'in basin_summary, mean_yearly or yearly'
 
-            call PRMS_open_output_file(this%monthlyunit, fileName, 'xxx', 0, ios)
-            if (ios /= 0) STOP 'in basin_summary, monthly'
-
-            write (this%monthlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
+          ! Write the header to the file
+          write(this%yearlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
         endif
 
         9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
@@ -208,91 +186,143 @@ module PRMS_BASIN_SUMMARY
       !***********************************************************************
       !     Output set of declared variables in CSV format
       !***********************************************************************
-      ! subroutine run_Basin_summary(var_data)
-      !   use PRMS_MODULE, only: Start_month, Start_day, End_year, End_month, End_day
-      !   use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, last_day_of_month
-      !   use variables_arr_mod, only: variables_arr_t
-      !   implicit none
-      !
-      !   type(variables_arr_t), intent(in) :: var_data
-      !
-      !   ! FUNCTIONS AND SUBROUTINES
-      !   INTRINSIC SNGL, DBLE
-      !
-      !   ! Local Variables
-      !   integer(i32) :: jj
-      !   integer(i32) :: write_month
-      !   integer(i32) :: write_year
-      !   integer(i32) :: last_day
-      !
-      !   !***********************************************************************
-      !   if (.not. Begin_results) then
-      !     if (Nowyear == Begyr .AND. Nowmonth == Start_month .AND. Nowday == Start_day) then
-      !       Begin_results = .true.
-      !     else
-      !       RETURN
-      !     endif
-      !   endif
-      !
-      !   !-----------------------------------------------------------------------
-      !   do jj = 1, BasinOutVars
-      !     call var_data%getvar_dble(MODNAME, BasinOutVar_names(jj)%str, 1, Basin_var_daily(jj))
-      !   enddo
-      !
-      !   write_month = 0
-      !   write_year = 0
-      !   if (BasinOut_freq > 4) then
-      !     last_day = 0
-      !     if (Nowyear == End_year .AND. Nowmonth == End_month .AND. Nowday == End_day) last_day = 1
-      !
-      !     if (Lastyear /= Nowyear .OR. last_day == 1) then
-      !       if ((Nowmonth == Start_month .AND. Nowday == Start_day) .OR. last_day == 1) then
-      !         do jj = 1, BasinOutVars
-      !           if (BasinOut_freq == 5) Basin_var_yearly(jj) = Basin_var_yearly(jj) / Yeardays
-      !         enddo
-      !
-      !         write (Yearlyunit, Output_fmt3) Lastyear, (Basin_var_yearly(jj), jj = 1, BasinOutVars)
-      !         Basin_var_yearly = 0.0D0
-      !         Yeardays = 0
-      !         Lastyear = Nowyear
-      !       endif
-      !     endif
-      !     Yeardays = Yeardays + 1
-      !   elseif (Monthly_flag == 1) then
-      !     ! check for last day of month and simulation
-      !     if (Nowday == last_day_of_month(Nowmonth)) then
-      !       write_month = 1
-      !     elseif (Nowyear == End_year) then
-      !       if (Nowmonth == End_month) then
-      !         if (Nowday == End_day) write_month = 1
-      !       endif
-      !     endif
-      !     Monthdays = Monthdays + 1.0D0
-      !   endif
-      !
-      !   if (BasinOut_freq > 4) then
-      !     do jj = 1, BasinOutVars
-      !       Basin_var_yearly(jj) = Basin_var_yearly(jj) + Basin_var_daily(jj)
-      !     enddo
-      !     RETURN
-      !   endif
-      !
-      !   if (Monthly_flag == 1) then
-      !     do jj = 1, BasinOutVars
-      !       Basin_var_monthly(jj) = Basin_var_monthly(jj) + Basin_var_daily(jj)
-      !
-      !       if (write_month == 1) then
-      !         if (BasinOut_freq == 4) Basin_var_monthly(jj) = Basin_var_monthly(jj) / Monthdays
-      !       endif
-      !     enddo
-      !   endif
-      !
-      !   if (Daily_flag == 1) write (Dailyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_daily(jj), jj = 1, BasinOutVars)
-      !
-      !   if (write_month == 1) then
-      !     write (Monthlyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_monthly(jj), jj = 1, BasinOutVars)
-      !     Monthdays = 0.0D0
-      !     Basin_var_monthly = 0.0D0
-      !   endif
-      ! end subroutine basin_summaryrun
+      subroutine run_Basin_summary(this, ctl_data, model_time, climate)
+        ! use PRMS_MODULE, only: Start_month, Start_day, End_year, End_month, End_day
+        ! use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, last_day_of_month
+        ! use variables_arr_mod, only: variables_arr_t
+        use Control_class, only: Control
+        use PRMS_SET_TIME, only: Time
+        use PRMS_CLIMATEVARS, only: Climateflow
+        implicit none
+
+        class(Basin_summary), intent(inout) :: this
+        type(Control), intent(in) :: ctl_data
+        type(Time), intent(in) :: model_time
+        type(Climateflow), intent(in) :: climate
+
+        ! FUNCTIONS AND SUBROUTINES
+        INTRINSIC SNGL, DBLE
+
+        ! Local Variables
+        integer(i32) :: jj
+        logical :: write_month = .false.
+        logical :: last_day = .false.
+
+        !***********************************************************************
+        associate(curr_year => model_time%Nowtime(YEAR), &
+                  curr_month => model_time%Nowtime(MONTH), &
+                  curr_day => model_time%Nowtime(DAY), &
+                  st_year => ctl_data%start_time%values(YEAR), &
+                  st_month => ctl_data%start_time%values(MONTH), &
+                  st_day => ctl_data%start_time%values(DAY), &
+                  en_year => ctl_data%end_time%values(YEAR), &
+                  en_month => ctl_data%end_time%values(MONTH), &
+                  en_day => ctl_data%end_time%values(DAY), &
+                  basinOutVars => ctl_data%basinOutVars%values(1), &
+                  basinOut_freq => ctl_data%basinOut_freq%values(1), &
+                  basinOutVar_names => ctl_data%basinOutVar_names%values)
+
+          if (.not. this%begin_results) then
+            if (curr_year == this%begyr .and. curr_month == st_month .and. curr_day == st_day) then
+              this%begin_results = .true.
+            else
+              RETURN
+            endif
+          endif
+
+          !-----------------------------------------------------------------------
+          do jj = 1, basinOutVars
+            ! TODO: This is where the daily basin values are copied over based on
+            !       what was requested in basinOutVar_names.
+            ! basin_potet, basin_swrad, basin_temp, basin_ppt
+            ! call var_data%getvar_dble(MODNAME, BasinOutVar_names(jj)%str, 1, Basin_var_daily(jj))
+            select case(basinOutVar_names(jj)%s)
+
+              case('basin_horad')
+                this%basin_var_daily(jj) = climate%basin_horad(1)
+              case('basin_obs_ppt')
+                this%basin_var_daily(jj) = climate%basin_obs_ppt(1)
+              case('basin_orad')
+                this%basin_var_daily(jj) = climate%basin_orad(1)
+              case('basin_potet')
+                this%basin_var_daily(jj) = climate%basin_potet(1)
+              case('basin_ppt')
+                this%basin_var_daily(jj) = climate%basin_ppt(1)
+              case('basin_rain')
+                this%basin_var_daily(jj) = climate%basin_rain(1)
+              case('basin_snow')
+                this%basin_var_daily(jj) = climate%basin_snow(1)
+              ! case('basin_solsta')
+              !   this%basin_var_daily(jj) = climate%basin_solsta(1)
+              case('basin_swrad')
+                this%basin_var_daily(jj) = climate%basin_swrad(1)
+              case('basin_temp')
+                this%basin_var_daily(jj) = climate%basin_temp(1)
+              case('basin_tmax')
+                this%basin_var_daily(jj) = climate%basin_tmax(1)
+              case('basin_tmin')
+                this%basin_var_daily(jj) = climate%basin_tmin(1)
+              ! case('basin_transp_on')
+              !   this%basin_var_daily(jj) = climate%basin_transp_on(1)
+              case default
+                ! pass
+            end select
+          enddo
+
+          if (ANY([MEAN_YEARLY, YEARLY]==basinOut_freq)) then
+            if (curr_year == en_year .AND. curr_month == en_month .AND. curr_day == en_day) then
+              last_day = .true.
+            endif
+
+            if (this%lastyear /= curr_year .or. last_day) then
+              if ((curr_month == st_month .and. curr_day == st_day) .or. last_day) then
+                do jj = 1, basinOutVars
+                  if (basinOut_freq == MEAN_YEARLY) then
+                    this%basin_var_yearly(jj) = this%basin_var_yearly(jj) / this%yeardays
+                  endif
+                enddo
+
+                write (this%yearlyunit, this%output_fmt3) this%lastyear, (this%basin_var_yearly(jj), jj = 1, basinOutVars)
+                this%basin_var_yearly = 0.0
+                this%yeardays = 0
+                this%lastyear = curr_year
+              endif
+            endif
+
+            this%yeardays = this%yeardays + 1
+
+            do jj = 1, basinOutVars
+              this%basin_var_yearly(jj) = this%basin_var_yearly(jj) + this%basin_var_daily(jj)
+            enddo
+            RETURN
+          elseif (this%monthly_flag == 1) then
+            ! check for last day of month and simulation
+            if (curr_day == model_time%last_day_of_month(curr_month)) then
+              write_month = .true.
+            elseif (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
+              write_month = .true.
+            endif
+
+            this%monthdays = this%monthdays + 1.0D0
+
+            do jj = 1, basinOutVars
+              this%basin_var_monthly(jj) = this%basin_var_monthly(jj) + this%basin_var_daily(jj)
+
+              if (write_month) then
+                if (basinOut_freq == MEAN_MONTHLY) then
+                  this%basin_var_monthly(jj) = this%basin_var_monthly(jj) / this%monthdays
+                endif
+              endif
+            enddo
+
+            if (write_month) then
+              write (this%monthlyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_monthly(jj), jj = 1, basinOutVars)
+              this%monthdays = 0.0
+              this%basin_var_monthly = 0.0
+            endif
+          elseif (this%daily_flag == 1) then
+            write (this%dailyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_daily(jj), jj = 1, basinOutVars)
+          endif
+        end associate
+      end subroutine
 end module PRMS_BASIN_SUMMARY
