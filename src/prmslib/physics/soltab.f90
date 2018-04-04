@@ -109,6 +109,11 @@ module PRMS_SOLTAB
       allocate(this%soltab_potsw(366, ctl_data%nhru%values(1)))
       allocate(this%soltab_horad_potsw(366, ctl_data%nhru%values(1)))
 
+      this%hru_cossl = 0.0D0
+      this%soltab_sunhrs = 0.0D0
+      this%soltab_potsw = 0.0D0
+      this%soltab_horad_potsw = 0.0D0
+
       do jd = 1, 366
         jddbl = DBLE(jd)
 
@@ -141,12 +146,6 @@ module PRMS_SOLTAB
                                      0.000907D0 * SIN(y2) - 0.002697D0 * COS(y3) + &
                                      0.00148D0 * SIN(y3)
       enddo
-
-      ! Module Variables
-      this%soltab_sunhrs = 0.0D0
-      this%soltab_potsw = 0.0D0
-      this%soltab_horad_potsw = 0.0D0
-      this%hru_cossl = 0.0D0
 
       do nn = 1, model_basin%active_hrus
         chru = model_basin%hru_route_order(nn)
