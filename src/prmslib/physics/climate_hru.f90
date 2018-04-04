@@ -6,16 +6,13 @@
 !***********************************************************************
 module PRMS_CLIMATE_HRU
     use variableKind
-    ! use prms_constants, only: MAXFILE_LENGTH
-
     implicit none
-
-    character(len=*), PARAMETER :: MODNAME = 'climate_hru'
-    character(len=*), PARAMETER :: VERSION = 'climate_hru.f90 2017-09-29 13:49:00Z'
-
 
     private
     public :: Climate_HRU
+
+    character(len=*), PARAMETER :: MODNAME = 'climate_hru'
+    character(len=*), PARAMETER :: MODVERSION = 'climate_hru.f90 2017-09-29 13:49:00Z'
 
     type Climate_HRU
       integer(i32), private :: precip_funit
@@ -30,6 +27,10 @@ module PRMS_CLIMATE_HRU
 
       contains
         procedure, public :: run => run_Climate_HRU
+        procedure, nopass, public :: module_name
+          !! Return the name of the module
+        procedure, nopass, public :: version
+          !! Return the version of the module
         procedure, private :: find_header_end
         procedure, private :: read_cbh_date
     end type
@@ -230,7 +231,21 @@ module PRMS_CLIMATE_HRU
         end associate
       end subroutine
 
+      function module_name()
+        implicit none
 
+        character(:), allocatable :: module_name
+        module_name = MODNAME
+      end function
+
+      function version()
+        implicit none
+
+        character(:), allocatable :: version
+        version = MODVERSION
+      end function
+
+      
       !***********************************************************************
       !     Read File to line before data starts in file
       !***********************************************************************

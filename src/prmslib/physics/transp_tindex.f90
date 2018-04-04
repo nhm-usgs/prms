@@ -7,12 +7,11 @@ MODULE PRMS_TRANSP_TINDEX
   use prms_constants, only: YEAR, MONTH, DAY
   implicit none
 
-  ! Local Variables
-  character(len=*), PARAMETER :: MODNAME = 'transp_tindex'
-  character(len=*), PARAMETER :: VERSION = 'transp_tindex.f90 2015-01-06 00:09:15Z'
-
   private
   public :: transp_tindex
+
+  character(len=*), PARAMETER :: MODNAME = 'transp_tindex'
+  character(len=*), PARAMETER :: MODVERSION = 'transp_tindex.f90 2015-01-06 00:09:15Z'
 
   type Transp_tindex
     ! Local Variables
@@ -25,6 +24,10 @@ MODULE PRMS_TRANSP_TINDEX
 
     contains
       procedure, public :: run => run_Transp_tindex
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
 
   end type
 
@@ -210,6 +213,19 @@ MODULE PRMS_TRANSP_TINDEX
       end associate
     end subroutine
 
+    function module_name()
+      implicit none
+
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
+    end function
     !***********************************************************************
     !     Write to or read from restart file
     !***********************************************************************

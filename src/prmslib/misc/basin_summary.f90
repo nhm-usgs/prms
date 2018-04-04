@@ -7,15 +7,11 @@ module PRMS_BASIN_SUMMARY
                               MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
 
-    character(len=*), parameter :: MODNAME = 'basin_summary'
-    character(len=*), parameter :: VERSION = 'basin_summary.f90 2017-09-29 13:49:00Z'
-    ! integer(i32) :: BasinOutVars
-    ! integer(i32) :: BasinOut_freq
-    ! ! character(len=:), save, allocatable :: BasinOutVar_names(:)
-    ! type(str_arr_type), allocatable :: BasinOutVar_names(:)
-    ! character(len=:), allocatable :: BasinOutBaseFileName
     private
     public :: Basin_summary
+
+    character(len=*), parameter :: MODNAME = 'basin_summary'
+    character(len=*), parameter :: MODVERSION = 'basin_summary.f90 2017-09-29 13:49:00Z'
 
     type Basin_summary
 
@@ -47,6 +43,10 @@ module PRMS_BASIN_SUMMARY
 
       contains
         procedure, public :: run => run_Basin_summary
+        procedure, nopass, public :: module_name
+          !! Return the name of the module
+        procedure, nopass, public :: version
+          !! Return the version of the module
     end type
 
     interface Basin_summary
@@ -325,4 +325,18 @@ module PRMS_BASIN_SUMMARY
           endif
         end associate
       end subroutine
+
+      function module_name()
+        implicit none
+
+        character(:), allocatable :: module_name
+        module_name = MODNAME
+      end function
+
+      function version()
+        implicit none
+
+        character(:), allocatable :: version
+        version = MODVERSION
+      end function
 end module PRMS_BASIN_SUMMARY

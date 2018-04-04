@@ -5,11 +5,11 @@ module PRMS_CLIMATEVARS
   use variableKind
   implicit none
 
-  character(len=*), parameter :: MODNAME = 'climateflow'
-  character(len=*), parameter :: VERSION = 'climateflow.f90 2017-09-29 13:47:00Z'
-
   private
   public :: Climateflow
+
+  character(len=*), parameter :: MODNAME = 'climateflow'
+  character(len=*), parameter :: MODVERSION = 'climateflow.f90 2017-09-29 13:47:00Z'
 
   type Climateflow
     real(r32) :: solrad_tmax(1)
@@ -61,6 +61,10 @@ module PRMS_CLIMATEVARS
     contains
       procedure, public :: temp_set
       procedure, public :: precip_form
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
 
   end type
 
@@ -191,6 +195,19 @@ module PRMS_CLIMATEVARS
       endif
     end function
 
+    function module_name()
+      implicit none
+
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
+    end function
 
     !***********************************************************************
     !     Write or read restart file

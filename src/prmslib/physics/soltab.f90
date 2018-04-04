@@ -14,9 +14,11 @@ module PRMS_SOLTAB
   use variableKind
   implicit none
 
-  !   Local Variables
+  private
+  public :: Soltab
+
   character(len=*), parameter :: MODNAME = 'soltab'
-  character(len=*), parameter :: VERSION = 'soltab.f90 2016-09-29 13:48:00Z'
+  character(len=*), parameter :: MODVERSION = 'soltab.f90 2016-09-29 13:48:00Z'
 
   integer(r32), parameter :: DAYS_PER_YEAR = 366
   real(r64), parameter :: PI = 3.1415926535898D0
@@ -24,8 +26,6 @@ module PRMS_SOLTAB
   real(r64), parameter :: TWOPI = 2.0D0 * PI       ! TWOPI ~ 6.2831853071786
   real(r64), parameter :: PI_12 = 12.0D0 / PI      ! PI_12 ~ 3.8197186342055
 
-  private
-  public :: Soltab
 
   type Soltab
     real(r64) :: solar_declination(366)
@@ -38,6 +38,10 @@ module PRMS_SOLTAB
     real(r64), allocatable :: soltab_horad_potsw(:, :)
 
     contains
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
       procedure, nopass, private :: compute_t
       procedure, nopass, private :: compute_soltab
       procedure, nopass, private :: func3
@@ -210,7 +214,21 @@ module PRMS_SOLTAB
       end associate
     end function
 
+    function module_name()
+      implicit none
 
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
+    end function
+
+    
     !***********************************************************************
     !  compute soltab_potsw (potential shortwave radiation)
     !  and soltab_sunhrs (hours between sunrise and sunset)

@@ -3,16 +3,15 @@
 !***********************************************************************
 module PRMS_BASIN
   use variableKind
-
   implicit none
+
+  private
+  public :: Basin
 
   intrinsic :: EPSILON
 
   character(len=*), PARAMETER :: MODNAME = 'basin'
-  character(len=*), PARAMETER :: VERSION = 'basin.f90 2017-09-29 13:50:00Z'
-
-  private
-  public :: Basin
+  character(len=*), PARAMETER :: MODVERSION = 'basin.f90 2017-09-29 13:50:00Z'
 
   type :: Basin
     real(r64) :: basin_area_inv
@@ -30,7 +29,11 @@ module PRMS_BASIN
     real(r64) :: total_area = 0.0
     real(r64) :: land_area = 0.0
 
-    ! contains
+    contains
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
   end type
 
   interface Basin
@@ -167,5 +170,19 @@ module PRMS_BASIN
       ! 9003 FORMAT (2(A, F13.2))
       ! 9004 FORMAT (2(A, F12.5))
       ! 9005 FORMAT (A, F13.2, A, F13.4)
+    end function
+
+    function module_name()
+      implicit none
+
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
     end function
 end module

@@ -7,11 +7,11 @@ MODULE PRMS_NHRU_SUMMARY
                             MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
   implicit none
 
-  character(len=*), parameter :: MODNAME = 'nhru_summary'
-  character(len=*), parameter :: VERSION = 'nhru_summary.f90 2017-09-29 13:49:00Z'
-
-  private ! :: nhru_summarydecl, nhru_summaryinit, nhru_summaryrun
+  private
   public :: Nhru_summary
+
+  character(len=*), parameter :: MODNAME = 'nhru_summary'
+  character(len=*), parameter :: MODVERSION = 'nhru_summary.f90 2017-09-29 13:49:00Z'
 
   type Nhru_summary
     ! Module Variables
@@ -47,6 +47,10 @@ MODULE PRMS_NHRU_SUMMARY
 
     contains
       procedure, public :: run => run_Nhru_summary
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
   end type
 
   interface Nhru_summary
@@ -432,4 +436,18 @@ MODULE PRMS_NHRU_SUMMARY
         endif
       end associate
     end subroutine
+
+    function module_name()
+      implicit none
+
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
+    end function
 end module

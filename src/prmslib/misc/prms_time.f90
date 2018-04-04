@@ -10,7 +10,7 @@ module PRMS_SET_TIME
   public :: Time
 
   character(len=*), parameter :: MODNAME = 'prms_time'
-  character(len=*), parameter :: VERSION = 'prms_time.f90 2017-07-06 14:16:00Z'
+  character(len=*), parameter :: MODVERSION = 'prms_time.f90 2017-07-06 14:16:00Z'
 
   integer(i32), parameter :: DAYPMO(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -39,6 +39,10 @@ module PRMS_SET_TIME
     contains
       procedure, public :: next
         !! Advance to next timestep
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
       procedure, private :: dattim
       procedure, nopass, private :: deltim
       procedure, private :: ordinal_date
@@ -220,6 +224,21 @@ module PRMS_SET_TIME
         print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
         STOP
       endif
+    end function
+
+
+    function module_name()
+      implicit none
+
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
     end function
 
 

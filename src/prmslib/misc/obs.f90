@@ -9,7 +9,7 @@ module PRMS_OBS
   public :: Obs
 
   character(len=*), parameter :: MODNAME = 'obs'
-  character(len=*), parameter :: VERSION = 'obs.f90 2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = 'obs.f90 2017-09-29 13:50:00Z'
 
   type Obs
     ! Declared Variables
@@ -19,6 +19,12 @@ module PRMS_OBS
     real(r32), allocatable :: tmin(:)
     real(r64), allocatable :: streamflow_cfs(:)
     real(r64), allocatable :: streamflow_cms(:)
+
+    contains
+      procedure, nopass, public :: module_name
+        !! Return the name of the module
+      procedure, nopass, public :: version
+        !! Return the version of the module
   end type
 
 
@@ -80,7 +86,19 @@ module PRMS_OBS
       endif
     end function
 
+    function module_name()
+      implicit none
 
+      character(:), allocatable :: module_name
+      module_name = MODNAME
+    end function
+
+    function version()
+      implicit none
+
+      character(:), allocatable :: version
+      version = MODVERSION
+    end function
 
 
 
