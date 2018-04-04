@@ -58,7 +58,7 @@ module PRMS_POTET_JH
                 hru_area => param_data%hru_area%values)
 
         climate%basin_potet = 0.0
-        
+
         do j = 1, model_basin%active_hrus
           chru = model_basin%hru_route_order(j)
           idx1D = (curr_month - 1) * ctl_data%nhru%values(1) + chru
@@ -72,7 +72,7 @@ module PRMS_POTET_JH
           climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * hru_area(chru))
         enddo
       end associate
-
+      
       climate%basin_potet = climate%basin_potet * model_basin%basin_area_inv
     end subroutine
 end module
