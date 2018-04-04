@@ -3,6 +3,7 @@
 !***********************************************************************
 module PRMS_SET_TIME
   use variableKind
+  use prms_constants, only: NORTHERN, SOUTHERN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
   implicit none
 
   private
@@ -14,11 +15,11 @@ module PRMS_SET_TIME
   integer(i32), parameter :: DAYPMO(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
   type Time
-    integer(i32) :: Yrdays
+    ! integer(i32) :: Yrdays  ! only used by last_day_of_month()
     integer(i32) :: Summer_flag
-    integer(i32) :: Jday
-    integer(i32) :: Jsol
-    integer(i32) :: Julwater
+    integer(i32) :: day_of_year
+    integer(i32) :: day_of_solar_year
+    integer(i32) :: day_of_water_year
     integer(i32) :: Julian_day_absolute
     integer(i32) :: Nowtime(6)
     integer(i32) :: Nowday
@@ -26,6 +27,7 @@ module PRMS_SET_TIME
     integer(i32) :: Nowyear
     integer(i32) :: Nowhour
     integer(i32) :: Nowminute
+    integer(i32) :: Number_timesteps
     integer(i32) :: Timestep
     real(r32) :: Timestep_hours
     real(r32) :: Timestep_days
@@ -35,15 +37,16 @@ module PRMS_SET_TIME
     real(r64) :: Timestep_seconds
 
     contains
-      procedure, public :: advance
+      procedure, public :: next
+        !! Advance to next timestep
       procedure, private :: dattim
       procedure, nopass, private :: deltim
-      procedure, private :: julian_day
+      procedure, private :: ordinal_date
       procedure, public :: print_date
-      procedure, private :: last_day_of_month
-      procedure, nopass, public :: julday_in_year
+      procedure, public :: last_day_of_month
+      ! procedure, nopass, public :: julday_in_year
       procedure, nopass, public :: leap_day
-      procedure, nopass, public :: compute_gregorian
+      procedure, nopass, public :: julian_to_gregorian
       procedure, nopass, public :: compute_julday
   end type
 
@@ -83,6 +86,9 @@ module PRMS_SET_TIME
 
       ! Local Variables
       integer(i32) :: startday
+        !! Julian day of model start_time
+      integer(i32) :: endday
+        !! Julian day of model end_time
       real(r64) :: dt
 
       ! original declare stuff
@@ -91,28 +97,37 @@ module PRMS_SET_TIME
       this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
 
       ! original init stuff
-      this%Nowtime = ctl_data%start_time%values
-      this%Jday = this%julian_day(ctl_data, model_basin, 'start', 'calendar', model_basin%hemisphere)
-      this%Jsol = this%julian_day(ctl_data, model_basin, 'start', 'solar', model_basin%hemisphere)
-      this%Julwater = this%julian_day(ctl_data, model_basin, 'start', 'water', model_basin%hemisphere)
-      startday = compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3))
-      ! startday = compute_julday(Starttime(1), Starttime(2), Starttime(3))
+      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', model_basin%hemisphere)
+      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', model_basin%hemisphere)
+      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', model_basin%hemisphere)
+
+      associate(model_start => ctl_data%start_time%values, &
+                model_end => ctl_data%end_time%values)
+        startday = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
+        endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
+        this%Nowtime = model_start
+      end associate
+
+      this%Number_timesteps = endday - startday + 1
+      this%Timestep = 0
       this%Julian_day_absolute = startday
 
-      this%Nowyear = this%Nowtime(1)
-      this%Nowmonth = this%Nowtime(2)
-      this%Nowday = this%Nowtime(3)
-      this%Nowhour = this%Nowtime(4)
-      this%Nowminute = this%Nowtime(5)
+      this%Nowyear = this%Nowtime(YEAR)
+      this%Nowmonth = this%Nowtime(MONTH)
+      this%Nowday = this%Nowtime(DAY)
+      this%Nowhour = this%Nowtime(HOUR)
+      this%Nowminute = this%Nowtime(MINUTE)
 
       ! Summer is based on equinox:
       !   Julian days 79 to 265 for Northern hemisphere
       !   Julian day 265 to 79 in Southern hemisphere
       this%Summer_flag = 1 ! 1 = summer, 0 = winter
-      if (model_basin%hemisphere == 0) then ! Northern Hemisphere
-        if (this%Jday < 79 .OR. this%Jday > 265) this%Summer_flag = 0 ! Equinox
-      else ! Southern Hemisphere
-        if (this%Jday > 79 .AND. this%Jday < 265) this%Summer_flag = 0 ! Equinox
+      if (model_basin%hemisphere == NORTHERN) then
+        ! Northern Hemisphere
+        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
+      else
+        ! Southern Hemisphere
+        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
       endif
 
       dt = deltim()
@@ -134,12 +149,13 @@ module PRMS_SET_TIME
     end function
 
 
-    subroutine advance(this, ctl_data, model_basin)
+    function next(this, ctl_data, model_basin)
       use Control_class, only: Control
       use PRMS_BASIN, only: Basin
       use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                                 HOUR_PER_DAY, MIN_PER_HOUR
 
+      logical :: next
       class(Time), intent(inout) :: this
       class(Control), intent(in) :: ctl_data
       class(Basin), intent(in) :: model_basin
@@ -147,12 +163,20 @@ module PRMS_SET_TIME
       real(r64) :: dt
 
       ! ------------------------------------------------------------------------
+      next = .true.
       this%Timestep = this%Timestep + 1
 
+      if (this%Timestep > this%Number_timesteps) then
+        !! End of simulation reached
+        next = .false.
+        return
+      endif
+
       call this%dattim(ctl_data, 'now', this%Nowtime)
-      this%Jday = this%julian_day(ctl_data, model_basin, 'now', 'calendar', model_basin%hemisphere)
-      this%Jsol = this%julian_day(ctl_data, model_basin, 'now', 'solar', model_basin%hemisphere)
-      this%Julwater = this%julian_day(ctl_data, model_basin, 'now', 'water', model_basin%hemisphere)
+
+      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'now', 'calendar', model_basin%hemisphere)
+      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'now', 'solar', model_basin%hemisphere)
+      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'now', 'water', model_basin%hemisphere)
       this%Julian_day_absolute = this%Julian_day_absolute + 1
 
       ! TODO: ?why? is this here? It shouldn't be.
@@ -168,12 +192,15 @@ module PRMS_SET_TIME
       !   Julian days 79 to 265 for Northern hemisphere
       !   Julian day 265 to 79 in Southern hemisphere
       this%Summer_flag = 1 ! 1 = summer, 0 = winter
-      if (model_basin%hemisphere == 0) then ! Northern Hemisphere
-        if (this%Jday < 79 .OR. this%Jday > 265) this%Summer_flag = 0 ! Equinox
-      else ! Southern Hemisphere
-        if (this%Jday > 79 .AND. this%Jday < 265) this%Summer_flag = 0 ! Equinox
+      if (model_basin%hemisphere == NORTHERN) then
+        ! Northern Hemisphere
+        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
+      else
+        ! Southern Hemisphere
+        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
       endif
 
+      ! TODO: This stuff shouldn't change once it's initialized
       dt = deltim()
       this%Timestep_hours = SNGL(dt)
       this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
@@ -181,6 +208,9 @@ module PRMS_SET_TIME
       this%Timestep_seconds = dt * SECS_PER_HOUR
       this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
       this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
+
+      print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
+               this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
 
       ! Check to see if in a daily or subdaily time step
       if (this%Timestep_hours > HOUR_PER_DAY) then
@@ -190,7 +220,7 @@ module PRMS_SET_TIME
         print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
         STOP
       endif
-    end subroutine
+    end function
 
 
     !***********************************************************************
@@ -199,16 +229,16 @@ module PRMS_SET_TIME
     !***********************************************************************
     subroutine dattim(this, ctl_data, String, Datetime)
       use Control_class, only: Control
-      ! use time_mod, only: compute_gregorian
+      ! use time_mod, only: julian_to_gregorian
       implicit none
 
       ! Arguments
-      class(Time) :: this
+      class(Time), intent(in) :: this
       class(Control), intent(in) :: ctl_data
         !! Control file data
       character(len=*), intent(in) :: String
         !! One of: 'now', 'start', or 'end'
-      integer(i32), intent(out) :: Datetime(6)
+      integer(i32), intent(inout) :: Datetime(6)
 
       !***********************************************************************
       Datetime = 0
@@ -216,11 +246,8 @@ module PRMS_SET_TIME
       if (String == 'end') then
         Datetime = ctl_data%end_time%values
       elseif (String == 'now') then
-        call compute_gregorian(this%Julian_day_absolute, this%Nowyear, this%Nowmonth, this%Nowday)
+        Datetime = julian_to_gregorian(this%Julian_day_absolute)
 
-        Datetime(1) = this%Nowyear
-        Datetime(2) = this%Nowmonth
-        Datetime(3) = this%Nowday
         ! Datetime = LIS function
       elseif (String == 'start') then
         Datetime = ctl_data%start_time%values
@@ -244,17 +271,18 @@ module PRMS_SET_TIME
 
 
     !***********************************************************************
-    ! julian_day
-    ! computes the Julian date given a Gregorian calendar date
-    ! (Year, Month, Day) relative to: calendar (Jan 1),
-    ! solar (12/22 in Northern; 6/21 in Southern) and
-    ! water year (10/1 in Northern; 4/1 in Southern) start dates.
-    ! The Julian day starts at noon of the Gregorian day and
+    ! ordinal_date
+    ! computes the ordinal day of the year given a Gregorian calendar date
+    ! (Year, Month, Day) relative to:
+    !   calendar (Jan 1),
+    !   solar (12/22 in Northern; 6/21 in Southern) and
+    !   water year (10/1 in Northern; 4/1 in Southern) start dates.
+    ! The day of the year starts at noon of the Gregorian day and
     ! extends to noon the next Gregorian day.
     !
     ! 2017-10-30 PAN: moved here from utils_prms.f90
     !***********************************************************************
-    integer function julian_day(this, ctl_data, model_basin, Date_type, Year_type, hemisphere)
+    integer function ordinal_date(this, ctl_data, model_basin, Date_type, Year_type, hemisphere)
       use Control_class, only: Control
       use PRMS_BASIN, only: Basin
       implicit none
@@ -306,7 +334,7 @@ module PRMS_SET_TIME
       if (Year_type == 'solar') then
         found = .true.
 
-        if (model_basin%hemisphere == 0) then ! Northern
+        if (model_basin%hemisphere == NORTHERN) then ! Northern
           if (month == 12 .AND. day > 21) then
             reftime_year = year
           else
@@ -328,7 +356,7 @@ module PRMS_SET_TIME
       elseif (Year_type == 'water') then
         found = .true.
 
-        if (model_basin%hemisphere == 0) then ! Northern
+        if (model_basin%hemisphere == NORTHERN) then ! Northern
           if (month > 9) then
             reftime_year = year
           else
@@ -350,7 +378,7 @@ module PRMS_SET_TIME
       elseif (Year_type == 'spring') then
         found = .true.
 
-        if (model_basin%hemisphere == 0) then ! Northern
+        if (model_basin%hemisphere == NORTHERN) then ! Northern
           if (month > 3 .OR. (month == 3 .AND. day > 20)) then
             reftime_year = year
           else
@@ -394,8 +422,8 @@ module PRMS_SET_TIME
       ! endif
       relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
 
-      julian_day = absolute_julday - relative_julday
-    end function julian_day
+      ordinal_date = absolute_julday - relative_julday
+    end function
 
 
     !***********************************************************************
@@ -425,18 +453,19 @@ module PRMS_SET_TIME
     ! Return the last day of the given month
     !***********************************************************************
     integer function last_day_of_month(this, mon)
-      ! use time_mod, only: DAYPMO, leap_day
       implicit none
 
-      class(Time), intent(inout) :: this
+      class(Time), intent(in) :: this
       integer(i32), intent(in) :: mon
 
+      ! Local variables
+      integer(r32) :: yrdays
       ! ===============================
-      this%Yrdays = 365
+      yrdays = 365
       last_day_of_month = DAYPMO(mon)
 
       if (leap_day(this%Nowyear)) then
-        this%Yrdays = this%Yrdays + 1
+        yrdays = yrdays + 1
 
         if (mon == 2) last_day_of_month = last_day_of_month + 1
       endif
@@ -454,37 +483,37 @@ module PRMS_SET_TIME
     ! julday_in_year
     ! computes the Julian Day of a date
     !***********************************************************************
-    integer function julday_in_year(Year, Month, Day)
-      implicit none
-
-      ! Arguments
-      integer(i32), intent(in) :: Year
-      integer(i32), intent(in) :: Month
-      integer(i32), intent(in) :: Day
-
-      ! Local Variables
-      integer(i32) :: i
-
-      !***********************************************************************
-      julday_in_year = Day
-
-      do i = 1, Month - 1
-          julday_in_year = julday_in_year + daypmo(i)
-      enddo
-
-      ! Add additional day if the day is in a leap year after February
-      if (leap_day(Year) .and. Month > 2) julday_in_year = julday_in_year + 1
-    end function julday_in_year
+    ! integer function julday_in_year(Year, Month, Day)
+    !   implicit none
+    !
+    !   ! Arguments
+    !   integer(i32), intent(in) :: Year
+    !   integer(i32), intent(in) :: Month
+    !   integer(i32), intent(in) :: Day
+    !
+    !   ! Local Variables
+    !   integer(i32) :: i
+    !
+    !   !***********************************************************************
+    !   julday_in_year = Day
+    !
+    !   do i = 1, Month - 1
+    !       julday_in_year = julday_in_year + daypmo(i)
+    !   enddo
+    !
+    !   ! Add additional day if the day is in a leap year after February
+    !   if (leap_day(Year) .and. Month > 2) julday_in_year = julday_in_year + 1
+    ! end function julday_in_year
 
     !***********************************************************************
     ! leap_day - is the year a leap year: (1=yes; 0=no)
     !***********************************************************************
-    function leap_day(Year)
+    function leap_day(year)
       implicit none
 
       ! Arguments
       logical :: leap_day
-      integer(i32), intent(in) :: Year
+      integer(i32), intent(in) :: year
 
       ! Functions
       INTRINSIC MOD
@@ -493,59 +522,69 @@ module PRMS_SET_TIME
       leap_day = .false.
 
       ! Check if leapyear - Start by identifying all years not divisible by 4
-      if (MOD(Year, 4) == 0) then
+      if (MOD(year, 4) == 0) then
           leap_day = .true.
-          if (MOD(Year, 100) == 0) then
-              if (MOD(Year, 400) /= 0) leap_day = .false.
+          if (MOD(year, 100) == 0) then
+              if (MOD(year, 400) /= 0) leap_day = .false.
           endif
       endif
     end function leap_day
 
     !***********************************************************************
-    ! compute_gregorian
+    ! julian_to_gregorian
     ! computes the Gregorian calendar date given the Julian Day
     !***********************************************************************
-    subroutine compute_gregorian(Julday, Year, Month, Day)
+    function julian_to_gregorian(julian_day) result(date)
       implicit none
 
       ! Arguments
-      integer(i32), intent(in) :: Julday
-      integer(i32), intent(out) :: Year
-      integer(i32), intent(out) :: Month
-      integer(i32), intent(out) :: Day
+      integer(i32) :: date(6)
+        !! Gregorian date ([1]=year, [2]=month, [3]=day)
+      integer(i32), intent(in) :: julian_day
+      ! integer(i32), intent(out) :: year
+      ! integer(i32), intent(out) :: month
+      ! integer(i32), intent(out) :: day
 
       ! Local Variables
       integer(i32) :: m
       integer(i32) :: n
 
       !***********************************************************************
-      m = Julday + 68569
+      ! See: http://aa.usno.navy.mil/faq/docs/JD_Formula.php
+      date = 0
+
+      m = julian_day + 68569
       n = 4 * m / 146097
       m = m - (146097 * n + 3) / 4
-      Year = 4000 * (m + 1) / 1461001
-      m = m - 1461 * Year / 4 + 31
-      Month = 80 * m / 2447
-      Day = m - 2447 * Month / 80
-      m = Month / 11
-      Month = Month + 2 - 12 * m
-      Year = 100 * (n - 49) + Year + m
-    end subroutine compute_gregorian
+      date(1) = 4000 * (m + 1) / 1461001
+
+      m = m - 1461 * date(1) / 4 + 31
+      date(2) = 80 * m / 2447
+      date(3) = m - 2447 * date(2) / 80
+
+      m = date(2) / 11
+      date(2) = date(2) + 2 - 12 * m
+      date(1) = 100 * (n - 49) + date(1) + m
+
+    end function
+
 
     !***********************************************************************
     ! compute_julday
     ! computes the Julian Day given a Gregorian calendar date
     !***********************************************************************
-    integer function compute_julday(Year, Month, Day)
+    function compute_julday(year, month, day) result(julian_day)
       implicit none
 
       ! Arguments
-      integer(i32), intent(in) :: Year
-      integer(i32), intent(in) :: Month
-      integer(i32), intent(in) :: Day
+      integer(i32) :: julian_day
+      integer(i32), intent(in) :: year
+      integer(i32), intent(in) :: month
+      integer(i32), intent(in) :: day
 
       !***********************************************************************
-      compute_julday = Day - 32075 + 1461 * (Year + 4800 + (Month - 14) / 12) / 4 &
-                       + 367 * (Month - 2 - (Month - 14) / 12 * 12) &
-                       / 12 - 3 * ((Year + 4900 + (Month - 14) / 12) / 100) / 4
+      julian_day = day - 32075 + 1461 * (year + 4800 + (month - 14) / 12) / 4 &
+                       + 367 * (month - 2 - (month - 14) / 12 * 12) &
+                       / 12 - 3 * ((year + 4900 + (month - 14) / 12) / 100) / 4
     end function compute_julday
 end module
