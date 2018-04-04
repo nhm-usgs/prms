@@ -84,35 +84,6 @@ module PRMS_OBS
 
 
 
-    !***********************************************************************
-    !     main obs routine
-    !***********************************************************************
-    ! integer function obs(dim_data, param_data, var_data)
-    !   use PRMS_MODULE, only:Process, Save_vars_to_file, Init_vars_from_file
-    !   use dimensions_mod, only: dimension_list
-    !   use parameter_arr_mod, only: parameter_arr_t
-    !   use variables_arr_mod, only: variables_arr_t
-    !   implicit none
-    !
-    !   type(dimension_list), intent(in) :: dim_data
-    !   type(parameter_arr_t), intent(inout) :: param_data
-    !   type(variables_arr_t), intent(inout) :: var_data
-    !
-    !   !***********************************************************************
-    !   obs = 0
-    !
-    !   !      if ( Process(:3)=='run' ) then
-    !   !        obs = obsrun()
-    !   if (Process == 'declare') then
-    !     obs = obsdecl(dim_data, param_data, var_data)
-    !   elseif (Process == 'init') then
-    !     if (Init_vars_from_file == 1) call obs_restart(1)
-    !
-    !     obs = obsinit(param_data)
-    !   elseif (Process == 'clean') then
-    !     if (Save_vars_to_file == 1) call obs_restart(0)
-    !   endif
-    ! end function obs
 
     !***********************************************************************
     !     obs_restart - write or read obs restart file
