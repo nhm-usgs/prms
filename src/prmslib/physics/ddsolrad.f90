@@ -73,11 +73,10 @@ module PRMS_DDSOLRAD
       !***********************************************************************
 
       !rsr using julian day as the soltab arrays are filled by julian day
-      climate%basin_horad = solt%soltab_basinpotsw(model_time%Jday)
+      climate%basin_horad = solt%soltab_basinpotsw(model_time%day_of_year)
       climate%basin_swrad = 0.0D0
       climate%basin_orad = 0.0D0
 
-      ! TODO: replace chru*Nowmonth with correct 2D indexing
       do jj = 1, model_basin%active_hrus
         chru = model_basin%hru_route_order(jj)
         idx1D = (model_time%Nowmonth - 1) * ctl_data%nhru%values(1) + chru
@@ -108,7 +107,10 @@ module PRMS_DDSOLRAD
             pptadj = param_data%radj_sppt%values(chru)
 
             if (climate%tmax_hru(chru) >= climate%tmax_allrain(chru, model_time%Nowmonth)) then
-              if (model_time%Summer_flag == 0) pptadj = param_data%radj_wppt%values(chru) ! Winter
+              if (model_time%Summer_flag == 0) then
+                ! Winter
+                pptadj = param_data%radj_wppt%values(chru)
+              endif
             else
               pptadj = param_data%radj_wppt%values(chru)
             endif
@@ -123,10 +125,10 @@ module PRMS_DDSOLRAD
         radadj = radadj * pptadj
         if (radadj < 0.2) radadj = 0.2
 
-        climate%orad_hru(chru) = radadj * SNGL(solt%soltab_horad_potsw(model_time%Jday, chru))
+        climate%orad_hru(chru) = radadj * SNGL(solt%soltab_horad_potsw(model_time%day_of_year, chru))
         climate%basin_orad = climate%basin_orad + &
                              DBLE(climate%orad_hru(chru) * param_data%hru_area%values(chru))
-        climate%swrad(chru) = SNGL(solt%soltab_potsw(model_time%Jday, chru) / solt%soltab_horad_potsw(model_time%Jday, chru) * &
+        climate%swrad(chru) = SNGL(solt%soltab_potsw(model_time%day_of_year, chru) / solt%soltab_horad_potsw(model_time%day_of_year, chru) * &
                               DBLE(climate%orad_hru(chru)) / solt%hru_cossl(chru))
         climate%basin_swrad = climate%basin_swrad + &
                               DBLE(climate%swrad(chru) * param_data%hru_area%values(chru))
