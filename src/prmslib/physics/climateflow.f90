@@ -211,11 +211,11 @@ module PRMS_CLIMATEVARS
       if (In_out == 0) then
         write(Restart_outunit) MODNAME
         write(Restart_outunit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-                                this%basin_obs_ppt, this%basin_temp, &
-                                this%basin_orad, this%basin_tmax, this%basin_tmin, &
-                                this%solrad_tmax, this%solrad_tmin, &
-                                this%basin_transp_on, this%basin_potet, &
-                                this%basin_horad, this%basin_swrad
+                               this%basin_obs_ppt, this%basin_temp, &
+                               this%basin_orad, this%basin_tmax, this%basin_tmin, &
+                               this%solrad_tmax, this%solrad_tmin, &
+                               this%basin_transp_on, this%basin_potet, &
+                               this%basin_horad, this%basin_swrad
         write(Restart_outunit) this%tmax_hru
         write(Restart_outunit) this%tmin_hru
         write(Restart_outunit) this%newsnow
@@ -271,14 +271,7 @@ module PRMS_CLIMATEVARS
     !***********************************************************************
     subroutine precip_form(this, ihru, month, hru_area, adjmix_rain, rain_adj, snow_adj, &
                            precip, sum_obs)
-    ! subroutine precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Pptmix, &
-    !                        Newsnow, Prmx, Sum_obs, Tmaxf, Tminf, Tmax_allrain_f, &
-    !                        Tmax_allsnow_f, Rain_adj, Snow_adj, Adjmix_rain, &
-    !                        Hru_area)
       use prms_constants, only: NEARZERO
-
-      ! NOTE: Need to pull 'Nowmonth' out of the use statement
-      ! use PRMS_SET_TIME, only: print_date ! Nowmonth
       implicit none
 
       ! Functions
@@ -294,18 +287,6 @@ module PRMS_CLIMATEVARS
       real(r32), intent(in) :: snow_adj
       real(r32), intent(inout) :: precip
       real(r64), intent(inout) :: sum_obs
-
-      ! real(r32), intent(INOUT) :: Hru_ppt
-      ! real(r32), intent(INOUT) :: Hru_rain
-      ! real(r32), intent(INOUT) :: Hru_snow
-      ! integer(i32), intent(INOUT) :: Pptmix
-      ! integer(i32), intent(INOUT) :: Newsnow
-      ! real(r32), intent(INOUT) :: Prmx
-
-      ! real(r32), intent(in) :: Tmaxf
-      ! real(r32), intent(in) :: Tminf
-      ! real(r32), intent(in) :: Tmax_allrain_f
-      ! real(r32), intent(in) :: Tmax_allsnow_f
 
       ! Local Variables
       real(r32) :: tdiff
@@ -367,21 +348,10 @@ module PRMS_CLIMATEVARS
     !     Sets temperatures in both system of units for each HRU
     !***********************************************************************
     subroutine temp_set(this, param_data, ihru, hru_area, tmax, tmin)
-    ! subroutine temp_set(Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, &
-    !                     Ihru, Hru_area, Tmax, Tmin)
-      ! use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday
       use prms_constants, only: MINTEMP, MAXTEMP
       use conversions_mod, only: c_to_f, f_to_c
       use Parameters_class, only: Parameters
       implicit none
-
-      ! Arguments
-      ! real(r32), intent(out) :: Tmaxf
-      ! real(r32), intent(out) :: Tminf
-      ! real(r32), intent(out) :: Tavgf
-      ! real(r32), intent(out) :: Tmaxc
-      ! real(r32), intent(out) :: Tminc
-      ! real(r32), intent(out) :: Tavgc
 
       class(Climateflow), intent(inout) :: this
       class(Parameters), intent(in) :: param_data
