@@ -4,22 +4,11 @@
 module PRMS_MODULE
   use variableKind
   use prms_constants, only: MAXFILE_LENGTH, MAXCONTROL_LENGTH
-  ! use data_mod, only: str_arr_type
   implicit none
 
   character(len=*), PARAMETER :: MODNAME = 'prms6'
   character(len=*), PARAMETER :: PRMS_VERSION = 'Version 6.0.0 09/29/2017'
 
-  ! character(len=:), allocatable, save :: Process   ! one of: setdims, declare, init, run, or clean
-  ! character(len=:), allocatable, save :: PRMS_versn
-  ! integer(i32), save :: Model
-  ! integer(i32), save :: Number_timesteps
-  ! integer(i32), save :: Nhru
-  ! integer(i32), save :: Ntemp
-  ! integer(i32), save :: Nrain
-  ! integer(i32), save :: Nobs
-  ! integer(i32), allocatable, save :: Starttime(:)  !> Simulation start date and time (YY MM DD hh mm ss)
-  ! integer(i32), allocatable, save :: Endtime(:)    !> Simulation end date and time (YY MM DD hh mm ss)
   ! integer(i32), save :: Start_year
   ! integer(i32), save :: Start_month
   ! integer(i32), save :: Start_day
@@ -28,8 +17,6 @@ module PRMS_MODULE
   ! integer(i32), save :: End_day
 
   ! integer(i32), save :: Inputerror_flag
-  ! integer(i32), save :: Timestep
-  ! integer(i32), save :: Prms_warmup
   integer(i32), save :: PRMS_output_unit
   integer(i32), save :: Restart_inunit
   integer(i32), save :: Restart_outunit
