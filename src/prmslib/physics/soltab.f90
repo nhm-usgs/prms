@@ -17,15 +17,15 @@ module PRMS_SOLTAB
   private
   public :: Soltab
 
+  character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
   character(len=*), parameter :: MODNAME = 'soltab'
-  character(len=*), parameter :: MODVERSION = 'soltab.f90 2016-09-29 13:48:00Z'
+  character(len=*), parameter :: MODVERSION = '2016-09-29 13:48:00Z'
 
   integer(r32), parameter :: DAYS_PER_YEAR = 366
   real(r64), parameter :: PI = 3.1415926535898D0
   real(r64), parameter :: RADIANS = PI / 180.0D0   ! RADIANS ~ 0.017453292519943
   real(r64), parameter :: TWOPI = 2.0D0 * PI       ! TWOPI ~ 6.2831853071786
   real(r64), parameter :: PI_12 = 12.0D0 / PI      ! PI_12 ~ 3.8197186342055
-
 
   type Soltab
     real(r64) :: solar_declination(366)
@@ -72,7 +72,7 @@ module PRMS_SOLTAB
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use PRMS_BASIN, only: Basin
-      use UTILS_PRMS, only: PRMS_open_module_file
+      use UTILS_PRMS, only: PRMS_open_module_file, print_module_info
       implicit none
 
       INTRINSIC SIN, COS, DBLE
@@ -109,10 +109,16 @@ module PRMS_SOLTAB
 
       ! ------------------------------------------------------------------------
       associate(nhru => ctl_data%nhru%values(1), &
+                print_debug => ctl_data%print_debug%values(1), &
                 hru_lat => param_data%hru_lat%values, &
                 hru_type => param_data%hru_type%values, &
                 hru_slope => param_data%hru_slope%values, &
                 hru_aspect => param_data%hru_aspect%values)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
+        endif
 
         allocate(this%hru_cossl(nhru))
         allocate(this%soltab_sunhrs(366, nhru))
@@ -228,7 +234,7 @@ module PRMS_SOLTAB
       version = MODVERSION
     end function
 
-    
+
     !***********************************************************************
     !  compute soltab_potsw (potential shortwave radiation)
     !  and soltab_sunhrs (hours between sunrise and sunset)
