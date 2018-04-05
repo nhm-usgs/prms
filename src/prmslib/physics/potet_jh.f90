@@ -8,14 +8,51 @@ module PRMS_POTET_JH
   implicit none
 
   private
-  public :: run_potet_jh
+  public :: Potet_jh
 
+  character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet_jh'
-  character(len=*), parameter :: MODVERSION = 'potet_jh.f90 2016-05-10 15:48:00Z'
+  character(len=*), parameter :: MODVERSION = '2016-05-10 15:48:00Z'
+
+  type Potet_jh
+    contains
+      procedure, public :: run => run_Potet_jh
+  end type
+
+  interface Potet_jh
+    !! Potet_jh constructor
+    module function constructor_Potet_jh(ctl_data) result(this)
+      use Control_class, only: Control
+
+      type(Potet_jh) :: this
+        !! Poteh_jh class
+      class(Control), intent(in) :: ctl_data
+        !! Control file parameters
+    end function
+  end interface
 
   contains
-    subroutine run_potet_jh(ctl_data, param_data, model_basin, model_time, climate)
-      ! use PRMS_SET_TIME, only: month
+    !***********************************************************************
+    ! Potet_jh constructor
+    module function constructor_Potet_jh(ctl_data) result(this)
+      use Control_class, only: Control
+      use UTILS_PRMS, only: print_module_info
+      implicit none
+
+      type(Potet_jh) :: this
+      class(Control), intent(in) :: ctl_data
+
+      ! ------------------------------------------------------------------------
+      associate(print_debug => ctl_data%print_debug%values(1))
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
+        endif
+      end associate
+    end function
+
+
+    subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate)
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use PRMS_SET_TIME, only: Time
@@ -23,6 +60,7 @@ module PRMS_POTET_JH
       use PRMS_CLIMATEVARS, only: Climateflow
       implicit none
 
+      class(Potet_jh), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
@@ -42,14 +80,10 @@ module PRMS_POTET_JH
       real(r32) :: elh
         !! Latent heat of vaporization
 
-
-      !***********************************************************************
-
       !***********************************************************************
       ! 597.3 cal/gm at 0 C is the energy required to change the state of
       ! water to vapor
       ! elh is the latent heat of vaporization (not including the *2.54)
-      ! Basin_potet = 0.0D0
 
       associate(curr_month => model_time%Nowmonth, &
                 jh_coef => param_data%jh_coef%values, &
