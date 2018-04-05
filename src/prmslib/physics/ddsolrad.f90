@@ -37,8 +37,6 @@ module PRMS_DDSOLRAD
       use PRMS_SOLTAB, only: Soltab
       use PRMS_SET_TIME, only: Time
 
-      use PRMS_MODULE, only: print_module
-      use UTILS_PRMS, only: read_error
       implicit none
 
       type(Control), intent(in) :: ctl_data

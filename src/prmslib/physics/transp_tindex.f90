@@ -136,7 +136,6 @@ MODULE PRMS_TRANSP_TINDEX
 
 
     subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, climate)
-      use UTILS_PRMS, only: read_error
       use conversions_mod, only: c_to_f
 
       use Control_class, only: Control

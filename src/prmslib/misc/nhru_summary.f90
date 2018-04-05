@@ -75,7 +75,7 @@ MODULE PRMS_NHRU_SUMMARY
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use prms_constants, only: MAXFILE_LENGTH
-      use UTILS_PRMS, only: read_error, PRMS_open_output_file
+      use UTILS_PRMS, only: PRMS_open_output_file
 
       implicit none
 
@@ -254,11 +254,6 @@ MODULE PRMS_NHRU_SUMMARY
       use PRMS_SET_TIME, only: Time
       use PRMS_BASIN, only: Basin
       use PRMS_CLIMATEVARS, only: Climateflow
-      ! use PRMS_MODULE, only: Start_month, Start_day, End_year, End_month, End_day
-                             ! NhruOutVars, NhruOut_freq, NhruOutVar_names
-      ! use PRMS_BASIN, only: Active_hrus, Hru_route_order
-      ! use PRMS_SET_TIME, only: Nowyear, Nowmonth, Nowday, last_day_of_month
-      ! use UTILS_PRMS, only: read_error
       implicit none
 
       class(Nhru_summary), intent(inout) :: this
