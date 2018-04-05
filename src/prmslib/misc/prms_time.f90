@@ -9,8 +9,9 @@ module PRMS_SET_TIME
   private
   public :: Time
 
+  character(len=*), parameter :: MODDESC = 'Time variables'
   character(len=*), parameter :: MODNAME = 'prms_time'
-  character(len=*), parameter :: MODVERSION = 'prms_time.f90 2017-07-06 14:16:00Z'
+  character(len=*), parameter :: MODVERSION = '2017-07-06 14:16:00Z'
 
   integer(i32), parameter :: DAYPMO(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -77,6 +78,7 @@ module PRMS_SET_TIME
       use PRMS_BASIN, only: Basin
       use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                                 HOUR_PER_DAY, MIN_PER_HOUR
+      use UTILS_PRMS, only: print_module_info
       ! use PRMS_DATA_FILE, only: read_data_line
       ! use variables_arr_mod, only: variables_arr_t
       implicit none
@@ -95,18 +97,26 @@ module PRMS_SET_TIME
         !! Julian day of model end_time
       real(r64) :: dt
 
-      ! original declare stuff
-      this%Timestep_seconds = SECS_PER_DAY
-      this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
-      this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
-
-      ! original init stuff
-      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', model_basin%hemisphere)
-      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', model_basin%hemisphere)
-      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', model_basin%hemisphere)
-
-      associate(model_start => ctl_data%start_time%values, &
+      ! ------------------------------------------------------------------------
+      associate(print_debug => ctl_data%print_debug%values(1), &
+                model_start => ctl_data%start_time%values, &
                 model_end => ctl_data%end_time%values)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
+        endif
+
+        ! original declare stuff
+        this%Timestep_seconds = SECS_PER_DAY
+        this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
+        this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
+
+        ! original init stuff
+        this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', model_basin%hemisphere)
+        this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', model_basin%hemisphere)
+        this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', model_basin%hemisphere)
+
         startday = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
         endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
         this%Nowtime = model_start
@@ -213,8 +223,8 @@ module PRMS_SET_TIME
       this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
       this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
 
-      print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
-               this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
+      ! print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
+      !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
 
       ! Check to see if in a daily or subdaily time step
       if (this%Timestep_hours > HOUR_PER_DAY) then
@@ -491,39 +501,6 @@ module PRMS_SET_TIME
     end function last_day_of_month
 
 
-
-
-    ! **************************************************************************
-    ! **************************************************************************
-    ! time helper functions pulled from time.f90
-    ! **************************************************************************
-
-    !***********************************************************************
-    ! julday_in_year
-    ! computes the Julian Day of a date
-    !***********************************************************************
-    ! integer function julday_in_year(Year, Month, Day)
-    !   implicit none
-    !
-    !   ! Arguments
-    !   integer(i32), intent(in) :: Year
-    !   integer(i32), intent(in) :: Month
-    !   integer(i32), intent(in) :: Day
-    !
-    !   ! Local Variables
-    !   integer(i32) :: i
-    !
-    !   !***********************************************************************
-    !   julday_in_year = Day
-    !
-    !   do i = 1, Month - 1
-    !       julday_in_year = julday_in_year + daypmo(i)
-    !   enddo
-    !
-    !   ! Add additional day if the day is in a leap year after February
-    !   if (leap_day(Year) .and. Month > 2) julday_in_year = julday_in_year + 1
-    ! end function julday_in_year
-
     !***********************************************************************
     ! leap_day - is the year a leap year: (1=yes; 0=no)
     !***********************************************************************
@@ -584,7 +561,6 @@ module PRMS_SET_TIME
       m = date(2) / 11
       date(2) = date(2) + 2 - 12 * m
       date(1) = 100 * (n - 49) + date(1) + m
-
     end function
 
 
