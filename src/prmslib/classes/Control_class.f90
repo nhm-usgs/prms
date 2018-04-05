@@ -7,8 +7,11 @@ module Control_class
   implicit none
 
   private
-
   public :: Control
+
+  character(len=*), parameter :: MODDESC = 'Control File'
+  character(len=*), parameter :: MODNAME = 'Control_class'
+  character(len=*), parameter :: MODVERSION = '2018-04-05 13:50:00Z'
 
   type Control
     ! Allowed dimensions
@@ -195,11 +198,15 @@ module Control_class
     type(sArray) :: windspeed_day
     type(sArray) :: wrain_intcp_dynamic
 
+    ! Non-control file variables
+    integer(i32) :: model_output_unit
+      !! File unit for opened model_output_file
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
 
   contains
     procedure, public :: read => read_Control
+    procedure, private :: open_model_output_file
   end type
 
   interface Control
@@ -219,4 +226,11 @@ module Control_class
     end subroutine
   end interface
 
+  interface
+    module function open_model_output_file(this)
+      integer(i32) :: open_model_output_file
+      class(Control), intent(inout) :: this
+        !! Control class
+    end function
+  end interface
 end module
