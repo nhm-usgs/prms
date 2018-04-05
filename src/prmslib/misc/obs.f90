@@ -8,8 +8,9 @@ module PRMS_OBS
   private
   public :: Obs
 
+  character(len=*), parameter :: MODDESC = 'Time Series Data'
   character(len=*), parameter :: MODNAME = 'obs'
-  character(len=*), parameter :: MODVERSION = 'obs.f90 2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = '2017-09-29 13:50:00Z'
 
   type Obs
     ! Declared Variables
@@ -45,45 +46,56 @@ module PRMS_OBS
     ! Obs constructor
     module function constructor_Obs(ctl_data) result(this)
       use Control_class, only: Control
+      use UTILS_PRMS, only: print_module_info
       implicit none
 
       type(Obs) :: this
       class(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
-      if (ctl_data%nobs%values(1) > 0) then
-        allocate(this%runoff(ctl_data%nobs%values(1)))
-        allocate(this%streamflow_cfs(ctl_data%nobs%values(1)))
-        allocate(this%streamflow_cms(ctl_data%nobs%values(1)))
+      associate(nobs => ctl_data%nobs%values(1), &
+                print_debug => ctl_data%print_debug%values(1), &
+                init_vars_from_file => ctl_data%init_vars_from_file%values(1))
 
-        if (ctl_data%init_vars_from_file%values(1) == 0) then
-          this%runoff = 0.0
-          this%streamflow_cfs = 0.0D0
-          this%streamflow_cms = 0.0D0
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
         endif
-      endif
 
-      if (allocated(ctl_data%nrain%values)) then
-        if (ctl_data%nrain%values(1) > 0) then
-          allocate(this%precip(ctl_data%nrain%values(1)))
+        if (nobs > 0) then
+          allocate(this%runoff(nobs))
+          allocate(this%streamflow_cfs(nobs))
+          allocate(this%streamflow_cms(nobs))
 
-          if (ctl_data%init_vars_from_file%values(1) == 0) then
-            this%precip = 0.0
+          if (init_vars_from_file == 0) then
+            this%runoff = 0.0
+            this%streamflow_cfs = 0.0D0
+            this%streamflow_cms = 0.0D0
           endif
         endif
-      endif
 
-      if (allocated(ctl_data%ntemp%values)) then
-        if (ctl_data%ntemp%values(1) > 0) then
-          allocate(this%tmin(ctl_data%ntemp%values(1)))
-          allocate(this%tmax(ctl_data%ntemp%values(1)))
+        if (allocated(ctl_data%nrain%values)) then
+          if (ctl_data%nrain%values(1) > 0) then
+            allocate(this%precip(ctl_data%nrain%values(1)))
 
-          if (ctl_data%init_vars_from_file%values(1) == 0) then
-            this%tmax = 0.0
-            this%tmin = 0.0
+            if (init_vars_from_file == 0) then
+              this%precip = 0.0
+            endif
           endif
         endif
-      endif
+
+        if (allocated(ctl_data%ntemp%values)) then
+          if (ctl_data%ntemp%values(1) > 0) then
+            allocate(this%tmin(ctl_data%ntemp%values(1)))
+            allocate(this%tmax(ctl_data%ntemp%values(1)))
+
+            if (init_vars_from_file == 0) then
+              this%tmax = 0.0
+              this%tmin = 0.0
+            endif
+          endif
+        endif
+      end associate
     end function
 
     function module_name()
