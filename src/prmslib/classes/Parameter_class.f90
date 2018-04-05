@@ -7,8 +7,11 @@ module Parameters_class
   use Control_class, only: Control
 
   private
-
   public :: Parameters
+
+  character(len=*), parameter :: MODDESC = 'Parameter File'
+  character(len=*), parameter :: MODNAME = 'Parameter_class'
+  character(len=*), parameter :: MODVERSION = '2018-04-05 13:50:00Z'
 
   type Parameters
     type(rVariable) :: K_coef
