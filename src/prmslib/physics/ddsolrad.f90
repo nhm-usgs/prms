@@ -14,22 +14,58 @@ module PRMS_DDSOLRAD
   implicit none
 
   private
-  public :: ddsolrad
+  public :: Ddsolrad
 
+  character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
   character(len=*), parameter :: MODNAME = 'ddsolrad'
-  character(len=*), parameter :: MODVERSION = 'ddsolrad.f90 2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = '2017-09-29 13:50:00Z'
 
   real(r32), dimension(26), parameter :: SOLF = [.20, .35, .45, .51, .56, .59, &
                                                  .62, .64, .655, .67, .682, .69, &
                                                  .70, .71, .715, .72, .722, .724, &
                                                  .726, .728, .73, .734, .738, &
                                                  .742, .746, .75]
-  ! Declared Parameters
-  ! type Ddsolrad
-  ! end type
+
+  type Ddsolrad
+    contains
+      procedure, public :: run => run_Ddsolrad
+  end type
+
+  interface Ddsolrad
+    !! Ddsolrad constructor
+    module function constructor_Ddsolrad(ctl_data) result(this)
+      use Control_class, only: Control
+
+      type(Ddsolrad) :: this
+        !! Ddsolrad class
+      class(Control), intent(in) :: ctl_data
+        !! Control file parameters
+    end function
+  end interface
 
   contains
-    subroutine ddsolrad(ctl_data, param_data, model_time, solt, climate, model_basin)
+    !***********************************************************************
+    ! Ddsolrad constructor
+    module function constructor_Ddsolrad(ctl_data) result(this)
+      use Control_class, only: Control
+      use UTILS_PRMS, only: print_module_info
+      implicit none
+
+      type(Ddsolrad) :: this
+      class(Control), intent(in) :: ctl_data
+
+      ! ------------------------------------------------------------------------
+      associate(print_debug => ctl_data%print_debug%values(1))
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
+        endif
+
+      end associate
+    end function
+
+
+    subroutine run_Ddsolrad(this, ctl_data, param_data, model_time, solt, climate, model_basin)
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use PRMS_BASIN, only: Basin
@@ -39,6 +75,7 @@ module PRMS_DDSOLRAD
 
       implicit none
 
+      class(Ddsolrad), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Time), intent(in) :: model_time
