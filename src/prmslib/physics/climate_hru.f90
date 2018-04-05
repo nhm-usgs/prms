@@ -11,8 +11,9 @@ module PRMS_CLIMATE_HRU
     private
     public :: Climate_HRU
 
+    character(len=*), parameter :: MODDESC = 'Climate distribution by HRU'
     character(len=*), PARAMETER :: MODNAME = 'climate_hru'
-    character(len=*), PARAMETER :: MODVERSION = 'climate_hru.f90 2017-09-29 13:49:00Z'
+    character(len=*), PARAMETER :: MODVERSION = '2017-09-29 13:49:00Z'
 
     type Climate_HRU
       integer(i32), private :: precip_funit
@@ -40,6 +41,7 @@ module PRMS_CLIMATE_HRU
       module function constructor_Climate_HRU(ctl_data, param_data) result(this)
         use Control_class, only: Control
         use Parameters_class, only: Parameters
+        use UTILS_PRMS, only: print_module_info
 
         type(Climate_HRU) :: this
           !! Climate_HRU class
@@ -56,8 +58,7 @@ module PRMS_CLIMATE_HRU
       module function constructor_Climate_HRU(ctl_data, param_data) result(this)
         use Control_class, only: Control
         use Parameters_class, only: Parameters
-        ! use PRMS_MODULE, only: Start_year, Start_month, Start_day
-        use UTILS_PRMS, only: find_current_time
+        use UTILS_PRMS, only: find_current_time, print_module_info
         implicit none
 
         type(Climate_HRU) :: this
@@ -68,45 +69,53 @@ module PRMS_CLIMATE_HRU
         integer(i32) :: ierr
         integer(i32) :: istop = 0
 
-        ! TODO: Start_year, Start_month, Start_day come from PRMS_MODULE
         ! ----------------------------------------------------------------------
-        this%nhru = ctl_data%nhru%values(1)
+        associate(nhru => ctl_data%nhru%values(1), &
+                  cbh_binary_flag => ctl_data%cbh_binary_flag%values(1), &
+                  print_debug => ctl_data%print_debug%values(1), &
+                  start_time => ctl_data%start_time%values)
 
-        if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
-          call this%find_header_end(this%precip_funit, ierr, &
-                                    ctl_data%precip_day%values(1)%s, 'precip_day', &
-                                    1, ctl_data%cbh_binary_flag%values(1))
-          if (ierr == 1) then
-            istop = 1
-          else
-            ! iret, iunit, datetime, binary_flag
-            call find_current_time(ierr, this%precip_funit, ctl_data%start_time%values, &
-                                   ctl_data%cbh_binary_flag%values(1))
-          endif
-        endif
-
-        if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
-          call this%find_header_end(this%tmax_funit, ierr, ctl_data%tmax_day%values(1)%s, &
-                                    'tmax_day', 1, ctl_data%cbh_binary_flag%values(1))
-          if (ierr == 1) then
-            istop = 1
-          else
-            call find_current_time(ierr, this%tmax_funit, ctl_data%start_time%values, &
-                                   ctl_data%cbh_binary_flag%values(1))
+          if (print_debug > -2) then
+            ! Output module and version information
+            call print_module_info(MODNAME, MODDESC, MODVERSION)
           endif
 
-          ! Iunit, Iret, Fname, Paramname, Cbh_flag, Cbh_binary_flag
-          call this%find_header_end(this%tmin_funit, ierr, ctl_data%tmin_day%values(1)%s, &
-                                    'tmin_day', 1, ctl_data%cbh_binary_flag%values(1))
-          if (ierr == 1) then
-            istop = 1
-          else
-            call find_current_time(ierr, this%tmin_funit, ctl_data%start_time%values, &
-                                   ctl_data%cbh_binary_flag%values(1))
-          endif
-        endif
+          ! TODO: This is only used for file-related procedures
+          this%nhru = nhru
 
-        if (istop == 1) STOP 'ERROR in climate_hru'
+          if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
+            call this%find_header_end(this%precip_funit, ierr, &
+                                      ctl_data%precip_day%values(1)%s, 'precip_day', &
+                                      1, cbh_binary_flag)
+            if (ierr == 1) then
+              istop = 1
+            else
+              ! iret, iunit, datetime, binary_flag
+              call find_current_time(ierr, this%precip_funit, start_time, cbh_binary_flag)
+            endif
+          endif
+
+          if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
+            call this%find_header_end(this%tmax_funit, ierr, ctl_data%tmax_day%values(1)%s, &
+                                      'tmax_day', 1, cbh_binary_flag)
+            if (ierr == 1) then
+              istop = 1
+            else
+              call find_current_time(ierr, this%tmax_funit, start_time, cbh_binary_flag)
+            endif
+
+            ! Iunit, Iret, Fname, Paramname, Cbh_flag, Cbh_binary_flag
+            call this%find_header_end(this%tmin_funit, ierr, ctl_data%tmin_day%values(1)%s, &
+                                      'tmin_day', 1, cbh_binary_flag)
+            if (ierr == 1) then
+              istop = 1
+            else
+              call find_current_time(ierr, this%tmin_funit, start_time, cbh_binary_flag)
+            endif
+          endif
+
+          if (istop == 1) STOP 'ERROR in climate_hru'
+        end associate
       end function
 
       subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
@@ -245,7 +254,7 @@ module PRMS_CLIMATE_HRU
         version = MODVERSION
       end function
 
-      
+
       !***********************************************************************
       !     Read File to line before data starts in file
       !***********************************************************************
