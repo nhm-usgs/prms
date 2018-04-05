@@ -1,35 +1,35 @@
 module conversions_mod
-  use kinds_mod, only: r4, r8, i4, i8
+  use variableKind
   implicit none
 
   contains
     !***********************************************************************
     ! Convert Fahrenheit to Celsius
     !***********************************************************************
-    REAL FUNCTION f_to_c(Temp)
+    real function f_to_c(Temp)
       implicit none
-      
+
       ! Arguments
-      REAL(r4), INTENT(IN) :: Temp
+      real(r32), intent(in) :: Temp
         !! Temperature in Fahrenheit
 
       !*******************************************************************
       f_to_c = (Temp - 32.0) / 1.8
-    END FUNCTION f_to_c
+    end function f_to_c
 
     !***********************************************************************
     ! Convert Celsius to Fahrenheit
     !***********************************************************************
-    REAL FUNCTION c_to_f(Temp)
+    real function c_to_f(Temp)
       implicit none
 
       ! Arguments
-      REAL(r4), INTENT(IN) :: Temp
+      real(r32), intent(in) :: Temp
         !! Temperature in Celsius
 
       !*******************************************************************
       c_to_f = Temp * 1.8 + 32.0
-    END FUNCTION c_to_f
+    end function c_to_f
 
     !***********************************************************************
     ! Compute saturation vapor pressure over water in millibars
@@ -38,11 +38,11 @@ module conversions_mod
     ! Flatau, P.j., Walko, R.L., Cotton, W.R., 1992, Polynomial Fits to
     !   saturation vapor pressure: Jornal of Applied Meteorology, v. 31, p. 1507-1513
     !***********************************************************************
-    REAL FUNCTION sat_vapor_press_poly(Tempc)
-      IMPLICIT NONE
+    real function sat_vapor_press_poly(Tempc)
+      implicit none
 
       ! Arguments
-      REAL(r4), INTENT(IN) :: Tempc
+      real(r32), intent(in) :: Tempc
         !! Temperature in degree Celsius
 
       !*******************************************************************
@@ -62,20 +62,20 @@ module conversions_mod
       !      sat_vapor_press_poly = 6.112*EXP(17.62*Tempc/(243.12+Tempc))
       ! Irmak and others (2012), equation 12
       !      sat_vapor_press_poly = 0.6108*EXP(17.27*Tempc/(237.3+Tempc))
-    END FUNCTION sat_vapor_press_poly
+    end function sat_vapor_press_poly
 
     !***********************************************************************
     ! Compute saturation vapor pressure over water
     ! Irmak and others (2012), equation 12
     !***********************************************************************
-    REAL FUNCTION sat_vapor_press(Tempc)
-      IMPLICIT NONE
+    real function sat_vapor_press(Tempc)
+      implicit none
 
       ! Arguments
-      REAL(r4), INTENT(IN) :: Tempc
+      real(r32), intent(in) :: Tempc
         !! Temperature in degree Celsius
 
       !*******************************************************************
       sat_vapor_press = 6.1078 * EXP((17.26939 * Tempc) / (237.3 + Tempc))
-    END FUNCTION sat_vapor_press
+    end function sat_vapor_press
 end module
