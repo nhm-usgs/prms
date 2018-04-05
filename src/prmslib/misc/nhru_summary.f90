@@ -10,8 +10,9 @@ MODULE PRMS_NHRU_SUMMARY
   private
   public :: Nhru_summary
 
+  character(len=*), parameter :: MODDESC = 'Output Summary by HRU'
   character(len=*), parameter :: MODNAME = 'nhru_summary'
-  character(len=*), parameter :: MODVERSION = 'nhru_summary.f90 2017-09-29 13:49:00Z'
+  character(len=*), parameter :: MODVERSION = '2017-09-29 13:49:00Z'
 
   type Nhru_summary
     ! Module Variables
@@ -40,9 +41,9 @@ MODULE PRMS_NHRU_SUMMARY
     real(r64), allocatable :: nhru_var_monthly(:, :)
     real(r64), allocatable :: nhru_var_yearly(:, :)
 
-    integer(i32), private :: start_time(6)
+    ! integer(i32), private :: start_time(6)
       !! Local copy of ctl_data%start_time
-    integer(i32), private :: end_time(6)
+    ! integer(i32), private :: end_time(6)
       !! Local copy of ctl_data%start_time
 
     contains
@@ -75,7 +76,7 @@ MODULE PRMS_NHRU_SUMMARY
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use prms_constants, only: MAXFILE_LENGTH
-      use UTILS_PRMS, only: PRMS_open_output_file
+      use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
 
       implicit none
 
@@ -87,11 +88,11 @@ MODULE PRMS_NHRU_SUMMARY
       INTRINSIC CHAR
 
       ! Local Variables
-      integer(i32) :: nhru_out_flag
+      ! integer(i32) :: nhru_out_flag
         !! Local copy of nhruOutON_OFF
-      integer(i32) :: nhru_out_freq
+      ! integer(i32) :: nhru_out_freq
         !! Local copy of nhruOut_freq
-      integer(i32) :: nhru_out_vars
+      ! integer(i32) :: nhru_out_vars
         !! Local copy of nhruOutVars
 
       integer(i32) :: ios
@@ -109,139 +110,152 @@ MODULE PRMS_NHRU_SUMMARY
       ! type(iArray) :: nhruOutVars
       ! type(iArray) :: nhruOut_freq
 
-      this%start_time = ctl_data%start_time%values(:)
-      this%end_time = ctl_data%end_time%values(:)
+      associate(nhru => ctl_data%nhru%values(1), &
+                print_debug => ctl_data%print_debug%values(1), &
+                start_time => ctl_data%start_time%values, &
+                end_time => ctl_data%end_time%values, &
+                nhruOutON_OFF => ctl_data%nhruOutON_OFF%values(1), &
+                nhruOut_freq => ctl_data%nhruOut_freq%values(1), &
+                nhruOutVars => ctl_data%nhruOutVars%values(1), &
+                nhm_id => param_data%nhm_id%values)
 
-      ! NOTE: NhruOutON_OFF=2 is an undocumented feature
-      !       Parameter nhm_id is needed for this.
-
-      nhru_out_flag = ctl_data%nhruOutON_OFF%values(1)
-
-      ! nhruOut_freq
-      ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
-      nhru_out_freq = ctl_data%nhruOut_freq%values(1)
-
-      ! nhruOutVars - use if present in control file
-      nhru_out_vars = ctl_data%nhruOutVars%values(1)
-
-      if (nhru_out_vars == 0) then
-        if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
-          print *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
-          STOP
-          !          print *, 'no nhru_summary output is produced'
-          !          NhruOutON_OFF = 0
-          ! Inputerror_flag = 1
-          return
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
         endif
-      endif
+        ! this%start_time = ctl_data%start_time%values(:)
+        ! this%end_time = ctl_data%end_time%values(:)
 
-      this%begin_results = .true.
-      this%begyr = this%start_time(1)
+        ! NOTE: NhruOutON_OFF=2 is an undocumented feature
+        !       Parameter nhm_id is needed for this.
 
-      if (ctl_data%prms_warmup%values(1) > 0) this%begin_results = .false.
+        ! nhru_out_flag = ctl_data%nhruOutON_OFF%values(1)
 
-      this%begyr = this%begyr + ctl_data%prms_warmup%values(1)
-      this%lastyear = this%begyr
+        ! nhruOut_freq
+        ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
+        ! nhru_out_freq = ctl_data%nhruOut_freq%values(1)
 
-      write (this%output_fmt, 9001) ctl_data%nhru%values(1)
+        ! nhruOutVars - use if present in control file
+        ! nhru_out_vars = ctl_data%nhruOutVars%values(1)
 
-      ! NOTE: removed checks for datatype and size
-
-      if (this%double_vars == 1) then
-        allocate(this%nhru_var_dble(ctl_data%nhru%values(1), nhru_out_vars))
-        this%nhru_var_dble = 0.0D0
-      endif
-
-      this%daily_flag = 0
-      if (ANY([DAILY, DAILY_MONTHLY]==nhru_out_freq)) then
-        this%daily_flag = 1
-        allocate(this%dailyunit(nhru_out_vars))
-      endif
-
-      this%monthly_flag = 0
-      if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==nhru_out_freq)) this%monthly_flag = 1
-
-      if (ANY([MEAN_YEARLY, YEARLY]==nhru_out_freq)) then
-        this%yeardays = 0
-        allocate(this%nhru_var_yearly(ctl_data%nhru%values(1), nhru_out_vars))
-        this%nhru_var_yearly = 0.0D0
-
-        allocate(this%yearlyunit(nhru_out_vars))
-
-        write(this%output_fmt3, 9003) ctl_data%nhru%values(1)
-      elseif (this%monthly_flag == 1) then
-        this%monthdays = 0.0D0
-        allocate(this%nhru_var_monthly(ctl_data%nhru%values(1), nhru_out_vars))
-        this%nhru_var_monthly = 0.0D0
-
-        allocate(this%monthlyunit(nhru_out_vars))
-      endif
-
-      write(this%output_fmt2, 9002) ctl_data%nhru%values(1)
-      allocate(this%nhru_var_daily(ctl_data%nhru%values(1), nhru_out_vars))
-      this%nhru_var_daily = 0.0
-
-      do jj = 1, nhru_out_vars
-        if (this%daily_flag == 1) then
-          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
-                     ctl_data%nhruOutVar_names%values(jj)%s // '.csv'
-
-          call PRMS_open_output_file(this%dailyunit(jj), fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in nhru_summary'
-
-          if (nhru_out_flag < 2) then
-            write (this%dailyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+        if (nhruOutVars == 0) then
+          if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
+            print *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
+            STOP
+            !          print *, 'no nhru_summary output is produced'
+            !          NhruOutON_OFF = 0
+            ! Inputerror_flag = 1
+            return
           endif
         endif
 
-        if (nhru_out_freq == MEAN_YEARLY) then
-          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
-                     ctl_data%nhruOutVar_names%values(jj)%s // '_meanyearly.csv'
+        this%begin_results = .true.
+        this%begyr = start_time(YEAR)
 
-          call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in nhru_summary, mean yearly'
+        if (ctl_data%prms_warmup%values(1) > 0) this%begin_results = .false.
 
-          if (nhru_out_flag < 2) write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
-        elseif (nhru_out_freq == YEARLY) then
-          fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
-                     ctl_data%nhruOutVar_names%values(jj)%s // '_yearly.csv'
+        this%begyr = this%begyr + ctl_data%prms_warmup%values(1)
+        this%lastyear = this%begyr
 
-          call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in nhru_summary, yearly'
+        write (this%output_fmt, 9001) nhru
 
-          write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+        ! NOTE: removed checks for datatype and size
+
+        if (this%double_vars == 1) then
+          allocate(this%nhru_var_dble(nhru, nhruOutVars))
+          this%nhru_var_dble = 0.0D0
+        endif
+
+        this%daily_flag = 0
+        if (ANY([DAILY, DAILY_MONTHLY]==nhruOut_freq)) then
+          this%daily_flag = 1
+          allocate(this%dailyunit(nhruOutVars))
+        endif
+
+        this%monthly_flag = 0
+        if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==nhruOut_freq)) this%monthly_flag = 1
+
+        if (ANY([MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
+          this%yeardays = 0
+          allocate(this%nhru_var_yearly(nhru, nhruOutVars))
+          this%nhru_var_yearly = 0.0D0
+
+          allocate(this%yearlyunit(nhruOutVars))
+
+          write(this%output_fmt3, 9003) nhru
         elseif (this%monthly_flag == 1) then
-          if (nhru_out_freq == MEAN_MONTHLY) then
+          this%monthdays = 0.0D0
+          allocate(this%nhru_var_monthly(nhru, nhruOutVars))
+          this%nhru_var_monthly = 0.0D0
+
+          allocate(this%monthlyunit(nhruOutVars))
+        endif
+
+        write(this%output_fmt2, 9002) nhru
+        allocate(this%nhru_var_daily(nhru, nhruOutVars))
+        this%nhru_var_daily = 0.0
+
+        do jj = 1, nhruOutVars
+          if (this%daily_flag == 1) then
             fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
-                       ctl_data%nhruOutVar_names%values(jj)%s // '_meanmonthly.csv'
-          else
-            fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
-                       ctl_data%nhruOutVar_names%values(jj)%s // '_monthly.csv'
+                       ctl_data%nhruOutVar_names%values(jj)%s // '.csv'
+
+            call PRMS_open_output_file(this%dailyunit(jj), fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in nhru_summary'
+
+            if (nhruOutON_OFF < 2) then
+              write (this%dailyunit(jj), this%output_fmt2) (j, j=1, nhru)
+            endif
           endif
 
-          call PRMS_open_output_file(this%monthlyunit(jj), fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in nhru_summary, monthly'
+          if (nhruOut_freq == MEAN_YEARLY) then
+            fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                       ctl_data%nhruOutVar_names%values(jj)%s // '_meanyearly.csv'
 
-          if (nhru_out_flag < 2) write (this%monthlyunit(jj), this%output_fmt2) (j, j=1, ctl_data%nhru%values(1))
+            call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in nhru_summary, mean yearly'
+
+            if (nhruOutON_OFF < 2) write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, nhru)
+          elseif (nhruOut_freq == YEARLY) then
+            fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                       ctl_data%nhruOutVar_names%values(jj)%s // '_yearly.csv'
+
+            call PRMS_open_output_file(this%yearlyunit(jj), fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in nhru_summary, yearly'
+
+            write (this%yearlyunit(jj), this%output_fmt2) (j, j=1, nhru)
+          elseif (this%monthly_flag == 1) then
+            if (nhruOut_freq == MEAN_MONTHLY) then
+              fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                         ctl_data%nhruOutVar_names%values(jj)%s // '_meanmonthly.csv'
+            else
+              fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
+                         ctl_data%nhruOutVar_names%values(jj)%s // '_monthly.csv'
+            endif
+
+            call PRMS_open_output_file(this%monthlyunit(jj), fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in nhru_summary, monthly'
+
+            if (NhruOutON_OFF < 2) write (this%monthlyunit(jj), this%output_fmt2) (j, j=1, nhru)
+          endif
+        enddo
+
+        if (nhruOutON_OFF == 2) then
+            do jj = 1, nhruOutVars
+                if (this%daily_flag == 1) write (this%dailyunit(jj), this%output_fmt2) (nhm_id(j), j=1, nhru)
+
+                if (nhruOut_freq == MEAN_YEARLY) then
+                    write (this%yearlyunit(jj), this%output_fmt2) (nhm_id(j), j=1, nhru)
+                elseif (this%monthly_flag == 1) then
+                    write (this%monthlyunit(jj), this%output_fmt2) (nhm_id(j), j=1, nhru)
+                endif
+            enddo
         endif
-      enddo
 
-      if (nhru_out_flag == 2) then
-          do jj = 1, nhru_out_vars
-              if (this%daily_flag == 1) write (this%dailyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
-
-              if (nhru_out_freq == MEAN_YEARLY) then
-                  write (this%yearlyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
-              elseif (this%monthly_flag == 1) then
-                  write (this%monthlyunit(jj), this%output_fmt2) (param_data%nhm_id%values(j), j=1, ctl_data%nhru%values(1))
-              endif
-          enddo
-      endif
-
-      9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
-      9002 FORMAT ('("Date "', I6, '('',''I6))')
-      9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
-
+        9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
+        9002 FORMAT ('("Date "', I6, '('',''I6))')
+        9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
+      end associate
     end function
 
 
