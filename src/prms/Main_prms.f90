@@ -37,6 +37,7 @@ program prms6
   call system_clock(count=start_rtc, count_rate=rate_rtc, count_max=max_rtc)
   call cpu_time(time=start_ct)
 
+  write(output_unit, fmt='(a)') repeat('=', 72)
   call get_control_filename(control_filename)
 
   Control_data = Control(control_filename)
@@ -47,11 +48,12 @@ program prms6
 
   ! TODO: Need routines for setting up output variables
 
-  print *, "Initialize Simulation"
+  ! Initialize the simulation object
   model_simulation = Simulation(Control_data, Parameter_data)
 
-  print *, "Run the simulation"
+  ! Run the simulation
   call model_simulation%run(Control_data, Parameter_data)
+
   ! TODO: Open, position, and read any ancillary data including:
   !       CBH files,
 
@@ -59,6 +61,7 @@ program prms6
   call system_clock(count=end_rtc)
   delta_rtc_sec = real(end_rtc - start_rtc, r64) / real(rate_rtc, r64)
 
+  write(output_unit, fmt='(a)') repeat('-', 72)
   write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed system clock:', delta_rtc_sec, 'seconds.'
   write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed cpu time:', end_ct - start_ct, 'seconds.'
 contains
