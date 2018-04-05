@@ -3,16 +3,14 @@
 !***********************************************************************
 program prms6
   use variableKind
-  !use PRMS_MODULE, only : Number_timesteps
+  use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SIMULATION, only: Simulation
-
   implicit none
 
   character(len=:), allocatable :: control_filename
     !! Name of the control file
-
   type(Control) :: Control_data
     !! Class of control file related parameters
   type(Parameters) :: Parameter_data
@@ -20,30 +18,32 @@ program prms6
   type(Simulation) :: model_simulation
     !! PRMS model simulation class
 
-  ! type(control_list) :: Control_data
-  ! type(dimension_list) :: Dimension_data
-  ! type(parameter_arr_t) :: Param_data
-  ! type(variables_arr_t) :: Var_data
+  integer(i64) :: start_rtc
+    !! Starting system clock value
+  integer(i64) :: end_rtc
+    !! Ending system clock value
+  integer(i64) :: max_rtc
+    !! Maximum system clock ticks per second
+  integer(i64) :: rate_rtc
+    !! System clock ticks per second
+  real(i64) :: delta_rtc_sec
+    !! Elapsed system clock in seconds
+  real(r64) :: start_ct
+    !! Starting cpu time value
+  real(r64) :: end_ct
+    !! Ending cpu time value
 
-  integer(i32) :: ii
-  integer(i32) :: ctl_crap
-  real(r32) :: param_crap
-  real(r32) :: param_crap_1D(14)
-  real(r32) :: param_crap_2D(14, 12)
+  ! ---------------------------------------------------------------------------
+  call system_clock(count=start_rtc, count_rate=rate_rtc, count_max=max_rtc)
+  call cpu_time(time=start_ct)
 
   call get_control_filename(control_filename)
 
   Control_data = Control(control_filename)
 
-  ! ctl_crap = Control_data%nhru
-  ! print *, 'nhru: ', ctl_crap
-
   ! TODO: How to handle allocation and reading of parameter variables depending
   !       on which physics modules are selected?
   Parameter_data = Parameters(Control_data)
-
-  !param_crap_1D = Parameter_data%tmin_cbh_adj
-  !print *, 'tmin_cbh_adj: ', param_crap_1D
 
   ! TODO: Need routines for setting up output variables
 
@@ -55,10 +55,12 @@ program prms6
   ! TODO: Open, position, and read any ancillary data including:
   !       CBH files,
 
-  ! TODO: Possibly have outermost time loop here and then call physics modules
-  !       for each timestep
+  call cpu_time(time=end_ct)
+  call system_clock(count=end_rtc)
+  delta_rtc_sec = real(end_rtc - start_rtc, r64) / real(rate_rtc, r64)
 
-
+  write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed system clock:', delta_rtc_sec, 'seconds.'
+  write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed cpu time:', end_ct - start_ct, 'seconds.'
 contains
 
   !***********************************************************************
