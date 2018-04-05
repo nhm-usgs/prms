@@ -8,8 +8,9 @@ module PRMS_CLIMATEVARS
   private
   public :: Climateflow
 
+  character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
   character(len=*), parameter :: MODNAME = 'climateflow'
-  character(len=*), parameter :: MODVERSION = 'climateflow.f90 2017-09-29 13:47:00Z'
+  character(len=*), parameter :: MODVERSION = '2017-09-29 13:47:00Z'
 
   type Climateflow
     real(r32) :: solrad_tmax(1)
@@ -90,6 +91,7 @@ module PRMS_CLIMATEVARS
       use Control_class, only: Control
       use Parameters_class, only: Parameters
       use conversions_mod, only: c_to_f, f_to_c
+      use UTILS_PRMS, only: print_module_info
       implicit none
 
       type(Climateflow) :: this
@@ -101,98 +103,106 @@ module PRMS_CLIMATEVARS
       integer(r32) :: j
       integer(r32) :: idx1D
         !! 1D index from 2D
-      integer(r32) :: nhru
-        !! local copy of ctl_data%nhru
-
-      ! TODO: how to handle when init_vars_from_file == 1 (during init)?
-      ! TODO: how to handle when save_vars_to_file == 1 (during clean)?
-
-      ! Get a local copy of the number of HRUs in the model
-      nhru = ctl_data%nhru%values(1)
-
-      ! real(r32), allocatable :: tmax_allrain(:, :)
-
-      allocate(this%hru_ppt(nhru))
-      allocate(this%hru_rain(nhru))
-      allocate(this%hru_snow(nhru))
-
-      allocate(this%potet(nhru))
-      allocate(this%prmx(nhru))
-      allocate(this%swrad(nhru))
-      allocate(this%tavgf(nhru), this%tavgc(nhru))
-      allocate(this%tmaxf(nhru), this%tmaxc(nhru))
-      allocate(this%tminf(nhru), this%tminc(nhru))
-      allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
-
-      allocate(this%tmax_allrain_f(nhru, 12))
-      allocate(this%tmax_allsnow_c(nhru, 12), this%tmax_allsnow_f(nhru, 12))
-      allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
-
-      allocate(this%newsnow(nhru))
-      allocate(this%pptmix(nhru))
-      allocate(this%transp_on(nhru))
-
-      this%hru_ppt = 0.0
-      this%hru_rain = 0.0
-      this%hru_snow = 0.0
-      this%potet = 0.0
-      this%prmx = 0.0
-      this%solrad_tmax = 0.0
-      this%solrad_tmin = 0.0
-      this%swrad = 0.0
-      this%tavgc = 0.0
-      this%tavgf = 0.0
-      this%tmax_hru = 0.0
-      this%tmaxc = 0.0
-      this%tmaxf = 0.0
-      this%tmin_hru = 0.0
-      this%tminc = 0.0
-      this%tminf = 0.0
-
-      this%pptmix = 0
-      this%newsnow = 0
-      this%transp_on = 0
-
-      ! TODO: Figure out how to check this correctly
-      ! if (any(['ddsolrad', 'ccsolrad']==ctl_data%solrad_module%values(1)%s) .or. &
-      !     ctl_data%model_mode == 'DOCUMENTATION') then
-        allocate(this%orad_hru(nhru))
-        this%orad_hru = 0.0
-      ! endif
 
       ! ------------------------------------------------------------------------
-      ! Set tmax_allrain in units of the input values
-      ! tmax_allsnow must be in the units of the input values
-      if (param_data%temp_units%values(1) == 0) then
-        this%tmax_allsnow_f = param_data%tmax_allsnow
-        ! this%tmax_allsnow_f = reshape(param_data%tmax_allsnow%values, shape(this%tmax_allsnow_f))
+      associate(nhru => ctl_data%nhru%values(1), &
+                print_debug => ctl_data%print_debug%values(1), &
+                tmax_allsnow => param_data%tmax_allsnow%values, &
+                tmax_allrain_offset => param_data%tmax_allrain_offset%values)
 
-        do j = 1, 12
-          do i = 1, nhru
-            idx1D = (j - 1) * nhru + i
-            this%tmax_allrain_f(i, j) = param_data%tmax_allsnow%values(idx1D) + &
-                                        param_data%tmax_allrain_offset%values(idx1D)
-            this%tmax_allsnow_c(i, j) = f_to_c(param_data%tmax_allsnow%values(idx1D))
+        if (print_debug > -2) then
+          ! Output module and version information
+          call print_module_info(MODNAME, MODDESC, MODVERSION)
+        endif
+
+        ! TODO: how to handle when init_vars_from_file == 1 (during init)?
+        ! TODO: how to handle when save_vars_to_file == 1 (during clean)?
+
+        ! real(r32), allocatable :: tmax_allrain(:, :)
+
+        allocate(this%hru_ppt(nhru))
+        allocate(this%hru_rain(nhru))
+        allocate(this%hru_snow(nhru))
+
+        allocate(this%potet(nhru))
+        allocate(this%prmx(nhru))
+        allocate(this%swrad(nhru))
+        allocate(this%tavgf(nhru), this%tavgc(nhru))
+        allocate(this%tmaxf(nhru), this%tmaxc(nhru))
+        allocate(this%tminf(nhru), this%tminc(nhru))
+        allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
+
+        allocate(this%tmax_allrain_f(nhru, 12))
+        allocate(this%tmax_allsnow_c(nhru, 12), this%tmax_allsnow_f(nhru, 12))
+        allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
+
+        allocate(this%newsnow(nhru))
+        allocate(this%pptmix(nhru))
+        allocate(this%transp_on(nhru))
+
+        this%hru_ppt = 0.0
+        this%hru_rain = 0.0
+        this%hru_snow = 0.0
+        this%potet = 0.0
+        this%prmx = 0.0
+        this%solrad_tmax = 0.0
+        this%solrad_tmin = 0.0
+        this%swrad = 0.0
+        this%tavgc = 0.0
+        this%tavgf = 0.0
+        this%tmax_hru = 0.0
+        this%tmaxc = 0.0
+        this%tmaxf = 0.0
+        this%tmin_hru = 0.0
+        this%tminc = 0.0
+        this%tminf = 0.0
+
+        this%pptmix = 0
+        this%newsnow = 0
+        this%transp_on = 0
+
+        ! TODO: Figure out how to check this correctly
+        ! if (any(['ddsolrad', 'ccsolrad']==ctl_data%solrad_module%values(1)%s) .or. &
+        !     ctl_data%model_mode == 'DOCUMENTATION') then
+          allocate(this%orad_hru(nhru))
+          this%orad_hru = 0.0
+        ! endif
+
+        ! ------------------------------------------------------------------------
+        ! Set tmax_allrain in units of the input values
+        ! tmax_allsnow must be in the units of the input values
+        ! TODO: FIX the 2D = 1D stuff in here.
+        if (param_data%temp_units%values(1) == 0) then
+          this%tmax_allsnow_f = param_data%tmax_allsnow
+          ! this%tmax_allsnow_f = reshape(param_data%tmax_allsnow%values, shape(this%tmax_allsnow_f))
+
+          do j = 1, 12
+            do i = 1, nhru
+              idx1D = (j - 1) * nhru + i
+              this%tmax_allrain_f(i, j) = tmax_allsnow(idx1D) + &
+                                          tmax_allrain_offset(idx1D)
+              this%tmax_allsnow_c(i, j) = f_to_c(tmax_allsnow(idx1D))
+            enddo
           enddo
-        enddo
 
-        this%tmax_allrain = this%tmax_allrain_f
-      else
-        this%tmax_allsnow_c = param_data%tmax_allsnow
-        ! this%tmax_allsnow_c = reshape(param_data%tmax_allsnow%values, shape(this%tmax_allsnow_c))
+          this%tmax_allrain = this%tmax_allrain_f
+        else
+          this%tmax_allsnow_c = param_data%tmax_allsnow
+          ! this%tmax_allsnow_c = reshape(param_data%tmax_allsnow%values, shape(this%tmax_allsnow_c))
 
-        do j = 1, 12
-          do i = 1, nhru
-            idx1D = (j - 1) * nhru + i
-            this%tmax_allsnow_f(i, j) = c_to_f(param_data%tmax_allsnow%values(idx1D))
+          do j = 1, 12
+            do i = 1, nhru
+              idx1D = (j - 1) * nhru + i
+              this%tmax_allsnow_f(i, j) = c_to_f(param_data%tmax_allsnow%values(idx1D))
 
-            ! TODO: Is tmax_allrain properly allocated here?
-            this%tmax_allrain(i, j) = param_data%tmax_allsnow%values(idx1D) + &
-                                      param_data%tmax_allrain_offset%values(idx1D)
-            this%tmax_allrain_f(i, j) = c_to_f(this%tmax_allrain(i, j))
+              ! TODO: Is tmax_allrain properly allocated here?
+              this%tmax_allrain(i, j) = tmax_allsnow(idx1D) + &
+                                        tmax_allrain_offset(idx1D)
+              this%tmax_allrain_f(i, j) = c_to_f(this%tmax_allrain(i, j))
+            enddo
           enddo
-        enddo
-      endif
+        endif
+      end associate
     end function
 
     function module_name()
@@ -212,76 +222,76 @@ module PRMS_CLIMATEVARS
     !***********************************************************************
     !     Write or read restart file
     !***********************************************************************
-    subroutine climateflow_restart(this, in_out)
-      use PRMS_MODULE, only: Restart_outunit, Restart_inunit ! , Solrad_module
-      use UTILS_PRMS, only: check_restart
-      implicit none
-
-      ! Arguments
-      class(Climateflow), intent(inout) :: this
-      integer(i32), intent(in) :: in_out
-
-      ! Local Variables
-      character(LEN=11) :: module_name
-
-      !***********************************************************************
-      if (In_out == 0) then
-        write(Restart_outunit) MODNAME
-        write(Restart_outunit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-                               this%basin_obs_ppt, this%basin_temp, &
-                               this%basin_orad, this%basin_tmax, this%basin_tmin, &
-                               this%solrad_tmax, this%solrad_tmin, &
-                               this%basin_transp_on, this%basin_potet, &
-                               this%basin_horad, this%basin_swrad
-        write(Restart_outunit) this%tmax_hru
-        write(Restart_outunit) this%tmin_hru
-        write(Restart_outunit) this%newsnow
-        write(Restart_outunit) this%pptmix
-        write(Restart_outunit) this%hru_ppt
-        write(Restart_outunit) this%hru_rain
-        write(Restart_outunit) this%hru_snow
-        write(Restart_outunit) this%prmx
-        write(Restart_outunit) this%tmaxf
-        write(Restart_outunit) this%tminf
-        write(Restart_outunit) this%tavgf
-        write(Restart_outunit) this%tmaxc
-        write(Restart_outunit) this%tminc
-        write(Restart_outunit) this%tavgc
-        write(Restart_outunit) this%transp_on
-        write(Restart_outunit) this%potet
-        write(Restart_outunit) this%swrad
-
-        ! if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) write(Restart_outunit) this%orad_hru
-      else
-        read(Restart_inunit) module_name
-        call check_restart(MODNAME, module_name)
-        read(Restart_inunit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-                              this%basin_obs_ppt, this%basin_temp, &
-                              this%basin_orad, this%basin_tmax, this%basin_tmin, &
-                              this%solrad_tmax, this%solrad_tmin, &
-                              this%basin_transp_on, this%basin_potet, &
-                              this%basin_horad, this%basin_swrad
-        read(Restart_inunit) this%tmax_hru
-        read(Restart_inunit) this%tmin_hru
-        read(Restart_inunit) this%newsnow
-        read(Restart_inunit) this%pptmix
-        read(Restart_inunit) this%hru_ppt
-        read(Restart_inunit) this%hru_rain
-        read(Restart_inunit) this%hru_snow
-        read(Restart_inunit) this%prmx
-        read(Restart_inunit) this%tmaxf
-        read(Restart_inunit) this%tminf
-        read(Restart_inunit) this%tavgf
-        read(Restart_inunit) this%tmaxc
-        read(Restart_inunit) this%tminc
-        read(Restart_inunit) this%tavgc
-        read(Restart_inunit) this%transp_on
-        read(Restart_inunit) this%potet
-        read(Restart_inunit) this%swrad
-
-        ! if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) read(Restart_inunit) this%orad_hru
-      endif
-    end subroutine climateflow_restart
+    ! subroutine climateflow_restart(this, in_out)
+    !   ! use PRMS_MODULE, only: Restart_outunit, Restart_inunit ! , Solrad_module
+    !   ! use UTILS_PRMS, only: check_restart
+    !   implicit none
+    !
+    !   ! Arguments
+    !   class(Climateflow), intent(inout) :: this
+    !   integer(i32), intent(in) :: in_out
+    !
+    !   ! Local Variables
+    !   character(LEN=11) :: module_name
+    !
+    !   !***********************************************************************
+    !   if (In_out == 0) then
+    !     write(Restart_outunit) MODNAME
+    !     write(Restart_outunit) this%basin_ppt, this%basin_rain, this%basin_snow, &
+    !                            this%basin_obs_ppt, this%basin_temp, &
+    !                            this%basin_orad, this%basin_tmax, this%basin_tmin, &
+    !                            this%solrad_tmax, this%solrad_tmin, &
+    !                            this%basin_transp_on, this%basin_potet, &
+    !                            this%basin_horad, this%basin_swrad
+    !     write(Restart_outunit) this%tmax_hru
+    !     write(Restart_outunit) this%tmin_hru
+    !     write(Restart_outunit) this%newsnow
+    !     write(Restart_outunit) this%pptmix
+    !     write(Restart_outunit) this%hru_ppt
+    !     write(Restart_outunit) this%hru_rain
+    !     write(Restart_outunit) this%hru_snow
+    !     write(Restart_outunit) this%prmx
+    !     write(Restart_outunit) this%tmaxf
+    !     write(Restart_outunit) this%tminf
+    !     write(Restart_outunit) this%tavgf
+    !     write(Restart_outunit) this%tmaxc
+    !     write(Restart_outunit) this%tminc
+    !     write(Restart_outunit) this%tavgc
+    !     write(Restart_outunit) this%transp_on
+    !     write(Restart_outunit) this%potet
+    !     write(Restart_outunit) this%swrad
+    !
+    !     ! if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) write(Restart_outunit) this%orad_hru
+    !   else
+    !     read(Restart_inunit) module_name
+    !     call check_restart(MODNAME, module_name)
+    !     read(Restart_inunit) this%basin_ppt, this%basin_rain, this%basin_snow, &
+    !                           this%basin_obs_ppt, this%basin_temp, &
+    !                           this%basin_orad, this%basin_tmax, this%basin_tmin, &
+    !                           this%solrad_tmax, this%solrad_tmin, &
+    !                           this%basin_transp_on, this%basin_potet, &
+    !                           this%basin_horad, this%basin_swrad
+    !     read(Restart_inunit) this%tmax_hru
+    !     read(Restart_inunit) this%tmin_hru
+    !     read(Restart_inunit) this%newsnow
+    !     read(Restart_inunit) this%pptmix
+    !     read(Restart_inunit) this%hru_ppt
+    !     read(Restart_inunit) this%hru_rain
+    !     read(Restart_inunit) this%hru_snow
+    !     read(Restart_inunit) this%prmx
+    !     read(Restart_inunit) this%tmaxf
+    !     read(Restart_inunit) this%tminf
+    !     read(Restart_inunit) this%tavgf
+    !     read(Restart_inunit) this%tmaxc
+    !     read(Restart_inunit) this%tminc
+    !     read(Restart_inunit) this%tavgc
+    !     read(Restart_inunit) this%transp_on
+    !     read(Restart_inunit) this%potet
+    !     read(Restart_inunit) this%swrad
+    !
+    !     ! if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) read(Restart_inunit) this%orad_hru
+    !   endif
+    ! end subroutine climateflow_restart
 
     !***********************************************************************
     !     Computes precipitation form (rain, snow or mix) and depth for each HRU
