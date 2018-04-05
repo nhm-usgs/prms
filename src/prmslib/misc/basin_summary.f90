@@ -10,8 +10,9 @@ module PRMS_BASIN_SUMMARY
     private
     public :: Basin_summary
 
+    character(len=*), parameter :: MODDESC = 'Output Summary by Basin'
     character(len=*), parameter :: MODNAME = 'basin_summary'
-    character(len=*), parameter :: MODVERSION = 'basin_summary.f90 2017-09-29 13:49:00Z'
+    character(len=*), parameter :: MODVERSION = '2017-09-29 13:49:00Z'
 
     type Basin_summary
 
@@ -32,9 +33,9 @@ module PRMS_BASIN_SUMMARY
       integer(i32) :: monthly_flag = 0
       integer(i32) :: yeardays = 0
 
-      integer(i32), private :: start_time(6)
+      ! integer(i32), private :: start_time(6)
         !! Local copy of ctl_data%start_time
-      integer(i32), private :: end_time(6)
+      ! integer(i32), private :: end_time(6)
         !! Local copy of ctl_data%start_time
       real(r64) :: monthdays = 0.0
       real(r64), allocatable :: basin_var_daily(:)
@@ -70,21 +71,12 @@ module PRMS_BASIN_SUMMARY
       module function constructor_Basin_summary(ctl_data, param_data) result(this)
         use Control_class, only: Control
         use Parameters_class, only: Parameters
-        ! use PRMS_MODULE, only: Start_year
-        use UTILS_PRMS, only: PRMS_open_output_file
+        use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
         implicit none
 
         type(Basin_summary) :: this
         class(Control), intent(in) :: ctl_data
         class(Parameters), intent(in) :: param_data
-
-        ! Local variables
-        integer(i32) :: basin_out_flag
-          !! Local copy of basinOutON_OFF
-        integer(i32) :: basin_out_freq
-          !! Local copy of basinOut_freq
-        integer(i32) :: basin_out_vars
-          !! Local copy of basinOutVars
 
         integer(i32) :: ios
         integer(i32) :: ierr = 0
@@ -93,92 +85,96 @@ module PRMS_BASIN_SUMMARY
         character(len=MAXFILE_LENGTH) :: fileName
 
         ! ----------------------------------------------------------------------
-        this%start_time = ctl_data%start_time%values(:)
-        this%end_time = ctl_data%end_time%values(:)
+        associate(print_debug => ctl_data%print_debug%values(1), &
+                  start_time => ctl_data%start_time%values, &
+                  end_time => ctl_data%end_time%values, &
+                  basinOutVars => ctl_data%basinOutVars%values(1), &
+                  basinOut_freq => ctl_data%basinOut_freq%values(1))
 
-        basin_out_vars = ctl_data%basinOutVars%values(1)
+          if (print_debug > -2) then
+            ! Output module and version information
+            call print_module_info(MODNAME, MODDESC, MODVERSION)
+          endif
 
-        ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
-        basin_out_freq = ctl_data%basinOut_freq%values(1)
+          if (basinOutVars == 0) then
+              if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
+                  print *, 'ERROR, basin_summary requested with basinOutVars equal 0'
+                  ! Inputerror_flag = 1
+                  STOP
+              endif
+          endif
 
-        if (basin_out_vars == 0) then
-            if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
-                print *, 'ERROR, basin_summary requested with basinOutVars equal 0'
-                ! Inputerror_flag = 1
-                STOP
+          ! Initialize everything
+          this%begin_results = .true.
+          this%begyr = start_time(1)
+          if (ctl_data%prms_warmup%values(1) > 0) this%begin_results = .false.
+
+          this%begyr = this%begyr + ctl_data%prms_warmup%values(1)
+          this%lastyear = this%begyr
+
+          write (this%output_fmt, 9001) basinOutVars
+
+          ! The header for output - common to all frequencies
+          write(this%output_fmt2, 9002) basinOutVars
+
+          ! Always allocate and intialize the daily array
+          allocate(this%basin_var_daily(basinOutVars))
+          this%basin_var_daily = 0.0D0
+
+          if (ANY([DAILY, DAILY_MONTHLY]==basinOut_freq)) then
+            this%daily_flag = 1
+
+            fileName = ctl_data%basinOutBaseFileName%values(1)%s // '.csv'
+
+            call PRMS_open_output_file(this%dailyunit, fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in basin_summary, daily'
+
+            write(this%dailyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basinOutVars)
+          endif
+
+          ! Allocate/intialize monthly array for month-based frequencies
+          if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==basinOut_freq)) then
+            this%monthly_flag = 1
+
+            allocate(this%basin_var_monthly(basinOutVars))
+            this%basin_var_monthly = 0.0D0
+
+            if (basinOut_freq == MEAN_MONTHLY) then
+                fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanmonthly.csv'
+            else
+                fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_monthly.csv'
             endif
-        endif
 
-        ! Initialize everything
-        this%begin_results = .true.
-        this%begyr = this%start_time(1)
-        if (ctl_data%prms_warmup%values(1) > 0) this%begin_results = .false.
+            call PRMS_open_output_file(this%monthlyunit, fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in basin_summary, monthly or meanmonthly'
 
-        this%begyr = this%begyr + ctl_data%prms_warmup%values(1)
-        this%lastyear = this%begyr
-
-        write (this%output_fmt, 9001) basin_out_vars
-
-        ! The header for output - common to all frequencies
-        write(this%output_fmt2, 9002) basin_out_vars
-
-        ! Always allocate and intialize the daily array
-        allocate(this%basin_var_daily(basin_out_vars))
-        this%basin_var_daily = 0.0D0
-
-        if (ANY([DAILY, DAILY_MONTHLY]==basin_out_freq)) then
-          this%daily_flag = 1
-
-          fileName = ctl_data%basinOutBaseFileName%values(1)%s // '.csv'
-
-          call PRMS_open_output_file(this%dailyunit, fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in basin_summary, daily'
-
-          write(this%dailyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        endif
-
-        ! Allocate/intialize monthly array for month-based frequencies
-        if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==basin_out_freq)) then
-          this%monthly_flag = 1
-
-          allocate(this%basin_var_monthly(basin_out_vars))
-          this%basin_var_monthly = 0.0D0
-
-          if (basin_out_freq == MEAN_MONTHLY) then
-              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanmonthly.csv'
-          else
-              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_monthly.csv'
+            write (this%monthlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basinOutVars)
           endif
 
-          call PRMS_open_output_file(this%monthlyunit, fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in basin_summary, monthly or meanmonthly'
+          ! Allocate/initialize the yearly array for year-based frequencies
+          if (ANY([MEAN_YEARLY, YEARLY]==basinOut_freq)) then
+            allocate(this%basin_var_yearly(basinOutVars))
+            this%basin_var_yearly = 0.0D0
 
-          write (this%monthlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        endif
+            write(this%output_fmt3, 9003) basinOutVars
 
-        ! Allocate/initialize the yearly array for year-based frequencies
-        if (ANY([MEAN_YEARLY, YEARLY]==basin_out_freq)) then
-          allocate(this%basin_var_yearly(basin_out_vars))
-          this%basin_var_yearly = 0.0D0
+            if (basinOut_freq == MEAN_YEARLY) then
+              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanyearly.csv'
+            elseif (basinOut_freq == YEARLY) then
+              fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_yearly.csv'
+            endif
 
-          write(this%output_fmt3, 9003) basin_out_vars
+            call PRMS_open_output_file(this%yearlyunit, fileName, 'xxx', 0, ios)
+            if (ios /= 0) STOP 'in basin_summary, mean_yearly or yearly'
 
-          if (basin_out_freq == MEAN_YEARLY) then
-            fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanyearly.csv'
-          elseif (basin_out_freq == YEARLY) then
-            fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_yearly.csv'
+            ! Write the header to the file
+            write(this%yearlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basinOutVars)
           endif
 
-          call PRMS_open_output_file(this%yearlyunit, fileName, 'xxx', 0, ios)
-          if (ios /= 0) STOP 'in basin_summary, mean_yearly or yearly'
-
-          ! Write the header to the file
-          write(this%yearlyunit, this%output_fmt2) (ctl_data%basinOutVar_names%values(jj)%s, jj=1, basin_out_vars)
-        endif
-
-        9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
-        9002 FORMAT ('("Date"', I6, '('',''A))')
-        9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
+          9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
+          9002 FORMAT ('("Date"', I6, '('',''A))')
+          9003 FORMAT ('(I4,', I6, '('',''ES10.3))')
+        end associate
       end function
 
 
