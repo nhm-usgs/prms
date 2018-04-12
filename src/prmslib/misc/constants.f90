@@ -49,32 +49,29 @@ module prms_constants
     integer(i32), parameter :: YEARLY = 6
 
     ! Model modes
-    integer(i32), parameter :: PRMS = 1
-    integer(i32), parameter :: WRITE_CLIMATE = 4
-    integer(i32), parameter :: CLIMATE = 6
-    integer(i32), parameter :: POTET = 7
-    integer(i32), parameter :: TRANSPIRE = 8
-    integer(i32), parameter :: FROST = 9
-    integer(i32), parameter :: CONVERT = 10
-    integer(i32), parameter :: DOCUMENTATION = 99
+    enum, bind(C)
+      enumerator :: GSFLOW=0, PRMS=1, WRITE_CLIMATE=4, CLIMATE=6, POTET=7, &
+                    TRANSPIRE=8, FROST=9, CONVERT=10, DOCUMENTATION=99
+    end enum
 
     ! Hemisphere constants
-    integer(i32), parameter :: NORTHERN = 0
-    integer(i32), parameter :: SOUTHERN = 0
+    enum, bind(C)
+      enumerator :: NORTHERN, SOUTHERN
+    end enum
 
     ! Date time index constants
-    integer(i32), parameter :: YEAR = 1
-    integer(i32), parameter :: MONTH = 2
-    integer(i32), parameter :: DAY = 3
-    integer(i32), parameter :: HOUR = 4
-    integer(i32), parameter :: MINUTE = 5
-    integer(i32), parameter :: SECOND = 6
+    enum, bind(c)
+      enumerator :: YEAR=1, MONTH=2, DAY=3, HOUR=4, MINUTE=5, SECOND=6
+    end enum
 
     ! Temperature units
-    integer(i32), parameter :: FAHRENHEIT = 0
-    integer(i32), parameter :: CELSIUS = 1
+    enum, bind(C)
+      enumerator :: FAHRENHEIT, CELSIUS
+    end enum
 
     ! Precipitation units
-    integer(i32), parameter :: INCHES = 0
-    integer(i32), parameter :: MM = 1
+    enum, bind(C)
+      enumerator :: INCHES, MM
+    end enum
+
 end module prms_constants
