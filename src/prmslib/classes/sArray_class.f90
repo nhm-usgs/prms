@@ -124,7 +124,17 @@ contains
         integer(i32) :: istat
         integer(i32) :: N
 
+        ! ####
+        ! poi_gage_id
+        ! 1
+        ! npoigages
+        ! 165
+        ! 4
+        ! 07331300
+
+        ! Get the number of dimension names
         read(iUnit, *) N
+        call this%allocate(N)
 
         ! A hack to handle control file sArray's and
         ! parameter file sArray's of dimension names
@@ -135,8 +145,6 @@ contains
             read(iUnit, *) ii
           endif
         end if
-
-        call this%allocate(N)
 
         do ii = 1, N
             call this%values(ii)%read(iUnit)
