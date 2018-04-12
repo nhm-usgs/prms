@@ -4,6 +4,7 @@ contains
 
   !====================================================================!
   module function constructor_Control(control_filename) result(this)
+    use iso_fortran_env
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -16,11 +17,31 @@ contains
       call print_module_info(MODNAME, MODDESC, MODVERSION)
     ! endif
 
+    ! Initialize certain dimensions with default values
+    this%ndays = iScalar(366)
+    this%one = iScalar(1)
+    this%nobs = iScalar(0)
+    this%nrain = iScalar(0)
+    this%ntemp = iScalar(0)
+
+    ! Initialize defaults for some control file parameters
+    this%prms_warmup = iScalar(0)
+
     this%control_filename = control_filename
 
     call this%read()
 
     this%model_output_unit = this%open_model_output_file()
+
+    if (this%save_vars_to_file%values(1) == 1) then
+      this%restart_output_unit = this%open_var_save_file()
+    endif
+
+    ! TODO: if print_debug > -2 output control file to model_output_file
+    !                           model_output_file to stdout
+    !       if print_debug > -1 output control file to stdout
+    !                           output var_init_file to stdout (if used)
+    !                           output var_save_file to stdout (if used)
   end function
   !====================================================================!
 
@@ -81,7 +102,7 @@ contains
           case('ncascade')
             this%ncascade%name = last
             call this%ncascade%read(iUnit)
-            line = line + this%ncascade%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ncascdgw')
             this%ncascdgw%name = last
             call this%ncascdgw%read(iUnit)
@@ -93,7 +114,7 @@ contains
           case('ndays')
             this%ndays%name = last
             call this%ndays%read(iUnit)
-            line = line + this%ndays%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ndepl')
             this%ndepl%name = last
             call this%ndepl%read(iUnit)
@@ -145,11 +166,11 @@ contains
           case('nmonths')
             this%nmonths%name = last
             call this%nmonths%read(iUnit)
-            line = line + this%nmonths%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nobs')
             this%nobs%name = last
             call this%nobs%read(iUnit)
-            line = line + this%nobs%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('npoigages')
             this%npoigages%name = last
             call this%npoigages%read(iUnit)
@@ -157,7 +178,7 @@ contains
           case('nrain')
             this%nrain%name = last
             call this%nrain%read(iUnit)
-            line = line + this%nrain%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nratetbl')
             this%nratetbl%name = last
             call this%nratetbl%read(iUnit)
@@ -185,7 +206,7 @@ contains
           case('ntemp')
             this%ntemp%name = last
             call this%ntemp%read(iUnit)
-            line = line + this%ntemp%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nwateruse')
             this%nwateruse%name = last
             call this%nwateruse%read(iUnit)
@@ -197,7 +218,7 @@ contains
           case('one')
             this%one%name = last
             call this%one%read(iUnit)
-            line = line + this%one%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
 
 
           ! All other control file parameters
@@ -252,11 +273,11 @@ contains
           case('cbh_binary_flag')
             this%cbh_binary_flag%name = last
             call this%cbh_binary_flag%read(iUnit)
-            line = line + this%cbh_binary_flag%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('cbh_check_flag')
             this%cbh_check_flag%name = last
             call this%cbh_check_flag%read(iUnit)
-            line = line + this%cbh_check_flag%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('consumed_transferON_OFF')
             this%consumed_transferON_OFF%name = last
             call this%consumed_transferON_OFF%read(iUnit)
@@ -620,11 +641,11 @@ contains
           case('print_debug')
             this%print_debug%name = last
             call this%print_debug%read(iUnit)
-            line = line + this%print_debug%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('prms_warmup')
             this%prms_warmup%name = last
             call this%prms_warmup%read(iUnit)
-            line = line + this%prms_warmup%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('radtrncf_dynamic')
             this%radtrncf_dynamic%name = last
             call this%radtrncf_dynamic%read(iUnit)
@@ -822,6 +843,7 @@ contains
     1   format(a)
   end subroutine
 
+
   module function open_model_output_file(this)
     !! Opens the model_output_file, if present, and sets this%model_output_unit
     use m_errors, only: fErr, IO_OPEN
@@ -842,4 +864,28 @@ contains
       open_model_output_file = iunit
     endif
   end function
+
+
+  module function open_var_save_file(this)
+    !! Open the var_save_file (aka restart file)
+    use m_errors, only: fErr, IO_OPEN
+    implicit none
+
+    integer(i32) :: open_var_save_file
+    class(Control), intent(inout) :: this
+
+    integer(i32) :: istat
+    integer(i32) :: iunit
+
+    ! --------------------------------------------------------------------------
+    if (allocated(this%var_save_file%values)) then
+      open(newunit=iunit, file=this%var_save_file%values(1)%s, status='replace', &
+           form='unformatted', access='stream', iostat=istat)
+
+      call fErr(istat, this%var_save_file%values(1)%s, IO_OPEN)
+
+      open_var_save_file = iunit
+    endif
+  end function
+
 end submodule
