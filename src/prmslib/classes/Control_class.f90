@@ -4,6 +4,7 @@ module Control_class
   use rArray_class, only: rArray
   use iArray_class, only: iArray
   use sArray_class, only: sArray
+  use iScalar_class, only: iScalar
   implicit none
 
   private
@@ -15,10 +16,10 @@ module Control_class
 
   type Control
     ! Allowed dimensions
-    type(iArray) :: ncascade
+    type(iScalar) :: ncascade
     type(iArray) :: ncascdgw
     type(iArray) :: nconsumed
-    type(iArray) :: ndays
+    type(iScalar) :: ndays
     type(iArray) :: ndepl
     type(iArray) :: ndeplval
     type(iArray) :: nevap
@@ -32,19 +33,19 @@ module Control_class
     type(iArray) :: nlakeelev
     type(iArray) :: nlapse
     type(iArray) :: nmonths
-    type(iArray) :: nobs
+    type(iScalar) :: nobs
     type(iArray) :: npoigages
-    type(iArray) :: nrain
+    type(iScalar) :: nrain
     type(iArray) :: nratetbl
     type(iArray) :: nsegment
     type(iArray) :: nsnow
     type(iArray) :: nsol
     type(iArray) :: nssr
     type(iArray) :: nsub
-    type(iArray) :: ntemp
+    type(iScalar) :: ntemp
     type(iArray) :: nwateruse
     type(iArray) :: nwind
-    type(iArray) :: one
+    type(iScalar) :: one
 
     ! All other control file parameters
     type(iArray) :: aniOutON_OFF
@@ -59,8 +60,8 @@ module Control_class
     type(sArray) :: capillary_module
     type(iArray) :: cascade_flag
     type(iArray) :: cascadegw_flag
-    type(iArray) :: cbh_binary_flag
-    type(iArray) :: cbh_check_flag
+    type(iScalar) :: cbh_binary_flag
+    type(iScalar) :: cbh_check_flag
     type(iArray) :: consumed_transferON_OFF
     type(sArray) :: covden_sum_dynamic
     type(sArray) :: covden_win_dynamic
@@ -151,8 +152,8 @@ module Control_class
     type(sArray) :: potet_day
     type(sArray) :: precip_day
     type(sArray) :: precip_module
-    type(iArray) :: print_debug
-    type(iArray) :: prms_warmup
+    type(iScalar) :: print_debug
+    type(iScalar) :: prms_warmup
     type(sArray) :: radtrncf_dynamic
     type(iArray) :: rpt_days
     type(iArray) :: save_vars_to_file
@@ -201,12 +202,18 @@ module Control_class
     ! Non-control file variables
     integer(i32) :: model_output_unit
       !! File unit for opened model_output_file
+    integer(i32) :: restart_output_unit
+      !! File unit to write restart information to
+    integer(i32) :: restart_input_unit
+      !! File unit to read restart information from
+
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
 
-  contains
-    procedure, public :: read => read_Control
-    procedure, private :: open_model_output_file
+    contains
+      procedure, public :: read => read_Control
+      procedure, private :: open_model_output_file
+      procedure, private :: open_var_save_file
   end type
 
   interface Control
@@ -233,4 +240,14 @@ module Control_class
         !! Control class
     end function
   end interface
+
+  interface
+    module function open_var_save_file(this)
+      !! Open the var_save_file (aka restart file)
+      integer(i32) :: open_var_save_file
+      class(Control), intent(inout) :: this
+        !! Control class
+    end function
+  end interface
+
 end module
