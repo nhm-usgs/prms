@@ -16,7 +16,7 @@ module iVariable_class
     type, extends(iArray) :: iVariable
         integer(i32) :: min_value
         integer(i32) :: max_value
-        integer(i32) :: default_value
+        ! integer(i32) :: default_value
 
         type(sArray) :: dim_names
         type(sArray) :: module_names
