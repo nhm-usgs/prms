@@ -15,6 +15,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/dVariable_class.f90"
 #    "${CMAKE_CURRENT_LIST_DIR}/dimensions_mod.f90"
     "${CMAKE_CURRENT_LIST_DIR}/iArray_class.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/iScalar_class.f90"
     "${CMAKE_CURRENT_LIST_DIR}/iVariable_class.f90"
 #    "${CMAKE_CURRENT_LIST_DIR}/m_kinds.f90"
 #    "${CMAKE_CURRENT_LIST_DIR}/parameter_mod.f90"
