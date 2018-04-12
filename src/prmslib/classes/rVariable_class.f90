@@ -37,12 +37,12 @@ module rVariable_class
         procedure, public, pass(this) :: read => read_rVariable
           !! Read the class from a file
 
-        procedure, private, pass(rhs) :: get_real_0D
-        procedure, private, pass(rhs) :: get_real_1D
-        procedure, private, pass(rhs) :: get_real_2D
+        ! procedure, private, pass(rhs) :: get_real_0D
+        ! procedure, private, pass(rhs) :: get_real_1D
+        ! procedure, private, pass(rhs) :: get_real_2D
         ! procedure, pass(this), public :: rval => fget_t_real
 
-        generic, public :: assignment(=) => get_real_0D, get_real_1D, get_real_2D
+        ! generic, public :: assignment(=) => get_real_0D, get_real_1D, get_real_2D
     end type
 
 contains
@@ -80,29 +80,29 @@ contains
   end subroutine
 
   !====================================================================!
-  subroutine get_real_0D(lhs, rhs)
-    real(r32), intent(inout) :: lhs
-    class(rVariable), intent(in) :: rhs
-
-    lhs = rhs%values(1)
-  end subroutine
-
-  subroutine get_real_1D(lhs, rhs)
-    real(r32), intent(inout) :: lhs(:)
-    class(rVariable), intent(in) :: rhs
-
-    if (rhs%size() == 1) then
-      lhs = reshape(rhs%values(:), shape(lhs), PAD=rhs%values(:))
-    else
-      lhs = rhs%values(:)
-    endif
-  end subroutine
-
-  subroutine get_real_2D(lhs, rhs)
-    real(r32), intent(inout) :: lhs(:, :)
-    class(rVariable), intent(in) :: rhs
-
-    lhs = reshape(rhs%values(:), shape(lhs), PAD=rhs%values(:))
-  end subroutine
+  ! subroutine get_real_0D(lhs, rhs)
+  !   real(r32), intent(inout) :: lhs
+  !   class(rVariable), intent(in) :: rhs
+  !
+  !   lhs = rhs%values(1)
+  ! end subroutine
+  !
+  ! subroutine get_real_1D(lhs, rhs)
+  !   real(r32), intent(inout) :: lhs(:)
+  !   class(rVariable), intent(in) :: rhs
+  !
+  !   if (rhs%size() == 1) then
+  !     lhs = reshape(rhs%values(:), shape(lhs), PAD=rhs%values(:))
+  !   else
+  !     lhs = rhs%values(:)
+  !   endif
+  ! end subroutine
+  !
+  ! subroutine get_real_2D(lhs, rhs)
+  !   real(r32), intent(inout) :: lhs(:, :)
+  !   class(rVariable), intent(in) :: rhs
+  !
+  !   lhs = reshape(rhs%values(:), shape(lhs), PAD=rhs%values(:))
+  ! end subroutine
 
 end module
