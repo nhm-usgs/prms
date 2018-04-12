@@ -808,7 +808,7 @@
         <default>1</default>
         <type>1</type>
         <numvals>1</numvals>
-        <desc>empty</desc>
+        <desc>Number of years to run simulation before recording results</desc>
     </control_param>
     <control_param name="nsubOutON_OFF">
         <default>0</default>
