@@ -10,7 +10,7 @@ contains
     class(Control), intent(in) :: Control_data
 
     ! --------------------------------------------------------------------------
-    associate(print_debug => Control_data%print_debug%values(1), &
+    associate(print_debug => Control_data%print_debug%value, &
               param_file => Control_data%param_file%values)
 
       if (print_debug > -2) then
@@ -19,6 +19,9 @@ contains
       endif
 
       this%parameter_filenames = Control_data%param_file
+
+      ! TODO: if print_debug > -1 output parameter file to stdout
+      !       if print_debug > -2 output parameter file to model_output_file
     end associate
 
     call this%read()
@@ -50,6 +53,10 @@ contains
     logical :: go
 
     integer(i32), parameter :: ENTRY_OFFSET = 2
+    integer(i32) :: ii
+      !! counter variable
+    integer(i32) :: N
+      !! used for getting declared number of dimension names or parameter values
     integer(i32) :: k
     integer(i32) :: numfiles
 
@@ -60,7 +67,6 @@ contains
 
     ! Read all parameters and verify
     numfiles = size(this%parameter_filenames%values)
-    ! Read_parameters = 0
 
     do k = 1, numfiles
       ! Open parameter file
@@ -920,10 +926,45 @@ contains
               call this%z_div%read(iUnit)
               line = line + this%z_div%size() + this%z_div%dim_names%size() + ENTRY_OFFSET
             case default
-              ! pass
+              ! ####
+              ! print_freq
+              ! 1
+              ! one
+              ! 1
+              ! 1
+              ! 0
+              ! ####
+              write(output_unit, *) 'WARNING: Skipping parameter, ', last
+
+              ! Get the number of dimension names
+              read(iUnit, *) N
+              line = line + 1
+
+              do ii=1, N
+                read(iUnit, '(A)')  ! Skip the dimension names
+                line = line + 1
+              enddo
+
+              read(iUnit, *) N  ! Get the number of entries for parameter
+              line = line + 1
+              read(iUnit, *)    ! Skip the datatype
+              line = line + 1
+
+              do ii=1, N
+                read(iUnit, *)  ! Skip the parameter entries
+
+                ! if (istat /= 0) then
+                !   inquire(UNIT=iUnit, NAME=filename)
+                !   write(output_unit, *) "ERROR: Reading from file: " // trim(filename)
+                !   close(iUnit)
+                !   stop
+                ! endif
+
+                line = line + 1
+              enddo
           end select
         else
-          call eMsg("Could not read from file " // this%parameter_filenames%values(k)%s // &
+          call eMsg(" Could not read from file " // this%parameter_filenames%values(k)%s // &
                     " for entry " // last // " at line " // str(line))
         endif
 
