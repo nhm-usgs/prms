@@ -6,7 +6,7 @@ program prms6
   use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
   use Parameters_class, only: Parameters
-  use PRMS_SIMULATION, only: Simulation
+  use Simulation_class, only: Simulation
   implicit none
 
   character(len=:), allocatable :: control_filename
@@ -42,11 +42,18 @@ program prms6
 
   Control_data = Control(control_filename)
 
+  ! TODO: Other stuff to consider
+  ! - variable: kkiter; Current iteration in GSFLOW simulation (when model_mode=GSFLOW)
+  ! - code behavior when init_vars_from_file==1
+  ! * how to handle having different combinations of physics modules
+
+
   ! TODO: How to handle allocation and reading of parameter variables depending
   !       on which physics modules are selected?
   Parameter_data = Parameters(Control_data)
 
   ! TODO: Need routines for setting up output variables
+
 
   ! Initialize the simulation object
   model_simulation = Simulation(Control_data, Parameter_data)
@@ -57,13 +64,19 @@ program prms6
   ! TODO: Open, position, and read any ancillary data including:
   !       CBH files,
 
+  ! Cleanup everything
+  call model_simulation%cleanup(Control_data)
+
   call cpu_time(time=end_ct)
   call system_clock(count=end_rtc)
-  delta_rtc_sec = real(end_rtc - start_rtc, r64) / real(rate_rtc, r64)
 
-  write(output_unit, fmt='(a)') repeat('-', 72)
-  write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed system clock:', delta_rtc_sec, 'seconds.'
-  write(output_unit, fmt='(a, 1x, f6.4, 1x, a)') 'Elapsed cpu time:', end_ct - start_ct, 'seconds.'
+  if (Control_data%print_debug%value > -1) then
+    delta_rtc_sec = real(end_rtc - start_rtc, r64) / real(rate_rtc, r64)
+
+    write(output_unit, fmt='(a)') repeat('-', 72)
+    write(output_unit, fmt='(a, 1x, f16.4, 1x, a)') 'Elapsed system clock:', delta_rtc_sec, 'seconds.'
+    write(output_unit, fmt='(a, 1x, f16.4, 1x, a)') 'Elapsed cpu time:', end_ct - start_ct, 'seconds.'
+  endif
 contains
 
   !***********************************************************************
