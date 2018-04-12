@@ -12,11 +12,9 @@ module iArray_class
   use m_allocate, only: allocate
   use m_deallocate, only: deallocate
   use m_strings, only: str
-
   implicit none
 
   private
-
   public :: iArray
 
   type, extends(Abc) :: iArray
@@ -25,6 +23,8 @@ module iArray_class
       !! The values of the array
     integer(i32), allocatable :: dims(:)
       !! Size(s) that values should represent. e.g. If values represents 2D data, dims might be [10, 15]
+    integer(i32) :: default_value
+      !! Default value to use for un-initialized array (optional)
 
     contains
       generic, public :: allocate => allocate_iArray_i1_, allocate_iArray_i1D_
