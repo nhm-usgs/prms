@@ -88,20 +88,20 @@ contains
       ! Set tmax_allrain in units of the input values
       ! tmax_allsnow must be in the units of the input values
       ! TODO: FIX the 2D = 1D stuff in here.
-      if (param_data%temp_units%values(1) == 0) then
+      if (param_data%temp_units%values(1) == FAHRENHEIT) then
         this%tmax_allsnow_f = reshape(tmax_allsnow, shape(this%tmax_allsnow_f))
 
         do j = 1, 12
           do i = 1, nhru
             idx1D = (j - 1) * nhru + i
-            this%tmax_allrain_f(i, j) = tmax_allsnow(idx1D) + &
-                                        tmax_allrain_offset(idx1D)
+            this%tmax_allrain_f(i, j) = tmax_allsnow(idx1D) + tmax_allrain_offset(idx1D)
             this%tmax_allsnow_c(i, j) = f_to_c(tmax_allsnow(idx1D))
           enddo
         enddo
 
         this%tmax_allrain = this%tmax_allrain_f
       else
+        ! Celsius
         this%tmax_allsnow_c = reshape(tmax_allsnow, shape(this%tmax_allsnow_c))
 
         do j = 1, 12

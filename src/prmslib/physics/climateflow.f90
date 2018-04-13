@@ -3,6 +3,7 @@
 !***********************************************************************
 module PRMS_CLIMATEVARS
   use variableKind
+  use prms_constants, only: FAHRENHEIT, CELSIUS, INCHES, MM
   implicit none
 
   private
