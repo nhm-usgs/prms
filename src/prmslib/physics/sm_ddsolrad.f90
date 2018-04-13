@@ -3,7 +3,6 @@ contains
   !***********************************************************************
   ! Ddsolrad constructor
   module function constructor_Ddsolrad(ctl_data) result(this)
-    ! use Control_class, only: Control
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -22,13 +21,6 @@ contains
 
 
   module subroutine run_Ddsolrad(this, ctl_data, param_data, model_time, solt, climate, model_basin)
-    ! use Control_class, only: Control
-    ! use Parameters_class, only: Parameters
-    ! use PRMS_BASIN, only: Basin
-    ! use PRMS_CLIMATEVARS, only: Climateflow
-    ! use PRMS_SOLTAB, only: Soltab
-    ! use PRMS_SET_TIME, only: Time_t
-
     implicit none
 
     class(Ddsolrad), intent(in) :: this
@@ -38,7 +30,6 @@ contains
     type(Soltab), intent(in) :: solt
     type(Climateflow), intent(inout) :: climate
     type(Basin), intent(inout) :: model_basin
-
 
     ! Functions
     INTRINSIC INT, FLOAT, DBLE, SNGL

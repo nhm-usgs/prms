@@ -4,8 +4,6 @@ contains
   !***********************************************************************
   ! Time_t constructor
   module function constructor_Time(ctl_data, model_basin) result(this)
-    ! use Control_class, only: Control
-    ! use PRMS_BASIN, only: Basin
     use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                               HOUR_PER_DAY, MIN_PER_HOUR
     use UTILS_PRMS, only: print_module_info

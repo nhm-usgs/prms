@@ -66,11 +66,6 @@ contains
   end function
 
   module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
-    ! use PRMS_BASIN, only: Basin
-    ! use Control_class, only: Control
-    ! use Parameters_class, only: Parameters
-    ! use PRMS_CLIMATEVARS, only: Climateflow
-    ! use PRMS_SET_TIME, only: Time_t
     use prms_constants, only: MM2INCH
     implicit none
 

@@ -26,8 +26,6 @@ MODULE PRMS_NHRU_SUMMARY
     integer(i32) :: begyr
     integer(i32) :: lastyear
     integer(i32), allocatable :: dailyunit(:)
-    ! integer(i32), allocatable :: nc_vars(:)
-    ! integer(i32), allocatable :: nhru_var_type(:)
     real(r32), allocatable :: nhru_var_daily(:, :)
     real(r64), allocatable :: nhru_var_dble(:, :)
 
@@ -46,11 +44,6 @@ MODULE PRMS_NHRU_SUMMARY
     real(r64), allocatable :: nhru_var_monthly(:, :)
     real(r64), allocatable :: nhru_var_yearly(:, :)
 
-    ! integer(i32), private :: start_time(6)
-      !! Local copy of ctl_data%start_time
-    ! integer(i32), private :: end_time(6)
-      !! Local copy of ctl_data%start_time
-
     contains
       procedure, public :: run => run_Nhru_summary
       procedure, nopass, public :: module_name
@@ -62,9 +55,6 @@ MODULE PRMS_NHRU_SUMMARY
   interface Nhru_summary
     !! Nhru_summary constructor
     module function constructor_Nhru_summary(ctl_data, param_data) result(this)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-
       type(Nhru_summary) :: this
         !! Nhru_summary class
       type(Control), intent(in) :: ctl_data
@@ -76,11 +66,6 @@ MODULE PRMS_NHRU_SUMMARY
 
   interface
     module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, climate)
-      ! use Control_class, only: Control
-      ! use PRMS_SET_TIME, only: Time_t
-      ! use PRMS_BASIN, only: Basin
-      ! use PRMS_CLIMATEVARS, only: Climateflow
-
       class(Nhru_summary), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Time_t), intent(in) :: model_time
