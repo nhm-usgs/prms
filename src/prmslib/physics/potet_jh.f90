@@ -27,8 +27,6 @@ module PRMS_POTET_JH
   interface Potet_jh
     !! Potet_jh constructor
     module function constructor_Potet_jh(ctl_data) result(this)
-      ! use Control_class, only: Control
-
       type(Potet_jh) :: this
         !! Poteh_jh class
       type(Control), intent(in) :: ctl_data
@@ -38,12 +36,6 @@ module PRMS_POTET_JH
 
   interface
     module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-      ! use PRMS_SET_TIME, only: Time_t
-      ! use PRMS_BASIN, only: Basin
-      ! use PRMS_CLIMATEVARS, only: Climateflow
-
       class(Potet_jh), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
