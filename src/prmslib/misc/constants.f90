@@ -74,4 +74,8 @@ module prms_constants
       enumerator :: INCHES, MM
     end enum
 
+    ! hru_type
+    enum, bind(C)
+      enumerator :: INACTIVE=0, LAND=1, LAKE=2, SWALE=3
+    end enum
 end module prms_constants
