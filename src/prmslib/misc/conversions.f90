@@ -6,30 +6,32 @@ module conversions_mod
     !***********************************************************************
     ! Convert Fahrenheit to Celsius
     !***********************************************************************
-    real function f_to_c(Temp)
+    pure elemental function f_to_c(temperature) result(res)
       implicit none
 
       ! Arguments
-      real(r32), intent(in) :: Temp
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
         !! Temperature in Fahrenheit
 
       !*******************************************************************
-      f_to_c = (Temp - 32.0) / 1.8
-    end function f_to_c
+      res = (temperature - 32.0) / 1.8
+    end function
 
     !***********************************************************************
     ! Convert Celsius to Fahrenheit
     !***********************************************************************
-    real function c_to_f(Temp)
+    pure elemental function c_to_f(temperature) result(res)
       implicit none
 
       ! Arguments
-      real(r32), intent(in) :: Temp
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
         !! Temperature in Celsius
 
       !*******************************************************************
-      c_to_f = Temp * 1.8 + 32.0
-    end function c_to_f
+      res = temperature * 1.8 + 32.0
+    end function
 
     !***********************************************************************
     ! Compute saturation vapor pressure over water in millibars
@@ -38,44 +40,43 @@ module conversions_mod
     ! Flatau, P.j., Walko, R.L., Cotton, W.R., 1992, Polynomial Fits to
     !   saturation vapor pressure: Jornal of Applied Meteorology, v. 31, p. 1507-1513
     !***********************************************************************
-    real function sat_vapor_press_poly(Tempc)
+    pure elemental function sat_vapor_press_poly(temp_c) result(res)
       implicit none
 
       ! Arguments
-      real(r32), intent(in) :: Tempc
+      real(r32) :: res
+      real(r32), intent(in) :: temp_c
         !! Temperature in degree Celsius
 
       !*******************************************************************
-      sat_vapor_press_poly = 6.11176750 + 0.443986062 * Tempc + &
-                             0.0143053301 * Tempc**2 + &
-                             0.265027242E-03 * Tempc**3 + &
-                             0.302246994E-05 * Tempc**4 + &
-                             0.203886313E-07 * Tempc**5 + &
-                             0.638780966E-10 * Tempc**6
+      res = 6.11176750 + 0.443986062 * temp_c + 0.0143053301 * temp_c**2 + &
+            0.265027242E-03 * temp_c**3 + 0.302246994E-05 * temp_c**4 + &
+            0.203886313E-07 * temp_c**5 + 0.638780966E-10 * temp_c**6
       ! Mastin documentation for potet_dpm
-      !      sat_vapor_press_poly = 23.38*exp(18.1-5303.3/(Tempc+273.0))
+      !      sat_vapor_press_poly = 23.38*exp(18.1-5303.3/(temp_c+273.0))
       ! Mastin documentation for param_leaf-loss.aml
-      !      sat_vapor_press_poly = 6.1078*EXP(17.269*Tempc/(237.30D0+Tempc))
+      !      sat_vapor_press_poly = 6.1078*EXP(17.269*temp_c/(237.30D0+temp_c))
       ! Buck Research Manual (1996)
-      !      sat_vapor_press_poly = 6.1121D0*EXP((18.678D0-Tempc/234.5D0)*Tempc/(257.14+Tempc))
+      !      sat_vapor_press_poly = 6.1121D0*EXP((18.678D0-temp_c/234.5D0)*temp_c/(257.14+temp_c))
       ! WMO 2008, CIMO Guide
-      !      sat_vapor_press_poly = 6.112*EXP(17.62*Tempc/(243.12+Tempc))
+      !      sat_vapor_press_poly = 6.112*EXP(17.62*temp_c/(243.12+temp_c))
       ! Irmak and others (2012), equation 12
-      !      sat_vapor_press_poly = 0.6108*EXP(17.27*Tempc/(237.3+Tempc))
-    end function sat_vapor_press_poly
+      !      sat_vapor_press_poly = 0.6108*EXP(17.27*temp_c/(237.3+temp_c))
+    end function
 
     !***********************************************************************
     ! Compute saturation vapor pressure over water
     ! Irmak and others (2012), equation 12
     !***********************************************************************
-    real function sat_vapor_press(Tempc)
+    pure elemental function sat_vapor_press(temp_c) result(res)
       implicit none
 
       ! Arguments
-      real(r32), intent(in) :: Tempc
+      real(r32) :: res
+      real(r32), intent(in) :: temp_c
         !! Temperature in degree Celsius
 
       !*******************************************************************
-      sat_vapor_press = 6.1078 * EXP((17.26939 * Tempc) / (237.3 + Tempc))
-    end function sat_vapor_press
+      res = 6.1078 * EXP((17.26939 * temp_c) / (237.3 + temp_c))
+    end function
 end module
