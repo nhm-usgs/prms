@@ -24,6 +24,8 @@ module PRMS_BASIN
 
     integer(i32) :: active_hrus
     integer(i32) :: hemisphere
+    logical, allocatable :: active_mask(:)
+      !! Logical mask of HRUs that have hru_type /= INACTIVE
     integer(i32), allocatable :: hru_route_order(:)
 
     real(r32), allocatable :: hru_frac_perv(:)
@@ -43,9 +45,6 @@ module PRMS_BASIN
   interface Basin
     !! Basin constructor
     module function constructor_Basin(ctl_data, param_data) result(this)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-
       type(Basin) :: this
         !! Basin class
       type(Control), intent(in) :: ctl_data
