@@ -51,13 +51,6 @@ module PRMS_DDSOLRAD
 
   interface
     module subroutine run_Ddsolrad(this, ctl_data, param_data, model_time, solt, climate, model_basin)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-      ! use PRMS_BASIN, only: Basin
-      ! use PRMS_CLIMATEVARS, only: Climateflow
-      ! use PRMS_SOLTAB, only: Soltab
-      ! use PRMS_SET_TIME, only: Time_t
-
       class(Ddsolrad), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
