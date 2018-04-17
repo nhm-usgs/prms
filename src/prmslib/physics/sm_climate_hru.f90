@@ -66,7 +66,9 @@ contains
   end function
 
   module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
-    use prms_constants, only: MM2INCH
+    use prms_constants, only: MM2INCH, NEARZERO
+    use conversions_mod, only: f_to_c, c_to_f
+    use UTILS_PRMS, only: get_array
     implicit none
 
     class(Climate_HRU), intent(inout) :: this
@@ -78,102 +80,67 @@ contains
 
     ! Local variables
     integer(i32) :: chru
-    integer(i32) :: ierr = 0
-    integer(i32) :: ios = 0
+    integer(i32) :: ierr
+    integer(i32) :: ios
     integer(i32) :: jj
     integer(i32) :: yr, mo, dy, hr, mn, sec
       !! junk vars to hold time info from files
-    real(r32) :: tmax_hru  ! different from what's defined in climateflow.f90
-    real(r32) :: tmin_hru  ! different from what's defined in climateflow.f90
-    real(r32) :: ppt
-    real(r64) :: sum_obs
 
-    integer(i32) :: idx1D
-      !! 1D index from 2D
+    real(r32), pointer :: tmax_adj_2d(:,:)
+    real(r32), pointer :: tmin_adj_2d(:,:)
+    real(r32), pointer :: rain_adj_2d(:,:)
+    real(r32), pointer :: snow_adj_2d(:,:)
+    real(r32), pointer :: adjmix_rain_2d(:,:)
 
     ! ----------------------------------------------------------------------
     associate(curr_month => model_time%Nowmonth, &
               nhru => ctl_data%nhru%values(1), &
-              hru_area => param_data%hru_area%values, &
+              nmonths => ctl_data%nmonths%values(1), &
+              ! hru_area => param_data%hru_area%values, &
               tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
               tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
               rain_cbh_adj => param_data%rain_cbh_adj%values, &
               snow_cbh_adj => param_data%snow_cbh_adj%values, &
               adjmix_rain => param_data%adjmix_rain%values)
+              ! active_hrus => model_basin%active_hrus, &
+              ! hru_route_order => model_basin%hru_route_order, &
+              ! basin_area_inv => model_basin%basin_area_inv)
 
+      ierr = 0
+      ios = 0
+
+      ! *****************
+      ! * Temperature   *
+      ! *****************
       if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
         read(this%tmax_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%tmaxf(jj), jj=1, nhru)
         read(this%tmin_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%tminf(jj), jj=1, nhru)
-        climate%basin_tmax = 0.0
-        climate%basin_tmin = 0.0
-        climate%basin_temp = 0.0
+
+        ! NOTE: This is dangerous because it circumvents the intent for param_data
+        ! Get 2D access to 1D array
+        tmin_adj_2d => get_array(tmin_cbh_adj, (/nhru, nmonths/))
+        tmax_adj_2d => get_array(tmax_cbh_adj, (/nhru, nmonths/))
+
+        call climate%set_temperature(ctl_data, param_data, model_basin, &
+                                     tmin_adj_2d(:, curr_month), tmax_adj_2d(:, curr_month))
       endif
 
+      ! *****************
+      ! * Precipitation *
+      ! *****************
       if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
         read(this%precip_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%hru_ppt(jj), jj=1, nhru)
-        climate%basin_ppt = 0.0
-        climate%basin_rain = 0.0
-        climate%basin_snow = 0.0
-        sum_obs = 0.0
-      endif
 
-      do jj = 1, model_basin%active_hrus
-        chru = model_basin%hru_route_order(jj)
-        idx1D = (curr_month - 1) * nhru + chru
+        ! NOTE: This is dangerous because it circumvents the intent for param_data
+        ! Get 2D access to 1D array
+        rain_adj_2d => get_array(rain_cbh_adj, (/nhru, nmonths/))
+        snow_adj_2d => get_array(snow_cbh_adj, (/nhru, nmonths/))
+        adjmix_rain_2d => get_array(adjmix_rain, (/nhru, nmonths/))
 
-        if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
-          tmax_hru = climate%tmaxf(chru) + tmax_cbh_adj(idx1D)
-          tmin_hru = climate%tminf(chru) + tmin_cbh_adj(idx1D)
-
-          ! param_data, ihru, hru_area, tmax, tmin
-          call climate%temp_set(param_data, chru, hru_area(chru), tmax_hru, tmin_hru)
-        endif
-
-        if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
-          !******Initialize HRU variables
-          climate%pptmix(chru) = 0
-          climate%newsnow(chru) = 0
-          climate%prmx(chru) = 0.0
-          climate%hru_rain(chru) = 0.0
-          climate%hru_snow(chru) = 0.0
-
-          if (climate%hru_ppt(chru) > 0.0) then
-            if (param_data%precip_units%values(1) == 1) then
-              climate%hru_ppt(chru) = climate%hru_ppt(chru) * MM2INCH
-            endif
-
-            ppt = climate%hru_ppt(chru)
-
-            ! ihru, month, hru_area, adjmix_rain, rain_adj, snow_adj, precip, sum_obs
-            call climate%precip_form(chru, curr_month, hru_area(chru), adjmix_rain(idx1D), &
-                                     rain_cbh_adj(idx1D), snow_cbh_adj(idx1D), &
-                                     ppt, sum_obs)
-          elseif (climate%hru_ppt(chru) < 0.0) then
-            print *, 'ERROR, negative precipitation value entered in CBH File, HRU:', chru
-            ! call print_date(0)
-            ierr = 1
-          endif
-        endif
-      enddo
-
-      if (ierr == 1) then
-        ! call print_date(0)
-        STOP
-      endif
-
-      if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
-        climate%basin_tmax = climate%basin_tmax * model_basin%basin_area_inv
-        climate%basin_tmin = climate%basin_tmin * model_basin%basin_area_inv
-        climate%basin_temp = climate%basin_temp * model_basin%basin_area_inv
-        climate%solrad_tmax = real(climate%basin_tmax, r32)
-        climate%solrad_tmin = real(climate%basin_tmin, r32)
-      endif
-
-      if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
-        climate%basin_ppt = climate%basin_ppt * model_basin%basin_area_inv
-        climate%basin_obs_ppt = sum_obs * model_basin%basin_area_inv
-        climate%basin_rain = climate%basin_rain * model_basin%basin_area_inv
-        climate%basin_snow = climate%basin_snow * model_basin%basin_area_inv
+        call climate%set_precipitation_form(ctl_data, param_data, model_basin, &
+                                            curr_month, rain_adj_2d(:, curr_month), &
+                                            snow_adj_2d(:, curr_month), &
+                                            adjmix_rain_2d(:, curr_month))
       endif
     end associate
   end subroutine
@@ -226,17 +193,17 @@ contains
       ! read to line before data starts in each file
       i = 0
 
-      do WHILE (i == 0)
+      do while (i == 0)
         if (Cbh_binary_flag == 0) then
-          read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+          read(Iunit, FMT='(A4)', IOSTAT=ios) dum
         else
-          read (Iunit, IOSTAT=ios) dum2
-          read (dum2, '(A4)') dum
+          read(Iunit, IOSTAT=ios) dum2
+          read(dum2, '(A4)') dum
         endif
 
         if (ios /= 0) then
-          WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                  'check to be sure the input file is in correct format'
+          write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                   'check to be sure the input file is in correct format'
           Iret = 1
           EXIT
         elseif (dum == '####') then
@@ -245,15 +212,15 @@ contains
           BACKSPACE Iunit
 
           if (Cbh_binary_flag == 0) then
-            read (Iunit, *, IOSTAT=ios) dum, dim
+            read(Iunit, *, IOSTAT=ios) dum, dim
           else
-            read (Iunit, IOSTAT=ios) dum2
-            read (dum2, *) dum, dim
+            read(Iunit, IOSTAT=ios) dum2
+            read(dum2, *) dum, dim
           endif
 
           if (ios /= 0) then
-            WRITE (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                    'check to be sure dimension line is in correct format'
+            write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                     'check to be sure dimension line is in correct format'
             Iret = 1
             EXIT
           endif
@@ -265,9 +232,9 @@ contains
           endif
 
           if (Cbh_binary_flag == 0) then
-            read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+            read(Iunit, FMT='(A4)', IOSTAT=ios) dum
           else
-            read (Iunit, IOSTAT=ios) dum
+            read(Iunit, IOSTAT=ios) dum
           endif
           i = 1
         endif
@@ -279,9 +246,8 @@ contains
   !     Read a day in the CBH File
   !***********************************************************************
   module subroutine read_cbh_date(this, model_time, Year, Month, Day, Var, Ios, Iret)
-    ! use PRMS_SET_TIME, only: Time_t
+    implicit none
 
-    ! Argument
     class(Climate_HRU), intent(inout) :: this
     type(Time_t), intent(in) :: model_time
     integer(i32), intent(in) :: Year
@@ -292,25 +258,30 @@ contains
     integer(i32), intent(inout) :: Iret
 
     ! Local Variables
-    integer(i32) :: right_day
+    logical :: right_day
 
     !***********************************************************************
-    right_day = 1
-    if (Year /= model_time%Nowyear .OR. Month /= model_time%Nowmonth .OR. Day /= model_time%Nowday) right_day = 0
+    associate(curr_year => model_time%Nowyear, &
+              curr_month => model_time%Nowmonth, &
+              curr_day => model_time%Nowday)
 
-    if (Ios /= 0 .OR. right_day == 0) then
-      print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
+      right_day = .true.
+      if (Year /= curr_year .OR. Month /= curr_month .OR. Day /= curr_day) right_day = .false.
 
-      if (Ios == -1) then
-        print *, '       End-of-File found'
-      elseif (right_day == 0) then
-        print *, '       Wrong day found'
-      else
-        print *, '       Invalid data value found'
+      if (Ios /= 0 .OR. .not. right_day) then
+        print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
+
+        if (Ios == -1) then
+          print *, '       End-of-File found'
+        elseif (.not. right_day) then
+          print *, '       Wrong day found'
+        else
+          print *, '       Invalid data value found'
+        endif
+
+        call model_time%print_date(0)
+        Iret = 1
       endif
-
-      call model_time%print_date(0)
-      Iret = 1
-    endif
+    end associate
   end subroutine read_cbh_date
 end submodule
