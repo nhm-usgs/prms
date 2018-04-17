@@ -5,6 +5,23 @@ module UTILS_PRMS
   implicit none
 
   contains
+    function get_array(array, shape_) result(aptr)
+      use iso_c_binding, only: C_LOC, C_F_POINTER
+      ! NOTE: from https://stackoverflow.com/questions/5406016/changing-array-dimensions-in-fortran
+      ! Pass in the array as an array of fixed size so that there
+      ! is no array descriptor associated with it. This means we
+      ! can get a pointer to the location of the data using C_LOC
+      real(r32), target :: array(1)
+      integer(i32) :: shape_(:)
+      real(r32), pointer :: aptr(:,:)
+
+      ! Use C_LOC to get the start location of the array data, and
+      ! use C_F_POINTER to turn this into a fortran pointer (aptr).
+      ! Note that we need to specify the shape of the pointer using an
+      ! integer array.
+      call C_F_POINTER(C_LOC(array), aptr, shape_)
+    end function
+
     subroutine print_module_info(module_name, module_desc, module_version)
       use iso_fortran_env, only: output_unit
       implicit none
