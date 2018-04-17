@@ -73,8 +73,8 @@ module PRMS_SOLTAB
                               Solar_declination, Slope, Aspect, Latitude, &
                               Hru_type, Id)
       real(r64), intent(out) :: Cossl
-      real(r64), intent(out), dimension(DAYS_PER_YEAR) :: Soltab_daily
-      real(r64), intent(out), dimension(DAYS_PER_YEAR) :: Sunhrs_daily
+      real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Soltab_daily
+      real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Sunhrs_daily
 
       real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Obliquity
       real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Solar_declination
@@ -87,18 +87,18 @@ module PRMS_SOLTAB
   end interface
 
   interface
-    module subroutine compute_t(Lat, Solar_declination, T)
+    pure elemental module function compute_t(Lat, Solar_declination) result(T)
+      real(r64) :: T
+        !! Angle hour from the local meridian (local solar noon) to the sunrise(negative) or sunset(positive).
       real(r64), intent(in) :: Lat
         !! Latitude
       real(r64), intent(in) :: Solar_declination
         !! Declination of the sun on a day.
-      real(r64), intent(out) :: T
-        !! Angle hour from the local meridian (local solar noon) to the sunrise(negative) or sunset(positive).
-    end subroutine
+    end function
   end interface
 
   interface
-    module function func3(V, W, X, Y, R1, Solar_declination) result(res)
+    pure elemental module function func3(V, W, X, Y, R1, Solar_declination) result(res)
       real(r64) :: res
       real(r64), intent(in) :: V
         !! Latitude angle hour offset between actual and equivalent slope
