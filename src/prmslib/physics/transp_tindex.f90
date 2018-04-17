@@ -40,11 +40,6 @@ MODULE PRMS_TRANSP_TINDEX
   interface Transp_tindex
     !! Transp_tindex constructor
     module function constructor_Transp_tindex(ctl_data, param_data, model_basin, climate) result(this)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-      ! use PRMS_BASIN, only: Basin
-      ! use PRMS_CLIMATEVARS, only: Climateflow
-
       type(Transp_tindex) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
@@ -60,12 +55,6 @@ MODULE PRMS_TRANSP_TINDEX
 
   interface
     module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, climate)
-      ! use Control_class, only: Control
-      ! use PRMS_SET_TIME, only: Time_t
-      ! use PRMS_BASIN, only: Basin
-      ! use Parameters_class, only: Parameters
-      ! use PRMS_CLIMATEVARS, only: Climateflow
-
       class(Transp_tindex), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data

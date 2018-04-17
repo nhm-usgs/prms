@@ -38,32 +38,27 @@ contains
               transp_end => param_data%transp_end%values, &
               transp_tmax => param_data%transp_tmax%values)
 
-    if (print_debug > -2) then
-      ! Output module and version information
-      call print_module_info(MODNAME, MODDESC, MODVERSION)
-    endif
+      if (print_debug > -2) then
+        ! Output module and version information
+        call print_module_info(MODNAME, MODDESC, MODVERSION)
+      endif
 
-    allocate(this%tmax_sum(nhru))
-    allocate(this%transp_check(nhru))
-    allocate(this%transp_tmax_f(nhru))
+      allocate(this%tmax_sum(nhru))
+      allocate(this%transp_check(nhru))
+      allocate(this%transp_tmax_f(nhru))
 
-    if (temp_units == 0) then
-      this%transp_tmax_f = transp_tmax(:)
-    else
-      do ii=1, ctl_data%nhru%values(1)
-        this%transp_tmax_f(ii) = c_to_f(transp_tmax(ii))
-      enddo
-    endif
+      if (temp_units == 0) then
+        this%transp_tmax_f = transp_tmax(:)
+      else
+        do ii=1, ctl_data%nhru%values(1)
+          this%transp_tmax_f(ii) = c_to_f(transp_tmax(ii))
+        enddo
+      endif
 
-    ! TODO: Incorporate the load from restart file stuff
-    this%tmax_sum = 0.0
-    this%transp_check = 0
-    climate%basin_transp_on = 0
-
-    ! associate(st_month => ctl_data%start_time%values(MONTH), &
-    !           st_day => ctl_data%start_time%values(DAY), &
-    !           transp_beg => param_data%transp_beg%values, &
-    !           transp_end => param_data%transp_end%values)
+      ! TODO: Incorporate the load from restart file stuff
+      this%tmax_sum = 0.0
+      this%transp_check = 0
+      climate%basin_transp_on = 0
 
       do ii=1, model_basin%active_hrus
         chru = model_basin%hru_route_order(ii)
@@ -92,19 +87,11 @@ contains
           endif
         endif
       enddo
-
     end associate
   end function
 
 
   module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, climate)
-    use conversions_mod, only: c_to_f
-    ! use Control_class, only: Control
-    ! use PRMS_SET_TIME, only: Time_t
-    ! use PRMS_BASIN, only: Basin
-    ! use Parameters_class, only: Parameters
-    ! use PRMS_CLIMATEVARS, only: Climateflow
-
     implicit none
 
     class(Transp_tindex), intent(inout) :: this
