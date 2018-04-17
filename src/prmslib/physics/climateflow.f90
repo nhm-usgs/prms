@@ -4,6 +4,9 @@
 module PRMS_CLIMATEVARS
   use variableKind
   use prms_constants, only: FAHRENHEIT, CELSIUS, INCHES, MM
+  use Control_class, only: Control
+  use Parameters_class, only: Parameters
+  use PRMS_BASIN, only: Basin
   implicit none
 
   private
@@ -60,11 +63,16 @@ module PRMS_CLIMATEVARS
     integer(i32), allocatable :: pptmix(:)
     integer(i32), allocatable :: transp_on(:)
 
+    real(r32), allocatable, private :: tdiff_arr(:)
+      !! Interval array to hold difference b/t tmaxf and tminf
+
     contains
       procedure, public :: cleanup
         !! Final code to execute after simulation
-      procedure, public :: precip_form
-      procedure, public :: temp_set
+      ! procedure, public :: precip_form
+      ! procedure, public :: temp_set
+      procedure, public :: set_precipitation_form
+      procedure, public :: set_temperature
 
       procedure, nopass, public :: module_name
         !! Return the name of the module
@@ -76,8 +84,8 @@ module PRMS_CLIMATEVARS
   interface Climateflow
     !! Climateflow constructor
     module function constructor_Climateflow(ctl_data, param_data) result(this)
-      use Control_class, only: Control
-      use Parameters_class, only: Parameters
+      ! use Control_class, only: Control
+      ! use Parameters_class, only: Parameters
 
       type(Climateflow) :: this
         !! Climateflow class
@@ -90,40 +98,70 @@ module PRMS_CLIMATEVARS
 
   interface
     module subroutine cleanup(this, ctl_data)
-      use Control_class, only: Control
+      ! use Control_class, only: Control
 
       class(Climateflow), intent(in) :: this
       type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 
-  interface
-    module subroutine precip_form(this, ihru, month, hru_area, adjmix_rain, &
-                                  rain_adj, snow_adj, precip, sum_obs)
-      class(Climateflow), intent(inout) :: this
-      integer(i32), intent(in) :: ihru
-      integer(i32), intent(in) :: month
-      real(r32), intent(in) :: hru_area
-      real(r32), intent(in) :: adjmix_rain
-      real(r32), intent(in) :: rain_adj
-      real(r32), intent(in) :: snow_adj
-      real(r32), intent(inout) :: precip
-      real(r64), intent(inout) :: sum_obs
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine precip_form(this, ihru, month, hru_area, adjmix_rain, &
+  !                                 rain_adj, snow_adj, precip, sum_obs)
+  !     class(Climateflow), intent(inout) :: this
+  !     integer(i32), intent(in) :: ihru
+  !     integer(i32), intent(in) :: month
+  !     real(r32), intent(in) :: hru_area
+  !     real(r32), intent(in) :: adjmix_rain
+  !     real(r32), intent(in) :: rain_adj
+  !     real(r32), intent(in) :: snow_adj
+  !     real(r32), intent(inout) :: precip
+  !     real(r64), intent(inout) :: sum_obs
+  !   end subroutine
+  ! end interface
 
   interface
-    module subroutine temp_set(this, param_data, ihru, hru_area, tmax, tmin)
-      use Parameters_class, only: Parameters
-
+    module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, &
+                                             month, rain_adj, snow_adj, rainmix_adj)
       class(Climateflow), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
-      integer(i32), intent(in) :: ihru
-      real(r32), intent(in) :: hru_area
-      real(r32), intent(in) :: tmax
-      real(r32), intent(in) :: tmin
+      type(Basin), intent(in) :: model_basin
+      integer(i32), intent(in) :: month
+      real(r32), optional, intent(in) :: rain_adj(:)
+        !! Array of rain adjustments
+      real(r32), optional, intent(in) :: snow_adj(:)
+        !! Array of snow adjustments
+      real(r32), optional, intent(in) :: rainmix_adj(:)
+        !! Array of rain mixture adjustments
     end subroutine
   end interface
+
+
+  interface
+    module subroutine set_temperature(this, ctl_data, param_data, model_basin, tmin_adj, tmax_adj)
+      class(Climateflow), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
+      real(r32), optional, intent(in) :: tmin_adj(:)
+        !! Array of minimum temperature adjustments
+      real(r32), optional, intent(in) :: tmax_adj(:)
+        !! Array of maximum temperature adjustments
+      end subroutine
+  end interface
+
+
+  ! interface
+  !   module subroutine temp_set(this, param_data, ihru, hru_area, tmax, tmin)
+  !     class(Climateflow), intent(inout) :: this
+  !     type(Parameters), intent(in) :: param_data
+  !     integer(i32), intent(in) :: ihru
+  !     real(r32), intent(in) :: hru_area
+  !     real(r32), intent(in) :: tmax
+  !     real(r32), intent(in) :: tmin
+  !   end subroutine
+  ! end interface
 
 
   interface
