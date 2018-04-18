@@ -81,6 +81,7 @@ submodule (Simulation_class) sm_simulation
 
         call this%climate%cleanup(ctl_data)
         call this%model_obs%cleanup(ctl_data)
+        call this%transpiration%cleanup(ctl_data)
       endif
     end subroutine
 end submodule
