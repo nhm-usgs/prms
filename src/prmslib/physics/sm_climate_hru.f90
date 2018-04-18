@@ -4,9 +4,7 @@ contains
   !***********************************************************************
   ! Climate_HRU constructor
   module function constructor_Climate_HRU(ctl_data, param_data) result(this)
-    ! use Control_class, only: Control
-    ! use Parameters_class, only: Parameters
-    use UTILS_PRMS, only: find_current_time, print_module_info
+    use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Climate_HRU) :: this
@@ -34,30 +32,30 @@ contains
       if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
         call this%find_header_end(this%precip_funit, ierr, &
                                   ctl_data%precip_day%values(1)%s, 'precip_day', &
-                                  1, cbh_binary_flag)
+                                  (cbh_binary_flag==1))
         if (ierr == 1) then
           istop = 1
         else
-          call find_current_time(ierr, this%precip_funit, start_time, cbh_binary_flag)
+          call this%find_current_time(ierr, this%precip_funit, start_time, (cbh_binary_flag==1))
         endif
       endif
 
       if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
         call this%find_header_end(this%tmax_funit, ierr, ctl_data%tmax_day%values(1)%s, &
-                                  'tmax_day', 1, cbh_binary_flag)
+                                  'tmax_day', (cbh_binary_flag==1))
         if (ierr == 1) then
           istop = 1
         else
-          call find_current_time(ierr, this%tmax_funit, start_time, cbh_binary_flag)
+          call this%find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
         endif
 
         ! Iunit, Iret, Fname, Paramname, Cbh_flag, Cbh_binary_flag
         call this%find_header_end(this%tmin_funit, ierr, ctl_data%tmin_day%values(1)%s, &
-                                  'tmin_day', 1, cbh_binary_flag)
+                                  'tmin_day', (cbh_binary_flag==1))
         if (ierr == 1) then
           istop = 1
         else
-          call find_current_time(ierr, this%tmin_funit, start_time, cbh_binary_flag)
+          call this%find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
         endif
       endif
 
@@ -66,8 +64,6 @@ contains
   end function
 
   module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
-    use prms_constants, only: MM2INCH, NEARZERO
-    use conversions_mod, only: f_to_c, c_to_f
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -95,13 +91,13 @@ contains
     ! ----------------------------------------------------------------------
     associate(curr_month => model_time%Nowmonth, &
               nhru => ctl_data%nhru%values(1), &
-              nmonths => ctl_data%nmonths%values(1), &
+              nmonths => ctl_data%nmonths%values(1))
               ! hru_area => param_data%hru_area%values, &
-              tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
-              tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
-              rain_cbh_adj => param_data%rain_cbh_adj%values, &
-              snow_cbh_adj => param_data%snow_cbh_adj%values, &
-              adjmix_rain => param_data%adjmix_rain%values)
+              ! tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
+              ! tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
+              ! rain_cbh_adj => param_data%rain_cbh_adj%values, &
+              ! snow_cbh_adj => param_data%snow_cbh_adj%values, &
+              ! adjmix_rain => param_data%adjmix_rain%values)
               ! active_hrus => model_basin%active_hrus, &
               ! hru_route_order => model_basin%hru_route_order, &
               ! basin_area_inv => model_basin%basin_area_inv)
@@ -118,8 +114,8 @@ contains
 
         ! NOTE: This is dangerous because it circumvents the intent for param_data
         ! Get 2D access to 1D array
-        tmin_adj_2d => get_array(tmin_cbh_adj, (/nhru, nmonths/))
-        tmax_adj_2d => get_array(tmax_cbh_adj, (/nhru, nmonths/))
+        tmin_adj_2d => get_array(param_data%tmin_cbh_adj%values, (/nhru, nmonths/))
+        tmax_adj_2d => get_array(param_data%tmax_cbh_adj%values, (/nhru, nmonths/))
 
         call climate%set_temperature(ctl_data, param_data, model_basin, &
                                      tmin_adj_2d(:, curr_month), tmax_adj_2d(:, curr_month))
@@ -133,9 +129,9 @@ contains
 
         ! NOTE: This is dangerous because it circumvents the intent for param_data
         ! Get 2D access to 1D array
-        rain_adj_2d => get_array(rain_cbh_adj, (/nhru, nmonths/))
-        snow_adj_2d => get_array(snow_cbh_adj, (/nhru, nmonths/))
-        adjmix_rain_2d => get_array(adjmix_rain, (/nhru, nmonths/))
+        rain_adj_2d => get_array(param_data%rain_cbh_adj%values, (/nhru, nmonths/))
+        snow_adj_2d => get_array(param_data%snow_cbh_adj%values, (/nhru, nmonths/))
+        adjmix_rain_2d => get_array(param_data%adjmix_rain%values, (/nhru, nmonths/))
 
         call climate%set_precipitation_form(ctl_data, param_data, model_basin, &
                                             curr_month, rain_adj_2d(:, curr_month), &
@@ -163,10 +159,65 @@ contains
 
 
   !***********************************************************************
-  !     Read File to line before data starts in file
+  ! Read CBH file to current time
   !***********************************************************************
-  module subroutine find_header_end(this, Iunit, Iret, Fname, Paramname, Cbh_flag, &
-                                    Cbh_binary_flag)
+  module subroutine find_current_time(iret, iunit, datetime, use_stream)
+    use prms_constants, only: MAXFILE_LENGTH, YEAR, MONTH, DAY
+    implicit none
+
+    ! Argument
+    integer(i32), intent(out) :: iret
+    integer(i32), intent(in) :: iunit
+    integer(i32), intent(in) :: datetime(6)
+    logical, optional, intent(in) :: use_stream
+      !! When .true. a stream (aka binary) file is opened
+
+    logical, parameter :: use_stream_def = .false.
+      !! Default value to use for use_stream argument
+
+    ! Local Variables
+    integer(i32) :: yr
+    integer(i32) :: mo
+    integer(i32) :: dy
+    character(len=MAXFILE_LENGTH) :: filename
+    logical :: use_stream_
+      !! Internal copy of use_stream to allow for default value.
+
+    !***********************************************************************
+    ! NOTE: Kludge to get around Fortran's lack of default values for args.
+    use_stream_ = use_stream_def
+    if (present(use_stream)) use_stream_ = use_stream
+
+    iret = 0
+    do
+      if (use_stream_) then
+        ! Stream access file (aka binary)
+        read(iunit, IOSTAT=iret) yr, mo, dy
+      else
+        read(iunit, *, IOSTAT=iret) yr, mo, dy
+      endif
+
+      if (iret == -1) then
+        inquire(UNIT=iunit, NAME=filename)
+        print *, 'ERROR, end-of-file found reading ', trim(filename), ' for date:', &
+                               datetime(YEAR), datetime(MONTH), datetime(DAY)
+        stop
+      endif
+
+      if (iret /= 0) return
+      if (yr == datetime(YEAR) .AND. mo == datetime(MONTH) .AND. dy == datetime(DAY)) EXIT
+    enddo
+
+    backspace iunit
+  end subroutine
+
+
+  !***********************************************************************
+  ! Read file to line before data starts in file
+  !***********************************************************************
+  module subroutine find_header_end(this, Iunit, Iret, Fname, Paramname, &
+                                    use_stream)
+    use iso_fortran_env, only: output_unit
     use UTILS_PRMS, only: PRMS_open_input_file
     implicit none
 
@@ -176,8 +227,11 @@ contains
     integer(i32), intent(out) :: Iret
     character(len=*), intent(in) :: Fname
     character(len=*), intent(in) :: Paramname
-    integer(i32), intent(in) :: Cbh_flag
-    integer(i32), intent(in) :: Cbh_binary_flag
+    logical, optional, intent(in) :: use_stream
+      !! When .true. a stream (aka binary) file is opened
+
+    logical, parameter :: use_stream_def = .false.
+      !! Default value to use for use_stream argument
 
     ! Local Variables
     integer(i32) :: i
@@ -186,57 +240,90 @@ contains
     character(len=4) :: dum
     character(len=80) :: dum2
 
+    logical :: use_stream_
+      !! Internal copy of use_stream to allow for default value.
+
     !***********************************************************************
-    call PRMS_open_input_file(Iunit, Fname, Paramname, Cbh_binary_flag, Iret)
+    ! NOTE: Kludge to get around Fortran's lack of default values for args.
+    use_stream_ = use_stream_def
+    if (present(use_stream)) use_stream_ = use_stream
+
+    call PRMS_open_input_file(Iunit, Iret, Fname, Paramname, use_stream_)
 
     if (Iret == 0) then
       ! read to line before data starts in each file
       i = 0
 
       do while (i == 0)
-        if (Cbh_binary_flag == 0) then
+        if (.not. use_stream_) then
+          ! ASCII file
           read(Iunit, FMT='(A4)', IOSTAT=ios) dum
-        else
-          read(Iunit, IOSTAT=ios) dum2
-          read(dum2, '(A4)') dum
-        endif
-
-        if (ios /= 0) then
-          write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                   'check to be sure the input file is in correct format'
-          Iret = 1
-          EXIT
-        elseif (dum == '####') then
-          if (Cbh_flag == 0) EXIT
-          BACKSPACE Iunit
-          BACKSPACE Iunit
-
-          if (Cbh_binary_flag == 0) then
-            read(Iunit, *, IOSTAT=ios) dum, dim
-          else
-            read(Iunit, IOSTAT=ios) dum2
-            read(dum2, *) dum, dim
-          endif
 
           if (ios /= 0) then
             write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
-                     'check to be sure dimension line is in correct format'
+                     'check to be sure the input file is in correct format'
+            Iret = 1
+            exit
+          elseif (dum == '####') then
+            ! Backspace to the <var> <dim> line
+            BACKSPACE Iunit
+            BACKSPACE Iunit
+
+            ! Read the variable name and number of entries (should match nhru)
+            read(Iunit, *, IOSTAT=ios) dum, dim
+
+            if (ios /= 0) then
+              write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                       'check to be sure dimension line is in correct format'
+              Iret = 1
+              EXIT
+            endif
+
+            ! Make sure the HRU dimension size in the CBH file matches our model.
+            if (dim /= this%nhru) then
+              print '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', this%nhru, ' CBH dimension=', &
+                                   dim, ' File: ' // Fname
+              STOP 'ERROR: update Control File with correct CBH files'
+            endif
+
+            read(Iunit, FMT='(A4)', IOSTAT=ios) dum
+            i = 1
+          endif
+        else
+          ! Stream I/O (aka binary)
+          read(Iunit, IOSTAT=ios) dum2
+          read(dum2, '(A4)') dum
+
+          if (ios /= 0) then
+            write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                     'check to be sure the input file is in correct format'
             Iret = 1
             EXIT
-          endif
+          elseif (dum == '####') then
+            ! Backspace to the <var> <dim> line
+            BACKSPACE Iunit
+            BACKSPACE Iunit
 
-          if (dim /= this%nhru) then
-            print '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', this%nhru, ' CBH dimension=', &
-                    dim, ' File: ' // Fname
-            STOP 'ERROR: update Control File with correct CBH files'
-          endif
+            read(Iunit, IOSTAT=ios) dum2
+            read(dum2, *) dum, dim
 
-          if (Cbh_binary_flag == 0) then
-            read(Iunit, FMT='(A4)', IOSTAT=ios) dum
-          else
+            if (ios /= 0) then
+              write(*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, &
+                       'check to be sure dimension line is in correct format'
+              Iret = 1
+              EXIT
+            endif
+
+            if (dim /= this%nhru) then
+              print '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', this%nhru, ' CBH dimension=', &
+                                   dim, ' File: ' // Fname
+              STOP 'ERROR: update Control File with correct CBH files'
+            endif
+
             read(Iunit, IOSTAT=ios) dum
+
+            i = 1
           endif
-          i = 1
         endif
       enddo
     endif
@@ -245,43 +332,43 @@ contains
   !***********************************************************************
   !     Read a day in the CBH File
   !***********************************************************************
-  module subroutine read_cbh_date(this, model_time, Year, Month, Day, Var, Ios, Iret)
-    implicit none
-
-    class(Climate_HRU), intent(inout) :: this
-    type(Time_t), intent(in) :: model_time
-    integer(i32), intent(in) :: Year
-    integer(i32), intent(in) :: Month
-    integer(i32), intent(in) :: Day
-    integer(i32), intent(in) :: Ios
-    character(len=*), intent(in) :: Var
-    integer(i32), intent(inout) :: Iret
-
-    ! Local Variables
-    logical :: right_day
-
-    !***********************************************************************
-    associate(curr_year => model_time%Nowyear, &
-              curr_month => model_time%Nowmonth, &
-              curr_day => model_time%Nowday)
-
-      right_day = .true.
-      if (Year /= curr_year .OR. Month /= curr_month .OR. Day /= curr_day) right_day = .false.
-
-      if (Ios /= 0 .OR. .not. right_day) then
-        print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
-
-        if (Ios == -1) then
-          print *, '       End-of-File found'
-        elseif (.not. right_day) then
-          print *, '       Wrong day found'
-        else
-          print *, '       Invalid data value found'
-        endif
-
-        call model_time%print_date(0)
-        Iret = 1
-      endif
-    end associate
-  end subroutine read_cbh_date
+  ! module subroutine read_cbh_date(this, model_time, Year, Month, Day, Var, Ios, Iret)
+  !   implicit none
+  !
+  !   class(Climate_HRU), intent(inout) :: this
+  !   type(Time_t), intent(in) :: model_time
+  !   integer(i32), intent(in) :: Year
+  !   integer(i32), intent(in) :: Month
+  !   integer(i32), intent(in) :: Day
+  !   integer(i32), intent(in) :: Ios
+  !   character(len=*), intent(in) :: Var
+  !   integer(i32), intent(inout) :: Iret
+  !
+  !   ! Local Variables
+  !   logical :: right_day
+  !
+  !   !***********************************************************************
+  !   associate(curr_year => model_time%Nowyear, &
+  !             curr_month => model_time%Nowmonth, &
+  !             curr_day => model_time%Nowday)
+  !
+  !     right_day = .true.
+  !     if (Year /= curr_year .OR. Month /= curr_month .OR. Day /= curr_day) right_day = .false.
+  !
+  !     if (Ios /= 0 .OR. .not. right_day) then
+  !       print *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
+  !
+  !       if (Ios == -1) then
+  !         print *, '       End-of-File found'
+  !       elseif (.not. right_day) then
+  !         print *, '       Wrong day found'
+  !       else
+  !         print *, '       Invalid data value found'
+  !       endif
+  !
+  !       call model_time%print_date(0)
+  !       Iret = 1
+  !     endif
+  !   end associate
+  ! end subroutine read_cbh_date
 end submodule
