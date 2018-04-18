@@ -68,7 +68,7 @@ contains
               radj_sppt => param_data%radj_sppt%values, &
               radj_wppt => param_data%radj_wppt%values)
 
-      ! Get pointers to 2D-indexed versions of 1D arrays
+      ! Get pointers to 2D-indexed versions of 1D parameter arrays
       dday_intcp_2d => get_array(param_data%dday_intcp%values, (/nhru, nmonths/))
       dday_slope_2d => get_array(param_data%dday_slope%values, (/nhru, nmonths/))
       ppt_rad_adj_2d => get_array(param_data%ppt_rad_adj%values, (/nhru, nmonths/))
@@ -79,8 +79,6 @@ contains
 
       !rsr using julian day as the soltab arrays are filled by julian day
       climate%basin_horad = solt%soltab_basinpotsw(day_of_year)
-      climate%basin_swrad = 0.0D0
-      climate%basin_orad = 0.0D0
 
       do jj = 1, active_hrus
         chru = hru_route_order(jj)
@@ -133,7 +131,7 @@ contains
 
         climate%orad_hru(chru) = radadj * SNGL(solt%soltab_horad_potsw(day_of_year, chru))
         climate%swrad(chru) = SNGL(solt%soltab_potsw(day_of_year, chru) / solt%soltab_horad_potsw(day_of_year, chru) * &
-                              DBLE(climate%orad_hru(chru)) / solt%hru_cossl(chru))
+                                   DBLE(climate%orad_hru(chru)) / solt%hru_cossl(chru))
       enddo
 
       climate%basin_orad = sum(dble(climate%orad_hru * hru_area), mask=active_mask) * basin_area_inv
