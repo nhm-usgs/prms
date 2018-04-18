@@ -3,6 +3,7 @@
 !***********************************************************************
 module PRMS_BASIN
   use variableKind
+  use prms_constants, only: dp, sp
   use iso_fortran_env, only: output_unit
   use Control_class, only: Control
   use Parameters_class, only: Parameters
@@ -19,8 +20,8 @@ module PRMS_BASIN
 
   type :: Basin
     real(r64) :: basin_area_inv
-    real(r64) :: basin_lat = 0.0
-    real(r64) :: active_area = 0.0
+    real(r64) :: basin_lat
+    real(r64) :: active_area
 
     integer(i32) :: active_hrus
     integer(i32) :: hemisphere
@@ -32,8 +33,8 @@ module PRMS_BASIN
     real(r32), allocatable :: hru_imperv(:)
     real(r32), allocatable :: hru_perv(:)
 
-    real(r64) :: total_area = 0.0
-    real(r64) :: land_area = 0.0
+    real(r64) :: total_area
+    real(r64) :: land_area
 
     contains
       procedure, nopass, public :: module_name

@@ -74,7 +74,7 @@ contains
 
       ! Total HRU area that is active in model.
       this%active_area = this%land_area
-      this%basin_area_inv = 1.0D0 / this%active_area
+      this%basin_area_inv = 1.0_dp / this%active_area
 
       ! Compute rough center latitude of the model area
       this%basin_lat = sum(dble(hru_lat * hru_area), mask=this%active_mask) * this%basin_area_inv
@@ -120,7 +120,7 @@ contains
       ! basin_imperv = basin_imperv * this%basin_area_inv
 
       ! Used in solrad modules to winter/summer radiation adjustment
-      if (this%basin_lat > 0.0D0) then
+      if (this%basin_lat > 0.0_dp) then
         this%hemisphere = NORTHERN
       else
         this%hemisphere = SOUTHERN
