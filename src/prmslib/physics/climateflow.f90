@@ -67,7 +67,7 @@ module PRMS_CLIMATEVARS
       !! Interval array to hold difference b/t tmaxf and tminf
 
     contains
-      procedure, public :: cleanup
+      procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
       ! procedure, public :: precip_form
       ! procedure, public :: temp_set
@@ -84,9 +84,6 @@ module PRMS_CLIMATEVARS
   interface Climateflow
     !! Climateflow constructor
     module function constructor_Climateflow(ctl_data, param_data) result(this)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-
       type(Climateflow) :: this
         !! Climateflow class
       type(Control), intent(in) :: ctl_data
@@ -97,9 +94,7 @@ module PRMS_CLIMATEVARS
   end interface
 
   interface
-    module subroutine cleanup(this, ctl_data)
-      ! use Control_class, only: Control
-
+    module subroutine cleanup_Climateflow(this, ctl_data)
       class(Climateflow), intent(in) :: this
       type(Control), intent(in) :: ctl_data
     end subroutine
