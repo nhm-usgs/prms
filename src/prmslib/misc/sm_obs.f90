@@ -10,12 +10,17 @@ contains
     type(Obs) :: this
     type(Control), intent(in) :: ctl_data
 
+    ! Local variables
+    character(LEN=11) :: modname_rst
+      !! Used to verify module name when reading from restart file
+
     ! ------------------------------------------------------------------------
     associate(nobs => ctl_data%nobs%value, &
               nrain => ctl_data%nrain%value, &
               ntemp => ctl_data%ntemp%value, &
-              print_debug => ctl_data%print_debug%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%values(1))
+              init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
+              rst_unit => ctl_data%restart_output_unit, &
+              print_debug => ctl_data%print_debug%value)
 
       if (print_debug > -2) then
         ! Output module and version information
@@ -50,6 +55,31 @@ contains
           this%tmax = 0.0
           this%tmin = 0.0
         endif
+      endif
+
+      if (init_vars_from_file == 1) then
+      !     read(rst_unit) modname_rst
+      !     call check_restart(MODNAME, modname_rst)
+      !     read(rst_unit) nrain_test, ntemp_test, nobs_test
+      !     ierr = 0
+      !
+      !     call check_restart_dimen('nrain', nrain_test, Nrain, ierr)
+      !     call check_restart_dimen('ntemp', ntemp_test, Ntemp, ierr)
+      !     call check_restart_dimen('nobs', nobs_test, Nobs, ierr)
+      !     if (ierr == 1) STOP
+      !
+      !     if (nrain > 0) read (rst_unit) this%precip
+      !
+      !     if (ntemp > 0) then
+      !       read(rst_unit) this%tmax
+      !       read(rst_unit) this%tmin
+      !     endif
+      !
+      !     if (nobs > 0) then
+      !       read(rst_unit) this%runoff
+      !       read(rst_unit) this%streamflow_cfs
+      !       read(rst_unit) this%streamflow_cms
+      !     endif
       endif
     end associate
   end function
@@ -104,70 +134,6 @@ contains
 
     res = MODVERSION
   end function
-
-
-
-
-  !***********************************************************************
-  !     obs_restart - write or read obs restart file
-  !***********************************************************************
-  ! subroutine obs_restart(In_out)
-  !   use PRMS_MODULE, only: Restart_outunit, Restart_inunit, Nrain, Ntemp, Nobs
-  !   use UTILS_PRMS, only: check_restart, check_restart_dimen
-  !   implicit none
-  !
-  !   ! Argument
-  !   integer(i32), intent(in) :: In_out
-  !
-  !   ! Local Variables
-  !   integer(i32) :: ierr
-  !   integer(i32) :: nrain_test
-  !   integer(i32) :: ntemp_test
-  !   integer(i32) :: nobs_test
-  !   character(len=3) :: module_name
-  !
-  !   !***********************************************************************
-  !   if (In_out == 0) then
-  !     ! Write to the restart file
-  !     write(Restart_outunit) MODNAME
-  !     write(Restart_outunit) Nrain, Ntemp, Nobs
-  !     if (Nrain > 0) write (Restart_outunit) Precip
-  !
-  !     if (Ntemp > 0) then
-  !       write(Restart_outunit) Tmax
-  !       write(Restart_outunit) Tmin
-  !     endif
-  !
-  !     if (Nobs > 0) then
-  !       write(Restart_outunit) Runoff
-  !       write(Restart_outunit) Streamflow_cfs
-  !       write(Restart_outunit) Streamflow_cms
-  !     endif
-  !   else
-  !     read(Restart_inunit) module_name
-  !     call check_restart(MODNAME, module_name)
-  !     read(Restart_inunit) nrain_test, ntemp_test, nobs_test
-  !     ierr = 0
-  !
-  !     call check_restart_dimen('nrain', nrain_test, Nrain, ierr)
-  !     call check_restart_dimen('ntemp', ntemp_test, Ntemp, ierr)
-  !     call check_restart_dimen('nobs', nobs_test, Nobs, ierr)
-  !     if (ierr == 1) STOP
-  !
-  !     if (Nrain > 0) read (Restart_inunit) Precip
-  !
-  !     if (Ntemp > 0) then
-  !       read(Restart_inunit) Tmax
-  !       read(Restart_inunit) Tmin
-  !     endif
-  !
-  !     if (Nobs > 0) then
-  !       read(Restart_inunit) Runoff
-  !       read(Restart_inunit) Streamflow_cfs
-  !       read(Restart_inunit) Streamflow_cms
-  !     endif
-  !   endif
-  ! end subroutine
 
 
 
