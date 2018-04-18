@@ -12,9 +12,11 @@
 !***********************************************************************
 module PRMS_SOLTAB
   use variableKind
+  use prms_constants, only: sp, dp
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
+  use prms_constants, only: dp
   implicit none
 
   private
@@ -24,11 +26,11 @@ module PRMS_SOLTAB
   character(len=*), parameter :: MODNAME = 'soltab'
   character(len=*), parameter :: MODVERSION = '2016-09-29 13:48:00Z'
 
-  integer(r32), parameter :: DAYS_PER_YEAR = 366
-  real(r64), parameter :: PI = 3.1415926535898D0
-  real(r64), parameter :: RADIANS = PI / 180.0D0   ! RADIANS ~ 0.017453292519943
-  real(r64), parameter :: TWOPI = 2.0D0 * PI       ! TWOPI ~ 6.2831853071786
-  real(r64), parameter :: PI_12 = 12.0D0 / PI      ! PI_12 ~ 3.8197186342055
+  integer(r32), parameter :: DAYS_PER_YEAR = 366.0_sp
+  real(r64), parameter :: PI = 3.1415926535898_dp
+  real(r64), parameter :: RADIANS = PI / 180.0_dp   ! RADIANS ~ 0.017453292519943
+  real(r64), parameter :: TWOPI = 2.0_dp * PI       ! TWOPI ~ 6.2831853071786
+  real(r64), parameter :: PI_12 = 12.0_dp / PI      ! PI_12 ~ 3.8197186342055
 
   type Soltab
     real(r64) :: solar_declination(366)
@@ -53,10 +55,6 @@ module PRMS_SOLTAB
   interface Soltab
     !! Soltab constructor
     module function constructor_Soltab(ctl_data, param_data, model_basin) result(this)
-      ! use Control_class, only: Control
-      ! use Parameters_class, only: Parameters
-      ! use PRMS_BASIN, only: Basin
-
       type(Soltab) :: this
         !! Soltab class
       type(Control), intent(in) :: ctl_data
