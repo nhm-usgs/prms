@@ -29,6 +29,7 @@ MODULE PRMS_TRANSP_TINDEX
     real(r32), allocatable :: transp_tmax_restart(:)
 
     contains
+      procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, public :: run => run_Transp_tindex
       procedure, nopass, public :: module_name
         !! Return the name of the module
@@ -51,6 +52,13 @@ MODULE PRMS_TRANSP_TINDEX
       type(Climateflow), intent(inout) :: climate
         !! Climate flow class
     end function
+  end interface
+
+  interface
+    module subroutine cleanup_Transp_tindex(this, ctl_data)
+      class(Transp_tindex), intent(in) :: this
+      type(Control), intent(in) :: ctl_data
+    end subroutine
   end interface
 
   interface

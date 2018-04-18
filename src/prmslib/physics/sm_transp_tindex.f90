@@ -3,10 +3,6 @@ contains
   !***********************************************************************
   ! Transp_tindex constructor
   module function constructor_Transp_tindex(ctl_data, param_data, model_basin, climate) result(this)
-    ! use Control_class, only: Control
-    ! use Parameters_class, only: Parameters
-    ! use PRMS_BASIN, only: Basin
-    ! use PRMS_CLIMATEVARS, only: Climateflow
     use conversions_mod, only: c_to_f
     use UTILS_PRMS, only: print_module_info
     implicit none
@@ -17,20 +13,19 @@ contains
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(inout) :: climate
 
+    ! Local variables
+    character(LEN=11) :: modname_rst
+      !! Used to verify module name when reading from restart file
     integer(i32) :: ii
       !! counter
     integer(i32) :: chru
       !! Current HRU
 
     ! ------------------------------------------------------------------------
-
-    ! These are only allocated when initializing from restart file
-    ! integer(i32), allocatable :: transp_beg_restart(:)
-    ! integer(i32), allocatable :: transp_end_restart(:)
-    ! real(r32), allocatable :: transp_tmax_restart(:)
-
     associate(nhru => ctl_data%nhru%values(1), &
+              init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
               print_debug => ctl_data%print_debug%value, &
+              rst_unit => ctl_data%restart_output_unit, &
               st_month => ctl_data%start_time%values(MONTH), &
               st_day => ctl_data%start_time%values(DAY), &
               temp_units => param_data%temp_units%values(1), &
@@ -55,7 +50,22 @@ contains
         enddo
       endif
 
-      ! TODO: Incorporate the load from restart file stuff
+      if (init_vars_from_file == 1) then
+        ! TODO: Incorporate the load from restart file stuff
+        ! These are only allocated when initializing from restart file
+        ! integer(i32), allocatable :: transp_beg_restart(:)
+        ! integer(i32), allocatable :: transp_end_restart(:)
+        ! real(r32), allocatable :: transp_tmax_restart(:)
+
+        ! read(rst_unit) modname_rst
+        ! call check_restart(MODNAME, modname_rst)
+        ! read(rst_unit) this%transp_check
+        ! read(rst_unit) this%tmax_sum
+        ! read(rst_unit) Transp_beg_restart
+        ! read(rst_unit) Transp_end_restart
+        ! read(rst_unit) Transp_tmax_restart
+      endif
+
       this%tmax_sum = 0.0
       this%transp_check = 0
       climate%basin_transp_on = 0
@@ -91,6 +101,27 @@ contains
   end function
 
 
+  module subroutine cleanup_Transp_tindex(this, ctl_data)
+    implicit none
+    class(Transp_tindex), intent(in) :: this
+    type(Control), intent(in) :: ctl_data
+
+    ! --------------------------------------------------------------------------
+    associate(rst_unit => ctl_data%restart_output_unit)
+
+      write(rst_unit) MODNAME
+      write(rst_unit) this%transp_check
+      write(rst_unit) this%tmax_sum
+
+      ! NOTE: Why save the following? It's already in the parameter file.
+      ! write(rst_unit) transp_beg
+      ! write(rst_unit) transp_end
+      ! write(rst_unit) transp_tmax
+    end associate
+  end subroutine
+
+
+
   module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, climate)
     implicit none
 
@@ -108,7 +139,6 @@ contains
       !! Counter
 
     !***********************************************************************
-
     !******Set switch for active transpiration period
     climate%basin_transp_on = 0
 
@@ -175,36 +205,4 @@ contains
 
     res = MODVERSION
   end function
-  !***********************************************************************
-  !     Write to or read from restart file
-  !***********************************************************************
-  ! subroutine transp_tindex_restart(In_out)
-  !   use PRMS_MODULE, only: Restart_outunit, Restart_inunit
-  !   use UTILS_PRMS, only: check_restart
-  !   implicit none
-  !
-  !   ! Argument
-  !   integer(i32), intent(in) :: In_out
-  !
-  !   ! Local Variable
-  !   character(len=13) :: module_name
-  !
-  !   !***********************************************************************
-  !   if (In_out == 0) then
-  !     write (Restart_outunit) MODNAME
-  !     write (Restart_outunit) Transp_check
-  !     write (Restart_outunit) Tmax_sum
-  !     write (Restart_outunit) Transp_beg
-  !     write (Restart_outunit) Transp_end
-  !     write (Restart_outunit) Transp_tmax
-  !   else
-  !     read (Restart_inunit) module_name
-  !     call check_restart(MODNAME, module_name)
-  !     read (Restart_inunit) Transp_check
-  !     read (Restart_inunit) Tmax_sum
-  !     read (Restart_inunit) Transp_beg_restart
-  !     read (Restart_inunit) Transp_end_restart
-  !     read (Restart_inunit) Transp_tmax_restart
-  !   endif
-  ! end subroutine transp_tindex_restart
 end submodule
