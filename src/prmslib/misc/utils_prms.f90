@@ -79,79 +79,38 @@ module UTILS_PRMS
 
 
     !***********************************************************************
-    !     Read CBH File to current time
-    !***********************************************************************
-    ! subroutine find_current_time(iunit, Year, Month, Day, iret, Cbh_binary_flag)
-    subroutine find_current_time(iret, iunit, datetime, binary_flag)
-      use prms_constants, only: MAXFILE_LENGTH
-      implicit none
-
-      ! Argument
-      integer(i32), intent(out) :: iret
-      integer(i32), intent(in) :: iunit
-      integer(i32), intent(in) :: datetime(6)
-      integer(i32), optional, intent(in) :: binary_flag
-      ! integer(i32), intent(in) :: Year
-      ! integer(i32), intent(in) :: Month
-      ! integer(i32), intent(in) :: Day
-
-      ! Local Variables
-      integer(i32) :: yr
-      integer(i32) :: mo
-      integer(i32) :: dy
-      character(len=MAXFILE_LENGTH) :: filename
-
-      !***********************************************************************
-      iret = 0
-      do
-        if (present(binary_flag) .and. binary_flag == 1) then
-          read(iunit, IOSTAT=iret) yr, mo, dy
-        else
-          read(iunit, *, IOSTAT=iret) yr, mo, dy
-        endif
-
-        if (iret == -1) then
-          inquire(UNIT=iunit, NAME=filename)
-          print *, 'ERROR, end-of-file found reading ', trim(filename), ' for date:', &
-                                 datetime(1), datetime(2), datetime(3)
-          stop
-        endif
-
-        if (iret /= 0) return
-        if (yr == datetime(1) .AND. mo == datetime(2) .AND. dy == datetime(3)) EXIT
-      enddo
-
-      backspace iunit
-    end subroutine find_current_time
-
-
-    !***********************************************************************
     !     Open PRMS input File and assign unit number
     !***********************************************************************
-    subroutine PRMS_open_input_file(iunit, Fname, Paramname, Ftype, iret)
+    subroutine PRMS_open_input_file(iunit, iret, Fname, Paramname, use_stream)
       implicit none
 
       ! Argument
       integer(i32), intent(out) :: iunit
+      integer(i32), intent(out) :: iret
       character(len=*), intent(in) :: Fname
       character(len=*), intent(in) :: Paramname
-      integer(i32), intent(in) :: Ftype
-      integer(i32), intent(out) :: iret
+      logical, optional, intent(in) :: use_stream
+        !! When .true. a stream (aka binary) file is opened
+
 
       ! Local Variables
-      integer(i32) :: ios  ! , nchars
+      integer(i32) :: ios
+      logical, parameter :: use_stream_def = .false.
+      logical :: use_stream_
 
       !***********************************************************************
+      ! NOTE: Kludge to get around Fortran's lack of default values for args.
+      use_stream_ = use_stream_def
+      if (present(use_stream)) use_stream_ = use_stream
+
       iret = 0
       iunit = get_ftnunit(777)
-      ! nchars = numchars(Fname)
 
-      if (Ftype == 0) then
-        open (unit=iunit, FILE=Fname, STATUS='OLD', IOSTAT=ios)
-        ! open (iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios)
+      if (use_stream_) then
+        ! Open file for stream access (aka binary)
+        open (unit=iunit, FILE=Fname, STATUS='OLD', form='unformatted', access='stream', IOSTAT=ios)
       else
-        open (unit=iunit, FILE=Fname, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios) ! for linux
-        ! open (iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='BINARY', IOSTAT=ios) ! for windows
+        open (unit=iunit, FILE=Fname, STATUS='OLD', IOSTAT=ios)
       endif
 
       if (ios /= 0) then
