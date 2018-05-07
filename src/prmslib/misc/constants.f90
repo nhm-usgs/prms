@@ -36,6 +36,9 @@ module prms_constants
 
     real(r32), parameter :: MM2INCH = 1.0 / INCH2MM
 
+    real(r32), parameter :: FEET2METERS = 0.3048
+    real(r32), parameter :: METERS2FEET = 1.0 / FEET2METERS
+
     ! Frequency values
     ! Used for basinOut_freq, nhruOut_freq, and nsubOut_freq
     integer(i32), parameter :: DAILY = 1
@@ -69,6 +72,11 @@ module prms_constants
     ! Precipitation units
     enum, bind(C)
       enumerator :: INCHES, MM
+    end enum
+
+    ! Elevation units
+    enum, bind(C)
+      enumerator :: FEET=0, METERS=1
     end enum
 
     ! hru_type
