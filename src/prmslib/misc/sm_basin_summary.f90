@@ -12,7 +12,7 @@ contains
     type(Parameters), intent(in) :: param_data
 
     integer(i32) :: ios
-    integer(i32) :: ierr = 0
+    integer(i32) :: ierr
     integer(i32) :: size
     integer(i32) :: jj
     character(len=MAXFILE_LENGTH) :: fileName
@@ -23,6 +23,8 @@ contains
               end_time => ctl_data%end_time%values, &
               basinOutVars => ctl_data%basinOutVars%values(1), &
               basinOut_freq => ctl_data%basinOut_freq%values(1))
+
+      ierr = 0
 
       if (print_debug > -2) then
         ! Output module and version information
@@ -129,8 +131,8 @@ contains
 
     ! Local Variables
     integer(i32) :: jj
-    logical :: write_month = .false.
-    logical :: last_day = .false.
+    logical :: write_month
+    logical :: last_day
 
     !***********************************************************************
     associate(curr_year => model_time%Nowtime(YEAR), &
@@ -155,36 +157,39 @@ contains
       endif
 
       !-----------------------------------------------------------------------
+      write_month = .false.
+      last_day = .false.
+
       do jj = 1, basinOutVars
         ! TODO: This is where the daily basin values are copied over based on
         !       what was requested in basinOutVar_names.
         select case(basinOutVar_names(jj)%s)
           case('basin_horad')
-            this%basin_var_daily(jj) = climate%basin_horad(1)
+            this%basin_var_daily(jj) = climate%basin_horad
           case('basin_obs_ppt')
-            this%basin_var_daily(jj) = climate%basin_obs_ppt(1)
+            this%basin_var_daily(jj) = climate%basin_obs_ppt
           case('basin_orad')
-            this%basin_var_daily(jj) = climate%basin_orad(1)
+            this%basin_var_daily(jj) = climate%basin_orad
           case('basin_potet')
-            this%basin_var_daily(jj) = climate%basin_potet(1)
+            this%basin_var_daily(jj) = climate%basin_potet
           case('basin_ppt')
-            this%basin_var_daily(jj) = climate%basin_ppt(1)
+            this%basin_var_daily(jj) = climate%basin_ppt
           case('basin_rain')
-            this%basin_var_daily(jj) = climate%basin_rain(1)
+            this%basin_var_daily(jj) = climate%basin_rain
           case('basin_snow')
-            this%basin_var_daily(jj) = climate%basin_snow(1)
+            this%basin_var_daily(jj) = climate%basin_snow
           ! case('basin_solsta')
-          !   this%basin_var_daily(jj) = climate%basin_solsta(1)
+          !   this%basin_var_daily(jj) = climate%basin_solsta
           case('basin_swrad')
-            this%basin_var_daily(jj) = climate%basin_swrad(1)
+            this%basin_var_daily(jj) = climate%basin_swrad
           case('basin_temp')
-            this%basin_var_daily(jj) = climate%basin_temp(1)
+            this%basin_var_daily(jj) = climate%basin_temp
           case('basin_tmax')
-            this%basin_var_daily(jj) = climate%basin_tmax(1)
+            this%basin_var_daily(jj) = climate%basin_tmax
           case('basin_tmin')
-            this%basin_var_daily(jj) = climate%basin_tmin(1)
+            this%basin_var_daily(jj) = climate%basin_tmin
           ! case('basin_transp_on')
-          !   this%basin_var_daily(jj) = climate%basin_transp_on(1)
+          !   this%basin_var_daily(jj) = climate%basin_transp_on
           case default
             ! pass
         end select
@@ -197,11 +202,9 @@ contains
 
         if (this%lastyear /= curr_year .or. last_day) then
           if ((curr_month == st_month .and. curr_day == st_day) .or. last_day) then
-            do jj = 1, basinOutVars
-              if (basinOut_freq == MEAN_YEARLY) then
-                this%basin_var_yearly(jj) = this%basin_var_yearly(jj) / this%yeardays
-              endif
-            enddo
+            if (basinOut_freq == MEAN_YEARLY) then
+              this%basin_var_yearly = this%basin_var_yearly / this%yeardays
+            endif
 
             write (this%yearlyunit, this%output_fmt3) this%lastyear, (this%basin_var_yearly(jj), jj = 1, basinOutVars)
             this%basin_var_yearly = 0.0
@@ -211,11 +214,8 @@ contains
         endif
 
         this%yeardays = this%yeardays + 1
-
-        do jj = 1, basinOutVars
-          this%basin_var_yearly(jj) = this%basin_var_yearly(jj) + this%basin_var_daily(jj)
-        enddo
-        RETURN
+        this%basin_var_yearly = this%basin_var_yearly + this%basin_var_daily
+        return
       elseif (this%monthly_flag == 1) then
         ! check for last day of month and simulation
         if (curr_day == model_time%last_day_of_month(curr_month)) then
@@ -225,27 +225,25 @@ contains
         endif
 
         this%monthdays = this%monthdays + 1.0D0
-
-        do jj = 1, basinOutVars
-          this%basin_var_monthly(jj) = this%basin_var_monthly(jj) + this%basin_var_daily(jj)
-
-          if (write_month) then
-            if (basinOut_freq == MEAN_MONTHLY) then
-              this%basin_var_monthly(jj) = this%basin_var_monthly(jj) / this%monthdays
-            endif
-          endif
-        enddo
+        this%basin_var_monthly = this%basin_var_monthly + this%basin_var_daily
 
         if (write_month) then
-          write (this%monthlyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_monthly(jj), jj = 1, basinOutVars)
+          if (basinOut_freq == MEAN_MONTHLY) then
+            this%basin_var_monthly = this%basin_var_monthly / this%monthdays
+          endif
+        endif
+
+        if (write_month) then
+          write (this%monthlyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_monthly(jj), jj=1, basinOutVars)
           this%monthdays = 0.0
           this%basin_var_monthly = 0.0
         endif
       elseif (this%daily_flag == 1) then
-        write (this%dailyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_daily(jj), jj = 1, basinOutVars)
+        write (this%dailyunit, this%output_fmt) curr_year, curr_month, curr_day, (this%basin_var_daily(jj), jj=1, basinOutVars)
       endif
     end associate
   end subroutine
+
 
   module function module_name() result(res)
     implicit none
