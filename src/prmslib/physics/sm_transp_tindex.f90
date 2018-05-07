@@ -22,7 +22,7 @@ contains
       !! Current HRU
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
               print_debug => ctl_data%print_debug%value, &
               rst_unit => ctl_data%restart_output_unit, &
@@ -45,7 +45,7 @@ contains
       if (temp_units == 0) then
         this%transp_tmax_f = transp_tmax(:)
       else
-        do ii=1, ctl_data%nhru%values(1)
+        do ii=1, nhru
           this%transp_tmax_f(ii) = c_to_f(transp_tmax(ii))
         enddo
       endif
