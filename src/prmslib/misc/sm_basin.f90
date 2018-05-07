@@ -26,7 +26,7 @@ contains
       !! General counter
 
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value, &
               model_output_unit => ctl_data%model_output_unit, &
               hru_area => param_data%hru_area%values, &
