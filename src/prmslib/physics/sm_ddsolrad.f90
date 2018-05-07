@@ -2,20 +2,32 @@ submodule (PRMS_DDSOLRAD) sm_ddsolrad
 contains
   !***********************************************************************
   ! Ddsolrad constructor
-  module function constructor_Ddsolrad(ctl_data) result(this)
+  module function constructor_Ddsolrad(ctl_data, param_data) result(this)
     use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Ddsolrad) :: this
     type(Control), intent(in) :: ctl_data
+    type(Parameters), intent(in) :: param_data
 
     ! ------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value)
+              ! hru_solsta => param_data%hru_solsta)
       if (print_debug > -2) then
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
 
+      ! WARNING: may have to deal with initializing basin_solsta and rad_conv
+
+      ! TODO: add hru_solsta to parameters class
+      !! If no radiation stations are available for the active HRUs
+      !! then the sum of hru_solsta is 0
+      ! if (param_data%hru_solsta%exists()) then
+      !   this%has_obs_station = sum(hru_solsta%values, mask=active_mask) > 0
+      ! else
+      !   this%has_obs_station = .false.
+      ! endif
     end associate
   end function
 
@@ -56,8 +68,8 @@ contains
 
     !***********************************************************************
 
-    associate(nhru => ctl_data%nhru%values(1), &
-              nmonths => ctl_data%nmonths%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
+              nmonths => ctl_data%nmonths%value, &
               curr_month => model_time%Nowmonth, &
               day_of_year => model_time%day_of_year, &
               active_hrus => model_basin%active_hrus, &

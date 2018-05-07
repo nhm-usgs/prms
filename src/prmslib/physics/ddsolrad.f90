@@ -33,19 +33,23 @@ module PRMS_DDSOLRAD
                                                  .742, .746, .75]
 
   type Ddsolrad
+    logical, private :: has_obs_station
+      !! When true has solar radiation stations available
     contains
       procedure, public :: run => run_Ddsolrad
   end type
 
   interface Ddsolrad
     !! Ddsolrad constructor
-    module function constructor_Ddsolrad(ctl_data) result(this)
+    module function constructor_Ddsolrad(ctl_data, param_data) result(this)
       ! use Control_class, only: Control
 
       type(Ddsolrad) :: this
         !! Ddsolrad class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Parameters), intent(in) :: param_data
+        !! Parameters
     end function
   end interface
 
