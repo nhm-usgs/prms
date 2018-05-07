@@ -23,7 +23,7 @@ contains
     character(len=MAXFILE_LENGTH) :: fileName
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               end_time => ctl_data%end_time%values, &
@@ -86,7 +86,7 @@ contains
 
         write(this%output_fmt3, 9003) nhru
       elseif (this%monthly_flag == 1) then
-        this%monthdays = 0.0D0
+        ! this%monthdays = 0.0D0
         allocate(this%nhru_var_monthly(nhru, nhruOutVars))
         this%nhru_var_monthly = 0.0D0
 
@@ -184,21 +184,25 @@ contains
     logical :: write_month
     logical :: write_year
     logical :: last_day
+    logical :: last_day_of_simulation
 
     !***********************************************************************
-    associate(curr_year => model_time%Nowtime(YEAR), &
+    associate(curr_date => model_time%Nowtime, &
+              curr_year => model_time%Nowtime(YEAR), &
               curr_month => model_time%Nowtime(MONTH), &
               curr_day => model_time%Nowtime(DAY), &
+              st_date => ctl_data%start_time%values, &
               st_year => ctl_data%start_time%values(YEAR), &
               st_month => ctl_data%start_time%values(MONTH), &
               st_day => ctl_data%start_time%values(DAY), &
+              en_date => ctl_data%end_time%values, &
               en_year => ctl_data%end_time%values(YEAR), &
               en_month => ctl_data%end_time%values(MONTH), &
               en_day => ctl_data%end_time%values(DAY), &
               nhruOutVars => ctl_data%nhruOutVars%values(1), &
               nhruOut_freq => ctl_data%nhruOut_freq%values(1), &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
-              nhru => ctl_data%nhru%values(1), &
+              nhru => ctl_data%nhru%value, &
               active_hrus => model_basin%active_hrus, &
               hru_route_order => model_basin%hru_route_order)
 
@@ -250,10 +254,14 @@ contains
 
       write_month = .false.
       write_year = .false.
+
+      last_day_of_simulation = all(curr_date .eq. en_date)
+
       if (ANY([MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
         last_day = .false.
 
-        if (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
+        if (last_day_of_simulation) then
+        ! if (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
           last_day = .true.
         endif
 
@@ -264,15 +272,12 @@ contains
                 do concurrent (j=1:active_hrus)
                   this%nhru_var_yearly(hru_route_order(j), jj) = this%nhru_var_yearly(hru_route_order(j), jj) / this%yeardays
                 end do
-                ! do j=1, model_basin%active_hrus
-                !   chru = model_basin%hru_route_order(j)
-                !   this%nhru_var_yearly(chru, jj) = this%nhru_var_yearly(chru, jj) / this%yeardays
-                ! enddo
               endif
+
               write (this%yearlyunit(jj), this%output_fmt3) this%lastyear, (this%nhru_var_yearly(j, jj), j=1, nhru)
             enddo
 
-            this%nhru_var_yearly = 0.0
+            this%nhru_var_yearly = 0.0d0
             this%yeardays = 0
             this%lastyear = curr_year
           endif
@@ -283,11 +288,12 @@ contains
           ! check for last day of month and simulation
           if (curr_day == model_time%last_day_of_month(curr_month)) then
             write_month = .true.
-          elseif (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
+          elseif (last_day_of_simulation) then
+          ! elseif (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
             write_month = .true.
           endif
 
-          this%monthdays = this%monthdays + 1.0
+          ! this%monthdays = this%monthdays + 1.0d0
       endif
 
       if (this%double_vars == 1) then
@@ -307,10 +313,6 @@ contains
           do concurrent (j=1:active_hrus)
             this%nhru_var_yearly(hru_route_order(j), jj) = this%nhru_var_yearly(hru_route_order(j), jj) + DBLE(this%nhru_var_daily(hru_route_order(j), jj))
           end do
-          ! do j = 1, model_basin%active_hrus
-          !   chru = model_basin%hru_route_order(j)
-          !   this%nhru_var_yearly(chru, jj) = this%nhru_var_yearly(chru, jj) + DBLE(this%nhru_var_daily(chru, jj))
-          ! enddo
         enddo
         RETURN
       endif
@@ -322,20 +324,11 @@ contains
 
             if (write_month) then
               if (nhruOut_freq == MEAN_MONTHLY) then
-                this%nhru_var_monthly(hru_route_order(j), jj) = this%nhru_var_monthly(hru_route_order(j), jj) / this%monthdays
+                this%nhru_var_monthly(hru_route_order(j), jj) = this%nhru_var_monthly(hru_route_order(j), jj) / model_time%last_day_of_month(curr_month)
+                ! this%nhru_var_monthly(hru_route_order(j), jj) = this%nhru_var_monthly(hru_route_order(j), jj) / this%monthdays
               endif
             endif
           end do
-          ! do j = 1, model_basin%active_hrus
-          !   chru = model_basin%hru_route_order(j)
-          !   this%nhru_var_monthly(chru, jj) = this%nhru_var_monthly(chru, jj) + DBLE(this%nhru_var_daily(chru, jj))
-          !
-          !   if (write_month) then
-          !     if (nhruOut_freq == MEAN_MONTHLY) then
-          !       this%nhru_var_monthly(chru, jj) = this%nhru_var_monthly(chru, jj) / this%monthdays
-          !     endif
-          !   endif
-          ! enddo
         enddo
       endif
 
@@ -352,8 +345,8 @@ contains
       enddo
 
       if (write_month) then
-        this%monthdays = 0.0
-        this%nhru_var_monthly = 0.0
+        ! this%monthdays = 0.0d0
+        this%nhru_var_monthly = 0.0d0
       endif
     end associate
   end subroutine
