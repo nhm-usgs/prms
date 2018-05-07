@@ -16,7 +16,7 @@ contains
     integer(i32) :: istop = 0
 
     ! ----------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values)
@@ -82,16 +82,16 @@ contains
     integer(i32) :: yr, mo, dy, hr, mn, sec
       !! junk vars to hold time info from files
 
-    real(r32), pointer :: tmax_adj_2d(:,:)
-    real(r32), pointer :: tmin_adj_2d(:,:)
-    real(r32), pointer :: rain_adj_2d(:,:)
-    real(r32), pointer :: snow_adj_2d(:,:)
-    real(r32), pointer :: adjmix_rain_2d(:,:)
+    real(r32), pointer, contiguous :: tmax_adj_2d(:,:)
+    real(r32), pointer, contiguous :: tmin_adj_2d(:,:)
+    real(r32), pointer, contiguous :: rain_adj_2d(:,:)
+    real(r32), pointer, contiguous :: snow_adj_2d(:,:)
+    real(r32), pointer, contiguous :: adjmix_rain_2d(:,:)
 
     ! ----------------------------------------------------------------------
     associate(curr_month => model_time%Nowmonth, &
-              nhru => ctl_data%nhru%values(1), &
-              nmonths => ctl_data%nmonths%values(1))
+              nhru => ctl_data%nhru%value, &
+              nmonths => ctl_data%nmonths%value)
               ! hru_area => param_data%hru_area%values, &
               ! tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
               ! tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
