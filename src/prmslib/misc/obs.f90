@@ -35,8 +35,6 @@ module PRMS_OBS
   interface Obs
     !! Obs constructor
     module function constructor_Obs(ctl_data) result(this)
-      ! use Control_class, only: Control
-
       type(Obs) :: this
         !! Obs class
       type(Control), intent(in) :: ctl_data
@@ -46,8 +44,6 @@ module PRMS_OBS
 
   interface
     module subroutine cleanup(this, ctl_data)
-      ! use Control_class, only: Control
-
       class(Obs), intent(in) :: this
       type(Control), intent(in) :: ctl_data
     end subroutine
