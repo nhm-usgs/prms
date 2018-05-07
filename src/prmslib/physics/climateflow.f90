@@ -3,7 +3,8 @@
 !***********************************************************************
 module PRMS_CLIMATEVARS
   use variableKind
-  use prms_constants, only: FAHRENHEIT, CELSIUS, INCHES, MM
+  use prms_constants, only: FAHRENHEIT, CELSIUS, INCHES, MM, FEET, METERS, &
+                            FEET2METERS, METERS2FEET
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -17,24 +18,27 @@ module PRMS_CLIMATEVARS
   character(len=*), parameter :: MODVERSION = '2017-09-29 13:47:00Z'
 
   type Climateflow
-    real(r32) :: solrad_tmax(1)
-    real(r32) :: solrad_tmin(1)
+    real(r32) :: solrad_tmax
+    real(r32) :: solrad_tmin
 
-    real(r64) :: basin_horad(1)
-    real(r64) :: basin_obs_ppt(1) = 0.0
-    real(r64) :: basin_orad(1) = 0.0
+    ! Basin variables
+    real(r64) :: basin_cloud_cover
+    real(r64) :: basin_horad
+    real(r64) :: basin_humidity
+    real(r64) :: basin_obs_ppt
+    real(r64) :: basin_orad
       !! used when solrad_module = [ddsolrad, ccsolrad] or model==99
-    real(r64) :: basin_potet(1) = 0.0
-    real(r64) :: basin_ppt(1) = 0.0
-    real(r64) :: basin_rain(1) = 0.0
-    real(r64) :: basin_snow(1) = 0.0
-    real(r64) :: basin_swrad(1) = 0.0
-    real(r64) :: basin_temp(1) = 0.0
-    real(r64) :: basin_tmax(1) = 0.0
-    real(r64) :: basin_tmin(1) = 0.0
+    real(r64) :: basin_potet
+    real(r64) :: basin_potsw
+    real(r64) :: basin_ppt
+    real(r64) :: basin_rain
+    real(r64) :: basin_snow
+    real(r64) :: basin_swrad
+    real(r64) :: basin_temp
+    real(r64) :: basin_tmax
+    real(r64) :: basin_tmin
 
-    integer(i32) :: basin_solsta = 0
-    integer(i32) :: basin_transp_on = 0
+    integer(i32) :: basin_transp_on
 
     real(r32), allocatable :: hru_ppt(:)
     real(r32), allocatable :: hru_rain(:)
@@ -46,34 +50,56 @@ module PRMS_CLIMATEVARS
     real(r32), allocatable :: swrad(:)
     real(r32), allocatable :: tavgc(:)
     real(r32), allocatable :: tavgf(:)
-    real(r32), allocatable :: tmax_hru(:)
     real(r32), allocatable :: tmaxc(:)
     real(r32), allocatable :: tmaxf(:)
-    real(r32), allocatable :: tmin_hru(:)
     real(r32), allocatable :: tminc(:)
     real(r32), allocatable :: tminf(:)
+
+    real(r32), allocatable :: tmax_hru(:)
+      !! maximum temperature by hru in temp_units
+    real(r32), allocatable :: tmin_hru(:)
+      !! minimum temperature by hru in temp_units
+
     real(r32), allocatable :: tmax_allrain(:, :)
     real(r32), allocatable :: tmax_allrain_f(:, :)
     real(r32), allocatable :: tmax_allsnow_c(:, :)
     real(r32), allocatable :: tmax_allsnow_f(:, :)
-    real(r32), allocatable :: tmax_aspect_adjust(:, :)
-    real(r32), allocatable :: tmin_aspect_adjust(:, :)
+
+    ! NOTE: Why both units? When are these variables needed
+    real(r32), allocatable :: psta_elev_feet(:)
+    real(r32), allocatable :: psta_elev_meters(:)
+    real(r32), allocatable :: tsta_elev_feet(:)
+    real(r32), allocatable :: tsta_elev_meters(:)
+
+    ! NOTE: These are just extra copies of parameters tmax_adj and tmin_adj
+    ! real(r32), allocatable :: tmax_aspect_adjust(:, :)
+    ! real(r32), allocatable :: tmin_aspect_adjust(:, :)
 
     integer(i32), allocatable :: newsnow(:)
     integer(i32), allocatable :: pptmix(:)
     integer(i32), allocatable :: transp_on(:)
 
+    ! For potet_pt, potet_pm, potet_pm_sta
+    real(r32), allocatable :: tempc_dewpt(:)
+    real(r32), allocatable :: vp_actual(:)
+    real(r32), allocatable :: lwrad_net(:)
+    real(r32), allocatable :: vp_slope(:)
+    real(r32), allocatable :: vp_sat(:)
+
+    ! For stream temperature
+    real(r32), allocatable :: cloud_cover_hru(:)
+
+    ! For solar radiation
+    real(r32) :: orad
+
     real(r32), allocatable, private :: tdiff_arr(:)
-      !! Interval array to hold difference b/t tmaxf and tminf
+      !! Array containing differences b/t tmaxf and tminf
 
     contains
       procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
-      ! procedure, public :: precip_form
-      ! procedure, public :: temp_set
       procedure, public :: set_precipitation_form
       procedure, public :: set_temperature
-
       procedure, nopass, public :: module_name
         !! Return the name of the module
       procedure, nopass, public :: version
@@ -100,20 +126,6 @@ module PRMS_CLIMATEVARS
     end subroutine
   end interface
 
-  ! interface
-  !   module subroutine precip_form(this, ihru, month, hru_area, adjmix_rain, &
-  !                                 rain_adj, snow_adj, precip, sum_obs)
-  !     class(Climateflow), intent(inout) :: this
-  !     integer(i32), intent(in) :: ihru
-  !     integer(i32), intent(in) :: month
-  !     real(r32), intent(in) :: hru_area
-  !     real(r32), intent(in) :: adjmix_rain
-  !     real(r32), intent(in) :: rain_adj
-  !     real(r32), intent(in) :: snow_adj
-  !     real(r32), intent(inout) :: precip
-  !     real(r64), intent(inout) :: sum_obs
-  !   end subroutine
-  ! end interface
 
   interface
     module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, &
@@ -145,18 +157,6 @@ module PRMS_CLIMATEVARS
         !! Array of maximum temperature adjustments
       end subroutine
   end interface
-
-
-  ! interface
-  !   module subroutine temp_set(this, param_data, ihru, hru_area, tmax, tmin)
-  !     class(Climateflow), intent(inout) :: this
-  !     type(Parameters), intent(in) :: param_data
-  !     integer(i32), intent(in) :: ihru
-  !     real(r32), intent(in) :: hru_area
-  !     real(r32), intent(in) :: tmax
-  !     real(r32), intent(in) :: tmin
-  !   end subroutine
-  ! end interface
 
 
   interface

@@ -24,33 +24,50 @@ contains
     real(r32), pointer :: tmax_allrain_offset_2d(:, :)
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
-              nmonths => ctl_data%nmonths%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
+              nmonths => ctl_data%nmonths%value, &
+              nrain => ctl_data%nrain%value, &
+              ntemp => ctl_data%ntemp%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
               rst_unit => ctl_data%restart_output_unit, &
               solrad_module => ctl_data%solrad_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
+              basin_tsta => param_data%basin_tsta%values(1), &
+              elev_units => param_data%elev_units%values(1), &
+              psta_elev => param_data%psta_elev%values, &
               tmax_allsnow => param_data%tmax_allsnow%values, &
-              tmax_allrain_offset => param_data%tmax_allrain_offset%values)
+              tmax_allrain_offset => param_data%tmax_allrain_offset%values, &
+              tsta_elev => param_data%tsta_elev%values)
 
       if (print_debug > -2) then
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
 
-      ! TODO: how to handle when init_vars_from_file == 1 (during init)?
-      ! TODO: how to handle when save_vars_to_file == 1 (during clean)?
-
       ! real(r32), allocatable :: tmax_allrain(:, :)
 
-      ! Get 2d-indexed pointers to 1d arrays
+      ! Get 2d-indexed pointers to 1d arrays of parameters
       tmax_allsnow_2d => get_array(tmax_allsnow, (/nhru, nmonths/))
       tmax_allrain_offset_2d => get_array(tmax_allrain_offset, (/nhru, nmonths/))
-
 
       allocate(this%hru_ppt(nhru))
       allocate(this%hru_rain(nhru))
       allocate(this%hru_snow(nhru))
+
+      if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
+          ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
+          ctl_data%precip_module%values(1)%s == 'xyz_dist') then
+        allocate(this%psta_elev_feet(nrain))
+        allocate(this%psta_elev_meters(nrain))
+
+        if (elev_units == FEET) then
+          this%psta_elev_feet = psta_elev
+          this%psta_elev_meters = psta_elev * FEET2METERS
+        else
+          this%psta_elev_meters = psta_elev
+          this%psta_elev_feet = psta_elev * METERS2FEET
+        endif
+      endif
 
       allocate(this%potet(nhru))
       allocate(this%prmx(nhru))
@@ -60,9 +77,24 @@ contains
       allocate(this%tminf(nhru), this%tminc(nhru))
       allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
 
+      if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
+          ctl_data%temp_module%values(1)%s /= 'temp_sta') then
+        allocate(this%tsta_elev_feet(ntemp))
+        allocate(this%tsta_elev_meters(ntemp))
+
+        if (elev_units == FEET) then
+          this%tsta_elev_feet = tsta_elev
+          this%tsta_elev_meters = tsta_elev * FEET2METERS
+        else
+          this%tsta_elev_meters = tsta_elev
+          this%tsta_elev_feet = tsta_elev * METERS2FEET
+        endif
+      endif
+
       allocate(this%tmax_allrain_f(nhru, 12))
-      allocate(this%tmax_allsnow_c(nhru, 12), this%tmax_allsnow_f(nhru, 12))
-      allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
+      allocate(this%tmax_allsnow_c(nhru, 12))
+      allocate(this%tmax_allsnow_f(nhru, 12))
+      ! allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
 
       allocate(this%newsnow(nhru))
       allocate(this%pptmix(nhru))
@@ -70,12 +102,52 @@ contains
 
       allocate(this%tdiff_arr(nhru))
 
+      if (ctl_data%et_module%values(1)%s == 'potet_pt' .or. &
+          ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
+          ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
+        allocate(this%tempc_dewpt(nhru))
+        allocate(this%vp_actual(nhru))
+        allocate(this%lwrad_net(nhru))
+        allocate(this%vp_slope(nhru))
+
+        this%tempc_dewpt = 0.0
+        this%vp_actual = 0.0
+        this%lwrad_net = 0.0
+        this%vp_slope = 0.0
+      endif
+
+      if (ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
+          ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
+        allocate(this%vp_sat(nhru))
+
+        this%vp_sat = 0.0
+      endif
+
+      ! TODO: Figure this out
+      ! if (ctl_data%et_module%values(1)%s /= 'potet_pm' .and. &
+      !     ctl_data%et_module%values(1)%s /= 'potet_pt') then
+      !   ! ?anything needed?
+      ! else
+      !   ! This is confusing because humidity_percent appears to only be used
+      !   ! by potet_pm and potet_pt. But it's forced to 1.0 in this case which
+      !   ! overrides the parameter values.
+      !   humidity_percent = 1.0
+      ! endif
+
+      if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
+          ctl_data%stream_temp_flag%values(1) == 1) then
+          allocate(this%cloud_cover_hru(nhru))
+      endif
+
       ! TODO: Figure out how to check this correctly
       ! if (any(['ddsolrad', 'ccsolrad']==ctl_data%solrad_module%values(1)%s) .or. &
       !     ctl_data%model_mode == 'DOCUMENTATION') then
         allocate(this%orad_hru(nhru))
         this%orad_hru = 0.0
       ! endif
+
+
+
 
       if (init_vars_from_file == 1) then
         ! read(rst_unit) modname_rst
@@ -131,6 +203,7 @@ contains
         ! Set tmax_allrain in units of the input values
         ! tmax_allsnow must be in the units of the input values
         if (param_data%temp_units%values(1) == FAHRENHEIT) then
+          ! TODO: remove reshape and use a pointer
           this%tmax_allsnow_f = reshape(tmax_allsnow, shape(this%tmax_allsnow_f))
 
           this%tmax_allrain_f = tmax_allsnow_2d + tmax_allrain_offset_2d
@@ -139,6 +212,7 @@ contains
           this%tmax_allrain = this%tmax_allrain_f
         else
           ! Celsius
+          ! TODO: remove reshape and use a pointer
           this%tmax_allsnow_c = reshape(tmax_allsnow, shape(this%tmax_allsnow_c))
 
           this%tmax_allsnow_f = c_to_f(tmax_allsnow_2d)
@@ -159,6 +233,7 @@ contains
     type(Control), intent(in) :: ctl_data
 
     ! ------------------------------------------------------------------------
+    ! TODO: Update to reflect the full PRMS codebase
     associate(rst_unit => ctl_data%restart_output_unit, &
               solrad_module => ctl_data%solrad_module%values(1))
 
@@ -325,6 +400,8 @@ contains
         this%tmaxc = f_to_c(this%tmaxf)
         this%tminc = f_to_c(this%tminf)
         this%tavgc = f_to_c(this%tavgf)
+
+        ! NOTE: Used by ddsolrad, ccsolrad and frost_date modules.
         this%tmax_hru = this%tmaxf ! in units temp_units
         this%tmin_hru = this%tminf ! in units temp_units
 
