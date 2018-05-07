@@ -17,34 +17,34 @@ module Control_class
   type Control
     ! Allowed dimensions
     type(iScalar) :: ncascade
-    type(iArray) :: ncascdgw
-    type(iArray) :: nconsumed
+    type(iScalar) :: ncascdgw
+    type(iScalar) :: nconsumed
     type(iScalar) :: ndays
-    type(iArray) :: ndepl
-    type(iArray) :: ndeplval
-    type(iArray) :: nevap
-    type(iArray) :: nexternal
-    type(iArray) :: ngw
-    type(iArray) :: ngwcell
-    type(iArray) :: nhru
-    type(iArray) :: nhrucell
-    type(iArray) :: nhumid
-    type(iArray) :: nlake
-    type(iArray) :: nlakeelev
-    type(iArray) :: nlapse
-    type(iArray) :: nmonths
+    type(iScalar) :: ndepl
+    type(iScalar) :: ndeplval
+    type(iScalar) :: nevap
+    type(iScalar) :: nexternal
+    type(iScalar) :: ngw
+    type(iScalar) :: ngwcell
+    type(iScalar) :: nhru
+    type(iScalar) :: nhrucell
+    type(iScalar) :: nhumid
+    type(iScalar) :: nlake
+    type(iScalar) :: nlakeelev
+    type(iScalar) :: nlapse
+    type(iScalar) :: nmonths
     type(iScalar) :: nobs
-    type(iArray) :: npoigages
+    type(iScalar) :: npoigages
     type(iScalar) :: nrain
-    type(iArray) :: nratetbl
-    type(iArray) :: nsegment
-    type(iArray) :: nsnow
-    type(iArray) :: nsol
-    type(iArray) :: nssr
-    type(iArray) :: nsub
+    type(iScalar) :: nratetbl
+    type(iScalar) :: nsegment
+    type(iScalar) :: nsnow
+    type(iScalar) :: nsol
+    type(iScalar) :: nssr
+    type(iScalar) :: nsub
     type(iScalar) :: ntemp
-    type(iArray) :: nwateruse
-    type(iArray) :: nwind
+    type(iScalar) :: nwateruse
+    type(iScalar) :: nwind
     type(iScalar) :: one
 
     ! All other control file parameters

@@ -106,11 +106,11 @@ contains
           case('ncascdgw')
             this%ncascdgw%name = last
             call this%ncascdgw%read(iUnit)
-            line = line + this%ncascdgw%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nconsumed')
             this%nconsumed%name = last
             call this%nconsumed%read(iUnit)
-            line = line + this%nconsumed%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ndays')
             this%ndays%name = last
             call this%ndays%read(iUnit)
@@ -118,51 +118,51 @@ contains
           case('ndepl')
             this%ndepl%name = last
             call this%ndepl%read(iUnit)
-            line = line + this%ndepl%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ndeplval')
             this%ndeplval%name = last
             call this%ndeplval%read(iUnit)
-            line = line + this%ndeplval%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nevap')
             this%nevap%name = last
             call this%nevap%read(iUnit)
-            line = line + this%nevap%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nexternal')
             this%nexternal%name = last
             call this%nexternal%read(iUnit)
-            line = line + this%nexternal%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ngw')
             this%ngw%name = last
             call this%ngw%read(iUnit)
-            line = line + this%ngw%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ngwcell')
             this%ngwcell%name = last
             call this%ngwcell%read(iUnit)
-            line = line + this%ngwcell%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nhru')
             this%nhru%name = last
             call this%nhru%read(iUnit)
-            line = line + this%nhru%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nhrucell')
             this%nhrucell%name = last
             call this%nhrucell%read(iUnit)
-            line = line + this%nhrucell%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nhumid')
             this%nhumid%name = last
             call this%nhumid%read(iUnit)
-            line = line + this%nhumid%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nlake')
             this%nlake%name = last
             call this%nlake%read(iUnit)
-            line = line + this%nlake%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nlakeelev')
             this%nlakeelev%name = last
             call this%nlakeelev%read(iUnit)
-            line = line + this%nlakeelev%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nlapse')
             this%nlapse%name = last
             call this%nlapse%read(iUnit)
-            line = line + this%nlapse%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nmonths')
             this%nmonths%name = last
             call this%nmonths%read(iUnit)
@@ -174,7 +174,7 @@ contains
           case('npoigages')
             this%npoigages%name = last
             call this%npoigages%read(iUnit)
-            line = line + this%npoigages%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nrain')
             this%nrain%name = last
             call this%nrain%read(iUnit)
@@ -182,27 +182,27 @@ contains
           case('nratetbl')
             this%nratetbl%name = last
             call this%nratetbl%read(iUnit)
-            line = line + this%nratetbl%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nsegment')
             this%nsegment%name = last
             call this%nsegment%read(iUnit)
-            line = line + this%nsegment%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nsnow')
             this%nsnow%name = last
             call this%nsnow%read(iUnit)
-            line = line + this%nsnow%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nsol')
             this%nsol%name = last
             call this%nsol%read(iUnit)
-            line = line + this%nsol%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nssr')
             this%nssr%name = last
             call this%nssr%read(iUnit)
-            line = line + this%nssr%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nsub')
             this%nsub%name = last
             call this%nsub%read(iUnit)
-            line = line + this%nsub%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('ntemp')
             this%ntemp%name = last
             call this%ntemp%read(iUnit)
@@ -210,11 +210,11 @@ contains
           case('nwateruse')
             this%nwateruse%name = last
             call this%nwateruse%read(iUnit)
-            line = line + this%nwateruse%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('nwind')
             this%nwind%name = last
             call this%nwind%read(iUnit)
-            line = line + this%nwind%size() + ENTRY_OFFSET
+            line = line + 1 + ENTRY_OFFSET
           case('one')
             this%one%name = last
             call this%one%read(iUnit)
