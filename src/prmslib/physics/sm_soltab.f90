@@ -48,7 +48,7 @@ contains
     ! real(r64) :: jddbl
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value, &
               hru_lat => param_data%hru_lat%values, &
               hru_type => param_data%hru_type%values, &
