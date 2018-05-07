@@ -42,6 +42,8 @@ module rArray_class
 
       procedure, public, pass(this) :: deallocate => deallocate_rArray
         !! Deallocate the memory inside the class
+      procedure, public, pass(this) :: exists => exists_rArray
+        !! Returns true if values array is allocated
       procedure, public, pass(this) :: print => print_rArray
         !! Print the class to the screen
       procedure, public, pass(this) :: read => read_rArray
@@ -115,6 +117,18 @@ contains
         call deallocate(this%values)
         call deallocate(this%dims)
     end subroutine
+    !====================================================================!
+
+    !====================================================================!
+    function exists_rArray(this) result(res)
+      logical :: res
+      class(rArray), intent(in) :: this
+
+      res = .false.
+      if (allocated(this%values)) then
+        res = .true.
+      endif
+    end function
     !====================================================================!
 
 

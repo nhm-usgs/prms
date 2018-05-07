@@ -34,6 +34,8 @@ module iArray_class
 
       procedure, public, pass(this) :: deallocate => deallocate_iArray
         !! Deallocate the memory inside the class
+      procedure, public, pass(this) :: exists => exists_iArray
+        !! Returns true if values array is allocated
       procedure, public, pass(this) :: print => print_iArray
         !! Print the class to the screen
       procedure, public, pass(this) :: read => read_iArray
@@ -105,6 +107,18 @@ module iArray_class
       call deallocate(this%values)
       call deallocate(this%dims)
     end subroutine deallocate_iArray
+    !====================================================================!
+
+    !====================================================================!
+    function exists_iArray(this) result(res)
+      logical :: res
+      class(iArray), intent(in) :: this
+
+      res = .false.
+      if (allocated(this%values)) then
+        res = .true.
+      endif
+    end function
     !====================================================================!
 
     !====================================================================!
