@@ -168,7 +168,6 @@ contains
   ! 2017-11-07 PAN: moved here from mmf_utils.f90
   !***********************************************************************
   module subroutine dattim(this, ctl_data, period, date_time)
-    ! use Control_class, only: Control
     implicit none
 
     ! Arguments
@@ -393,7 +392,7 @@ contains
   !***********************************************************************
   ! Return the last day of the given month
   !***********************************************************************
-  module function last_day_of_month(this, mon) result(res)
+  pure module function last_day_of_month(this, mon) result(res)
     implicit none
 
     integer(i32) :: res
@@ -401,13 +400,13 @@ contains
     integer(i32), intent(in) :: mon
 
     ! Local variables
-    integer(r32) :: yrdays
+    ! integer(r32) :: yrdays
     ! ===============================
-    yrdays = 365
+    ! yrdays = 365
     res = DAYPMO(mon)
 
     if (leap_day(this%Nowyear)) then
-      yrdays = yrdays + 1
+    !   yrdays = yrdays + 1
 
       if (mon == 2) res = res + 1
     endif
@@ -417,7 +416,7 @@ contains
   !***********************************************************************
   ! leap_day - is the year a leap year: (1=yes; 0=no)
   !***********************************************************************
-  module function leap_day(year) result(res)
+  pure module function leap_day(year) result(res)
     implicit none
 
     ! Arguments
