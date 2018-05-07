@@ -119,7 +119,8 @@ module UTILS_PRMS
                   'file specified by control parameter: ', Paramname
         iret = 1
       endif
-    end subroutine PRMS_open_input_file
+    end subroutine
+
 
     !***********************************************************************
     !     Open PRMS module output file and assign unit number
@@ -145,6 +146,7 @@ module UTILS_PRMS
         STOP
       endif
     end subroutine PRMS_open_module_file
+
 
     !***********************************************************************
     !     Open PRMS output file and assign unit number
@@ -185,15 +187,16 @@ module UTILS_PRMS
     ! ***********************************************************************
     !     Determine an unopened FORTRAN File Unit
     ! ***********************************************************************
-    integer function get_ftnunit(iunit)
+    function get_ftnunit(iunit) result(res)
       implicit none
 
       ! Argument
+      integer(i32) :: res
       integer, intent(in) :: iunit
 
       ! Local Variables
       integer :: good_unit
-      LOGICAL :: opend
+      logical :: opend
 
       !***********************************************************************
       good_unit = iunit
@@ -204,6 +207,6 @@ module UTILS_PRMS
         INQUIRE (UNIT=good_unit, OPENED=opend)
       enddo
 
-      get_ftnunit = good_unit
-   end function get_ftnunit
+      res = good_unit
+   end function
 end module
