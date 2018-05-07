@@ -19,7 +19,7 @@ submodule (Simulation_class) sm_simulation
       this%model_obs = Obs(ctl_data)
       this%model_time = Time_t(ctl_data, this%model_basin)
       this%climate_by_hru = Climate_HRU(ctl_data, param_data)
-      this%solrad = Ddsolrad(ctl_data)
+      this%solrad = Ddsolrad(ctl_data, param_data)
       this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin, this%climate)
       this%potet = Potet_jh(ctl_data)
 
@@ -75,7 +75,7 @@ submodule (Simulation_class) sm_simulation
       if (ctl_data%save_vars_to_file%values(1) == 1) then
         ! Write the important model information to the restart file
         write(ctl_data%restart_output_unit) this%model_time%timestep, &
-                                            ctl_data%nhru%values(1), &
+                                            ctl_data%nhru%value, &
                                             ctl_data%temp_module%values(1)%s, &
                                             ctl_data%model_mode%values(1)%s
 
