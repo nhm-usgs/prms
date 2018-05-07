@@ -61,9 +61,6 @@ module PRMS_SET_TIME
   interface Time_t
     !! Time_t constructor
     module function constructor_Time(ctl_data, model_basin) result(this)
-      ! use Control_class, only: Control
-      ! use PRMS_BASIN, only: Basin
-
       type(Time_t) :: this
         !! Time_t class
       type(Control), intent(in) :: ctl_data
@@ -74,7 +71,7 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function last_day_of_month(this, mon) result(res)
+    pure module function last_day_of_month(this, mon) result(res)
       integer(i32) :: res
       class(Time_t), intent(in) :: this
       integer(i32), intent(in) :: mon
@@ -83,9 +80,6 @@ module PRMS_SET_TIME
 
   interface
     module function next(this, ctl_data, model_basin) result(res)
-      ! use Control_class, only: Control
-      ! use PRMS_BASIN, only: Basin
-
       logical :: res
       class(Time_t), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
@@ -96,7 +90,6 @@ module PRMS_SET_TIME
   interface
     module function module_name() result(res)
       character(:), allocatable :: res
-      ! class(Basin_summary), intent(in) :: this
     end function
   end interface
 
@@ -108,9 +101,6 @@ module PRMS_SET_TIME
 
   interface
     module subroutine dattim(this, ctl_data, period, date_time)
-      ! use Control_class, only: Control
-
-      ! Arguments
       class(Time_t), intent(in) :: this
       type(Control), intent(in) :: ctl_data
         !! Control file data
@@ -128,10 +118,6 @@ module PRMS_SET_TIME
 
   interface
     module function ordinal_date(this, ctl_data, model_basin, Date_type, Year_type, hemisphere) result(res)
-      ! use Control_class, only: Control
-      ! use PRMS_BASIN, only: Basin
-
-      ! Arguments
       integer(i32) :: res
       class(Time_t) :: this
       type(Control), intent(in) :: ctl_data
@@ -155,7 +141,7 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function leap_day(year) result(res)
+    pure module function leap_day(year) result(res)
       logical :: res
       integer(i32), intent(in) :: year
     end function
