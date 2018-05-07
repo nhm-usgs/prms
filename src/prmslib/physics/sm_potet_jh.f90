@@ -43,15 +43,15 @@ contains
       !! 1D index from 2D
     ! real(r32) :: elh
       !! Latent heat of vaporization
-    real(r32), pointer :: jh_coef_2d(:,:)
+    real(r32), pointer, contiguous :: jh_coef_2d(:,:)
 
     !***********************************************************************
     ! 597.3 cal/gm at 0 C is the energy required to change the state of
     ! water to vapor
     ! elh is the latent heat of vaporization (not including the *2.54)
 
-    associate(nhru => ctl_data%nhru%values(1), &
-              nmonths => ctl_data%nmonths%values(1), &
+    associate(nhru => ctl_data%nhru%value, &
+              nmonths => ctl_data%nmonths%value, &
               curr_month => model_time%Nowmonth, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
@@ -66,7 +66,7 @@ contains
       where (climate%potet < 0.0) climate%potet = 0.0
 
       climate%basin_potet = sum(dble(climate%potet * hru_area), mask=active_mask) * basin_area_inv
-      
+
       ! do j = 1, model_basin%active_hrus
       !   chru = model_basin%hru_route_order(j)
       !   ! idx1D = (curr_month - 1) * ctl_data%nhru%values(1) + chru
