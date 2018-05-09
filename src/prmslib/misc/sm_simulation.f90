@@ -23,11 +23,11 @@ submodule (Simulation_class) sm_simulation
       this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin, this%climate)
       this%potet = Potet_jh(ctl_data)
 
-      if (ctl_data%nhruOutON_OFF%values(1) > 0) then
+      if (ctl_data%nhruOutON_OFF%value > 0) then
         this%summary_by_hru = Nhru_summary(ctl_data, param_data)
       endif
 
-      if (ctl_data%basinOutON_OFF%values(1) == 1) then
+      if (ctl_data%basinOutON_OFF%value == 1) then
         this%summary_by_basin = Basin_summary(ctl_data, param_data)
       endif
     end function
@@ -54,11 +54,11 @@ submodule (Simulation_class) sm_simulation
 
         call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%climate)
 
-        if (ctl_data%basinOutON_OFF%values(1) == 1) then
+        if (ctl_data%basinOutON_OFF%value == 1) then
           call this%summary_by_basin%run(ctl_data, this%model_time, this%climate)
         endif
 
-        if (ctl_data%nhruOutON_OFF%values(1) > 0) then
+        if (ctl_data%nhruOutON_OFF%value > 0) then
           call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, this%climate)
         endif
       enddo
@@ -72,7 +72,7 @@ submodule (Simulation_class) sm_simulation
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
-      if (ctl_data%save_vars_to_file%values(1) == 1) then
+      if (ctl_data%save_vars_to_file%value == 1) then
         ! Write the important model information to the restart file
         write(ctl_data%restart_output_unit) this%model_time%timestep, &
                                             ctl_data%nhru%value, &
