@@ -23,7 +23,7 @@ contains
 
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
+              init_vars_from_file => ctl_data%init_vars_from_file%value, &
               print_debug => ctl_data%print_debug%value, &
               rst_unit => ctl_data%restart_output_unit, &
               st_month => ctl_data%start_time%values(MONTH), &
