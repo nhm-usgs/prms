@@ -21,8 +21,8 @@ contains
     associate(print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               end_time => ctl_data%end_time%values, &
-              basinOutVars => ctl_data%basinOutVars%values(1), &
-              basinOut_freq => ctl_data%basinOut_freq%values(1))
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOut_freq => ctl_data%basinOut_freq%value)
 
       ierr = 0
 
@@ -144,8 +144,8 @@ contains
               en_year => ctl_data%end_time%values(YEAR), &
               en_month => ctl_data%end_time%values(MONTH), &
               en_day => ctl_data%end_time%values(DAY), &
-              basinOutVars => ctl_data%basinOutVars%values(1), &
-              basinOut_freq => ctl_data%basinOut_freq%values(1), &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOut_freq => ctl_data%basinOut_freq%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values)
 
       if (.not. this%begin_results) then
