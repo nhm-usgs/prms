@@ -28,11 +28,11 @@ contains
               nmonths => ctl_data%nmonths%value, &
               nrain => ctl_data%nrain%value, &
               ntemp => ctl_data%ntemp%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
+              init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
               solrad_module => ctl_data%solrad_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
-              basin_tsta => param_data%basin_tsta%values(1), &
+              ! basin_tsta => param_data%basin_tsta%values(1), &
               elev_units => param_data%elev_units%values(1), &
               psta_elev => param_data%psta_elev%values, &
               tmax_allsnow => param_data%tmax_allsnow%values, &
@@ -135,8 +135,8 @@ contains
       ! endif
 
       if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
-          ctl_data%stream_temp_flag%values(1) == 1) then
-          allocate(this%cloud_cover_hru(nhru))
+          ctl_data%stream_temp_flag%value == 1) then
+        allocate(this%cloud_cover_hru(nhru))
       endif
 
       ! TODO: Figure out how to check this correctly
