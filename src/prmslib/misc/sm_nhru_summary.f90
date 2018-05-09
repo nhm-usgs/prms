@@ -27,9 +27,9 @@ contains
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               end_time => ctl_data%end_time%values, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%values(1), &
-              nhruOut_freq => ctl_data%nhruOut_freq%values(1), &
-              nhruOutVars => ctl_data%nhruOutVars%values(1), &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOut_freq => ctl_data%nhruOut_freq%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
               nhm_id => param_data%nhm_id%values)
 
       if (print_debug > -2) then
@@ -199,8 +199,8 @@ contains
               en_year => ctl_data%end_time%values(YEAR), &
               en_month => ctl_data%end_time%values(MONTH), &
               en_day => ctl_data%end_time%values(DAY), &
-              nhruOutVars => ctl_data%nhruOutVars%values(1), &
-              nhruOut_freq => ctl_data%nhruOut_freq%values(1), &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOut_freq => ctl_data%nhruOut_freq%value, &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               nhru => ctl_data%nhru%value, &
               active_hrus => model_basin%active_hrus, &
