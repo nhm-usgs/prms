@@ -18,7 +18,7 @@ contains
     associate(nobs => ctl_data%nobs%value, &
               nrain => ctl_data%nrain%value, &
               ntemp => ctl_data%ntemp%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%values(1), &
+              init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value)
 
