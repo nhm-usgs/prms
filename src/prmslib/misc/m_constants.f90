@@ -4,9 +4,9 @@ module prms_constants
     implicit none
 
     ! see discussion at: https://software.intel.com/en-us/forums/intel-visual-fortran-compiler-for-windows/topic/285082
-    integer, parameter :: sp = selected_real_kind(6, 37)
+    integer, parameter :: sp = r32
       !! Define real precision and range
-    integer, parameter :: dp = selected_real_kind(15, 300)
+    integer, parameter :: dp = r64
       !! Define double precision and range
 
     ! from prms6.f90
@@ -78,6 +78,13 @@ module prms_constants
     enum, bind(C)
       enumerator :: FEET=0, METERS=1
     end enum
+
+    ! cov_type
+    enum, bind(C)
+      ! 0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous
+      enumerator :: BARESOIL=0, GRASSES=1, SHRUBS=2, TREES=3, CONIFEROUS=4
+    end enum
+
 
     ! hru_type
     enum, bind(C)

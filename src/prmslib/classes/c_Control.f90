@@ -5,6 +5,7 @@ module Control_class
   use iArray_class, only: iArray
   use sArray_class, only: sArray
   use iScalar_class, only: iScalar
+  use rScalar_class, only: rScalar
   implicit none
 
   private
@@ -47,105 +48,105 @@ module Control_class
     type(iScalar) :: nwind
     type(iScalar) :: one
 
-    ! All other control file parameters
-    type(iArray) :: aniOutON_OFF
+    ! Control variables
+    type(iScalar) :: aniOutON_OFF
     type(sArray) :: aniOutVar_names
     type(sArray) :: ani_output_file
     type(sArray) :: basinOutBaseFileName
-    type(iArray) :: basinOutON_OFF
+    type(iScalar) :: basinOutON_OFF
     type(sArray) :: basinOutVar_names
-    type(iArray) :: basinOutVars
-    type(iArray) :: basinOut_freq
-    type(iArray) :: canopy_transferON_OFF
+    type(iScalar) :: basinOutVars
+    type(iScalar) :: basinOut_freq
+    type(iScalar) :: canopy_transferON_OFF
     type(sArray) :: capillary_module
-    type(iArray) :: cascade_flag
-    type(iArray) :: cascadegw_flag
+    type(iScalar) :: cascade_flag
+    type(iScalar) :: cascadegw_flag
     type(iScalar) :: cbh_binary_flag
     type(iScalar) :: cbh_check_flag
-    type(iArray) :: consumed_transferON_OFF
+    type(iScalar) :: consumed_transferON_OFF
     type(sArray) :: covden_sum_dynamic
     type(sArray) :: covden_win_dynamic
     type(sArray) :: covtype_dynamic
     type(sArray) :: creator_email
-    type(iArray) :: csvON_OFF
+    type(iScalar) :: csvON_OFF
     type(sArray) :: csv_output_file
     type(sArray) :: data_file
-    type(iArray) :: dispGraphsBuffSize
+    type(iScalar) :: dispGraphsBuffSize
     type(sArray) :: dprst_area_dynamic
     type(sArray) :: dprst_depth_dynamic
-    type(iArray) :: dprst_flag
+    type(iScalar) :: dprst_flag
     type(sArray) :: dprst_frac_dynamic
-    type(iArray) :: dprst_transferON_OFF
-    type(iArray) :: dyn_covden_flag
-    type(iArray) :: dyn_covtype_flag
-    type(iArray) :: dyn_dprst_flag
-    type(iArray) :: dyn_fallfrost_flag
-    type(iArray) :: dyn_imperv_flag
-    type(iArray) :: dyn_intcp_flag
-    type(iArray) :: dyn_potet_flag
-    type(iArray) :: dyn_radtrncf_flag
-    type(iArray) :: dyn_snareathresh_flag
-    type(iArray) :: dyn_soil_flag
-    type(iArray) :: dyn_springfrost_flag
-    type(iArray) :: dyn_sro2dprst_imperv_flag
-    type(iArray) :: dyn_sro2dprst_perv_flag
-    type(iArray) :: dyn_sro_to_dprst_flag
-    type(iArray) :: dyn_sro_to_imperv_flag
-    type(iArray) :: dyn_transp_flag
-    type(iArray) :: dyn_transp_on_flag
+    type(iScalar) :: dprst_transferON_OFF
+    type(iScalar) :: dyn_covden_flag
+    type(iScalar) :: dyn_covtype_flag
+    type(iScalar) :: dyn_dprst_flag
+    type(iScalar) :: dyn_fallfrost_flag
+    type(iScalar) :: dyn_imperv_flag
+    type(iScalar) :: dyn_intcp_flag
+    type(iScalar) :: dyn_potet_flag
+    type(iScalar) :: dyn_radtrncf_flag
+    type(iScalar) :: dyn_snareathresh_flag
+    type(iScalar) :: dyn_soil_flag
+    type(iScalar) :: dyn_springfrost_flag
+    type(iScalar) :: dyn_sro2dprst_imperv_flag
+    type(iScalar) :: dyn_sro2dprst_perv_flag
+    type(iScalar) :: dyn_sro_to_dprst_flag
+    type(iScalar) :: dyn_sro_to_imperv_flag
+    type(iScalar) :: dyn_transp_flag
+    type(iScalar) :: dyn_transp_on_flag
     type(iArray) :: end_time
     type(sArray) :: et_module
     type(sArray) :: executable_desc
     type(sArray) :: executable_model
-    type(iArray) :: external_transferON_OFF
+    type(iScalar) :: external_transferON_OFF
     type(sArray) :: fallfrost_dynamic
-    type(iArray) :: frozen_flag
-    type(iArray) :: glacier_flag
-    type(iArray) :: gsf_rpt
+    type(iScalar) :: frozen_flag
+    type(iScalar) :: glacier_flag
+    type(iScalar) :: gsf_rpt
     type(sArray) :: gsflow_csv_file
     type(sArray) :: gsflow_output_file
-    type(iArray) :: gwflow_cbh_flag
-    type(iArray) :: gwr_swale_flag
-    type(iArray) :: gwr_transferON_OFF
+    type(iScalar) :: gwflow_cbh_flag
+    type(iScalar) :: gwr_swale_flag
+    type(iScalar) :: gwr_transferON_OFF
     type(sArray) :: gwres_flow_day
-    type(iArray) :: humidity_cbh_flag
+    type(iScalar) :: humidity_cbh_flag
     type(sArray) :: humidity_day
-    type(iArray) :: ignore_data_file_end
+    type(iScalar) :: ignore_data_file_end
     type(sArray) :: imperv_frac_dynamic
     type(sArray) :: imperv_stor_dynamic
-    type(iArray) :: init_vars_from_file
-    type(rArray) :: initial_deltat
+    type(iScalar) :: init_vars_from_file
+    type(rScalar) :: initial_deltat
     type(sArray) :: jhcoef_dynamic
-    type(iArray) :: lake_transferON_OFF
-    type(iArray) :: mapOutON_OFF
+    type(iScalar) :: lake_transferON_OFF
+    type(iScalar) :: mapOutON_OFF
     type(sArray) :: mapOutVar_names
-    type(iArray) :: mbInit_flag
+    type(iScalar) :: mbInit_flag
     type(sArray) :: model_mode
     type(sArray) :: model_output_file
     type(sArray) :: modflow_name
-    type(iArray) :: modflow_time_zero
-    type(iArray) :: musroute_flag
-    type(iArray) :: naniOutVars
-    type(iArray) :: ndispGraphs
+    type(iScalar) :: modflow_time_zero
+    type(iScalar) :: musroute_flag
+    type(iScalar) :: naniOutVars
+    type(iScalar) :: ndispGraphs
     type(sArray) :: nhruOutBaseFileName
-    type(iArray) :: nhruOutON_OFF
+    type(iScalar) :: nhruOutON_OFF
     type(sArray) :: nhruOutVar_names
-    type(iArray) :: nhruOutVars
-    type(iArray) :: nhruOut_freq
-    type(iArray) :: nmapOutVars
+    type(iScalar) :: nhruOutVars
+    type(iScalar) :: nhruOut_freq
+    type(iScalar) :: nmapOutVars
     type(sArray) :: nsegmentOutBaseFileName
-    type(iArray) :: nsegmentOutON_OFF
-    type(iArray) :: nsegmentOutVars
-    type(iArray) :: nsegmentOut_freq
-    type(iArray) :: nstatVars
+    type(iScalar) :: nsegmentOutON_OFF
+    type(iScalar) :: nsegmentOutVars
+    type(iScalar) :: nsegmentOut_freq
+    type(iScalar) :: nstatVars
     type(sArray) :: nsubOutBaseFileName
-    type(iArray) :: nsubOutON_OFF
+    type(iScalar) :: nsubOutON_OFF
     type(sArray) :: nsubOutVar_names
-    type(iArray) :: nsubOutVars
-    type(iArray) :: nsubOut_freq
-    type(iArray) :: orad_flag
+    type(iScalar) :: nsubOutVars
+    type(iScalar) :: nsubOut_freq
+    type(iScalar) :: orad_flag
     type(sArray) :: param_file
-    type(iArray) :: parameter_check_flag
+    type(iScalar) :: parameter_check_flag
     type(sArray) :: pk_depth_day
     type(sArray) :: pkwater_equiv_day
     type(sArray) :: potet_coef_dynamic
@@ -155,13 +156,13 @@ module Control_class
     type(iScalar) :: print_debug
     type(iScalar) :: prms_warmup
     type(sArray) :: radtrncf_dynamic
-    type(iArray) :: rpt_days
-    type(iArray) :: save_vars_to_file
-    type(iArray) :: seg2hru_flag
-    type(iArray) :: segmentOutON_OFF
+    type(iScalar) :: rpt_days
+    type(iScalar) :: save_vars_to_file
+    type(iScalar) :: seg2hru_flag
+    type(iScalar) :: segmentOutON_OFF
     type(sArray) :: segmentOutVar_names
-    type(iArray) :: segment_transferON_OFF
-    type(iArray) :: snow_cbh_flag
+    type(iScalar) :: segment_transferON_OFF
+    type(iScalar) :: snow_cbh_flag
     type(sArray) :: snow_evap_day
     type(sArray) :: snow_intcp_dynamic
     type(sArray) :: snowcov_area_day
@@ -169,7 +170,7 @@ module Control_class
     type(sArray) :: soilmoist_dynamic
     type(sArray) :: soilrechr_dynamic
     type(sArray) :: soilzone_module
-    type(iArray) :: soilzone_transferON_OFF
+    type(iScalar) :: soilzone_transferON_OFF
     type(sArray) :: solrad_module
     type(sArray) :: springfrost_dynamic
     type(sArray) :: srain_intcp_dynamic
@@ -178,12 +179,12 @@ module Control_class
     type(sArray) :: srunoff_module
     type(iArray) :: start_time
     type(sArray) :: stat_var_file
-    type(iArray) :: statsON_OFF
+    type(iScalar) :: statsON_OFF
     type(sArray) :: stats_output_file
-    type(iArray) :: stream_temp_flag
-    type(iArray) :: stream_temp_shade_flag
+    type(iScalar) :: stream_temp_flag
+    type(iScalar) :: stream_temp_shade_flag
     type(sArray) :: strmflow_module
-    type(iArray) :: subbasin_flag
+    type(iScalar) :: subbasin_flag
     type(sArray) :: swrad_day
     type(sArray) :: temp_module
     type(sArray) :: tmax_day
@@ -195,7 +196,7 @@ module Control_class
     type(sArray) :: transpend_dynamic
     type(sArray) :: var_init_file
     type(sArray) :: var_save_file
-    type(iArray) :: windspeed_cbh_flag
+    type(iScalar) :: windspeed_cbh_flag
     type(sArray) :: windspeed_day
     type(sArray) :: wrain_intcp_dynamic
 
