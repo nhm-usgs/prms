@@ -5,21 +5,23 @@
 !***********************************************************************
 module PRMS_INTCP
   use variableKind
+  use prms_constants, only: dp
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
+  ! use PRMS_SNOW, only: Snowcomp
   implicit none
 
   private
-  public :: Intercept
+  public :: Interception
 
   character(len=*), parameter :: MODDESC = 'Canopy Interception'
   character(len=*), parameter :: MODNAME = 'intcp'
   character(len=*), parameter :: MODVERSION = '2018-02-26 12:28:00Z'
 
-  type Intercept
+  type Interception
     ! Local Variables
     real(r32), allocatable :: gain_inches(:)
     real(r32), allocatable :: intcp_changeover(:)
@@ -55,15 +57,15 @@ module PRMS_INTCP
 
     contains
       procedure, nopass, private :: intercept
-      procedure, public :: run => run_Intercept
-      procedure, public :: cleanup => cleanup_Intercept
+      procedure, public :: run => run_Interception
+      procedure, public :: cleanup => cleanup_Interception
   end type
 
-  interface Intercept
+  interface Interception
     !! Intercept constructor
-    module function constructor_Intercept(ctl_data, model_climate) result(this)
-      type(Intercept) :: this
-        !! Intercept class
+    module function constructor_Interception(ctl_data, model_climate) result(this)
+      type(Interception) :: this
+        !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Climateflow), intent(in) :: model_climate
@@ -72,25 +74,26 @@ module PRMS_INTCP
   end interface
 
   interface
-    module subroutine run_Intercept(this, ctl_data, param_data, model_basin, model_climate, model_time)
-      type(Intercept) :: this
-        !! Intercept class
+    module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
+                                       model_climate, model_time)
+      class(Interception) :: this
+        !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      type(Climateflow), intent(in) :: model_climate
+      type(Climateflow), intent(inout) :: model_climate
         !! Climate variables
       type(Time_t), intent(in) :: model_time
     end subroutine
   end interface
 
   interface
-    module subroutine clean_Intercept(this)
-      type(Intercept) :: this
-        !! Intercept class
+    module subroutine cleanup_Interception(this)
+      class(Interception) :: this
+        !! Interception class
     end subroutine
   end interface
 
