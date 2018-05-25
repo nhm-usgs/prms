@@ -12,7 +12,7 @@ module PRMS_BASIN
   private
   public :: Basin
 
-  intrinsic :: EPSILON
+  ! intrinsic :: EPSILON
 
   character(len=*), parameter :: MODDESC = 'Basin Definition'
   character(len=*), parameter :: MODNAME = 'basin'
