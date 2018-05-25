@@ -3,6 +3,7 @@
 !***********************************************************************
 module PRMS_CLIMATEVARS
   use variableKind
+  use prms_constants, only: dp
   use prms_constants, only: FAHRENHEIT, CELSIUS, INCHES, MM, FEET, METERS, &
                             FEET2METERS, METERS2FEET
   use Control_class, only: Control
@@ -78,6 +79,10 @@ module PRMS_CLIMATEVARS
     integer(i32), allocatable :: newsnow(:)
     integer(i32), allocatable :: pptmix(:)
     integer(i32), allocatable :: transp_on(:)
+
+    ! snow variables
+    real(r64), allocatable :: pkwater_equiv(:)
+      !! Snowpack water equivalent on each HRU [inches]
 
     ! For potet_pt, potet_pm, potet_pm_sta
     real(r32), allocatable :: tempc_dewpt(:)
