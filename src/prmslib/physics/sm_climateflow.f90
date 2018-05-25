@@ -123,6 +123,10 @@ contains
         this%vp_sat = 0.0
       endif
 
+      ! Snow
+      allocate(this%pkwater_equiv(nhru))
+      this%pkwater_equiv = 0.0_dp
+
       ! TODO: Figure this out
       ! if (ctl_data%et_module%values(1)%s /= 'potet_pm' .and. &
       !     ctl_data%et_module%values(1)%s /= 'potet_pt') then
@@ -135,6 +139,7 @@ contains
       ! endif
 
       if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
+          ctl_data%solrad_module%values(1)%s == 'ddsolrad' .or. &
           ctl_data%stream_temp_flag%value == 1) then
         allocate(this%cloud_cover_hru(nhru))
       endif
