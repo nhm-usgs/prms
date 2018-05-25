@@ -105,6 +105,9 @@ contains
       ierr = 0
       ios = 0
 
+      ! 2D index to 1D
+      ! idx1D = (curr_month - 1) * nhru + chru
+
       ! *****************
       ! * Temperature   *
       ! *****************
