@@ -27,6 +27,7 @@ module prms_constants
     real(r64), parameter :: FT2_PER_ACRE = 43560.0_dp
     real(r64), parameter :: CFS2CMS_CONV = 0.028316847_dp
 
+    real(r32), parameter :: INCH2CM = 2.54
     real(r32), parameter :: INCH2MM = 25.4_sp
     real(r32), parameter :: INCH2M = 0.0254_sp
 
