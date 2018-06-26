@@ -16,11 +16,15 @@ module prms_constants
     character(len=*), parameter :: PARAM_HEADER = '** Parameters **'
     character(len=*), parameter :: ENTRY_DELIMITER = '####'
 
+    ! From c_muskingum.f90
+    real(r64), parameter :: ONE_24TH = 1.0_dp / 24.0_dp
+
     real(r64), parameter :: SECS_PER_DAY = 86400_dp
     real(r64), parameter :: SECS_PER_HOUR = 3600_dp
     real(r32), parameter :: MIN_PER_HOUR = 60_sp
     real(r32), parameter :: HOUR_PER_DAY = 24_sp
 
+    real(r32), parameter :: CLOSEZERO = EPSILON(0.0)
     real(r32), parameter :: NEARZERO = EPSILON(0.0)
     real(r64), parameter :: DNEARZERO = EPSILON(0.0_dp)
 
@@ -90,5 +94,11 @@ module prms_constants
     ! hru_type
     enum, bind(C)
       enumerator :: INACTIVE=0, LAND=1, LAKE=2, SWALE=3
+    end enum
+
+    ! lake_type
+    enum, bind(C)
+      enumerator :: PULS=1, LINEAR=2, FLOWTHRU=3, BCWEIR=4, GATEOP=5, MEASURED=6
+      ! 1=Puls routing; 2=linear routing; 3=flow through; 4=broad crested weir; 5=gate opening; 6=measured flow)
     end enum
 end module prms_constants
