@@ -32,9 +32,11 @@ module PRMS_SET_TIME
     integer(i32) :: Nowminute
     integer(i32) :: Number_timesteps
     integer(i32) :: Timestep
+    
     real(r32) :: Timestep_hours
     real(r32) :: Timestep_days
     real(r32) :: Timestep_minutes
+
     real(r64) :: Cfs2inches
     real(r64) :: Cfs_conv
     real(r64) :: Timestep_seconds
