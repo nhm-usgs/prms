@@ -233,10 +233,10 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
 
-              albset_rna => param_data%albset_rna%values(chru), &
-              albset_rnm => param_data%albset_rnm%values(chru), &
-              albset_sna => param_data%albset_sna%values(chru), &
-              albset_snm => param_data%albset_snm%values(chru), &
+              albset_rna => param_data%albset_rna%values(1), &
+              albset_rnm => param_data%albset_rnm%values(1), &
+              albset_sna => param_data%albset_sna%values(1), &
+              albset_snm => param_data%albset_snm%values(1), &
               den_max => param_data%den_max%values(1), &
               cecn_coef => param_data%cecn_coef%values, &
               cov_type => param_data%cov_type%values, &
@@ -451,8 +451,6 @@ contains
           ! the melt-look day (parameters). If between these dates, the spring melt
           ! applies if the snowpack temperature is above or equal to 0 for more
           ! than 4 cycles of the snorun function.
-
-
           if (this%iso(chru) == 1) then
             ! Before the first melt-force day
             if (this%mso(chru) == 2) then
@@ -781,7 +779,7 @@ contains
               !rsr, this should not happen, remove later
               if (print_debug > -1) then
                 print *, 'snow density problem', pk_depth, pk_den, pss, pkwater_equiv
-                call print_date(1)
+                ! call print_date(1)
               endif
 
               pk_den = den_max
