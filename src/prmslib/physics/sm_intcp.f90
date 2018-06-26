@@ -34,6 +34,7 @@ contains
       allocate(this%hru_intcpstor(nhru))
       allocate(this%intcp_changeover(nhru))
       allocate(this%intcp_evap(nhru))
+      allocate(this%intcp_form(nhru))
       allocate(this%intcp_on(nhru))
       allocate(this%intcp_stor(nhru))
       allocate(this%intcp_transp_on(nhru))
@@ -71,8 +72,8 @@ contains
     end associate
   end function
 
-  module subroutine clean_Interception(this)
-    type(Interception) :: this
+  module subroutine cleanup_Interception(this)
+    class(Interception) :: this
       !! Interception class
 
     ! TODO: Add write restart file stuff
