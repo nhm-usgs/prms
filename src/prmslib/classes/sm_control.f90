@@ -37,6 +37,8 @@ contains
       this%restart_output_unit = this%open_var_save_file()
     endif
 
+    ! TODO: add water_use_flag (composite of other flags)
+
     ! TODO: if print_debug > -2 output control file to model_output_file
     !                           model_output_file to stdout
     !       if print_debug > -1 output control file to stdout

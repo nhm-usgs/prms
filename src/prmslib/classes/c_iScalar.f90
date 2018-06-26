@@ -89,10 +89,13 @@ module iScalar_class
 
       if (istat /= 0) then
         inquire(UNIT=iUnit, NAME=filename)
-        write(output_unit, *) "ERROR: Reading from file: " // trim(filename)
+        write(output_unit, 9005) "ERROR: IOSTAT=", istat, "Reading from file:", trim(filename)
+        ! write(output_unit, *) "ERROR: IOSTAT=" // istat // "Reading from file: " // trim(filename)
         close(iUnit)
         stop
       endif
+
+      9005 format(a, 1x, i6, 1x, a, 1x, a)
     end subroutine
     !====================================================================!
 

@@ -5,7 +5,7 @@ module rScalar_class
 
   use iso_fortran_env, only: output_unit
   use prms_constants, only: MAXFILE_LENGTH
-  use variableKind, only: i32
+  use variableKind, only: i32, r32
   use m_errors, only: fErr, IO_READ
   use Abc_class, only: Abc
   use m_strings, only: str
@@ -16,7 +16,7 @@ module rScalar_class
 
   type, extends(Abc) :: rScalar
       !! 1D array of reals that can represent multiple dimensional data
-    integer(i32) :: value
+    real(r32) :: value
       !! The scalar value
 
     contains
@@ -89,10 +89,13 @@ module rScalar_class
 
       if (istat /= 0) then
         inquire(UNIT=iUnit, NAME=filename)
-        write(output_unit, *) "ERROR: Reading from file: " // trim(filename)
+        write(output_unit, 9005) "ERROR: IOSTAT=", istat, "Reading from file:", trim(filename)
+        ! write(output_unit, *) "ERROR: IOSTAT=" // istat // "Reading from file: " // trim(filename)
         close(iUnit)
         stop
       endif
+
+      9005 format(a, 1x, i6, 1x, a, 1x, a)
     end subroutine
     !====================================================================!
 
