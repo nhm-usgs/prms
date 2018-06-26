@@ -15,6 +15,7 @@ submodule (Simulation_class) sm_simulation
       ! Initialize the simulation modules
       this%model_basin = Basin(ctl_data, param_data)
       this%climate = Climateflow(ctl_data, param_data)
+      this%model_flow = Flowvars(ctl_data, param_data)
       this%solt = Soltab(ctl_data, param_data, this%model_basin)
       this%model_obs = Obs(ctl_data)
       this%model_time = Time_t(ctl_data, this%model_basin)
@@ -22,6 +23,13 @@ submodule (Simulation_class) sm_simulation
       this%solrad = Ddsolrad(ctl_data, param_data)
       this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin, this%climate)
       this%potet = Potet_jh(ctl_data)
+      this%intcp = Interception(ctl_data, this%climate)
+      this%snow = Snowcomp(this%climate, ctl_data, param_data, this%model_basin)
+      this%runoff = Srunoff(ctl_data, param_data, this%model_basin)
+      this%soil = Soilzone(ctl_data, param_data, this%model_basin, this%model_flow, this%snow)
+      this%groundwater = Gwflow(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff)
+      this%model_route = Routing(ctl_data, param_data, this%model_basin, this%model_time)
+      this%model_muskingum = Muskingum(ctl_data, param_data, this%model_basin, this%model_flow, this%model_route, this%model_time)
 
       if (ctl_data%nhruOutON_OFF%value > 0) then
         this%summary_by_hru = Nhru_summary(ctl_data, param_data)
@@ -54,6 +62,21 @@ submodule (Simulation_class) sm_simulation
 
         call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%climate)
 
+        call this%intcp%run(ctl_data, param_data, this%model_basin, this%climate, this%model_time)
+
+        call this%snow%run(this%climate, ctl_data, param_data, this%model_time, this%model_basin, this%intcp)
+
+        call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, this%model_flow, this%intcp, this%snow)
+
+        call this%soil%run(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%snow, this%runoff, this%model_flow)
+
+        call this%groundwater%run(ctl_data, param_data, this%model_basin, this%climate, this%model_flow, this%intcp, this%soil, this%runoff, this%model_time)
+
+        call this%model_route%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time)
+
+        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%groundwater, this%soil, this%runoff, this%model_obs, this%model_route, this%model_time, this%model_flow)
+
+        
         if (ctl_data%basinOutON_OFF%value == 1) then
           call this%summary_by_basin%run(ctl_data, this%model_time, this%climate)
         endif

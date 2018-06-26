@@ -4,11 +4,19 @@ module Simulation_class
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
+  use PRMS_FLOWVARS, only: Flowvars
   use PRMS_CLIMATE_HRU, only: Climate_HRU
   use PRMS_SOLTAB, only: Soltab
   use PRMS_DDSOLRAD, only: Ddsolrad
   use PRMS_TRANSP_TINDEX, only: Transp_tindex
   use PRMS_POTET_JH, only: Potet_jh
+  use PRMS_INTCP, only: Interception
+  use PRMS_SNOW, only: Snowcomp
+  use PRMS_SRUNOFF, only: Srunoff
+  use PRMS_SOILZONE, only: Soilzone
+  use PRMS_GWFLOW, only: Gwflow
+  use PRMS_ROUTING, only: Routing
+  use PRMS_MUSKINGUM, only: Muskingum
   use PRMS_BASIN_SUMMARY, only: Basin_summary
   use PRMS_NHRU_SUMMARY, only: Nhru_summary
   use PRMS_SET_TIME, only: Time_t
@@ -21,6 +29,7 @@ module Simulation_class
   type Simulation
       type(Basin) :: model_basin
       type(Climateflow) :: climate
+      type(Flowvars) :: model_flow
       type(Soltab) :: solt
       type(Obs) :: model_obs
       type(Time_t) :: model_time
@@ -29,6 +38,13 @@ module Simulation_class
       type(Ddsolrad) :: solrad
       type(Transp_tindex) :: transpiration
       type(Potet_jh) :: potet
+      type(Interception) :: intcp
+      type(Snowcomp) :: snow
+      type(Srunoff) :: runoff
+      type(Soilzone) :: soil
+      type(Gwflow) :: groundwater
+      type(Routing) :: model_route
+      type(Muskingum) :: model_muskingum
       type(Nhru_summary) :: summary_by_hru
       type(Basin_summary) :: summary_by_basin
     contains
