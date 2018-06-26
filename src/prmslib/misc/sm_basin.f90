@@ -3,7 +3,8 @@ contains
   !***********************************************************************
   ! Basin constructor
   module function constructor_Basin(ctl_data, param_data) result(this)
-    use prms_constants, only: INACTIVE, LAND, LAKE, SWALE, NORTHERN, SOUTHERN
+    use prms_constants, only: INACTIVE, LAND, LAKE, SWALE, NORTHERN, SOUTHERN, &
+                              BCWEIR, GATEOP, PULS, LINEAR
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -12,36 +13,62 @@ contains
     type(Parameters), intent(in) :: param_data
 
     ! Local variables
+    real(r64) :: basin_dprst = 0.0
     real(r64) :: basin_perv = 0.0
     real(r64) :: basin_imperv = 0.0
-    real(r32) :: harea
     real(r64) :: harea_dble
+
+    real(r32) :: harea
 
     ! logical, allocatable :: active_mask(:)
 
     character(len=69) :: buffer
     integer(i32) :: chru
       !! Current HRU
+    integer(i32) :: ii
+      !! General counter
     integer(i32) :: j
       !! General counter
+    integer(i32) :: lakeid
 
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              nlake => ctl_data%nlake%value, &
+              cascadegw_flag => ctl_data%cascadegw_flag%value, &
+              dprst_flag => ctl_data%dprst_flag%value, &
+              et_module => ctl_data%et_module%values, &
+              precip_module => ctl_data%precip_module%values, &
               print_debug => ctl_data%print_debug%value, &
+              model_mode => ctl_data%model_mode%values, &
               model_output_unit => ctl_data%model_output_unit, &
+              stream_temp_flag => ctl_data%stream_temp_flag%value, &
+              strmflow_module => ctl_data%strmflow_module%values, &
+              dprst_frac => param_data%dprst_frac%values, &
+              dprst_frac_open => param_data%dprst_frac_open%values, &
               hru_area => param_data%hru_area%values, &
               hru_lat => param_data%hru_lat%values, &
               hru_percent_imperv => param_data%hru_percent_imperv%values, &
-              hru_type => param_data%hru_type%values)
+              hru_type => param_data%hru_type%values, &
+              lake_hru_id => param_data%lake_hru_id%values, &
+              lake_type => param_data%lake_type%values)
 
       if (print_debug > -2) then
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
 
+      allocate(this%hru_area_dble(nhru))
+
       allocate(this%hru_frac_perv(nhru))
       allocate(this%hru_imperv(nhru))
       allocate(this%hru_perv(nhru))
+
+      if (dprst_flag == 1) then
+        allocate(this%dprst_area_max(nhru))
+        allocate(this%dprst_area_clos_max(nhru))
+        allocate(this%dprst_area_open_max(nhru))
+        allocate(this%dprst_frac_clos(nhru))
+      endif
 
       ! Create mask of only active land and swale HRUs
       allocate(this%active_mask(nhru))
@@ -54,6 +81,25 @@ contains
       ! Allocate the hru_route_order array for the number of active HRUs
       allocate(this%hru_route_order(count(this%active_mask)))
 
+      if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+        allocate(this%gwr_route_order(nhru))
+      endif
+
+      if (et_module(1)%s == 'potet_pm' .or. et_module(1)%s == 'potet_pm_sta' .or. &
+          et_module(1)%s == 'potet_pt') then
+        allocate(this%hru_elev_feet(nhru))
+        allocate(this%hru_elev_meters(nhru))
+      elseif (precip_module(1)%s == 'ide_dist' .or. stream_temp_flag == 1) then
+        allocate(this%hru_elev_meters(nhru))
+      endif
+
+      if (nlake > 0) then
+        allocate(this%lake_area(nlake))
+        this%lake_area = 0.0_dp
+      endif
+
+      this%hru_area_dble = hru_area
+
       ! Populate hru_route_order with indices of active HRUs
       j = 0
       do chru=1, nhru
@@ -63,6 +109,15 @@ contains
         endif
       enddo
       this%active_hrus = j
+
+      if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+         this%active_gwrs = this%active_hrus
+
+         ! WARNING: This modifies a parameter
+         ! this%gwr_type = this%hru_type
+
+         this%gwr_route_order = this%hru_route_order
+      endif
 
       ! Total HRU area in the model
       this%total_area = sum(dble(hru_area))
@@ -85,8 +140,85 @@ contains
         this%hru_frac_perv = this%hru_perv / hru_area
       end where
 
+      if (dprst_flag == 1) then
+        this%dprst_clos_flag = 0
+        this%dprst_open_flag = 0
+        this%dprst_frac_clos = 0.0
+        this%dprst_area_open_max = 0.0
+        this%dprst_area_clos_max = 0.0
+        this%dprst_area_max = 0.0
+
+        this%dprst_area_max = dprst_frac * hru_area
+
+        where (this%dprst_area_max > 0.0)
+          this%dprst_area_open_max = this%dprst_area_max * dprst_frac_open
+          this%dprst_frac_clos = 1.0 - dprst_frac_open
+          this%dprst_area_clos_max = this%dprst_area_max - this%dprst_area_open_max
+        end where
+
+        ! TODO: Figure out proper way to handle this
+        ! IF ( Hru_percent_imperv(ii)+Dprst_frac(ii)>0.999 ) THEN
+        !    PRINT *, 'ERROR, impervious plus depression fraction > 0.999 for HRU:', ii
+        !    PRINT *, '       value:', Hru_percent_imperv(ii) + Dprst_frac(ii)
+        !    basinit = 1
+        ! ENDIF
+
+        where (this%active_mask)
+          this%hru_perv = this%hru_perv - this%dprst_area_max
+        end where
+
+        basin_dprst = sum(dble(this%dprst_area_max))
+
+        if (any(this%dprst_area_clos_max>0.0)) this%dprst_clos_flag = 1
+        if (any(this%dprst_area_open_max>0.0)) this%dprst_open_flag = 1
+      endif
+
       basin_perv = sum(dble(this%hru_perv)) * this%basin_area_inv
       basin_imperv = sum(dble(this%hru_imperv)) * this%basin_area_inv
+
+      ! TODO: 2018-06-21 - Hook up the lake stuff
+      this%weir_gate_flag = 0
+      this%puls_lin_flag = 0
+      this%water_area = 0.0_dp
+
+      this%numlakes_check = 0
+      this%numlake_hrus = 0
+
+      if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
+        if (any([BCWEIR, GATEOP]==lake_type)) this%weir_gate_flag = 1
+        if (any([PULS, LINEAR]==lake_type)) this%puls_lin_flag = 1
+      endif
+
+      ! TODO: 2018-06-21 - more lake stuff to integrate
+      do ii=1, nhru
+        if (hru_type(ii) == LAKE) then
+          this%numlake_hrus = this%numlake_hrus + 1
+          this%water_area = this%water_area + this%hru_area_dble(ii)
+          lakeid = lake_hru_id(ii)
+
+          if (lakeid > 0) then
+            this%lake_area(lakeid) = this%lake_area(lakeid) + this%hru_area_dble(ii)
+
+            if (lakeid > this%numlakes_check) this%numlakes_check = lakeid
+          ! TODO: Hook this up
+          ! else
+          !   print *, 'ERROR, hru_type = 2 for HRU:', ii, ' and lake_hru_id = 0'
+          !   cycle
+          endif
+
+          ! TODO: Hook this up
+          ! if (nlake == 0) then
+          !   print *, 'ERROR, hru_type = 2 for HRU:', ii, ' and dimension nlake = 0'
+          !   cycle
+          ! endif
+
+          this%hru_frac_perv(ii) = 1.0
+          this%hru_imperv(ii) = 0.0
+          this%hru_perv(ii) = hru_area(ii)
+        endif
+      enddo
+
+
 
       ! do chru = 1, nhru
       !   harea = hru_area(chru)
