@@ -18,29 +18,10 @@ module PRMS_FLOWVARS
   ! Variables related to flows from soilzone, smbal, ssflow, srunoff_carea, srunoff_smidx
   type Flowvars
     ! soilzone variables
-    ! real(r64) :: basin_actet
-    !   !! (moved to soilzone) Basin area-weighted average actual ET
-    ! real(r64) :: basin_lakeevap
-    !   !! (moved to soilzone) Basin area-weighted average lake evaporation
-    ! real(r64) :: basin_perv_et
-    !   !! (moved to soilzone) Basin area-weighted average ET from capillary reservoirs
-    ! real(r64) :: basin_soil_moist
-    !   !! (moved to soilzone) Basin area-weighted average capillary reservoir storage
-    ! real(r64) :: basin_soil_to_gw
-    !   !! (moved to soilzone) Basin average excess flow to capillary reservoirs that drain to GWRs
-    ! real(r64) :: basin_ssflow
-    !   !! (moved to soilzone) Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network
-    ! real(r64) :: basin_ssstor
-    !   !! (moved to soilzone)
-    ! real(r64) :: basin_swale_et
-    !   !! (moved to soilzone)
-
     real(r32), allocatable :: hru_actet(:)
       !! Actual ET for each HRU
     real(r32), allocatable :: slow_flow(:)
       !! Interflow from gravity reservoir storage that flows to the stream network for each HRU
-    ! real(r32), allocatable :: slow_stor(:)
-    !   !! (moved to soilzone) Storage of gravity reservoir for each HRU
     real(r32), allocatable :: soil_moist(:)
       !! Storage of capillary reservoir for each HRU
     real(r32), allocatable :: soil_rechr(:)
@@ -53,37 +34,11 @@ module PRMS_FLOWVARS
       !! Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU
     real(r32), allocatable :: ssr_to_gw(:)
       !! Drainage from the gravity-reservoir to the associated GWR for each HRU
-    ! real(r32), allocatable :: ssres_flow(:)
-    !   !! (moved to soilzone) Interflow from gravity and preferential-flow reservoirs
     real(r32), allocatable :: ssres_in(:)
       !! Inflow to the gravity and preferential-flow reservoirs for each HRU
-    ! real(r32), allocatable :: ssres_stor(:)
-    !   !! (moved to soilzone) Storage in the gravity and preferential-flow reservoirs for each HRU
-
-    ! srunoff variables
-    ! NOTE: moved to c_srunoff.f90
-    ! real(r32), allocatable :: imperv_stor(:)
-    !   !! Storage on impervious area for each HRU
-    ! real(r32), allocatable :: infil(:)
-    !   !! Infiltration to the capillary and preferential-flow reservoirs from each HRU
-    ! real(r32), allocatable :: sroff(:)
-    !   !! Surface runoff to the stream network for each HRU
-
-    ! NOTE: moved to c_srunoff.f90
-    ! ! Surface-Depression Storage variables
-    ! real(r64), allocatable :: dprst_vol_open(:)
-    !   !! Storage volume in open surface depressions for each HRU
-    ! real(r64), allocatable :: dprst_vol_clos(:)
-    !   !! Storage volume in closed surface depressions for each HRU
-
-    ! gwflow variables
-    ! real(r64), allocatable :: gwres_stor(:)
-    !   !! (moved to gwflow) Storage in each GWR
 
     ! lakes variables
     real(r64) :: basin_lake_stor
-    ! real(r64), allocatable :: lake_vol(:)
-    !   !! (moved to gwflow) Storage in each lake using broad-crested weir or gate opening routing
 
     ! streamflow variables
     real(r64) :: basin_cfs
@@ -104,8 +59,6 @@ module PRMS_FLOWVARS
       !! Total flow out of model domain
     real(r64), allocatable :: seg_inflow(:)
       !! Total flow entering a segment
-    ! real(r64), allocatable :: seg_lateral_inflow(:)
-    !   !! (moved to routing) Lateral inflow entering lateral inflow entering a segment
     real(r64), allocatable :: seg_outflow(:)
       !! Streamflow leaving a segment
     real(r64), allocatable :: seg_upstream_inflow(:)
