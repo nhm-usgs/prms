@@ -26,16 +26,16 @@ submodule (PRMS_FLOWVARS) sm_flowvars
         ! Soilzone variables
         allocate(this%hru_actet(nhru))
         allocate(this%slow_flow(nhru))
-        allocate(this%slow_stor(nhru))
+        ! allocate(this%slow_stor(nhru))  ! moved to soilzone
         allocate(this%soil_moist(nhru))
         allocate(this%soil_rechr_max(nhru))
         allocate(this%soil_rechr(nhru))
         allocate(this%soil_to_gw(nhru))
         allocate(this%soil_to_ssr(nhru))
         allocate(this%ssr_to_gw(nhru))
-        allocate(this%ssres_flow(nhru))
+        ! allocate(this%ssres_flow(nhru))  ! moved to soilzone
         allocate(this%ssres_in(nhru))
-        allocate(this%ssres_stor(nhru))
+        ! allocate(this%ssres_stor(nhru))  ! moved to soilzone
 
         this%hru_actet = 0.0
         this%slow_flow = 0.0
@@ -46,25 +46,26 @@ submodule (PRMS_FLOWVARS) sm_flowvars
         this%soil_to_gw = 0.0
         this%soil_to_ssr = 0.0
         this%ssr_to_gw = 0.0
-        this%ssres_flow = 0.0
+        ! this%ssres_flow = 0.0   ! moved to soilzone
         this%ssres_in = 0.0
-        this%ssres_stor = ssstor_init_frac * sat_threshold
+        ! this%ssres_stor = ssstor_init_frac * sat_threshold  ! moved to soilzone
 
         ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
         !       and ssstor_init_frac
 
         ! gwflow variables
-        allocate(this%gwres_stor(nhru))
-        this%gwres_stor = 0.0_dp
+        ! (moved to sm_gwflow.f90)
+        ! allocate(this%gwres_stor(nhru))
+        ! this%gwres_stor = 0.0_dp
 
         ! srunoff variables
-        allocate(this%imperv_stor(nhru))
-        allocate(this%infil(nhru))
-        allocate(this%sroff(nhru))
-
-        this%imperv_stor = 0.0
-        this%infil = 0.0
-        this%sroff = 0.0
+        ! allocate(this%imperv_stor(nhru))
+        ! allocate(this%infil(nhru))
+        ! allocate(this%sroff(nhru))
+        !
+        ! this%imperv_stor = 0.0
+        ! this%infil = 0.0
+        ! this%sroff = 0.0
 
         ! Streamflow
         if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
@@ -76,28 +77,30 @@ submodule (PRMS_FLOWVARS) sm_flowvars
           endif
 
           allocate(this%seg_inflow(nsegment))
-          allocate(this%seg_lateral_inflow(nsegment))
+          ! allocate(this%seg_lateral_inflow(nsegment)) ! (moved to sm_routing)
           allocate(this%seg_outflow(nsegment))
           allocate(this%seg_upstream_inflow(nsegment))
 
           this%seg_upstream_inflow = 0.0_dp
-          this%seg_lateral_inflow = 0.0_dp
+          ! this%seg_lateral_inflow = 0.0_dp  ! (moved to sm_routing)
         endif
 
-        ! Lakes
-        if (nlake > 0) then
-          allocate(this%lake_vol(nlake))
-          this%lake_vol = 0.0_dp
-        endif
+        ! NOTE: moved to sm_gwflow.f90
+        ! ! Lakes
+        ! if (nlake > 0) then
+        !   allocate(this%lake_vol(nlake))
+        !   this%lake_vol = 0.0_dp
+        ! endif
 
-        ! Depression storage
-        if (dprst_flag == 1) then
-          allocate(this%dprst_vol_open(nhru))
-          allocate(this%dprst_vol_clos(nhru))
-
-          this%dprst_vol_open = 0.0_dp
-          this%dprst_vol_clos = 0.0_dp
-        endif
+        ! NOTE: moved to sm_srunoff.f90
+        ! ! Depression storage
+        ! if (dprst_flag == 1) then
+        !   allocate(this%dprst_vol_open(nhru))
+        !   allocate(this%dprst_vol_clos(nhru))
+        !
+        !   this%dprst_vol_open = 0.0_dp
+        !   this%dprst_vol_clos = 0.0_dp
+        ! endif
 
         if (init_vars_from_file == 1) then
           ! TODO: Get the init from file stuff hooked up
