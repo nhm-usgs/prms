@@ -4,6 +4,9 @@
 module PRMS_OBS
   use variableKind
   use Control_class, only: Control
+  use Parameters_class, only: Parameters
+  use PRMS_BASIN, only: Basin
+  use PRMS_SET_TIME, only: Time_t
   implicit none
 
   private
@@ -15,15 +18,26 @@ module PRMS_OBS
 
   type Obs
     ! Declared Variables
-    real(r32), allocatable :: runoff(:)
+    real(r32), allocatable :: gate_ht(:)
+      !! Lake module gate height
+    real(r32), allocatable :: humidity(:)
+    real(r32), allocatable :: lake_elev(:)
+      !! Lake module lake elevation
+    real(r32), allocatable :: pan_evap(:)
     real(r32), allocatable :: precip(:)
+    real(r32), allocatable :: runoff(:)
+    real(r32), allocatable :: snowdepth(:)
+    real(r32), allocatable :: solrad(:)
     real(r32), allocatable :: tmax(:)
     real(r32), allocatable :: tmin(:)
+    real(r32), allocatable :: wind_speed(:)
+
     real(r64), allocatable :: streamflow_cfs(:)
     real(r64), allocatable :: streamflow_cms(:)
 
     contains
-      procedure, public :: cleanup
+      procedure, public :: run => run_Obs
+      procedure, public :: cleanup => cleanup_Obs
         !! Final cleanup code after simulation
       procedure, nopass, public :: module_name
         !! Return the name of the module
@@ -43,9 +57,19 @@ module PRMS_OBS
   end interface
 
   interface
-    module subroutine cleanup(this, ctl_data)
+    module subroutine cleanup_Obs(this, ctl_data)
       class(Obs), intent(in) :: this
       type(Control), intent(in) :: ctl_data
+    end subroutine
+  end interface
+
+  interface
+    module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
+      class(Obs), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Parameters), intent(in) :: param_data
+      type(Time_t), intent(in) :: model_time
+      type(Basin), intent(in) :: model_basin
     end subroutine
   end interface
 
