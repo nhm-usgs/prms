@@ -22,49 +22,76 @@ module PRMS_ROUTING
 
   type Routing
       ! Local Variables
-      integer(i32) :: noarea_flag
-      integer(i32) :: use_transfer_segment
+      integer(i32), private :: noarea_flag
+      integer(i32), public :: use_transfer_segment
+        !! used by muskingum and muskingum_lake
 
-      real(r64) :: cfs2acft
-      real(r64) :: segment_area
+      real(r64), public :: cfs2acft
+        !! used by muskingum_lake
+      real(r64), private :: segment_area
 
-      integer(i32), allocatable :: segment_order(:)
-      integer(i32), allocatable :: segment_up(:)
-      integer(i32), allocatable :: ts_i(:)
 
-      real(r32), allocatable :: c0(:)
-      real(r32), allocatable :: c1(:)
-      real(r32), allocatable :: c2(:)
+      integer(i32), public, allocatable :: segment_order(:)
+        !! used by muskingum, muskingum_lake, stream_temp, strmflow_in_out
+      integer(i32), public, allocatable :: segment_up(:)
+        !! used by stream_temp
+      integer(i32), public, allocatable :: ts_i(:)
+        !! used by muskingum and muskingum_lake
+
+      real(r32), public, allocatable :: c0(:)
+        !! used by muskingum and muskingum_lake
+      real(r32), public, allocatable :: c1(:)
+        !! used by muskingum and muskingum_lake
+      real(r32), public, allocatable :: c2(:)
+        !! used by muskingum and muskingum_lake
       real(r32), allocatable :: ts(:)
 
-      real(r64), allocatable :: segment_hruarea(:)
+      real(r64), private, allocatable :: segment_hruarea(:)
 
       ! Declared Variables
-      real(r64) :: basin_segment_storage
-      real(r64) :: flow_headwater
-      real(r64) :: flow_in_great_lakes
-      real(r64) :: flow_in_nation
-      real(r64) :: flow_in_region
-      real(r64) :: flow_out_NHM
-      real(r64) :: flow_out_region
-      real(r64) :: flow_replacement
-      real(r64) :: flow_terminus
-      real(r64) :: flow_to_great_lakes
-      real(r64) :: flow_to_lakes
-      real(r64) :: flow_to_ocean
+      real(r64), public :: basin_segment_storage
+        !! basin_sum, muskingum, muskingum_lake
+      real(r64), public :: flow_headwater
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_in_great_lakes
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_in_nation
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_in_region
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_out_NHM
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_out_region
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_replacement
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_terminus
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_to_great_lakes
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_to_lakes
+        !! muskingum, muskingum_lake, strmflow_in_out
+      real(r64), public :: flow_to_ocean
+        !! muskingum, muskingum_lake, strmflow_in_out
 
-      real(r64), allocatable :: hru_outflow(:)
-      real(r64), allocatable :: seg_gwflow(:)
-      real(r64), allocatable :: seg_lateral_inflow(:)
+      real(r64), private, allocatable :: hru_outflow(:)
+      real(r64), private, allocatable :: seg_gwflow(:)
+      real(r64), public, allocatable :: seg_lateral_inflow(:)
         !! (moved from flowvars) Lateral inflow entering lateral inflow entering a segment
-      real(r64), allocatable :: seg_sroff(:)
-      real(r64), allocatable :: seg_ssflow(:)
-      real(r64), allocatable :: seginc_gwflow(:)
-      real(r64), allocatable :: seginc_potet(:)
-      real(r64), allocatable :: seginc_sroff(:)
-      real(r64), allocatable :: seginc_ssflow(:)
-      real(r64), allocatable :: seginc_swrad(:)
-      real(r64), allocatable :: segment_delta_flow(:)
+        !! muskingum, muskingum_lake, strmflow_in_out, stream_temp
+      real(r64), private, allocatable :: seg_sroff(:)
+      real(r64), private, allocatable :: seg_ssflow(:)
+      real(r64), public, allocatable :: seginc_gwflow(:)
+        !! stream_temp
+      real(r64), private, allocatable :: seginc_potet(:)
+      real(r64), public, allocatable :: seginc_sroff(:)
+        !! stream_temp
+      real(r64), public, allocatable :: seginc_ssflow(:)
+        !! stream_temp
+      real(r64), public, allocatable :: seginc_swrad(:)
+        !! stream_temp
+      real(r64), public, allocatable :: segment_delta_flow(:)
+        !! muskingum, muskingum_lake
 
       ! Declared Parameters
       ! integer(i32), allocatable :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
