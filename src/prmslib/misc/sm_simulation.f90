@@ -20,7 +20,7 @@ submodule (Simulation_class) sm_simulation
       this%model_obs = Obs(ctl_data)
       this%model_time = Time_t(ctl_data, this%model_basin)
       this%climate_by_hru = Climate_HRU(ctl_data, param_data)
-      this%solrad = Ddsolrad(ctl_data, param_data)
+      this%solrad = Ddsolrad(ctl_data, param_data, this%model_basin)
       this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin, this%climate)
       this%potet = Potet_jh(ctl_data)
       this%intcp = Interception(ctl_data, this%climate)
@@ -52,10 +52,10 @@ submodule (Simulation_class) sm_simulation
         if (.not. this%model_time%next(ctl_data, this%model_basin)) exit
 
         call this%climate_by_hru%run(ctl_data, param_data, this%model_time, &
-                                     this%model_basin, this%climate)
+                                     this%model_basin, this%climate, this%solt)
 
-        call this%solrad%run(ctl_data, param_data, this%model_time, this%solt, &
-                             this%climate, this%model_basin)
+        call this%solrad%run(ctl_data, param_data, this%model_time, this%model_obs, &
+                             this%solt, this%climate, this%model_basin)
 
         call this%transpiration%run(ctl_data, param_data, this%model_time, &
                                     this%model_basin, this%climate)
@@ -76,7 +76,7 @@ submodule (Simulation_class) sm_simulation
 
         call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%groundwater, this%soil, this%runoff, this%model_obs, this%model_route, this%model_time, this%model_flow)
 
-        
+
         if (ctl_data%basinOutON_OFF%value == 1) then
           call this%summary_by_basin%run(ctl_data, this%model_time, this%climate)
         endif
