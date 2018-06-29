@@ -467,6 +467,10 @@ select case(buf)
     this%lapsemin_min%name = last
     call this%lapsemin_min%read(iUnit)
     line = line + this%lapsemin_min%size() + this%lapsemin_min%dim_names%size() + ENTRY_OFFSET
+  case('lat_temp_adj')
+    this%lat_temp_adj%name = last
+    call this%lat_temp_adj%read(iUnit)
+    line = line + this%lat_temp_adj%size() + this%lat_temp_adj%dim_names%size() + ENTRY_OFFSET
   case('mapvars_freq')
     this%mapvars_freq%name = last
     call this%mapvars_freq%read(iUnit)
@@ -731,10 +735,22 @@ select case(buf)
     this%sat_threshold%name = last
     call this%sat_threshold%read(iUnit)
     line = line + this%sat_threshold%size() + this%sat_threshold%dim_names%size() + ENTRY_OFFSET
+  case('seg_elev')
+    this%seg_elev%name = last
+    call this%seg_elev%read(iUnit)
+    line = line + this%seg_elev%size() + this%seg_elev%dim_names%size() + ENTRY_OFFSET
+  case('seg_humidity')
+    this%seg_humidity%name = last
+    call this%seg_humidity%read(iUnit)
+    line = line + this%seg_humidity%size() + this%seg_humidity%dim_names%size() + ENTRY_OFFSET
   case('seg_humidity_sta')
     this%seg_humidity_sta%name = last
     call this%seg_humidity_sta%read(iUnit)
     line = line + this%seg_humidity_sta%size() + this%seg_humidity_sta%dim_names%size() + ENTRY_OFFSET
+  case('seg_lat')
+    this%seg_lat%name = last
+    call this%seg_lat%read(iUnit)
+    line = line + this%seg_lat%size() + this%seg_lat%dim_names%size() + ENTRY_OFFSET
   case('seg_length')
     this%seg_length%name = last
     call this%seg_length%read(iUnit)
@@ -1071,10 +1087,18 @@ select case(buf)
     this%weir_len%name = last
     call this%weir_len%read(iUnit)
     line = line + this%weir_len%size() + this%weir_len%dim_names%size() + ENTRY_OFFSET
+  case('width_alpha')
+    this%width_alpha%name = last
+    call this%width_alpha%read(iUnit)
+    line = line + this%width_alpha%size() + this%width_alpha%dim_names%size() + ENTRY_OFFSET
   case('width_flow')
     this%width_flow%name = last
     call this%width_flow%read(iUnit)
     line = line + this%width_flow%size() + this%width_flow%dim_names%size() + ENTRY_OFFSET
+  case('width_m')
+    this%width_m%name = last
+    call this%width_m%read(iUnit)
+    line = line + this%width_m%size() + this%width_m%dim_names%size() + ENTRY_OFFSET
   case('width_values')
     this%width_values%name = last
     call this%width_values%read(iUnit)

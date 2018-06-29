@@ -115,6 +115,7 @@ type(rVariable) :: lapsemax_max
 type(rVariable) :: lapsemax_min
 type(rVariable) :: lapsemin_max
 type(rVariable) :: lapsemin_min
+type(rVariable) :: lat_temp_adj
 type(iVariable) :: mapvars_freq
 type(iVariable) :: mapvars_units
 type(iVariable) :: max_missing
@@ -181,7 +182,10 @@ type(iVariable) :: ratetbl_lake
 type(iVariable) :: runoff_units
 type(rVariable) :: s2
 type(rVariable) :: sat_threshold
+type(rVariable) :: seg_elev
+type(rVariable) :: seg_humidity
 type(iVariable) :: seg_humidity_sta
+type(rVariable) :: seg_lat
 type(rVariable) :: seg_length
 type(rVariable) :: seg_slope
 type(rVariable) :: seg_summer_humidity
@@ -266,7 +270,9 @@ type(rVariable) :: voe
 type(rVariable) :: vow
 type(rVariable) :: weir_coef
 type(rVariable) :: weir_len
+type(rVariable) :: width_alpha
 type(rVariable) :: width_flow
+type(rVariable) :: width_m
 type(rVariable) :: width_values
 type(rVariable) :: wrain_intcp
 type(rVariable) :: x_coef
