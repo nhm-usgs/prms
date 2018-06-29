@@ -748,7 +748,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! else
           if (model_mode(1)%s /= 'GSFLOW') then
             availh2o = this%slow_stor(i) + gvr_maxin
-            if (hru_type(i) == 1) then
+
+            if (hru_type(i) == LAND) then
               topfr = max(0.0, availh2o - this%pref_flow_thrsh(i))
               ssresin = gvr_maxin - topfr
               this%slow_stor(i) = availh2o - topfr
@@ -758,7 +759,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 call this%compute_interflow(slowcoef_lin(i), slowcoef_sq(i), &
                                        ssresin, this%slow_stor(i), slow_flow(i))
               endif
-            elseif (hru_type(i) == 3) then
+            elseif (hru_type(i) == SWALE) then
               this%slow_stor(i) = availh2o
             endif
 
@@ -787,7 +788,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
             if (this%pref_flow_stor(i) > 0.0) then
               call this%compute_interflow(fastcoef_lin(i), fastcoef_sq(i), &
-                                     this%pref_flow_in(i), this%pref_flow_stor(i), prefflow)
+                                          this%pref_flow_in(i), this%pref_flow_stor(i), &
+                                          prefflow)
             endif
 
             this%basin_pref_stor = this%basin_pref_stor + dble(this%pref_flow_stor(i) * harea)
@@ -828,7 +830,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
           ! If HRU cascades,
           ! compute interflow and excess flow to each HRU or stream
-          if (hru_type(i) == 1) then
+          if (hru_type(i) == LAND) then
             interflow = slow_flow(i) + prefflow
             ! Interflow_max(i) = interflow
             this%basin_interflow_max = this%basin_interflow_max + interflow * harea
