@@ -62,7 +62,8 @@ contains
       jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
       ! climate%basin_potet = 0.0
 
-      climate%potet = jh_coef_2d(:, curr_month) * (climate%tavgf - jh_coef_hru) * climate%swrad / ((597.3 - (0.5653 * climate%tavgc)) * 2.54)
+      climate%potet = jh_coef_2d(:, curr_month) * (climate%tavgf - jh_coef_hru) * &
+                      climate%swrad / ((597.3 - (0.5653 * climate%tavgc)) * 2.54)
       where (climate%potet < 0.0) climate%potet = 0.0
 
       climate%basin_potet = sum(dble(climate%potet * hru_area), mask=active_mask) * basin_area_inv
