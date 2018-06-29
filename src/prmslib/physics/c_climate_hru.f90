@@ -11,6 +11,7 @@ module PRMS_CLIMATE_HRU
     use PRMS_BASIN, only: Basin
     use PRMS_CLIMATEVARS, only: Climateflow
     use PRMS_SET_TIME, only: Time_t
+    use PRMS_SOLTAB, only: Soltab
     implicit none
 
     private
@@ -21,15 +22,31 @@ module PRMS_CLIMATE_HRU
     character(len=*), PARAMETER :: MODVERSION = '2017-09-29 13:49:00Z'
 
     type Climate_HRU
+      integer(i32), private :: et_funit
+        !! Evapotranspiration CBH file unit
+      integer(i32), private :: humidity_funit
+        !! Humidity CBH file unit
       integer(i32), private :: precip_funit
         !! Precipitation CBH file unit
+      integer(i32), private :: swrad_funit
+        !! Solar radiation CBH file unit
       integer(i32), private :: tmax_funit
-        !! Maximum temperature file unit
+        !! Maximum temperature CBH file unit
       integer(i32), private :: tmin_funit
-        !! Minimum temperature file unit
+        !! Minimum temperature CBH file unit
+      integer(i32), private :: transp_funit
+        !! Transpiration CBH file unit
+      integer(i32), private :: windspeed_funit
+        !! Windspeed CBH file unit
 
       integer(i32), private :: nhru
         !! Internal copy of ctl_data%nhru
+
+      real(r64) :: basin_humidity
+        !! (moved from climateflow.f90)
+      real(r64) :: basin_windspeed
+      real(r32), allocatable :: humidity_hru(:)
+      real(r32), allocatable :: windspeed_hru(:)
 
       contains
         procedure, public :: run => run_Climate_HRU
@@ -55,13 +72,14 @@ module PRMS_CLIMATE_HRU
     end interface
 
     interface
-      module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
+      module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate, model_soltab)
         class(Climate_HRU), intent(inout) :: this
         type(Control), intent(in) :: ctl_data
         type(Parameters), intent(in) :: param_data
         type(Time_t), intent(in) :: model_time
         type(Basin), intent(in) :: model_basin
         type(Climateflow), intent(inout) :: climate
+        type(Soltab), intent(in) :: model_soltab
       end subroutine
     end interface
 

@@ -4,6 +4,7 @@ contains
   !***********************************************************************
   ! Climate_HRU constructor
   module function constructor_Climate_HRU(ctl_data, param_data) result(this)
+    use prms_constants, only: dp
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -15,11 +16,20 @@ contains
     integer(i32) :: ierr
     integer(i32) :: istop = 0
 
+    ! Control
+    ! nhru, cbh_binary_flag, et_module, print_debug, start_time, solrad_module,
+    ! stream_temp_flag, strmtemp_humidity_flag, transp_module,
+
     ! ----------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+              et_module => ctl_data%et_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
-              start_time => ctl_data%start_time%values)
+              solrad_module => ctl_data%solrad_module%values(1), &
+              start_time => ctl_data%start_time%values, &
+              stream_temp_flag => ctl_data%stream_temp_flag%value, &
+              strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
+              transp_module => ctl_data%transp_module%values(1))
 
       if (print_debug > -2) then
         ! Output module and version information
@@ -29,6 +39,82 @@ contains
       ! TODO: This is only used for file-related procedures
       this%nhru = nhru
 
+      ! Humidity
+      if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pan' .or. &
+          (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
+        allocate(this%humidity_hru(nhru))
+        this%humidity_hru = 0.0
+
+        call this%find_header_end(this%humidity_funit, ierr, &
+                                  ctl_data%humidity_day%values(1)%s, 'humidity_day', &
+                                  (cbh_binary_flag==1))
+
+        if (ierr == 1) then
+          istop = 1
+        else
+          ! TODO: Original code defaults ierr=2 which causes the humidity_cbh_flag
+          !       to be reset and allows climate_flow to use humidity_percent
+          !       from the parameter file instead. Need to figure out a good way
+          !       to handle this.
+          call this%find_current_time(ierr, this%humidity_funit, start_time, (cbh_binary_flag==1))
+        endif
+      endif
+
+      if (et_module%s == 'climate_hru') then
+        call this%find_header_end(this%et_funit, ierr, &
+                                  ctl_data%potet_day%values(1)%s, 'potet_day', &
+                                  (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call this%find_current_time(ierr, this%et_funit, start_time, (cbh_binary_flag==1))
+        endif
+      end if
+
+      ! Windspeed
+      if (et_module%s == 'potet_pan') then
+        allocate(this%windspeed_hru(nhru))
+        this%windspeed_hru = 0.0
+
+        call this%find_header_end(this%windspeed_funit, ierr, &
+                                  ctl_data%windspeed_day%values(1)%s, 'windspeed_day', &
+                                  (cbh_binary_flag==1))
+
+        if (ierr == 1) then
+          istop = 1
+        else
+          call this%find_current_time(ierr, this%windspeed_funit, start_time, (cbh_binary_flag==1))
+        endif
+      endif
+
+      this%basin_humidity = 0.0_dp
+      this%basin_windspeed = 0.0_dp
+
+      ! Transpiration
+      if (transp_module%s == 'climate_hru') then
+        call this%find_header_end(this%transp_funit, ierr, &
+                                  ctl_data%transp_day%values(1)%s, 'transp_day', &
+                                  (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call this%find_current_time(ierr, this%transp_funit, start_time, (cbh_binary_flag==1))
+        endif
+      endif
+
+      ! Solar radiation
+      if (solrad_module%s == 'climate_hru') then
+        call this%find_header_end(this%swrad_funit, ierr, &
+                                  ctl_data%swrad_day%values(1)%s, 'swrad_day', &
+                                  (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call this%find_current_time(ierr, this%swrad_funit, start_time, (cbh_binary_flag==1))
+        endif
+      endif
+
+      ! Precipitation
       if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
         call this%find_header_end(this%precip_funit, ierr, &
                                   ctl_data%precip_day%values(1)%s, 'precip_day', &
@@ -40,6 +126,7 @@ contains
         endif
       endif
 
+      ! Temperature
       if (ctl_data%temp_module%values(1)%s == 'climate_hru') then
         call this%find_header_end(this%tmax_funit, ierr, ctl_data%tmax_day%values(1)%s, &
                                   'tmax_day', (cbh_binary_flag==1))
@@ -63,7 +150,8 @@ contains
     end associate
   end function
 
-  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
+  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate, model_soltab)
+    use prms_constants, only: dp
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -73,6 +161,7 @@ contains
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(inout) :: climate
+    type(Soltab), intent(in) :: model_soltab
 
     ! Local variables
     integer(i32) :: chru
@@ -84,15 +173,58 @@ contains
 
     real(r32), pointer, contiguous :: tmax_adj_2d(:,:)
     real(r32), pointer, contiguous :: tmin_adj_2d(:,:)
+    real(r32), pointer, contiguous :: potet_adj_2d(:,:)
     real(r32), pointer, contiguous :: rain_adj_2d(:,:)
     real(r32), pointer, contiguous :: snow_adj_2d(:,:)
     real(r32), pointer, contiguous :: adjmix_rain_2d(:,:)
 
+    ! Control
+    ! nhru, nmonths,
+    ! et_module, orad_flag, solrad_module, stream_temp_flag,
+    ! strmtemp_humidity_flag, transp_module
+
+    ! Parameter
+    ! hru_area, potet_cbh_adj,
+
+    ! Basin
+    ! basin_area_inv,
+
+    ! Climate
+    ! basin_horad, basin_potet, basin_potsw, basin_swrad, basin_transp_on, orad,
+    ! potet, swrad, transp_on
+
+    ! Soltab
+    ! hru_cossl, soltab_basinpotsw, soltab_potsw
+
+    ! Time_t
+    ! curr_month, day_of_year
     ! ----------------------------------------------------------------------
     associate(curr_month => model_time%Nowmonth, &
+              day_of_year => model_time%day_of_year, &
               nhru => ctl_data%nhru%value, &
-              nmonths => ctl_data%nmonths%value)
-              ! hru_area => param_data%hru_area%values, &
+              nmonths => ctl_data%nmonths%value, &
+              et_module => ctl_data%et_module%values(1), &
+              orad_flag => ctl_data%orad_flag%value, &
+              solrad_module => ctl_data%solrad_module%values(1), &
+              stream_temp_flag => ctl_data%stream_temp_flag%value, &
+              strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
+              transp_module => ctl_data%transp_module%values(1), &
+              basin_area_inv => model_basin%basin_area_inv, &
+              basin_horad => climate%basin_horad, &
+              basin_potet => climate%basin_potet, &
+              basin_potsw => climate%basin_potsw, &
+              basin_swrad => climate%basin_swrad, &
+              basin_transp_on => climate%basin_transp_on, &
+              orad => climate%orad, &
+              potet => climate%potet, &
+              swrad => climate%swrad, &
+              transp_on => climate%transp_on, &
+              hru_cossl => model_soltab%hru_cossl, &
+              soltab_basinpotsw => model_soltab%soltab_basinpotsw, &
+              soltab_potsw => model_soltab%soltab_potsw, &
+              hru_area => param_data%hru_area%values, &
+              potet_cbh_adj => param_data%potet_cbh_adj%values)
+
               ! tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
               ! tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
               ! rain_cbh_adj => param_data%rain_cbh_adj%values, &
@@ -130,7 +262,7 @@ contains
       if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
         read(this%precip_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (climate%hru_ppt(jj), jj=1, nhru)
 
-        ! NOTE: This is dangerous because it circumvents the intent for param_data
+        ! FIXME: This is dangerous because it circumvents the intent for param_data
         ! Get 2D access to 1D array
         rain_adj_2d => get_array(param_data%rain_cbh_adj%values, (/nhru, nmonths/))
         snow_adj_2d => get_array(param_data%snow_cbh_adj%values, (/nhru, nmonths/))
@@ -141,6 +273,67 @@ contains
                                             snow_adj_2d(:, curr_month), &
                                             adjmix_rain_2d(:, curr_month))
       endif
+
+      ! Evapotranspiration
+      if (et_module%s == 'climate_hru') then
+        read(this%et_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (potet(jj), jj=1, nhru)
+        basin_potet = 0.0_dp
+
+        ! FIXME: This is dangerous because it circumvents the intent for param_data
+        potet_adj_2d => get_array(param_data%potet_cbh_adj%values, (/nhru, nmonths/))
+
+        ! Potet(i) = Potet(i)*Potet_cbh_adj(i, Nowmonth)
+        potet = potet * potet_adj_2d(:, curr_month)
+        basin_potet = sum(dble(potet * hru_area)) * basin_area_inv
+      endif
+
+      ! Humidity
+      if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
+          (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
+        read(this%humidity_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%humidity_hru(jj), jj=1, nhru)
+
+        ! NOTE: This doesn't check for missing/bad values
+        this%basin_humidity = sum(dble(this%humidity_hru * hru_area)) * basin_area_inv
+      endif
+
+      ! Solar radiation
+      if (solrad_module%s == 'climate_hru') then
+        basin_horad = soltab_basinpotsw(day_of_year)
+
+        if (orad_flag == 0) then
+          read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru)
+
+          ! FIXME: Bad assumption using HRU 1
+          orad = sngl((dble(swrad(1)) * hru_cossl(1) * basin_horad) / soltab_potsw(day_of_year, 1))
+        else
+          ! orad is specified as last column in swrad_day CBH file
+          read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru), orad
+        endif
+
+        basin_swrad = sum(dble(swrad * hru_area)) * basin_area_inv
+        basin_potsw = basin_swrad
+      endif
+
+      ! Transpiration
+      if (transp_module%s == 'climate_hru') then
+        read(this%transp_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (transp_on(jj), jj=1, nhru)
+
+        if (any(transp_on==1)) then
+          basin_transp_on = 1
+        else
+          basin_transp_on = 0
+        endif
+
+      endif
+
+      ! Windspeed
+      if (et_module%s == 'potet_pm') then
+        read(this%windspeed_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%windspeed_hru(jj), jj=1, nhru)
+
+        ! NOTE: This doesn't check for missing/bad values
+        this%basin_windspeed = sum(dble(this%windspeed_hru * hru_area)) * basin_area_inv
+      endif
+
     end associate
   end subroutine
 
