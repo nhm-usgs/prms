@@ -2737,6 +2737,18 @@
             <module>stream_temp</module>
         </modules>
     </parameter>
+    <parameter name="lat_temp_adj">
+        <type>F</type>
+        <units>decimal fraction</units>
+        <desc>Correction factor to adjust the bias of the temperature of the lateral inflow</desc>
+        <help>Correction factor to adjust the bias of the temperature of the lateral inflow</help>
+        <minimum>-5.0</minimum>
+        <maximum>5.0</maximum>
+        <default>0.0</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
     <parameter name="maxiter_sntemp">
         <type>I</type>
         <units>none</units>
@@ -2757,6 +2769,42 @@
         <minimum>0.0</minimum>
         <maximum>10.0</maximum>
         <default>1.5</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
+    <parameter name="seg_elev">
+        <type>F</type>
+        <units>meters</units>
+        <desc>Segment elevation at midpoint</desc>
+        <help>Segment elevation at midpoint</help>
+        <minimum>-1000.0</minimum>
+        <maximum>30000</maximum>
+        <default>0.0</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
+    <parameter name="seg_lat">
+        <type>F</type>
+        <units>degrees north</units>
+        <desc>Segment latitude</desc>
+        <help>Latitude of each segment</help>
+        <minimum>-90.0</minimum>
+        <maximum>90.0</maximum>
+        <default>40.0</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
+    <parameter name="seg_humidity">
+        <type>F</type>
+        <units>decimal fraction</units>
+        <desc>Mean monthly humidity for each segment</desc>
+        <help>Mean monthly humidity for each segment, used when values not input in CBH file</help>
+        <minimum>0.0</minimum>
+        <maximum>1.0</maximum>
+        <default>0.7</default>
         <modules>
             <module>stream_temp</module>
         </modules>
@@ -2989,6 +3037,18 @@
             <module>stream_temp</module>
         </modules>
     </parameter>
+    <parameter name="width_alpha">
+        <type>F</type>
+        <units>unknown</units>
+        <desc>Alpha coefficient in power function for width calculation</desc>
+        <help>Alpha coefficient in power function for width calculation</help>
+        <minimum>0.0001</minimum>
+        <maximum>2.0</maximum>
+        <default>0.015</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
     <parameter name="width_flow">
         <type>F</type>
         <units>cms</units>
@@ -2997,6 +3057,18 @@
         <minimum>0.0</minimum>
         <maximum>220000.0</maximum>
         <default>50.0</default>
+        <modules>
+            <module>stream_temp</module>
+        </modules>
+    </parameter>
+    <parameter name="width_m">
+        <type>F</type>
+        <units>unknown</units>
+        <desc>M value in power function for width calculation</desc>
+        <help>M value in power function for width calculation</help>
+        <minimum>0.0001</minimum>
+        <maximum>2.0</maximum>
+        <default>0.015</default>
         <modules>
             <module>stream_temp</module>
         </modules>
