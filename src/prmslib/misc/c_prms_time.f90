@@ -20,7 +20,7 @@ module PRMS_SET_TIME
   type Time_t
     ! integer(i32) :: Yrdays  ! only used by last_day_of_month()
     integer(i32) :: Summer_flag
-    integer(i32) :: day_of_year
+    integer(i32) :: day_of_year ! was Jday
     integer(i32) :: day_of_solar_year
     integer(i32) :: day_of_water_year
     integer(i32) :: Julian_day_absolute
@@ -32,7 +32,7 @@ module PRMS_SET_TIME
     integer(i32) :: Nowminute
     integer(i32) :: Number_timesteps
     integer(i32) :: Timestep
-    
+
     real(r32) :: Timestep_hours
     real(r32) :: Timestep_days
     real(r32) :: Timestep_minutes
