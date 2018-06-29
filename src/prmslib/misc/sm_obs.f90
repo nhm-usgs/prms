@@ -3,7 +3,7 @@ contains
   !***********************************************************************
   ! Obs constructor
   module function constructor_Obs(ctl_data) result(this)
-    ! use Control_class, only: Control
+    use prms_constants, only: dp
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -15,9 +15,16 @@ contains
       !! Used to verify module name when reading from restart file
 
     ! ------------------------------------------------------------------------
-    associate(nobs => ctl_data%nobs%value, &
+    associate(nevap => ctl_data%nevap%value, &
+              nhumid => ctl_data%nhumid%value, &
+              nlakeelev => ctl_data%nlakeelev%value, &
+              nobs => ctl_data%nobs%value, &
               nrain => ctl_data%nrain%value, &
+              nratetbl => ctl_data%nratetbl%value, &
+              nsnow => ctl_data%nsnow%value, &
+              nsol => ctl_data%nsol%value, &
               ntemp => ctl_data%ntemp%value, &
+              nwind => ctl_data%nwind%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value)
@@ -34,8 +41,8 @@ contains
 
         if (init_vars_from_file == 0) then
           this%runoff = 0.0
-          this%streamflow_cfs = 0.0D0
-          this%streamflow_cms = 0.0D0
+          this%streamflow_cfs = 0.0_dp
+          this%streamflow_cms = 0.0_dp
         endif
       endif
 
@@ -57,15 +64,51 @@ contains
         endif
       endif
 
+      if (nsol > 0) then
+        allocate(this%solrad(nsol))
+        this%solrad = 0.0
+      endif
+
+      if (nsnow > 0) then
+        allocate(this%snowdepth(nsnow))
+        this%snowdepth = 0.0
+      endif
+
+      if (nevap > 0) then
+        allocate(this%pan_evap(nevap))
+        this%pan_evap = 0.0
+      endif
+
+      if (nhumid > 0) then
+        allocate(this%humidity(nhumid))
+        this%humidity = 0.0
+      endif
+
+      if (nwind > 0) then
+        allocate(this%wind_speed(nwind))
+        this%wind_speed = 0.0
+      endif
+
+      ! Lake variables
+      if (nratetbl > 0) then
+        allocate(this%gate_ht(nratetbl))
+        this%gate_ht = 0.0
+      endif
+
+      if (nlakeelev > 0) then
+        allocate(this%lake_elev(nlakeelev))
+        this%lake_elev = 0.0
+      endif
+
       if (init_vars_from_file == 1) then
       !     read(rst_unit) modname_rst
       !     call check_restart(MODNAME, modname_rst)
       !     read(rst_unit) nrain_test, ntemp_test, nobs_test
       !     ierr = 0
       !
-      !     call check_restart_dimen('nrain', nrain_test, Nrain, ierr)
-      !     call check_restart_dimen('ntemp', ntemp_test, Ntemp, ierr)
-      !     call check_restart_dimen('nobs', nobs_test, Nobs, ierr)
+      !     call check_restart_dimen('nrain', nrain_test, nrain, ierr)
+      !     call check_restart_dimen('ntemp', ntemp_test, ntemp, ierr)
+      !     call check_restart_dimen('nobs', nobs_test, nobs, ierr)
       !     if (ierr == 1) STOP
       !
       !     if (nrain > 0) read (rst_unit) this%precip
@@ -85,8 +128,7 @@ contains
   end function
 
 
-  module subroutine cleanup(this, ctl_data)
-    ! use Control_class, only: Control
+  module subroutine cleanup_Obs(this, ctl_data)
     implicit none
 
     class(Obs), intent(in) :: this
@@ -119,6 +161,95 @@ contains
   end subroutine
 
 
+  module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
+    use prms_constants, only: CFS2CMS_CONV
+    implicit none
+
+    class(Obs), intent(inout) :: this
+    type(Control), intent(in) :: ctl_data
+    type(Parameters), intent(in) :: param_data
+    type(Time_t), intent(in) :: model_time
+    type(Basin), intent(in) :: model_basin
+
+    ! Local Variables
+    integer(i32) :: i
+
+    ! Control
+    ! nevap, nobs, nrain, nsnow, nsol, ntemp,
+    ! precip_module
+
+    ! Parameter
+    ! rain_code, runoff_units
+
+    ! Basin
+
+    ! Time_t
+    ! Nowmonth
+
+    ! --------------------------------------------------------------------------
+    ! TODO: Need to write a read_var routine before this can be used.
+    ! if (nobs > 0) then
+    !   if ( readvar(MODNAME, 'runoff')/=0 ) call read_error(9, 'runoff')
+    !
+    !   if (runoff_units == 1) then
+    !     do i=1, nobs
+    !       this%streamflow_cms(i) = dble(this%runoff(i))
+    !       this%streamflow_cfs(i) = this%streamflow_cms(i) / CFS2CMS_CONV
+    !     enddo
+    !   else
+    !     do i=1, nobs
+    !       this%streamflow_cfs(i) = dble(this%runoff(i))
+    !       this%streamflow_cms(i) = this%streamflow_cfs(i) * CFS2CMS_CONV
+    !     enddo
+    !   endif
+    ! endif
+    !
+    ! if (nrain > 0) then
+    !   if ( readvar(MODNAME, 'precip')/=0 ) call read_error(9, 'precip')
+    ! endif
+    !
+    ! if (ntemp > 0) then
+    !   if ( readvar(MODNAME, 'tmax')/=0 ) call read_error(9, 'tmax')
+    !   if ( readvar(MODNAME, 'tmin')/=0 ) call read_error(9, 'tmin')
+    ! endif
+    !
+    ! if (nsol > 0) then
+    !   if ( readvar(MODNAME, 'solrad')/=0 ) call read_error(9, 'solrad')
+    ! endif
+    !
+    ! if (nevap > 0) then
+    !   if ( readvar(MODNAME, 'pan_evap')/=0 ) call read_error(9, 'pan_evap')
+    ! endif
+    !
+    ! if (nsnow > 0) then
+    !   if ( readvar(MODNAME, 'snowdepth')/=0 ) call read_error(9, 'snowdepth')
+    ! endif
+    !
+    ! if (precip_module%s == 'xyz_dist') then
+    !   if (rain_code(Nowmonth) == 4) then
+    !     if ( readvar(MODNAME, 'rain_day')/=0 ) call read_error(9, 'rain_day')
+    !   endif
+    ! endif
+    !
+    ! if (nlakeelev > 0) then
+    !   if ( readvar(MODNAME, 'lake_elev')/=0 ) call read_error(9, 'lake_elev')
+    ! endif
+    !
+    ! if (nratetbl > 0) then
+    !   if ( readvar(MODNAME, 'gate_ht')/=0 ) call read_error(9, 'gate_ht')
+    ! endif
+    !
+    ! if (nhumid > 0) then
+    !   if ( readvar(MODNAME, 'humidity')/=0 ) call read_error(9, 'humidity')
+    ! endif
+    !
+    ! if (nwind > 0) then
+    !   if ( readvar(MODNAME, 'wind_speed')/=0 ) call read_error(9, 'wind_speed')
+    ! endif
+
+  end subroutine
+
+
   module function module_name() result(res)
     implicit none
 
@@ -142,8 +273,8 @@ contains
   !***********************************************************************
   ! subroutine check_data_variables(Varname, Numvalues, Values, Iflag, Iret)
   !     use prms_constants, only: CFS2CMS_CONV
-  !     use PRMS_MODULE, only: Ntemp, Nrain, Nobs
-  !     use PRMS_OBS, only: Tmin, Tmax, Precip, Runoff, Streamflow_cfs, Streamflow_cms, Runoff_units
+  !     use PRMS_MODULE, only: ntemp, nrain, nobs
+  !     use PRMS_OBS, only: Tmin, Tmax, Precip, this%runoff, this%streamflow_cfs, this%streamflow_cms, runoff_units
   !     implicit none
   !
   !     ! Arguments
@@ -161,9 +292,9 @@ contains
   !
   !     if (Varname == 'tmax') then
   !         if (Iflag == 0) then
-  !             if (Numvalues /= Ntemp) then
+  !             if (Numvalues /= ntemp) then
   !                 Iret = -1
-  !                 ndim = Ntemp
+  !                 ndim = ntemp
   !             endif
   !         else
   !             do i = 1, Numvalues
@@ -172,9 +303,9 @@ contains
   !         endif
   !     elseif (Varname == 'tmin') then
   !         if (Iflag == 0) then
-  !             if (Numvalues /= Ntemp) then
+  !             if (Numvalues /= ntemp) then
   !                 Iret = -1
-  !                 ndim = Ntemp
+  !                 ndim = ntemp
   !             endif
   !         else
   !             do i = 1, Numvalues
@@ -183,9 +314,9 @@ contains
   !         endif
   !     elseif (Varname == 'precip') then
   !         if (Iflag == 0) then
-  !             if (Numvalues /= Nrain) then
+  !             if (Numvalues /= nrain) then
   !                 Iret = -1
-  !                 ndim = Nrain
+  !                 ndim = nrain
   !             endif
   !         else
   !             do i = 1, Numvalues
@@ -194,23 +325,23 @@ contains
   !         endif
   !     elseif (Varname == 'runoff') then
   !         if (Iflag == 0) then
-  !             if (Numvalues /= Nobs) then
+  !             if (Numvalues /= nobs) then
   !                 Iret = -1
-  !                 ndim = Nobs
+  !                 ndim = nobs
   !             endif
   !         else
   !             do i = 1, Numvalues
-  !                 Runoff(i) = Values(i)
+  !                 this%runoff(i) = Values(i)
   !             enddo
-  !             if (ALL(Runoff_units == 1)) then
-  !                 do i = 1, Nobs
-  !                     Streamflow_cms(i) = DBLE(Runoff(i))
-  !                     Streamflow_cfs(i) = Streamflow_cms(i) / CFS2CMS_CONV
+  !             if (ALL(runoff_units == 1)) then
+  !                 do i = 1, nobs
+  !                     this%streamflow_cms(i) = dble(this%runoff(i))
+  !                     this%streamflow_cfs(i) = this%streamflow_cms(i) / CFS2CMS_CONV
   !                 enddo
   !             else
-  !                 do i = 1, Nobs
-  !                     Streamflow_cfs(i) = DBLE(Runoff(i))
-  !                     Streamflow_cms(i) = Streamflow_cfs(i) * CFS2CMS_CONV
+  !                 do i = 1, nobs
+  !                     this%streamflow_cfs(i) = dble(this%runoff(i))
+  !                     this%streamflow_cms(i) = this%streamflow_cfs(i) * CFS2CMS_CONV
   !                 enddo
   !             endif
   !         endif
