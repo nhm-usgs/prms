@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_soltab.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_soilzone.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_srunoff.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_stream_temp.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_transp_tindex.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_climateflow.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_climate_hru.f90"
@@ -27,4 +28,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/sm_soltab.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_soilzone.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_srunoff.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_stream_temp.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_transp_tindex.f90")
