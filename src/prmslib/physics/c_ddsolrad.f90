@@ -15,6 +15,7 @@ module PRMS_DDSOLRAD
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
+  use PRMS_OBS, only: Obs
   use PRMS_SOLTAB, only: Soltab
   use PRMS_SET_TIME, only: Time_t
   implicit none
@@ -35,13 +36,15 @@ module PRMS_DDSOLRAD
   type Ddsolrad
     logical, private :: has_obs_station
       !! When true has solar radiation stations available
+    real(r32), private :: radiation_cv_factor
+      !! Conversion factor to Langleys for measured radiation. Defaults to 1.0, but can be overridden by parameter rad_conv
     contains
       procedure, public :: run => run_Ddsolrad
   end type
 
   interface Ddsolrad
     !! Ddsolrad constructor
-    module function constructor_Ddsolrad(ctl_data, param_data) result(this)
+    module function constructor_Ddsolrad(ctl_data, param_data, model_basin) result(this)
       ! use Control_class, only: Control
 
       type(Ddsolrad) :: this
@@ -50,15 +53,17 @@ module PRMS_DDSOLRAD
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
         !! Parameters
+      type(Basin), intent(in) :: model_basin
     end function
   end interface
 
   interface
-    module subroutine run_Ddsolrad(this, ctl_data, param_data, model_time, solt, climate, model_basin)
+    module subroutine run_Ddsolrad(this, ctl_data, param_data, model_time, model_obs, solt, climate, model_basin)
       class(Ddsolrad), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
+      type(Obs), intent(in) :: model_obs
       type(Soltab), intent(in) :: solt
       type(Climateflow), intent(inout) :: climate
       type(Basin), intent(inout) :: model_basin
