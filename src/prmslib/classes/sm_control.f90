@@ -20,9 +20,16 @@ contains
     ! Initialize certain dimensions with default values
     this%ndays = iScalar(366)
     this%one = iScalar(1)
+    this%nevap = iScalar(0)
+    this%nhumid = iScalar(0)
+    this%nlakeelev = iScalar(0)
     this%nobs = iScalar(0)
     this%nrain = iScalar(0)
+    this%nratetbl = iScalar(0)
+    this%nsol = iScalar(0)
+    this%nsnow = iScalar(0)
     this%ntemp = iScalar(0)
+    this%nwind = iScalar(0)
 
     ! Initialize defaults for some control file parameters
     this%prms_warmup = iScalar(0)
