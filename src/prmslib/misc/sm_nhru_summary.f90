@@ -165,7 +165,7 @@ contains
   !***********************************************************************
   !     Output set of declared variables in R compatible format
   !***********************************************************************
-  module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, climate)
+  module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, climate, model_solrad)
     implicit none
 
     class(Nhru_summary), intent(inout) :: this
@@ -173,6 +173,7 @@ contains
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(in) :: climate
+    class(SolarRadiation), intent(in) :: model_solrad
 
     ! FUNCTIONS AND SUBROUTINES
     INTRINSIC SNGL, DBLE
@@ -230,7 +231,7 @@ contains
           case('prmx')
             this%nhru_var_daily(:, jj) = climate%prmx
           case('swrad')
-            this%nhru_var_daily(:, jj) = climate%swrad
+            this%nhru_var_daily(:, jj) = model_solrad%swrad
           case('tavgc')
             this%nhru_var_daily(:, jj) = climate%tavgc
           case('tavgf')
