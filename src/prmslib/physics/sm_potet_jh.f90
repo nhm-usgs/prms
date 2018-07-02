@@ -20,7 +20,7 @@ contains
   end function
 
 
-  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate)
+  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad)
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -30,6 +30,7 @@ contains
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in) :: model_time
     type(Climateflow), intent(inout) :: climate
+    class(SolarRadiation), intent(in) :: model_solrad
 
     ! Functions
     INTRINSIC DBLE
@@ -45,11 +46,30 @@ contains
       !! Latent heat of vaporization
     real(r32), pointer, contiguous :: jh_coef_2d(:,:)
 
-    !***********************************************************************
+    ! ***********************************************************************
     ! 597.3 cal/gm at 0 C is the energy required to change the state of
     ! water to vapor
     ! elh is the latent heat of vaporization (not including the *2.54)
 
+    ! Control
+    ! nrhu, nmonths,
+
+    ! Time_t
+    ! curr_month
+
+    ! Basin
+    ! active_mask, basin_area_inv
+
+    ! Parameters
+    ! jh_coef_hru, hru_area,
+
+    ! Climate
+    ! basin_potet, potet, tavgf
+
+    ! SolarRadiation
+    ! swrad
+
+    ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
               curr_month => model_time%Nowmonth, &
@@ -57,16 +77,22 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               ! jh_coef => param_data%jh_coef%values, &
               jh_coef_hru => param_data%jh_coef_hru%values, &
-              hru_area => param_data%hru_area%values)
+              hru_area => param_data%hru_area%values, &
+              basin_potet => climate%basin_potet, &
+              potet => climate%potet, &
+              tavgc => climate%tavgc, &
+              tavgf => climate%tavgf, &
+              swrad => model_solrad%swrad)
 
       jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
       ! climate%basin_potet = 0.0
 
-      climate%potet = jh_coef_2d(:, curr_month) * (climate%tavgf - jh_coef_hru) * &
-                      climate%swrad / ((597.3 - (0.5653 * climate%tavgc)) * 2.54)
-      where (climate%potet < 0.0) climate%potet = 0.0
+      ! WARNING: This confusing because tavgc and tavgf are used
+      potet = jh_coef_2d(:, curr_month) * (tavgf - jh_coef_hru) * &
+              swrad / ((597.3 - (0.5653 * tavgc)) * 2.54)
+      where (potet < 0.0) potet = 0.0
 
-      climate%basin_potet = sum(dble(climate%potet * hru_area), mask=active_mask) * basin_area_inv
+      basin_potet = sum(dble(potet * hru_area), mask=active_mask) * basin_area_inv
 
       ! do j = 1, model_basin%active_hrus
       !   chru = model_basin%hru_route_order(j)

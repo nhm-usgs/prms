@@ -10,6 +10,7 @@ module PRMS_POTET_JH
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
+  use SOLAR_RADIATION, only: SolarRadiation
   implicit none
 
   private
@@ -35,13 +36,14 @@ module PRMS_POTET_JH
   end interface
 
   interface
-    module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate)
+    module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad)
       class(Potet_jh), intent(in) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Climateflow), intent(inout) :: climate
+      class(SolarRadiation), intent(in) :: model_solrad
     end subroutine
   end interface
 
