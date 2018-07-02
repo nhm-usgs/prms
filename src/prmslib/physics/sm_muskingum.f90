@@ -1,8 +1,8 @@
 submodule (PRMS_MUSKINGUM) sm_muskingum
   contains
     module function constructor_Muskingum(ctl_data, param_data, model_basin, &
-                                          model_flow, model_route, model_time) result(this)
-      use prms_constants, only: dp
+                                          model_time) result(this)
+      use prms_constants, only: dp, NEARZERO
       implicit none
 
       type(Muskingum) :: this
@@ -12,12 +12,16 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       type(Parameters), intent(in) :: param_data
         !! Parameter data
       type(Basin), intent(in) :: model_basin
-      type(Flowvars), intent(inout) :: model_flow
-      type(Routing), intent(inout) :: model_route
       type(Time_t), intent(in) :: model_time
 
       ! Local variables
       integer(i32) :: i
+      integer(i32) :: ierr
+
+      real(r32) :: d
+      real(r32) :: k
+      real(r32) :: x
+      real(r32) :: x_max
 
       ! Control
       ! nsegment, init_vars_from_file,
@@ -28,23 +32,130 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       ! Basin
       ! basin_area_inv
 
-      ! Flowvars
-      ! seg_outflow
-
-      ! Routing
-      ! basin_segment_storage
-
       ! Time_t
       ! cfs_conv
 
       ! -----------------------------------------------------------------------
+      ! Call the parent constructor first
+      this%Streamflow = Streamflow(ctl_data, param_data, model_basin, model_time)
+
       associate(nsegment => ctl_data%nsegment%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 segment_flow_init => param_data%segment_flow_init%values, &
                 basin_area_inv => model_basin%basin_area_inv, &
-                seg_outflow => model_flow%seg_outflow, &
-                basin_segment_storage => model_route%basin_segment_storage, &
-                cfs_conv => model_time%cfs_conv)
+                ! seg_outflow => model_flow%seg_outflow, &
+                cfs_conv => model_time%cfs_conv, &
+                K_coef => param_data%K_coef%values, &
+                x_coef => param_data%x_coef%values)
+
+        allocate(this%c0(nsegment))
+        allocate(this%c1(nsegment))
+        allocate(this%c2(nsegment))
+        allocate(this%ts(nsegment))
+        allocate(this%ts_i(nsegment))
+
+        ! Compute the three constants in the Muskingum routing equation based
+        ! on the values of K_coef and a routing period of 1 hour. See the notes
+        ! at the top of this file.
+        this%c0 = 0.0
+        this%c1 = 0.0
+        this%c2 = 0.0
+
+        ! Make sure K > 0
+        this%ts = 1.0
+        ierr = 0
+
+        do i=1, nsegment
+          ! WARNING: parameter data is read-only
+          ! if (segment_type(i) == 2 .and. K_coef(i) < 24.0) then
+          !   ! For lakes K_coef must be equal to 24
+          !   K_coef(i) = 24.0
+          ! endif
+
+          k = K_coef(i)
+          x = x_coef(i)
+
+          ! Check the values of k and x to make sure that Muskingum routing is stable
+          if (k < 1.0) then
+            this%ts_i(i) = -1
+          elseif (k < 2.0) then
+            this%ts(i) = 1.0
+            this%ts_i(i) = 1
+          elseif (k < 3.0) then
+            this%ts(i) = 2.0
+            this%ts_i(i) = 2
+          elseif (k < 4.0) then
+            this%ts(i) = 3.0
+            this%ts_i(i) = 3
+          elseif (k < 6.0) then
+            this%ts(i) = 4.0
+            this%ts_i(i) = 4
+          elseif (k < 8.0) then
+            this%ts(i) = 6.0
+            this%ts_i(i) = 6
+          elseif (k < 12.0) then
+            this%ts(i) = 8.0
+            this%ts_i(i) = 8
+          elseif (k < 24.0) then
+            this%ts(i) = 12.0
+            this%ts_i(i) = 12
+          else
+            this%ts(i) = 24.0
+            this%ts_i(i) = 24
+          endif
+
+          ! x must be <= t/(2K) the C coefficents will be negative. Check for
+          ! this for all segments with this%ts >= minimum this%ts (1 hour).
+          if (this%ts(i) > 0.1) then
+            x_max = this%ts(i) / (2.0 * k)
+
+            if (x > x_max) then
+              print *, 'ERROR, x_coef value is too large for stable routing for segment:', i, ' x_coef:', x
+              print *, '       a maximum value of:', x_max, ' is suggested'
+              ! Inputerror_flag = 1
+              cycle
+            endif
+          endif
+
+          d = k - (k * x) + (0.5 * this%ts(i))
+
+          if (abs(d) < NEARZERO) then
+            d = 0.0001
+          endif
+
+          this%c0(i) = (-(k * x) + (0.5 * this%ts(i))) / d
+          this%c1(i) = ((k * x) + (0.5 * this%ts(i))) / d
+          this%c2(i) = (k - (k * x) - (0.5 * this%ts(i))) / d
+
+          ! the following code was in the original musroute, but, not in Linsley and others
+          ! NOTE: rsr, 3/1/2016 - having < 0 coefficient can cause negative
+          !                       flows as found by Jacob in GCPO headwater.
+          !  if c2 is <= 0.0 then short travel time though reach (less daily
+          !  flows), thus outflow is mainly = inflow w/ small influence of previous
+          !  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
+
+          !  if c0 is <= 0.0 then long travel time through reach (greater than daily
+          !  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
+          !  c2 as is, reduce c1 by c0 and set c0=0
+
+          ! SHORT travel time
+          if (this%c2(i) < 0.0) then
+            this%c1(i) = this%c1(i) + this%c2(i)
+            this%c2(i) = 0.0
+          endif
+
+          ! LONG travel time
+          if (this%c0(i) < 0.0) then
+            this%c1(i) = this%c1(i) + this%c0(i)
+            this%c0(i) = 0.0
+          endif
+
+        enddo
+
+        if (ierr == 1) print '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
+        ! deallocate(K_coef)
+        ! deallocate(x_coef)
+
 
         allocate(this%currinsum(nsegment))
         allocate(this%inflow_ts(nsegment))
@@ -54,7 +165,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2) then
           do i = 1, nsegment
-            seg_outflow(i) = segment_flow_init(i)
+            this%seg_outflow(i) = segment_flow_init(i)
           enddo
 
           ! deallocate (segment_flow_init)
@@ -64,23 +175,23 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           this%outflow_ts = 0.0_dp
         endif
 
-        basin_segment_storage = 0.0_dp
+        this%basin_segment_storage = 0.0_dp
 
         do i = 1, nsegment
-          basin_segment_storage = basin_segment_storage + seg_outflow(i)
+          this%basin_segment_storage = this%basin_segment_storage + this%seg_outflow(i)
         enddo
 
-        basin_segment_storage = basin_segment_storage * basin_area_inv / cfs_conv
+        this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
       end associate
     end function
 
     module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
-                                    groundwater, soil, runoff, model_obs, &
-                                    model_route, model_time, model_flow)
+                                    model_climate, groundwater, soil, runoff, &
+                                    model_time, model_solrad, model_flow, model_obs)
       use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
       implicit none
 
-      class(Muskingum) :: this
+      class(Muskingum), intent(inout) :: this
         !! Muskingum class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -88,14 +199,16 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
+      type(Climateflow), intent(in) :: model_climate
+        !! Climate variables
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
-      type(Obs), intent(in) :: model_obs
-      type(Routing), intent(inout) :: model_route
       type(Time_t), intent(in) :: model_time
+      class(SolarRadiation), intent(in) :: model_solrad
       type(Flowvars), intent(inout) :: model_flow
+      type(Obs), intent(in) :: model_obs
 
       ! Local Variables
       integer(i32) :: i
@@ -120,9 +233,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       ! basin_area_inv
 
       ! Flowvars
-      ! basin_cfs(RW), basin_cms(RW), basin_gwflow_cfs(RW), basin_sroff_cfs(RW),
-      ! basin_ssflow_cfs(RW), basin_stflow_in(RW), basin_stflow_out(RW),
-      ! flow_out(RW), seg_inflow, seg_outflow, seg_upstream_inflow(RW)
+      ! flow_out(RW)
 
       ! Gwflow
       ! basin_gwflow
@@ -130,18 +241,11 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       ! Obs
       ! streamflow_cfs
 
-      ! Routing
-      ! basin_segment_storage(RW), c0, c1, c2, flow_headwater, flow_in_great_lakes,
-      ! flow_in_nation, flow_in_region, flow_out_NHM, flow_out_region,
-      ! flow_replacement, flow_terminus, flow_to_great_lakes, flow_to_lakes,
-      ! flow_to_ocean, segment_delta_flow, segment_order, seg_lateral_inflow,
-      ! ts, ts_i, use_transfer_segment,
-
       ! Soilzone
       ! basin_ssflow
 
       ! Srunoff
-      ! basin_sroff,
+      ! basin_sroff
 
       ! Time_t
       ! cfs_conv
@@ -169,92 +273,69 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       !   Out2   =      In2*c0    +        In1*c1    +          Out1*c2
       !   seg_outflow = seg_inflow*Czero + Pastinflow*Cone + Pastoutflow*Ctwo
       !     c0, c1, and c2: initialized in the "init" part of this module
+
+      ! Call parent class run routine first
+      call this%run_Streamflow(ctl_data, param_data, model_basin, model_climate, &
+                               groundwater, soil, runoff, model_time, model_solrad)
+
       associate(nsegment => ctl_data%nsegment%value, &
                 obsin_segment => param_data%obsin_segment%values, &
                 ! FIXME: 2018-06-26 PAN - obsout_segment doesn't always exist in the
-                !                         parameter file
+                !                         parameter file.
                 ! obsout_segment => param_data%obsout_segment%values, &
                 segment_type => param_data%segment_type%values, &
                 tosegment => param_data%tosegment%values, &
                 basin_area_inv => model_basin%basin_area_inv, &
-                basin_cfs => model_flow%basin_cfs, &
-                basin_cms => model_flow%basin_cms, &
-                basin_gwflow_cfs => model_flow%basin_gwflow_cfs, &
-                basin_sroff_cfs => model_flow%basin_sroff_cfs, &
-                basin_ssflow_cfs => model_flow%basin_ssflow_cfs, &
-                basin_stflow_in => model_flow%basin_stflow_in, &
-                basin_stflow_out => model_flow%basin_stflow_out, &
+
                 flow_out => model_flow%flow_out, &
-                seg_inflow => model_flow%seg_inflow, &
-                seg_outflow => model_flow%seg_outflow, &
-                seg_upstream_inflow => model_flow%seg_upstream_inflow, &
+
                 basin_gwflow => groundwater%basin_gwflow, &
                 streamflow_cfs => model_obs%streamflow_cfs, &
-                basin_segment_storage => model_route%basin_segment_storage, &
-                c0 => model_route%c0, &
-                c1 => model_route%c1, &
-                c2 => model_route%c2, &
-                flow_headwater => model_route%flow_headwater, &
-                flow_in_great_lakes => model_route%flow_in_great_lakes, &
-                flow_in_nation => model_route%flow_in_nation, &
-                flow_in_region => model_route%flow_in_region, &
-                flow_out_NHM => model_route%flow_out_NHM, &
-                flow_out_region => model_route%flow_out_region, &
-                flow_replacement => model_route%flow_replacement, &
-                flow_terminus => model_route%flow_terminus, &
-                flow_to_great_lakes => model_route%flow_to_great_lakes, &
-                flow_to_lakes => model_route%flow_to_lakes, &
-                flow_to_ocean => model_route%flow_to_ocean, &
-                segment_delta_flow => model_route%segment_delta_flow, &
-                segment_order => model_route%segment_order, &
-                seg_lateral_inflow => model_route%seg_lateral_inflow, &
-                ts => model_route%ts, &
-                ts_i => model_route%ts_i, &
-                use_transfer_segment => model_route%use_transfer_segment, &
+
                 basin_ssflow => soil%basin_ssflow, &
                 basin_sroff => runoff%basin_sroff, &
                 cfs_conv => model_time%cfs_conv)
 
-        this%pastin = seg_inflow
-        this%pastout = seg_outflow
-        seg_inflow = 0.0_dp
-        seg_outflow = 0.0_dp
+        this%pastin = this%seg_inflow
+        this%pastout = this%seg_outflow
+        this%seg_inflow = 0.0_dp
+        this%seg_outflow = 0.0_dp
         this%inflow_ts = 0.0_dp
         this%currinsum = 0.0_dp
 
         ! 24 hourly timesteps per day
         do j = 1, 24
-          seg_upstream_inflow = 0.0_dp
+          this%seg_upstream_inflow = 0.0_dp
 
           do i = 1, nsegment
-            iorder = segment_order(i)
+            iorder = this%segment_order(i)
 
             ! current inflow to the segment is the time weighted average of the outflow
             ! of the upstream segments plus the lateral HRU inflow plus any gains.
-            currin = seg_lateral_inflow(iorder)
+            currin = this%seg_lateral_inflow(iorder)
 
             if (obsin_segment(iorder) > 0) then
-              seg_upstream_inflow(iorder) = streamflow_cfs(obsin_segment(iorder))
+              this%seg_upstream_inflow(iorder) = streamflow_cfs(obsin_segment(iorder))
             endif
 
-            currin = currin + seg_upstream_inflow(iorder)
-            seg_inflow(iorder) = seg_inflow(iorder) + currin
+            currin = currin + this%seg_upstream_inflow(iorder)
+            this%seg_inflow(iorder) = this%seg_inflow(iorder) + currin
             this%inflow_ts(iorder) = this%inflow_ts(iorder) + currin
-            this%currinsum(iorder) = this%currinsum(iorder) + seg_upstream_inflow(iorder)
+            this%currinsum(iorder) = this%currinsum(iorder) + this%seg_upstream_inflow(iorder)
 
             ! Check to see if this segment is to be routed on this time step
-            tspd = ts_i(iorder)
+            tspd = this%ts_i(iorder)
             imod = mod(j, tspd)
 
             if (imod == 0) then
-              this%inflow_ts(iorder) = (this%inflow_ts(iorder) / ts(iorder))
+              this%inflow_ts(iorder) = (this%inflow_ts(iorder) / this%ts(iorder))
               ! Compute routed streamflow
 
-              if (ts_i(iorder) > 0) then
+              if (this%ts_i(iorder) > 0) then
                 ! Muskingum routing equation
-                this%outflow_ts(iorder) = this%inflow_ts(iorder) * c0(iorder) + &
-                                          this%pastin(iorder) * c1(iorder) + &
-                                          this%outflow_ts(iorder) * c2(iorder)
+                this%outflow_ts(iorder) = this%inflow_ts(iorder) * this%c0(iorder) + &
+                                          this%pastin(iorder) * this%c1(iorder) + &
+                                          this%outflow_ts(iorder) * this%c2(iorder)
               else
                 ! If travel time (K_coef parameter) is less than or equal to
                 ! time step (one hour), then the outflow is equal to the inflow
@@ -279,7 +360,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             ! Water-use removed/added in routing module
             ! Check for negative flow
             if (this%outflow_ts(iorder) < 0.0) then
-              if (use_transfer_segment == 1) then
+              if (this%use_transfer_segment == 1) then
                 print *, 'ERROR, transfer(s) from stream segment:', iorder, ' causes outflow to be negative'
                 print *, '       outflow =', this%outflow_ts(iorder), ' must fix water-use stream segment transfer file'
               else
@@ -290,7 +371,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             endif
 
             ! seg_outflow (the mean daily flow rate for each segment) will be the average of the hourly values.
-            seg_outflow(iorder) = seg_outflow(iorder) + this%outflow_ts(iorder)
+            this%seg_outflow(iorder) = this%seg_outflow(iorder) + this%outflow_ts(iorder)
             ! pastout is equal to the this%inflow_ts on the previous routed timestep
             this%pastout(iorder) = this%outflow_ts(iorder)
 
@@ -303,101 +384,78 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             toseg = tosegment(iorder)
 
             if (toseg > 0) then
-              seg_upstream_inflow(toseg) = seg_upstream_inflow(toseg) + this%outflow_ts(iorder)
+              this%seg_upstream_inflow(toseg) = this%seg_upstream_inflow(toseg) + this%outflow_ts(iorder)
             endif
           enddo  ! segment
         enddo  ! timestep
 
-        basin_segment_storage = 0.0_dp
         flow_out = 0.0_dp
-        flow_to_lakes = 0.0_dp
-        flow_to_ocean = 0.0_dp
-        flow_to_great_lakes = 0.0_dp
-        flow_out_region = 0.0_dp
-        flow_out_NHM = 0.0_dp
-        flow_in_region = 0.0_dp
-        flow_terminus = 0.0_dp
-        flow_in_nation = 0.0_dp
-        flow_headwater = 0.0_dp
-        flow_in_great_lakes = 0.0_dp
-        flow_replacement = 0.0_dp
+        this%basin_segment_storage = 0.0_dp
+        this%flow_to_lakes = 0.0_dp
+        this%flow_to_ocean = 0.0_dp
+        this%flow_to_great_lakes = 0.0_dp
+        this%flow_out_region = 0.0_dp
+        this%flow_out_NHM = 0.0_dp
+        this%flow_in_region = 0.0_dp
+        this%flow_terminus = 0.0_dp
+        this%flow_in_nation = 0.0_dp
+        this%flow_headwater = 0.0_dp
+        this%flow_in_great_lakes = 0.0_dp
+        this%flow_replacement = 0.0_dp
 
         do i=1, nsegment
-          seg_outflow(i) = seg_outflow(i) * ONE_24TH
-          segout = seg_outflow(i)
+          this%seg_outflow(i) = this%seg_outflow(i) * ONE_24TH
+          segout = this%seg_outflow(i)
           segtype = Segment_type(i)
-          seg_inflow(i) = seg_inflow(i) * ONE_24TH
-          seg_upstream_inflow(i) = this%currinsum(i) * ONE_24TH
+          this%seg_inflow(i) = this%seg_inflow(i) * ONE_24TH
+          this%seg_upstream_inflow(i) = this%currinsum(i) * ONE_24TH
 
           ! Flow_out is the total flow out of the basin, which allows for multiple
           ! outlets includes closed basins (tosegment=0)
           select case(segtype)
             case(1)
-              flow_headwater = flow_headwater + segout
+              this%flow_headwater = this%flow_headwater + segout
             case(2)
-              flow_to_lakes = flow_to_lakes + segout
+              this%flow_to_lakes = this%flow_to_lakes + segout
             case(3)
-              flow_replacement = flow_replacement + segout
+              this%flow_replacement = this%flow_replacement + segout
             case(4)
-              flow_in_nation = flow_in_nation + segout
+              this%flow_in_nation = this%flow_in_nation + segout
             case(5)
-              flow_out_NHM = flow_out_NHM + segout
+              this%flow_out_NHM = this%flow_out_NHM + segout
             case(6)
-              flow_in_region = flow_in_region + segout
+              this%flow_in_region = this%flow_in_region + segout
             case(7)
-              flow_out_region = flow_out_region + segout
+              this%flow_out_region = this%flow_out_region + segout
             case(8)
-              flow_to_ocean = flow_to_ocean + segout
+              this%flow_to_ocean = this%flow_to_ocean + segout
             case(9)
-              flow_terminus = flow_terminus + segout
+              this%flow_terminus = this%flow_terminus + segout
             case(10)
-              flow_in_great_lakes = flow_in_great_lakes + segout
+              this%flow_in_great_lakes = this%flow_in_great_lakes + segout
             case(11)
-              flow_to_great_lakes = flow_to_great_lakes + segout
+              this%flow_to_great_lakes = this%flow_to_great_lakes + segout
           end select
-
-          ! if (segtype == 1) then
-          !   flow_headwater = flow_headwater + segout
-          ! elseif (segtype == 2) then
-          !   flow_to_lakes = flow_to_lakes + segout
-          ! elseif (segtype == 3) then
-          !   flow_replacement = flow_replacement + segout
-          ! elseif (segtype == 4) then
-          !   flow_in_nation = flow_in_nation + segout
-          ! elseif (segtype == 5) then
-          !   flow_out_NHM = flow_out_NHM + segout
-          ! elseif (segtype == 6) then
-          !   flow_in_region = flow_in_region + segout
-          ! elseif (segtype == 7) then
-          !   flow_out_region = flow_out_region + segout
-          ! elseif (segtype == 8) then
-          !   flow_to_ocean = flow_to_ocean + segout
-          ! elseif (segtype == 9) then
-          !   flow_terminus = flow_terminus + segout
-          ! elseif (segtype == 10) then
-          !   flow_in_great_lakes = flow_in_great_lakes + segout
-          ! elseif (segtype == 11) then
-          !   flow_to_great_lakes = flow_to_great_lakes + segout
-          ! endif
 
           if (tosegment(i) == 0) then
             flow_out = flow_out + segout
           endif
 
-          segment_delta_flow(i) = segment_delta_flow(i) + seg_inflow(i) - segout
-          basin_segment_storage = basin_segment_storage + segment_delta_flow(i)
+          this%segment_delta_flow(i) = this%segment_delta_flow(i) + this%seg_inflow(i) - segout
+          this%basin_segment_storage = this%basin_segment_storage + this%segment_delta_flow(i)
         enddo
 
         area_fac = cfs_conv / basin_area_inv
 
-        basin_stflow_in = basin_sroff + basin_gwflow + basin_ssflow ! not equal to basin_stflow_out if replacement flows
-        basin_cfs = flow_out
-        basin_stflow_out = basin_cfs / area_fac
-        basin_cms = basin_cfs * CFS2CMS_CONV
-        basin_sroff_cfs = basin_sroff * area_fac
-        basin_ssflow_cfs = basin_ssflow * area_fac
-        basin_gwflow_cfs = basin_gwflow * area_fac
-        basin_segment_storage = basin_segment_storage / area_fac
+        ! NOTE: Is this block repeated in the other child classes?
+        this%basin_stflow_in = basin_sroff + basin_gwflow + basin_ssflow ! not equal to basin_stflow_out if replacement flows
+        this%basin_cfs = flow_out
+        this%basin_stflow_out = this%basin_cfs / area_fac
+        this%basin_cms = this%basin_cfs * CFS2CMS_CONV
+        this%basin_sroff_cfs = basin_sroff * area_fac
+        this%basin_ssflow_cfs = basin_ssflow * area_fac
+        this%basin_gwflow_cfs = basin_gwflow * area_fac
+        this%basin_segment_storage = this%basin_segment_storage / area_fac
       end associate
     end subroutine
 
