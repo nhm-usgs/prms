@@ -30,7 +30,7 @@ contains
               ntemp => ctl_data%ntemp%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
-              solrad_module => ctl_data%solrad_module%values(1), &
+              ! solrad_module => ctl_data%solrad_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
               ! basin_tsta => param_data%basin_tsta%values(1), &
               elev_units => param_data%elev_units%values(1), &
@@ -71,7 +71,7 @@ contains
 
       allocate(this%potet(nhru))
       allocate(this%prmx(nhru))
-      allocate(this%swrad(nhru))
+      ! allocate(this%swrad(nhru))
       allocate(this%tavgf(nhru), this%tavgc(nhru))
       allocate(this%tmaxf(nhru), this%tmaxc(nhru))
       allocate(this%tminf(nhru), this%tminc(nhru))
@@ -138,17 +138,19 @@ contains
       !   humidity_percent = 1.0
       ! endif
 
-      if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
-          ctl_data%solrad_module%values(1)%s == 'ddsolrad' .or. &
-          ctl_data%stream_temp_flag%value == 1) then
-        allocate(this%cloud_cover_hru(nhru))
-      endif
+      ! NOTE: Doesn't appear to be used by stream_temp; computed in ccsolrad
+      ! For stream temperature
+      ! if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
+      !     ctl_data%solrad_module%values(1)%s == 'ddsolrad' .or. &
+      !     ctl_data%stream_temp_flag%value == 1) then
+      !   allocate(this%cloud_cover_hru(nhru))
+      ! endif
 
       ! TODO: Figure out how to check this correctly
       ! if (any(['ddsolrad', 'ccsolrad']==ctl_data%solrad_module%values(1)%s) .or. &
       !     ctl_data%model_mode == 'DOCUMENTATION') then
-        allocate(this%orad_hru(nhru))
-        this%orad_hru = 0.0
+        ! allocate(this%orad_hru(nhru))
+        ! this%orad_hru = 0.0
       ! endif
 
 
@@ -190,7 +192,7 @@ contains
         this%prmx = 0.0
         this%solrad_tmax = 0.0
         this%solrad_tmin = 0.0
-        this%swrad = 0.0
+        ! this%swrad = 0.0
         this%tavgc = 0.0
         this%tavgf = 0.0
         this%tmax_hru = 0.0
@@ -242,33 +244,33 @@ contains
     associate(rst_unit => ctl_data%restart_output_unit, &
               solrad_module => ctl_data%solrad_module%values(1))
 
-      write(rst_unit) MODNAME
-      write(rst_unit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-                      this%basin_obs_ppt, this%basin_temp, this%basin_orad, &
-                      this%basin_tmax, this%basin_tmin, this%solrad_tmax, &
-                      this%solrad_tmin, this%basin_transp_on, this%basin_potet, &
-                      this%basin_horad, this%basin_swrad
-      write(rst_unit) this%tmax_hru
-      write(rst_unit) this%tmin_hru
-      write(rst_unit) this%newsnow
-      write(rst_unit) this%pptmix
-      write(rst_unit) this%hru_ppt
-      write(rst_unit) this%hru_rain
-      write(rst_unit) this%hru_snow
-      write(rst_unit) this%prmx
-      write(rst_unit) this%tmaxf
-      write(rst_unit) this%tminf
-      write(rst_unit) this%tavgf
-      write(rst_unit) this%tmaxc
-      write(rst_unit) this%tminc
-      write(rst_unit) this%tavgc
-      write(rst_unit) this%transp_on
-      write(rst_unit) this%potet
-      write(rst_unit) this%swrad
-
-      if (solrad_module%s == 'ddsolrad' .or. solrad_module%s == 'ccsolrad') then
-        write(rst_unit) this%orad_hru
-      endif
+      ! write(rst_unit) MODNAME
+      ! write(rst_unit) this%basin_ppt, this%basin_rain, this%basin_snow, &
+      !                 this%basin_obs_ppt, this%basin_temp, this%basin_orad, &
+      !                 this%basin_tmax, this%basin_tmin, this%solrad_tmax, &
+      !                 this%solrad_tmin, this%basin_transp_on, this%basin_potet, &
+      !                 this%basin_horad, this%basin_swrad
+      ! write(rst_unit) this%tmax_hru
+      ! write(rst_unit) this%tmin_hru
+      ! write(rst_unit) this%newsnow
+      ! write(rst_unit) this%pptmix
+      ! write(rst_unit) this%hru_ppt
+      ! write(rst_unit) this%hru_rain
+      ! write(rst_unit) this%hru_snow
+      ! write(rst_unit) this%prmx
+      ! write(rst_unit) this%tmaxf
+      ! write(rst_unit) this%tminf
+      ! write(rst_unit) this%tavgf
+      ! write(rst_unit) this%tmaxc
+      ! write(rst_unit) this%tminc
+      ! write(rst_unit) this%tavgc
+      ! write(rst_unit) this%transp_on
+      ! write(rst_unit) this%potet
+      ! write(rst_unit) this%swrad
+      !
+      ! if (solrad_module%s == 'ddsolrad' .or. solrad_module%s == 'ccsolrad') then
+      !   write(rst_unit) this%orad_hru
+      ! endif
     end associate
   end subroutine
 
@@ -387,7 +389,6 @@ contains
       !! Array of maximum temperature adjustments
 
     ! --------------------------------------------------------------------------
-    ! NOTE: This is dangerous because it circumvents the intent for param_data
     associate(basin_area_inv => model_basin%basin_area_inv, &
               hru_area => param_data%hru_area%values)
 
@@ -436,6 +437,7 @@ contains
         this%basin_tmin = sum(dble(this%tminc * hru_area)) * basin_area_inv
       endif
 
+      ! NOTE: Why are separate variables needed for solrad?
       this%solrad_tmax = real(this%basin_tmax, r32)
       this%solrad_tmin = real(this%basin_tmin, r32)
 

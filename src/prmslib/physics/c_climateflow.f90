@@ -19,22 +19,20 @@ module PRMS_CLIMATEVARS
   character(len=*), parameter :: MODVERSION = '2017-09-29 13:47:00Z'
 
   type Climateflow
+    ! integer(i32) :: use_pandata !! NOTE: No longer used; folded into intcp
+    integer(i32) :: solsta_flag
+
+    ! TODO: what are these two used for?
     real(r32) :: solrad_tmax
     real(r32) :: solrad_tmin
 
     ! Basin variables
     real(r64) :: basin_cloud_cover
-    real(r64) :: basin_horad
-    real(r64) :: basin_humidity
     real(r64) :: basin_obs_ppt
-    real(r64) :: basin_orad
-      !! used when solrad_module = [ddsolrad, ccsolrad] or model==99
     real(r64) :: basin_potet
-    real(r64) :: basin_potsw
     real(r64) :: basin_ppt
     real(r64) :: basin_rain
     real(r64) :: basin_snow
-    real(r64) :: basin_swrad
     real(r64) :: basin_temp
     real(r64) :: basin_tmax
     real(r64) :: basin_tmin
@@ -44,11 +42,8 @@ module PRMS_CLIMATEVARS
     real(r32), allocatable :: hru_ppt(:)
     real(r32), allocatable :: hru_rain(:)
     real(r32), allocatable :: hru_snow(:)
-    real(r32), allocatable :: orad_hru(:)
-      !! used when solrad_module = [ddsolrad, ccsolrad] or model==99
     real(r32), allocatable :: potet(:)
     real(r32), allocatable :: prmx(:)
-    real(r32), allocatable :: swrad(:)
     real(r32), allocatable :: tavgc(:)
     real(r32), allocatable :: tavgf(:)
     real(r32), allocatable :: tmaxc(:)
@@ -91,11 +86,12 @@ module PRMS_CLIMATEVARS
     real(r32), allocatable :: vp_slope(:)
     real(r32), allocatable :: vp_sat(:)
 
+    ! NOTE: Doesn't appear to be used by stream_temp; computed in ccsolrad
     ! For stream temperature
-    real(r32), allocatable :: cloud_cover_hru(:)
+    ! real(r32), allocatable :: cloud_cover_hru(:)
 
     ! For solar radiation
-    real(r32) :: orad
+    ! real(r32) :: orad
 
     real(r32), allocatable, private :: tdiff_arr(:)
       !! Array containing differences b/t tmaxf and tminf
