@@ -24,58 +24,32 @@ submodule (PRMS_FLOWVARS) sm_flowvars
                 sat_threshold => param_data%sat_threshold%values)
 
         ! Soilzone variables
-        allocate(this%hru_actet(nhru))
-        allocate(this%slow_flow(nhru))
+        ! allocate(this%hru_actet(nhru))
+        ! allocate(this%slow_flow(nhru))
         allocate(this%soil_moist(nhru))
         allocate(this%soil_rechr_max(nhru))
         allocate(this%soil_rechr(nhru))
-        allocate(this%soil_to_gw(nhru))
-        allocate(this%soil_to_ssr(nhru))
-        allocate(this%ssr_to_gw(nhru))
-        allocate(this%ssres_in(nhru))
-
-        this%hru_actet = 0.0
-        this%slow_flow = 0.0
+        
         ! ?this%slow_stor
         this%soil_moist = soil_moist_init_frac * soil_moist_max
         this%soil_rechr_max = soil_rechr_max_frac * soil_moist_max
         this%soil_rechr = soil_rechr_init_frac * this%soil_rechr_max
-        this%soil_to_gw = 0.0
-        this%soil_to_ssr = 0.0
-        this%ssr_to_gw = 0.0
-        this%ssres_in = 0.0
 
         ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
         !       and ssstor_init_frac
-
-        ! Streamflow
-        if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
-            ctl_data%strmflow_module%values(1)%s == 'muskingum_lake' .or. &
-            ctl_data%strmflow_module%values(1)%s == 'strmflow_in_out') then
-          if (nsegment < 1) then
-            write(output_unit, *) 'ERROR: streamflow and cascade routing require nsegment > 0, specified as:', nsegment
-            stop
-          endif
-
-          allocate(this%seg_inflow(nsegment))
-          allocate(this%seg_outflow(nsegment))
-          allocate(this%seg_upstream_inflow(nsegment))
-
-          this%seg_upstream_inflow = 0.0_dp
-        endif
 
         if (init_vars_from_file == 1) then
           ! TODO: Get the init from file stuff hooked up
         else
           this%flow_out = 0.0_dp
 
-          if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
-              ctl_data%strmflow_module%values(1)%s == 'muskingum_lake' .or. &
-              ctl_data%strmflow_module%values(1)%s == 'strmflow_in_out') then
-            ! TODO: why is the conditional necessary?
-            this%seg_inflow = 0.0_dp
-            this%seg_outflow = 0.0_dp
-          endif
+        !   if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
+        !       ctl_data%strmflow_module%values(1)%s == 'muskingum_lake' .or. &
+        !       ctl_data%strmflow_module%values(1)%s == 'strmflow_in_out') then
+        !     ! TODO: why is the conditional necessary?
+        !     this%seg_inflow = 0.0_dp
+        !     this%seg_outflow = 0.0_dp
+        !   endif
         endif
       end associate
     end function
