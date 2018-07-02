@@ -178,7 +178,7 @@ contains
   !***********************************************************************
   !     snorun - daily mode snow estimates
   !***********************************************************************
-  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp)
+  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad)
     use prms_constants, only: dp
     use UTILS_PRMS, only: get_array
     implicit none
@@ -197,6 +197,7 @@ contains
       !! Basin
     type(Interception), intent(in) :: intcp
       !! Canopy interception
+    class(SolarRadiation), intent(in) :: model_solrad
 
     ! Local Variables
     integer(i32) :: chru
@@ -251,14 +252,15 @@ contains
               ! snarea_curve => param_data%snarea_curve%values, &
               snarea_thresh => param_data%snarea_thresh%values, &
 
-              basin_horad => model_climate%basin_horad, &
+              basin_horad => model_solrad%basin_horad, &
+              orad => model_solrad%orad, &
+              swrad => model_solrad%swrad, &
+
               hru_ppt => model_climate%hru_ppt, &
               newsnow => model_climate%newsnow, &
-              orad => model_climate%orad, &
               pkwater_equiv => model_climate%pkwater_equiv, &
               prmx => model_climate%prmx, &
               pptmix => model_climate%pptmix, &
-              swrad => model_climate%swrad, &
               tavgc => model_climate%tavgc, &
               tmaxc => model_climate%tmaxc, &
               tminc => model_climate%tminc, &

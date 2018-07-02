@@ -7,6 +7,7 @@ module PRMS_SNOW
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
+  use SOLAR_RADIATION, only: SolarRadiation
   implicit none
 
   private
@@ -149,7 +150,7 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp)
+    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad)
         class(Snowcomp), intent(inout) :: this
           !! Snowcomp class
         type(Climateflow), intent(inout) :: model_climate
@@ -164,6 +165,7 @@ module PRMS_SNOW
           !! Basin
         type(Interception), intent(in) :: intcp
           !! Canopy interception
+        class(SolarRadiation), intent(in) :: model_solrad
       end subroutine
   end interface
 
