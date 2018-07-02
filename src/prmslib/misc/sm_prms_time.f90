@@ -4,7 +4,7 @@ contains
   !***********************************************************************
   ! Time_t constructor
   module function constructor_Time(ctl_data, model_basin) result(this)
-    use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
+    use prms_constants, only: dp, FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                               HOUR_PER_DAY, MIN_PER_HOUR
     use UTILS_PRMS, only: print_module_info
     implicit none
@@ -26,7 +26,9 @@ contains
     ! ------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               model_start => ctl_data%start_time%values, &
-              model_end => ctl_data%end_time%values)
+              model_end => ctl_data%end_time%values, &
+              basin_area_inv => model_basin%basin_area_inv, &
+              hemisphere => model_basin%hemisphere)
 
       if (print_debug > -2) then
         ! Output module and version information
@@ -35,57 +37,57 @@ contains
 
       ! original declare stuff
       this%Timestep_seconds = SECS_PER_DAY
-      this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
-      this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
+      this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+      this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
 
       ! original init stuff
-      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', model_basin%hemisphere)
-      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', model_basin%hemisphere)
-      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', model_basin%hemisphere)
+      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', hemisphere)
+      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', hemisphere)
+      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', hemisphere)
 
       startday = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
       endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
       this%Nowtime = model_start
+
+      this%Number_timesteps = endday - startday + 1
+      this%Timestep = 0
+      this%Julian_day_absolute = startday
+
+      this%Nowyear = this%Nowtime(YEAR)
+      this%Nowmonth = this%Nowtime(MONTH)
+      this%Nowday = this%Nowtime(DAY)
+      this%Nowhour = this%Nowtime(HOUR)
+      this%Nowminute = this%Nowtime(MINUTE)
+
+      ! Summer is based on equinox:
+      !   Julian days 79 to 265 for Northern hemisphere
+      !   Julian day 265 to 79 in Southern hemisphere
+      this%Summer_flag = 1 ! 1 = summer, 0 = winter
+      if (hemisphere == NORTHERN) then
+        ! Northern Hemisphere
+        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
+      else
+        ! Southern Hemisphere
+        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
+      endif
+
+      dt = deltim()
+      this%Timestep_hours = SNGL(dt)
+      this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
+      this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
+      this%Timestep_seconds = dt * SECS_PER_HOUR
+      this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+      this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
+
+      ! Check to see if in a daily or subdaily time step
+      if (this%Timestep_hours > HOUR_PER_DAY) then
+        print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
+        STOP
+      elseif (this%Timestep_hours < HOUR_PER_DAY) then
+        print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
+        STOP
+      endif
     end associate
-
-    this%Number_timesteps = endday - startday + 1
-    this%Timestep = 0
-    this%Julian_day_absolute = startday
-
-    this%Nowyear = this%Nowtime(YEAR)
-    this%Nowmonth = this%Nowtime(MONTH)
-    this%Nowday = this%Nowtime(DAY)
-    this%Nowhour = this%Nowtime(HOUR)
-    this%Nowminute = this%Nowtime(MINUTE)
-
-    ! Summer is based on equinox:
-    !   Julian days 79 to 265 for Northern hemisphere
-    !   Julian day 265 to 79 in Southern hemisphere
-    this%Summer_flag = 1 ! 1 = summer, 0 = winter
-    if (model_basin%hemisphere == NORTHERN) then
-      ! Northern Hemisphere
-      if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
-    else
-      ! Southern Hemisphere
-      if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
-    endif
-
-    dt = deltim()
-    this%Timestep_hours = SNGL(dt)
-    this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
-    this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-    this%Timestep_seconds = dt * SECS_PER_HOUR
-    this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
-    this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
-
-    ! Check to see if in a daily or subdaily time step
-    if (this%Timestep_hours > HOUR_PER_DAY) then
-      print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
-      STOP
-    elseif (this%Timestep_hours < HOUR_PER_DAY) then
-      print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
-      STOP
-    endif
   end function
 
 
@@ -103,63 +105,67 @@ contains
     real(r64) :: dt
 
     ! ------------------------------------------------------------------------
-    res = .true.
-    this%Timestep = this%Timestep + 1
+    associate(basin_area_inv => model_basin%basin_area_inv, &
+              hemisphere => model_basin%hemisphere)
 
-    if (this%Timestep > this%Number_timesteps) then
-      !! End of simulation reached
-      res = .false.
-      return
-    endif
+      res = .true.
+      this%Timestep = this%Timestep + 1
 
-    call this%dattim(ctl_data, 'now', this%Nowtime)
+      if (this%Timestep > this%Number_timesteps) then
+        !! End of simulation reached
+        res = .false.
+        return
+      endif
 
-    this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'now', 'calendar', model_basin%hemisphere)
-    this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'now', 'solar', model_basin%hemisphere)
-    this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'now', 'water', model_basin%hemisphere)
-    this%Julian_day_absolute = this%Julian_day_absolute + 1
+      call this%dattim(ctl_data, 'now', this%Nowtime)
 
-    ! TODO: ?why? is this here? It shouldn't be.
-    ! call read_data_line(this%Nowtime, var_data)
+      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'now', 'calendar', hemisphere)
+      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'now', 'solar', hemisphere)
+      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'now', 'water', hemisphere)
+      this%Julian_day_absolute = this%Julian_day_absolute + 1
 
-    this%Nowyear = this%Nowtime(1)
-    this%Nowmonth = this%Nowtime(2)
-    this%Nowday = this%Nowtime(3)
-    this%Nowhour = this%Nowtime(4)
-    this%Nowminute = this%Nowtime(5)
+      ! TODO: ?why? is this here? It shouldn't be.
+      ! call read_data_line(this%Nowtime, var_data)
 
-    ! Summer is based on equinox:
-    !   Julian days 79 to 265 for Northern hemisphere
-    !   Julian day 265 to 79 in Southern hemisphere
-    this%Summer_flag = 1 ! 1 = summer, 0 = winter
-    if (model_basin%hemisphere == NORTHERN) then
-      ! Northern Hemisphere
-      if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
-    else
-      ! Southern Hemisphere
-      if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
-    endif
+      this%Nowyear = this%Nowtime(1)
+      this%Nowmonth = this%Nowtime(2)
+      this%Nowday = this%Nowtime(3)
+      this%Nowhour = this%Nowtime(4)
+      this%Nowminute = this%Nowtime(5)
 
-    ! TODO: This stuff shouldn't change once it's initialized
-    dt = deltim()
-    this%Timestep_hours = SNGL(dt)
-    this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
-    this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-    this%Timestep_seconds = dt * SECS_PER_HOUR
-    this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
-    this%Cfs2inches = model_basin%basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
+      ! Summer is based on equinox:
+      !   Julian days 79 to 265 for Northern hemisphere
+      !   Julian day 265 to 79 in Southern hemisphere
+      this%Summer_flag = 1 ! 1 = summer, 0 = winter
+      if (hemisphere == NORTHERN) then
+        ! Northern Hemisphere
+        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
+      else
+        ! Southern Hemisphere
+        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
+      endif
 
-    ! print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
-    !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
+      ! TODO: This stuff shouldn't change once it's initialized
+      dt = deltim()
+      this%Timestep_hours = SNGL(dt)
+      this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
+      this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
+      this%Timestep_seconds = dt * SECS_PER_HOUR
+      this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
+      this%Cfs2inches = basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
 
-    ! Check to see if in a daily or subdaily time step
-    if (this%Timestep_hours > HOUR_PER_DAY) then
-      print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
-      STOP
-    elseif (this%Timestep_hours < HOUR_PER_DAY) then
-      print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
-      STOP
-    endif
+      ! print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
+      !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
+
+      ! Check to see if in a daily or subdaily time step
+      if (this%Timestep_hours > HOUR_PER_DAY) then
+        print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
+        STOP
+      elseif (this%Timestep_hours < HOUR_PER_DAY) then
+        print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
+        STOP
+      endif
+    end associate
   end function
 
 
@@ -179,19 +185,23 @@ contains
     integer(i32), intent(inout) :: date_time(6)
 
     !***********************************************************************
-    date_time = 0
+    associate(end_time => ctl_data%end_time%values, &
+              start_time => ctl_data%start_time%values)
 
-    if (period == 'end') then
-      date_time = ctl_data%end_time%values
-    elseif (period == 'now') then
-      date_time = julian_to_gregorian(this%Julian_day_absolute)
+      date_time = 0
 
-      ! Datetime = LIS function
-    elseif (period == 'start') then
-      date_time = ctl_data%start_time%values
-    else
-      STOP 'ERROR, invalid call to dattim'
-    endif
+      if (period == 'end') then
+        date_time = end_time
+      elseif (period == 'now') then
+        date_time = julian_to_gregorian(this%Julian_day_absolute)
+
+        ! Datetime = LIS function
+      elseif (period == 'start') then
+        date_time = start_time
+      else
+        STOP 'ERROR, invalid call to dattim'
+      endif
+    end associate
   end subroutine dattim
 
 
@@ -200,12 +210,13 @@ contains
   ! 2017-11-07 PAN: moved here from mmf_utils.f90
   !***********************************************************************
   module function deltim() result(res)
+    use prms_constants, only: dp
     implicit none
 
     real(r64) :: res
     !***********************************************************************
     !deltim = lisfunction() ! need to make routine to get time step increment
-    res = 24.0D0
+    res = 24.0_dp
   end function deltim
 
 
