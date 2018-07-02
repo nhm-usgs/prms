@@ -25,7 +25,7 @@ contains
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
-              solrad_module => ctl_data%solrad_module%values(1), &
+              ! solrad_module => ctl_data%solrad_module%values(1), &
               start_time => ctl_data%start_time%values, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
@@ -103,16 +103,16 @@ contains
       endif
 
       ! Solar radiation
-      if (solrad_module%s == 'climate_hru') then
-        call this%find_header_end(this%swrad_funit, ierr, &
-                                  ctl_data%swrad_day%values(1)%s, 'swrad_day', &
-                                  (cbh_binary_flag==1))
-        if (ierr == 1) then
-          istop = 1
-        else
-          call this%find_current_time(ierr, this%swrad_funit, start_time, (cbh_binary_flag==1))
-        endif
-      endif
+      ! if (solrad_module%s == 'climate_hru') then
+      !   call this%find_header_end(this%swrad_funit, ierr, &
+      !                             ctl_data%swrad_day%values(1)%s, 'swrad_day', &
+      !                             (cbh_binary_flag==1))
+      !   if (ierr == 1) then
+      !     istop = 1
+      !   else
+      !     call this%find_current_time(ierr, this%swrad_funit, start_time, (cbh_binary_flag==1))
+      !   endif
+      ! endif
 
       ! Precipitation
       if (ctl_data%precip_module%values(1)%s == 'climate_hru') then
@@ -150,7 +150,7 @@ contains
     end associate
   end function
 
-  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate, model_soltab)
+  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
     use prms_constants, only: dp
     use UTILS_PRMS, only: get_array
     implicit none
@@ -161,7 +161,7 @@ contains
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(inout) :: climate
-    type(Soltab), intent(in) :: model_soltab
+    ! type(Soltab), intent(in) :: model_soltab
 
     ! Local variables
     integer(i32) :: chru
@@ -190,7 +190,7 @@ contains
     ! basin_area_inv,
 
     ! Climate
-    ! basin_horad, basin_potet, basin_potsw, basin_swrad, basin_transp_on, orad,
+    ! basin_potet, basin_potsw, basin_swrad, basin_transp_on, orad,
     ! potet, swrad, transp_on
 
     ! Soltab
@@ -204,24 +204,24 @@ contains
               nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
               et_module => ctl_data%et_module%values(1), &
-              orad_flag => ctl_data%orad_flag%value, &
-              solrad_module => ctl_data%solrad_module%values(1), &
+              ! orad_flag => ctl_data%orad_flag%value, &
+              ! solrad_module => ctl_data%solrad_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
               transp_module => ctl_data%transp_module%values(1), &
               basin_area_inv => model_basin%basin_area_inv, &
-              basin_horad => climate%basin_horad, &
+              ! basin_horad => climate%basin_horad, &
               basin_potet => climate%basin_potet, &
-              basin_potsw => climate%basin_potsw, &
-              basin_swrad => climate%basin_swrad, &
+              ! basin_potsw => climate%basin_potsw, &
+              ! basin_swrad => climate%basin_swrad, &
               basin_transp_on => climate%basin_transp_on, &
-              orad => climate%orad, &
+              ! orad => climate%orad, &
               potet => climate%potet, &
-              swrad => climate%swrad, &
+              ! swrad => climate%swrad, &
               transp_on => climate%transp_on, &
-              hru_cossl => model_soltab%hru_cossl, &
-              soltab_basinpotsw => model_soltab%soltab_basinpotsw, &
-              soltab_potsw => model_soltab%soltab_potsw, &
+              ! hru_cossl => model_soltab%hru_cossl, &
+              ! soltab_basinpotsw => model_soltab%soltab_basinpotsw, &
+              ! soltab_potsw => model_soltab%soltab_potsw, &
               hru_area => param_data%hru_area%values, &
               potet_cbh_adj => param_data%potet_cbh_adj%values)
 
@@ -297,22 +297,22 @@ contains
       endif
 
       ! Solar radiation
-      if (solrad_module%s == 'climate_hru') then
-        basin_horad = soltab_basinpotsw(day_of_year)
-
-        if (orad_flag == 0) then
-          read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru)
-
-          ! FIXME: Bad assumption using HRU 1
-          orad = sngl((dble(swrad(1)) * hru_cossl(1) * basin_horad) / soltab_potsw(day_of_year, 1))
-        else
-          ! orad is specified as last column in swrad_day CBH file
-          read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru), orad
-        endif
-
-        basin_swrad = sum(dble(swrad * hru_area)) * basin_area_inv
-        basin_potsw = basin_swrad
-      endif
+      ! if (solrad_module%s == 'climate_hru') then
+      !   ! basin_horad = soltab_basinpotsw(day_of_year)  ! Calculated in cc/ddsolrad
+      !
+      !   if (orad_flag == 0) then
+      !     read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru)
+      !
+      !     ! FIXME: Bad assumption using HRU 1
+      !     orad = sngl((dble(swrad(1)) * hru_cossl(1) * soltab_basinpotsw(day_of_year)) / soltab_potsw(day_of_year, 1))
+      !   else
+      !     ! orad is specified as last column in swrad_day CBH file
+      !     read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (swrad(jj), jj=1, nhru), orad
+      !   endif
+      !
+      !   basin_swrad = sum(dble(swrad * hru_area)) * basin_area_inv
+      !   basin_potsw = basin_swrad
+      ! endif
 
       ! Transpiration
       if (transp_module%s == 'climate_hru') then
