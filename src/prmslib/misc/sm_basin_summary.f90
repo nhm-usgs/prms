@@ -116,7 +116,7 @@ contains
   !***********************************************************************
   !     Output set of declared variables in CSV format
   !***********************************************************************
-  module subroutine run_Basin_summary(this, ctl_data, model_time, climate)
+  module subroutine run_Basin_summary(this, ctl_data, model_time, climate, model_solrad)
     use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                               MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
@@ -125,6 +125,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Time_t), intent(in) :: model_time
     type(Climateflow), intent(in) :: climate
+    class(SolarRadiation), intent(in) :: model_solrad
 
     ! FUNCTIONS AND SUBROUTINES
     INTRINSIC SNGL, DBLE
@@ -165,11 +166,11 @@ contains
         !       what was requested in basinOutVar_names.
         select case(basinOutVar_names(jj)%s)
           case('basin_horad')
-            this%basin_var_daily(jj) = climate%basin_horad
+            this%basin_var_daily(jj) = model_solrad%basin_horad
           case('basin_obs_ppt')
             this%basin_var_daily(jj) = climate%basin_obs_ppt
           case('basin_orad')
-            this%basin_var_daily(jj) = climate%basin_orad
+            this%basin_var_daily(jj) = model_solrad%basin_orad
           case('basin_potet')
             this%basin_var_daily(jj) = climate%basin_potet
           case('basin_ppt')
@@ -181,7 +182,7 @@ contains
           ! case('basin_solsta')
           !   this%basin_var_daily(jj) = climate%basin_solsta
           case('basin_swrad')
-            this%basin_var_daily(jj) = climate%basin_swrad
+            this%basin_var_daily(jj) = model_solrad%basin_swrad
           case('basin_temp')
             this%basin_var_daily(jj) = climate%basin_temp
           case('basin_tmax')
@@ -190,6 +191,44 @@ contains
             this%basin_var_daily(jj) = climate%basin_tmin
           ! case('basin_transp_on')
           !   this%basin_var_daily(jj) = climate%basin_transp_on
+
+          ! Interception
+          ! case('basin_intcp_stor')
+          !   this%basin_var_daily(jj) = intcp%basin_intcp_stor
+
+          ! Snowcomp
+          ! case('basin_pweqv')
+          !   this%basin_var_daily(jj) = basin_pweqv
+          ! case('basin_tcal')
+          !   this%basin_var_daily(jj) = basin_tcal
+
+          ! Evapotranspiration
+          ! case('basin_actet')
+          !   this%basin_var_daily(jj) =
+          ! basin_actet
+
+          ! Srunoff
+          ! basin_cap_infil_tot
+          ! basin_hortonian
+          ! basin_sroff
+
+          ! Depression storage
+          ! basin_dprst_seep
+          ! basin_dprst_sroff
+
+          ! Soilzone
+          ! basin_capwaterin
+          ! basin_dunnian
+          ! basin_slowflow
+          ! basin_soil_moist
+
+          ! Gwflow
+          ! basin_gwflow
+          ! basin_gwstor
+          ! basin_gwsink
+
+          ! Streamflow
+          ! basin_stflow_out
           case default
             ! pass
         end select

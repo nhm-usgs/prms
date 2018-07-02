@@ -9,6 +9,7 @@ module PRMS_BASIN_SUMMARY
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_CLIMATEVARS, only: Climateflow
+  use SOLAR_RADIATION, only: SolarRadiation
   implicit none
 
   private
@@ -63,11 +64,12 @@ module PRMS_BASIN_SUMMARY
   end interface
 
   interface
-    module subroutine run_Basin_summary(this, ctl_data, model_time, climate)
+    module subroutine run_Basin_summary(this, ctl_data, model_time, climate, model_solrad)
       class(Basin_summary), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Time_t), intent(in) :: model_time
       type(Climateflow), intent(in) :: climate
+      class(SolarRadiation), intent(in) :: model_solrad
     end subroutine
   end interface
 
