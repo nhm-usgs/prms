@@ -96,6 +96,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
         allocate(this%hru_storage(nhru))
         allocate(this%hru_streamflow_out(nhru))
 
+
+
         if (dprst_flag == 1) then
           allocate(this%gwin_dprst(ngw))
         endif
@@ -232,7 +234,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
 
     module subroutine run_Gwflow(this, ctl_data, param_data, model_basin, &
-                                   model_climate, model_flow, intcp, soil, runoff, model_time)
+                                   model_climate, intcp, soil, runoff, model_time)
       ! USE PRMS_WATER_USE, ONLY: gwr_transfers_on, gwr_transfer, gwr_gain
       use prms_constants, only: dp, LAKE, BCWEIR, GATEOP, SWALE
       implicit none
@@ -248,7 +250,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! type(Cascade), intent(in) :: model_cascade
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      type(Flowvars), intent(in) :: model_flow
+      ! type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
@@ -273,14 +275,13 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
       ! Control
       ! cascadegw_flag, dprst_flag, gwr_swale_flag, print_debug,
-      !
 
       ! Parameter
       ! gwflow_coef, gwsink_coef, gw_seep_coef, gwr_type, hru_area, lake_hru_id,
       ! lake_seep_elev, lake_type,
 
       ! Basin
-      ! active_gwrs, basin_area_inv, gwr_route_order, weir_gate_flag,
+      ! active_gwrs, basin_area_inv, gwr_route_order, hru_area_dble, weir_gate_flag,
 
       ! Cascade
       ! ncascade_gwr,
@@ -288,14 +289,11 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! Climateflow
       ! pkwater_equiv
 
-      ! Flowvars
-      ! soil_to_gw, ssr_to_gw,
-
       ! Interception
       ! hru_intcpstor
 
       ! Soilzone
-      ! soil_moist_tot, ssres_flow
+      ! soil_moist_tot, ssres_flow, soil_to_gw, ssr_to_gw,
 
       ! Srunoff
       ! dprst_seep_hru, dprst_stor_hru, hru_impervstor, sroff,
@@ -306,14 +304,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! water_used_read
       ! gwr_gain, gwr_transfer, gwr_transfers_on,
 
-      ! ????
-      ! hru_area_dble
-
       ! ------------------------------------------------------------------------
       associate(cascadegw_flag => ctl_data%cascadegw_flag%value, &
                 dprst_flag => ctl_data%dprst_flag%value, &
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 print_debug => ctl_data%print_debug%value, &
+
                 gwflow_coef => param_data%gwflow_coef%values, &
                 gwsink_coef => param_data%gwsink_coef%values, &
                 gw_seep_coef => param_data%gw_seep_coef%values, &
@@ -322,21 +318,28 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 lake_hru_id => param_data%lake_hru_id%values, &
                 lake_seep_elev => param_data%lake_seep_elev%values, &
                 lake_type => param_data%lake_type%values, &
+
                 active_gwrs => model_basin%active_gwrs, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
                 hru_area_dble => model_basin%hru_area_dble, &
                 weir_gate_flag => model_basin%weir_gate_flag, &
+
                 ! ncascade_gwr => model_cascade%ncascade_gwr, &
+
                 pkwater_equiv => model_climate%pkwater_equiv, &
-                soil_to_gw => model_flow%soil_to_gw, &
-                ssr_to_gw => model_flow%ssr_to_gw, &
+
                 hru_intcpstor => intcp%hru_intcpstor, &
+
                 soil_moist_tot => soil%soil_moist_tot, &
+                soil_to_gw => soil%soil_to_gw, &
+                ssr_to_gw => soil%ssr_to_gw, &
                 ssres_flow => soil%ssres_flow, &
+
                 dprst_seep_hru => runoff%dprst_seep_hru, &
                 dprst_stor_hru => runoff%dprst_stor_hru, &
                 hru_impervstor => runoff%hru_impervstor, &
+
                 sroff => runoff%sroff, &
                 cfs_conv => model_time%cfs_conv)
 

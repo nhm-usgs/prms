@@ -60,10 +60,6 @@ module PRMS_GWFLOW
     real(r64), allocatable :: lake_vol(:)
       !! (moved from flowvars) Storage in each lake using broad-crested weir or gate opening routing
 
-    ! Declared Parameters
-    ! real(r32), SAVE, allocatable :: Gwflow_coef(:), Gwsink_coef(:)
-    ! real(r32), SAVE, allocatable :: Gwstor_init(:), Gwstor_min(:)
-    ! real(r32), SAVE, allocatable :: Lake_seep_elev(:), Elevlake_init(:), Gw_seep_coef(:)
     contains
       procedure, public :: run => run_Gwflow
       procedure, public :: cleanup => cleanup_Gwflow
@@ -93,7 +89,7 @@ module PRMS_GWFLOW
 
   interface
     module subroutine run_Gwflow(this, ctl_data, param_data, model_basin, &
-                                   model_climate, model_flow, intcp, soil, runoff, model_time)
+                                   model_climate, intcp, soil, runoff, model_time)
       class(Gwflow), intent(inout) :: this
         !! Gwflow class
       type(Control), intent(in) :: ctl_data
@@ -105,7 +101,7 @@ module PRMS_GWFLOW
       ! type(Cascade), intent(in) :: model_cascade
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      type(Flowvars), intent(in) :: model_flow
+      ! type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
