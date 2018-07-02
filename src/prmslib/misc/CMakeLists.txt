@@ -6,6 +6,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_Basin_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_constants.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_conversions.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/m_utils_cbh.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/Datetime_class.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_nhru_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_obs.f90"
