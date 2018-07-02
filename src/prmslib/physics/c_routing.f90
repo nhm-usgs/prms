@@ -5,11 +5,9 @@ module PRMS_ROUTING
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
-  ! use PRMS_FLOWVARS, only: Flowvars
-  ! use PRMS_INTCP, only: Interception
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
-  ! use PRMS_SNOW, only: Snowcomp
+  use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_SRUNOFF, only: Srunoff
   implicit none
 
@@ -23,13 +21,21 @@ module PRMS_ROUTING
   type Routing
       ! Local Variables
       integer(i32), private :: noarea_flag
+      real(r64), private :: segment_area
+
+      real(r64), private, allocatable :: hru_outflow(:)
+      real(r64), private, allocatable :: seg_gwflow(:)
+      real(r64), private, allocatable :: seg_sroff(:)
+      real(r64), private, allocatable :: seg_ssflow(:)
+      real(r64), private, allocatable :: seginc_potet(:)
+      real(r64), private, allocatable :: segment_hruarea(:)
+
+      ! Declared Variables
       integer(i32), public :: use_transfer_segment
         !! used by muskingum and muskingum_lake
 
       real(r64), public :: cfs2acft
         !! used by muskingum_lake
-      real(r64), private :: segment_area
-
 
       integer(i32), public, allocatable :: segment_order(:)
         !! used by muskingum, muskingum_lake, stream_temp, strmflow_in_out
@@ -44,11 +50,9 @@ module PRMS_ROUTING
         !! used by muskingum and muskingum_lake
       real(r32), public, allocatable :: c2(:)
         !! used by muskingum and muskingum_lake
-      real(r32), allocatable :: ts(:)
+      real(r32), public, allocatable :: ts(:)
+        !! used by muskingum and muskingum_lake
 
-      real(r64), private, allocatable :: segment_hruarea(:)
-
-      ! Declared Variables
       real(r64), public :: basin_segment_storage
         !! basin_sum, muskingum, muskingum_lake
       real(r64), public :: flow_headwater
@@ -74,16 +78,11 @@ module PRMS_ROUTING
       real(r64), public :: flow_to_ocean
         !! muskingum, muskingum_lake, strmflow_in_out
 
-      real(r64), private, allocatable :: hru_outflow(:)
-      real(r64), private, allocatable :: seg_gwflow(:)
       real(r64), public, allocatable :: seg_lateral_inflow(:)
         !! (moved from flowvars) Lateral inflow entering lateral inflow entering a segment
         !! muskingum, muskingum_lake, strmflow_in_out, stream_temp
-      real(r64), private, allocatable :: seg_sroff(:)
-      real(r64), private, allocatable :: seg_ssflow(:)
       real(r64), public, allocatable :: seginc_gwflow(:)
         !! stream_temp
-      real(r64), private, allocatable :: seginc_potet(:)
       real(r64), public, allocatable :: seginc_sroff(:)
         !! stream_temp
       real(r64), public, allocatable :: seginc_ssflow(:)
@@ -93,9 +92,6 @@ module PRMS_ROUTING
       real(r64), public, allocatable :: segment_delta_flow(:)
         !! muskingum, muskingum_lake
 
-      ! Declared Parameters
-      ! integer(i32), allocatable :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
-      ! real(r32), allocatable :: K_coef(:), X_coef(:)
     contains
       procedure, public :: run => run_Routing
       procedure, public :: cleanup => cleanup_Routing
@@ -117,7 +113,8 @@ module PRMS_ROUTING
 
   interface
     module subroutine run_Routing(this, ctl_data, param_data, model_basin, &
-                                  model_climate, groundwater, soil, runoff, model_time)
+                                  model_climate, groundwater, soil, runoff, &
+                                  model_time, model_solrad)
       use prms_constants, only: dp, NEARZERO
       implicit none
 
@@ -136,6 +133,7 @@ module PRMS_ROUTING
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
       type(Time_t), intent(in) :: model_time
+      class(SolarRadiation), intent(in) :: model_solrad
     end subroutine
   end interface
 

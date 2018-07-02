@@ -346,7 +346,8 @@ submodule (PRMS_ROUTING) sm_routing
 
 
     module subroutine run_Routing(this, ctl_data, param_data, model_basin, &
-                                  model_climate, groundwater, soil, runoff, model_time)
+                                  model_climate, groundwater, soil, runoff, &
+                                  model_time, model_solrad)
       use prms_constants, only: dp, FT2_PER_ACRE, NEARZERO
       implicit none
 
@@ -365,6 +366,7 @@ submodule (PRMS_ROUTING) sm_routing
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
       type(Time_t), intent(in) :: model_time
+      class(SolarRadiation), intent(in) :: model_solrad
 
       ! Local Variables
       integer(i32) :: i
@@ -391,6 +393,9 @@ submodule (PRMS_ROUTING) sm_routing
       ! Soilzone
       ! ssres_flow
 
+      ! SolarRadiation
+      ! swrad
+
       ! Srunoff
       ! sroff, strm_seg_in,
 
@@ -409,7 +414,7 @@ submodule (PRMS_ROUTING) sm_routing
                 active_hrus => model_basin%active_hrus, &
                 hru_route_order => model_basin%hru_route_order, &
                 potet => model_climate%potet, &
-                swrad => model_climate%swrad, &
+                swrad => model_solrad%swrad, &
                 gwres_flow => groundwater%gwres_flow, &
                 ssres_flow => soil%ssres_flow, &
                 sroff => runoff%sroff, &
