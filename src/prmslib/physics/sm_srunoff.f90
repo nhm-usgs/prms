@@ -165,21 +165,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                                   model_climate, model_flow, intcp, snow)  ! , cascades)
       use prms_constants, only: dp
       implicit none
-         !  USE PRMS_SRUNOFF
-         !  USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Print_debug
-         !  USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
-         ! &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
-         ! &    Dprst_area_max, Hru_area, hru_type, Basin_area_inv, &
-         ! &    this%dprst_area_clos_max, this%dprst_area_open_max, Hru_area_dble
-         !  USE PRMS_CLIMATEVARS, ONLY: Potet
-         !  USE PRMS_FLOWVARS, ONLY: this%sroff, this%infil, this%imperv_stor, pkwater_equiv, this%dprst_vol_open, this%dprst_vol_clos, &
-         ! &    imperv_stor_max, snowinfil_max
-         !  USE PRMS_CASCADE, ONLY: Ncascade_hru
-         !  USE PRMS_INTCP, ONLY: Net_rain, net_snow, net_ppt, Hru_intcpevap, Net_apply
-         !  USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, snowmelt
-         !  IMPLICIT NONE
-         !  INTRINSIC sngl, dble
-         !  EXTERNAL imperv_et, compute_infil, run_cascade_sroff, dprst_comp, perv_comp
        class(Srunoff) :: this
          !! Srunoff class
        type(Control), intent(in) :: ctl_data
