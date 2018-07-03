@@ -53,7 +53,7 @@ submodule (Simulation_class) sm_simulation
         if (.not. this%model_time%next(ctl_data, this%model_basin)) exit
 
         call this%climate_by_hru%run(ctl_data, param_data, this%model_time, &
-                                     this%model_basin, this%climate)
+                                     this%model_basin, this%potet, this%climate)
 
         call this%solrad%run(ctl_data, param_data, this%model_time, this%model_obs, &
                              this%climate, this%model_basin)
@@ -63,29 +63,29 @@ submodule (Simulation_class) sm_simulation
 
         call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%climate, this%solrad)
 
-        call this%intcp%run(ctl_data, param_data, this%model_basin, this%climate, this%model_time)
+        call this%intcp%run(ctl_data, param_data, this%model_basin, this%potet, this%climate, this%model_time)
 
-        call this%snow%run(this%climate, ctl_data, param_data, this%model_time, this%model_basin, this%intcp, this%solrad)
+        call this%snow%run(this%climate, ctl_data, param_data, this%model_time, this%model_basin, this%intcp, this%solrad, this%potet)
 
-        call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, this%model_flow, this%intcp, this%snow)
+        call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, this%model_flow, this%potet, this%intcp, this%snow)
 
-        call this%soil%run(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%snow, this%runoff, this%model_flow)
+        call this%soil%run(ctl_data, param_data, this%model_basin, this%potet, this%climate, this%intcp, this%snow, this%runoff, this%model_flow)
 
         call this%groundwater%run(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_time)
 
         ! call this%model_route%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad)
 
-        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad, this%model_flow, this%model_obs)
+        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%climate, this%potet, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad, this%model_flow, this%model_obs)
 
         ! ctl_data, param_data, model_basin, model_climate, groundwater, soil, runoff, &
         !   model_time, model_solrad, model_flow, model_obs
 
         if (ctl_data%basinOutON_OFF%value == 1) then
-          call this%summary_by_basin%run(ctl_data, this%model_time, this%climate, this%solrad)
+          call this%summary_by_basin%run(ctl_data, this%model_time, this%climate, this%solrad, this%potet)
         endif
 
         if (ctl_data%nhruOutON_OFF%value > 0) then
-          call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, this%climate, this%solrad)
+          call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, this%climate, this%solrad, this%potet)
         endif
       enddo
     end subroutine

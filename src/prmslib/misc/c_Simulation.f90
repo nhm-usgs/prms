@@ -7,8 +7,6 @@ module Simulation_class
   use PRMS_FLOWVARS, only: Flowvars
   use PRMS_CLIMATE_HRU, only: Climate_HRU
   use SOLAR_RADIATION_DEGDAY, only: Solrad_degday
-  ! use PRMS_SOLTAB, only: Soltab
-  ! use PRMS_DDSOLRAD, only: Ddsolrad
   use PRMS_TRANSP_TINDEX, only: Transp_tindex
   use PRMS_POTET_JH, only: Potet_jh
   use PRMS_INTCP, only: Interception
@@ -16,7 +14,6 @@ module Simulation_class
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_GWFLOW, only: Gwflow
-  ! use PRMS_ROUTING, only: Routing
   use PRMS_MUSKINGUM, only: Muskingum
   use PRMS_BASIN_SUMMARY, only: Basin_summary
   use PRMS_NHRU_SUMMARY, only: Nhru_summary
