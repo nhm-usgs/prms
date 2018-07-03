@@ -11,7 +11,7 @@ module PRMS_CLIMATE_HRU
     use PRMS_BASIN, only: Basin
     use PRMS_CLIMATEVARS, only: Climateflow
     use PRMS_SET_TIME, only: Time_t
-    ! use PRMS_SOLTAB, only: Soltab
+    use PRMS_POTET, only: Potential_ET
     implicit none
 
     private
@@ -22,8 +22,8 @@ module PRMS_CLIMATE_HRU
     character(len=*), PARAMETER :: MODVERSION = '2017-09-29 13:49:00Z'
 
     type Climate_HRU
-      integer(i32), private :: et_funit
-        !! Evapotranspiration CBH file unit
+      ! integer(i32), private :: et_funit
+      !   !! Evapotranspiration CBH file unit
       integer(i32), private :: humidity_funit
         !! Humidity CBH file unit
       integer(i32), private :: precip_funit
@@ -72,12 +72,13 @@ module PRMS_CLIMATE_HRU
     end interface
 
     interface
-      module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
+      module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, model_potet, climate)
         class(Climate_HRU), intent(inout) :: this
         type(Control), intent(in) :: ctl_data
         type(Parameters), intent(in) :: param_data
         type(Time_t), intent(in) :: model_time
         type(Basin), intent(in) :: model_basin
+        class(Potential_ET), intent(in) :: model_potet
         type(Climateflow), intent(inout) :: climate
         ! type(Soltab), intent(in) :: model_soltab
       end subroutine

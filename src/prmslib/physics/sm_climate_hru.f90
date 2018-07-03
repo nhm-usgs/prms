@@ -60,16 +60,16 @@ contains
         endif
       endif
 
-      if (et_module%s == 'climate_hru') then
-        call this%find_header_end(this%et_funit, ierr, &
-                                  ctl_data%potet_day%values(1)%s, 'potet_day', &
-                                  (cbh_binary_flag==1))
-        if (ierr == 1) then
-          istop = 1
-        else
-          call this%find_current_time(ierr, this%et_funit, start_time, (cbh_binary_flag==1))
-        endif
-      end if
+      ! if (et_module%s == 'climate_hru') then
+      !   call this%find_header_end(this%et_funit, ierr, &
+      !                             ctl_data%potet_day%values(1)%s, 'potet_day', &
+      !                             (cbh_binary_flag==1))
+      !   if (ierr == 1) then
+      !     istop = 1
+      !   else
+      !     call this%find_current_time(ierr, this%et_funit, start_time, (cbh_binary_flag==1))
+      !   endif
+      ! end if
 
       ! Windspeed
       if (et_module%s == 'potet_pan') then
@@ -150,7 +150,7 @@ contains
     end associate
   end function
 
-  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, climate)
+  module subroutine run_Climate_HRU(this, ctl_data, param_data, model_time, model_basin, model_potet, climate)
     use prms_constants, only: dp
     use UTILS_PRMS, only: get_array
     implicit none
@@ -160,8 +160,8 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
+    class(Potential_ET), intent(in) :: model_potet
     type(Climateflow), intent(inout) :: climate
-    ! type(Soltab), intent(in) :: model_soltab
 
     ! Local variables
     integer(i32) :: chru
@@ -173,7 +173,7 @@ contains
 
     real(r32), pointer, contiguous :: tmax_adj_2d(:,:)
     real(r32), pointer, contiguous :: tmin_adj_2d(:,:)
-    real(r32), pointer, contiguous :: potet_adj_2d(:,:)
+    ! real(r32), pointer, contiguous :: potet_adj_2d(:,:)
     real(r32), pointer, contiguous :: rain_adj_2d(:,:)
     real(r32), pointer, contiguous :: snow_adj_2d(:,:)
     real(r32), pointer, contiguous :: adjmix_rain_2d(:,:)
@@ -211,12 +211,12 @@ contains
               transp_module => ctl_data%transp_module%values(1), &
               basin_area_inv => model_basin%basin_area_inv, &
               ! basin_horad => climate%basin_horad, &
-              basin_potet => climate%basin_potet, &
+              basin_potet => model_potet%basin_potet, &
               ! basin_potsw => climate%basin_potsw, &
               ! basin_swrad => climate%basin_swrad, &
               basin_transp_on => climate%basin_transp_on, &
               ! orad => climate%orad, &
-              potet => climate%potet, &
+              ! potet => model_potet%potet, &
               ! swrad => climate%swrad, &
               transp_on => climate%transp_on, &
               ! hru_cossl => model_soltab%hru_cossl, &
@@ -275,17 +275,17 @@ contains
       endif
 
       ! Evapotranspiration
-      if (et_module%s == 'climate_hru') then
-        read(this%et_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (potet(jj), jj=1, nhru)
-        basin_potet = 0.0_dp
-
-        ! FIXME: This is dangerous because it circumvents the intent for param_data
-        potet_adj_2d => get_array(param_data%potet_cbh_adj%values, (/nhru, nmonths/))
-
-        ! Potet(i) = Potet(i)*Potet_cbh_adj(i, Nowmonth)
-        potet = potet * potet_adj_2d(:, curr_month)
-        basin_potet = sum(dble(potet * hru_area)) * basin_area_inv
-      endif
+      ! if (et_module%s == 'climate_hru') then
+      !   read(this%et_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (potet(jj), jj=1, nhru)
+      !   basin_potet = 0.0_dp
+      !
+      !   ! FIXME: This is dangerous because it circumvents the intent for param_data
+      !   potet_adj_2d => get_array(param_data%potet_cbh_adj%values, (/nhru, nmonths/))
+      !
+      !   ! Potential_ET(i) = Potential_ET(i)*Potet_cbh_adj(i, Nowmonth)
+      !   potet = potet * potet_adj_2d(:, curr_month)
+      !   basin_potet = sum(dble(potet * hru_area)) * basin_area_inv
+      ! endif
 
       ! Humidity
       if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
