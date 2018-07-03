@@ -235,7 +235,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
 
     module subroutine run_Streamflow(this, ctl_data, param_data, model_basin, &
-                                  model_climate, groundwater, soil, runoff, &
+                                  model_climate, model_potet, groundwater, soil, runoff, &
                                   model_time, model_solrad)
       use prms_constants, only: dp, FT2_PER_ACRE, NEARZERO
       implicit none
@@ -250,6 +250,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
+      class(Potential_ET), intent(inout) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil
@@ -302,7 +303,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
                 tosegment => param_data%tosegment%values, &
                 active_hrus => model_basin%active_hrus, &
                 hru_route_order => model_basin%hru_route_order, &
-                potet => model_climate%potet, &
+                potet => model_potet%potet, &
                 swrad => model_solrad%swrad, &
                 gwres_flow => groundwater%gwres_flow, &
                 ssres_flow => soil%ssres_flow, &

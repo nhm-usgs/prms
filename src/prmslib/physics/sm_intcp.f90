@@ -80,7 +80,7 @@ contains
   end subroutine
 
   module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
-                                     model_climate, model_time)
+                                     model_potet, model_climate, model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
                               LAKE, NEARZERO, DNEARZERO
     implicit none
@@ -93,6 +93,7 @@ contains
       !! Parameters
     type(Basin), intent(in) :: model_basin
       !! Basin variables
+    class(Potential_ET), intent(in) :: model_potet
     type(Climateflow), intent(inout) :: model_climate
       !! Climate variables
     type(Time_t), intent(in) :: model_time
@@ -121,11 +122,26 @@ contains
     real(r32) :: stor
     real(r32) :: z
 
+    ! Control
+    ! nevap, nhru, et_module, print_debug
+
+    ! Basin
+    ! basin_area_inv, active_hrus, hru_route_order
+
+    ! Climate
+    ! hru_ppt, hru_rain, hru_snow, newsnow, pkwater_equiv, pptmix, transp_on,
+
+    ! Parameters
+    ! hru_area, hru_pansta, hru_type, covden_sum, covden_win, cov_type, epan_coef,
+    ! potet_sublim, snow_intcp, srain_intcp, wrain_intcp,
+
+    ! Potential_ET
+    ! potet,
+
+    ! Time_t
+    ! Nowmonth, Cfs_conv
+
     ! --------------------------------------------------------------------------
-    ! USE PRMS_WATER_USE, ONLY: Canopy_gain
-    ! USE PRMS_CLIMATEVARS, ONLY: Use_pandata
-    ! USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
-    ! USE PRMS_OBS, ONLY: Pan_evap
     associate(nevap => ctl_data%nevap%value, &
               nhru => ctl_data%nhru%value, &
               et_module => ctl_data%et_module%values, &
@@ -146,7 +162,16 @@ contains
               snow_intcp => param_data%snow_intcp%values, &
               srain_intcp => param_data%srain_intcp%values, &
               wrain_intcp => param_data%wrain_intcp%values, &
-              pkwater_equiv => model_climate%pkwater_equiv)
+
+              potet => model_potet%potet, &
+
+              hru_ppt => model_climate%hru_ppt, &
+              hru_rain => model_climate%hru_rain, &
+              hru_snow => model_climate%hru_snow, &
+              newsnow => model_climate%newsnow, &
+              pkwater_equiv => model_climate%pkwater_equiv, &
+              pptmix => model_climate%pptmix, &
+              transp_on => model_climate%transp_on)
 
       ! pkwater_equiv is from last time step
       if (print_debug == 1) then
@@ -180,16 +205,16 @@ contains
 
         if (hru_type(chru) == LAKE .or. cov_type(chru) == BARESOIL) then
           ! Lake or bare ground HRUs
-          this%net_rain(chru) = model_climate%hru_rain(chru)
-          this%net_snow(chru) = model_climate%hru_snow(chru)
+          this%net_rain(chru) = hru_rain(chru)
+          this%net_snow(chru) = hru_snow(chru)
           this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * harea)
-          this%basin_net_snow = this%basin_net_snow + dble(model_climate%hru_snow(chru) * harea)
-          this%basin_net_rain = this%basin_net_rain + dble(model_climate%hru_rain(chru) * harea)
+          this%basin_net_snow = this%basin_net_snow + dble(hru_snow(chru) * harea)
+          this%basin_net_rain = this%basin_net_rain + dble(hru_rain(chru) * harea)
           CYCLE
         endif
 
-        netrain = model_climate%hru_rain(chru)
-        netsnow = model_climate%hru_snow(chru)
+        netrain = hru_rain(chru)
+        netsnow = hru_snow(chru)
 
         ! cov = this%canopy_covden(chru)
         this%intcp_form(chru) = 0
@@ -199,14 +224,14 @@ contains
         changeover = 0.0
 
         ! ******Adjust interception amounts for changes in summer/winter cover density
-        if (model_climate%transp_on(chru) == 1) then
+        if (transp_on(chru) == 1) then
           this%canopy_covden(chru) = covden_sum(chru)
         else
           this%canopy_covden(chru) = covden_win(chru)
         endif
 
         ! *****Determine the amount of interception from rain
-        if (model_climate%transp_on(chru) == 0 .and. this%intcp_transp_on(chru) == 1) then
+        if (transp_on(chru) == 0 .and. this%intcp_transp_on(chru) == 1) then
           ! ***** go from summer to winter cover density
           this%intcp_transp_on(chru) = 0
 
@@ -231,7 +256,7 @@ contains
               this%intcp_on(chru) = 0
             endif
           endif
-        elseif (model_climate%transp_on(chru) == 1 .and. this%intcp_transp_on(chru) == 0) then
+        elseif (transp_on(chru) == 1 .and. this%intcp_transp_on(chru) == 0) then
           ! ****** go from winter to summer cover density, excess = throughfall
           this%intcp_transp_on(chru) = 1
 
@@ -258,23 +283,23 @@ contains
         endif
 
         ! *****Determine the amount of interception from rain
-        if (model_climate%transp_on(chru) == 1) then
+        if (transp_on(chru) == 1) then
           stor = srain_intcp(chru)
         else
           stor = wrain_intcp(chru)
         endif
 
-        if (model_climate%hru_rain(chru) > 0.0) then
+        if (hru_rain(chru) > 0.0) then
           if (this%canopy_covden(chru) > 0.0) then
             if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
               call this%intercept(this%intcp_on(chru), netrain, intcpstor, this%canopy_covden(chru), &
-                                  model_climate%hru_rain(chru), stor)
+                                  hru_rain(chru), stor)
             elseif (cov_type(chru) == GRASSES) then
               !rsr, 03/24/2008 intercept rain on snow-free grass, when not a mixed event
               if (pkwater_equiv(chru) < DNEARZERO .and. netsnow < NEARZERO) then
                 call this%intercept(this%intcp_on(chru), netrain, intcpstor, &
                                     this%canopy_covden(chru), &
-                                    model_climate%hru_rain(chru), stor)
+                                    hru_rain(chru), stor)
                 ! rsr 03/24/2008
                 ! It was decided to leave the water in intcpstor rather than put
                 ! the water in the snowpack, as doing so for a mixed event on
@@ -325,7 +350,7 @@ contains
         ! endif
 
         ! ******Determine amount of interception from snow
-        if (model_climate%hru_snow(chru) > 0.0) then
+        if (hru_snow(chru) > 0.0) then
           if (this%canopy_covden(chru) > 0.0) then
             this%intcp_form(chru) = 1
 
@@ -333,13 +358,13 @@ contains
             ! if (cov_type(chru) > 1) then
               stor = snow_intcp(chru)
               call this%intercept(this%intcp_on(chru), netsnow, intcpstor, this%canopy_covden(chru), &
-                                  model_climate%hru_snow(chru), stor)
+                                  hru_snow(chru), stor)
 
               if (netsnow < NEARZERO) then   !rsr, added 3/9/2006
                 netrain = netrain + netsnow
                 netsnow = 0.0
-                model_climate%newsnow(chru) = 0
-                model_climate%pptmix(chru) = 0   ! reset to be sure it is zero
+                newsnow(chru) = 0
+                pptmix(chru) = 0   ! reset to be sure it is zero
               endif
             endif
           endif
@@ -350,9 +375,9 @@ contains
         ! ******compute evaporation or sublimation of interception
         if (this%intcp_on(chru) == 1) then
           ! if precipitation assume no evaporation or sublimation
-          if (model_climate%hru_ppt(chru) < NEARZERO) then
-            evrn = model_climate%potet(chru) / epan_coef(idx1D)
-            evsn = potet_sublim(chru) * model_climate%potet(chru)
+          if (hru_ppt(chru) < NEARZERO) then
+            evrn = potet(chru) / epan_coef(idx1D)
+            evsn = potet_sublim(chru) * potet(chru)
 
             ! TODO: Uncomment when potet_pan module is added
             ! if (nevap > 0 .and. et_module%s == 'potet_pan') then
@@ -391,11 +416,11 @@ contains
           endif
         endif
 
-        if (intcpevap * this%canopy_covden(chru) > model_climate%potet(chru)) then
+        if (intcpevap * this%canopy_covden(chru) > potet(chru)) then
           last = intcpevap
 
           if (this%canopy_covden(chru) > 0.0) then
-            intcpevap = model_climate%potet(chru) / this%canopy_covden(chru)
+            intcpevap = potet(chru) / this%canopy_covden(chru)
           else
             intcpevap = 0.0
           endif

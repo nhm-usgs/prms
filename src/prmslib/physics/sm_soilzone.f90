@@ -393,7 +393,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                       model_climate, intcp, snow, runoff, model_flow)
+                                   model_potet, model_climate, intcp, snow, runoff, model_flow)
       ! USE PRMS_CASCADE, ONLY: Ncascade_hru
       ! USE PRMS_SET_TIME, ONLY: Nowmonth !, Nowday
       use prms_constants, only: dp, LAKE, LAND, SWALE
@@ -407,7 +407,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      type(Climateflow), intent(inout) :: model_climate
+      class(Potential_ET), intent(inout) :: model_potet
+      type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
@@ -491,9 +492,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 infil => runoff%infil, &
                 sroff => runoff%sroff, &
                 strm_seg_in => runoff%strm_seg_in, &
-                basin_potet => model_climate%basin_potet, &
+
+                basin_potet => model_potet%basin_potet, &
+                potet => model_potet%potet, &
+
                 hru_ppt => model_climate%hru_ppt, &
-                potet => model_climate%potet, &
                 transp_on => model_climate%transp_on, &
                 hru_intcpevap => intcp%hru_intcpevap, &
                 snow_evap => snow%snow_evap, &

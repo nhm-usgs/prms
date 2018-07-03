@@ -6,6 +6,7 @@ module PRMS_SRUNOFF
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
+  use PRMS_POTET, only: Potential_ET
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SET_TIME, only: Time_t
   implicit none
@@ -142,7 +143,7 @@ module PRMS_SRUNOFF
 
   interface
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
-                                       model_climate, model_flow, intcp, snow)
+                                       model_climate, model_flow, model_potet, intcp, snow)
       class(Srunoff) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
@@ -154,6 +155,7 @@ module PRMS_SRUNOFF
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Flowvars), intent(in) :: model_flow
+      class(Potential_ET), intent(inout) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
     end subroutine
@@ -185,12 +187,13 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine dprst_comp(this, ctl_data, param_data, model_climate, intcp, &
+    module subroutine dprst_comp(this, ctl_data, param_data, model_climate, model_potet, intcp, &
                                  snow, idx, avail_et)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
+      class(Potential_ET), intent(inout) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       integer(i32), intent(in) :: idx

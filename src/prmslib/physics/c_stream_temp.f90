@@ -9,7 +9,7 @@ module PRMS_STRMTEMP
   use PRMS_FLOWVARS, only: Flowvars
   ! use PRMS_INTCP, only: Interception
   use PRMS_OBS, only: Obs
-  ! use PRMS_ROUTING, only: Routing
+  use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
   use PRMS_STREAMFLOW, only: Streamflow
   ! use PRMS_SOILZONE, only: Soilzone
@@ -180,7 +180,7 @@ module PRMS_STRMTEMP
   interface
     module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, &
                                      model_climate, model_climate_hru, model_flow, &
-                                     model_obs, model_streamflow, snow, model_solrad, &
+                                     model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
       class(StreamTemp) :: this
         !! StreamTemp class
@@ -192,6 +192,7 @@ module PRMS_STRMTEMP
       type(Climateflow), intent(in) :: model_climate
       type(Climate_HRU), intent(in) :: model_climate_hru
       type(Flowvars), intent(in) :: model_flow
+      class(Potential_ET), intent(in) :: model_potet
       type(Obs), intent(in) :: model_obs
       class(Streamflow), intent(in) :: model_streamflow
       type(Snowcomp), intent(in) :: snow

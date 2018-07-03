@@ -5,6 +5,7 @@ module PRMS_STREAMFLOW
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
+  use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
@@ -129,7 +130,7 @@ module PRMS_STREAMFLOW
 
   interface
     module subroutine run_Streamflow(this, ctl_data, param_data, model_basin, &
-                                  model_climate, groundwater, soil, runoff, &
+                                  model_climate, model_potet, groundwater, soil, runoff, &
                                   model_time, model_solrad)
       use prms_constants, only: dp, NEARZERO
       implicit none
@@ -144,6 +145,7 @@ module PRMS_STREAMFLOW
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
+      class(Potential_ET), intent(inout) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil

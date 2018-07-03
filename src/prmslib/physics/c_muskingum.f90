@@ -6,15 +6,13 @@ module PRMS_MUSKINGUM
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_FLOWVARS, only: Flowvars
-  ! use PRMS_INTCP, only: Interception
   use PRMS_OBS, only: Obs
+  use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
-  ! use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_STREAMFLOW, only: Streamflow
   use SOLAR_RADIATION, only: SolarRadiation
-  ! use PRMS_ROUTING, only: Routing
   implicit none
 
   private
@@ -74,7 +72,7 @@ module PRMS_MUSKINGUM
 
   interface
     module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
-                                    model_climate, groundwater, soil, runoff, &
+                                    model_climate, model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_flow, model_obs)
       use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
       implicit none
@@ -89,6 +87,7 @@ module PRMS_MUSKINGUM
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
+      class(Potential_ET), intent(inout) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil

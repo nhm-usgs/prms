@@ -329,7 +329,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
 
     module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, &
                                      model_climate, model_climate_hru, model_flow, &
-                                     model_obs, model_streamflow, snow, model_solrad, &
+                                     model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
       use prms_constants, only: CFS2CMS_CONV, dp, NEARZERO
       implicit none
@@ -344,6 +344,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       type(Climateflow), intent(in) :: model_climate
       type(Climate_HRU), intent(in) :: model_climate_hru
       type(Flowvars), intent(in) :: model_flow
+      class(Potential_ET), intent(in) :: model_potet
       type(Obs), intent(in) :: model_obs
       class(Streamflow), intent(in) :: model_streamflow
       type(Snowcomp), intent(in) :: snow
@@ -426,8 +427,9 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
                 active_hrus => model_basin%active_hrus, &
                 hru_route_order => model_basin%hru_route_order, &
 
+                potet => model_potet%potet, &
+
                 hru_rain => model_climate%hru_rain, &
-                potet => model_climate%potet, &
                 tavgc => model_climate%tavgc, &
                 humidity_hru => model_climate_hru%humidity_hru, &
 

@@ -178,7 +178,7 @@ contains
   !***********************************************************************
   !     snorun - daily mode snow estimates
   !***********************************************************************
-  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad)
+  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad, model_potet)
     use prms_constants, only: dp
     use UTILS_PRMS, only: get_array
     implicit none
@@ -198,6 +198,7 @@ contains
     type(Interception), intent(in) :: intcp
       !! Canopy interception
     class(SolarRadiation), intent(in) :: model_solrad
+    class(Potential_ET), intent(in) :: model_potet
 
     ! Local Variables
     integer(i32) :: chru
@@ -530,7 +531,7 @@ contains
             ! Snow can evaporate when transpiration is not occuring or when
             ! transpiration is occuring with cover types of bare soil or grass.
             if (transp_on(chru) == 0 .or. (transp_on(chru) == 1 .and. cov_type(chru) < 2)) then
-              call this%snowevap(model_climate, chru, ctl_data, param_data, intcp)
+              call this%snowevap(model_climate, chru, ctl_data, param_data, intcp, model_potet)
             endif
           elseif (pkwater_equiv(chru) < 0.0_dp) then
             if (print_debug > -1) then
@@ -1932,7 +1933,7 @@ contains
   !***********************************************************************
   !      Subroutine to compute evaporation from snowpack
   !***********************************************************************
-  module subroutine snowevap(this, model_climate, chru, ctl_data, param_data, intcp)
+  module subroutine snowevap(this, model_climate, chru, ctl_data, param_data, intcp, model_potet)
     implicit none
 
     ! Arguments
@@ -1942,6 +1943,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
     type(Interception), intent(in) :: intcp
+    class(Potential_ET), intent(in) :: model_potet
 
     ! Local Variables
     real(r32) :: avail_et
@@ -1954,7 +1956,7 @@ contains
     ! --------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               potet_sublim => param_data%potet_sublim%values(chru), &
-              potet => model_climate%potet(chru), &
+              potet => model_potet%potet(chru), &
               hru_intcpevap => intcp%hru_intcpevap(chru), &
               freeh2o => this%freeh2o(chru), &
               snow_evap => this%snow_evap(chru), &

@@ -6,6 +6,7 @@ module PRMS_SOILZONE
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
+  use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
@@ -214,7 +215,7 @@ module PRMS_SOILZONE
 
   interface
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                   model_climate, intcp, snow, runoff, model_flow)
+                                   model_potet, model_climate, intcp, snow, runoff, model_flow)
       class(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
@@ -223,7 +224,8 @@ module PRMS_SOILZONE
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      type(Climateflow), intent(inout) :: model_climate
+      class(Potential_ET), intent(inout) :: model_potet
+      type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow

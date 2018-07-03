@@ -162,7 +162,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     !                  computations using antecedent soil moisture.
     !***********************************************************************
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
-                                  model_climate, model_flow, intcp, snow)  ! , cascades)
+                                  model_climate, model_flow, model_potet, intcp, snow)  ! , cascades)
       use prms_constants, only: dp
       implicit none
        class(Srunoff) :: this
@@ -176,6 +176,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
        type(Climateflow), intent(in) :: model_climate
          !! Climate variables
        type(Flowvars), intent(in) :: model_flow
+       class(Potential_ET), intent(inout) :: model_potet
        type(Interception), intent(in) :: intcp
        type(Snowcomp), intent(in) :: snow
 
@@ -244,7 +245,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 snowcov_area => snow%snowcov_area, &
                 snowmelt => snow%snowmelt, &
                 snow_evap => snow%snow_evap, &
-                potet => model_climate%potet, &
+                potet => model_potet%potet, &
                 pkwater_equiv => model_climate%pkwater_equiv)
 
         if (print_debug == 1) then
@@ -357,7 +358,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
               dprst_chk = 1
               ! ****** Compute the depression storage component
               ! only call if total depression surface area for each HRU is > 0.0
-              call this%dprst_comp(ctl_data, param_data, model_climate, intcp, snow, i, avail_et)
+              call this%dprst_comp(ctl_data, param_data, model_climate, model_potet, intcp, snow, i, avail_et)
               ! call this%dprst_comp(this%dprst_vol_clos(i), this%dprst_area_clos_max(i), &
               !                 this%dprst_area_clos(i), this%dprst_vol_open_max(i), &
               !                 this%dprst_vol_open(i), this%dprst_area_open_max(i), &
@@ -936,7 +937,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     !***********************************************************************
     ! Compute depression storage area hydrology
     !***********************************************************************
-    module subroutine dprst_comp(this, ctl_data, param_data, model_climate, intcp, snow, idx, avail_et)
+    module subroutine dprst_comp(this, ctl_data, param_data, model_climate, model_potet, intcp, snow, idx, avail_et)
       ! subroutine dprst_comp(Dprst_vol_clos, Dprst_area_clos_max, Dprst_area_clos, &
       !                       Dprst_vol_open_max, Dprst_vol_open, Dprst_area_open_max, &
       !                       Dprst_area_open, Dprst_sroff_hru, Dprst_seep_hru, &
@@ -961,6 +962,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
+      class(Potential_ET), intent(inout) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       integer(i32), intent(in) :: idx
@@ -1057,7 +1059,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 snowmelt => snow%snowmelt, &
                 snowcov_area => snow%snowcov_area, &
                 pkwater_equiv => model_climate%pkwater_equiv, &
-                potet => model_climate%potet, &
+                potet => model_potet%potet, &
                 net_rain => intcp%net_rain, &
                 net_snow => intcp%net_snow)
 
