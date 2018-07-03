@@ -21,6 +21,15 @@ module SOLAR_RADIATION
   real(r64), parameter :: PI_12 = 12.0_dp / PI      ! PI_12 ~ 3.8197186342055
 
   type SolarRadiation
+    logical :: has_basin_obs_station
+      !! When true has a main solar radiation station
+    logical :: has_hru_obs_station
+      !! When true has solar radiation stations available
+    real(r32) :: radiation_cv_factor
+      !! Conversion factor to Langleys for measured radiation. Defaults to 1.0, but can be overridden by parameter rad_conv
+
+    real(r32), allocatable :: orad_hru(:)
+
     real(r64) :: solar_declination(366)
     real(r64) :: soltab_basinpotsw(366)
     real(r64), allocatable :: hru_cossl(:)

@@ -23,12 +23,6 @@ module SOLAR_RADIATION_DEGDAY
                                                  .742, .746, .75]
 
   type, extends(SolarRadiation) :: Solrad_degday
-    logical, private :: has_obs_station
-      !! When true has solar radiation stations available
-    real(r32), private :: radiation_cv_factor
-      !! Conversion factor to Langleys for measured radiation. Defaults to 1.0, but can be overridden by parameter rad_conv
-
-    real(r32), allocatable :: orad_hru(:)
 
     contains
       procedure, public :: run => run_Solrad_degday

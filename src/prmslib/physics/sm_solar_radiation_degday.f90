@@ -26,22 +26,6 @@ contains
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
-
-      allocate(this%orad_hru(nhru))
-      this%orad_hru = 0.0
-
-      ! If no radiation stations are available for the active HRUs
-      ! then the sum of hru_solsta is 0
-      if (param_data%hru_solsta%exists()) then
-        this%has_obs_station = sum(param_data%hru_solsta%values, mask=active_mask) > 0
-      else
-        this%has_obs_station = .false.
-      endif
-
-      this%radiation_cv_factor = 1.0
-      if (param_data%rad_conv%exists()) then
-        this%radiation_cv_factor = param_data%rad_conv%values(1)
-      endif
     end associate
   end function
 
@@ -103,15 +87,9 @@ contains
               hru_ppt => climate%hru_ppt, &
               tmax_allrain => climate%tmax_allrain, &
               tmax_hru => climate%tmax_hru, &
-              ! basin_orad => climate%basin_orad, &
-              ! basin_potsw => climate%basin_potsw, &
-              ! basin_swrad => climate%basin_swrad, &
-              ! orad => climate%orad, &
-              ! swrad => climate%swrad, &
-              ! basin_solsta => param_data%basin_solsta%values(1), &
+
               hru_area => param_data%hru_area%values, &
               hru_solsta => param_data%hru_solsta%values, &
-              ! rad_conv => param_data%rad_conv%values(1), &
               radj_sppt => param_data%radj_sppt%values, &
               radj_wppt => param_data%radj_wppt%values)
 
@@ -180,7 +158,7 @@ contains
         ! climate%orad_hru(chru) = radadj * sngl(solt%soltab_horad_potsw(day_of_year, chru))
         this%orad_hru(chru) = radadj * sngl(this%soltab_horad_potsw(day_of_year, chru))
 
-        if (this%has_obs_station) then
+        if (this%has_hru_obs_station) then
           kk = hru_solsta(chru)
           if (kk > 0) then
             if (solrad(kk) < 0.0 .or. solrad(kk) > 10000.0 ) then
@@ -206,8 +184,7 @@ contains
       ! climate%basin_orad = sum(dble(climate%orad_hru * hru_area), mask=active_mask) * basin_area_inv
       this%basin_orad = sum(dble(this%orad_hru * hru_area), mask=active_mask) * basin_area_inv
 
-      if (this%has_obs_station) then
-      ! if (nsol > 0 .and. basin_solsta > 0) then
+      if (this%has_basin_obs_station) then
         ! orad = solrad(param_data%basin_solsta%values(1)) * this%radiation_cv_factor
         this%orad = solrad(param_data%basin_solsta%values(1)) * this%radiation_cv_factor
       else

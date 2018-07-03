@@ -3,7 +3,7 @@ contains
   module function constructor_SolarRadiation(ctl_data, param_data, model_basin) result(this)
     use UTILS_PRMS, only: PRMS_open_module_file, print_module_info
     implicit none
-    
+
     type(SolarRadiation) :: this
       !! SolarRadiation class
     type(Control), intent(in) :: ctl_data
@@ -42,6 +42,7 @@ contains
 
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              nsol => ctl_data%nsol%value, &
               print_debug => ctl_data%print_debug%value, &
               solrad_module => ctl_data%solrad_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
@@ -50,6 +51,7 @@ contains
               hru_slope => param_data%hru_slope%values, &
               hru_aspect => param_data%hru_aspect%values, &
               active_hrus => model_basin%active_hrus, &
+              active_mask => model_basin%active_mask, &
               basin_lat => model_basin%basin_lat, &
               hru_route_order => model_basin%hru_route_order)
 
@@ -65,6 +67,29 @@ contains
       allocate(this%soltab_sunhrs(366, nhru))
       allocate(this%soltab_potsw(366, nhru))
       allocate(this%soltab_horad_potsw(366, nhru))
+
+      allocate(this%orad_hru(nhru))
+      this%orad_hru = 0.0
+
+      this%has_basin_obs_station = .false.
+      this%has_hru_obs_station = .false.
+
+      if (nsol > 0) then
+        if (param_data%hru_solsta%exists()) then
+          ! If no radiation stations are available for the active HRUs
+          ! then the sum of hru_solsta is 0
+          this%has_hru_obs_station = sum(param_data%hru_solsta%values, mask=active_mask) > 0
+        endif
+
+        if (param_data%basin_solsta%exists()) then
+          this%has_basin_obs_station = (param_data%basin_solsta%values(1) > 0)
+        endif
+      endif
+
+      this%radiation_cv_factor = 1.0
+      if (param_data%rad_conv%exists()) then
+        this%radiation_cv_factor = param_data%rad_conv%values(1)
+      endif
 
       this%hru_cossl = 0.0
       this%soltab_sunhrs = 0.0
