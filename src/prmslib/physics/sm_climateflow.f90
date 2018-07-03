@@ -30,14 +30,12 @@ contains
               ntemp => ctl_data%ntemp%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
-              ! solrad_module => ctl_data%solrad_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
-              ! basin_tsta => param_data%basin_tsta%values(1), &
               elev_units => param_data%elev_units%values(1), &
-              psta_elev => param_data%psta_elev%values, &
+              ! psta_elev => param_data%psta_elev%values, &
               tmax_allsnow => param_data%tmax_allsnow%values, &
-              tmax_allrain_offset => param_data%tmax_allrain_offset%values, &
-              tsta_elev => param_data%tsta_elev%values)
+              tmax_allrain_offset => param_data%tmax_allrain_offset%values)
+              ! tsta_elev => param_data%tsta_elev%values)
 
       if (print_debug > -2) then
         ! Output module and version information
@@ -54,22 +52,22 @@ contains
       allocate(this%hru_rain(nhru))
       allocate(this%hru_snow(nhru))
 
-      if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
-          ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
-          ctl_data%precip_module%values(1)%s == 'xyz_dist') then
-        allocate(this%psta_elev_feet(nrain))
-        allocate(this%psta_elev_meters(nrain))
+      ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
+      !     ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
+      !     ctl_data%precip_module%values(1)%s == 'xyz_dist') then
+      !   allocate(this%psta_elev_feet(nrain))
+      !   allocate(this%psta_elev_meters(nrain))
+      !
+      !   if (elev_units == FEET) then
+      !     this%psta_elev_feet = psta_elev
+      !     this%psta_elev_meters = psta_elev * FEET2METERS
+      !   else
+      !     this%psta_elev_meters = psta_elev
+      !     this%psta_elev_feet = psta_elev * METERS2FEET
+      !   endif
+      ! endif
 
-        if (elev_units == FEET) then
-          this%psta_elev_feet = psta_elev
-          this%psta_elev_meters = psta_elev * FEET2METERS
-        else
-          this%psta_elev_meters = psta_elev
-          this%psta_elev_feet = psta_elev * METERS2FEET
-        endif
-      endif
-
-      allocate(this%potet(nhru))
+      ! allocate(this%potet(nhru))
       allocate(this%prmx(nhru))
       ! allocate(this%swrad(nhru))
       allocate(this%tavgf(nhru), this%tavgc(nhru))
@@ -77,19 +75,19 @@ contains
       allocate(this%tminf(nhru), this%tminc(nhru))
       allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
 
-      if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
-          ctl_data%temp_module%values(1)%s /= 'temp_sta') then
-        allocate(this%tsta_elev_feet(ntemp))
-        allocate(this%tsta_elev_meters(ntemp))
-
-        if (elev_units == FEET) then
-          this%tsta_elev_feet = tsta_elev
-          this%tsta_elev_meters = tsta_elev * FEET2METERS
-        else
-          this%tsta_elev_meters = tsta_elev
-          this%tsta_elev_feet = tsta_elev * METERS2FEET
-        endif
-      endif
+      ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
+      !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
+      !   allocate(this%tsta_elev_feet(ntemp))
+      !   allocate(this%tsta_elev_meters(ntemp))
+      !
+      !   if (elev_units == FEET) then
+      !     this%tsta_elev_feet = tsta_elev
+      !     this%tsta_elev_meters = tsta_elev * FEET2METERS
+      !   else
+      !     this%tsta_elev_meters = tsta_elev
+      !     this%tsta_elev_feet = tsta_elev * METERS2FEET
+      !   endif
+      ! endif
 
       allocate(this%tmax_allrain_f(nhru, 12))
       allocate(this%tmax_allsnow_c(nhru, 12))
@@ -188,7 +186,7 @@ contains
         this%hru_ppt = 0.0
         this%hru_rain = 0.0
         this%hru_snow = 0.0
-        this%potet = 0.0
+        ! this%potet = 0.0
         this%prmx = 0.0
         this%solrad_tmax = 0.0
         this%solrad_tmin = 0.0

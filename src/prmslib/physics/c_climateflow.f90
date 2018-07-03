@@ -27,9 +27,8 @@ module PRMS_CLIMATEVARS
     real(r32) :: solrad_tmin
 
     ! Basin variables
-    real(r64) :: basin_cloud_cover
     real(r64) :: basin_obs_ppt
-    real(r64) :: basin_potet
+    ! real(r64) :: basin_potet
     real(r64) :: basin_ppt
     real(r64) :: basin_rain
     real(r64) :: basin_snow
@@ -42,7 +41,7 @@ module PRMS_CLIMATEVARS
     real(r32), allocatable :: hru_ppt(:)
     real(r32), allocatable :: hru_rain(:)
     real(r32), allocatable :: hru_snow(:)
-    real(r32), allocatable :: potet(:)
+    ! real(r32), allocatable :: potet(:)
     real(r32), allocatable :: prmx(:)
     real(r32), allocatable :: tavgc(:)
     real(r32), allocatable :: tavgf(:)
@@ -62,10 +61,10 @@ module PRMS_CLIMATEVARS
     real(r32), allocatable :: tmax_allsnow_f(:, :)
 
     ! NOTE: Why both units? When are these variables needed
-    real(r32), allocatable :: psta_elev_feet(:)
-    real(r32), allocatable :: psta_elev_meters(:)
-    real(r32), allocatable :: tsta_elev_feet(:)
-    real(r32), allocatable :: tsta_elev_meters(:)
+    ! real(r32), allocatable :: psta_elev_feet(:)
+    ! real(r32), allocatable :: psta_elev_meters(:)
+    ! real(r32), allocatable :: tsta_elev_feet(:)
+    ! real(r32), allocatable :: tsta_elev_meters(:)
 
     ! NOTE: These are just extra copies of parameters tmax_adj and tmin_adj
     ! real(r32), allocatable :: tmax_aspect_adjust(:, :)
@@ -89,9 +88,6 @@ module PRMS_CLIMATEVARS
     ! NOTE: Doesn't appear to be used by stream_temp; computed in ccsolrad
     ! For stream temperature
     ! real(r32), allocatable :: cloud_cover_hru(:)
-
-    ! For solar radiation
-    ! real(r32) :: orad
 
     real(r32), allocatable, private :: tdiff_arr(:)
       !! Array containing differences b/t tmaxf and tminf
