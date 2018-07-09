@@ -18,6 +18,8 @@ module Simulation_class
   use PRMS_BASIN_SUMMARY, only: Basin_summary
   use PRMS_NHRU_SUMMARY, only: Nhru_summary
   use PRMS_SET_TIME, only: Time_t
+  use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_TEMPERATURE_HRU, only: Temperature_hru
   use PRMS_OBS, only: Obs
   implicit none
 
@@ -35,6 +37,7 @@ module Simulation_class
       type(Climate_HRU) :: climate_by_hru
       type(Solrad_degday) :: solrad
       ! type(Ddsolrad) :: solrad
+      class(Temperature), allocatable :: model_temp
       type(Transp_tindex) :: transpiration
       type(Potet_jh) :: potet
       type(Interception) :: intcp
