@@ -10,6 +10,8 @@ MODULE PRMS_TRANSP_TINDEX
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_SET_TIME, only: Time_t
+  use PRMS_TRANSPIRATION, only: Transpiration
+  use PRMS_TEMPERATURE, only: Temperature
   implicit none
 
   private
@@ -19,13 +21,13 @@ MODULE PRMS_TRANSP_TINDEX
   character(len=*), PARAMETER :: MODNAME = 'transp_tindex'
   character(len=*), PARAMETER :: MODVERSION = '2015-01-06 00:09:15Z'
 
-  type Transp_tindex
+  type, extends(Transpiration) :: Transp_tindex
     ! Local Variables
     integer(i32), allocatable :: transp_check(:)
     integer(i32), allocatable :: transp_beg_restart(:)
     integer(i32), allocatable :: transp_end_restart(:)
-    real(r32), allocatable :: tmax_sum(:)
-    real(r32), allocatable :: transp_tmax_f(:)
+    real(r32), private, allocatable :: tmax_sum(:)
+    real(r32), private, allocatable :: transp_tmax_c(:)
     real(r32), allocatable :: transp_tmax_restart(:)
 
     contains
@@ -40,7 +42,7 @@ MODULE PRMS_TRANSP_TINDEX
 
   interface Transp_tindex
     !! Transp_tindex constructor
-    module function constructor_Transp_tindex(ctl_data, param_data, model_basin, climate) result(this)
+    module function constructor_Transp_tindex(ctl_data, param_data, model_basin) result(this)
       type(Transp_tindex) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
@@ -49,8 +51,6 @@ MODULE PRMS_TRANSP_TINDEX
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin information
-      type(Climateflow), intent(inout) :: climate
-        !! Climate flow class
     end function
   end interface
 
@@ -62,13 +62,13 @@ MODULE PRMS_TRANSP_TINDEX
   end interface
 
   interface
-    module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, climate)
+    module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, model_temp)
       class(Transp_tindex), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Basin), intent(in) :: model_basin
-      type(Climateflow), intent(inout) :: climate
+      class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface
 
