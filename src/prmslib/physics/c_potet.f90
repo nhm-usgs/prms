@@ -2,6 +2,7 @@ module PRMS_POTET
   use variableKind
   use Control_class, only: Control
   use Parameters_class, only: Parameters
+  use PRMS_BASIN, only: Basin
 
   implicit none
 
@@ -14,8 +15,15 @@ module PRMS_POTET
 
   ! Potential Evapotranspiration class
   type Potential_ET
+    integer(i32), private :: humidity_funit
+      !! Humidity CBH file unit
+
+    real(r64) :: basin_humidity
+      !! (moved from climateflow.f90)
     real(r64) :: basin_potet
 
+    real(r32), allocatable :: humidity_hru(:)
+      !! (moved from climate_hru)
     real(r32), allocatable :: potet(:)
 
     ! For potet_pt, potet_pm, potet_pm_sta
@@ -40,10 +48,11 @@ module PRMS_POTET
   end interface
 
   interface
-    module subroutine run_Potet(this, ctl_data, param_data)
+    module subroutine run_Potet(this, ctl_data, param_data, model_basin)
       class(Potential_ET), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
     end subroutine
   end interface
 end module
