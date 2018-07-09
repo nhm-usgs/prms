@@ -7,6 +7,7 @@ module SOLAR_RADIATION_DEGDAY
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_OBS, only: Obs
   use PRMS_SET_TIME, only: Time_t
+  use PRMS_TEMPERATURE, only: Temperature
   implicit none
 
   private
@@ -42,15 +43,15 @@ module SOLAR_RADIATION_DEGDAY
   end interface
 
   interface
-    module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, climate, model_basin)
+    module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, climate, model_basin, model_temp)
       class(Solrad_degday), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Obs), intent(in) :: model_obs
-      ! type(Soltab), intent(in) :: solt
       type(Climateflow), intent(inout) :: climate
       type(Basin), intent(inout) :: model_basin
+      class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface
 end module

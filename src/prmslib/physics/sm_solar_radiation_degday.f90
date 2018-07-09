@@ -11,6 +11,7 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
 
+
     ! Control
     ! nhru,
 
@@ -26,11 +27,16 @@ contains
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
+
+      ! NOTE: Once units are standardized this can go away
+      allocate(this%tmax_f(nhru))
+
     end associate
   end function
 
 
-  module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, climate, model_basin)
+  module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, climate, model_basin, model_temp)
+    use conversions_mod, only: c_to_f
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -39,9 +45,9 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Obs), intent(in) :: model_obs
-    ! type(Soltab), intent(in) :: solt
     type(Climateflow), intent(inout) :: climate
     type(Basin), intent(inout) :: model_basin
+    class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
     integer(i32) :: chru
@@ -63,7 +69,7 @@ contains
     real(r32), pointer :: tmax_index_2d(:,:)
 
     ! Climateflow
-    ! hru_ppt, tmax_allrain, tmax_hru,
+    ! hru_ppt, tmax_allrain_c
 
     ! Obs
     ! solrad,
@@ -71,27 +77,41 @@ contains
     ! Soltad
     ! hru_cossl, soltab_basinpotsw, soltab_horad_potsw, soltab_potsw,
 
+    ! Temperature
+    ! tmax
+
     !***********************************************************************
 
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
               nmonths => ctl_data%nmonths%value, &
               print_debug => ctl_data%print_debug%value, &
+
               curr_month => model_time%Nowmonth, &
               day_of_year => model_time%day_of_year, &
+
               solrad => model_obs%solrad, &
+
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
+
               hru_ppt => climate%hru_ppt, &
-              tmax_allrain => climate%tmax_allrain, &
-              tmax_hru => climate%tmax_hru, &
+              tmax_allrain => climate%tmax_allrain_f, &
+              ! tmaxc => climate%tmaxc, &
+              ! tmax_hru => climate%tmax_hru, &
 
               hru_area => param_data%hru_area%values, &
               hru_solsta => param_data%hru_solsta%values, &
               radj_sppt => param_data%radj_sppt%values, &
               radj_wppt => param_data%radj_wppt%values)
+
+
+      ! NOTE: Once units are standardized this can go away
+      this%tmax_f = c_to_f(model_temp%tmax)
+
+      tmax_index_2d => get_array(param_data%tmax_index%values, (/nhru, nmonths/))
 
       ! WARNING: Get pointers to 2D-indexed versions of 1D parameter arrays
       dday_intcp_2d => get_array(param_data%dday_intcp%values, (/nhru, nmonths/))
@@ -100,7 +120,7 @@ contains
       radmax_2d => get_array(param_data%radmax%values, (/nhru, nmonths/))
       radadj_intcp_2d => get_array(param_data%radadj_intcp%values, (/nhru, nmonths/))
       radadj_slope_2d => get_array(param_data%radadj_slope%values, (/nhru, nmonths/))
-      tmax_index_2d => get_array(param_data%tmax_index%values, (/nhru, nmonths/))
+
 
       !rsr using julian day as the soltab arrays are filled by julian day
       ! climate%basin_horad = solt%soltab_basinpotsw(day_of_year)
@@ -110,7 +130,7 @@ contains
         chru = hru_route_order(jj)
 
         ! set degree day and radiation adjustment limited by radmax
-        dday = dday_slope_2d(chru, curr_month) * tmax_hru(chru) + &
+        dday = dday_slope_2d(chru, curr_month) * this%tmax_f(chru) + &
                dday_intcp_2d(chru, curr_month) + 1.0
 
         if (dday < 1.0) dday = 1.0
@@ -133,10 +153,11 @@ contains
         pptadj = 1.0
 
         if (hru_ppt(chru) > ppt_rad_adj_2d(chru, curr_month)) then
-          if (tmax_hru(chru) < tmax_index_2d(chru, curr_month)) then
+          if (this%tmax_f(chru) < tmax_index_2d(chru, curr_month)) then
             pptadj = radj_sppt(chru)
 
-            if (tmax_hru(chru) >= tmax_allrain(chru, curr_month)) then
+            ! if (tmax_hru(chru) >= tmax_allrain(chru, curr_month)) then
+            if (this%tmax_f(chru) >= tmax_allrain(chru, curr_month)) then
               if (model_time%Summer_flag == 0) then
                 ! Winter
                 pptadj = radj_wppt(chru)
@@ -146,7 +167,8 @@ contains
             endif
           else
             pptadj = radadj_intcp_2d(chru, curr_month) + &
-                     radadj_slope_2d(chru, curr_month) * (tmax_hru(chru) - tmax_index_2d(chru, curr_month))
+                     radadj_slope_2d(chru, curr_month) * &
+                     (this%tmax_f(chru) - tmax_index_2d(chru, curr_month))
 
             if (pptadj > 1.0) pptadj = 1.0
           endif
