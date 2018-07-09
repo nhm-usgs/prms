@@ -10,6 +10,7 @@ module PRMS_SOILZONE
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
+  use PRMS_TRANSPIRATION, only: Transpiration
 
   implicit none
 
@@ -169,19 +170,6 @@ module PRMS_SOILZONE
     ! real(r32), SAVE, allocatable :: Cpr_stor_frac(:), Pfr_stor_frac(:), Gvr_stor_frac(:), Soil_moist_frac(:)
     ! real(r32), SAVE, allocatable :: Soil_rechr_ratio(:), Snowevap_aet_frac(:), Perv_avail_et(:), Cap_upflow_max(:)
 
-    ! Declared Parameters
-    ! integer(i32), allocatable :: Soil_type(:)
-    ! integer(i32), allocatable :: Gvr_hru_id(:)
-    ! real(r32), allocatable :: Pref_flow_den(:)
-    ! real(r32), allocatable :: Fastcoef_lin(:)
-    ! real(r32), allocatable :: Fastcoef_sq(:)
-    ! real(r32), allocatable :: Slowcoef_lin(:)
-    ! real(r32), allocatable :: Slowcoef_sq(:)
-    ! real(r32), allocatable :: Ssr2gw_rate(:)
-    ! real(r32), allocatable :: Ssr2gw_exp(:)
-    ! real(r32), allocatable :: Soil2gw_max(:)
-    ! real(r32), allocatable :: Lake_evap_adj(:, :)
-
     contains
       procedure, public :: run => run_Soilzone
       procedure, public :: cleanup => cleanup_Soilzone
@@ -193,7 +181,6 @@ module PRMS_SOILZONE
       procedure, private, nopass :: compute_soilmoist
       procedure, private :: compute_szactet
       procedure, private :: reset_basin_vars
-
 
   end type
 
@@ -215,7 +202,7 @@ module PRMS_SOILZONE
 
   interface
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                   model_potet, model_climate, intcp, snow, runoff, model_flow)
+                                   model_potet, model_climate, intcp, snow, model_transp, runoff, model_flow)
       class(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
@@ -229,6 +216,7 @@ module PRMS_SOILZONE
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
+      class(Transpiration), intent(in) :: model_transp
       type(Srunoff), intent(inout) :: runoff
       type(Flowvars), intent(inout) :: model_flow
     end subroutine

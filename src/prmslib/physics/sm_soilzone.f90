@@ -36,7 +36,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! hru_frac_perv, hru_perv, basin_area_inv
 
       ! flowvars
-      ! soil_moist, soil_rechr, soil_rechr_max, slow_stor, ssres_stor, soil_to_gw,
+      ! soil_moist, soil_rechr, soil_rechr_max
 
       ! Snowcomp
       ! snowcov_area
@@ -50,6 +50,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 model_mode => ctl_data%model_mode%values, &
                 print_debug => ctl_data%print_debug%value, &
+
                 hru_area => param_data%hru_area%values, &
                 hru_type => param_data%hru_type%values, &
                 gvr_hru_id => param_data%gvr_hru_id%values, &
@@ -58,12 +59,15 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 soil_moist_max => param_data%soil_moist_max%values, &
                 soil2gw_max => param_data%soil2gw_max%values, &
                 ssstor_init_frac => param_data%ssstor_init_frac%values, &
+
                 basin_area_inv => model_basin%basin_area_inv, &
                 hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_perv => model_basin%hru_perv, &
+
                 soil_moist => model_flow%soil_moist, &
                 soil_rechr => model_flow%soil_rechr, &
                 soil_rechr_max => model_flow%soil_rechr_max, &
+
                 snowcov_area => snow%snowcov_area)
 
         ! TODO: 2018-06-21 - Uncomment once cascade module is converted.
@@ -393,7 +397,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                   model_potet, model_climate, intcp, snow, runoff, model_flow)
+                                   model_potet, model_climate, intcp, snow, model_transp, runoff, model_flow)
       ! USE PRMS_CASCADE, ONLY: Ncascade_hru
       ! USE PRMS_SET_TIME, ONLY: Nowmonth !, Nowday
       use prms_constants, only: dp, LAKE, LAND, SWALE
@@ -412,6 +416,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
+      class(Transpiration), intent(in) :: model_transp
       type(Srunoff), intent(inout) :: runoff
       type(Flowvars), intent(inout) :: model_flow
 
@@ -463,7 +468,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! strm_seg_in(RW), infil, basin_sroff(RW)
 
       ! Climateflow
-      ! potet(RW), transp_on, hru_ppt, basin_potet(RW)
+      ! transp_on, hru_ppt
 
       ! Flowvars
       ! soil_rechr(RW), soil_rechr_max, soil_moist(RW),
@@ -480,11 +485,13 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 dprst_flag => ctl_data%dprst_flag%value, &
                 model_mode => ctl_data%model_mode%values, &
                 print_debug => ctl_data%print_debug%value, &
+
                 active_hrus => model_basin%active_hrus, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_perv => model_basin%hru_perv, &
                 hru_route_order => model_basin%hru_route_order, &
+
                 basin_sroff => runoff%basin_sroff, &
                 dprst_evap_hru => runoff%dprst_evap_hru, &
                 dprst_seep_hru => runoff%dprst_seep_hru, &
@@ -497,10 +504,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 potet => model_potet%potet, &
 
                 hru_ppt => model_climate%hru_ppt, &
-                transp_on => model_climate%transp_on, &
+
+                transp_on => model_transp%transp_on, &
+
                 hru_intcpevap => intcp%hru_intcpevap, &
+
                 snow_evap => snow%snow_evap, &
                 snowcov_area => snow%snowcov_area, &
+
                 cov_type => param_data%cov_type%values, &
                 fastcoef_lin => param_data%fastcoef_lin%values, &
                 fastcoef_sq => param_data%fastcoef_sq%values, &
@@ -516,15 +527,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 slowcoef_sq => param_data%slowcoef_sq%values, &
                 ssr2gw_exp => param_data%ssr2gw_exp%values, &
                 ssr2gw_rate => param_data%ssr2gw_rate%values, &
-                ! hru_actet => model_flow%hru_actet, &
+
                 soil_rechr => model_flow%soil_rechr, &
                 soil_rechr_max => model_flow%soil_rechr_max, &
                 soil_moist => model_flow%soil_moist)
-                ! soil_to_gw => model_flow%soil_to_gw, &
-                ! ssr_to_gw => model_flow%ssr_to_gw, &
-                ! slow_flow => model_flow%slow_flow, &
-                ! soil_to_ssr => model_flow%soil_to_ssr, &
-                ! ssres_in => model_flow%ssres_in)
 
         ! TODO: 2018-06-21 - Uncomment when GSFLOW stuff is figured out.
         ! if (model_mode(1)%s == 'GSFLOW') then
