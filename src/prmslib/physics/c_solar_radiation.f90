@@ -30,6 +30,11 @@ module SOLAR_RADIATION
 
     real(r32), allocatable :: orad_hru(:)
 
+    ! WARNING: tmax_f and tmin_f will be removed once ccov_slope and ccov_intcp
+    !          are converted to match Celsius temp_unit.
+    real(r32), allocatable :: tmax_f(:)
+    real(r32), allocatable :: tmin_f(:)
+
     real(r64) :: solar_declination(366)
     real(r64) :: soltab_basinpotsw(366)
     real(r64), allocatable :: hru_cossl(:)

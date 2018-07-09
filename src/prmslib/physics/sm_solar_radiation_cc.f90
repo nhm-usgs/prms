@@ -1,6 +1,7 @@
 submodule(SOLAR_RADIATION_CC) sm_solar_radiation_cc
 contains
-  module function constructor_Solrad_cc(ctl_data, param_data, model_basin) result(this)
+  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp) result(this)
+    use conversions_mod, only: c_to_f
     use prms_constants, only: dp
     implicit none
     type(Solrad_cc) :: this
@@ -10,6 +11,7 @@ contains
     type(Parameters), intent(in) :: param_data
       !! Parameters
     type(Basin), intent(in) :: model_basin
+    class(Temperature), intent(in) :: model_temp
 
     ! Control
     ! nhru, nsol
@@ -28,6 +30,10 @@ contains
 
       this%basin_cloud_cover = 0.0_dp
       this%basin_radadj = 0.0_dp
+
+      ! NOTE: Once units are standardized tmax_f and tmin_f can go away
+      this%tmax_f = c_to_f(model_temp%tmax)
+      this%tmin_f = c_to_f(model_temp%tmin)
     end associate
   end function
 
@@ -60,7 +66,7 @@ contains
     ! active_hrus, basin_area_inv, hru_route_order,
 
     ! Climate
-    ! hru_ppt, tmax_hru, tmin_hru,
+    ! hru_ppt
 
     ! Obs
     ! solrad,
@@ -69,6 +75,9 @@ contains
     ! basin_solsta(not included in associate), ccov_slope(2D), ccov_intcp(2D),
     ! crad_coef(2D), crad_exp(2D), hru_area,
     ! hru_solsta, ppt_rad_adj(2D), radj_sppt, radj_wppt, radmax(2D),
+
+    ! Temperature
+    ! tmax, tmin
 
     ! Time_t
     ! day_of_year, Nowmonth, Summer_flag,
@@ -81,8 +90,8 @@ contains
               hru_route_order => model_basin%hru_route_order, &
 
               hru_ppt => climate%hru_ppt, &
-              tmax_hru => climate%tmax_hru, &
-              tmin_hru => climate%tmin_hru, &
+              ! tmax_hru => climate%tmax_hru, &
+              ! tmin_hru => climate%tmin_hru, &
 
               solrad => model_obs%solrad, &
 
@@ -96,6 +105,9 @@ contains
               radj_sppt => param_data%radj_sppt%values, &
               radj_wppt => param_data%radj_wppt%values, &
               radmax => param_data%radmax%values, &
+
+              ! tmax => model_temp%tmax, &
+              ! tmin => model_temp%tmin, &
 
               curr_month => model_time%Nowmonth, &
               day_of_year => model_time%day_of_year, &
@@ -127,7 +139,10 @@ contains
         endif
 
         ! ccov = ccov_slope(chru, curr_month) * (tmax_hru(chru) - tmin_hru(chru)) + ccov_intcp(chru, curr_month)
-        ccov = ccov_slope(idx1D) * (tmax_hru(chru) - tmin_hru(chru)) + ccov_intcp(idx1D)
+        ! ccov = ccov_slope(idx1D) * (tmax_hru(chru) - tmin_hru(chru)) + ccov_intcp(idx1D)
+        ! WARNING: ccov_slope and/or ccov_intcp will have to be converted if
+        !          tmax and tmin are supplied in degree Celsius.
+        ccov = ccov_slope(idx1D) * (this%tmax_f(chru) - this%tmin_f(chru)) + ccov_intcp(idx1D)
 
         if (ccov < 0.0) then
           ccov = 0.0
