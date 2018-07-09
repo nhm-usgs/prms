@@ -44,7 +44,7 @@ contains
               freeh2o_cap => param_data%freeh2o_cap%values, &
               hru_area => param_data%hru_area%values, &
               hru_deplcrv => param_data%hru_deplcrv%values, &
-              settle_const => param_data%settle_const%values(1), &
+              ! settle_const => param_data%settle_const%values(1), &
               ! snarea_curve => param_data%snarea_curve%values, &
               snarea_thresh => param_data%snarea_thresh%values, &
               snowpack_init => param_data%snowpack_init%values, &
@@ -65,7 +65,6 @@ contains
       allocate(this%pk_def(nhru))
       allocate(this%pk_den(nhru))
       allocate(this%pk_depth(nhru))
-      ! allocate(model_climate%pkwater_equiv(nhru))
       allocate(this%pk_ice(nhru))
       allocate(this%pk_precip(nhru))
       allocate(this%pk_temp(nhru))
@@ -86,6 +85,7 @@ contains
 
       ! FIXME: This may not get the correct 2D index because of how the
       !        snarea_curve is stored.
+      ! NOTE: pan - this does appear to work.
       snarea_curve_2d => get_array(param_data%snarea_curve%values, (/11, nhru/))
 
       this%ai = 0.0_dp
@@ -101,7 +101,6 @@ contains
       this%pk_def = 0.0
       this%pk_den = 0.0
       this%pk_depth = 0.0_dp
-      ! model_climate%pkwater_equiv = 0.0_dp
       this%pk_ice = 0.0
       this%pk_precip = 0.0
       this%pk_temp = 0.0
@@ -130,9 +129,7 @@ contains
       this%deninv = 1.0_dp / dble(den_init)
       this%denmaxinv = 1.0_dp / dble(den_max)
 
-      this%settle_const_dble = dble(settle_const)
-      ! Set1 = 1.0/(1.0+Settle_const)
-      ! Setden = Settle_const/Den_max
+      ! this%settle_const_dble = dble(settle_const)
 
       ! TODO: Hookup the read from restart file code
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
@@ -176,10 +173,10 @@ contains
 
 
   !***********************************************************************
-  !     snorun - daily mode snow estimates
+  ! Run daily snow estimates
   !***********************************************************************
-  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad, model_potet)
-    use prms_constants, only: dp
+  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_temp, intcp, model_solrad, model_potet, model_transp)
+    use prms_constants, only: dp, LAKE
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -195,16 +192,17 @@ contains
       !! Time
     type(Basin), intent(in) :: model_basin
       !! Basin
+    class(Temperature), intent(in) :: model_temp
     type(Interception), intent(in) :: intcp
       !! Canopy interception
     class(SolarRadiation), intent(in) :: model_solrad
     class(Potential_ET), intent(in) :: model_potet
+    class(Transpiration), intent(in) :: model_transp
 
     ! Local Variables
     integer(i32) :: chru
     integer(i32) :: idx1D
     integer(i32) :: j
-    integer(i32) :: k
     integer(i32) :: niteda
     real(r32) :: cals
     real(r32) :: cec
@@ -218,8 +216,6 @@ contains
     real(r32) :: trd
     real(r64) :: dpt1
     real(r64) :: dpt_before_settle
-
-    real(r32), pointer, contiguous :: snarea_curve_2d(:,:)
 
     !***********************************************************************
     associate(nhru => ctl_data%nhru%value, &
@@ -245,12 +241,11 @@ contains
               emis_noppt => param_data%emis_noppt%values, &
               freeh2o_cap => param_data%freeh2o_cap%values, &
               hru_area => param_data%hru_area%values, &
-              hru_deplcrv => param_data%hru_deplcrv%values, &
               hru_type => param_data%hru_type%values, &
               melt_force => param_data%melt_force%values, &
               melt_look => param_data%melt_look%values, &
               rad_trncf => param_data%rad_trncf%values, &
-              ! snarea_curve => param_data%snarea_curve%values, &
+              settle_const => param_data%settle_const%values(1), &
               snarea_thresh => param_data%snarea_thresh%values, &
 
               basin_horad => model_solrad%basin_horad, &
@@ -262,18 +257,16 @@ contains
               pkwater_equiv => model_climate%pkwater_equiv, &
               prmx => model_climate%prmx, &
               pptmix => model_climate%pptmix, &
-              tavgc => model_climate%tavgc, &
-              tmaxc => model_climate%tmaxc, &
-              tminc => model_climate%tminc, &
-              transp_on => model_climate%transp_on, &
+
+              tavg => model_temp%tavg, &
+              tmax => model_temp%tmax, &
+              tmin => model_temp%tmin, &
+
+              transp_on => model_transp%transp_on, &
 
               net_ppt => intcp%net_ppt, &
               net_rain => intcp%net_rain, &
               net_snow => intcp%net_snow)
-
-      ! FIXME: This may not get the correct 2D index because of how the
-      !        snarea_curve is stored.
-      snarea_curve_2d => get_array(param_data%snarea_curve%values, (/11, nhru/))
 
       ! Set the basin totals to 0 (recalculated at the end of the time step)
       this%basin_pk_precip = 0.0_dp
@@ -288,12 +281,28 @@ contains
       ! (used as a cumulative indicator of cloud cover)
       trd = orad / sngl(basin_horad)  ! [dimensionless ratio]
 
+      ! By default, the precipitation added to snowpack, snowmelt,
+      ! and snow evaporation are 0.
+      this%pk_precip = 0.0  ! [inches]
+      this%snowmelt = 0.0  ! [inches]
+      this%snow_evap = 0.0  ! [inches]
+      this%frac_swe = 0.0
+      this%ai = 0.0_dp
+      this%tcal = 0.0
+
+      ! By default, there has not been a mixed event without a snowpack
+      this%pptmix_nopack = 0  ! [flag]
+
+      ! Keep track of the pack water equivalent before it is changed
+      ! by precipitation during this time step.
+      this%pkwater_ante = pkwater_equiv
+
       ! Loop through all the active HRUs, in routing order
       do j=1, active_hrus
-        chru = hru_route_order(j)  ! [counter]
+        chru = hru_route_order(j)
 
         ! Skip the HRU if it is a lake
-        if (hru_type(chru) == 2) CYCLE
+        if (hru_type(chru) == LAKE) cycle
 
         ! 2D index to 1D
         idx1D = (curr_month - 1) * nhru + chru
@@ -313,22 +322,21 @@ contains
 
         ! HRU SET-UP - SET DEFAULT VALUES AND/OR BASE CONDITIONS FOR THIS TIME PERIOD
         !**************************************************************
+        ! ! Keep track of the pack water equivalent before it is changed
+        ! ! by precipitation during this time step.
+        ! this%pkwater_ante(chru) = pkwater_equiv(chru)
 
-        ! Keep track of the pack water equivalent before it is changed
-        ! by precipitation during this time step.
-        this%pkwater_ante(chru) = pkwater_equiv(chru)
+        ! ! By default, the precipitation added to snowpack, snowmelt,
+        ! ! and snow evaporation are 0.
+        ! this%pk_precip(chru) = 0.0  ! [inches]
+        ! this%snowmelt(chru) = 0.0  ! [inches]
+        ! this%snow_evap(chru) = 0.0  ! [inches]
+        ! this%frac_swe(chru) = 0.0
+        ! this%ai(chru) = 0.0_dp
+        ! this%tcal(chru) = 0.0
 
-        ! By default, the precipitation added to snowpack, snowmelt,
-        ! and snow evaporation are 0.
-        this%pk_precip(chru) = 0.0  ! [inches]
-        this%snowmelt(chru) = 0.0  ! [inches]
-        this%snow_evap(chru) = 0.0  ! [inches]
-        this%frac_swe(chru) = 0.0
-        this%ai(chru) = 0.0_dp
-        this%tcal(chru) = 0.0
-
-        ! By default, there has not been a mixed event without a snowpack
-        this%pptmix_nopack(chru) = 0  ! [flag]
+        ! ! By default, there has not been a mixed event without a snowpack
+        ! this%pptmix_nopack(chru) = 0  ! [flag]
 
         ! If the day of the water year is beyond the forced melt day indicated by
         ! the parameter, then set the flag indicating melt season
@@ -341,19 +349,34 @@ contains
         ! season indicated by the parameter, then set the flag indicating to watch
         ! for melt season.
         ! TODO: rsr, need to rethink this at some point
-          if (day_of_year == melt_look(chru)) this%mso(chru) = 2  ! [flag]
+        if (day_of_year == melt_look(chru)) this%mso(chru) = 2  ! [flag]
 
-        ! Skip the HRU if there is no snowpack and no new snow
-        if (pkwater_equiv(chru) < DNEARZERO .and. newsnow(chru) == 0) then
-          this%snowcov_area(chru) = 0.0  ! reset to be sure it is zero if snowpack melted on last timestep
-          CYCLE
+
+        if (pkwater_equiv(chru) < DNEARZERO) then
+          ! No existing snowpack
+          if (newsnow(chru) == 0) then
+            ! Skip the HRU if there is no snowpack and no new snow
+            ! Reset to be sure it is zero if snowpack melted on last timestep.
+            this%snowcov_area(chru) = 0.0
+            cycle
+          elseif (newsnow(chru) == 1) then
+            ! We have new snow; the initial snow-covered area is complete (1)
+            this%snowcov_area(chru) = 1.0  ! [fraction of area]
+          endif
         endif
 
-        ! If there is no existing snow pack and there is new snow, the
-        ! initial snow covered area is complete (1)
-        if (newsnow(chru) == 1 .and. pkwater_equiv(chru) < DNEARZERO) then
-          this%snowcov_area(chru) = 1.0  ! [fraction of area]
-        endif
+        ! ! Skip the HRU if there is no snowpack and no new snow
+        ! if (pkwater_equiv(chru) < DNEARZERO .and. newsnow(chru) == 0) then
+        !   ! Reset to be sure it is zero if snowpack melted on last timestep.
+        !   this%snowcov_area(chru) = 0.0
+        !   cycle
+        ! endif
+        !
+        ! ! If there is no existing snow pack and there is new snow, the
+        ! ! initial snow covered area is complete (1)
+        ! if (newsnow(chru) == 1 .and. pkwater_equiv(chru) < DNEARZERO) then
+        !   this%snowcov_area(chru) = 1.0  ! [fraction of area]
+        ! endif
 
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
@@ -362,36 +385,35 @@ contains
         ! If there is net precipitation on an existing snowpack, OR if there is
         ! any net snow, add the incoming water (or ice) and heat (or heat deficit)
         ! to the snowpack.
+        ! WARNING: pan - wouldn't this be pkwater_equiv > DNEARZERO?
         if ((pkwater_equiv(chru) > 0.0_dp .and. net_ppt(chru) > 0.0) .or. net_snow(chru) > 0.0) then
-          call this%ppt_to_pack(model_climate, curr_month, chru, ctl_data, param_data, intcp)
+          call this%ppt_to_pack(model_climate, curr_month, chru, ctl_data, param_data, intcp, model_temp)
         endif
 
-        ! If there is still a snowpack
         if (pkwater_equiv(chru) > 0.0_dp) then
+          ! If there is still a snowpack
+
           ! HRU STEP 2 - CALCULATE THE NEW SNOW COVERED AREA
           !**********************************************************
           ! Compute snow-covered area from depletion curve
-          k = hru_deplcrv(chru)
 
-          ! calculate the new snow covered area
+          ! Calculate the new snow covered area
           call this%snowcov(chru, ctl_data, param_data, model_climate, intcp)
 
           ! HRU STEP 3 - COMPUTE THE NEW ALBEDO
           !**********************************************************
-
           ! Compute albedo if there is any snowpack
           call this%snalbedo(param_data, model_climate, intcp, chru)
 
           ! HRU STEP 4 - DETERMINE RADIATION FLUXES AND SNOWPACK
           !              STATES NECESSARY FOR ENERGY BALANCE
           !**********************************************************
-
           ! Set the emissivity of the air to the emissivity when there
           ! is no precipitation
           emis = emis_noppt(chru)  ! [fraction of radiation]
 
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
-          ! temparature is halfway between the minimum and average temperature for the day
+          ! Temperature is halfway between the minimum and average temperature for the day
           ! temp = (tminc(chru)+tavgc(chru))*0.5
           ! emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
 
@@ -407,13 +429,14 @@ contains
           swn = swrad(chru) * (1.0 - this%albedo(chru)) * rad_trncf(chru)  ! [cal/cm^2] or [Langleys]
 
           ! Set the convection-condensation for a half-day interval
-          cec = cecn_coef(idx1D) * 0.5  ! [cal/(cm^2 degC)] or [Langleys / degC]
-          ! cec = cecn_coef(chru, curr_month) * 0.5  ! [cal/(cm^2 degC)] or [Langleys / degC]
+          cec = cecn_coef(idx1D) * 0.5  ! [cal/(cm^2 degC)] or [Langleys/degC]
 
           ! If the land cover is trees, reduce the convection-condensation
           ! parameter by half
-          if (cov_type(chru) > 2) cec = cec * 0.5  ! [cal/(cm^2 degC)] RSR: cov_type=4 is valid for trees (coniferous)
-                                                   ! or [Langleys / degC]
+          if (cov_type(chru) > 2) then
+            ! RSR: cov_type==4 is valid for trees (coniferous)
+            cec = cec * 0.5  ! [cal/(cm^2 degC)] or [Langleys/degC]
+          endif
 
           ! Calculate the new snow depth (Riley et al. 1973)
           ! RSR: the following 3 lines of code were developed by Rob Payn, 7/10/2013
@@ -421,7 +444,7 @@ contains
           ! the new net snow.
           this%pss(chru) = this%pss(chru) + dble(net_snow(chru))  ! [inches]
           dpt_before_settle = this%pk_depth(chru) + dble(net_snow(chru)) * this%deninv
-          dpt1 = dpt_before_settle + this%settle_const_dble * ((this%pss(chru) * this%denmaxinv) - dpt_before_settle)
+          dpt1 = dpt_before_settle + dble(settle_const) * ((this%pss(chru) * this%denmaxinv) - dpt_before_settle)
 
           ! RAPCOMMENT - CHANGED TO THE APPROPRIATE FINITE DIFFERENCE APPROXIMATION OF SNOW DEPTH
           this%pk_depth(chru) = dpt1  ! [inches]
@@ -491,9 +514,9 @@ contains
           ! No shortwave (solar) radiation at night.
           sw = 0.0  ! [cal / cm^2] or [Langleys]
 
-          ! Temparature is halfway between the minimum and average temperature
+          ! Temperature is halfway between the minimum and average temperature
           ! for the day.
-          temp = (tminc(chru) + tavgc(chru)) * 0.5
+          temp = (tmin(chru) + tavg(chru)) * 0.5
 
           ! Calculate the night time energy balance
           call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
@@ -512,7 +535,7 @@ contains
 
             ! Temperature is halfway between the maximum and average temperature
             ! for the day.
-            temp = (tmaxc(chru) + tavgc(chru)) * 0.5  ! [degrees C]
+            temp = (tmax(chru) + tavg(chru)) * 0.5  ! [degrees C]
 
             call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
                               chru, curr_month, niteda, cec, cst, esv, sw, temp, trd)
@@ -660,6 +683,12 @@ contains
     real(r64) :: dif_dble
       !! 64-bit version of dif [cal/cm^2]
 
+    ! this
+    ! iasw(RW), pk_def(RW), pk_den(RW), pk_depth(RW), pk_ice(RW), pk_temp(RW),
+    ! pss(RW), pst(RW), snowmelt(RW),
+
+    ! climate
+    ! pkwater_equiv(RW),
     ! --------------------------------------------------------------------------
     associate(pkwater_equiv => model_climate%pkwater_equiv(chru), &
 
@@ -826,11 +855,17 @@ contains
     real(r32) :: dif
       !! Difference between heat in free water and the heat that can be absorbed by new snow without melting [cal/cm^2]
 
+    ! this
+    ! freeh2o(RW), pk_def(RW), pk_ice(RW), pk_temp(RW)
+
+    ! climate
+    ! pkwater_equiv(RW)
     ! --------------------------------------------------------------------------
     associate(freeh2o => this%freeh2o(chru), &
               pk_def => this%pk_def(chru), &
               pk_ice => this%pk_ice(chru), &
               pk_temp => this%pk_temp(chru), &
+
               pkwater_equiv => model_climate%pkwater_equiv(chru))
 
       ! Loss of heat is handled differently if there is liquid water in the
@@ -841,7 +876,7 @@ contains
 
         ! Heat deficit increases because snow is colder than pack
         ! (minus a negative number = plus).
-        pk_def = pk_def - Cal  ! [cal/cm^2]
+        pk_def = pk_def - cal  ! [cal/cm^2]
       else
         ! (2) Free water exists in pack
 
@@ -862,8 +897,8 @@ contains
 
           ! The calories absorbed by the new snow freezes some of the free water
           ! (increase in ice, decrease in free water).
-          pk_ice = pk_ice + (-Cal / 203.2) ! [inches]
-          freeh2o = freeh2o - (-Cal / 203.2) ! [inches]
+          pk_ice = pk_ice + (-cal / 203.2)  ! [inches]
+          freeh2o = freeh2o - (-cal / 203.2)  ! [inches]
           return
         else ! if ( dif<=0.0 ) then
           ! (1) All free water freezes
@@ -894,7 +929,7 @@ contains
   !***********************************************************************
   ! Subroutine to add rain and/or snow to snowpack
   !***********************************************************************
-  module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp)
+  module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp, model_temp)
     implicit none
 
     class(Snowcomp), intent(inout) :: this
@@ -904,6 +939,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
     type(Interception), intent(in) :: intcp
+    class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
     integer(i32) :: idx1D
@@ -921,10 +957,38 @@ contains
     real(r32) :: tsnow
       !! Snow temperature [degree C]
 
+    ! this
+    ! freeh2o(RW), pk_def(RW), pk_ice(RW), pptmix_nopack(RW), pk_precip(RW), pk_temp(RW),
+
+    ! Control
+    ! nhru,
+
+    ! Climate
+    ! pkwater_equiv(RW), pptmix, tmax_allsnow_c,
+
+    ! Interception
+    ! net_rain, net_snow
+
+    ! Parameters
+    ! freeh2o_cap,
+
+    ! Temperature
+    ! tavg, tmax, tmin,
     !***********************************************************************
     associate(nhru => ctl_data%nhru%value, &
+
+              pkwater_equiv => model_climate%pkwater_equiv, &
+              pptmix => model_climate%pptmix, &
+              tmax_allsnow => model_climate%tmax_allsnow_c, &
+
+              net_rain => intcp%net_rain, &
+              net_snow => intcp%net_snow, &
+
+              tavg => model_temp%tavg, &
+              tmax => model_temp%tmax, &
+              tmin => model_temp%tmin, &
+
               freeh2o_cap => param_data%freeh2o_cap%values)
-              ! pkwater_equiv => model_climate%pkwater_equiv)
 
       ! 2D index to 1D
       idx1D = (month - 1) * nhru + chru
@@ -933,35 +997,35 @@ contains
       ! all rain or snow 2 options below (if-then, else).
 
       ! If there is any snow, the snow temperature is the average temperature.
-      tsnow = model_climate%tavgc(chru)  ! [degrees C]
+      tsnow = tavg(chru)  ! [degrees C]
 
-      if (model_climate%pptmix(chru) == 1) then
+      if (pptmix(chru) == 1) then
         ! (1) If precipitation is mixed...
 
         ! If there is any rain, the rain temperature is halfway between the maximum
         ! temperature and the allsnow temperature.
-        train = (model_climate%tmaxc(chru) + model_climate%tmax_allsnow_c(chru, month)) * 0.5  ! [degrees C]
+        train = (tmax(chru) + tmax_allsnow(chru, month)) * 0.5  ! [degrees C]
 
         ! Temperatures will differ, depending on the presence of existing snowpack.
-        if (model_climate%pkwater_equiv(chru) > 0.0_dp) then
+        if (pkwater_equiv(chru) > 0.0_dp) then
           ! If there is a snowpack, snow temperature is halfway between the minimum
           ! daily temperature and maximum temperature for which all precipitation is snow.
-          tsnow = (model_climate%tminc(chru) + model_climate%tmax_allsnow_c(chru, month)) * 0.5  ! [degrees C]
-        elseif (model_climate%pkwater_equiv(chru) < 0.0_dp) then
+          tsnow = (tmin(chru) + tmax_allsnow(chru, month)) * 0.5  ! [degrees C]
+        elseif (pkwater_equiv(chru) < 0.0_dp) then
           ! If no existing snowpack, snow temperature is the average temperature for the day.
-          model_climate%pkwater_equiv(chru) = 0.0_dp  ! To be sure negative snowpack is ignored
+          pkwater_equiv(chru) = 0.0_dp  ! To be sure negative snowpack is ignored
         endif
       else
         ! (2) If precipitation is all snow or all rain...
 
         ! If there is any rain, the rain temperature is the average temperature.
-        train = model_climate%tavgc(chru)  ! [degrees C]
+        train = tavg(chru)  ! [degrees C]
 
         if (train < NEARZERO) then
           ! If average temperature is close to freezing, the rain temperature is
           ! halfway between the maximum daily temperature and maximum temperature
           ! for which all precipitation is snow.
-          train = (model_climate%tmaxc(chru) + model_climate%tmax_allsnow_c(chru, month)) * 0.5 ! [degrees C]
+          train = (tmax(chru) + tmax_allsnow(chru, month)) * 0.5 ! [degrees C]
         endif
       endif
 
@@ -977,13 +1041,13 @@ contains
       ! Rain can only add to the snowpack if a previous snowpack exists, so rain
       ! or a mixed event is processed differently when a snowpack exists.
       ! 2 options below (if-then, elseif)
-      if (model_climate%pkwater_equiv(chru) > 0.0_dp) then
+      if (pkwater_equiv(chru) > 0.0_dp) then
         ! (1) There is net rain on an existing snowpack...
-        if (intcp%net_rain(chru) > 0.0) then
+        if (net_rain(chru) > 0.0) then
           ! Add rain water to pack (rain on snow) and increment the precipitation
           ! on the snowpack by the rain water.
-          model_climate%pkwater_equiv(chru) = model_climate%pkwater_equiv(chru) + dble(intcp%net_rain(chru))  ! [inches]
-          this%pk_precip(chru) = this%pk_precip(chru) + intcp%net_rain(chru)  ! [inches]
+          pkwater_equiv(chru) = pkwater_equiv(chru) + dble(net_rain(chru))  ! [inches]
+          this%pk_precip(chru) = this%pk_precip(chru) + net_rain(chru)  ! [inches]
 
           ! Incoming rain water carries heat that must be added to the snowpack.
           ! This heat could both warm the snowpack and melt snow. Handling of this
@@ -1011,26 +1075,26 @@ contains
             ! to isothermal at 0 degC or not 3 options below (if-then, elseif, else).
 
             ! (1.1.1) Exactly enough rain to bring pack to isothermal...
-            if (ABS(intcp%net_rain(chru) - pndz) < NEARZERO) then
+            if (ABS(net_rain(chru) - pndz) < NEARZERO) then
               ! Heat deficit and temperature of the snowpack go to 0.
               this%pk_def(chru) = 0.0  ! [cal/cm^2]
               this%pk_temp(chru) = 0.0  ! [degrees C]
 
               ! In the process of giving up its heat, all the net rain freezes and
               ! becomes pack ice.
-              this%pk_ice(chru) = this%pk_ice(chru) + intcp%net_rain(chru)  ! [inches]
+              this%pk_ice(chru) = this%pk_ice(chru) + net_rain(chru)  ! [inches]
 
             ! (1.1.2) Rain not sufficient to bring pack to isothermal...
-            elseif (intcp%net_rain(chru) < pndz) then
+            elseif (net_rain(chru) < pndz) then
               ! The snowpack heat deficit decreases by the heat provided by rain
               ! and a new snowpack temperature is calculated.
               ! 1.27 is the specific heat of ice (0.5 cal/(cm^3 degC))
               ! times the conversion of cm to inches (2.54 cm/in)
-              this%pk_def(chru) = this%pk_def(chru) - (caln * intcp%net_rain(chru))  ! [cal/(in cm^3)]
-              this%pk_temp(chru) = -this%pk_def(chru) / sngl(model_climate%pkwater_equiv(chru) * 1.27_dp)
+              this%pk_def(chru) = this%pk_def(chru) - (caln * net_rain(chru))  ! [cal/(in cm^3)]
+              this%pk_temp(chru) = -this%pk_def(chru) / sngl(pkwater_equiv(chru) * 1.27_dp)
 
               ! All the net rain freezes and becomes pack ice
-              this%pk_ice(chru) = this%pk_ice(chru) + intcp%net_rain(chru)
+              this%pk_ice(chru) = this%pk_ice(chru) + net_rain(chru)
 
             ! (1.1.3) Rain in excess of amount required to bring pack to isothermal...
             else
@@ -1043,11 +1107,11 @@ contains
               ! The rest of the net rain becomes free water in the snowpack.
               ! Note that there cannot be previous freeh2o because the snowpack
               ! had a heat deficit (all water was ice) before this condition was reached.
-              this%freeh2o(chru) = intcp%net_rain(chru) - pndz
+              this%freeh2o(chru) = net_rain(chru) - pndz
 
               ! Calculate the excess heat per area added by the portion of rain
               ! that does not bring the snowpack to isothermal (using specific heat of water)
-              calpr = train * (intcp%net_rain(chru) - pndz) * INCH2CM  ! [cal/cm^2]
+              calpr = train * (net_rain(chru) - pndz) * INCH2CM  ! [cal/cm^2]
 
               ! Add the new heat to the snow pack (the heat in this excess rain
               ! will melt some of the pack ice when the water cools to 0 degC).
@@ -1057,17 +1121,17 @@ contains
           ! (1.2) Rain on snowpack that is isothermal at 0 degC (no heat deficit)...
           else
             ! All net rain is added to free water in the snowpack.
-            this%freeh2o(chru) = this%freeh2o(chru) + intcp%net_rain(chru)
+            this%freeh2o(chru) = this%freeh2o(chru) + net_rain(chru)
 
             ! Calculate the heat per area added by the rain (using specific heat of water).
-            calpr = train * intcp%net_rain(chru) * INCH2CM  ! [cal/cm^2]
+            calpr = train * net_rain(chru) * INCH2CM  ! [cal/cm^2]
 
             ! Add the new heat to the snow pack (the heat in rain will melt some
             ! of the pack ice when the water cools to 0 degC).
             call this%calin(model_climate, ctl_data, param_data, calpr, chru)
           endif
         endif
-      elseif (intcp%net_rain(chru) > 0.0) then
+      elseif (net_rain(chru) > 0.0) then
         ! (2) If there is net rain but no snowpack, set flag for a mix on no snowpack.
 
         ! Be careful with the code here.
@@ -1079,11 +1143,11 @@ contains
 
       ! At this point, the subroutine has handled all conditions where there is
       ! net rain, so if there is net snow (doesn't matter if there is a pack or not)...
-      if (intcp%net_snow(chru) > 0.0) then
+      if (net_snow(chru) > 0.0) then
         ! Add the new snow to the pack water equivalent, precip, and ice
-        model_climate%pkwater_equiv(chru) = model_climate%pkwater_equiv(chru) + dble(intcp%net_snow(chru))
-        this%pk_precip(chru) = this%pk_precip(chru) + intcp%net_snow(chru)
-        this%pk_ice(chru) = this%pk_ice(chru) + intcp%net_snow(chru)
+        pkwater_equiv(chru) = pkwater_equiv(chru) + dble(net_snow(chru))
+        this%pk_precip(chru) = this%pk_precip(chru) + net_snow(chru)
+        this%pk_ice(chru) = this%pk_ice(chru) + net_snow(chru)
 
         ! The temperature of the new snow will determine its effect on snowpack heat deficit
         ! 2 options below (if-then, else)
@@ -1095,14 +1159,14 @@ contains
           ! of the snowpack will be "spread out" among more snow.  Calculate the
           ! snow pack temperature from the heat deficit, specific heat of snow,
           ! and the new total snowpack water content.
-          this%pk_temp(chru) = -this%pk_def(chru) / sngl(model_climate%pkwater_equiv(chru) * 1.27_dp)  ! [degrees C]
+          this%pk_temp(chru) = -this%pk_def(chru) / sngl(pkwater_equiv(chru) * 1.27_dp)  ! [degrees C]
         else
           ! (2) If the new snow is colder than 0 degC...
 
           ! Calculate the amount of heat the new snow will absorb if warming it
           ! to 0C (negative number). This is the negative of the heat deficit of
           ! the new snow.
-          calps = tsnow * intcp%net_snow(chru) * 1.27  ! [cal/cm^2]
+          calps = tsnow * net_snow(chru) * 1.27  ! [cal/cm^2]
 
           ! The heat to warm the new snow can come from different sources
           ! depending on the state of the snowpack.
@@ -1117,7 +1181,7 @@ contains
             ! Heat deficit increases because snow is colder than pack (minus a
             ! negative number = plus) and calculate the new pack temperature.
             this%pk_def(chru) = this%pk_def(chru) - calps  ! [cal/cm^2]
-            this%pk_temp(chru) = -this%pk_def(chru) / sngl(model_climate%pkwater_equiv(chru) * 1.27_dp)  ! [degrees C]
+            this%pk_temp(chru) = -this%pk_def(chru) / sngl(pkwater_equiv(chru) * 1.27_dp)  ! [degrees C]
           endif
         endif
       endif
@@ -1165,6 +1229,7 @@ contains
       ! Calculate the difference in snow covered area represented by next
       ! highest and lowest curve values.
       difx = snarea_curve(idx) - snarea_curve(jdx)
+
       ! Linearly interpolate a snow covered area between those represented by
       ! the next highest and lowest curve values.
       res = snarea_curve(jdx) + dify * difx
@@ -1189,15 +1254,20 @@ contains
     integer(i32) :: l
       !! Number of days (or effective days) since last snowfall [days]
 
+    ! this
+    ! albedo(RW), int_alb(RW), iso, lst(RW), slst(RW), snsv(RW),
     !***********************************************************************
     associate(albset_rna => param_data%albset_rna%values(1), &
               albset_rnm => param_data%albset_rnm%values(1), &
               albset_sna => param_data%albset_sna%values(1), &
               albset_snm => param_data%albset_snm%values(1), &
+
               newsnow => model_climate%newsnow(chru), &
               pptmix => model_climate%pptmix(chru), &
               prmx => model_climate%prmx(chru), &
+
               net_snow => intcp%net_snow(chru), &
+
               albedo => this%albedo(chru), &
               int_alb => this%int_alb(chru), &
               iso => this%iso(chru), &
@@ -1228,14 +1298,14 @@ contains
           ! slst is the number of days (float) since the last new snowfall.
           ! Set the albedo curve back three days from the number of days since
           ! the previous snowfall (see salb assignment below).
-          ! (note that "shallow new snow" indicates new snow that
-          ! is insufficient to completely reset the albedo curve)
-          ! In effect, a shallow new snow sets the albedo curve back
-          ! a few days, rather than resetting it entirely.
-          slst = salb - 3.0 ! [days]
+          ! (note that "shallow new snow" indicates new snow that is insufficient
+          ! to completely reset the albedo curve)
+          ! In effect, a shallow new snow sets the albedo curve back a few days,
+          ! rather than resetting it entirely.
+          slst = salb - 3.0  ! [days]
 
           ! Make sure the number of days since last new snow isn't less than 1.
-          if (slst < 1.0) slst = 1.0 ! [days]
+          if (slst < 1.0) slst = 1.0  ! [days]
 
           if (iso /= 2) then
             ! If not in melt season.
@@ -1248,16 +1318,15 @@ contains
             ! In effect, if there is any new snow, the albedo can only get so
             ! low in accumulation season, even if the new snow is insufficient
             ! to reset albedo entirely.
-            if (slst > 5.0) slst = 5.0 ! [days]
+            if (slst > 5.0) slst = 5.0  ! [days]
           endif
 
           ! Reset the shallow new snow flag and cumulative shallow snow variable (see below).
-          lst = 0 ! [flag]
-          snsv = 0.0 ! [inches]
+          lst = 0  ! [flag]
+          snsv = 0.0  ! [inches]
         endif
       elseif (iso == 2) then
         ! (2) New snow during the melt season
-
         ! RAPCOMMENT - CHANGED TO ISO FROM MSO
 
         ! If there is too much rain in a precipitation mix, albedo will not be reset.
@@ -1498,6 +1567,9 @@ contains
     real(r32) :: ts
       !! [degree C]
 
+    ! this
+    ! pk_def(RW), pk_temp(RW)
+
     ! --------------------------------------------------------------------------
     ! 2D index to 1D
     idx1D = (month - 1) * ctl_data%nhru%value + chru
@@ -1505,20 +1577,15 @@ contains
     associate(freeh2o_cap => param_data%freeh2o_cap%values(chru), &
               tstorm_mo => param_data%tstorm_mo%values(idx1D), &
               emis_noppt => param_data%emis_noppt%values(chru), &
+
               hru_ppt => model_climate%hru_ppt(chru), &
-              canopy_covden => intcp%canopy_covden(chru), &
-              freeh2o => this%freeh2o(chru), &
-              iasw => this%iasw(chru), &
-              pk_def => this%pk_def(chru), &
-              pk_den => this%pk_den(chru), &
-              pk_depth => this%pk_depth(chru), &
-              pk_ice => this%pk_ice(chru), &
-              pk_temp => this%pk_temp(chru), &
               pkwater_equiv => model_climate%pkwater_equiv(chru), &
-              pss => this%pss(chru), &
-              pst => this%pst(chru), &
-              snowcov_area => this%snowcov_area(chru), &
-              snowmelt => this%snowmelt(chru))
+
+              canopy_covden => intcp%canopy_covden(chru), &
+
+              pk_def => this%pk_def(chru), &
+              pk_temp => this%pk_temp(chru))
+
       !***********************************************************************
       ! Calculate the potential long wave energy from air based on temperature
       ! (assuming perfect black-body emission).
@@ -1609,7 +1676,7 @@ contains
       if (ts >= 0.0) then
         if (cal > 0.0) then
           call this%calin(model_climate, ctl_data, param_data, cal, chru)
-          RETURN
+          return
         endif
       endif
 
@@ -1756,16 +1823,24 @@ contains
     real(r32), pointer :: snarea_curve_2d(:, :)
       !! Pointer to 2D version of 1D snarea_curve
 
+    ! this
+    ! ai(RW), frac_swe(RW), iasw(RW), pksv(RW), scrv(RW), snowcov_area(RW),
+    ! snowcov_areasv(RW),
+
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              hru_deplcrv => param_data%hru_deplcrv%values, &
               snarea_curve => param_data%snarea_curve%values, &
               snarea_thresh => param_data%snarea_thresh%values(chru), &
+
               net_snow => intcp%net_snow(chru), &
+
+              newsnow => model_climate%newsnow(chru), &
+              pkwater_equiv => model_climate%pkwater_equiv(chru), &
+
               ai => this%ai(chru), &
               frac_swe => this%frac_swe(chru), &
               iasw => this%iasw(chru), &
-              newsnow => model_climate%newsnow(chru), &
-              pkwater_equiv => model_climate%pkwater_equiv(chru), &
               pksv => this%pksv(chru), &
               pst => this%pst(chru), &
               scrv => this%scrv(chru), &
@@ -1779,7 +1854,8 @@ contains
       snowcov_area_ante = snowcov_area
 
       ! Reset snowcover area to the maximum
-      snowcov_area = snarea_curve_2d(11, chru)  ! [fraction of area]
+      ! snowcov_area = snarea_curve_2d(11, chru)  ! [fraction of area]
+      snowcov_area = snarea_curve_2d(11, hru_deplcrv(chru))  ! [fraction of area]
 
       ! Track the maximum pack water equivalent for the current snow pack.
       if (pkwater_equiv > pst) pst = pkwater_equiv  ! [inches]
@@ -1923,7 +1999,8 @@ contains
         ! snow covered area curve.  So at this point it must interpolate between
         ! points on the snow covered area curve (not the same as interpolating
         ! between 100% and the previous spot on the snow area depletion curve).
-        snowcov_area = this%sca_deplcrv(snarea_curve_2d(1:11, chru), frac_swe)
+        snowcov_area = this%sca_deplcrv(snarea_curve_2d(1:11, hru_deplcrv(chru)), frac_swe)
+
         ! call this%sca_deplcrv(snowcov_area, snarea_curve, frac_swe)
       endif
     end associate
@@ -1953,18 +2030,30 @@ contains
     real(r32) :: ez
       !! Amount of evaporation affecting the snowpack [inches]
 
+    ! this
+    ! freeh2o(RW), pk_def(RW), pk_ice(RW), pk_temp(RW), snow_evap(RW),
+    ! snowcov_area,
+
+    ! climate
+    ! pkwater_equiv(RW),
+
     ! --------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
+
               potet_sublim => param_data%potet_sublim%values(chru), &
+
               potet => model_potet%potet(chru), &
+
               hru_intcpevap => intcp%hru_intcpevap(chru), &
+
+              pkwater_equiv => model_climate%pkwater_equiv(chru), &
+
               freeh2o => this%freeh2o(chru), &
               snow_evap => this%snow_evap(chru), &
               snowcov_area => this%snowcov_area(chru), &
               pk_def => this%pk_def(chru), &
               pk_ice => this%pk_ice(chru), &
-              pk_temp => this%pk_temp(chru), &
-              pkwater_equiv => model_climate%pkwater_equiv(chru))
+              pk_temp => this%pk_temp(chru))
 
       ! ***********************************************************************
       ! The amount of evaporation affecting the snowpack is the total
@@ -1985,7 +2074,7 @@ contains
         ! Set the evaporation to the pack water equivalent and set all snowpack
         ! variables to no-snowpack values.
         snow_evap = sngl(pkwater_equiv)  ! [inches]
-        pkwater_equiv = 0.0D0  ! [inches]
+        pkwater_equiv = 0.0_dp  ! [inches]
         pk_ice = 0.0  ! [inches]
         pk_def = 0.0  ! [cal/cm^2]
         freeh2o = 0.0  ! [inches]

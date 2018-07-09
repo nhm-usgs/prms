@@ -8,7 +8,9 @@ module PRMS_SNOW
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
+  use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_TRANSPIRATION, only: Transpiration
   implicit none
 
   private
@@ -28,9 +30,9 @@ module PRMS_SNOW
   type Snowcomp
     integer(i32), allocatable :: int_alb(:)
       !! Flag to indicate: 1) accumlation season curve; 2) use of the melt season curve [flag]
-    real(r64) :: deninv
-    real(r64) :: denmaxinv
-    real(r64) :: settle_const_dble
+    real(r64), private :: deninv
+    real(r64), private :: denmaxinv
+    ! real(r64) :: settle_const_dble
     !     real(r32), SAVE :: Setden, Set1
 
     real(r32) :: acum(MAXALB)
@@ -94,8 +96,6 @@ module PRMS_SNOW
       !! Density of the snowpack on each HRU [fraction of depth]
     real(r32), allocatable :: pk_def(:)
       !! Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degreees Celsius [cal/cm^2]
-    ! real(r64), allocatable :: pkwater_equiv(:)
-      !! Snowpack water equivalent on each HRU
     real(r32), allocatable :: pk_ice(:)
       !! Storage of frozen water in the snowpack on each HRU [inches]
     real(r32), allocatable :: freeh2o(:)
@@ -151,7 +151,7 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, intcp, model_solrad, model_potet)
+    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_temp, intcp, model_solrad, model_potet, model_transp)
         class(Snowcomp), intent(inout) :: this
           !! Snowcomp class
         type(Climateflow), intent(inout) :: model_climate
@@ -164,10 +164,12 @@ module PRMS_SNOW
           !! Time
         type(Basin), intent(in) :: model_basin
           !! Basin
+        class(Temperature), intent(in) :: model_temp
         type(Interception), intent(in) :: intcp
           !! Canopy interception
         class(SolarRadiation), intent(in) :: model_solrad
         class(Potential_ET), intent(in) :: model_potet
+        class(Transpiration), intent(in) :: model_transp
       end subroutine
   end interface
 
@@ -192,7 +194,7 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp)
+    module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp, model_temp)
       class(Snowcomp), intent(inout) :: this
       type(Climateflow), intent(inout) :: model_climate
       integer(i32), intent(in) :: month
@@ -200,6 +202,7 @@ module PRMS_SNOW
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Interception), intent(in) :: intcp
+      class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface
 
