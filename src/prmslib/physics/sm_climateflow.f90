@@ -70,10 +70,10 @@ contains
       ! allocate(this%potet(nhru))
       allocate(this%prmx(nhru))
       ! allocate(this%swrad(nhru))
-      allocate(this%tavgf(nhru), this%tavgc(nhru))
-      allocate(this%tmaxf(nhru), this%tmaxc(nhru))
-      allocate(this%tminf(nhru), this%tminc(nhru))
-      allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
+      ! allocate(this%tavgf(nhru), this%tavgc(nhru))
+      ! allocate(this%tmaxf(nhru), this%tmaxc(nhru))
+      ! allocate(this%tminf(nhru), this%tminc(nhru))
+      ! allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
 
       ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
       !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
@@ -89,6 +89,8 @@ contains
       !   endif
       ! endif
 
+      allocate(this%tmax_allrain(nhru, 12))
+      allocate(this%tmax_allrain_c(nhru, 12))
       allocate(this%tmax_allrain_f(nhru, 12))
       allocate(this%tmax_allsnow_c(nhru, 12))
       allocate(this%tmax_allsnow_f(nhru, 12))
@@ -96,30 +98,20 @@ contains
 
       allocate(this%newsnow(nhru))
       allocate(this%pptmix(nhru))
-      allocate(this%transp_on(nhru))
 
-      allocate(this%tdiff_arr(nhru))
-
-      if (ctl_data%et_module%values(1)%s == 'potet_pt' .or. &
-          ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
-          ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
-        allocate(this%tempc_dewpt(nhru))
-        allocate(this%vp_actual(nhru))
-        allocate(this%lwrad_net(nhru))
-        allocate(this%vp_slope(nhru))
-
-        this%tempc_dewpt = 0.0
-        this%vp_actual = 0.0
-        this%lwrad_net = 0.0
-        this%vp_slope = 0.0
-      endif
-
-      if (ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
-          ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
-        allocate(this%vp_sat(nhru))
-
-        this%vp_sat = 0.0
-      endif
+      ! if (ctl_data%et_module%values(1)%s == 'potet_pt' .or. &
+      !     ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
+      !     ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
+      !   allocate(this%tempc_dewpt(nhru))
+      !   allocate(this%vp_actual(nhru))
+      !   allocate(this%lwrad_net(nhru))
+      !   allocate(this%vp_slope(nhru))
+      !
+      !   this%tempc_dewpt = 0.0
+      !   this%vp_actual = 0.0
+      !   this%lwrad_net = 0.0
+      !   this%vp_slope = 0.0
+      ! endif
 
       ! Snow
       allocate(this%pkwater_equiv(nhru))
@@ -143,16 +135,6 @@ contains
       !     ctl_data%stream_temp_flag%value == 1) then
       !   allocate(this%cloud_cover_hru(nhru))
       ! endif
-
-      ! TODO: Figure out how to check this correctly
-      ! if (any(['ddsolrad', 'ccsolrad']==ctl_data%solrad_module%values(1)%s) .or. &
-      !     ctl_data%model_mode == 'DOCUMENTATION') then
-        ! allocate(this%orad_hru(nhru))
-        ! this%orad_hru = 0.0
-      ! endif
-
-
-
 
       if (init_vars_from_file == 1) then
         ! read(rst_unit) modname_rst
@@ -186,23 +168,20 @@ contains
         this%hru_ppt = 0.0
         this%hru_rain = 0.0
         this%hru_snow = 0.0
-        ! this%potet = 0.0
         this%prmx = 0.0
         this%solrad_tmax = 0.0
         this%solrad_tmin = 0.0
-        ! this%swrad = 0.0
-        this%tavgc = 0.0
-        this%tavgf = 0.0
-        this%tmax_hru = 0.0
-        this%tmaxc = 0.0
-        this%tmaxf = 0.0
-        this%tmin_hru = 0.0
-        this%tminc = 0.0
-        this%tminf = 0.0
+        ! this%tavgc = 0.0
+        ! this%tavgf = 0.0
+        ! this%tmax_hru = 0.0
+        ! this%tmaxc = 0.0
+        ! this%tmaxf = 0.0
+        ! this%tmin_hru = 0.0
+        ! this%tminc = 0.0
+        ! this%tminf = 0.0
 
         this%pptmix = 0
         this%newsnow = 0
-        this%transp_on = 0
 
         ! ------------------------------------------------------------------------
         ! Set tmax_allrain in units of the input values
@@ -212,6 +191,7 @@ contains
           this%tmax_allsnow_f = reshape(tmax_allsnow, shape(this%tmax_allsnow_f))
 
           this%tmax_allrain_f = tmax_allsnow_2d + tmax_allrain_offset_2d
+          this%tmax_allrain_c = f_to_c(this%tmax_allrain_f)
           this%tmax_allsnow_c = f_to_c(tmax_allsnow_2d)
 
           this%tmax_allrain = this%tmax_allrain_f
@@ -223,6 +203,7 @@ contains
           this%tmax_allsnow_f = c_to_f(tmax_allsnow_2d)
 
           this%tmax_allrain = tmax_allsnow_2d + tmax_allrain_offset_2d
+          this%tmax_allrain_c = this%tmax_allrain
           this%tmax_allrain_f = c_to_f(this%tmax_allrain)
         endif
       endif
@@ -291,158 +272,290 @@ contains
   end function
 
 
-  module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, &
-                                           month, rain_adj, snow_adj, rainmix_adj)
-    use prms_constants, only: NEARZERO, INCHES, MM, MM2INCH
-    implicit none
+    module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, model_temp, &
+                                             month, rain_adj, snow_adj, rainmix_adj)
+      use prms_constants, only: NEARZERO, INCHES, MM, MM2INCH
+      implicit none
 
-    class(Climateflow), intent(inout) :: this
-    type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
-    type(Basin), intent(in) :: model_basin
-    integer(i32), intent(in) :: month
-    real(r32), optional, intent(in) :: rain_adj(:)
-      !! Array of rain adjustments
-    real(r32), optional, intent(in) :: snow_adj(:)
-      !! Array of snow adjustments
-    real(r32), optional, intent(in) :: rainmix_adj(:)
-      !! Array of rain mixture adjustments
+      class(Climateflow), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
+      integer(i32), intent(in) :: month
+      real(r32), optional, intent(in) :: rain_adj(:)
+        !! Array of rain adjustments
+      real(r32), optional, intent(in) :: snow_adj(:)
+        !! Array of snow adjustments
+      real(r32), optional, intent(in) :: rainmix_adj(:)
+        !! Array of rain mixture adjustments
 
-    ! -------------------------------------------------------------------------
-    this%tdiff_arr = this%tmaxf - this%tminf
-    where (abs(this%tdiff_arr) < NEARZERO)
-      this%tdiff_arr = 0.0001
-    end where
+      ! Local variables
+      ! real(r32), allocatable :: tdiff_arr(:)
+        !! Array containing differences b/t tmaxf and tminf
+      real(r32) :: tdiff
 
-    ! Convert precipitation to inches if required
-    if (param_data%precip_units%values(1) == MM) then
-      where (this%hru_ppt > 0.0) this%hru_ppt = this%hru_ppt * MM2INCH
-    endif
+      integer(i32) :: chru
+      integer(i32) :: ii
 
-    associate(basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => param_data%hru_area%values)
+      ! Control
+      ! nhru,
 
-      ! Basin precipitation before any adjustments
-      this%basin_obs_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
+      ! Parameters
+      ! hru_area, precip_units,
 
-      !******Initialize HRU variables
-      this%pptmix = 0
-      this%newsnow = 0
-      this%prmx = 0.0
-      this%hru_rain = 0.0
-      this%hru_snow = 0.0
+      ! Basin
+      ! active_hrus, basin_area_inv, hru_route_order,
 
-      ! TODO: how to handle tmax_allsnow_f??
-      where (this%tmaxf <= this%tmax_allsnow_f(:, month))
-        this%hru_ppt = this%hru_ppt * snow_adj
-        this%hru_snow = this%hru_ppt
-        this%newsnow = 1
-      elsewhere (this%tminf > this%tmax_allsnow_f(:, month) .or. &
-                 this%tmaxf >= this%tmax_allrain_f(:, month))
-        this%hru_ppt = this%hru_ppt * rain_adj
-        this%hru_rain = this%hru_ppt
-        this%prmx = 1.0
-      elsewhere
-        this%prmx = ((this%tmaxf - this%tmax_allsnow_f(:, month)) / this%tdiff_arr) * rainmix_adj
+      ! Temperature
+      ! tmax, tmin
 
-        where (this%prmx < 0.0)
-          this%prmx = 0.0
-        end where
+      ! -------------------------------------------------------------------------
+      associate(nhru => ctl_data%nhru%value, &
 
-        where (this%prmx < 1.0)
-          this%pptmix = 1
-          this%hru_ppt = this%hru_ppt * snow_adj
-          this%hru_rain = this%prmx * this%hru_ppt
-          this%hru_snow = this%hru_ppt - this%hru_rain
-          this%newsnow = 1
-        elsewhere
-          this%hru_ppt = this%hru_ppt * rain_adj
-          this%hru_rain = this%hru_ppt
-          this%prmx = 1.0
-        end where
-      end where
+                active_hrus => model_basin%active_hrus, &
+                basin_area_inv => model_basin%basin_area_inv, &
+                hru_route_order => model_basin%hru_route_order, &
 
-      this%basin_ppt = sum(DBLE(this%hru_ppt * hru_area)) * basin_area_inv
-      this%basin_rain = sum(DBLE(this%hru_rain * hru_area)) * basin_area_inv
-      this%basin_snow = sum(DBLE(this%hru_snow * hru_area)) * basin_area_inv
-    end associate
-  end subroutine
+                hru_area => param_data%hru_area%values, &
+                precip_units => param_data%precip_units%values(1), &
+
+                tmax => model_temp%tmax, &
+                tmin => model_temp%tmin, &
+
+                ! WARNING: This will change when tmax_allsnow and tmax_allrain
+                !          are standardized to Celsius.
+                tmax_allrain => this%tmax_allrain_c, &
+                tmax_allsnow => this%tmax_allsnow_c)
+
+        ! Basin precipitation before any adjustments
+        this%basin_obs_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
+
+        do ii=1, active_hrus
+          chru = hru_route_order(ii)
+
+          if (this%hru_ppt(chru) > 0.0) then
+
+            if (tmax(chru) <= tmax_allsnow(chru, month)) then
+              this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+              this%hru_snow(chru) = this%hru_ppt(chru)
+              this%newsnow(chru) = 1
+            elseif (tmin(chru) > tmax_allsnow(chru, month) .or. tmax(chru) >= tmax_allrain(chru, month)) then
+              this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+              this%hru_rain(chru) = this%hru_ppt(chru)
+              this%prmx(chru) = 1.0
+            else
+              tdiff = tmax(chru) - tmin(chru)
+
+              if (abs(tdiff) < NEARZERO) tdiff = 0.0001
+
+              this%prmx(chru) = ((tmax(chru) - tmax_allsnow(chru, month)) / tdiff) * rainmix_adj(chru)
+              if (this%prmx(chru) < 0.0) this%prmx(chru) = 0.0
+
+              if (this%prmx(chru) < 1.0) then
+                this%pptmix(chru) = 1
+                this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+                this%hru_rain(chru) = this%prmx(chru) * this%hru_ppt(chru)
+                this%hru_snow(chru) = this%hru_ppt(chru) - this%hru_rain(chru)
+                this%newsnow(chru) = 1
+              else
+                this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+                this%hru_rain(chru) = this%hru_ppt(chru)
+                this%prmx(chru) = 1.0
+              endif
+            endif
+          endif
+        enddo
+
+        this%basin_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
+        this%basin_rain = sum(dble(this%hru_rain * hru_area)) * basin_area_inv
+        this%basin_snow = sum(dble(this%hru_snow * hru_area)) * basin_area_inv
+      end associate
+    end subroutine
+
+  ! module subroutine set_precipitation_form(this, param_data, model_basin, model_temp, &
+  !                                          month, rain_adj, snow_adj, rainmix_adj)
+  !   use prms_constants, only: NEARZERO, INCHES, MM, MM2INCH
+  !   implicit none
+  !
+  !   class(Climateflow), intent(inout) :: this
+  !   ! type(Control), intent(in) :: ctl_data
+  !   type(Parameters), intent(in) :: param_data
+  !   type(Basin), intent(in) :: model_basin
+  !   class(Temperature), intent(in) :: model_temp
+  !   integer(i32), intent(in) :: month
+  !   real(r32), optional, intent(in) :: rain_adj(:)
+  !     !! Array of rain adjustments
+  !   real(r32), optional, intent(in) :: snow_adj(:)
+  !     !! Array of snow adjustments
+  !   real(r32), optional, intent(in) :: rainmix_adj(:)
+  !     !! Array of rain mixture adjustments
+  !
+  !   ! Local variables
+  !   real(r32), allocatable :: tdiff_arr(:)
+  !     !! Array containing differences b/t tmaxf and tminf
+  !
+  !   ! Control
+  !
+  !   ! Parameters
+  !   ! hru_area, precip_units,
+  !
+  !   ! Basin
+  !   ! basin_area_inv,
+  !
+  !   ! Temperature
+  !   ! tmax, tmin
+  !
+  !   ! -------------------------------------------------------------------------
+  !   associate(basin_area_inv => model_basin%basin_area_inv, &
+  !             hru_area => param_data%hru_area%values, &
+  !             precip_units => param_data%precip_units%values(1), &
+  !
+  !             tmax => model_temp%tmax, &
+  !             tmin => model_temp%tmin, &
+  !
+  !             ! WARNING: This will change when tmax_allsnow and tmax_allrain
+  !             !          are standardized to Celsius.
+  !             tmax_allrain => this%tmax_allrain_c, &
+  !             tmax_allsnow => this%tmax_allsnow_c)
+  !
+  !     ! tdiff_arr = this%tmaxf - this%tminf
+  !     tdiff_arr = tmax - tmin
+  !     where (abs(tdiff_arr) < NEARZERO)
+  !       tdiff_arr = 0.0001
+  !     end where
+  !
+  !     ! Convert precipitation to inches if required
+  !     if (precip_units == MM) then
+  !       where (this%hru_ppt > 0.0) this%hru_ppt = this%hru_ppt * MM2INCH
+  !     endif
+  !
+  !     ! Basin precipitation before any adjustments
+  !     this%basin_obs_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
+  !
+  !     !******Initialize HRU variables
+  !     this%pptmix = 0
+  !     this%newsnow = 0
+  !     this%prmx = 0.0
+  !     this%hru_rain = 0.0
+  !     this%hru_snow = 0.0
+  !
+  !     ! TODO: how to handle tmax_allsnow_f??
+  !     where (tmax <= tmax_allsnow(:, month))
+  !       this%hru_ppt = this%hru_ppt * snow_adj
+  !       this%hru_snow = this%hru_ppt
+  !       this%newsnow = 1
+  !     elsewhere
+  !       where (tmin > tmax_allsnow(:, month) .or. &
+  !              tmax >= tmax_allrain(:, month))
+  !         this%hru_ppt = this%hru_ppt * rain_adj
+  !         this%hru_rain = this%hru_ppt
+  !         this%prmx = 1.0
+  !       elsewhere
+  !         this%prmx = ((tmax - tmax_allsnow(:, month)) / tdiff_arr) * rainmix_adj
+  !
+  !         where (this%prmx < 0.0)
+  !           this%prmx = 0.0
+  !         end where
+  !
+  !         where (this%prmx < 1.0)
+  !           this%pptmix = 1
+  !           this%hru_ppt = this%hru_ppt * snow_adj
+  !           this%hru_rain = this%prmx * this%hru_ppt
+  !           this%hru_snow = this%hru_ppt - this%hru_rain
+  !           this%newsnow = 1
+  !         elsewhere
+  !           this%hru_ppt = this%hru_ppt * rain_adj
+  !           this%hru_rain = this%hru_ppt
+  !           this%prmx = 1.0
+  !         end where
+  !       end where
+  !     end where
+  !
+  !     this%basin_ppt = sum(DBLE(this%hru_ppt * hru_area)) * basin_area_inv
+  !     this%basin_rain = sum(DBLE(this%hru_rain * hru_area)) * basin_area_inv
+  !     this%basin_snow = sum(DBLE(this%hru_snow * hru_area)) * basin_area_inv
+  !   end associate
+  ! end subroutine
 
 
-  !***********************************************************************
-  !     Sets temperatures in both system of units for each HRU
-  !***********************************************************************
-  module subroutine set_temperature(this, ctl_data, param_data, model_basin, tmin_adj, tmax_adj)
-    use prms_constants, only: MINTEMP, MAXTEMP, FAHRENHEIT, CELSIUS
-    use conversions_mod, only: c_to_f, f_to_c
-    implicit none
-
-    class(Climateflow), intent(inout) :: this
-    type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
-    type(Basin), intent(in) :: model_basin
-    real(r32), optional, intent(in) :: tmin_adj(:)
-      !! Array of minimum temperature adjustments
-    real(r32), optional, intent(in) :: tmax_adj(:)
-      !! Array of maximum temperature adjustments
-
-    ! --------------------------------------------------------------------------
-    associate(basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => param_data%hru_area%values)
-
-      if (param_data%temp_units%values(1) == FAHRENHEIT) then
-        if (present(tmax_adj)) then
-          this%tmaxf = this%tmaxf + tmax_adj
-        endif
-
-        if (present(tmin_adj)) then
-          this%tminf = this%tminf + tmin_adj
-        endif
-
-        this%tavgf = (this%tmaxf + this%tminf) * 0.5
-
-        this%tmaxc = f_to_c(this%tmaxf)
-        this%tminc = f_to_c(this%tminf)
-        this%tavgc = f_to_c(this%tavgf)
-
-        ! NOTE: Used by ddsolrad, ccsolrad and frost_date modules.
-        this%tmax_hru = this%tmaxf ! in units temp_units
-        this%tmin_hru = this%tminf ! in units temp_units
-
-        this%basin_temp = sum(dble(this%tavgf * hru_area)) * basin_area_inv
-        this%basin_tmax = sum(dble(this%tmaxf * hru_area)) * basin_area_inv
-        this%basin_tmin = sum(dble(this%tminf * hru_area)) * basin_area_inv
-      else
-        ! degrees Celsius
-        if (present(tmax_adj)) then
-          this%tmaxc = this%tmaxc + tmax_adj
-        endif
-
-        if (present(tmin_adj)) then
-          this%tminc = this%tminc + tmin_adj
-        endif
-
-        this%tavgc = (this%tmaxc + this%tminc) * 0.5
-
-        this%tmaxf = c_to_f(this%tmaxc)
-        this%tminf = c_to_f(this%tminc)
-        this%tavgf = c_to_f(this%tavgc)
-        this%tmax_hru = this%tmaxc ! in units temp_units
-        this%tmin_hru = this%tminc ! in units temp_units
-
-        this%basin_temp = sum(dble(this%tavgc * hru_area)) * basin_area_inv
-        this%basin_tmax = sum(dble(this%tmaxc * hru_area)) * basin_area_inv
-        this%basin_tmin = sum(dble(this%tminc * hru_area)) * basin_area_inv
-      endif
-
-      ! NOTE: Why are separate variables needed for solrad?
-      this%solrad_tmax = real(this%basin_tmax, r32)
-      this%solrad_tmin = real(this%basin_tmin, r32)
-
-      ! if (this%tminf(ihru) < MINTEMP .OR. this%tmaxf(ihru) > MAXTEMP) then
-      !   PRINT *, 'ERROR, invalid temperature value for HRU: ', ihru, this%tminf(ihru), this%tmaxf(ihru) !, ' Date:', Nowyear, Nowmonth, Nowday
-      !   STOP
-      ! endif
-    end associate
-  end subroutine
+  ! !***********************************************************************
+  ! !     Sets temperatures in both system of units for each HRU
+  ! !***********************************************************************
+  ! module subroutine set_temperature(this, ctl_data, param_data, model_basin, tmin_adj, tmax_adj)
+  !   use prms_constants, only: MINTEMP, MAXTEMP, FAHRENHEIT, CELSIUS
+  !   use conversions_mod, only: c_to_f, f_to_c
+  !   implicit none
+  !
+  !   class(Climateflow), intent(inout) :: this
+  !   type(Control), intent(in) :: ctl_data
+  !   type(Parameters), intent(in) :: param_data
+  !   type(Basin), intent(in) :: model_basin
+  !   real(r32), optional, intent(in) :: tmin_adj(:)
+  !     !! Array of minimum temperature adjustments
+  !   real(r32), optional, intent(in) :: tmax_adj(:)
+  !     !! Array of maximum temperature adjustments
+  !
+  !   ! --------------------------------------------------------------------------
+  !   associate(basin_area_inv => model_basin%basin_area_inv, &
+  !             hru_area => param_data%hru_area%values)
+  !
+  !     if (param_data%temp_units%values(1) == FAHRENHEIT) then
+  !       if (present(tmax_adj)) then
+  !         this%tmaxf = this%tmaxf + tmax_adj
+  !       endif
+  !
+  !       if (present(tmin_adj)) then
+  !         this%tminf = this%tminf + tmin_adj
+  !       endif
+  !
+  !       this%tavgf = (this%tmaxf + this%tminf) * 0.5
+  !
+  !       this%tmaxc = f_to_c(this%tmaxf)
+  !       this%tminc = f_to_c(this%tminf)
+  !       this%tavgc = f_to_c(this%tavgf)
+  !
+  !       ! NOTE: Used by ddsolrad, ccsolrad and frost_date modules.
+  !       this%tmax_hru = this%tmaxf ! in units temp_units
+  !       this%tmin_hru = this%tminf ! in units temp_units
+  !
+  !       this%basin_temp = sum(dble(this%tavgf * hru_area)) * basin_area_inv
+  !       this%basin_tmax = sum(dble(this%tmaxf * hru_area)) * basin_area_inv
+  !       this%basin_tmin = sum(dble(this%tminf * hru_area)) * basin_area_inv
+  !     else
+  !       ! degrees Celsius
+  !
+  !       ! WARNING: This won't work because tmax and tmin from the CBH file
+  !       !          are always assumed to be in Fahrenheit.
+  !       if (present(tmax_adj)) then
+  !         this%tmaxc = this%tmaxc + tmax_adj
+  !       endif
+  !
+  !       if (present(tmin_adj)) then
+  !         this%tminc = this%tminc + tmin_adj
+  !       endif
+  !
+  !       this%tavgc = (this%tmaxc + this%tminc) * 0.5
+  !
+  !       this%tmaxf = c_to_f(this%tmaxc)
+  !       this%tminf = c_to_f(this%tminc)
+  !       this%tavgf = c_to_f(this%tavgc)
+  !       this%tmax_hru = this%tmaxc ! in units temp_units
+  !       this%tmin_hru = this%tminc ! in units temp_units
+  !
+  !       this%basin_temp = sum(dble(this%tavgc * hru_area)) * basin_area_inv
+  !       this%basin_tmax = sum(dble(this%tmaxc * hru_area)) * basin_area_inv
+  !       this%basin_tmin = sum(dble(this%tminc * hru_area)) * basin_area_inv
+  !     endif
+  !
+  !     ! NOTE: Why are separate variables needed for solrad?
+  !     this%solrad_tmax = real(this%basin_tmax, r32)
+  !     this%solrad_tmin = real(this%basin_tmin, r32)
+  !
+  !     ! if (this%tminf(ihru) < MINTEMP .OR. this%tmaxf(ihru) > MAXTEMP) then
+  !     !   PRINT *, 'ERROR, invalid temperature value for HRU: ', ihru, this%tminf(ihru), this%tmaxf(ihru) !, ' Date:', Nowyear, Nowmonth, Nowday
+  !     !   STOP
+  !     ! endif
+  !   end associate
+  ! end subroutine
 end submodule
