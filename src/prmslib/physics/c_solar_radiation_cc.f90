@@ -16,6 +16,7 @@ module SOLAR_RADIATION_CC
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_OBS, only: Obs
+  use PRMS_TEMPERATURE, only: Temperature
   use PRMS_SET_TIME, only: Time_t
   implicit none
 
@@ -32,7 +33,7 @@ module SOLAR_RADIATION_CC
     real(r64) :: basin_cloud_cover
     real(r32), allocatable :: cloud_radadj(:)
     real(r32), allocatable :: cloud_cover_hru(:)
-    
+
     contains
       procedure, public :: run => run_Solrad_cc
   end type
@@ -40,7 +41,7 @@ module SOLAR_RADIATION_CC
 
   interface Solrad_cc
     !! Solrad_cc constructor
-    module function constructor_Solrad_cc(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp) result(this)
       type(Solrad_cc) :: this
         !! Solrad_cc class
       type(Control), intent(in) :: ctl_data
@@ -48,6 +49,7 @@ module SOLAR_RADIATION_CC
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
     end function
   end interface
 
