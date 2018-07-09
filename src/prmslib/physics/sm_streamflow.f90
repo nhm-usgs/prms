@@ -125,6 +125,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         this%seg_inflow = 0.0_dp
         this%seg_outflow = 0.0_dp
 
+        this%flow_out = 0.0_dp
         this%flow_headwater = 0.0_dp
         this%flow_in_great_lakes = 0.0_dp
         this%flow_in_nation = 0.0_dp

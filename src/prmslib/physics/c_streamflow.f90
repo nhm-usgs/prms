@@ -25,10 +25,12 @@ module PRMS_STREAMFLOW
       integer(i32), private :: noarea_flag
       real(r64), private :: segment_area
 
-      real(r64), private, allocatable :: hru_outflow(:)
-      real(r64), private, allocatable :: seg_gwflow(:)
-      real(r64), private, allocatable :: seg_sroff(:)
-      real(r64), private, allocatable :: seg_ssflow(:)
+      real(r64) :: flow_out
+        !! Total flow out of model domain
+      real(r64), allocatable :: hru_outflow(:)
+      real(r64), allocatable :: seg_gwflow(:)
+      real(r64), allocatable :: seg_sroff(:)
+      real(r64), allocatable :: seg_ssflow(:)
       real(r64), private, allocatable :: seginc_potet(:)
       real(r64), private, allocatable :: segment_hruarea(:)
 
@@ -70,9 +72,6 @@ module PRMS_STREAMFLOW
         !! Basin area-weighted average lateral flow entering the stream network
       real(r64) :: basin_stflow_out
         !! Basin area-weighted average streamflow leaving through the stream network
-
-
-
         !! basin_sum, muskingum, muskingum_lake
       real(r64), public :: flow_headwater
         !! muskingum, muskingum_lake, strmflow_in_out
@@ -96,7 +95,6 @@ module PRMS_STREAMFLOW
         !! muskingum, muskingum_lake, strmflow_in_out
       real(r64), public :: flow_to_ocean
         !! muskingum, muskingum_lake, strmflow_in_out
-
 
       real(r64), public, allocatable :: seginc_gwflow(:)
         !! stream_temp
