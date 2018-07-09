@@ -10,7 +10,12 @@ MODULE PRMS_NHRU_SUMMARY
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
+  use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
+  use PRMS_SNOW, only: Snowcomp
+  use PRMS_STREAMFLOW, only: Streamflow
+  use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_TRANSPIRATION, only: Transpiration
   use SOLAR_RADIATION, only: SolarRadiation
   implicit none
 
@@ -67,14 +72,22 @@ MODULE PRMS_NHRU_SUMMARY
   end interface
 
   interface
-    module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, climate, model_solrad, model_potet)
+    module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, &
+                                       climate, model_intcp, model_potet, model_snow, &
+                                       model_solrad, model_streamflow, model_temp, &
+                                       model_transp)
       class(Nhru_summary), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Time_t), intent(in) :: model_time
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: climate
-      class(SolarRadiation), intent(in) :: model_solrad
+      class(Interception), intent(in) :: model_intcp
       class(Potential_ET), intent(in) :: model_potet
+      type(Snowcomp), intent(in) :: model_snow
+      class(SolarRadiation), intent(in) :: model_solrad
+      class(Streamflow), intent(in) :: model_streamflow
+      class(Temperature), intent(in) :: model_temp
+      class(Transpiration), intent(in) :: model_transp
     end subroutine
   end interface
 

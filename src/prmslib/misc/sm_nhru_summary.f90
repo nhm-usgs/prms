@@ -165,7 +165,11 @@ contains
   !***********************************************************************
   !     Output set of declared variables in R compatible format
   !***********************************************************************
-  module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, climate, model_solrad, model_potet)
+  module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, &
+                                     climate, model_intcp, model_potet, model_snow, &
+                                     model_solrad, model_streamflow, model_temp, &
+                                     model_transp)
+    use conversions_mod, only: c_to_f
     implicit none
 
     class(Nhru_summary), intent(inout) :: this
@@ -173,8 +177,13 @@ contains
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(in) :: climate
-    class(SolarRadiation), intent(in) :: model_solrad
+    class(Interception), intent(in) :: model_intcp
     class(Potential_ET), intent(in) :: model_potet
+    type(Snowcomp), intent(in) :: model_snow
+    class(SolarRadiation), intent(in) :: model_solrad
+    class(Streamflow), intent(in) :: model_streamflow
+    class(Temperature), intent(in) :: model_temp
+    class(Transpiration), intent(in) :: model_transp
 
     ! FUNCTIONS AND SUBROUTINES
     INTRINSIC SNGL, DBLE
@@ -220,35 +229,69 @@ contains
       do concurrent(jj=1: nhruOutVars)
       ! do jj = 1, nhruOutVars
         select case(nhruOutVar_names(jj)%s)
-
+          !
+          case('freeh2o')
+            this%nhru_var_daily(:, jj) = model_snow%freeh2o
+          case('hru_intcpevap')
+            this%nhru_var_daily(:, jj) = model_intcp%hru_intcpevap
+          case('hru_intcpstor')
+            this%nhru_var_daily(:, jj) = model_intcp%hru_intcpstor
+          case('hru_outflow')
+            this%nhru_var_daily(:, jj) = sngl(model_streamflow%hru_outflow)
           case('hru_ppt')
             this%nhru_var_daily(:, jj) = climate%hru_ppt
           case('hru_rain')
             this%nhru_var_daily(:, jj) = climate%hru_rain
           case('hru_snow')
             this%nhru_var_daily(:, jj) = climate%hru_snow
+          case('net_ppt')
+            this%nhru_var_daily(:, jj) = model_intcp%net_ppt
+          case('net_rain')
+            this%nhru_var_daily(:, jj) = model_intcp%net_rain
+          case('net_snow')
+            this%nhru_var_daily(:, jj) = model_intcp%net_snow
+          case('pkwater_equiv')
+            this%nhru_var_daily(:, jj) = sngl(climate%pkwater_equiv)
+          case('pk_def')
+            this%nhru_var_daily(:, jj) = model_snow%pk_def
+          case('pk_ice')
+            this%nhru_var_daily(:, jj) = model_snow%pk_ice
           case('potet')
             this%nhru_var_daily(:, jj) = model_potet%potet
           case('prmx')
             this%nhru_var_daily(:, jj) = climate%prmx
+          case('snow_evap')
+            this%nhru_var_daily(:, jj) = model_snow%snow_evap
+          case('snowcov_area')
+            this%nhru_var_daily(:, jj) = model_snow%snowcov_area
+          case('snowmelt')
+            this%nhru_var_daily(:, jj) = model_snow%snowmelt
           case('swrad')
             this%nhru_var_daily(:, jj) = model_solrad%swrad
-          case('tavgc')
-            this%nhru_var_daily(:, jj) = climate%tavgc
+          case('tavg')
+            this%nhru_var_daily(:, jj) = model_temp%tavg
+          case('tmax')
+            this%nhru_var_daily(:, jj) = model_temp%tmax
+          case('tmin')
+            this%nhru_var_daily(:, jj) = model_temp%tmin
+          ! case('tavgc')
+          !   this%nhru_var_daily(:, jj) = climate%tavgc
           case('tavgf')
-            this%nhru_var_daily(:, jj) = climate%tavgf
-          case('tmaxc')
-            this%nhru_var_daily(:, jj) = climate%tmaxc
+            this%nhru_var_daily(:, jj) = c_to_f(model_temp%tavg)
           case('tmaxf')
-            this%nhru_var_daily(:, jj) = climate%tmaxf
-          case('tminc')
-            this%nhru_var_daily(:, jj) = climate%tminc
+            this%nhru_var_daily(:, jj) = c_to_f(model_temp%tmax)
           case('tminf')
-            this%nhru_var_daily(:, jj) = climate%tminf
-          case('tmax_hru')
-            this%nhru_var_daily(:, jj) = climate%tmax_hru
-          case('tmin_hru')
-            this%nhru_var_daily(:, jj) = climate%tmin_hru
+            this%nhru_var_daily(:, jj) = c_to_f(model_temp%tmin)
+          case('transp_on')
+            this%nhru_var_daily(:, jj) = model_transp%transp_on
+          ! case('tminc')
+          !   this%nhru_var_daily(:, jj) = climate%tminc
+          ! case('tminf')
+          !   this%nhru_var_daily(:, jj) = climate%tminf
+          ! case('tmax_hru')
+          !   this%nhru_var_daily(:, jj) = climate%tmax_hru
+          ! case('tmin_hru')
+          !   this%nhru_var_daily(:, jj) = climate%tmin_hru
           case default
             ! pass
         end select
