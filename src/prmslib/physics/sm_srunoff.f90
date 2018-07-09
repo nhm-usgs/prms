@@ -795,7 +795,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       ! USE PRMS_SNOW, ONLY: pptmix_nopack
       ! USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
       ! USE PRMS_MODULE, ONLY: Cascade_flag
-      use prms_constants, only: dp, DNEARZERO, NEARZERO
+      use prms_constants, only: dp, DNEARZERO, NEARZERO, LAND
       implicit none
 
       ! Arguments
@@ -887,7 +887,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           avail_water = avail_water + snowmelt(idx)
           this%infil(idx) = this%infil(idx) + snowmelt(idx)
 
-          if (hru_type == 1) then
+          if (hru_type == LAND) then
             if (pkwater_equiv(idx) > 0.0_dp .or. net_ppt(idx) - net_snow(idx) < NEARZERO) then
               ! ****** Pervious area computations
               ! this, param_data, model_flow, idx
@@ -943,17 +943,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       !                       Dprst_area_open, Dprst_sroff_hru, Dprst_seep_hru, &
       !                       Sro_to_dprst_perv, Sro_to_dprst_imperv, Dprst_evap_hru, &
       !                       Avail_et, Net_rain, Dprst_in)
-      ! USE PRMS_SRUNOFF, ONLY: Srp, Sri, idx, Perv_frac, Imperv_frac, this%hruarea, Dprst_et_coef, &
-      !    Dprst_seep_rate_open, Dprst_seep_rate_clos, Va_clos_exp, Va_open_exp, Dprst_flow_coef, &
-      !    Dprst_vol_thres_open, Dprst_vol_clos_max, Dprst_insroff_hru, Upslope_hortonian, &
-      !    Basin_dprst_volop, Basin_dprst_volcl, Basin_dprst_evap, Basin_dprst_seep, Basin_dprst_sroff, &
-      !    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Dprst_stor_hru, this%hruarea_dble
-      ! USE PRMS_MODULE, ONLY: Cascade_flag !, Print_debug
-      ! USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Dprst_frac_open, Dprst_frac_clos
-      ! USE PRMS_INTCP, ONLY: Net_snow
-      ! USE PRMS_CLIMATEVARS, ONLY: Potet
-      ! USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
-      ! USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snowcov_area
       use prms_constants, only: dp, DNEARZERO, NEARZERO
       implicit none
 
@@ -967,22 +956,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       type(Snowcomp), intent(in) :: snow
       integer(i32), intent(in) :: idx
       real(r32), intent(inout) :: avail_et
-
-      ! real(r32), intent(in) :: Dprst_area_open_max
-      ! real(r32), intent(in) :: Dprst_area_clos_max
-      ! real(r32), intent(in) :: Net_rain
-      ! real(r32), intent(in) :: Sro_to_dprst_perv
-      ! real(r32), intent(in) :: Sro_to_dprst_imperv
-      ! real(r64), intent(in) :: Dprst_vol_open_max
-      ! real(r64), intent(inout) :: Dprst_vol_open
-      ! real(r64), intent(inout) :: Dprst_vol_clos
-      ! real(r64), intent(inout) :: Dprst_in
-      ! real(r32), intent(inout) :: Avail_et
-      ! real(r32), intent(out) :: Dprst_area_open
-      ! real(r32), intent(out) :: Dprst_area_clos
-      ! real(r32), intent(out) :: Dprst_evap_hru
-      ! real(r64), intent(out) :: Dprst_sroff_hru
-      ! real(r64), intent(out) :: Dprst_seep_hru
 
       ! Local Variables
       real(r32) :: clos_vol_r
