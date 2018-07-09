@@ -29,11 +29,7 @@ module PRMS_FLOWVARS
 
     ! lakes variables
     real(r64) :: basin_lake_stor
-      !! Written by soilzone and muskingum_lake
-
-    ! streamflow variables
-    real(r64) :: flow_out
-      !! Total flow out of model domain
+      !! Modified by soilzone and muskingum_lake
 
     contains
       ! procedure, public :: cleanup => cleanup_Flowvars
