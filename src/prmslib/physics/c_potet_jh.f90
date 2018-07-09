@@ -12,6 +12,7 @@ module PRMS_POTET_JH
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_POTET, only: Potential_ET
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_TEMPERATURE, only: Temperature
   implicit none
 
   private
@@ -22,6 +23,9 @@ module PRMS_POTET_JH
   character(len=*), parameter :: MODVERSION = '2016-05-10 15:48:00Z'
 
   type, extends(Potential_ET) :: Potet_jh
+    ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
+    real(r32), private, allocatable :: tavg_f(:)
+
     contains
       procedure, public :: run => run_Potet_jh
   end type
@@ -37,7 +41,7 @@ module PRMS_POTET_JH
   end interface
 
   interface
-    module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad)
+    module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad, model_temp)
       class(Potet_jh), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
@@ -45,6 +49,8 @@ module PRMS_POTET_JH
       type(Time_t), intent(in) :: model_time
       type(Climateflow), intent(in) :: climate
       class(SolarRadiation), intent(in) :: model_solrad
+      class(Temperature), intent(in) :: model_temp
+
     end subroutine
   end interface
 

@@ -3,7 +3,6 @@ contains
   !***********************************************************************
   ! Potet_jh constructor
   module function constructor_Potet_jh(ctl_data) result(this)
-    ! use Control_class, only: Control
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -14,16 +13,23 @@ contains
     ! Call the parent constructor first
     this%Potential_ET = Potential_ET(ctl_data)
 
-    associate(print_debug => ctl_data%print_debug%value)
+    associate(nhru => ctl_data%nhru%value, &
+              print_debug => ctl_data%print_debug%value)
+
       if (print_debug > -2) then
         ! Output module and version information
         call print_module_info(MODNAME, MODDESC, MODVERSION)
       endif
+
+      ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
+      allocate(this%tavg_f(nhru))
+
     end associate
   end function
 
 
-  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad)
+  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad, model_temp)
+    use conversions_mod, only: c_to_f
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -34,7 +40,7 @@ contains
     type(Time_t), intent(in) :: model_time
     type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
-
+    class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
     integer(i32) :: chru
@@ -81,9 +87,13 @@ contains
               hru_area => param_data%hru_area%values, &
               ! basin_potet => climate%basin_potet, &
               ! potet => climate%potet, &
-              tavgc => climate%tavgc, &
-              tavgf => climate%tavgf, &
-              swrad => model_solrad%swrad)
+              ! tavgc => climate%tavgc, &
+              ! tavgf => climate%tavgf, &
+              swrad => model_solrad%swrad, &
+
+              tavg => model_temp%tavg)
+
+      this%tavg_f = c_to_f(model_temp%tavg)
 
       jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
       ! climate%basin_potet = 0.0
@@ -97,8 +107,10 @@ contains
         chru = model_basin%hru_route_order(j)
         ! idx1D = (curr_month - 1) * ctl_data%nhru%values(1) + chru
 
-        elh = (597.3 - (0.5653 * tavgc(chru))) * 2.54
-        this%potet(chru) = jh_coef_2d(chru, curr_month) * (tavgf(chru) - &
+        ! WARNING: Use of tavgf will be removed once temp_unit is standardized
+        !          to Celsius and jh_coef, jh_coef_hru are re-computed for Celsius.
+        elh = (597.3 - (0.5653 * tavg(chru))) * 2.54
+        this%potet(chru) = jh_coef_2d(chru, curr_month) * (this%tavg_f(chru) - &
                               jh_coef_hru(chru)) * swrad(chru) / elh
 
         if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
