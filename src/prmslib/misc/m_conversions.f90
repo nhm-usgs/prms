@@ -1,12 +1,45 @@
 module conversions_mod
+  use prms_constants, only: dp
   use variableKind
   implicit none
+
+  interface c_to_f
+    pure elemental module function c_to_f_r32(temperature) result(res)
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
+    end function
+
+    pure elemental module function c_to_f_r64(temperature) result(res)
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+    end function
+  end interface
+
+  interface f_to_c
+    pure elemental module function f_to_c_r32(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
+        !! Temperature in Fahrenheit
+    end function
+
+    pure elemental module function f_to_c_r64(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+        !! Temperature in Fahrenheit
+    end function
+  end interface
 
   contains
     !***********************************************************************
     ! Convert Fahrenheit to Celsius
     !***********************************************************************
-    pure elemental function f_to_c(temperature) result(res)
+    pure elemental module function f_to_c_r32(temperature) result(res)
       implicit none
 
       ! Arguments
@@ -18,10 +51,22 @@ module conversions_mod
       res = (temperature - 32.0) / 1.8
     end function
 
+    pure elemental module function f_to_c_r64(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+        !! Temperature in Fahrenheit
+
+      !*******************************************************************
+      res = (temperature - 32.0_dp) / 1.8_dp
+    end function
+
     !***********************************************************************
     ! Convert Celsius to Fahrenheit
     !***********************************************************************
-    pure elemental function c_to_f(temperature) result(res)
+    pure elemental module function c_to_f_r32(temperature) result(res)
       implicit none
 
       ! Arguments
@@ -31,6 +76,18 @@ module conversions_mod
 
       !*******************************************************************
       res = temperature * 1.8 + 32.0
+    end function
+
+    pure elemental module function c_to_f_r64(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+        !! Temperature in Celsius
+
+      !*******************************************************************
+      res = temperature * 1.8_dp + 32.0_dp
     end function
 
     !***********************************************************************
