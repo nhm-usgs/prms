@@ -14,6 +14,7 @@ module PRMS_STRMTEMP
   use PRMS_STREAMFLOW, only: Streamflow
   ! use PRMS_SOILZONE, only: Soilzone
   ! use PRMS_SOLTAB, only: Soltab
+  use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_SNOW, only: Snowcomp
   ! use PRMS_SRUNOFF, only: Srunoff
@@ -178,7 +179,7 @@ module PRMS_STRMTEMP
   end interface
 
   interface
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, &
+    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_temp, &
                                      model_climate, model_climate_hru, model_flow, &
                                      model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
@@ -189,6 +190,7 @@ module PRMS_STRMTEMP
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
       type(Climateflow), intent(in) :: model_climate
       type(Climate_HRU), intent(in) :: model_climate_hru
       type(Flowvars), intent(in) :: model_flow

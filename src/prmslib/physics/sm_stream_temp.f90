@@ -327,7 +327,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
     end function
 
 
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, &
+    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_temp, &
                                      model_climate, model_climate_hru, model_flow, &
                                      model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
@@ -341,6 +341,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
       type(Climateflow), intent(in) :: model_climate
       type(Climate_HRU), intent(in) :: model_climate_hru
       type(Flowvars), intent(in) :: model_flow
@@ -382,7 +383,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! active_hrus, hru_route_order,
 
       ! Climate
-      ! hru_rain, potet, swrad, tavgc,
+      ! hru_rain, tavgc,
 
       ! Climate_HRU
       ! humidity_hru
@@ -393,6 +394,9 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! Obs
       ! humidity
 
+      ! Potential_ET
+      ! potet,
+
       ! Streamflow
       ! seginc_swrad, segment_order,
 
@@ -400,7 +404,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! snowmelt,
 
       ! SolarRadiation
-      ! hru_cossl, soltab_potsw
+      ! hru_cossl, soltab_potsw, swrad,
 
       ! Time_t
       ! day_of_year, Nowday, Nowmonth, Nowyear, Summer_flag
@@ -428,10 +432,11 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
                 hru_route_order => model_basin%hru_route_order, &
 
                 potet => model_potet%potet, &
+                humidity_hru => model_potet%humidity_hru, &
 
                 hru_rain => model_climate%hru_rain, &
-                tavgc => model_climate%tavgc, &
-                humidity_hru => model_climate_hru%humidity_hru, &
+
+                tavg => model_temp%tavg, &
 
                 humidity => model_obs%humidity, &
 
@@ -493,7 +498,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
           if (i == 0) cycle
 
           ! Compute temperature of surface runoff here for HRU and stream segments
-          this%seg_tave_air(i) = this%seg_tave_air(i) + tavgc(j) * harea
+          this%seg_tave_air(i) = this%seg_tave_air(i) + tavg(j) * harea
           this%hru_area_sum(i) = this%hru_area_sum(i) + harea
 
           ! Compute segment humidity if info is specified in CBH as timeseries by HRU
