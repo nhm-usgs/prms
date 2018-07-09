@@ -116,7 +116,7 @@ contains
   !***********************************************************************
   !     Output set of declared variables in CSV format
   !***********************************************************************
-  module subroutine run_Basin_summary(this, ctl_data, model_time, climate, model_solrad, model_potet)
+  module subroutine run_Basin_summary(this, ctl_data, model_time, climate, model_solrad, model_potet, model_temp)
     use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                               MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
@@ -127,6 +127,8 @@ contains
     type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
     class(Potential_ET), intent(in) :: model_potet
+    class(Temperature), intent(in) :: model_temp
+
 
     ! Local Variables
     integer(i32) :: jj
@@ -182,11 +184,11 @@ contains
           case('basin_swrad')
             this%basin_var_daily(jj) = model_solrad%basin_swrad
           case('basin_temp')
-            this%basin_var_daily(jj) = climate%basin_temp
+            this%basin_var_daily(jj) = model_temp%basin_temp
           case('basin_tmax')
-            this%basin_var_daily(jj) = climate%basin_tmax
+            this%basin_var_daily(jj) = model_temp%basin_tmax
           case('basin_tmin')
-            this%basin_var_daily(jj) = climate%basin_tmin
+            this%basin_var_daily(jj) = model_temp%basin_tmin
           ! case('basin_transp_on')
           !   this%basin_var_daily(jj) = climate%basin_transp_on
 
