@@ -1,19 +1,25 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_climate) result(this)
+  module function constructor_Interception(ctl_data, model_transp) result(this)
     use prms_constants, only: dp
 
     type(Interception) :: this
       !! Interception class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
-    type(Climateflow), intent(in) :: model_climate
-      !! Climate variables
+    class(Transpiration), intent(in) :: model_transp
+
+    ! Control
+    ! nhru, init_vars_from_file, print_debug
+
+    ! Transpiration
+    ! transp_on,
 
     ! -------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              print_debug => ctl_data%print_debug%value)
+              print_debug => ctl_data%print_debug%value, &
+              transp_on => model_transp%transp_on)
 
       ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       this%use_transfer_intcp = 0
@@ -51,7 +57,7 @@ contains
       this%intcp_form = 0
       this%intcp_on = 0
       this%intcp_stor = 0.0
-      this%intcp_transp_on = model_climate%transp_on
+      this%intcp_transp_on = transp_on
       this%net_ppt = 0.0
       this%net_rain = 0.0
       this%net_snow = 0.0
@@ -80,7 +86,7 @@ contains
   end subroutine
 
   module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
-                                     model_potet, model_climate, model_time)
+                                     model_potet, model_transp, model_climate, model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
                               LAKE, NEARZERO, DNEARZERO
     implicit none
@@ -94,6 +100,7 @@ contains
     type(Basin), intent(in) :: model_basin
       !! Basin variables
     class(Potential_ET), intent(in) :: model_potet
+    class(Transpiration), intent(in) :: model_transp
     type(Climateflow), intent(inout) :: model_climate
       !! Climate variables
     type(Time_t), intent(in) :: model_time
@@ -129,7 +136,7 @@ contains
     ! basin_area_inv, active_hrus, hru_route_order
 
     ! Climate
-    ! hru_ppt, hru_rain, hru_snow, newsnow, pkwater_equiv, pptmix, transp_on,
+    ! hru_ppt, hru_rain, hru_snow, newsnow, pkwater_equiv, pptmix,
 
     ! Parameters
     ! hru_area, hru_pansta, hru_type, covden_sum, covden_win, cov_type, epan_coef,
@@ -141,16 +148,22 @@ contains
     ! Time_t
     ! Nowmonth, Cfs_conv
 
+    ! Transpiration
+    ! transp_on,
+
     ! --------------------------------------------------------------------------
     associate(nevap => ctl_data%nevap%value, &
               nhru => ctl_data%nhru%value, &
               et_module => ctl_data%et_module%values, &
               print_debug => ctl_data%print_debug%value, &
+
               Nowmonth => model_time%Nowmonth, &
               Cfs_conv => model_time%Cfs_conv, &
+
               basin_area_inv => model_basin%basin_area_inv, &
               active_hrus => model_basin%active_hrus, &
               hru_route_order => model_basin%hru_route_order, &
+
               hru_area => param_data%hru_area%values, &
               hru_pansta => param_data%hru_pansta%values, &
               hru_type => param_data%hru_type%values, &
@@ -171,7 +184,8 @@ contains
               newsnow => model_climate%newsnow, &
               pkwater_equiv => model_climate%pkwater_equiv, &
               pptmix => model_climate%pptmix, &
-              transp_on => model_climate%transp_on)
+
+              transp_on => model_transp%transp_on)
 
       ! pkwater_equiv is from last time step
       if (print_debug == 1) then
@@ -193,12 +207,10 @@ contains
         this%net_apply = 0.0
       endif
 
-      this%net_ppt = model_climate%hru_ppt
-
       do j=1, active_hrus
         chru = hru_route_order(j)
         harea = hru_area(chru)
-        ! this%net_ppt(chru) = hru_ppt(chru)
+        this%net_ppt(chru) = hru_ppt(chru)
 
         ! 2D index to 1D
         idx1D = (Nowmonth - 1) * nhru + chru
