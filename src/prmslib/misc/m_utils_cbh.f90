@@ -1,7 +1,7 @@
 module UTILS_CBH
   use variableKind
   implicit none
-  
+
   contains
     !***********************************************************************
     ! Read CBH file to current time
