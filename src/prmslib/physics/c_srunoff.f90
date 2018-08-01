@@ -23,37 +23,38 @@ module PRMS_SRUNOFF
     logical :: has_closed_dprst
       !! NOTE: replaces dprst_clos_flag
     logical :: has_open_dprst
-      !! NOTE: replace dprst_open_flag
+      !! NOTE: replaces dprst_open_flag
     ! integer(i32) :: ihru
-
 
     real(r32), allocatable :: carea_dif(:)
     real(r32), allocatable :: imperv_stor_ante(:)
 
-    real(r32) :: hruarea
-    real(r32) :: hruarea_imperv
-    real(r32) :: imperv_frac
-    real(r32) :: perv_frac
+    ! real(r32) :: hruarea
+    ! real(r32) :: hruarea_imperv
+    ! real(r32) :: imperv_frac
+    ! real(r32) :: perv_frac
     real(r32) :: sri
     real(r32) :: srp
 
-    real(r64) :: basin_apply_sroff
     real(r64) :: hruarea_dble
 
     integer(i32) :: use_sroff_transfer
 
     ! Declared Variables
+    real(r64) :: basin_apply_sroff
     real(r64) :: basin_contrib_fraction
     real(r64) :: basin_hortonian
-    real(r64) :: basin_hortonian_lakes
     real(r64) :: basin_imperv_evap
     real(r64) :: basin_imperv_stor
     real(r64) :: basin_infil
     real(r64) :: basin_sroff
-    real(r64) :: basin_sroff_down
-    real(r64) :: basin_sroff_upslope
     real(r64) :: basin_sroffi
     real(r64) :: basin_sroffp
+
+    ! Used for cascades
+    real(r64) :: basin_hortonian_lakes
+    real(r64) :: basin_sroff_down
+    real(r64) :: basin_sroff_upslope
 
     real(r32), allocatable :: contrib_fraction(:)
     real(r32), allocatable :: hortonian_flow(:)
@@ -72,6 +73,8 @@ module PRMS_SRUNOFF
     real(r64), allocatable :: hortonian_lakes(:)
     real(r64), allocatable :: hru_hortn_cascflow(:)
     real(r64), allocatable :: strm_seg_in(:)
+
+    ! Used for cascades
     real(r64), allocatable :: upslope_hortonian(:)
 
     ! Declared Variables for Depression Storage
@@ -144,7 +147,7 @@ module PRMS_SRUNOFF
   interface
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
                                        model_climate, model_flow, model_potet, intcp, snow)
-      class(Srunoff) :: this
+      class(Srunoff), intent(inout) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -155,7 +158,7 @@ module PRMS_SRUNOFF
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Flowvars), intent(in) :: model_flow
-      class(Potential_ET), intent(inout) :: model_potet
+      class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
     end subroutine
@@ -187,13 +190,14 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine dprst_comp(this, ctl_data, param_data, model_climate, model_potet, intcp, &
+    module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, &
                                  snow, idx, avail_et)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
-      class(Potential_ET), intent(inout) :: model_potet
+      class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       integer(i32), intent(in) :: idx
@@ -202,9 +206,10 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine imperv_et(this, idx, potet, sca, avail_et)
+    module subroutine imperv_et(this, idx, param_data, potet, sca, avail_et)
       class(Srunoff), intent(inout) :: this
       integer(i32), intent(in) :: idx
+      type(Parameters), intent(in) :: param_data
       real(r32), intent(in) :: potet
       real(r32), intent(in) :: sca
       real(r32), intent(in) :: avail_et
@@ -227,11 +232,12 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine compute_infil(this, ctl_data, param_data, model_climate, &
+    module subroutine compute_infil(this, ctl_data, param_data, model_basin, model_climate, &
                                     model_flow, intcp, snow, idx)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
       type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
