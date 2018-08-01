@@ -20,7 +20,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       type(Srunoff), intent(in) :: runoff
 
       ! Local Variables
-      integer(i32) :: i
+      integer(i32) :: cgwr
       integer(i32) :: j
       integer(i32) :: jjj
 
@@ -62,20 +62,26 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 model_mode => ctl_data%model_mode%values, &
                 print_debug => ctl_data%print_debug%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
+
                 elevlake_init => param_data%elevlake_init%values, &
                 gwflow_coef => param_data%gwflow_coef%values, &
                 gwstor_init => param_data%gwstor_init%values, &
                 gwstor_min => param_data%gwstor_min%values, &
                 hru_area => param_data%hru_area%values, &
                 lake_hru_id => param_data%lake_hru_id%values, &
+
                 active_gwrs => model_basin%active_gwrs, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
                 gwr_type => model_basin%gwr_type, &
                 weir_gate_flag => model_basin%weir_gate_flag, &
+
                 pkwater_equiv => model_climate%pkwater_equiv, &
+
                 hru_intcpstor => intcp%hru_intcpstor, &
+
                 soil_moist_tot => soil%soil_moist_tot, &
+
                 dprst_stor_hru => runoff%dprst_stor_hru, &
                 hru_impervstor => runoff%hru_impervstor)
 
@@ -120,8 +126,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%basin_gwstor_minarea_wb = 0.0_dp
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 6) then
-          do i=1, ngw
-            this%gwres_stor(i) = dble(gwstor_init(i))
+          do cgwr=1, ngw
+            this%gwres_stor(cgwr) = dble(gwstor_init(cgwr))
           enddo
         endif
 
@@ -131,34 +137,32 @@ submodule (PRMS_GWFLOW) sm_gwflow
           this%lake_vol = 0.0_dp
         endif
 
-
-
         this%hru_storage = 0.0_dp
         this%basin_gwstor = 0.0_dp
 
         do j = 1, active_gwrs
-          i = gwr_route_order(j)
-          this%basin_gwstor = this%basin_gwstor + this%gwres_stor(i) * dble(hru_area(i))
+          cgwr = gwr_route_order(j)
+          this%basin_gwstor = this%basin_gwstor + this%gwres_stor(cgwr) * dble(hru_area(cgwr))
 
-          if (gwstor_min(i) > 0.0) then
+          if (gwstor_min(cgwr) > 0.0) then
             this%gwminarea_flag = 1
-            this%gwstor_minarea(i) = dble(gwstor_min(i) * hru_area(i))
+            this%gwstor_minarea(cgwr) = dble(gwstor_min(cgwr) * hru_area(cgwr))
           endif
 
-          if (gwflow_coef(i) > 1.0) then
-            if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', i, gwflow_coef(i)
+          if (gwflow_coef(cgwr) > 1.0) then
+            if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', cgwr, gwflow_coef(cgwr)
           endif
 
           ! TODO: Uncomment once gwr_type has been created in parameter file
           ! GWR's cannot be swales unless gwr_swale_flag > 0
-          ! if (gwr_type(i) == SWALE) then
+          ! if (gwr_type(cgwr) == SWALE) then
           !   ! NOTE: rsr, may need to add gwr_type and gwr_segment
           !   if (gwr_swale_flag == 0) then
-          !     print *, 'ERROR, GWRs cannot be swales when gwr_swale_flag = 0, GWR:', i
+          !     print *, 'ERROR, GWRs cannot be swales when gwr_swale_flag = 0, GWR:', cgwr
           !   elseif (gwr_swale_flag == 1) then
-          !     if (print_debug > -1) print *, 'WARNING, GWR:', i, ' is treated as a swale, flow sent to sink'
+          !     if (print_debug > -1) print *, 'WARNING, GWR:', cgwr, ' is treated as a swale, flow sent to sink'
           !   elseif (gwr_swale_flag == 2) then
-          !     if (print_debug > -1) print *, 'WARNING, GWR:', i, &
+          !     if (print_debug > -1) print *, 'WARNING, GWR:', cgwr, &
           !                                    ' is treated as a swale, flow sent to basin_cfs and hru_segment if > 0'
           !   else
           !     ! maybe gwr_swale_flag = 3 abs(hru_segment) so hru_segment could be changed from 0 to allow HRU swales
@@ -166,17 +170,21 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !   endif
           ! endif
 
-          this%hru_storage(i) = dble(soil_moist_tot(i) + hru_intcpstor(i) + hru_impervstor(i)) + &
-                                this%gwres_stor(i) + pkwater_equiv(i)
+          this%hru_storage(cgwr) = dble(soil_moist_tot(cgwr) + hru_intcpstor(cgwr) + hru_impervstor(cgwr)) + &
+                                this%gwres_stor(cgwr) + pkwater_equiv(cgwr)
 
-          if (dprst_flag == 1) this%hru_storage(i) = this%hru_storage(i) + dprst_stor_hru(i)
+          if (dprst_flag == 1) then
+            this%hru_storage(cgwr) = this%hru_storage(cgwr) + dprst_stor_hru(cgwr)
+          endif
         enddo
 
         if (this%gwminarea_flag == 0) deallocate(this%gwstor_minarea)
 
         this%basin_gwstor = this%basin_gwstor * basin_area_inv
 
-        if (dprst_flag == 1) this%gwin_dprst = 0.0_dp
+        if (dprst_flag == 1) then
+          this%gwin_dprst = 0.0_dp
+        endif
 
         if (weir_gate_flag == 1) then
           if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 4) then
@@ -192,8 +200,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
           endif
 
           ! TODO: Uncomment once gwr_type is created in parameter file
-          ! do i=1, active_gwrs
-          !   j = gwr_route_order(i)
+          ! do cgwr=1, active_gwrs
+          !   j = gwr_route_order(cgwr)
           !
           !   if (gwr_type(j) == 2) then
           !     jjj = lake_hru_id(j)
@@ -257,12 +265,13 @@ submodule (PRMS_GWFLOW) sm_gwflow
       type(Time_t), intent(in) :: model_time
 
       ! Local Variables
-      integer(i32) :: i
+      integer(i32) :: cgwr
       integer(i32) :: j
       integer(i32) :: jj
       integer(i32) :: jjj
 
-      real(r32) :: dnflow
+      ! TODO: Uncomment when cascade module is converted
+      ! real(r32) :: dnflow
 
       real(r64) :: gwarea
       real(r64) :: gwflow
@@ -270,8 +279,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
       real(r64) :: gwsink
       real(r64) :: gwstor
       real(r64) :: gwstor_last
-      real(r64) :: inch2acre_feet
-      real(r64) :: seepage
+      ! TODO: Uncomment next 2 when cascade module is converted
+      ! real(r64) :: inch2acre_feet
+      ! real(r64) :: seepage
 
       ! Control
       ! cascadegw_flag, dprst_flag, gwr_swale_flag, print_debug,
@@ -339,8 +349,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 dprst_seep_hru => runoff%dprst_seep_hru, &
                 dprst_stor_hru => runoff%dprst_stor_hru, &
                 hru_impervstor => runoff%hru_impervstor, &
-
                 sroff => runoff%sroff, &
+
                 cfs_conv => model_time%cfs_conv)
 
         if (cascadegw_flag > 0) then
@@ -428,29 +438,29 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%basin_gwin = 0.0_dp
 
         do j=1, active_gwrs
-          i = gwr_route_order(j)
-          gwarea = hru_area_dble(i)
-          gwstor = this%gwres_stor(i) * gwarea  ! acre-inches
+          cgwr = gwr_route_order(j)
+          gwarea = hru_area_dble(cgwr)
+          gwstor = this%gwres_stor(cgwr) * gwarea  ! acre-inches
 
           ! soil_to_gw is for whole HRU, not just perv
-          this%gw_in_soil(i) = soil_to_gw(i) * hru_area(i)
-          this%gw_in_ssr(i) = ssr_to_gw(i) * hru_area(i)
-          gwin = this%gw_in_soil(i) + this%gw_in_ssr(i)
+          this%gw_in_soil(cgwr) = soil_to_gw(cgwr) * hru_area(cgwr)
+          this%gw_in_ssr(cgwr) = ssr_to_gw(cgwr) * hru_area(cgwr)
+          gwin = this%gw_in_soil(cgwr) + this%gw_in_ssr(cgwr)
 
           if (cascadegw_flag > 0) then
-            gwin = gwin + this%gw_upslope(i)
-            this%basin_gw_upslope = this%basin_gw_upslope + this%gw_upslope(i)
+            gwin = gwin + this%gw_upslope(cgwr)
+            this%basin_gw_upslope = this%basin_gw_upslope + this%gw_upslope(cgwr)
           endif
 
           if (dprst_flag == 1) then
-            ! NOTE: rsr, need basin variable for WB
-            this%gwin_dprst(i) = dprst_seep_hru(i) * gwarea
-            gwin = gwin + this%gwin_dprst(i)
+            ! TODO: rsr, need basin variable for WB
+            this%gwin_dprst(cgwr) = dprst_seep_hru(cgwr) * gwarea
+            gwin = gwin + this%gwin_dprst(cgwr)
           endif
 
           ! TODO: Uncomment when water use module is converted
           ! if (gwr_transfers_on == 1) then
-          !   gwin = gwin + (gwr_gain(i) - gwr_transfer(i)) / cfs_conv
+          !   gwin = gwin + (gwr_gain(cgwr) - gwr_transfer(cgwr)) / cfs_conv
           ! endif
 
           gwstor = gwstor + gwin
@@ -458,28 +468,28 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
           if (this%gwminarea_flag == 1) then
             ! Check to be sure gwres_stor >= gwstor_minarea before computing outflows
-            if (gwstor < this%gwstor_minarea(i)) then
+            if (gwstor < this%gwstor_minarea(cgwr)) then
               if (gwstor < 0.0_dp) then
                 if (print_debug > -1) then
-                  print *, 'Warning, groundwater reservoir for HRU:', i, &
+                  print *, 'Warning, groundwater reservoir for HRU:', cgwr, &
                            ' is < 0.0 with gwstor_min active', gwstor
                 endif
               endif
 
               gwstor_last = gwstor
-              gwstor = this%gwstor_minarea(i)
+              gwstor = this%gwstor_minarea(cgwr)
 
               !rsr, keep track of change in storage for WB
-              this%gwstor_minarea_wb(i) = gwstor - gwstor_last
-              this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb + this%gwstor_minarea_wb(i)
-              this%gwstor_minarea_wb(i) = this%gwstor_minarea_wb(i) / gwarea
+              this%gwstor_minarea_wb(cgwr) = gwstor - gwstor_last
+              this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb + this%gwstor_minarea_wb(cgwr)
+              this%gwstor_minarea_wb(cgwr) = this%gwstor_minarea_wb(cgwr) / gwarea
 
               if (print_debug > -1) then
-                print *, 'Added to gwres_stor as storage < gwstor_min to GWR:', i, &
-                         ' amount:', this%gwstor_minarea_wb(i)
+                print *, 'Added to gwres_stor as storage < gwstor_min to GWR:', cgwr, &
+                         ' amount:', this%gwstor_minarea_wb(cgwr)
               endif
             else
-              this%gwstor_minarea_wb(i) = 0.0_dp
+              this%gwstor_minarea_wb(cgwr) = 0.0_dp
             endif
           endif
 
@@ -487,21 +497,21 @@ submodule (PRMS_GWFLOW) sm_gwflow
           if (gwstor < 0.0_dp) then
             ! Could happen with water use
             if (print_debug > -1) then
-              print *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0', gwstor
+              print *, 'Warning, groundwater reservoir for HRU:', cgwr, ' is < 0.0', gwstor
             endif
 
             gwflow = 0.0_dp
-            this%gwres_sink(i) = 0.0
+            this%gwres_sink(cgwr) = 0.0
           else
             ! Compute groundwater discharge
-            gwflow = gwstor * dble(gwflow_coef(i))
+            gwflow = gwstor * dble(gwflow_coef(cgwr))
 
             ! Reduce storage by outflow
             gwstor = gwstor - gwflow
 
-            if (gwsink_coef(i) > 0.0) then
+            if (gwsink_coef(cgwr) > 0.0) then
               ! if gwsink_coef > 1, could have had negative gwstor
-              gwsink = min(gwstor * dble(gwsink_coef(i)), gwstor)
+              gwsink = min(gwstor * dble(gwsink_coef(cgwr)), gwstor)
               gwstor = gwstor - gwsink
             endif
 
@@ -510,43 +520,43 @@ submodule (PRMS_GWFLOW) sm_gwflow
             ! so hru_segment could be changed from 0 to allow HRU swales.
             ! TODO: Uncommented when gwr_type figured out
             ! if (gwr_swale_flag == 1) then
-            !   if (gwr_type(i) == SWALE) then
+            !   if (gwr_type(cgwr) == SWALE) then
             !     gwsink = gwsink + gwflow
             !     gwflow = 0.0_dp
             !   endif
             ! endif
 
-            this%gwres_sink(i) = sngl(gwsink / gwarea)
+            this%gwres_sink(cgwr) = sngl(gwsink / gwarea)
             this%basin_gwsink = this%basin_gwsink + gwsink
           endif
 
           this%basin_gwstor = this%basin_gwstor + gwstor
-          this%gwres_flow(i) = sngl(gwflow / gwarea)
+          this%gwres_flow(cgwr) = sngl(gwflow / gwarea)
 
           ! TODO: Uncomment when cascade module is converted
           ! if (cascadegw_flag > 0) then
-          !   if (ncascade_gwr(i) > 0) then
-          !     call rungw_cascade(runoff, model_time, i, ncascade_gwr(i), this%gwres_flow(i), dnflow)
+          !   if (ncascade_gwr(cgwr) > 0) then
+          !     call rungw_cascade(runoff, model_time, cgwr, ncascade_gwr(cgwr), this%gwres_flow(cgwr), dnflow)
           !
-          !     this%hru_gw_cascadeflow(i) = dnflow
+          !     this%hru_gw_cascadeflow(cgwr) = dnflow
           !     this%basin_dnflow = this%basin_dnflow + dnflow * gwarea
           !   endif
           ! endif
 
-          this%basin_gwflow = this%basin_gwflow + dble(this%gwres_flow(i)) * gwarea
+          this%basin_gwflow = this%basin_gwflow + dble(this%gwres_flow(cgwr)) * gwarea
 
           ! Leave gwin in inch-acres
-          this%gwres_in(i) = gwin
-          this%gwres_stor(i) = gwstor / gwarea
-          this%hru_lateral_flow(i) = dble(this%gwres_flow(i) + sroff(i) + ssres_flow(i))
+          this%gwres_in(cgwr) = gwin
+          this%gwres_stor(cgwr) = gwstor / gwarea
+          this%hru_lateral_flow(cgwr) = dble(this%gwres_flow(cgwr) + sroff(cgwr) + ssres_flow(cgwr))
 
           ! cfs_conv converts acre-inches per timestep to cfs
-          this%hru_streamflow_out(i) = gwarea * cfs_conv * this%hru_lateral_flow(i)
-          this%hru_storage(i) = dble(soil_moist_tot(i) + hru_intcpstor(i) + hru_impervstor(i)) + &
-                                this%gwres_stor(i) + pkwater_equiv(i)
+          this%hru_streamflow_out(cgwr) = gwarea * cfs_conv * this%hru_lateral_flow(cgwr)
+          this%hru_storage(cgwr) = dble(soil_moist_tot(cgwr) + hru_intcpstor(cgwr) + hru_impervstor(cgwr)) + &
+                                this%gwres_stor(cgwr) + pkwater_equiv(cgwr)
 
           if (dprst_flag == 1) then
-            this%hru_storage(i) = this%hru_storage(i) + dprst_stor_hru(i)
+            this%hru_storage(cgwr) = this%hru_storage(cgwr) + dprst_stor_hru(cgwr)
           endif
         enddo
 
