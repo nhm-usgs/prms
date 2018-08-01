@@ -30,6 +30,7 @@ module PRMS_INTCP
     real(r32), allocatable :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
+      !! Set by intcp, used by water_balance
 
     integer(i32) :: use_transfer_intcp
 

@@ -24,16 +24,16 @@ contains
       ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       this%use_transfer_intcp = 0
 
-      if (Water_use_flag==1) then
-        ! irr_type may not exist if not doing water use so can't use associate
-        this%use_transfer_intcp = 1
-
-        allocate(this%gain_inches(nhru))
-        allocate(this%net_apply(nhru))
-
-        this%gain_inches = 0.0
-        this%net_apply = 0.0
-      endif
+      ! if (Water_use_flag==1) then
+      !   ! irr_type may not exist if not doing water use so can't use associate
+      !   this%use_transfer_intcp = 1
+      !
+      !   allocate(this%gain_inches(nhru))
+      !   allocate(this%net_apply(nhru))
+      !
+      !   this%gain_inches = 0.0
+      !   this%net_apply = 0.0
+      ! endif
 
       allocate(this%canopy_covden(nhru))
       allocate(this%hru_intcpevap(nhru))
@@ -136,7 +136,7 @@ contains
     ! basin_area_inv, active_hrus, hru_route_order
 
     ! Climate
-    ! hru_ppt, hru_rain, hru_snow, newsnow, pkwater_equiv, pptmix,
+    ! hru_ppt, hru_rain, hru_snow, newsnow (RW), pkwater_equiv, pptmix (RW),
 
     ! Parameters
     ! hru_area, hru_pansta, hru_type, covden_sum, covden_win, cov_type, epan_coef,
@@ -158,6 +158,7 @@ contains
               print_debug => ctl_data%print_debug%value, &
 
               Nowmonth => model_time%Nowmonth, &
+              Nowyear => model_time%Nowyear, &
               Cfs_conv => model_time%Cfs_conv, &
 
               basin_area_inv => model_basin%basin_area_inv, &
@@ -225,15 +226,12 @@ contains
           CYCLE
         endif
 
+        changeover = 0.0
+        intcpevap = 0.0
+        intcpstor = this%intcp_stor(chru)
         netrain = hru_rain(chru)
         netsnow = hru_snow(chru)
-
-        ! cov = this%canopy_covden(chru)
         this%intcp_form(chru) = 0
-
-        intcpstor = this%intcp_stor(chru)
-        intcpevap = 0.0
-        changeover = 0.0
 
         ! ******Adjust interception amounts for changes in summer/winter cover density
         if (transp_on(chru) == 1) then
@@ -249,6 +247,7 @@ contains
 
           if (intcpstor > 0.0) then
             ! assume canopy storage change falls as throughfall
+            ! NOTE: pan - if transp_on == 1 diff will always be zero
             diff = covden_sum(chru) - this%canopy_covden(chru)
             changeover = intcpstor * diff
 
@@ -310,8 +309,7 @@ contains
               !rsr, 03/24/2008 intercept rain on snow-free grass, when not a mixed event
               if (pkwater_equiv(chru) < DNEARZERO .and. netsnow < NEARZERO) then
                 call this%intercept(this%intcp_on(chru), netrain, intcpstor, &
-                                    this%canopy_covden(chru), &
-                                    hru_rain(chru), stor)
+                                    this%canopy_covden(chru), hru_rain(chru), stor)
                 ! rsr 03/24/2008
                 ! It was decided to leave the water in intcpstor rather than put
                 ! the water in the snowpack, as doing so for a mixed event on
@@ -367,7 +365,6 @@ contains
             this%intcp_form(chru) = 1
 
             if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
-            ! if (cov_type(chru) > 1) then
               stor = snow_intcp(chru)
               call this%intercept(this%intcp_on(chru), netsnow, intcpstor, this%canopy_covden(chru), &
                                   hru_snow(chru), stor)
@@ -386,7 +383,7 @@ contains
 
         ! ******compute evaporation or sublimation of interception
         if (this%intcp_on(chru) == 1) then
-          ! if precipitation assume no evaporation or sublimation
+          ! If precipitation assume no evaporation or sublimation
           if (hru_ppt(chru) < NEARZERO) then
             evrn = potet(chru) / epan_coef(idx1D)
             evsn = potet_sublim(chru) * potet(chru)
@@ -444,8 +441,14 @@ contains
         this%intcp_stor(chru) = intcpstor
         this%hru_intcpstor(chru) = intcpstor * this%canopy_covden(chru)
         this%intcp_changeover(chru) = changeover
+
+            ! if (chru == 11) then
+            !   print *, '(intcp) ', hru_ppt(chru), hru_rain(chru), hru_snow(chru), netrain, netsnow
+            ! endif
+
         this%net_rain(chru) = netrain
         this%net_snow(chru) = netsnow
+
 
         !rsr, question about depression storage for basin_net_ppt???
         !     My assumption is that cover density is for the whole HRU
@@ -454,6 +457,7 @@ contains
         this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * harea)
         this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * harea)
         this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * harea)
+
       enddo
 
       this%basin_net_ppt = this%basin_net_ppt * basin_area_inv
@@ -489,8 +493,8 @@ contains
     !***********************************************************************
     intcp_on = 1
 
-    intcp_stor = intcp_stor + precip
     net_precip = precip * (1.0 - cov)
+    intcp_stor = intcp_stor + precip
 
     if (intcp_stor > stor_max) then
       net_precip = net_precip + (intcp_stor - stor_max) * cov
