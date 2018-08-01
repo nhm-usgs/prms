@@ -16,13 +16,13 @@ contains
     real(r64) :: basin_dprst = 0.0
     real(r64) :: basin_perv = 0.0
     real(r64) :: basin_imperv = 0.0
-    real(r64) :: harea_dble
+    ! real(r64) :: harea_dble
 
-    real(r32) :: harea
+    ! real(r32) :: harea
 
     ! logical, allocatable :: active_mask(:)
 
-    character(len=69) :: buffer
+    ! character(len=69) :: buffer
     integer(i32) :: chru
       !! Current HRU
     integer(i32) :: ii
@@ -98,7 +98,7 @@ contains
         this%lake_area = 0.0_dp
       endif
 
-      this%hru_area_dble = hru_area
+      this%hru_area_dble = dble(hru_area)
 
       ! Populate hru_route_order with indices of active HRUs
       j = 0
@@ -165,6 +165,9 @@ contains
 
         where (this%active_mask)
           this%hru_perv = this%hru_perv - this%dprst_area_max
+
+          ! Recompute hru_frac_perv to reflect the depression storage area
+          this%hru_frac_perv = this%hru_perv / hru_area
         end where
 
         basin_dprst = sum(dble(this%dprst_area_max))
