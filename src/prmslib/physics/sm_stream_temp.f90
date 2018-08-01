@@ -498,7 +498,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
           if (i == 0) cycle
 
           ! Compute temperature of surface runoff here for HRU and stream segments
-          this%seg_tave_air(i) = this%seg_tave_air(i) + tavg(j) * harea
+          this%seg_tave_air(i) = this%seg_tave_air(i) + (tavg(j)) * harea
           this%hru_area_sum(i) = this%hru_area_sum(i) + harea
 
           ! Compute segment humidity if info is specified in CBH as timeseries by HRU
