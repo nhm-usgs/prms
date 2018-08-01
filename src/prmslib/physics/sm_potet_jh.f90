@@ -22,13 +22,13 @@ contains
       endif
 
       ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
-      allocate(this%tavg_f(nhru))
+      ! allocate(this%tavg_f(nhru))
 
     end associate
   end function
 
 
-  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, climate, model_solrad, model_temp)
+  module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, model_solrad, model_temp)
     use conversions_mod, only: c_to_f
     use UTILS_PRMS, only: get_array
     implicit none
@@ -38,7 +38,7 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in) :: model_time
-    type(Climateflow), intent(in) :: climate
+    ! type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
     class(Temperature), intent(in) :: model_temp
 
@@ -70,7 +70,7 @@ contains
     ! Parameters
     ! jh_coef_hru, hru_area,
 
-    ! Climate
+    ! Temperature
     ! tavgc, tavgf
 
     ! SolarRadiation
@@ -85,15 +85,13 @@ contains
               ! jh_coef => param_data%jh_coef%values, &
               jh_coef_hru => param_data%jh_coef_hru%values, &
               hru_area => param_data%hru_area%values, &
-              ! basin_potet => climate%basin_potet, &
-              ! potet => climate%potet, &
-              ! tavgc => climate%tavgc, &
-              ! tavgf => climate%tavgf, &
+
               swrad => model_solrad%swrad, &
 
-              tavg => model_temp%tavg)
+              tavg => model_temp%tavg, &
+              tavg_f => model_temp%tavg_f)
 
-      this%tavg_f = c_to_f(model_temp%tavg)
+      ! this%tavg_f = c_to_f(model_temp%tavg)
 
       jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
       ! climate%basin_potet = 0.0
@@ -109,8 +107,9 @@ contains
 
         ! WARNING: Use of tavgf will be removed once temp_unit is standardized
         !          to Celsius and jh_coef, jh_coef_hru are re-computed for Celsius.
+        ! elh = (597.3 - (0.5653 * sngl(tavg(chru)))) * 2.54
         elh = (597.3 - (0.5653 * tavg(chru))) * 2.54
-        this%potet(chru) = jh_coef_2d(chru, curr_month) * (this%tavg_f(chru) - &
+        this%potet(chru) = jh_coef_2d(chru, curr_month) * (tavg_f(chru) - &
                               jh_coef_hru(chru)) * swrad(chru) / elh
 
         if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
