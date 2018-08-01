@@ -1,6 +1,6 @@
 submodule (PRMS_SOILZONE) sm_soilzone
   contains
-    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_flow, snow) result(this)
+    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_climate, snow) result(this)
       use prms_constants, only: dp, INACTIVE, LAND, LAKE, SWALE
       implicit none
 
@@ -11,7 +11,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Parameters), intent(in) :: param_data
         !! Parameter data
       type(Basin), intent(in) :: model_basin
-      type(Flowvars), intent(inout) :: model_flow
+      type(Climateflow), intent(inout) :: model_climate
+      ! type(Flowvars), intent(inout) :: model_flow
       type(Snowcomp), intent(in) :: snow
 
       ! Local variables
@@ -68,9 +69,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_perv => model_basin%hru_perv, &
 
-                soil_moist => model_flow%soil_moist, &
-                soil_rechr => model_flow%soil_rechr, &
-                soil_rechr_max => model_flow%soil_rechr_max, &
+                soil_moist => model_climate%soil_moist, &
+                soil_rechr => model_climate%soil_rechr, &
+                soil_rechr_max => model_climate%soil_rechr_max, &
 
                 snowcov_area => snow%snowcov_area)
 
@@ -401,7 +402,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                   model_potet, model_climate, intcp, snow, model_transp, runoff, model_flow)
+                                   model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
       use prms_constants, only: dp, LAKE, LAND, SWALE
       implicit none
 
@@ -414,13 +415,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(inout) :: model_potet
-      type(Climateflow), intent(in) :: model_climate
+      class(Precipitation), intent(in) :: model_precip
+      type(Climateflow), intent(inout) :: model_climate
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       class(Transpiration), intent(in) :: model_transp
       type(Srunoff), intent(inout) :: runoff
-      type(Flowvars), intent(inout) :: model_flow
+      ! type(Flowvars), intent(inout) :: model_flow
 
       ! Local Variables
       integer(i32) :: chru
@@ -472,10 +474,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! dprst_evap_hru, dprst_seep_hru, hru_impervevap, sroff(RW),
       ! strm_seg_in(RW), infil, basin_sroff(RW)
 
-      ! Climateflow
+      ! Precipitation
       ! hru_ppt
 
-      ! Flowvars
+      ! Climateflow
       ! soil_rechr(RW), soil_rechr_max, soil_moist(RW),
 
       ! Interception
@@ -511,7 +513,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 basin_potet => model_potet%basin_potet, &
                 potet => model_potet%potet, &
 
-                hru_ppt => model_climate%hru_ppt, &
+                hru_ppt => model_precip%hru_ppt, &
 
                 transp_on => model_transp%transp_on, &
 
@@ -536,9 +538,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 ssr2gw_exp => param_data%ssr2gw_exp%values, &
                 ssr2gw_rate => param_data%ssr2gw_rate%values, &
 
-                soil_rechr => model_flow%soil_rechr, &
-                soil_rechr_max => model_flow%soil_rechr_max, &
-                soil_moist => model_flow%soil_moist)
+                soil_rechr => model_climate%soil_rechr, &
+                soil_rechr_max => model_climate%soil_rechr_max, &
+                soil_moist => model_climate%soil_moist)
 
         ! TODO: 2018-06-21 - Uncomment when GSFLOW stuff is figured out.
         ! if (model_mode(1)%s == 'GSFLOW') then

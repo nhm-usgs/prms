@@ -4,7 +4,7 @@ module PRMS_POTET_HRU
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
-  use PRMS_CLIMATEVARS, only: Climateflow
+  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_POTET, only: Potential_ET
   use SOLAR_RADIATION, only: SolarRadiation
   implicit none

@@ -258,7 +258,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! type(Cascade), intent(in) :: model_cascade
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      ! type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff

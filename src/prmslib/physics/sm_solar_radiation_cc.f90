@@ -37,7 +37,7 @@ contains
     end associate
   end function
 
-  module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, climate, model_basin)
+  module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, model_precip, model_basin)
     use prms_constants, only: dp
     implicit none
 
@@ -46,7 +46,8 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Obs), intent(in) :: model_obs
-    type(Climateflow), intent(in) :: climate
+    class(Precipitation), intent(in) :: model_precip
+    ! type(Climateflow), intent(in) :: climate
     type(Basin), intent(in) :: model_basin
 
     ! Local Variables
@@ -90,7 +91,7 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
 
-              hru_ppt => climate%hru_ppt, &
+              hru_ppt => model_precip%hru_ppt, &
               ! tmax_hru => climate%tmax_hru, &
               ! tmin_hru => climate%tmin_hru, &
 

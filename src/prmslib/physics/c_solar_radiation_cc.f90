@@ -14,8 +14,9 @@ module SOLAR_RADIATION_CC
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  use PRMS_CLIMATEVARS, only: Climateflow
+  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_OBS, only: Obs
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_SET_TIME, only: Time_t
   implicit none
@@ -54,13 +55,14 @@ module SOLAR_RADIATION_CC
   end interface
 
   interface
-    module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, climate, model_basin)
+    module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, model_precip, model_basin)
       class(Solrad_cc), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Obs), intent(in) :: model_obs
-      type(Climateflow), intent(in) :: climate
+      class(Precipitation), intent(in) :: model_precip
+      ! type(Climateflow), intent(in) :: climate
       type(Basin), intent(in) :: model_basin
     end subroutine
   end interface

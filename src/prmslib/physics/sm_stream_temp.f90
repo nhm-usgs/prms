@@ -327,8 +327,8 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
     end function
 
 
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_temp, &
-                                     model_climate, model_climate_hru, model_flow, &
+    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_precip, model_temp, &
+                                     model_climate, &
                                      model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
       use prms_constants, only: CFS2CMS_CONV, dp, NEARZERO
@@ -341,10 +341,9 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      class(Precipitation), intent(in) :: model_precip
       class(Temperature), intent(in) :: model_temp
       type(Climateflow), intent(in) :: model_climate
-      type(Climate_HRU), intent(in) :: model_climate_hru
-      type(Flowvars), intent(in) :: model_flow
       class(Potential_ET), intent(in) :: model_potet
       type(Obs), intent(in) :: model_obs
       class(Streamflow), intent(in) :: model_streamflow
@@ -382,20 +381,17 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! Basin
       ! active_hrus, hru_route_order,
 
-      ! Climate
-      ! hru_rain, tavgc,
+      ! Precipitation
+      ! hru_rain
 
-      ! Climate_HRU
-      ! humidity_hru
-
-      ! Flowvars
+      ! Climateflow
       ! seg_outflow,
 
       ! Obs
       ! humidity
 
       ! Potential_ET
-      ! potet,
+      ! potet, humidity_hru
 
       ! Streamflow
       ! seginc_swrad, segment_order,
@@ -434,7 +430,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
                 potet => model_potet%potet, &
                 humidity_hru => model_potet%humidity_hru, &
 
-                hru_rain => model_climate%hru_rain, &
+                hru_rain => model_precip%hru_rain, &
 
                 tavg => model_temp%tavg, &
 
@@ -743,7 +739,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
             ! Compute the equilibrium temerature
             ! Out: te, ak1, ak2
             ! In: this%seg_shade, svi, i, t_o
-            call this%equilb(param_data, model_flow, model_streamflow, te, ak1, ak2, &
+            call this%equilb(param_data, model_climate, model_streamflow, te, ak1, ak2, &
                              this%seg_shade(i), svi, i, t_o)
 
             ! Compute the daily mean water temperature
@@ -761,7 +757,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
     !*******************************************************************************
     !    "equilb"
     !*******************************************************************************
-    module subroutine equilb (this, param_data, model_flow, model_streamflow, ted, ak1d, &
+    module subroutine equilb (this, param_data, model_climate, model_streamflow, ted, ak1d, &
                               ak2d, sh, svi, seg_id, t_o)
       ! PURPOSE:
       !   1. Determine the average daily equilibrium water temperature parameters
@@ -772,7 +768,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! Arguments:
       class(StreamTemp), intent(in) :: this
       type(Parameters), intent(in) :: param_data
-      type(Flowvars), intent(in) :: model_flow
+      type(Climateflow), intent(in) :: model_climate
       class(Streamflow), intent(in) :: model_streamflow
       real(r32), intent(out) :: ted
       real(r32), intent(out) :: ak1d
@@ -809,7 +805,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! Parameter
       ! albedo, seg_slope
 
-      ! Flowvars
+      ! Climateflow
       ! seg_inflow
 
       ! Streamflow

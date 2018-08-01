@@ -4,7 +4,7 @@ module PRMS_GWFLOW
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  use PRMS_FLOWVARS, only: Flowvars
+  ! use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
@@ -101,7 +101,6 @@ module PRMS_GWFLOW
       ! type(Cascade), intent(in) :: model_cascade
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      ! type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff

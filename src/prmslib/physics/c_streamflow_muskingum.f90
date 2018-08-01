@@ -3,9 +3,8 @@ module PRMS_MUSKINGUM
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  use PRMS_CLIMATEVARS, only: Climateflow
+  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
-  use PRMS_FLOWVARS, only: Flowvars
   use PRMS_OBS, only: Obs
   use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
@@ -85,8 +84,6 @@ module PRMS_MUSKINGUM
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      ! type(Climateflow), intent(in) :: model_climate
-        !! Climate variables
       class(Potential_ET), intent(in) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables

@@ -4,20 +4,16 @@ module PRMS_STRMTEMP
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  use PRMS_CLIMATE_HRU, only: Climate_HRU
   ! use PRMS_GWFLOW, only: Gwflow
-  use PRMS_FLOWVARS, only: Flowvars
   ! use PRMS_INTCP, only: Interception
   use PRMS_OBS, only: Obs
   use PRMS_POTET, only: Potential_ET
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_SET_TIME, only: Time_t
   use PRMS_STREAMFLOW, only: Streamflow
-  ! use PRMS_SOILZONE, only: Soilzone
-  ! use PRMS_SOLTAB, only: Soltab
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_SNOW, only: Snowcomp
-  ! use PRMS_SRUNOFF, only: Srunoff
   implicit none
 
   private
@@ -179,8 +175,8 @@ module PRMS_STRMTEMP
   end interface
 
   interface
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_temp, &
-                                     model_climate, model_climate_hru, model_flow, &
+    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_precip, model_temp, &
+                                     model_climate, &
                                      model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
       class(StreamTemp) :: this
@@ -190,10 +186,9 @@ module PRMS_STRMTEMP
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      class(Precipitation), intent(in) :: model_precip
       class(Temperature), intent(in) :: model_temp
       type(Climateflow), intent(in) :: model_climate
-      type(Climate_HRU), intent(in) :: model_climate_hru
-      type(Flowvars), intent(in) :: model_flow
       class(Potential_ET), intent(in) :: model_potet
       type(Obs), intent(in) :: model_obs
       class(Streamflow), intent(in) :: model_streamflow
@@ -204,11 +199,11 @@ module PRMS_STRMTEMP
   end interface
 
   interface
-    module subroutine equilb (this, param_data, model_flow, model_streamflow, ted, ak1d, &
+    module subroutine equilb (this, param_data, model_climate, model_streamflow, ted, ak1d, &
                               ak2d, sh, svi, seg_id, t_o)
       class(StreamTemp), intent(in) :: this
       type(Parameters), intent(in) :: param_data
-      type(Flowvars), intent(in) :: model_flow
+      type(Climateflow), intent(in) :: model_climate
       class(Streamflow), intent(in) :: model_streamflow
       real(r32), intent(out) :: ted
       real(r32), intent(out) :: ak1d

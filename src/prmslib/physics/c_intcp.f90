@@ -12,6 +12,7 @@ module PRMS_INTCP
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_POTET, only: Potential_ET
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TRANSPIRATION, only: Transpiration
   ! use PRMS_SNOW, only: Snowcomp
   implicit none
@@ -77,7 +78,7 @@ module PRMS_INTCP
 
   interface
     module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
-                                       model_potet, model_transp, model_climate, model_time)
+                                       model_potet, model_precip, model_transp, model_climate, model_time)
       class(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
@@ -87,6 +88,7 @@ module PRMS_INTCP
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(in) :: model_potet
+      class(Precipitation), intent(inout) :: model_precip
       class(Transpiration), intent(in) :: model_transp
       type(Climateflow), intent(inout) :: model_climate
         !! Climate variables

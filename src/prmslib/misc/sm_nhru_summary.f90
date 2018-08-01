@@ -166,7 +166,7 @@ contains
   !     Output set of declared variables in R compatible format
   !***********************************************************************
   module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, &
-                                     climate, model_gw, model_intcp, model_potet, model_snow, &
+                                     climate, model_gw, model_intcp, model_precip, model_potet, model_snow, &
                                      model_soil, model_solrad, model_srunoff, model_streamflow, model_temp, &
                                      model_transp)
     use conversions_mod, only: c_to_f
@@ -179,6 +179,7 @@ contains
     type(Climateflow), intent(in) :: climate
     type(Gwflow), intent(in) :: model_gw
     class(Interception), intent(in) :: model_intcp
+    class(Precipitation), intent(in) :: model_precip
     class(Potential_ET), intent(in) :: model_potet
     type(Snowcomp), intent(in) :: model_snow
     type(Soilzone), intent(in) :: model_soil
@@ -276,11 +277,11 @@ contains
           case('hru_outflow')
             this%nhru_var_daily(:, jj) = sngl(model_streamflow%hru_outflow)
           case('hru_ppt')
-            this%nhru_var_daily(:, jj) = climate%hru_ppt
+            this%nhru_var_daily(:, jj) = model_precip%hru_ppt
           case('hru_rain')
-            this%nhru_var_daily(:, jj) = climate%hru_rain
+            this%nhru_var_daily(:, jj) = model_precip%hru_rain
           case('hru_snow')
-            this%nhru_var_daily(:, jj) = climate%hru_snow
+            this%nhru_var_daily(:, jj) = model_precip%hru_snow
           case('hru_sroffi')
             this%nhru_var_daily(:, jj) = model_srunoff%hru_sroffi
           case('hru_sroffp')
@@ -314,7 +315,7 @@ contains
           case('pref_flow_stor')
             this%nhru_var_daily(:, jj) = model_soil%pref_flow_stor
           case('prmx')
-            this%nhru_var_daily(:, jj) = climate%prmx
+            this%nhru_var_daily(:, jj) = model_precip%prmx
           ! case('seg_inflow')
           !   this%nhru_var_daily(:, jj) = model_streamflow%seg_inflow
           ! case('seg_lateral_inflow')

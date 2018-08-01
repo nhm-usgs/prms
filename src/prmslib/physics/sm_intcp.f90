@@ -86,7 +86,7 @@ contains
   end subroutine
 
   module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
-                                     model_potet, model_transp, model_climate, model_time)
+                                     model_potet, model_precip, model_transp, model_climate, model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
                               LAKE, NEARZERO, DNEARZERO
     implicit none
@@ -100,6 +100,7 @@ contains
     type(Basin), intent(in) :: model_basin
       !! Basin variables
     class(Potential_ET), intent(in) :: model_potet
+    class(Precipitation), intent(inout) :: model_precip
     class(Transpiration), intent(in) :: model_transp
     type(Climateflow), intent(inout) :: model_climate
       !! Climate variables
@@ -179,12 +180,13 @@ contains
 
               potet => model_potet%potet, &
 
-              hru_ppt => model_climate%hru_ppt, &
-              hru_rain => model_climate%hru_rain, &
-              hru_snow => model_climate%hru_snow, &
-              newsnow => model_climate%newsnow, &
+              hru_ppt => model_precip%hru_ppt, &
+              hru_rain => model_precip%hru_rain, &
+              hru_snow => model_precip%hru_snow, &
+              newsnow => model_precip%newsnow, &
+              pptmix => model_precip%pptmix, &
+
               pkwater_equiv => model_climate%pkwater_equiv, &
-              pptmix => model_climate%pptmix, &
 
               transp_on => model_transp%transp_on)
 

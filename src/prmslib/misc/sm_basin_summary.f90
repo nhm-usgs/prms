@@ -116,7 +116,7 @@ contains
   !***********************************************************************
   !     Output set of declared variables in CSV format
   !***********************************************************************
-  module subroutine run_Basin_summary(this, ctl_data, model_time, climate, model_solrad, model_potet, model_temp)
+  module subroutine run_Basin_summary(this, ctl_data, model_time, model_solrad, model_precip, model_potet, model_temp)
     use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                               MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
@@ -124,8 +124,9 @@ contains
     class(Basin_summary), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Time_t), intent(in) :: model_time
-    type(Climateflow), intent(in) :: climate
+    ! type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
+    class(Precipitation), intent(in) :: model_precip
     class(Potential_ET), intent(in) :: model_potet
     class(Temperature), intent(in) :: model_temp
 
@@ -168,17 +169,17 @@ contains
           case('basin_horad')
             this%basin_var_daily(jj) = model_solrad%basin_horad
           case('basin_obs_ppt')
-            this%basin_var_daily(jj) = climate%basin_obs_ppt
+            this%basin_var_daily(jj) = model_precip%basin_obs_ppt
           case('basin_orad')
             this%basin_var_daily(jj) = model_solrad%basin_orad
           case('basin_potet')
             this%basin_var_daily(jj) = model_potet%basin_potet
           case('basin_ppt')
-            this%basin_var_daily(jj) = climate%basin_ppt
+            this%basin_var_daily(jj) = model_precip%basin_ppt
           case('basin_rain')
-            this%basin_var_daily(jj) = climate%basin_rain
+            this%basin_var_daily(jj) = model_precip%basin_rain
           case('basin_snow')
-            this%basin_var_daily(jj) = climate%basin_snow
+            this%basin_var_daily(jj) = model_precip%basin_snow
           ! case('basin_solsta')
           !   this%basin_var_daily(jj) = climate%basin_solsta
           case('basin_swrad')

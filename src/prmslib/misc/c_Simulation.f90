@@ -4,11 +4,11 @@ module Simulation_class
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  use PRMS_FLOWVARS, only: Flowvars
-  use PRMS_CLIMATE_HRU, only: Climate_HRU
   use SOLAR_RADIATION_DEGDAY, only: Solrad_degday
   use PRMS_TRANSP_TINDEX, only: Transp_tindex
   use PRMS_POTET_JH, only: Potet_jh
+  use PRMS_PRECIPITATION, only: Precipitation
+  use PRMS_PRECIPITATION_HRU, only: Precipitation_hru
   use PRMS_INTCP, only: Interception
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
@@ -29,11 +29,11 @@ module Simulation_class
   type Simulation
       type(Basin) :: model_basin
       type(Climateflow) :: climate
-      type(Flowvars) :: model_flow
       type(Obs) :: model_obs
       type(Time_t) :: model_time
 
-      type(Climate_HRU) :: climate_by_hru
+      class(Precipitation), allocatable :: model_precip
+      ! type(Climate_HRU) :: climate_by_hru
       type(Solrad_degday) :: solrad
 
       class(Temperature), allocatable :: model_temp

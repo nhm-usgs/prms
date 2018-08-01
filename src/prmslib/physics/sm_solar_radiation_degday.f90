@@ -35,7 +35,7 @@ contains
   end function
 
 
-  module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, climate, model_basin, model_temp)
+  module subroutine run_Solrad_degday(this, ctl_data, param_data, model_time, model_obs, model_precip, model_basin, model_temp)
     use conversions_mod, only: c_to_f
     use UTILS_PRMS, only: get_array
     implicit none
@@ -45,7 +45,8 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Obs), intent(in) :: model_obs
-    type(Climateflow), intent(in) :: climate
+    class(Precipitation), intent(in) :: model_precip
+    ! type(Climateflow), intent(in) :: climate
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
 
@@ -97,8 +98,8 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
 
-              hru_ppt => climate%hru_ppt, &
-              tmax_allrain => climate%tmax_allrain_f, &
+              hru_ppt => model_precip%hru_ppt, &
+              tmax_allrain => model_precip%tmax_allrain_f, &
               ! tmaxc => climate%tmaxc, &
               ! tmax_hru => climate%tmax_hru, &
 

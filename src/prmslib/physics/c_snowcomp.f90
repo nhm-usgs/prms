@@ -8,6 +8,7 @@ module PRMS_SNOW
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_TRANSPIRATION, only: Transpiration
@@ -152,7 +153,7 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_temp, intcp, model_solrad, model_potet, model_transp)
+    module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_precip, model_temp, intcp, model_solrad, model_potet, model_transp)
         class(Snowcomp), intent(inout) :: this
           !! Snowcomp class
         type(Climateflow), intent(inout) :: model_climate
@@ -165,6 +166,7 @@ module PRMS_SNOW
           !! Time
         type(Basin), intent(in) :: model_basin
           !! Basin
+        class(Precipitation), intent(in) :: model_precip
         class(Temperature), intent(in) :: model_temp
         type(Interception), intent(in) :: intcp
           !! Canopy interception
@@ -195,9 +197,10 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp, model_temp)
+    module subroutine ppt_to_pack(this, model_climate, model_precip, month, chru, ctl_data, param_data, intcp, model_temp)
       class(Snowcomp), intent(inout) :: this
       type(Climateflow), intent(inout) :: model_climate
+      class(Precipitation), intent(in) :: model_precip
       integer(i32), intent(in) :: month
       integer(i32), intent(in) :: chru
       type(Control), intent(in) :: ctl_data
@@ -217,17 +220,18 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine snalbedo(this, param_data, model_climate, intcp, chru)
+    module subroutine snalbedo(this, param_data, intcp, model_precip, chru)
       class(Snowcomp), intent(inout) :: this
       type(Parameters), intent(in) :: param_data
-      type(Climateflow), intent(in) :: model_climate
+      ! type(Climateflow), intent(in) :: model_climate
       type(Interception), intent(in) :: intcp
+      class(Precipitation), intent(in) :: model_precip
       integer(i32), intent(in) :: chru
     end subroutine
   end interface
 
   interface
-    module subroutine snowbal(this, cal, model_climate, ctl_data, param_data, intcp, &
+    module subroutine snowbal(this, cal, model_climate, ctl_data, param_data, intcp, model_precip, &
                               chru, month, niteda, cec, cst, esv, sw, temp, trd)
       class(Snowcomp), intent(inout) :: this
       real(r32), intent(out) :: cal
@@ -235,6 +239,7 @@ module PRMS_SNOW
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Interception), intent(in) :: intcp
+      class(Precipitation), intent(in) :: model_precip
       integer(i32), intent(in) :: chru
       integer(i32), intent(in) :: month
       integer(i32), intent(in) :: niteda
@@ -248,13 +253,14 @@ module PRMS_SNOW
   end interface
 
   interface
-    module subroutine snowcov(this, chru, ctl_data, param_data, model_climate, intcp)
+    module subroutine snowcov(this, chru, ctl_data, param_data, model_climate, intcp, model_precip)
       class(Snowcomp), intent(inout) :: this
       integer(i32), intent(in) :: chru
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
       type(Interception), intent(in) :: intcp
+      class(Precipitation), intent(in) :: model_precip
     end subroutine
   end interface
 

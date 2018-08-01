@@ -13,6 +13,7 @@ MODULE PRMS_NHRU_SUMMARY
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_STREAMFLOW, only: Streamflow
@@ -76,7 +77,7 @@ MODULE PRMS_NHRU_SUMMARY
 
   interface
     module subroutine run_nhru_summary(this, ctl_data, model_time, model_basin, &
-                                       climate, model_gw, model_intcp, model_potet, model_snow, &
+                                       climate, model_gw, model_intcp, model_precip, model_potet, model_snow, &
                                        model_soil, model_solrad, model_srunoff, model_streamflow, model_temp, &
                                        model_transp)
       class(Nhru_summary), intent(inout) :: this
@@ -86,6 +87,7 @@ MODULE PRMS_NHRU_SUMMARY
       type(Climateflow), intent(in) :: climate
       type(Gwflow), intent(in) :: model_gw
       class(Interception), intent(in) :: model_intcp
+      class(Precipitation), intent(in) :: model_precip
       class(Potential_ET), intent(in) :: model_potet
       type(Snowcomp), intent(in) :: model_snow
       type(Soilzone), intent(in) :: model_soil

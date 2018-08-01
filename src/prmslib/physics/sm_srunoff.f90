@@ -164,7 +164,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     !                  computations using antecedent soil moisture.
     !***********************************************************************
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
-                                  model_climate, model_flow, model_potet, intcp, snow)  ! , cascades)
+                                  model_climate, model_potet, intcp, snow)  ! , cascades)
       use prms_constants, only: dp, LAKE, LAND, NEARZERO
       implicit none
        class(Srunoff), intent(inout) :: this
@@ -177,7 +177,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
          !! Basin variables
        type(Climateflow), intent(in) :: model_climate
          !! Climate variables
-       type(Flowvars), intent(in) :: model_flow
+       ! type(Flowvars), intent(in) :: model_flow
        class(Potential_ET), intent(in) :: model_potet
        type(Interception), intent(in) :: intcp
        type(Snowcomp), intent(in) :: snow
@@ -344,7 +344,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           !     this%infil(chru) = this%infil(chru) + net_apply(chru)
           !
           !     if (hru_type(chru) == LAND) then
-          !       call this%perv_comp(ctl_data, param_data, model_flow, chru, &
+          !       call this%perv_comp(ctl_data, param_data, model_climate, chru, &
           !                           net_apply(chru), net_apply(chru), sra)
           !
           !       ! ** ADD in water from irrigation application and water-use
@@ -356,7 +356,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           !   endif
           ! endif
 
-          call this%compute_infil(ctl_data, param_data, model_basin, model_climate, model_flow, intcp, snow, chru)
+          call this%compute_infil(ctl_data, param_data, model_basin, model_climate, intcp, snow, chru)
           ! call this%compute_infil(net_rain(chru), net_ppt(chru), this%imperv_stor(chru), &
           !                    imperv_stor_max(chru), snowmelt(chru), snowinfil_max(chru), &
           !                    net_snow(chru), pkwater_equiv(chru), this%infil(chru), hru_type(chru))
@@ -749,13 +749,13 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     ! fill soil to soil_moist_max, if more than capacity restrict
     ! infiltration by snowinfil_max, with excess added to runoff
     !***********************************************************************
-    module subroutine check_capacity(this, param_data, model_flow, idx)
+    module subroutine check_capacity(this, param_data, model_climate, idx)
       implicit none
 
       ! Arguments
       class(Srunoff), intent(inout) :: this
       type(Parameters), intent(in) :: param_data
-      type(Flowvars), intent(in) :: model_flow
+      type(Climateflow), intent(in) :: model_climate
       integer(i32), intent(in) :: idx
       ! real(r32), intent(in) :: snowinfil_max
       ! real(r32), intent(inout) :: infil
@@ -770,13 +770,10 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       ! Parameters
       ! soil_moist_max, snowinfil_max
 
-      ! Flowvars
-      ! soil_moist
-
       !***********************************************************************
       associate(snowinfil_max => param_data%snowinfil_max%values, &
                 soil_moist_max => param_data%soil_moist_max%values, &
-                soil_moist => model_flow%soil_moist)
+                soil_moist => model_climate%soil_moist)
 
         ! print *, '-- check_capacity()'
         capacity = soil_moist_max(idx) - soil_moist(idx)
@@ -795,7 +792,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     ! Compute infiltration
     !***********************************************************************
     module subroutine compute_infil(this, ctl_data, param_data, model_basin, model_climate, &
-                                    model_flow, intcp, snow, idx)
+                                    intcp, snow, idx)
       use prms_constants, only: dp, DNEARZERO, NEARZERO, LAND
       implicit none
 
@@ -805,7 +802,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
-      type(Flowvars), intent(in) :: model_flow
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       integer(i32), intent(in) :: idx
@@ -869,7 +865,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             this%infil(idx) = avail_water
 
             if (hru_type == LAND) then
-              call this%perv_comp(ctl_data, param_data, model_flow, idx, &
+              call this%perv_comp(ctl_data, param_data, model_climate, idx, &
                                   avail_water, avail_water, this%srp)
             endif
           endif
@@ -884,7 +880,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           avail_water = avail_water + net_rain(idx)
           this%infil(idx) = this%infil(idx) + net_rain(idx)
 
-          if (hru_type == LAND) call this%perv_comp(ctl_data, param_data, model_flow, &
+          if (hru_type == LAND) call this%perv_comp(ctl_data, param_data, model_climate, &
                                                     idx, net_rain(idx), net_rain(idx), this%srp)
         endif
 
@@ -900,10 +896,10 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           if (hru_type == LAND) then
             if (pkwater_equiv(idx) > 0.0_dp .or. net_ppt(idx) - net_snow(idx) < NEARZERO) then
               ! ****** Pervious area computations
-              call this%check_capacity(param_data, model_flow, idx)
+              call this%check_capacity(param_data, model_climate, idx)
             else
               ! ****** Snowmelt occurred and depleted the snowpack
-              call this%perv_comp(ctl_data, param_data, model_flow, idx, snowmelt(idx), &
+              call this%perv_comp(ctl_data, param_data, model_climate, idx, snowmelt(idx), &
                                   net_ppt(idx), this%srp)
             endif
 
@@ -921,7 +917,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             this%infil(idx) = this%infil(idx) + net_rain(idx)
 
             if (hru_type == LAND) then
-              call this%perv_comp(ctl_data, param_data, model_flow, idx, &
+              call this%perv_comp(ctl_data, param_data, model_climate, idx, &
                                   net_rain(idx), net_rain(idx), this%srp)
             endif
           endif
@@ -930,7 +926,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           ! ***** snowmelt infiltration rate. infil results from rain snow mix
           ! ***** on a snowfree surface.
           if (hru_type == LAND) then
-            call this%check_capacity(param_data, model_flow, idx)
+            call this%check_capacity(param_data, model_climate, idx)
           endif
         endif
 
@@ -1384,7 +1380,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
 
 
 
-    module subroutine perv_comp(this, ctl_data, param_data, model_flow, &
+    module subroutine perv_comp(this, ctl_data, param_data, model_climate, &
                                 idx, pptp, ptc, srp)
       implicit none
 
@@ -1392,7 +1388,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
-      type(Flowvars), intent(in) :: model_flow
+      type(Climateflow), intent(in) :: model_climate
+      ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
       real(r32), intent(in) :: pptp
       real(r32), intent(in) :: ptc
@@ -1422,8 +1419,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 smidx_exp => param_data%smidx_exp%values, &
                 soil_rechr_max => param_data%soil_rechr_max%values, &
 
-                soil_moist => model_flow%soil_moist, &
-                soil_rechr => model_flow%soil_rechr)
+                soil_moist => model_climate%soil_moist, &
+                soil_rechr => model_climate%soil_rechr)
 
         ! print *, '-- perv_comp()'
         !****** Pervious area computations

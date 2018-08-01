@@ -4,9 +4,10 @@ module PRMS_SOILZONE
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  use PRMS_FLOWVARS, only: Flowvars
+  ! use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
+  use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
@@ -187,7 +188,7 @@ module PRMS_SOILZONE
 
   interface Soilzone
     !! Soilzone constructor
-    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_flow, snow) result(this)
+    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_climate, snow) result(this)
       type(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
@@ -195,14 +196,15 @@ module PRMS_SOILZONE
       type(Parameters), intent(in) :: param_data
         !! Parameter data
       type(Basin), intent(in) :: model_basin
-      type(Flowvars), intent(inout) :: model_flow
+      type(Climateflow), intent(inout) :: model_climate
+      ! type(Flowvars), intent(inout) :: model_flow
       type(Snowcomp), intent(in) :: snow
     end function
   end interface
 
   interface
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
-                                   model_potet, model_climate, intcp, snow, model_transp, runoff, model_flow)
+                                   model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
       class(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
@@ -212,13 +214,13 @@ module PRMS_SOILZONE
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(inout) :: model_potet
-      type(Climateflow), intent(in) :: model_climate
+      class(Precipitation), intent(in) :: model_precip
+      type(Climateflow), intent(inout) :: model_climate
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       class(Transpiration), intent(in) :: model_transp
       type(Srunoff), intent(inout) :: runoff
-      type(Flowvars), intent(inout) :: model_flow
     end subroutine
   end interface
 

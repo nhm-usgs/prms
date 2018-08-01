@@ -8,7 +8,7 @@ MODULE PRMS_TRANSP_TINDEX
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  use PRMS_CLIMATEVARS, only: Climateflow
+  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_TEMPERATURE, only: Temperature

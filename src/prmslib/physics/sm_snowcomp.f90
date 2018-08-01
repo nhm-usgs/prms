@@ -175,7 +175,7 @@ contains
   !***********************************************************************
   ! Run daily snow estimates
   !***********************************************************************
-  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_temp, intcp, model_solrad, model_potet, model_transp)
+  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_precip, model_temp, intcp, model_solrad, model_potet, model_transp)
     use prms_constants, only: dp, LAKE
     use UTILS_PRMS, only: get_array
     implicit none
@@ -192,6 +192,7 @@ contains
       !! Time
     type(Basin), intent(in) :: model_basin
       !! Basin
+    class(Precipitation), intent(in) :: model_precip
     class(Temperature), intent(in) :: model_temp
     type(Interception), intent(in) :: intcp
       !! Canopy interception
@@ -254,11 +255,12 @@ contains
               orad => model_solrad%orad, &
               swrad => model_solrad%swrad, &
 
-              hru_ppt => model_climate%hru_ppt, &
-              newsnow => model_climate%newsnow, &
               pkwater_equiv => model_climate%pkwater_equiv, &
-              prmx => model_climate%prmx, &
-              pptmix => model_climate%pptmix, &
+
+              hru_ppt => model_precip%hru_ppt, &
+              newsnow => model_precip%newsnow, &
+              prmx => model_precip%prmx, &
+              pptmix => model_precip%pptmix, &
 
               tavg => model_temp%tavg, &
               tmax => model_temp%tmax, &
@@ -397,7 +399,7 @@ contains
         ! to the snowpack.
         ! WARNING: pan - wouldn't this be pkwater_equiv > DNEARZERO?
         if ((pkwater_equiv(chru) > 0.0_dp .and. net_ppt(chru) > 0.0) .or. net_snow(chru) > 0.0) then
-          call this%ppt_to_pack(model_climate, curr_month, chru, ctl_data, param_data, intcp, model_temp)
+          call this%ppt_to_pack(model_climate, model_precip, curr_month, chru, ctl_data, param_data, intcp, model_temp)
         endif
 
         if (pkwater_equiv(chru) > 0.0_dp) then
@@ -408,12 +410,12 @@ contains
           ! Compute snow-covered area from depletion curve
 
           ! Calculate the new snow covered area
-          call this%snowcov(chru, ctl_data, param_data, model_climate, intcp)
+          call this%snowcov(chru, ctl_data, param_data, model_climate, intcp, model_precip)
 
           ! HRU STEP 3 - COMPUTE THE NEW ALBEDO
           !**********************************************************
           ! Compute albedo if there is any snowpack
-          call this%snalbedo(param_data, model_climate, intcp, chru)
+          call this%snalbedo(param_data, intcp, model_precip, chru)
 
           ! HRU STEP 4 - DETERMINE RADIATION FLUXES AND SNOWPACK
           !              STATES NECESSARY FOR ENERGY BALANCE
@@ -529,7 +531,7 @@ contains
           temp = (tmin(chru) + tavg(chru)) * 0.5
 
           ! Calculate the night time energy balance
-          call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
+          call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, model_precip, &
                             chru, curr_month, niteda, cec, cst, esv, sw, sngl(temp), trd)
 
           ! Track total heat flux from both night and day periods
@@ -548,7 +550,7 @@ contains
             ! for the day.
             temp = (tmax(chru) + tavg(chru)) * 0.5  ! [degrees C]
 
-            call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
+            call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, model_precip, &
                               chru, curr_month, niteda, cec, cst, esv, sw, sngl(temp), trd)
 
             ! Track total heat flux from both night and day periods
@@ -941,11 +943,12 @@ contains
   !***********************************************************************
   ! Subroutine to add rain and/or snow to snowpack
   !***********************************************************************
-  module subroutine ppt_to_pack(this, model_climate, month, chru, ctl_data, param_data, intcp, model_temp)
+  module subroutine ppt_to_pack(this, model_climate, model_precip, month, chru, ctl_data, param_data, intcp, model_temp)
     implicit none
 
     class(Snowcomp), intent(inout) :: this
     type(Climateflow), intent(inout) :: model_climate
+    class(Precipitation), intent(in) :: model_precip
     integer(i32), intent(in) :: month
     integer(i32), intent(in) :: chru
     type(Control), intent(in) :: ctl_data
@@ -976,7 +979,10 @@ contains
     ! nhru,
 
     ! Climate
-    ! pkwater_equiv(RW), pptmix, tmax_allsnow_c,
+    ! pkwater_equiv(RW),
+
+    ! Precipitation
+    ! pptmix, tmax_allsnow_c,
 
     ! Interception
     ! net_rain, net_snow
@@ -990,8 +996,9 @@ contains
     associate(nhru => ctl_data%nhru%value, &
 
               pkwater_equiv => model_climate%pkwater_equiv, &
-              pptmix => model_climate%pptmix, &
-              tmax_allsnow => model_climate%tmax_allsnow_c, &
+
+              pptmix => model_precip%pptmix, &
+              tmax_allsnow => model_precip%tmax_allsnow_c, &
 
               net_rain => intcp%net_rain, &
               net_snow => intcp%net_snow, &
@@ -1274,14 +1281,15 @@ contains
   !***********************************************************************
   !      Subroutine to compute snowpack albedo
   !***********************************************************************
-  module subroutine snalbedo(this, param_data, model_climate, intcp, chru)
+  module subroutine snalbedo(this, param_data, intcp, model_precip, chru)
     implicit none
 
     ! Arguments
     class(Snowcomp), intent(inout) :: this
     type(Parameters), intent(in) :: param_data
-    type(Climateflow), intent(in) :: model_climate
+    ! type(Climateflow), intent(in) :: model_climate
     type(Interception), intent(in) :: intcp
+    class(Precipitation), intent(in) :: model_precip
     integer(i32), intent(in) :: chru
 
     ! Local Variables
@@ -1296,9 +1304,9 @@ contains
               albset_sna => param_data%albset_sna%values(1), &
               albset_snm => param_data%albset_snm%values(1), &
 
-              newsnow => model_climate%newsnow(chru), &
-              pptmix => model_climate%pptmix(chru), &
-              prmx => model_climate%prmx(chru), &
+              newsnow => model_precip%newsnow(chru), &
+              pptmix => model_precip%pptmix(chru), &
+              prmx => model_precip%prmx(chru), &
 
               net_snow => intcp%net_snow(chru), &
 
@@ -1549,7 +1557,7 @@ contains
   ! Compute energy balance of snowpack
   !   1st call is for night period, 2nd call for day period
   !***********************************************************************
-  module subroutine snowbal(this, cal, model_climate, ctl_data, param_data, intcp, &
+  module subroutine snowbal(this, cal, model_climate, ctl_data, param_data, intcp, model_precip, &
                             chru, month, niteda, cec, cst, esv, sw, temp, trd)
     implicit none
 
@@ -1562,6 +1570,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
     type(Interception), intent(in) :: intcp
+    class(Precipitation), intent(in) :: model_precip
     integer(i32), intent(in) :: chru
     integer(i32), intent(in) :: month
     integer(i32), intent(in) :: niteda
@@ -1612,7 +1621,7 @@ contains
               tstorm_mo => param_data%tstorm_mo%values(idx1D), &
               emis_noppt => param_data%emis_noppt%values(chru), &
 
-              hru_ppt => model_climate%hru_ppt(chru), &
+              hru_ppt => model_precip%hru_ppt(chru), &
               pkwater_equiv => model_climate%pkwater_equiv(chru), &
 
               canopy_covden => intcp%canopy_covden(chru), &
@@ -1833,7 +1842,7 @@ contains
   !***********************************************************************
   ! Subroutine to compute snow-covered area
   !***********************************************************************
-  module subroutine snowcov(this, chru, ctl_data, param_data, model_climate, intcp)
+  module subroutine snowcov(this, chru, ctl_data, param_data, model_climate, intcp, model_precip)
     use UTILS_PRMS, only: get_array
     implicit none
 
@@ -1844,6 +1853,7 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Climateflow), intent(in) :: model_climate
     type(Interception), intent(in) :: intcp
+    class(Precipitation), intent(in) :: model_precip
 
     ! Local Variables
     real(r32) :: snowcov_area_ante
@@ -1869,7 +1879,7 @@ contains
 
               net_snow => intcp%net_snow(chru), &
 
-              newsnow => model_climate%newsnow(chru), &
+              newsnow => model_precip%newsnow(chru), &
               pkwater_equiv => model_climate%pkwater_equiv(chru), &
 
               ai => this%ai(chru), &
