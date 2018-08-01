@@ -185,7 +185,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
     end function
 
     module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
-                                    model_climate, model_potet, groundwater, soil, runoff, &
+                                    model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
       use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
       implicit none
@@ -198,9 +198,9 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      type(Climateflow), intent(in) :: model_climate
+      ! type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      class(Potential_ET), intent(inout) :: model_potet
+      class(Potential_ET), intent(in) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil
@@ -271,7 +271,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       !     c0, c1, and c2: initialized in the "init" part of this module
 
       ! Call parent class run routine first
-      call this%run_Streamflow(ctl_data, param_data, model_basin, model_climate, &
+      call this%run_Streamflow(ctl_data, param_data, model_basin, &
                                model_potet, groundwater, soil, runoff, model_time, model_solrad)
 
       associate(nsegment => ctl_data%nsegment%value, &

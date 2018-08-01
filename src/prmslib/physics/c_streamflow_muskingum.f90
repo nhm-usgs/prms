@@ -72,7 +72,7 @@ module PRMS_MUSKINGUM
 
   interface
     module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
-                                    model_climate, model_potet, groundwater, soil, runoff, &
+                                    model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
       use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
       implicit none
@@ -85,9 +85,9 @@ module PRMS_MUSKINGUM
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      type(Climateflow), intent(in) :: model_climate
+      ! type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      class(Potential_ET), intent(inout) :: model_potet
+      class(Potential_ET), intent(in) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
       type(Soilzone), intent(in) :: soil
