@@ -49,8 +49,8 @@ module SOLAR_RADIATION_DEGDAY
       type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Obs), intent(in) :: model_obs
-      type(Climateflow), intent(inout) :: climate
-      type(Basin), intent(inout) :: model_basin
+      type(Climateflow), intent(in) :: climate
+      type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface

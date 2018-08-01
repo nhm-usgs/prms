@@ -32,8 +32,8 @@ contains
       this%basin_radadj = 0.0_dp
 
       ! NOTE: Once units are standardized tmax_f and tmin_f can go away
-      this%tmax_f = c_to_f(model_temp%tmax)
-      this%tmin_f = c_to_f(model_temp%tmin)
+      this%tmax_f = (c_to_f(model_temp%tmax))
+      this%tmin_f = (c_to_f(model_temp%tmin))
     end associate
   end function
 
@@ -46,8 +46,8 @@ contains
     type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Obs), intent(in) :: model_obs
-    type(Climateflow), intent(inout) :: climate
-    type(Basin), intent(inout) :: model_basin
+    type(Climateflow), intent(in) :: climate
+    type(Basin), intent(in) :: model_basin
 
     ! Local Variables
     integer(i32) :: chru
@@ -85,6 +85,7 @@ contains
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value, &
+
               active_hrus => model_basin%active_hrus, &
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &

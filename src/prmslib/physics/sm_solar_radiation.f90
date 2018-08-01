@@ -218,7 +218,7 @@ contains
       !! The hour angle of sunrise on the equivalent slope
     real(r64), dimension(DAYS_PER_YEAR) :: t7
       !! The hour angle of sunset on the equivalent slope
-    real(r64), dimension(DAYS_PER_YEAR) :: d
+    ! real(r64), dimension(DAYS_PER_YEAR) :: d
       !! Solar declination for a day of the year
     real(r64) :: sl
       !! Arc-tangent of the slope
