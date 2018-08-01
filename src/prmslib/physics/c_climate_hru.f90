@@ -25,9 +25,9 @@ module PRMS_CLIMATE_HRU
     type Climate_HRU
       integer(i32), private :: precip_funit
         !! Precipitation CBH file unit
-      integer(i32), private :: tmax_funit
+      ! integer(i32), private :: tmax_funit
         !! Maximum temperature CBH file unit
-      integer(i32), private :: tmin_funit
+      ! integer(i32), private :: tmin_funit
         !! Minimum temperature CBH file unit
 
       integer(i32), private :: nhru

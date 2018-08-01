@@ -83,7 +83,7 @@ contains
     type(Climateflow), intent(inout) :: climate
 
     ! Local variables
-    integer(i32) :: chru
+    ! integer(i32) :: chru
     integer(i32) :: ierr
     integer(i32) :: ios
     integer(i32) :: jj
