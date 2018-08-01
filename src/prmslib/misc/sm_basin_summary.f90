@@ -13,7 +13,7 @@ contains
 
     integer(i32) :: ios
     integer(i32) :: ierr
-    integer(i32) :: size
+    ! integer(i32) :: size
     integer(i32) :: jj
     character(len=MAXFILE_LENGTH) :: fileName
 
