@@ -11,7 +11,7 @@ contains
     type(Control), intent(in) :: ctl_data
 
     ! Local variables
-    character(LEN=11) :: modname_rst
+    ! character(LEN=11) :: modname_rst
       !! Used to verify module name when reading from restart file
 
     ! ------------------------------------------------------------------------
@@ -172,7 +172,7 @@ contains
     type(Basin), intent(in) :: model_basin
 
     ! Local Variables
-    integer(i32) :: i
+    ! integer(i32) :: i
 
     ! Control
     ! nevap, nobs, nrain, nsnow, nsol, ntemp,
