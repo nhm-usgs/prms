@@ -94,7 +94,7 @@ contains
 
     ! Local Variables
     character(len=:), allocatable :: command_line_arg
-    character(len=256) :: buffer    ! contains user-supplied input for filename
+    ! character(len=256) :: buffer    ! contains user-supplied input for filename
     integer(i32) :: status
     integer(i32) :: nchars
     integer(i32) :: numargs
