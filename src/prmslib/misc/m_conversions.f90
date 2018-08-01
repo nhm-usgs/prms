@@ -17,23 +17,32 @@ module conversions_mod
 
   interface f_to_c
     pure elemental module function f_to_c_r32(temperature) result(res)
-      implicit none
-
-      ! Arguments
       real(r32) :: res
       real(r32), intent(in) :: temperature
         !! Temperature in Fahrenheit
     end function
 
     pure elemental module function f_to_c_r64(temperature) result(res)
-      implicit none
-
-      ! Arguments
       real(r64) :: res
       real(r64), intent(in) :: temperature
         !! Temperature in Fahrenheit
     end function
   end interface
+
+  interface f_to_c_diff
+    pure elemental module function f_to_c_diff_r32(temperature) result(res)
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
+        !! Temperature difference (relative temperature) in Fahrenheit
+    end function
+
+    pure elemental module function f_to_c_diff_r64(temperature) result(res)
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+        !! Temperature difference (relative temperature) in Fahrenheit
+    end function
+  end interface
+
 
   contains
     !***********************************************************************
@@ -135,5 +144,33 @@ module conversions_mod
 
       !*******************************************************************
       res = 6.1078 * EXP((17.26939 * temp_c) / (237.3 + temp_c))
+    end function
+
+
+    !***********************************************************************
+    ! Convert temperature difference from Fahrenheit to Celsius
+    !***********************************************************************
+    pure elemental module function f_to_c_diff_r32(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r32) :: res
+      real(r32), intent(in) :: temperature
+        !! Temperature difference (relative temperature) in Fahrenheit
+
+      !*******************************************************************
+      res = temperature / 1.8
+    end function
+
+    pure elemental module function f_to_c_diff_r64(temperature) result(res)
+      implicit none
+
+      ! Arguments
+      real(r64) :: res
+      real(r64), intent(in) :: temperature
+        !! Temperature difference (relative temperature) in Fahrenheit
+
+      !*******************************************************************
+      res = temperature / 1.8_dp
     end function
 end module
