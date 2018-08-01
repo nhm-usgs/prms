@@ -233,8 +233,6 @@ contains
   ! 2017-10-30 PAN: moved here from utils_prms.f90
   !***********************************************************************
   module function ordinal_date(this, ctl_data, model_basin, Date_type, Year_type, hemisphere) result(res)
-    ! use Control_class, only: Control
-    ! use PRMS_BASIN, only: Basin
     implicit none
 
     ! Arguments
