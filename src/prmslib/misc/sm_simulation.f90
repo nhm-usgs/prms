@@ -18,6 +18,10 @@ submodule (Simulation_class) sm_simulation
 
       this%model_obs = Obs(ctl_data)
 
+      ! this%temp_hru = Temperature_hru(ctl_data)
+      ! allocate(Temperature_hru::this%model_temp)
+      ! this%model_temp = this%temp_hru
+
       allocate(Temperature_hru::this%model_temp)
       this%model_temp = Temperature_hru(ctl_data)
 
@@ -54,34 +58,43 @@ submodule (Simulation_class) sm_simulation
       ! ------------------------------------------------------------------------
       do
         if (.not. this%model_time%next(ctl_data, this%model_basin)) exit
+        ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
 
         call this%model_temp%run(ctl_data, param_data, this%model_basin, this%model_time)
-
+        ! print *, '1'
         call this%climate_by_hru%run(ctl_data, param_data, this%model_time, &
                                      this%model_basin, this%potet, this%model_temp, &
                                      this%climate)
-
+        ! print *, '2'
         call this%solrad%run(ctl_data, param_data, this%model_time, this%model_obs, &
                              this%climate, this%model_basin, this%model_temp)
 
+        ! print *, '3'
         call this%transpiration%run(ctl_data, param_data, this%model_time, &
                                     this%model_basin, this%model_temp)
 
-        call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%climate, this%solrad, this%model_temp)
+        ! print *, '4'
+        call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%solrad, this%model_temp)
 
+        ! print *, '5'
         call this%intcp%run(ctl_data, param_data, this%model_basin, this%potet, this%transpiration, this%climate, this%model_time)
 
+        ! print *, '6'
         call this%snow%run(this%climate, ctl_data, param_data, this%model_time, this%model_basin, this%model_temp, this%intcp, this%solrad, this%potet, this%transpiration)
 
+        ! print *, '7'
         call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, this%model_flow, this%potet, this%intcp, this%snow)
 
+        ! print *, '8'
         call this%soil%run(ctl_data, param_data, this%model_basin, this%potet, this%climate, this%intcp, this%snow, this%transpiration, this%runoff, this%model_flow)
 
+        ! print *, '9'
         call this%groundwater%run(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_time)
 
         ! call this%model_route%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad)
 
-        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%climate, this%potet, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad, this%model_obs)
+        ! print *, '10'
+        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%potet, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad, this%model_obs)
 
         ! ctl_data, param_data, model_basin, model_climate, groundwater, soil, runoff, &
         !   model_time, model_solrad, model_flow, model_obs
@@ -92,8 +105,8 @@ submodule (Simulation_class) sm_simulation
 
         if (ctl_data%nhruOutON_OFF%value > 0) then
           call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, &
-                                       this%climate, this%intcp, this%potet, this%snow, &
-                                       this%solrad, this%model_muskingum, &
+                                       this%climate, this%groundwater, this%intcp, this%potet, this%snow, &
+                                       this%soil, this%solrad, this%runoff, this%model_muskingum, &
                                        this%model_temp, this%transpiration)
         endif
       enddo

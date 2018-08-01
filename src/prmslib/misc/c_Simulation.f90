@@ -30,14 +30,15 @@ module Simulation_class
       type(Basin) :: model_basin
       type(Climateflow) :: climate
       type(Flowvars) :: model_flow
-      ! type(Soltab) :: solt
       type(Obs) :: model_obs
       type(Time_t) :: model_time
 
       type(Climate_HRU) :: climate_by_hru
       type(Solrad_degday) :: solrad
-      ! type(Ddsolrad) :: solrad
+
       class(Temperature), allocatable :: model_temp
+      ! type(Temperature_hru) :: temp_hru
+
       type(Transp_tindex) :: transpiration
       type(Potet_jh) :: potet
       type(Interception) :: intcp
