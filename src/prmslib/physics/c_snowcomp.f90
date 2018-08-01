@@ -1,6 +1,6 @@
 module PRMS_SNOW
   use variableKind
-  use prms_constants, only: dp, NEARZERO, DNEARZERO, INCH2CM
+  use prms_constants, only: dp, CLOSEZERO, NEARZERO, DNEARZERO, INCH2CM
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only : Time_t
@@ -37,8 +37,6 @@ module PRMS_SNOW
 
     real(r32) :: acum(MAXALB)
     real(r32) :: amlt(MAXALB)
-    real(r32), allocatable :: snowcov_areasv(:)
-      !! Snow cover fraction when there is new snow and in melt phase [fraction]
 
     real(r64), allocatable :: scrv(:)
       !! Snowpack water equivalent plus a portion of new snow on each HRU
@@ -53,6 +51,8 @@ module PRMS_SNOW
       !! Days since last new snow to reset albedo for each HRU
     real(r32), allocatable :: slst(:)
       !! Days since last new snow for each HRU [days]
+    real(r32), allocatable :: snowcov_areasv(:)
+      !! Snow cover fraction when there is new snow and in melt phase [fraction]
 
     !****************************************************************
     !   Declared Variables
@@ -110,6 +110,7 @@ module PRMS_SNOW
       !! Precipitation added to snowpack for each HRU [inches]
     real(r32), allocatable :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU
+
     real(r64), allocatable :: pk_depth(:)
       !! Depth of snowpack on each HRU [inches]
     real(r64), allocatable :: pkwater_ante(:)
@@ -207,7 +208,7 @@ module PRMS_SNOW
   end interface
 
   interface
-    module pure function sca_deplcrv(snarea_curve, frac_swe) result(res)
+    pure module function sca_deplcrv(snarea_curve, frac_swe) result(res)
       real(r32) :: res
         !! Snow covered area returned from function
       real(r32), intent(in) :: snarea_curve(11)

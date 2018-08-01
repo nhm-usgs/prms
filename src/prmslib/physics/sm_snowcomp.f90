@@ -204,6 +204,7 @@ contains
     integer(i32) :: idx1D
     integer(i32) :: j
     integer(i32) :: niteda
+
     real(r32) :: cals
     real(r32) :: cec
     real(r32) :: cst
@@ -212,10 +213,11 @@ contains
     real(r32) :: esv
     real(r32) :: sw
     real(r32) :: swn
-    real(r32) :: temp
     real(r32) :: trd
+
     real(r64) :: dpt1
     real(r64) :: dpt_before_settle
+    real(r64) :: temp
 
     !***********************************************************************
     associate(nhru => ctl_data%nhru%value, &
@@ -277,25 +279,27 @@ contains
       this%basin_snowmelt = 0.0_dp
       this%basin_tcal = 0.0_dp
 
+      cals = 0.0  ! initialize
+
       ! Calculate the ratio of measured radiation to potential radiation
       ! (used as a cumulative indicator of cloud cover)
       trd = orad / sngl(basin_horad)  ! [dimensionless ratio]
 
       ! By default, the precipitation added to snowpack, snowmelt,
       ! and snow evaporation are 0.
-      this%pk_precip = 0.0  ! [inches]
-      this%snowmelt = 0.0  ! [inches]
-      this%snow_evap = 0.0  ! [inches]
-      this%frac_swe = 0.0
-      this%ai = 0.0_dp
-      this%tcal = 0.0
+      ! this%pk_precip = 0.0  ! [inches]
+      ! this%snowmelt = 0.0  ! [inches]
+      ! this%snow_evap = 0.0  ! [inches]
+      ! this%frac_swe = 0.0
+      ! this%ai = 0.0_dp
+      ! this%tcal = 0.0
 
       ! By default, there has not been a mixed event without a snowpack
       this%pptmix_nopack = 0  ! [flag]
 
       ! Keep track of the pack water equivalent before it is changed
       ! by precipitation during this time step.
-      this%pkwater_ante = pkwater_equiv
+      ! this%pkwater_ante = pkwater_equiv
 
       ! Loop through all the active HRUs, in routing order
       do j=1, active_hrus
@@ -324,16 +328,16 @@ contains
         !**************************************************************
         ! ! Keep track of the pack water equivalent before it is changed
         ! ! by precipitation during this time step.
-        ! this%pkwater_ante(chru) = pkwater_equiv(chru)
+        this%pkwater_ante(chru) = pkwater_equiv(chru)
 
         ! ! By default, the precipitation added to snowpack, snowmelt,
         ! ! and snow evaporation are 0.
-        ! this%pk_precip(chru) = 0.0  ! [inches]
-        ! this%snowmelt(chru) = 0.0  ! [inches]
-        ! this%snow_evap(chru) = 0.0  ! [inches]
-        ! this%frac_swe(chru) = 0.0
-        ! this%ai(chru) = 0.0_dp
-        ! this%tcal(chru) = 0.0
+        this%pk_precip(chru) = 0.0  ! [inches]
+        this%snowmelt(chru) = 0.0  ! [inches]
+        this%snow_evap(chru) = 0.0  ! [inches]
+        this%frac_swe(chru) = 0.0
+        this%ai(chru) = 0.0_dp
+        this%tcal(chru) = 0.0
 
         ! ! By default, there has not been a mixed event without a snowpack
         ! this%pptmix_nopack(chru) = 0  ! [flag]
@@ -381,6 +385,12 @@ contains
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
         !************************************************************
+
+              ! if (chru == 5) then
+              !   if (curr_month == 3 .and. model_time%Nowyear == 1986) then
+              !     print *, '^', pkwater_equiv(chru)
+              !   endif
+              ! endif
 
         ! If there is net precipitation on an existing snowpack, OR if there is
         ! any net snow, add the incoming water (or ice) and heat (or heat deficit)
@@ -520,10 +530,11 @@ contains
 
           ! Calculate the night time energy balance
           call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
-                            chru, curr_month, niteda, cec, cst, esv, sw, temp, trd)
+                            chru, curr_month, niteda, cec, cst, esv, sw, sngl(temp), trd)
 
           ! Track total heat flux from both night and day periods
           this%tcal(chru) = cals  ! [cal/cm^2] or [Langleys]
+
 
           ! Compute energy balance for day period (if the snowpack still exists)
           if (pkwater_equiv(chru) > 0.0_dp) then
@@ -538,7 +549,7 @@ contains
             temp = (tmax(chru) + tavg(chru)) * 0.5  ! [degrees C]
 
             call this%snowbal(cals, model_climate, ctl_data, param_data, intcp, &
-                              chru, curr_month, niteda, cec, cst, esv, sw, temp, trd)
+                              chru, curr_month, niteda, cec, cst, esv, sw, sngl(temp), trd)
 
             ! Track total heat flux from both night and day periods
             this%tcal(chru) = this%tcal(chru) + cals  ! [cal/cm^2] or [Langleys]
@@ -550,6 +561,7 @@ contains
           ! Compute snow evaporation (if there is still a snowpack)
           ! Some of the calculated evaporation can come from interception rather
           ! than the snowpack.  Therefore, the effects of interception must be evaluated.
+
           if (pkwater_equiv(chru) > 0.0_dp) then
             ! Snow can evaporate when transpiration is not occuring or when
             ! transpiration is occuring with cover types of bare soil or grass.
@@ -871,7 +883,7 @@ contains
       ! Loss of heat is handled differently if there is liquid water in the
       ! snowpack or not.
       ! 2 options below (if-then, else)
-      if (freeh2o < NEARZERO) then
+      if (freeh2o < CLOSEZERO) then
         ! (1) No free water exists in pack
 
         ! Heat deficit increases because snow is colder than pack
@@ -898,7 +910,7 @@ contains
           ! The calories absorbed by the new snow freezes some of the free water
           ! (increase in ice, decrease in free water).
           pk_ice = pk_ice + (-cal / 203.2)  ! [inches]
-          freeh2o = freeh2o - (-cal / 203.2)  ! [inches]
+          freeh2o   = freeh2o - (-cal / 203.2)  ! [inches]
           return
         else ! if ( dif<=0.0 ) then
           ! (1) All free water freezes
@@ -993,6 +1005,12 @@ contains
       ! 2D index to 1D
       idx1D = (month - 1) * nhru + chru
 
+      ! Added by PAN 2018-07-16
+      caln = 0.0
+      calpr = 0.0
+      calps = 0.0
+      pndz = 0.0
+
       ! The temperature of precipitation will be different if it is mixed or
       ! all rain or snow 2 options below (if-then, else).
 
@@ -1019,9 +1037,9 @@ contains
         ! (2) If precipitation is all snow or all rain...
 
         ! If there is any rain, the rain temperature is the average temperature.
-        train = tavg(chru)  ! [degrees C]
+        train = (tavg(chru))  ! [degrees C]
 
-        if (train < NEARZERO) then
+        if (train < CLOSEZERO) then
           ! If average temperature is close to freezing, the rain temperature is
           ! halfway between the maximum daily temperature and maximum temperature
           ! for which all precipitation is snow.
@@ -1075,7 +1093,7 @@ contains
             ! to isothermal at 0 degC or not 3 options below (if-then, elseif, else).
 
             ! (1.1.1) Exactly enough rain to bring pack to isothermal...
-            if (ABS(net_rain(chru) - pndz) < NEARZERO) then
+            if (ABS(net_rain(chru) - pndz) < CLOSEZERO) then
               ! Heat deficit and temperature of the snowpack go to 0.
               this%pk_def(chru) = 0.0  ! [cal/cm^2]
               this%pk_temp(chru) = 0.0  ! [degrees C]
@@ -1115,7 +1133,16 @@ contains
 
               ! Add the new heat to the snow pack (the heat in this excess rain
               ! will melt some of the pack ice when the water cools to 0 degC).
+
+                  ! if (chru == 5) then
+                  !     print *, ' ', pkwater_equiv(chru), month, train, calpr, pndz, net_rain(chru), net_snow(chru)
+                  ! endif
+
               call this%calin(model_climate, ctl_data, param_data, calpr, chru)
+
+                  ! if (chru == 5) then
+                  !     print *, '*', pkwater_equiv(chru)
+                  ! endif
             endif
 
           ! (1.2) Rain on snowpack that is isothermal at 0 degC (no heat deficit)...
@@ -1128,7 +1155,14 @@ contains
 
             ! Add the new heat to the snow pack (the heat in rain will melt some
             ! of the pack ice when the water cools to 0 degC).
+                ! if (chru == 5) then
+                !     print *, '  ', pkwater_equiv(chru), month, train, calpr, pndz, net_rain(chru), net_snow(chru)
+                ! endif
+
             call this%calin(model_climate, ctl_data, param_data, calpr, chru)
+                ! if (chru == 5) then
+                !     print *, '**', pkwater_equiv(chru)
+                ! endif
           endif
         endif
       elseif (net_rain(chru) > 0.0) then
@@ -1192,7 +1226,7 @@ contains
   !***********************************************************************
   ! Interpolate along snow covered area depletion curve
   !***********************************************************************
-  pure function sca_deplcrv(snarea_curve, frac_swe) result(res)
+  pure module function sca_deplcrv(snarea_curve, frac_swe) result(res)
     implicit none
 
     ! Arguments
@@ -1721,7 +1755,7 @@ contains
         ! it maintains its value and the referencing code uses it to calculate
         ! the total energy balance of the snowpack. Right now cal isn't used for
         ! anything outside this subroutine, but care should be taken if it is.
-      elseif (qcond < NEARZERO) then
+      elseif (qcond < CLOSEZERO) then
         ! (2)  There is no heat conduction, qcond = 0.0
 
         ! If the pack temperature is isothermal at 0 degC, then apply any
@@ -2064,7 +2098,7 @@ contains
       ! evaporation, and if the potential evapotation is enough to completely
       ! deplete the snow pack or not.
       ! 3 options below (if-then, elseif, else)
-      if (ez < NEARZERO) then
+      if (ez < CLOSEZERO) then
         ! (1) There is no potential for evaporation...
 
         snow_evap = 0.0  ! [inches]
@@ -2131,7 +2165,7 @@ contains
         pkwater_equiv = pkwater_equiv - dble(avail_et)
 
         if (snow_evap < 0.0) then
-          pkwater_equiv = pkwater_equiv - snow_evap
+          pkwater_equiv = pkwater_equiv - dble(snow_evap)
 
           if (pkwater_equiv < 0.0_dp) then
             if (print_debug > -1) then
