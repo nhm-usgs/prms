@@ -1,6 +1,6 @@
 submodule(PRMS_TRANSP_HRU) sm_transp_hru
 contains
-    module function constructor_Transp_hru(ctl_data) result(this)
+  module function constructor_Transp_hru(ctl_data) result(this)
     use UTILS_CBH, only: find_header_end, find_current_time
     implicit none
 
