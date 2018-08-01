@@ -63,7 +63,7 @@ contains
     type(Time_t), intent(in), optional :: model_time
 
     ! Local variables
-    integer(i32) :: chru
+    ! integer(i32) :: chru
     integer(i32) :: ios
     integer(i32) :: jj
     integer(i32) :: yr, mo, dy, hr, mn, sec
@@ -108,12 +108,24 @@ contains
       this%tmax = this%tmax + tmax_adj_2d(:, curr_month)
       this%tmin = this%tmin + tmin_adj_2d(:, curr_month)
 
+      ! NOTE: Only used by solar_radiation_degday; remove once temperature units
+      !       are standardized.
+      this%tmax_f = real(this%tmax, r32)
+      ! this%tmax_f = sngl(this%tmax)
+
+      ! NOTE: Only used by potet_jh; remove once temperature units are standardized
+      ! NOTE: Using individual sngl calls is the only way to get tavg_f to match
+      !       PRMS5 output.
+      this%tavg_f = real(this%tmax + this%tmin, r32) * 0.5
+      ! this%tavg_f = (sngl(this%tmax) + sngl(this%tmin)) * 0.5
+
       ! WARNING: Assuming CBH in Fahrenheit; conversion to Celsius can be remove
       !          once parameter files are standardized on Celsius temp units.
       this%tmax = f_to_c(this%tmax)
       this%tmin = f_to_c(this%tmin)
 
-      this%tavg = (this%tmax + this%tmin) * 0.5
+      this%tavg = f_to_c(this%tavg_f)
+      ! this%tavg = (this%tmax + this%tmin) * 0.5
 
       ! NOTE: This may be moved to parent class at some point.
       ! WARNING: Explicit conversion to Fahrenheit for testing.

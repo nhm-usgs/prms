@@ -19,9 +19,18 @@ module PRMS_TEMPERATURE
     real(r64) :: basin_tmax
     real(r64) :: basin_tmin
 
+    ! NOTE: 2018-07-24 PAN: Changed tavg, tmax, tmin to r64
+    !       The additional precision is needed when fahrenheit temperatures are
+    !       converted to Celsius.
     real(r32), allocatable :: tavg(:)
     real(r32), allocatable :: tmax(:)
     real(r32), allocatable :: tmin(:)
+
+    ! NOTE: Only used by potet_jh; remove once temperature units are standardized
+    real(r32), allocatable :: tavg_f(:)
+    ! NOTE: Only used by solar_radiation_degday; remove once temperature units
+    !       are standardized.
+    real(r32), allocatable :: tmax_f(:)
 
     contains
       procedure, public :: run => run_Temperature

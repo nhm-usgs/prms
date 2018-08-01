@@ -15,6 +15,10 @@ contains
       allocate(this%tavg(nhru))
       allocate(this%tmax(nhru))
       allocate(this%tmin(nhru))
+
+      ! NOTE: Only used by potet_jh; remove once temperature units are standardized
+      allocate(this%tavg_f(nhru))
+      allocate(this%tmax_f(nhru))
     end associate
   end function
 
