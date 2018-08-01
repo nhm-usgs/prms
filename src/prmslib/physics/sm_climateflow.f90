@@ -13,16 +13,18 @@ contains
     type(Parameters), intent(in) :: param_data
 
     ! Local variables
-    character(LEN=11) :: modname_rst
+    ! character(LEN=11) :: modname_rst
       !! Used to verify module name when reading from restart file
-    integer(r32) :: i
-    integer(r32) :: j
+    ! integer(r32) :: i
+    ! integer(r32) :: j
     ! integer(r32) :: idx1D
       !! 1D index from 2D
 
-    real(r32), pointer :: tmax_allsnow_2d(:, :)
-    real(r32), pointer :: tmax_allrain_offset_2d(:, :)
+    ! real(r32), pointer :: tmax_allsnow_2d(:, :)
+    ! real(r32), pointer :: tmax_allrain_offset_2d(:, :)
 
+    integer(i32) :: jj
+    ! real(r32), allocatable :: crap(:)
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
@@ -45,12 +47,13 @@ contains
       ! real(r32), allocatable :: tmax_allrain(:, :)
 
       ! Get 2d-indexed pointers to 1d arrays of parameters
-      tmax_allsnow_2d => get_array(tmax_allsnow, (/nhru, nmonths/))
-      tmax_allrain_offset_2d => get_array(tmax_allrain_offset, (/nhru, nmonths/))
+      ! tmax_allsnow_2d => get_array(tmax_allsnow, (/nhru, nmonths/))
+      ! tmax_allrain_offset_2d => get_array(tmax_allrain_offset, (/nhru, nmonths/))
 
       allocate(this%hru_ppt(nhru))
       allocate(this%hru_rain(nhru))
       allocate(this%hru_snow(nhru))
+      allocate(this%prmx(nhru))
 
       ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
       !     ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
@@ -66,14 +69,6 @@ contains
       !     this%psta_elev_feet = psta_elev * METERS2FEET
       !   endif
       ! endif
-
-      ! allocate(this%potet(nhru))
-      allocate(this%prmx(nhru))
-      ! allocate(this%swrad(nhru))
-      ! allocate(this%tavgf(nhru), this%tavgc(nhru))
-      ! allocate(this%tmaxf(nhru), this%tmaxc(nhru))
-      ! allocate(this%tminf(nhru), this%tminc(nhru))
-      ! allocate(this%tmax_hru(nhru), this%tmin_hru(nhru))
 
       ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
       !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
@@ -98,20 +93,6 @@ contains
 
       allocate(this%newsnow(nhru))
       allocate(this%pptmix(nhru))
-
-      ! if (ctl_data%et_module%values(1)%s == 'potet_pt' .or. &
-      !     ctl_data%et_module%values(1)%s == 'potet_pm' .or. &
-      !     ctl_data%et_module%values(1)%s == 'potet_pm_sta') then
-      !   allocate(this%tempc_dewpt(nhru))
-      !   allocate(this%vp_actual(nhru))
-      !   allocate(this%lwrad_net(nhru))
-      !   allocate(this%vp_slope(nhru))
-      !
-      !   this%tempc_dewpt = 0.0
-      !   this%vp_actual = 0.0
-      !   this%lwrad_net = 0.0
-      !   this%vp_slope = 0.0
-      ! endif
 
       ! Snow
       allocate(this%pkwater_equiv(nhru))
@@ -190,9 +171,18 @@ contains
           ! TODO: remove reshape and use a pointer
           this%tmax_allsnow_f = reshape(tmax_allsnow, shape(this%tmax_allsnow_f))
 
-          this%tmax_allrain_f = tmax_allsnow_2d + tmax_allrain_offset_2d
+          ! NOTE: 2018-07-24 PAN: changed tmax_allsnow_2d to this%tmax_allsnow_f
+          !       This resulted in a minor change in value causing a different
+          !       branch to be followed in precip_form for 1996-02-22, hru=12,13
+          ! this%tmax_allrain_f = this%tmax_allsnow_f + tmax_allrain_offset_2d
+          ! this%tmax_allrain_f = this%tmax_allsnow_f + reshape(tmax_allrain_offset, shape(this%tmax_allrain_f))
+          ! this%tmax_allrain_f = reshape(tmax_allsnow + tmax_allrain_offset, shape(this%tmax_allrain_f))
+
+          this%tmax_allrain_f = reshape(tmax_allrain_offset, shape(this%tmax_allrain_f))
+          this%tmax_allrain_f = this%tmax_allrain_f + this%tmax_allsnow_f
+
           this%tmax_allrain_c = f_to_c(this%tmax_allrain_f)
-          this%tmax_allsnow_c = f_to_c(tmax_allsnow_2d)
+          this%tmax_allsnow_c = f_to_c(this%tmax_allsnow_f)
 
           this%tmax_allrain = this%tmax_allrain_f
         else
@@ -200,9 +190,9 @@ contains
           ! TODO: remove reshape and use a pointer
           this%tmax_allsnow_c = reshape(tmax_allsnow, shape(this%tmax_allsnow_c))
 
-          this%tmax_allsnow_f = c_to_f(tmax_allsnow_2d)
+          ! this%tmax_allsnow_f = c_to_f(tmax_allsnow_2d)
 
-          this%tmax_allrain = tmax_allsnow_2d + tmax_allrain_offset_2d
+          ! this%tmax_allrain = tmax_allsnow_2d + tmax_allrain_offset_2d
           this%tmax_allrain_c = this%tmax_allrain
           this%tmax_allrain_f = c_to_f(this%tmax_allrain)
         endif
@@ -274,7 +264,7 @@ contains
 
     module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, model_temp, &
                                              month, rain_adj, snow_adj, rainmix_adj)
-      use prms_constants, only: NEARZERO, INCHES, MM, MM2INCH
+      use prms_constants, only: DNEARZERO, NEARZERO, INCHES, MM, MM2INCH
       implicit none
 
       class(Climateflow), intent(inout) :: this
@@ -337,28 +327,44 @@ contains
           if (this%hru_ppt(chru) > 0.0) then
 
             if (tmax(chru) <= tmax_allsnow(chru, month)) then
+              ! All-snow precipitation event
               this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
               this%hru_snow(chru) = this%hru_ppt(chru)
               this%newsnow(chru) = 1
             elseif (tmin(chru) > tmax_allsnow(chru, month) .or. tmax(chru) >= tmax_allrain(chru, month)) then
+              ! All-rain precipitation event
               this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
               this%hru_rain(chru) = this%hru_ppt(chru)
               this%prmx(chru) = 1.0
             else
-              tdiff = tmax(chru) - tmin(chru)
+              ! Mixed rain/snow or all-rain precipitation event
 
-              if (abs(tdiff) < NEARZERO) tdiff = 0.0001
+              ! WARNING: This would introduce a bias. tdiff values near zero
+              !          would become warmer than values just above the near zero
+              !          cutoff. Using max(tdiff, 0.0001) will provide more
+              !          consistent adjustment for small values.
+              ! tdiff = tmax(chru) - tmin(chru)
+              ! if (abs(tdiff) < NEARZERO) then
+              !   tdiff = 0.0001
+              ! endif
+
+              tdiff = max(tmax(chru) - tmin(chru), 0.0001)
 
               this%prmx(chru) = ((tmax(chru) - tmax_allsnow(chru, month)) / tdiff) * rainmix_adj(chru)
-              if (this%prmx(chru) < 0.0) this%prmx(chru) = 0.0
+              this%prmx(chru) = max(this%prmx(chru), 0.0)
+              ! if (this%prmx(chru) < 0.0) then
+              !   this%prmx(chru) = 0.0
+              ! endif
 
               if (this%prmx(chru) < 1.0) then
+                ! Mixed precip event
                 this%pptmix(chru) = 1
                 this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
                 this%hru_rain(chru) = this%prmx(chru) * this%hru_ppt(chru)
                 this%hru_snow(chru) = this%hru_ppt(chru) - this%hru_rain(chru)
                 this%newsnow(chru) = 1
               else
+                ! All-rain event
                 this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
                 this%hru_rain(chru) = this%hru_ppt(chru)
                 this%prmx(chru) = 1.0
