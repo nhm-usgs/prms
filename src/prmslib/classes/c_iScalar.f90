@@ -70,7 +70,7 @@ module iScalar_class
       integer(i32), intent(in) :: iUnit
         !! Unit number to read from
 
-      integer(i32) :: ii  ! counter
+      ! integer(i32) :: ii  ! counter
       integer(i32) :: istat  ! iostat result from read
       integer(i32) :: numvals  ! Number of values to read
       character(len=MAXFILE_LENGTH) :: filename

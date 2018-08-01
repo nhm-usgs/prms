@@ -50,7 +50,7 @@ module sVariable_class
       integer(i32) :: ii
       integer(i32) :: istat
       integer(i32) :: N ! number of values
-      character(len=MAXFILE_LENGTH) :: filename
+      ! character(len=MAXFILE_LENGTH) :: filename
 
       ! Read the dimension names
       call this%dim_names%read(Iunit, has_datatype=.false.)

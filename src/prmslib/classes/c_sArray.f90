@@ -121,7 +121,7 @@ contains
         logical, optional, intent(in) :: has_datatype
 
         integer(i32) :: ii
-        integer(i32) :: istat
+        ! integer(i32) :: istat
         integer(i32) :: N
 
         ! ####
