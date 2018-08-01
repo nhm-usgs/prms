@@ -148,6 +148,7 @@ contains
         ! elh = 597.3 - 0.5653*tavgc(chru) ! same as potet_jh
 
         ! LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
+        ! elh = (597.3 - 0.5653 * sngl(tavg(chru))) * 4.184
         elh = (597.3 - 0.5653 * tavg(chru)) * 4.184
         ! elh = 2501.0 - 2.361*tavgc(chru)
         ! elh = 2500.8 - 2.36*tavgc(chru) + 0.0016*tavgc(chru)**2 - 0.00006*tavgc(chru)**3
@@ -206,8 +207,11 @@ contains
 
         ! Net long wave rediation (Irmak eqn. 10) MJ / m2/ day
         ! 4.903E-09 = Stefan-Boltzmann constant
-         this%lwrad_net(chru) = 4.903E-09 * (((tmax(chru) + 273.16)**4 + (tmin(chru) + 273.16)**4) / 2.0 ) &
-                        * (0.34 - 0.14 * (this%vp_actual(chru)**0.5)) * (((1.35 * sw) / stab) - 0.35)
+        ! this%lwrad_net(chru) = 4.903E-09 * ((sngl(tmax(chru) + 273.16)**4 + sngl(tmin(chru) + 273.16)**4) / 2.0 ) &
+        !                * (0.34 - 0.14 * (this%vp_actual(chru)**0.5)) * (((1.35 * sw) / stab) - 0.35)
+        this%lwrad_net(chru) = 4.903E-09 * (((tmax(chru) + 273.16)**4 + (tmin(chru) + 273.16)**4) / 2.0 ) &
+                               * (0.34 - 0.14 * (this%vp_actual(chru)**0.5)) * (((1.35 * sw) / stab) - 0.35)
+
 
         ! Net radiation (Irmak eqn. 8) MJ / m2 / day
         ! 1 Langley = 0.04184 MJ/m2
