@@ -24,25 +24,26 @@ module prms_constants
     real(r32), parameter :: MIN_PER_HOUR = 60_sp
     real(r32), parameter :: HOUR_PER_DAY = 24_sp
 
-    real(r32), parameter :: CLOSEZERO = EPSILON(0.0)
-    real(r32), parameter :: NEARZERO = EPSILON(0.0)
+    real(r32), parameter :: CLOSEZERO = EPSILON(0.0_sp)
+    real(r32), parameter :: NEARZERO = 1.0E-6   ! As defined in PRMS5
+    ! real(r32), parameter :: NEARZERO = EPSILON(0.0_sp)
     real(r64), parameter :: DNEARZERO = EPSILON(0.0_dp)
 
     real(r64), parameter :: FT2_PER_ACRE = 43560.0_dp
     real(r64), parameter :: CFS2CMS_CONV = 0.028316847_dp
 
-    real(r32), parameter :: INCH2CM = 2.54
+    real(r32), parameter :: INCH2CM = 2.54_sp
     real(r32), parameter :: INCH2MM = 25.4_sp
     real(r32), parameter :: INCH2M = 0.0254_sp
 
     ! TODO: what units are MAXTEMP and MINTEMP?
-    real(r32), parameter :: MAXTEMP = 200.0
-    real(r32), parameter :: MINTEMP = -150.0
+    real(r32), parameter :: MAXTEMP = 200.0_sp
+    real(r32), parameter :: MINTEMP = -150.0_sp
 
-    real(r32), parameter :: MM2INCH = 1.0 / INCH2MM
+    real(r32), parameter :: MM2INCH = 1.0_sp / INCH2MM
 
-    real(r32), parameter :: FEET2METERS = 0.3048
-    real(r32), parameter :: METERS2FEET = 1.0 / FEET2METERS
+    real(r32), parameter :: FEET2METERS = 0.3048_sp
+    real(r32), parameter :: METERS2FEET = 1.0_sp / FEET2METERS
 
     ! Frequency values
     ! Used for basinOut_freq, nhruOut_freq, and nsubOut_freq
