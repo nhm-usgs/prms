@@ -102,11 +102,11 @@ contains
     class(Potential_ET), intent(in) :: model_potet
     class(Precipitation), intent(inout) :: model_precip
     class(Transpiration), intent(in) :: model_transp
-    type(Climateflow), intent(inout) :: model_climate
+    type(Climateflow), intent(in) :: model_climate
       !! Climate variables
     type(Time_t), intent(in) :: model_time
 
-    ! NOTE: model_climate must be intent inout because newsnow and pptmix are
+    ! NOTE: model_precip must be intent(inout) because newsnow and pptmix are
     !       modified in this subroutine.
 
     ! Local Variables
