@@ -208,8 +208,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
             this%soil_zone_max(chru) = 0.0
             this%ssres_stor(chru) = 0.0
 
-            soil_moist(chru) = 0.0 ! WARNING: Overrides init in flowvars
-            soil_rechr(chru) = 0.0 ! WARNING: Overrides init in flowvars
+            soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
+            soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
             cycle
           endif
 
@@ -403,7 +403,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
     module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
                                    model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
-      use prms_constants, only: dp, LAKE, LAND, SWALE
+      use prms_constants, only: dp, LAKE, LAND, SWALE, NEARZERO
       implicit none
 
       class(Soilzone) :: this
@@ -783,10 +783,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
             if (hru_type(chru) == LAND) then
               topfr = max(0.0, availh2o - this%pref_flow_thrsh(chru))
               ssresin = gvr_maxin - topfr
-              this%slow_stor(chru) = availh2o - topfr
+              this%slow_stor(chru) = max(0.0, availh2o - topfr)
+
+                  ! if (chru == 1757) then
+                  !   print *, chru, this%slow_stor(chru), availh2o, topfr, this%pref_flow_thrsh(chru), gvr_maxin
+                  ! endif
 
               ! compute slow contribution to interflow, if any
-              if (this%slow_stor(chru) > 0.0) then
+              if (this%slow_stor(chru) > NEARZERO) then
                 call this%compute_interflow(slowcoef_lin(chru), slowcoef_sq(chru), &
                                        ssresin, this%slow_stor(chru), this%slow_flow(chru))
               endif
@@ -794,7 +798,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
               this%slow_stor(chru) = availh2o
             endif
 
-            if (this%slow_stor(chru) > 0.0 .and. ssr2gw_rate(chru) > 0.0) then
+            if (this%slow_stor(chru) > NEARZERO .and. ssr2gw_rate(chru) > 0.0) then
               call this%compute_gwflow(ssr2gw_rate(chru), ssr2gw_exp(chru), this%ssr_to_gw(chru), this%slow_stor(chru))
             endif
           endif
@@ -807,11 +811,13 @@ submodule (PRMS_SOILZONE) sm_soilzone
             if (dunnianflw_gvr > 0.0) then
               topfr = topfr - dunnianflw_gvr
 
-              if (topfr < 0.0) then
-                ! if ( topfr<-NEARZERO .AND. print_debug>-1 ) print *, 'gvr2pfr<0', topfr, dunnianflw_gvr, &
-                !   this%pref_flow_max(chru), this%pref_flow_stor(chru), gvr_maxin
-                topfr = 0.0
-              endif
+              topfr = max(0.0, topfr)
+
+              ! if (topfr < 0.0) then
+              !   ! if ( topfr<-NEARZERO .AND. print_debug>-1 ) print *, 'gvr2pfr<0', topfr, dunnianflw_gvr, &
+              !   !   this%pref_flow_max(chru), this%pref_flow_stor(chru), gvr_maxin
+              !   topfr = 0.0
+              ! endif
             endif
 
             this%pref_flow_in(chru) = this%pref_flow_infil(chru) + topfr
@@ -1373,13 +1379,17 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
       ! ********************************************************************
       ! ****** Compute flow to groundwater
-      ssr_to_gw = ssr2gw_rate * slow_stor**ssr2gw_exp
 
-      if (ssr_to_gw < 0.0) then
-        ssr_to_gw = 0.0
-      elseif (ssr_to_gw > slow_stor) then
-        ssr_to_gw = slow_stor
-      endif
+      ssr_to_gw = min(ssr2gw_rate * slow_stor**ssr2gw_exp, slow_stor)
+      ssr_to_gw = max(0.0, ssr_to_gw)
+
+      ! ssr_to_gw = ssr2gw_rate * slow_stor**ssr2gw_exp
+      !
+      ! if (ssr_to_gw < 0.0) then
+      !   ssr_to_gw = 0.0
+      ! elseif (ssr_to_gw > slow_stor) then
+      !   ssr_to_gw = slow_stor
+      ! endif
 
       slow_stor = slow_stor - ssr_to_gw
     end subroutine
