@@ -267,7 +267,7 @@ module PRMS_SNOW
   interface
     module subroutine snowevap(this, model_climate, chru, ctl_data, param_data, intcp, model_potet)
       class(Snowcomp), intent(inout) :: this
-            type(Climateflow), intent(inout) :: model_climate
+      type(Climateflow), intent(inout) :: model_climate
       integer(i32), intent(in) :: chru
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
