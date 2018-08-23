@@ -273,13 +273,13 @@ contains
               net_snow => intcp%net_snow)
 
       ! Set the basin totals to 0 (recalculated at the end of the time step)
-      this%basin_pk_precip = 0.0_dp
-      this%basin_pweqv = 0.0_dp
-      this%basin_snowcov = 0.0_dp
-      this%basin_snowdepth = 0.0_dp
-      this%basin_snowevap = 0.0_dp
-      this%basin_snowmelt = 0.0_dp
-      this%basin_tcal = 0.0_dp
+      ! this%basin_pk_precip = 0.0_dp
+      ! this%basin_pweqv = 0.0_dp
+      ! this%basin_snowcov = 0.0_dp
+      ! this%basin_snowdepth = 0.0_dp
+      ! this%basin_snowevap = 0.0_dp
+      ! this%basin_snowmelt = 0.0_dp
+      ! this%basin_tcal = 0.0_dp
 
       cals = 0.0  ! initialize
 
@@ -355,8 +355,9 @@ contains
         ! season indicated by the parameter, then set the flag indicating to watch
         ! for melt season.
         ! TODO: rsr, need to rethink this at some point
-        if (day_of_year == melt_look(chru)) this%mso(chru) = 2  ! [flag]
-
+        if (day_of_year == melt_look(chru)) then
+          this%mso(chru) = 2  ! [flag]
+        endif
 
         if (pkwater_equiv(chru) < DNEARZERO) then
           ! No existing snowpack
@@ -386,7 +387,7 @@ contains
 
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
-        !************************************************************
+        !***********************************************************************
 
               ! if (chru == 5) then
               !   if (curr_month == 3 .and. model_time%Nowyear == 1986) then
@@ -399,7 +400,8 @@ contains
         ! to the snowpack.
         ! WARNING: pan - wouldn't this be pkwater_equiv > DNEARZERO?
         if ((pkwater_equiv(chru) > 0.0_dp .and. net_ppt(chru) > 0.0) .or. net_snow(chru) > 0.0) then
-          call this%ppt_to_pack(model_climate, model_precip, curr_month, chru, ctl_data, param_data, intcp, model_temp)
+          call this%ppt_to_pack(model_climate, model_precip, curr_month, chru, &
+                                ctl_data, param_data, intcp, model_temp)
         endif
 
         if (pkwater_equiv(chru) > 0.0_dp) then
@@ -639,23 +641,32 @@ contains
         endif
 
         ! Sum volumes for basin totals
-        this%basin_snowmelt = this%basin_snowmelt + dble(this%snowmelt(chru) * hru_area(chru))
-        this%basin_pweqv = this%basin_pweqv + pkwater_equiv(chru) * dble(hru_area(chru))
-        this%basin_snowevap = this%basin_snowevap + dble(this%snow_evap(chru) * hru_area(chru))
-        this%basin_snowcov = this%basin_snowcov + dble(this%snowcov_area(chru) * hru_area(chru))
-        this%basin_pk_precip = this%basin_pk_precip + dble(this%pk_precip(chru) * hru_area(chru))
-        this%basin_snowdepth = this%basin_snowdepth + this%pk_depth(chru) * dble(hru_area(chru))
-        this%basin_tcal = this%basin_tcal + dble(this%tcal(chru) * hru_area(chru))
+        ! this%basin_snowmelt = this%basin_snowmelt + dble(this%snowmelt(chru) * hru_area(chru))
+        ! this%basin_pweqv = this%basin_pweqv + pkwater_equiv(chru) * dble(hru_area(chru))
+        ! this%basin_snowevap = this%basin_snowevap + dble(this%snow_evap(chru) * hru_area(chru))
+        ! this%basin_snowcov = this%basin_snowcov + dble(this%snowcov_area(chru) * hru_area(chru))
+        ! this%basin_pk_precip = this%basin_pk_precip + dble(this%pk_precip(chru) * hru_area(chru))
+        ! this%basin_snowdepth = this%basin_snowdepth + this%pk_depth(chru) * dble(hru_area(chru))
+        ! this%basin_tcal = this%basin_tcal + dble(this%tcal(chru) * hru_area(chru))
       enddo
 
+
+      this%basin_snowmelt = sum(dble(this%snowmelt * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_pweqv = sum(dble(pkwater_equiv * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_snowevap = sum(dble(this%snow_evap * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_pk_precip = sum(dble(this%pk_precip * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_snowdepth = sum(dble(this%pk_depth * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_tcal = sum(dble(this%tcal * hru_area), mask=active_mask) * basin_area_inv
+
       ! Area normalize basin totals
-      this%basin_snowmelt = this%basin_snowmelt * basin_area_inv
-      this%basin_pweqv = this%basin_pweqv * basin_area_inv
-      this%basin_snowevap = this%basin_snowevap * basin_area_inv
-      this%basin_snowcov = this%basin_snowcov * basin_area_inv
-      this%basin_pk_precip = this%basin_pk_precip * basin_area_inv
-      this%basin_snowdepth = this%basin_snowdepth * basin_area_inv
-      this%basin_tcal = this%basin_tcal * basin_area_inv
+      ! this%basin_snowmelt = this%basin_snowmelt * basin_area_inv
+      ! this%basin_pweqv = this%basin_pweqv * basin_area_inv
+      ! this%basin_snowevap = this%basin_snowevap * basin_area_inv
+      ! this%basin_snowcov = this%basin_snowcov * basin_area_inv
+      ! this%basin_pk_precip = this%basin_pk_precip * basin_area_inv
+      ! this%basin_snowdepth = this%basin_snowdepth * basin_area_inv
+      ! this%basin_tcal = this%basin_tcal * basin_area_inv
 
       if (print_debug == 9) then
         print 9001, day_of_year, (transp_on(chru), chru=1, nhru)
