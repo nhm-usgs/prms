@@ -16,11 +16,6 @@ contains
     real(r64) :: basin_dprst = 0.0
     real(r64) :: basin_perv = 0.0
     real(r64) :: basin_imperv = 0.0
-    ! real(r64) :: harea_dble
-
-    ! real(r32) :: harea
-
-    ! logical, allocatable :: active_mask(:)
 
     ! character(len=69) :: buffer
     integer(i32) :: chru
@@ -43,6 +38,7 @@ contains
               model_output_unit => ctl_data%model_output_unit, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmflow_module => ctl_data%strmflow_module%values, &
+
               dprst_frac => param_data%dprst_frac%values, &
               dprst_frac_open => param_data%dprst_frac_open%values, &
               hru_area => param_data%hru_area%values, &
@@ -65,9 +61,6 @@ contains
 
       if (dprst_flag == 1) then
         allocate(this%dprst_area_max(nhru))
-        allocate(this%dprst_area_clos_max(nhru))
-        allocate(this%dprst_area_open_max(nhru))
-        allocate(this%dprst_frac_clos(nhru))
       endif
 
       ! Create mask of only active land and swale HRUs
@@ -141,27 +134,7 @@ contains
       end where
 
       if (dprst_flag == 1) then
-        this%dprst_clos_flag = 0
-        this%dprst_open_flag = 0
-        this%dprst_frac_clos = 0.0
-        this%dprst_area_open_max = 0.0
-        this%dprst_area_clos_max = 0.0
-        this%dprst_area_max = 0.0
-
         this%dprst_area_max = dprst_frac * hru_area
-
-        where (this%dprst_area_max > 0.0)
-          this%dprst_area_open_max = this%dprst_area_max * dprst_frac_open
-          this%dprst_frac_clos = 1.0 - dprst_frac_open
-          this%dprst_area_clos_max = this%dprst_area_max - this%dprst_area_open_max
-        end where
-
-        ! TODO: Figure out proper way to handle this
-        ! IF ( Hru_percent_imperv(ii)+Dprst_frac(ii)>0.999 ) THEN
-        !    PRINT *, 'ERROR, impervious plus depression fraction > 0.999 for HRU:', ii
-        !    PRINT *, '       value:', Hru_percent_imperv(ii) + Dprst_frac(ii)
-        !    basinit = 1
-        ! ENDIF
 
         where (this%active_mask)
           this%hru_perv = this%hru_perv - this%dprst_area_max
@@ -171,15 +144,12 @@ contains
         end where
 
         basin_dprst = sum(dble(this%dprst_area_max))
-
-        if (any(this%dprst_area_clos_max>0.0)) this%dprst_clos_flag = 1
-        if (any(this%dprst_area_open_max>0.0)) this%dprst_open_flag = 1
       endif
 
       basin_perv = sum(dble(this%hru_perv)) * this%basin_area_inv
       basin_imperv = sum(dble(this%hru_imperv)) * this%basin_area_inv
 
-      ! TODO: 2018-06-21 - Hook up the lake stuff
+      ! TODO: 2018-06-21 PAN - Hook up the lake stuff
       this%weir_gate_flag = 0
       this%puls_lin_flag = 0
       this%water_area = 0.0_dp

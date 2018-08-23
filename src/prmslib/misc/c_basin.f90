@@ -12,11 +12,9 @@ module PRMS_BASIN
   private
   public :: Basin
 
-  ! intrinsic :: EPSILON
-
   character(len=*), parameter :: MODDESC = 'Basin Definition'
   character(len=*), parameter :: MODNAME = 'basin'
-  character(len=*), parameter :: MODVERSION = '2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-22 13:22:00Z'
 
   type :: Basin
     real(r64) :: active_area
@@ -28,8 +26,6 @@ module PRMS_BASIN
 
     integer(i32) :: active_gwrs
     integer(i32) :: active_hrus
-    integer(i32) :: dprst_clos_flag
-    integer(i32) :: dprst_open_flag
     integer(i32) :: hemisphere
     integer(i32) :: numlake_hrus
     integer(i32) :: numlakes_check
@@ -43,10 +39,7 @@ module PRMS_BASIN
     integer(i32), allocatable :: gwr_type(:)
     integer(i32), allocatable :: hru_route_order(:)
 
-    real(r32), allocatable :: dprst_area_clos_max(:)
     real(r32), allocatable :: dprst_area_max(:)
-    real(r32), allocatable :: dprst_area_open_max(:)
-    real(r32), allocatable :: dprst_frac_clos(:)
     real(r32), allocatable :: hru_elev_feet(:)
     real(r32), allocatable :: hru_elev_meters(:)
     real(r32), allocatable :: hru_frac_perv(:)
