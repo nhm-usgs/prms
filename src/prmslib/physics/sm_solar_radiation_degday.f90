@@ -124,9 +124,7 @@ contains
       radadj_intcp_2d => get_array(param_data%radadj_intcp%values, (/nhru, nmonths/))
       radadj_slope_2d => get_array(param_data%radadj_slope%values, (/nhru, nmonths/))
 
-
       !rsr using julian day as the soltab arrays are filled by julian day
-      ! climate%basin_horad = solt%soltab_basinpotsw(day_of_year)
       this%basin_horad = this%soltab_basinpotsw(day_of_year)
 
       do jj = 1, active_hrus
