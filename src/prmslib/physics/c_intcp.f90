@@ -90,7 +90,7 @@ module PRMS_INTCP
       class(Potential_ET), intent(in) :: model_potet
       class(Precipitation), intent(inout) :: model_precip
       class(Transpiration), intent(in) :: model_transp
-      type(Climateflow), intent(inout) :: model_climate
+      type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Time_t), intent(in) :: model_time
     end subroutine
