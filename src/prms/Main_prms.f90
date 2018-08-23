@@ -3,6 +3,7 @@
 !***********************************************************************
 program prms6
   use variableKind
+  use prms_constants
   use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
   use Parameters_class, only: Parameters
@@ -37,6 +38,7 @@ program prms6
   call system_clock(count=start_rtc, count_rate=rate_rtc, count_max=max_rtc)
   call cpu_time(time=start_ct)
 
+  print *, CLOSEZERO, NEARZERO, DNEARZERO
   write(output_unit, fmt='(a)') repeat('=', 72)
   call get_control_filename(control_filename)
 
