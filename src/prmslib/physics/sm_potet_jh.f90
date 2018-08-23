@@ -113,12 +113,9 @@ contains
                               jh_coef_hru(chru)) * swrad(chru) / elh
 
         if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
-
-        ! climate%basin_potet = climate%basin_potet + DBLE(climate%potet(chru) * hru_area(chru))
       enddo
 
       this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
-      ! climate%basin_potet = climate%basin_potet * model_basin%basin_area_inv
     end associate
   end subroutine
 end submodule
