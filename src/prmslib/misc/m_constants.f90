@@ -25,8 +25,8 @@ module prms_constants
     real(r32), parameter :: HOUR_PER_DAY = 24_sp
 
     real(r32), parameter :: CLOSEZERO = EPSILON(0.0_sp)
-    real(r32), parameter :: NEARZERO = 1.0E-6   ! As defined in PRMS5
-    ! real(r32), parameter :: NEARZERO = EPSILON(0.0_sp)
+    ! real(r32), parameter :: NEARZERO = 1.0E-6   ! As defined in PRMS5
+    real(r32), parameter :: NEARZERO = EPSILON(0.0_sp)
     real(r64), parameter :: DNEARZERO = EPSILON(0.0_dp)
 
     real(r64), parameter :: FT2_PER_ACRE = 43560.0_dp
