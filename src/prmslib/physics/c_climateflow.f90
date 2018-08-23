@@ -55,8 +55,6 @@ module PRMS_CLIMATEVARS
     contains
       procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
-      ! procedure, public :: set_precipitation_form
-      ! procedure, public :: set_temperature
       procedure, nopass, public :: module_name
         !! Return the name of the module
       procedure, nopass, public :: version
