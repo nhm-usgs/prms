@@ -88,7 +88,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
               external_transferON_OFF == 1 .or. dprst_transferON_OFF == 1 .or. &
               lake_transferON_OFF == 1 .or. nconsumed > 0 .or. nwateruse > 0) then
 
-              this%use_sroff_transfer = 1
+            this%use_sroff_transfer = 1
           endif
         endif
 
@@ -537,6 +537,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 basin_area_inv => model_basin%basin_area_inv, &
                 dprst_area_max => model_basin%dprst_area_max, &
                 hru_route_order => model_basin%hru_route_order, &
+
                 dprst_depth_avg => param_data%dprst_depth_avg%values, &
                 dprst_frac => param_data%dprst_frac%values, &
                 dprst_frac_init => param_data%dprst_frac_init%values, &
@@ -972,8 +973,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       ! Local Variables
       real(r32) :: clos_vol_r
       real(r32) :: dprst_avail_et
-      real(r64) :: dprst_evap_clos
-      real(r64) :: dprst_evap_open
       real(r32) :: dprst_sri
       real(r32) :: dprst_sri_clos
       real(r32) :: dprst_sri_open
@@ -987,6 +986,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       real(r32) :: tmp
       real(r32) :: unsatisfied_et
 
+      real(r64) :: dprst_evap_clos
+      real(r64) :: dprst_evap_open
       real(r64) :: seep_open
       real(r64) :: seep_clos
       real(r64) :: tmp1
@@ -1162,7 +1163,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           this%sri = this%sri - dprst_sri / hru_percent_imperv(idx)
 
           if (this%sri < 0.0) then
-            if (this%sri < -NEARZERO) print *, 'dprst sri<0.0', this%sri, dprst_sri
+            if (this%sri < -NEARZERO) print *, 'dprst sri < 0.0', this%sri, dprst_sri
             ! May need to adjust dprst_sri and volumes
             this%sri = 0.0
           endif
@@ -1281,6 +1282,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             seep_open = seep_open + this%dprst_vol_open(idx)
             this%dprst_vol_open(idx) = 0.0_dp
           endif
+
           this%dprst_seep_hru(idx) = seep_open / hru_area_dble(idx)
         endif
 
