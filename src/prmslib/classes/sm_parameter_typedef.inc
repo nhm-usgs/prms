@@ -276,4 +276,3 @@ type(rVariable) :: width_m
 type(rVariable) :: width_values
 type(rVariable) :: wrain_intcp
 type(rVariable) :: x_coef
-
