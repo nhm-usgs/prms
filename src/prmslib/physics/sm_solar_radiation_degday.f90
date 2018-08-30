@@ -23,9 +23,11 @@ contains
               print_debug => ctl_data%print_debug%value, &
               active_mask => model_basin%active_mask)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       ! NOTE: Once units are standardized this can go away

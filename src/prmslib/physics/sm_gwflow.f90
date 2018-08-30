@@ -84,6 +84,13 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 dprst_stor_hru => runoff%dprst_stor_hru, &
                 hru_impervstor => runoff%hru_impervstor)
 
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
+
         if (cascadegw_flag > 0) then
           allocate(this%gw_upslope(nhru))
           allocate(this%hru_gw_cascadeflow(nhru))

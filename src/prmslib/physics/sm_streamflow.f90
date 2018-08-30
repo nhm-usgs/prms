@@ -47,18 +47,29 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
                 nsegment => ctl_data%nsegment%value, &
                 cascade_flag => ctl_data%cascade_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
+                print_debug => ctl_data%print_debug%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
+
                 hru_segment => param_data%hru_segment%values, &
                 ! K_coef => param_data%K_coef%values, &
                 obsin_segment => param_data%obsin_segment%values, &
                 segment_type => param_data%segment_type%values, &
                 tosegment => param_data%tosegment%values, &
                 ! x_coef => param_data%x_coef%values, &
+
                 active_hrus => model_basin%active_hrus, &
                 hru_area_dble => model_basin%hru_area_dble, &
                 hru_route_order => model_basin%hru_route_order, &
+
                 Timestep_seconds => model_time%Timestep_seconds)
+
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
 
         allocate(this%hru_outflow(nhru))
 

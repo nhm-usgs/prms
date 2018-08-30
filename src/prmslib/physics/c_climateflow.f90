@@ -4,6 +4,7 @@
 module PRMS_CLIMATEVARS
   use variableKind
   use prms_constants, only: dp
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -14,9 +15,9 @@ module PRMS_CLIMATEVARS
 
   character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
   character(len=*), parameter :: MODNAME = 'climateflow'
-  character(len=*), parameter :: MODVERSION = '2017-09-29 13:47:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:40:00Z'
 
-  type Climateflow
+  type, extends(ModelBase) :: Climateflow
     ! Variables related to flows from soilzone, smbal, ssflow, srunoff_carea, srunoff_smidx
     ! WARNING: soil_moist, soil_rechr, soil_rechr_max are depended on
     !          by BOTH Srunoff and Soilzone.
@@ -55,10 +56,6 @@ module PRMS_CLIMATEVARS
     contains
       procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
   end type
 
   interface Climateflow
@@ -80,15 +77,4 @@ module PRMS_CLIMATEVARS
     end subroutine
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
 end module

@@ -25,10 +25,12 @@ contains
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values)
 
-      ! if (print_debug > -2) then
-      !   ! Output module and version information
-      !   call print_module_info(MODNAME, MODDESC, MODVERSION)
-      ! endif
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
 
       ! Open and read the precipitation cbh file
       call find_header_end(nhru, this%precip_funit, ierr, precip_day%s, &

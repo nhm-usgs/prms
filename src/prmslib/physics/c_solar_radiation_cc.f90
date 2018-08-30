@@ -26,7 +26,7 @@ module SOLAR_RADIATION_CC
 
   character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
   character(len=*), parameter :: MODNAME = 'solrad_cc'
-  character(len=*), parameter :: MODVERSION = '2018-07-02 14:04:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:47:00Z'
 
   type, extends(SolarRadiation) :: Solrad_cc
     ! Declared Variables

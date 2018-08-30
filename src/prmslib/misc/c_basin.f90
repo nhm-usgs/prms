@@ -5,6 +5,7 @@ module PRMS_BASIN
   use variableKind
   use prms_constants, only: dp, sp
   use iso_fortran_env, only: output_unit
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   implicit none
@@ -14,9 +15,9 @@ module PRMS_BASIN
 
   character(len=*), parameter :: MODDESC = 'Basin Definition'
   character(len=*), parameter :: MODNAME = 'basin'
-  character(len=*), parameter :: MODVERSION = '2018-08-22 13:22:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:22:00Z'
 
-  type :: Basin
+  type, extends(ModelBase) :: Basin
     real(r64) :: active_area
     real(r64) :: basin_area_inv
     real(r64) :: basin_lat
@@ -49,11 +50,11 @@ module PRMS_BASIN
     real(r64), allocatable :: hru_area_dble(:)
     real(r64), allocatable :: lake_area(:)
 
-    contains
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
+    ! contains
+    !   procedure, nopass, public :: module_name
+    !     !! Return the name of the module
+    !   procedure, nopass, public :: version
+    !     !! Return the version of the module
   end type
 
   interface Basin
@@ -68,16 +69,16 @@ module PRMS_BASIN
     end function
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
+  ! interface
+  !   module function module_name() result(res)
+  !     character(:), allocatable :: res
+  !   end function
+  ! end interface
+  !
+  ! interface
+  !   module function version() result(res)
+  !     character(:), allocatable :: res
+  !   end function
+  ! end interface
 
 end module

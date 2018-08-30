@@ -75,6 +75,13 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
                 snowcov_area => snow%snowcov_area)
 
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
+
         ! TODO: 2018-06-21 - Uncomment once cascade module is converted.
         ! if (cascade_flag == 1) then
         !   allocate(this%hru_sz_cascadeflow(nhru))

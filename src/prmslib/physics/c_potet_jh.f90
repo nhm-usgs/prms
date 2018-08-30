@@ -20,7 +20,7 @@ module PRMS_POTET_JH
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet_jh'
-  character(len=*), parameter :: MODVERSION = '2016-05-10 15:48:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:00:00Z'
 
   type, extends(Potential_ET) :: Potet_jh
     ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.

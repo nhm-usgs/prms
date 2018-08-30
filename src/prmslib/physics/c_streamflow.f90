@@ -1,5 +1,6 @@
 module PRMS_STREAMFLOW
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -18,9 +19,9 @@ module PRMS_STREAMFLOW
 
   character(len=*), parameter :: MODDESC = 'Streamflow initialization'
   character(len=*), parameter :: MODNAME = 'streamflow'
-  character(len=*), parameter :: MODVERSION = '2018-06-25 16:20:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:01:00Z'
 
-  type Streamflow
+  type, extends(ModelBase) :: Streamflow
       ! Local Variables
       integer(i32), private :: noarea_flag
       real(r64), private :: segment_area

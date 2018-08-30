@@ -15,7 +15,7 @@ module SOLAR_RADIATION_HRU
 
   character(len=*), parameter :: MODDESC = 'Solar radiation by HRU'
   character(len=*), parameter :: MODNAME = 'solrad_hru'
-  character(len=*), parameter :: MODVERSION = '2018-07-02 12:56:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:50:00Z'
 
   type, extends(SolarRadiation) :: Solrad_hru
     integer(i32), private :: swrad_funit

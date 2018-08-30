@@ -51,6 +51,13 @@ contains
 
               pkwater_equiv => model_climate%pkwater_equiv)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
+
       ! TODO: Allocated internal arrays/variables
       allocate(this%ai(nhru))
       allocate(this%albedo(nhru))

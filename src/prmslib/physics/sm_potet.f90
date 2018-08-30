@@ -21,12 +21,20 @@ contains
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
+              print_debug => ctl_data%print_debug%value, &
 
               ! NOTE: humidity_day needs a default value to be associated
               ! humidity_day => ctl_data%humidity_day%values(1), &
               start_time => ctl_data%start_time%values, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value)
+
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
 
       allocate(this%potet(nhru))
       this%potet = 0.0

@@ -6,7 +6,6 @@ contains
   module function constructor_Time(ctl_data, model_basin) result(this)
     use prms_constants, only: dp, FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                               HOUR_PER_DAY, MIN_PER_HOUR
-    use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Time_t) :: this
@@ -30,9 +29,11 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               hemisphere => model_basin%hemisphere)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       ! original declare stuff

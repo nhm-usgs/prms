@@ -1,7 +1,7 @@
 submodule (SOLAR_RADIATION) sm_solar_radiation
 contains
   module function constructor_SolarRadiation(ctl_data, param_data, model_basin) result(this)
-    use UTILS_PRMS, only: PRMS_open_module_file, print_module_info
+    use UTILS_PRMS, only: PRMS_open_module_file
     implicit none
 
     type(SolarRadiation) :: this
@@ -55,9 +55,11 @@ contains
               basin_lat => model_basin%basin_lat, &
               hru_route_order => model_basin%hru_route_order)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       allocate(this%swrad(nhru))
@@ -403,19 +405,4 @@ contains
                         SIN(Y + V)))
   end function
 
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
 end submodule

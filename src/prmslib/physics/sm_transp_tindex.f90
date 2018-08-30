@@ -48,9 +48,11 @@ contains
               transp_end => param_data%transp_end%values, &
               transp_tmax => param_data%transp_tmax%values)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       allocate(this%tmax_sum(nhru))
@@ -234,19 +236,4 @@ contains
     end associate
   end subroutine
 
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
 end submodule

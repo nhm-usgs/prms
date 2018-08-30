@@ -41,12 +41,20 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       associate(nsegment => ctl_data%nsegment%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
+                print_debug => ctl_data%print_debug%value, &
                 segment_flow_init => param_data%segment_flow_init%values, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 ! seg_outflow => model_flow%seg_outflow, &
                 cfs_conv => model_time%cfs_conv, &
                 K_coef => param_data%K_coef%values, &
                 x_coef => param_data%x_coef%values)
+
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
 
         allocate(this%c0(nsegment))
         allocate(this%c1(nsegment))

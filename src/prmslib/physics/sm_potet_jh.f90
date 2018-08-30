@@ -16,9 +16,11 @@ contains
     associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.

@@ -3,6 +3,7 @@
 !***********************************************************************
 module PRMS_OBS
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -14,9 +15,9 @@ module PRMS_OBS
 
   character(len=*), parameter :: MODDESC = 'Time Series Data'
   character(len=*), parameter :: MODNAME = 'obs'
-  character(len=*), parameter :: MODVERSION = '2017-09-29 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:38:00Z'
 
-  type Obs
+  type, extends(ModelBase) :: Obs
     ! Declared Variables
     real(r32), allocatable :: gate_ht(:)
       !! Lake module gate height
@@ -39,10 +40,6 @@ module PRMS_OBS
       procedure, public :: run => run_Obs
       procedure, public :: cleanup => cleanup_Obs
         !! Final cleanup code after simulation
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
   end type
 
 
@@ -71,18 +68,6 @@ module PRMS_OBS
       type(Time_t), intent(in) :: model_time
       type(Basin), intent(in) :: model_basin
     end subroutine
-  end interface
-
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
   end interface
 
 end module

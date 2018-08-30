@@ -1,6 +1,7 @@
 module PRMS_TRANSPIRATION
   use variableKind
   use prms_constants, only: sp, dp
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -12,9 +13,9 @@ module PRMS_TRANSPIRATION
 
   character(len=*), parameter :: MODDESC = 'Transpiration'
   character(len=*), parameter :: MODNAME = 'transpiration'
-  character(len=*), parameter :: MODVERSION = '2018-07-05 16:57:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:51:00Z'
 
-  type Transpiration
+  type, extends(ModelBase) :: Transpiration
     integer(i32) :: basin_transp_on
 
     integer(i32), allocatable :: transp_on(:)

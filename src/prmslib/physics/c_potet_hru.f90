@@ -14,7 +14,7 @@ module PRMS_POTET_HRU
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration by HRU'
   character(len=*), parameter :: MODNAME = 'potet_hru'
-  character(len=*), parameter :: MODVERSION = '2018-07-03 17:41:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:01:00Z'
 
   type, extends(Potential_ET) :: Potet_hru
     integer(i32), private :: et_funit

@@ -24,12 +24,14 @@ contains
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOut_freq => ctl_data%basinOut_freq%value)
 
-      ierr = 0
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
+
+      ierr = 0
 
       if (basinOutVars == 0) then
           if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then

@@ -1,10 +1,10 @@
 module PRMS_SOILZONE
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  ! use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
   use PRMS_PRECIPITATION, only: Precipitation
@@ -20,9 +20,9 @@ module PRMS_SOILZONE
 
   character(len=*), parameter :: MODDESC = 'Soilzone'
   character(len=*), parameter :: MODNAME = 'soilzone'
-  character(len=*), parameter :: MODVERSION = '2018-06-20 18:20:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:15:00Z'
 
-  type Soilzone
+  type, extends(ModelBase) :: Soilzone
     ! Local Variables
     integer(i32) :: DBGUNT
     integer(i32) :: et_type

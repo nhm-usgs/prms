@@ -1,5 +1,6 @@
 module PRMS_POTET
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -11,10 +12,10 @@ module PRMS_POTET
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet'
-  character(len=*), parameter :: MODVERSION = '20188-07-03 12:36:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:58:00Z'
 
   ! Potential Evapotranspiration class
-  type Potential_ET
+  type, extends(ModelBase) :: Potential_ET
     integer(i32), private :: humidity_funit
       !! Humidity CBH file unit
 

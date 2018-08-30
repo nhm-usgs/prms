@@ -1,5 +1,6 @@
 module PRMS_STRMTEMP
   use VariableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -21,7 +22,7 @@ module PRMS_STRMTEMP
 
   character(len=*), parameter :: MODDESC = 'Stream Temperature'
   character(len=*), parameter :: MODNAME = 'stream_temp'
-  character(len=*), parameter :: MODVERSION = '2018-06-26 16:40:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:05:00Z'
 
   ! Conversions
   real(r32), PARAMETER :: HALF_PI = ACOS(0.0)
@@ -31,7 +32,7 @@ module PRMS_STRMTEMP
   real(r32), PARAMETER :: DAYSYR = 365.242
   real(r64) :: MPS_CONVERT = 2.93981481D-07
 
-  type StreamTemp
+  type, extends(ModelBase) :: StreamTemp
     ! Local Variables
     integer(i32) :: gw_index
     integer(i32) :: ss_index

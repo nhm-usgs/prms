@@ -5,7 +5,7 @@ contains
   module function constructor_Basin(ctl_data, param_data) result(this)
     use prms_constants, only: INACTIVE, LAND, LAKE, SWALE, NORTHERN, SOUTHERN, &
                               BCWEIR, GATEOP, PULS, LINEAR
-    use UTILS_PRMS, only: print_module_info
+    ! use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Basin) :: this
@@ -48,9 +48,11 @@ contains
               lake_hru_id => param_data%lake_hru_id%values, &
               lake_type => param_data%lake_type%values)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       allocate(this%hru_area_dble(nhru))
@@ -258,20 +260,20 @@ contains
     end associate
   end function
 
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
+  ! module function module_name() result(res)
+  !   implicit none
+  !
+  !   character(:), allocatable :: res
+  !
+  !   res = MODNAME
+  ! end function
+  !
+  ! module function version() result(res)
+  !   implicit none
+  !
+  !   character(:), allocatable :: res
+  !
+  !   res = MODVERSION
+  ! end function
 
 end submodule

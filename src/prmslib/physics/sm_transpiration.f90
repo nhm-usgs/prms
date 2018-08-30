@@ -9,7 +9,15 @@ contains
     ! Control
     ! nhru,
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value)
+    associate(nhru => ctl_data%nhru%value, &
+              print_debug => ctl_data%print_debug%value)
+
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
 
       allocate(this%transp_on(nhru))
       this%transp_on = 0

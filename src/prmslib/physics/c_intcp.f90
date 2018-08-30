@@ -5,6 +5,7 @@
 !***********************************************************************
 module PRMS_INTCP
   use variableKind
+  use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
   use Parameters_class, only: Parameters
@@ -22,9 +23,9 @@ module PRMS_INTCP
 
   character(len=*), parameter :: MODDESC = 'Canopy Interception'
   character(len=*), parameter :: MODNAME = 'intcp'
-  character(len=*), parameter :: MODVERSION = '2018-02-26 12:28:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:07:00Z'
 
-  type Interception
+  type, extends(ModelBase) :: Interception
     ! Local Variables
     real(r32), allocatable :: gain_inches(:)
     real(r32), allocatable :: intcp_changeover(:)

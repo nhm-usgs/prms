@@ -1,5 +1,6 @@
 module PRMS_PRECIPITATION
   use variableKind
+  use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
   use Parameters_class, only: Parameters
@@ -12,10 +13,10 @@ module PRMS_PRECIPITATION
   public :: Precipitation
 
   character(len=*), parameter :: MODDESC = 'Precipitation distribution'
-  character(len=*), parameter :: MODNAME = 'precip'
-  character(len=*), parameter :: MODVERSION = '2018-08-01 17:11:00Z'
+  character(len=*), parameter :: MODNAME = 'precipitation'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 17:09:00Z'
 
-  type Precipitation
+  type, extends(ModelBase) :: Precipitation
     ! Basin variables
     real(r64) :: basin_obs_ppt
     real(r64) :: basin_ppt

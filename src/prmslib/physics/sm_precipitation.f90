@@ -24,6 +24,13 @@ contains
               tmax_allsnow => param_data%tmax_allsnow%values, &
               tmax_allrain_offset => param_data%tmax_allrain_offset%values)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
+
       allocate(this%hru_ppt(nhru))
       allocate(this%hru_rain(nhru))
       allocate(this%hru_snow(nhru))

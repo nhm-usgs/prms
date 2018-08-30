@@ -1,6 +1,7 @@
 module SOLAR_RADIATION
   use variableKind
   use prms_constants, only: sp, dp
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
@@ -12,7 +13,7 @@ module SOLAR_RADIATION
 
   character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
   character(len=*), parameter :: MODNAME = 'soltab'
-  character(len=*), parameter :: MODVERSION = '2018-06-29 20:10:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:42:00Z'
 
   integer(r32), parameter :: DAYS_PER_YEAR = 366.0_sp
   real(r64), parameter :: PI = 3.1415926535898_dp
@@ -20,7 +21,7 @@ module SOLAR_RADIATION
   real(r64), parameter :: TWOPI = 2.0_dp * PI       ! TWOPI ~ 6.2831853071786
   real(r64), parameter :: PI_12 = 12.0_dp / PI      ! PI_12 ~ 3.8197186342055
 
-  type SolarRadiation
+  type, extends(ModelBase) :: SolarRadiation
     logical :: has_basin_obs_station
       !! When true has a main solar radiation station
     logical :: has_hru_obs_station
@@ -55,10 +56,6 @@ module SOLAR_RADIATION
     real(r64), allocatable :: soltab_horad_potsw(:, :)
 
     contains
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
       procedure, nopass, private :: compute_soltab
       procedure, nopass, private :: compute_t
       procedure, nopass, private :: func3
@@ -125,15 +122,4 @@ module SOLAR_RADIATION
     end function
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
 end module

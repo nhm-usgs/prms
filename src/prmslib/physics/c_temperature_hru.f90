@@ -11,9 +11,9 @@ module PRMS_TEMPERATURE_HRU
   private
   public :: Temperature_hru
 
-  character(len=*), parameter :: MODDESC = 'Temperature distribution by HRU'
+  character(len=*), parameter :: MODDESC = 'Temp distribution by HRU'
   character(len=*), parameter :: MODNAME = 'temp_hru'
-  character(len=*), parameter :: MODVERSION = '2018-07-05 19:55:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:09:00Z'
 
   type, extends(Temperature) :: Temperature_hru
     integer(i32), private :: tmax_funit

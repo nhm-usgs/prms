@@ -12,9 +12,9 @@ module PRMS_PRECIPITATION_HRU
   private
   public :: Precipitation_hru
 
-  character(len=*), parameter :: MODDESC = 'Precipitation distribution by HRU'
-  character(len=*), parameter :: MODNAME = 'precip_hru'
-  character(len=*), parameter :: MODVERSION = '2018-08-01 17:11:00Z'
+  character(len=*), parameter :: MODDESC = 'Precip distribution by HRU'
+  character(len=*), parameter :: MODNAME = 'precipitation_hru'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:11:00Z'
 
   type, extends(Precipitation) :: Precipitation_hru
     integer(i32), private :: precip_funit

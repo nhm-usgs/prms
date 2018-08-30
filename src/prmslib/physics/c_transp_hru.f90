@@ -14,7 +14,7 @@ module PRMS_TRANSP_HRU
 
   character(len=*), parameter :: MODDESC = 'Transpiration by HRU'
   character(len=*), parameter :: MODNAME = 'transp_hru'
-  character(len=*), parameter :: MODVERSION = '2018-07-05 17:12:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:55:00Z'
 
   type, extends(Transpiration) :: Transp_hru
     integer(i32), private :: transp_funit

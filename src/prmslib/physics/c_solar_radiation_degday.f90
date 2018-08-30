@@ -16,7 +16,7 @@ module SOLAR_RADIATION_DEGDAY
 
   character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
   character(len=*), parameter :: MODNAME = 'solrad_degday'
-  character(len=*), parameter :: MODVERSION = '2018-07-02 14:04:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:45:00Z'
 
   real(r32), dimension(26), parameter :: SOLF = [.20, .35, .45, .51, .56, .59, &
                                                  .62, .64, .655, .67, .682, .69, &

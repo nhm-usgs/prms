@@ -49,7 +49,9 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! ------------------------------------------------------------------------
       associate(nsegment => ctl_data%nsegment%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
+                print_debug => ctl_data%print_debug%value, &
                 stream_temp_shade_flag => ctl_data%stream_temp_shade_flag%value, &
+
                 azrh => param_data%azrh%values, &
                 hru_segment => param_data%hru_segment%values, &
                 seg_elev => param_data%seg_elev%values, &
@@ -58,8 +60,16 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
                 tosegment => param_data%tosegment%values, &
                 active_hrus => model_basin%active_hrus, &
                 hru_route_order => model_basin%hru_route_order, &
+
                 segment_order => model_streamflow%segment_order, &
                 segment_up => model_streamflow%segment_up)
+
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
 
         allocate(this%gw_silo(nsegment, 365))
         allocate(this%gw_sum(nsegment))

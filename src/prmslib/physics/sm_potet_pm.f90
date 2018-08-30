@@ -21,8 +21,16 @@ contains
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+              print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               windspeed_day => ctl_data%windspeed_day%values(1))
+
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
 
       allocate(this%tempc_dewpt(nhru))
       allocate(this%vp_actual(nhru))

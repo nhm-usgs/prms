@@ -19,7 +19,7 @@ MODULE PRMS_TRANSP_TINDEX
 
   character(len=*), PARAMETER :: MODDESC = 'Transpiration Distribution'
   character(len=*), PARAMETER :: MODNAME = 'transp_tindex'
-  character(len=*), PARAMETER :: MODVERSION = '2015-01-06 00:09:15Z'
+  character(len=*), PARAMETER :: MODVERSION = '2018-08-30 13:54:00Z'
 
   type, extends(Transpiration) :: Transp_tindex
     ! Local Variables
@@ -33,10 +33,6 @@ MODULE PRMS_TRANSP_TINDEX
     contains
       procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, public :: run => run_Transp_tindex
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
 
   end type
 
@@ -72,15 +68,4 @@ MODULE PRMS_TRANSP_TINDEX
     end subroutine
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
 end MODULE

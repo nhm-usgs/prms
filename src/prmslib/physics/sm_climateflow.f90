@@ -4,7 +4,7 @@ contains
   !***********************************************************************
   ! Climateflow constructor
   module function constructor_Climateflow(ctl_data, param_data) result(this)
-    use UTILS_PRMS, only: check_restart, print_module_info
+    use UTILS_PRMS, only: check_restart
     implicit none
 
     type(Climateflow) :: this
@@ -22,9 +22,11 @@ contains
               soil_moist_init_frac => param_data%soil_moist_init_frac%values, &
               soil_moist_max => param_data%soil_moist_max%values)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       ! Soilzone variables
@@ -172,22 +174,5 @@ contains
     end associate
   end subroutine
 
-
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
 
 end submodule

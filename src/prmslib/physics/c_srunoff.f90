@@ -1,10 +1,10 @@
 module PRMS_SRUNOFF
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  ! use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
   use PRMS_POTET, only: Potential_ET
   use PRMS_SNOW, only: Snowcomp
@@ -16,9 +16,9 @@ module PRMS_SRUNOFF
 
   character(len=*), parameter :: MODDESC = 'Surface Runoff'
   character(len=*), parameter :: MODNAME = 'srunoff_smidx'
-  character(len=*), parameter :: MODVERSION = '2018-06-18 13:46:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:19:00Z'
 
-  type Srunoff
+  type, extends(ModelBase) :: Srunoff
     ! Local Variables
     logical :: has_closed_dprst
       !! NOTE: replaces dprst_clos_flag

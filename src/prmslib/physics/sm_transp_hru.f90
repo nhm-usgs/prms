@@ -22,9 +22,16 @@ contains
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
-              ! print_debug => ctl_data%print_debug%value, &
+              print_debug => ctl_data%print_debug%value, &
               transp_day => ctl_data%transp_day%values(1), &
               start_time => ctl_data%start_time%values)
+
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
 
       call find_header_end(nhru, this%transp_funit, ierr, &
                                 ctl_data%transp_day%values(1)%s, 'transp_day', &

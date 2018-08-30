@@ -5,6 +5,7 @@ module PRMS_BASIN_SUMMARY
   use variableKind
   use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                             MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
@@ -20,9 +21,9 @@ module PRMS_BASIN_SUMMARY
 
   character(len=*), parameter :: MODDESC = 'Output Summary by Basin'
   character(len=*), parameter :: MODNAME = 'basin_summary'
-  character(len=*), parameter :: MODVERSION = '2017-09-29 13:49:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:12:00Z'
 
-  type Basin_summary
+  type, extends(ModelBase) :: Basin_summary
 
     ! Module Variables
     logical :: begin_results
@@ -48,10 +49,7 @@ module PRMS_BASIN_SUMMARY
 
     contains
       procedure, public :: run => run_Basin_summary
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
+
   end type
 
   interface Basin_summary
@@ -80,15 +78,4 @@ module PRMS_BASIN_SUMMARY
     end subroutine
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
 end module

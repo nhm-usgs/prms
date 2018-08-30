@@ -1,10 +1,10 @@
 module PRMS_GWFLOW
   use variableKind
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
-  ! use PRMS_FLOWVARS, only: Flowvars
   use PRMS_INTCP, only: Interception
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
@@ -16,11 +16,11 @@ module PRMS_GWFLOW
   private
   public :: Gwflow
 
-  character(len=*), parameter :: MODDESC = 'gwflow'
-  character(len=*), parameter :: MODNAME = 'Groundwater'
-  character(len=*), parameter :: MODVERSION = '2018-06-22 14:28:00Z'
+  character(len=*), parameter :: MODDESC = 'Groundwater flow'
+  character(len=*), parameter :: MODNAME = 'gwflow'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:04:00Z'
 
-  type Gwflow
+  type, extends(ModelBase) :: Gwflow
     ! Local Variables
     real(r64), allocatable :: gwstor_minarea(:)
     real(r64), allocatable :: gwin_dprst(:)

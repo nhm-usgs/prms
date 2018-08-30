@@ -28,6 +28,13 @@ contains
               tmax_day => ctl_data%tmax_day%values(1), &
               tmin_day => ctl_data%tmin_day%values(1))
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
+
       ! Open and read tmax cbh file
       call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
                            'tmax_day', (cbh_binary_flag==1))

@@ -29,10 +29,12 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
                 start_time => ctl_data%start_time%values, &
                 swrad_day => ctl_data%swrad_day%values(1))
 
-        ! if (print_debug > -2) then
-        !   ! Output module and version information
-        !   call print_module_info(MODNAME, MODDESC, MODVERSION)
-        ! endif
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
 
         ! Solar radiation
         call find_header_end(nhru, this%swrad_funit, ierr, swrad_day%s, 'swrad_day', &

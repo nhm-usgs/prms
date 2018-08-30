@@ -50,6 +50,13 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 carea_max => param_data%carea_max%values, &
                 carea_min => param_data%carea_min%values)
 
+        call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+        if (print_debug > -2) then
+          ! Output module and version information
+          call this%print_module_info()
+        endif
+
         allocate(this%contrib_fraction(nhru))
         allocate(this%hru_impervevap(nhru))
         allocate(this%hru_impervstor(nhru))

@@ -24,7 +24,7 @@ module PRMS_POTET_PM
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet_pm'
-  character(len=*), parameter :: MODVERSION = '2018-07-05 14:04:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:03:00Z'
 
   type, extends(Potential_ET) :: Potet_pm
     integer(i32), private :: windspeed_funit

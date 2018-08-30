@@ -1,6 +1,7 @@
 module PRMS_SNOW
   use variableKind
   use prms_constants, only: dp, CLOSEZERO, NEARZERO, DNEARZERO, INCH2CM
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only : Time_t
@@ -19,7 +20,7 @@ module PRMS_SNOW
 
   character(len=*), parameter :: MODDESC = 'Snow Dynamics'
   character(len=*), parameter :: MODNAME = 'snowcomp'
-  character(len=*), parameter :: MODVERSION = '2018-02-23 16:04:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 14:13:00Z'
 
   integer(i32), parameter :: MAXALB = 15
 
@@ -28,7 +29,7 @@ module PRMS_SNOW
   real(r32), parameter :: AMLT_INIT(MAXALB) = [0.72, 0.65, 0.60, 0.58, 0.56, 0.54, 0.52, &
                                        0.50, 0.48, 0.46, 0.44, 0.43, 0.42, 0.41, 0.40]
 
-  type Snowcomp
+  type, extends(ModelBase) :: Snowcomp
     integer(i32), allocatable :: int_alb(:)
       !! Flag to indicate: 1) accumlation season curve; 2) use of the melt season curve [flag]
     real(r64), private :: deninv
@@ -121,10 +122,7 @@ module PRMS_SNOW
 
     contains
       procedure, public :: run => run_Snowcomp
-      ! procedure, nopass, public :: module_name
-        !! Return the name of the module
-      ! procedure, nopass, public :: version
-        !! Return the version of the module
+
       procedure, private :: calin
       procedure, private :: caloss
       procedure, private :: ppt_to_pack

@@ -21,7 +21,16 @@ contains
     this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin)
 
     associate(nhru => ctl_data%nhru%value, &
-              nsol => ctl_data%nsol%value)
+              nsol => ctl_data%nsol%value, &
+              print_debug => ctl_data%print_debug%value)
+
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
+
       allocate(this%cloud_radadj(nhru))
       allocate(this%cloud_cover_hru(nhru))
 

@@ -32,9 +32,11 @@ contains
               nhruOutVars => ctl_data%nhruOutVars%value, &
               nhm_id => param_data%nhm_id%values)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       ! NOTE: NhruOutON_OFF=2 is an undocumented feature

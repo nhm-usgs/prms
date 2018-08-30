@@ -4,7 +4,6 @@ contains
   ! Obs constructor
   module function constructor_Obs(ctl_data) result(this)
     use prms_constants, only: dp
-    use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Obs) :: this
@@ -29,9 +28,11 @@ contains
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
       if (print_debug > -2) then
         ! Output module and version information
-        call print_module_info(MODNAME, MODDESC, MODVERSION)
+        call this%print_module_info()
       endif
 
       if (nobs > 0) then

@@ -3,7 +3,6 @@ module PRMS_MUSKINGUM
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_OBS, only: Obs
   use PRMS_POTET, only: Potential_ET
@@ -19,7 +18,7 @@ module PRMS_MUSKINGUM
 
   character(len=*), parameter :: MODDESC = 'Streamflow routing'
   character(len=*), parameter :: MODNAME = 'muskingum'
-  character(len=*), parameter :: MODVERSION = '2018-06-25 18:42:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:04:00Z'
 
   type, extends(Streamflow) :: Muskingum
     ! Local Variables

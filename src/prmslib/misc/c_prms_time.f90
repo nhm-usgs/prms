@@ -4,6 +4,7 @@
 module PRMS_SET_TIME
   use variableKind
   use prms_constants, only: NORTHERN, SOUTHERN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
   implicit none
@@ -13,11 +14,11 @@ module PRMS_SET_TIME
 
   character(len=*), parameter :: MODDESC = 'Time_t variables'
   character(len=*), parameter :: MODNAME = 'prms_time'
-  character(len=*), parameter :: MODVERSION = '2017-07-06 14:16:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 13:36:00Z'
 
   integer(i32), parameter :: DAYPMO(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-  type Time_t
+  type, extends(ModelBase) :: Time_t
     ! integer(i32) :: Yrdays  ! only used by last_day_of_month()
     integer(i32) :: Summer_flag
     integer(i32) :: day_of_year ! was Jday
@@ -50,10 +51,6 @@ module PRMS_SET_TIME
       procedure, nopass, public :: compute_julday
       procedure, nopass, public :: julian_to_gregorian
       procedure, nopass, public :: leap_day
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
 
       procedure, private :: dattim
       procedure, nopass, private :: deltim
@@ -86,18 +83,6 @@ module PRMS_SET_TIME
       class(Time_t), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
-    end function
-  end interface
-
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
     end function
   end interface
 

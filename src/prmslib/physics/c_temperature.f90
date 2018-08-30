@@ -1,5 +1,6 @@
 module PRMS_TEMPERATURE
   use variableKind
+  use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
   use Parameters_class, only: Parameters
@@ -11,10 +12,10 @@ module PRMS_TEMPERATURE
   public :: Temperature
 
   character(len=*), parameter :: MODDESC = 'Temperature distribution'
-  character(len=*), parameter :: MODNAME = 'temp'
-  character(len=*), parameter :: MODVERSION = '2018-07-05 19:55:00Z'
+  character(len=*), parameter :: MODNAME = 'temperature'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:07:00Z'
 
-  type Temperature
+  type, extends(ModelBase) :: Temperature
     real(r64) :: basin_temp
     real(r64) :: basin_tmax
     real(r64) :: basin_tmin

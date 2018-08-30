@@ -5,6 +5,7 @@ MODULE PRMS_NHRU_SUMMARY
   use variableKind
   use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                             MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
+  use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
@@ -28,9 +29,9 @@ MODULE PRMS_NHRU_SUMMARY
 
   character(len=*), parameter :: MODDESC = 'Output Summary by HRU'
   character(len=*), parameter :: MODNAME = 'nhru_summary'
-  character(len=*), parameter :: MODVERSION = '2017-09-29 13:49:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-08-30 15:14:00Z'
 
-  type Nhru_summary
+  type, extends(ModelBase) :: Nhru_summary
     ! Module Variables
     logical :: begin_results
       !! Used to trigger processing in the run_Nhru_summary routine
@@ -57,10 +58,7 @@ MODULE PRMS_NHRU_SUMMARY
 
     contains
       procedure, public :: run => run_Nhru_summary
-      procedure, nopass, public :: module_name
-        !! Return the name of the module
-      procedure, nopass, public :: version
-        !! Return the version of the module
+
   end type
 
   interface Nhru_summary
@@ -99,15 +97,4 @@ MODULE PRMS_NHRU_SUMMARY
     end subroutine
   end interface
 
-  interface
-    module function module_name() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
-
-  interface
-    module function version() result(res)
-      character(:), allocatable :: res
-    end function
-  end interface
 end module
