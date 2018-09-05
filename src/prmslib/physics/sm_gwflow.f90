@@ -91,6 +91,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
           call this%print_module_info()
         endif
 
+        ! Add trap for sigfpe error
+        ! iret1 = signal(SIGFPE, sigfpe_err, -1)
+
         if (cascadegw_flag > 0) then
           allocate(this%gw_upslope(nhru))
           allocate(this%hru_gw_cascadeflow(nhru))
@@ -284,6 +287,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       real(r64) :: gwsink
       real(r64) :: gwstor
       real(r64) :: gwstor_last
+
       ! TODO: Uncomment next 2 when cascade module is converted
       ! real(r64) :: inch2acre_feet
       ! real(r64) :: seepage
@@ -473,7 +477,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
           if (this%gwminarea_flag == 1) then
             ! Check to be sure gwres_stor >= gwstor_minarea before computing outflows
-            if (gwstor < this%gwstor_minarea(chru)) then
+              if (gwstor < this%gwstor_minarea(chru)) then
               if (gwstor < 0.0_dp) then
                 if (print_debug > -1) then
                   print *, 'Warning, groundwater reservoir for HRU:', chru, &
@@ -506,7 +510,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
             endif
 
             gwflow = 0.0_dp
-            this%gwres_sink(chru) = 0.0
+            this%gwres_sink(chru) = 0.0_dp
           else
             ! Compute groundwater discharge
             gwflow = gwstor * dble(gwflow_coef(chru))
@@ -531,12 +535,18 @@ submodule (PRMS_GWFLOW) sm_gwflow
             !   endif
             ! endif
 
-            this%gwres_sink(chru) = sngl(gwsink / gwarea)
+            this%gwres_sink(chru) = gwsink / gwarea
             this%basin_gwsink = this%basin_gwsink + gwsink
           endif
 
           this%basin_gwstor = this%basin_gwstor + gwstor
-          this%gwres_flow(chru) = sngl(gwflow / gwarea)
+
+          ! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+          ! if (chru == 816) then
+          !   write(*, *) chru, gwflow, gwarea, gwstor, gwflow_coef(chru)
+          ! endif
+
+          this%gwres_flow(chru) = gwflow / gwarea
 
           ! TODO: Uncomment when cascade module is converted
           ! if (cascadegw_flag > 0) then
@@ -548,12 +558,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !   endif
           ! endif
 
-          this%basin_gwflow = this%basin_gwflow + dble(this%gwres_flow(chru)) * gwarea
+          this%basin_gwflow = this%basin_gwflow + this%gwres_flow(chru) * gwarea
 
           ! Leave gwin in inch-acres
           this%gwres_in(chru) = gwin
           this%gwres_stor(chru) = gwstor / gwarea
-          this%hru_lateral_flow(chru) = dble(this%gwres_flow(chru) + sroff(chru) + ssres_flow(chru))
+          this%hru_lateral_flow(chru) = this%gwres_flow(chru) + sroff(chru) + ssres_flow(chru)
 
           ! cfs_conv converts acre-inches per timestep to cfs
           this%hru_streamflow_out(chru) = gwarea * cfs_conv * this%hru_lateral_flow(chru)
@@ -574,7 +584,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%basin_dnflow = this%basin_dnflow * basin_area_inv
       end associate
     end subroutine
-
 
     module subroutine cleanup_Gwflow(this)
       class(Gwflow) :: this

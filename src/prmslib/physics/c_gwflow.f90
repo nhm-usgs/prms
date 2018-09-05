@@ -40,9 +40,9 @@ module PRMS_GWFLOW
     real(r64) :: basin_lake_seep
 
     real(r32), allocatable :: elevlake(:)
-    real(r32), allocatable :: gwres_flow(:)
-    real(r32), allocatable :: gwres_sink(:)
-    real(r32), allocatable :: hru_gw_cascadeflow(:)
+    real(r64), allocatable :: gwres_flow(:)
+    real(r64), allocatable :: gwres_sink(:)
+    real(r64), allocatable :: hru_gw_cascadeflow(:)
 
     real(r64), allocatable :: gw_in_soil(:)
     real(r64), allocatable :: gw_in_ssr(:)
