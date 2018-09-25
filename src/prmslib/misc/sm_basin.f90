@@ -5,7 +5,6 @@ contains
   module function constructor_Basin(ctl_data, param_data) result(this)
     use prms_constants, only: INACTIVE, LAND, LAKE, SWALE, NORTHERN, SOUTHERN, &
                               BCWEIR, GATEOP, PULS, LINEAR
-    ! use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Basin) :: this
@@ -32,9 +31,10 @@ contains
               cascadegw_flag => ctl_data%cascadegw_flag%value, &
               dprst_flag => ctl_data%dprst_flag%value, &
               et_module => ctl_data%et_module%values, &
+              gsflow_mode => ctl_data%gsflow_mode, &
               precip_module => ctl_data%precip_module%values, &
               print_debug => ctl_data%print_debug%value, &
-              model_mode => ctl_data%model_mode%values, &
+              ! model_mode => ctl_data%model_mode%values, &
               model_output_unit => ctl_data%model_output_unit, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmflow_module => ctl_data%strmflow_module%values, &
@@ -58,8 +58,8 @@ contains
       allocate(this%hru_area_dble(nhru))
 
       allocate(this%hru_frac_perv(nhru))
-      allocate(this%hru_imperv(nhru))
-      allocate(this%hru_perv(nhru))
+      allocate(this%hru_area_imperv(nhru))
+      allocate(this%hru_area_perv(nhru))
 
       if (dprst_flag == 1) then
         allocate(this%dprst_area_max(nhru))
@@ -76,7 +76,8 @@ contains
       ! Allocate the hru_route_order array for the number of active HRUs
       allocate(this%hru_route_order(count(this%active_mask)))
 
-      if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+      ! if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+      if (.not. gsflow_mode .or. cascadegw_flag > 0) then
         allocate(this%gwr_route_order(nhru))
       endif
 
@@ -105,7 +106,8 @@ contains
       enddo
       this%active_hrus = j
 
-      if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+      ! if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
+      if (.not. gsflow_mode .or. cascadegw_flag > 0) then
          this%active_gwrs = this%active_hrus
 
          ! WARNING: This modifies a parameter
@@ -130,26 +132,26 @@ contains
       this%basin_lat = sum(dble(hru_lat * hru_area), mask=this%active_mask) * this%basin_area_inv
 
       where (this%active_mask)
-        this%hru_imperv = hru_percent_imperv * hru_area
-        this%hru_perv = hru_area - this%hru_imperv
-        this%hru_frac_perv = this%hru_perv / hru_area
+        this%hru_area_imperv = hru_percent_imperv * hru_area
+        this%hru_area_perv = hru_area - this%hru_area_imperv
+        this%hru_frac_perv = this%hru_area_perv / hru_area
       end where
 
       if (dprst_flag == 1) then
         this%dprst_area_max = dprst_frac * hru_area
 
         where (this%active_mask)
-          this%hru_perv = this%hru_perv - this%dprst_area_max
+          this%hru_area_perv = this%hru_area_perv - this%dprst_area_max
 
           ! Recompute hru_frac_perv to reflect the depression storage area
-          this%hru_frac_perv = this%hru_perv / hru_area
+          this%hru_frac_perv = this%hru_area_perv / hru_area
         end where
 
         basin_dprst = sum(dble(this%dprst_area_max))
       endif
 
-      basin_perv = sum(dble(this%hru_perv)) * this%basin_area_inv
-      basin_imperv = sum(dble(this%hru_imperv)) * this%basin_area_inv
+      basin_perv = sum(dble(this%hru_area_perv)) * this%basin_area_inv
+      basin_imperv = sum(dble(this%hru_area_imperv)) * this%basin_area_inv
 
       ! TODO: 2018-06-21 PAN - Hook up the lake stuff
       this%weir_gate_flag = 0
@@ -159,9 +161,15 @@ contains
       this%numlakes_check = 0
       this%numlake_hrus = 0
 
-      if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
-        if (any([BCWEIR, GATEOP]==lake_type)) this%weir_gate_flag = 1
-        if (any([PULS, LINEAR]==lake_type)) this%puls_lin_flag = 1
+      ! if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
+      if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. .not. gsflow_mode) then
+        if (any([BCWEIR, GATEOP]==lake_type)) then
+          this%weir_gate_flag = 1
+        endif
+
+        if (any([PULS, LINEAR]==lake_type)) then
+          this%puls_lin_flag = 1
+        endif
       endif
 
       ! TODO: 2018-06-21 - more lake stuff to integrate
@@ -174,7 +182,10 @@ contains
           if (lakeid > 0) then
             this%lake_area(lakeid) = this%lake_area(lakeid) + this%hru_area_dble(ii)
 
-            if (lakeid > this%numlakes_check) this%numlakes_check = lakeid
+            if (lakeid > this%numlakes_check) then
+              this%numlakes_check = lakeid
+            endif
+
           ! TODO: Hook this up
           ! else
           !   print *, 'ERROR, hru_type = 2 for HRU:', ii, ' and lake_hru_id = 0'
@@ -188,43 +199,10 @@ contains
           ! endif
 
           this%hru_frac_perv(ii) = 1.0
-          this%hru_imperv(ii) = 0.0
-          this%hru_perv(ii) = hru_area(ii)
+          this%hru_area_imperv(ii) = 0.0
+          this%hru_area_perv(ii) = hru_area(ii)
         endif
       enddo
-
-
-
-      ! do chru = 1, nhru
-      !   harea = hru_area(chru)
-      !   harea_dble = DBLE(harea)
-      !   this%total_area = this%total_area + harea_dble
-      !
-      !   if (hru_type(chru) == INACTIVE) cycle
-      !
-      !   ! ????????? need to fix for lakes with multiple HRUs and PRMS lake routing ????????
-      !   this%land_area = this%land_area + harea_dble ! swale or land
-      !
-      !   this%basin_lat = this%basin_lat + DBLE(hru_lat(chru) * harea)
-      !   j = j + 1
-      !   this%hru_route_order(j) = chru
-      !
-      !   this%hru_imperv(chru) = hru_percent_imperv(chru) * harea
-      !   this%hru_perv(chru) = harea - this%hru_imperv(chru)
-      !
-      !   this%hru_frac_perv(chru) = this%hru_perv(chru) / harea
-      !   basin_perv = basin_perv + DBLE(this%hru_perv(chru))
-      !   basin_imperv = basin_imperv + DBLE(this%hru_imperv(chru))
-      ! enddo
-
-      ! this%active_hrus = j
-      ! this%active_area = this%land_area
-      !
-      ! this%basin_area_inv = 1.0D0 / this%active_area
-      ! this%basin_lat = this%basin_lat * this%basin_area_inv
-
-      ! basin_perv = basin_perv * this%basin_area_inv
-      ! basin_imperv = basin_imperv * this%basin_area_inv
 
       ! Used in solrad modules to winter/summer radiation adjustment
       if (this%basin_lat > 0.0_dp) then
@@ -259,21 +237,4 @@ contains
       endif
     end associate
   end function
-
-  ! module function module_name() result(res)
-  !   implicit none
-  !
-  !   character(:), allocatable :: res
-  !
-  !   res = MODNAME
-  ! end function
-  !
-  ! module function version() result(res)
-  !   implicit none
-  !
-  !   character(:), allocatable :: res
-  !
-  !   res = MODVERSION
-  ! end function
-
 end submodule

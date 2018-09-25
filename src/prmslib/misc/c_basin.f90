@@ -28,8 +28,11 @@ module PRMS_BASIN
     integer(i32) :: active_gwrs
     integer(i32) :: active_hrus
     integer(i32) :: hemisphere
+
+    ! TODO: 2018-09-11 PAN Only used by soilzone; could move there?
     integer(i32) :: numlake_hrus
-    integer(i32) :: numlakes_check
+
+    integer(i32), private :: numlakes_check
     integer(i32) :: puls_lin_flag
     integer(i32) :: weir_gate_flag
 
@@ -44,17 +47,15 @@ module PRMS_BASIN
     real(r32), allocatable :: hru_elev_feet(:)
     real(r32), allocatable :: hru_elev_meters(:)
     real(r32), allocatable :: hru_frac_perv(:)
-    real(r32), allocatable :: hru_imperv(:)
-    real(r32), allocatable :: hru_perv(:)
+    real(r32), allocatable :: hru_area_imperv(:)
+    real(r32), allocatable :: hru_area_perv(:)
 
     real(r64), allocatable :: hru_area_dble(:)
+
+    ! TODO: 2018-09-11 PAN Possibly move lake_area to muskingum_lake class
     real(r64), allocatable :: lake_area(:)
 
-    ! contains
-    !   procedure, nopass, public :: module_name
-    !     !! Return the name of the module
-    !   procedure, nopass, public :: version
-    !     !! Return the version of the module
+
   end type
 
   interface Basin
@@ -68,17 +69,5 @@ module PRMS_BASIN
         !! Parameters
     end function
   end interface
-
-  ! interface
-  !   module function module_name() result(res)
-  !     character(:), allocatable :: res
-  !   end function
-  ! end interface
-  !
-  ! interface
-  !   module function version() result(res)
-  !     character(:), allocatable :: res
-  !   end function
-  ! end interface
 
 end module
