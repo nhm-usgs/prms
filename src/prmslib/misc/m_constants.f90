@@ -102,4 +102,9 @@ module prms_constants
       enumerator :: PULS=1, LINEAR=2, FLOWTHRU=3, BCWEIR=4, GATEOP=5, MEASURED=6
       ! 1=Puls routing; 2=linear routing; 3=flow through; 4=broad crested weir; 5=gate opening; 6=measured flow)
     end enum
+
+    ! soil_type
+    enum, bind(C)
+      enumerator :: SAND=1, LOAM=2, CLAY=3
+    end enum
 end module prms_constants
