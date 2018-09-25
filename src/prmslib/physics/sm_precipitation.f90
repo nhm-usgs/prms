@@ -119,11 +119,13 @@ contains
       !! Array of rain mixture adjustments
 
     ! Local variables
+
     ! real(r32), allocatable :: tdiff_arr(:)
       !! Array containing differences b/t tmaxf and tminf
     real(r32) :: tdiff
 
     integer(i32) :: chru
+    integer(i32) :: idx1D
     integer(i32) :: ii
 
     ! Control
@@ -161,17 +163,20 @@ contains
 
       do ii=1, active_hrus
         chru = hru_route_order(ii)
+        idx1D = (month - 1) * nhru + chru
 
         if (this%hru_ppt(chru) > 0.0) then
 
           if (tmax(chru) <= tmax_allsnow(chru, month)) then
             ! All-snow precipitation event
-            this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+            ! this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+            this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(idx1D)
             this%hru_snow(chru) = this%hru_ppt(chru)
             this%newsnow(chru) = 1
           elseif (tmin(chru) > tmax_allsnow(chru, month) .or. tmax(chru) >= tmax_allrain(chru, month)) then
             ! All-rain precipitation event
-            this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+            ! this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+            this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(idx1D)
             this%hru_rain(chru) = this%hru_ppt(chru)
             this%prmx(chru) = 1.0
           else
@@ -188,7 +193,8 @@ contains
 
             tdiff = max(tmax(chru) - tmin(chru), 0.0001)
 
-            this%prmx(chru) = ((tmax(chru) - tmax_allsnow(chru, month)) / tdiff) * rainmix_adj(chru)
+            ! this%prmx(chru) = ((tmax(chru) - tmax_allsnow(chru, month)) / tdiff) * rainmix_adj(chru)
+            this%prmx(chru) = ((tmax(chru) - tmax_allsnow(chru, month)) / tdiff) * rainmix_adj(idx1D)
             this%prmx(chru) = max(this%prmx(chru), 0.0)
             ! if (this%prmx(chru) < 0.0) then
             !   this%prmx(chru) = 0.0
@@ -197,13 +203,15 @@ contains
             if (this%prmx(chru) < 1.0) then
               ! Mixed precip event
               this%pptmix(chru) = 1
-              this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+              ! this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(chru)
+              this%hru_ppt(chru) = this%hru_ppt(chru) * snow_adj(idx1D)
               this%hru_rain(chru) = this%prmx(chru) * this%hru_ppt(chru)
               this%hru_snow(chru) = this%hru_ppt(chru) - this%hru_rain(chru)
               this%newsnow(chru) = 1
             else
               ! All-rain event
-              this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+              ! this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(chru)
+              this%hru_ppt(chru) = this%hru_ppt(chru) * rain_adj(idx1D)
               this%hru_rain(chru) = this%hru_ppt(chru)
               this%prmx(chru) = 1.0
             endif
