@@ -45,7 +45,7 @@ contains
 
   module subroutine run_Potet_hru(this, ctl_data, param_data, model_time, model_basin)
     use prms_constants, only: dp
-    use UTILS_PRMS, only: get_array
+    ! use UTILS_PRMS, only: get_array
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
@@ -56,6 +56,7 @@ contains
     type(Basin), intent(in) :: model_basin
 
     ! Local variables
+    integer(i32) :: idx1D
     integer(i32) :: ios
     integer(i32) :: jj
       !! Counter
@@ -77,18 +78,28 @@ contains
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
+
               basin_area_inv => model_basin%basin_area_inv, &
+
               hru_area => param_data%hru_area%values, &
+              potet_cbh_adj => param_data%potet_cbh_adj%values, &
+
               curr_month => model_time%Nowmonth)
 
       read(this%et_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%potet(jj), jj=1, nhru)
-      this%basin_potet = 0.0_dp
+      ! this%basin_potet = 0.0_dp
 
       ! FIXME: This is dangerous because it circumvents the intent for param_data
-      potet_adj_2d => get_array(param_data%potet_cbh_adj%values, (/nhru, nmonths/))
+      ! potet_adj_2d => get_array(param_data%potet_cbh_adj%values, (/nhru, nmonths/))
 
       ! Potential_ET(i) = Potential_ET(i)*Potet_cbh_adj(i, Nowmonth)
-      this%potet = this%potet * potet_adj_2d(:, curr_month)
+      ! this%potet = this%potet * potet_adj_2d(:, curr_month)
+
+      do jj=1, nhru
+        idx1D = (curr_month - 1) * nhru + jj
+        this%potet = this%potet * potet_cbh_adj(idx1D)
+      end do
+
       this%basin_potet = sum(dble(this%potet * hru_area)) * basin_area_inv
     end associate
   end subroutine
