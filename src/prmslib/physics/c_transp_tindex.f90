@@ -8,7 +8,6 @@ MODULE PRMS_TRANSP_TINDEX
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_TEMPERATURE, only: Temperature
@@ -23,11 +22,14 @@ MODULE PRMS_TRANSP_TINDEX
 
   type, extends(Transpiration) :: Transp_tindex
     ! Local Variables
-    integer(i32), allocatable :: transp_check(:)
+    ! integer(i32), allocatable :: transp_check(:)
+    logical, allocatable, private :: transp_check(:)
+
     integer(i32), allocatable :: transp_beg_restart(:)
     integer(i32), allocatable :: transp_end_restart(:)
-    real(r32), private, allocatable :: tmax_sum(:)
-    real(r32), private, allocatable :: transp_tmax_c(:)
+
+    real(r32), allocatable, private :: tmax_sum(:)
+    real(r32), allocatable, private :: transp_tmax_c(:)
     real(r32), allocatable :: transp_tmax_restart(:)
 
     contains

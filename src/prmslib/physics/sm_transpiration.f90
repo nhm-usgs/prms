@@ -20,7 +20,7 @@ contains
       endif
 
       allocate(this%transp_on(nhru))
-      this%transp_on = 0
+      this%transp_on = .false.
     end associate
   end function
 

@@ -65,11 +65,12 @@ contains
 
       read(this%transp_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%transp_on(jj), jj=1, nhru)
 
-      if (any(this%transp_on==1)) then
-        this%basin_transp_on = 1
-      else
-        this%basin_transp_on = 0
-      endif
+      this%basin_transp_on = any(this%transp_on)
+      ! if (any(this%transp_on==1)) then
+      !   this%basin_transp_on = 1
+      ! else
+      !   this%basin_transp_on = 0
+      ! endif
     end associate
   end subroutine
 
