@@ -36,9 +36,10 @@ module PRMS_SRUNOFF
     real(r32) :: sri
     real(r32) :: srp
 
-    real(r64) :: hruarea_dble
+    ! real(r64) :: hruarea_dble
 
-    integer(i32) :: use_sroff_transfer
+    logical :: use_sroff_transfer
+    ! integer(i32) :: use_sroff_transfer
 
     ! Declared Variables
     real(r64) :: basin_apply_sroff
@@ -146,7 +147,8 @@ module PRMS_SRUNOFF
 
   interface
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
-                                       model_climate, model_potet, intcp, snow)
+                                  model_climate, model_potet, intcp, snow, &
+                                  model_time)
       class(Srunoff), intent(inout) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
@@ -161,6 +163,7 @@ module PRMS_SRUNOFF
       class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
+      type(Time_t), intent(in) :: model_time
     end subroutine
   end interface
 
@@ -192,7 +195,7 @@ module PRMS_SRUNOFF
 
   interface
     module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, &
-                                 snow, idx, avail_et)
+                                 snow, model_time, idx, avail_et)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
@@ -201,6 +204,7 @@ module PRMS_SRUNOFF
       class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
+      type(Time_t), intent(in) :: model_time
       integer(i32), intent(in) :: idx
       real(r32), intent(inout) :: avail_et
     end subroutine

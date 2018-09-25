@@ -74,14 +74,18 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           ! Cascading variables
           allocate(this%upslope_hortonian(nhru))
           allocate(this%hru_hortn_cascflow(nhru))
+          this%upslope_hortonian = 0.0_dp
+          this%hru_hortn_cascflow = 0.0_dp
 
           if (nlake > 0) then
             allocate(this%hortonian_lakes(nhru))
+            this%hortonian_lakes = 0.0_dp
           endif
         endif
 
         if (cascade_flag == 1 .or. cascadegw_flag > 0) then
           allocate(this%strm_seg_in(nsegment))
+          this%strm_seg_in = 0.0_dp
         endif
 
         if (print_debug == 1) then
@@ -89,13 +93,13 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         endif
 
         ! Now initialize everything
-        this%use_sroff_transfer = 0
+        this%use_sroff_transfer = .false.
         if (nwateruse > 0) then
           if (segment_transferON_OFF == 1 .or. gwr_transferON_OFF == 1 .or. &
               external_transferON_OFF == 1 .or. dprst_transferON_OFF == 1 .or. &
               lake_transferON_OFF == 1 .or. nconsumed > 0 .or. nwateruse > 0) then
 
-            this%use_sroff_transfer = 1
+            this%use_sroff_transfer = .true.
           endif
         endif
 
@@ -111,19 +115,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         this%imperv_stor = 0.0
         this%infil = 0.0
         this%sroff = 0.0
-
-        if (cascade_flag == 1 .or. cascadegw_flag > 0) then
-          this%strm_seg_in = 0.0_dp
-        endif
-
-        if (cascade_flag == 1) then
-          this%upslope_hortonian = 0.0_dp
-          this%hru_hortn_cascflow = 0.0_dp
-
-          if (nlake > 0) then
-            this%hortonian_lakes = 0.0_dp
-          endif
-        endif
 
         if (init_vars_from_file == 0) then
           this%basin_contrib_fraction = 0.0_dp
@@ -147,20 +138,17 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         endif
 
         if (srunoff_module(1)%s == 'srunoff_carea') then
-        ! if (sroff_flag == 2) then
+          allocate(this%carea_dif(nhru))
+
           where (model_basin%active_mask)
             this%carea_dif = carea_max - carea_min
           end where
-
-          ! do jj=1, active_hrus
-          !   chru = hru_route_order(jj)
-          !
-          !   this%carea_dif(chru) = carea_max(chru) - carea_min(chru)
-          ! enddo
         endif
 
         ! Depression storage initialization
-        if (dprst_flag == 1) call this%dprst_init(ctl_data, param_data, model_basin)
+        if (dprst_flag == 1) then
+          call this%dprst_init(ctl_data, param_data, model_basin)
+        endif
       end associate
     end function
 
@@ -171,7 +159,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     !                  computations using antecedent soil moisture.
     !***********************************************************************
     module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
-                                  model_climate, model_potet, intcp, snow)  ! , cascades)
+                                  model_climate, model_potet, intcp, snow, model_time)  ! , cascades)
       use prms_constants, only: dp, LAKE, LAND, NEARZERO
       implicit none
        class(Srunoff), intent(inout) :: this
@@ -184,10 +172,10 @@ submodule (PRMS_SRUNOFF) sm_srunoff
          !! Basin variables
        type(Climateflow), intent(in) :: model_climate
          !! Climate variables
-       ! type(Flowvars), intent(in) :: model_flow
        class(Potential_ET), intent(in) :: model_potet
        type(Interception), intent(in) :: intcp
        type(Snowcomp), intent(in) :: snow
+       type(Time_t), intent(in) :: model_time
 
       ! Local Variables
       integer(i32) :: dprst_chk
@@ -195,7 +183,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       integer(i32) :: k
 
       real(r32) :: avail_et
-      real(r32) :: hperv
       real(r32) :: sra
       real(r32) :: srunoff
 
@@ -212,7 +199,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       ! sro_to_dprst_imperv, sro_to_dprst_perv,
 
       ! Basin
-      ! active_hrus, hru_route_order, hru_frac_perv, hru_imperv, hru_perv,
+      ! active_hrus, hru_route_order, hru_frac_perv, hru_area_imperv, hru_area_perv,
       ! dprst_area_max, basin_area_inv
 
       ! Interception
@@ -251,8 +238,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 dprst_area_max => model_basin%dprst_area_max, &
                 hru_area_dble => model_basin%hru_area_dble, &
                 hru_frac_perv => model_basin%hru_frac_perv, &
-                hru_imperv => model_basin%hru_imperv, &
-                hru_perv => model_basin%hru_perv, &
+                hru_area_imperv => model_basin%hru_area_imperv, &
+                hru_area_perv => model_basin%hru_area_perv, &
                 hru_route_order => model_basin%hru_route_order, &
 
                 hru_intcpevap => intcp%hru_intcpevap, &
@@ -267,47 +254,36 @@ submodule (PRMS_SRUNOFF) sm_srunoff
 
                 potet => model_potet%potet, &
 
-                pkwater_equiv => model_climate%pkwater_equiv)
+                pkwater_equiv => model_climate%pkwater_equiv, &
+
+                nowtime => model_time%Nowtime)
 
         if (print_debug == 1) then
           this%imperv_stor_ante = this%hru_impervstor
-          if (dprst_flag == 1) this%dprst_stor_ante = this%dprst_stor_hru
+
+          if (dprst_flag == 1) then
+            this%dprst_stor_ante = this%dprst_stor_hru
+          endif
         endif
 
         this%basin_sroffi = 0.0_dp
         this%basin_sroffp = 0.0_dp
-        this%basin_sroff = 0.0_dp
-        this%basin_infil = 0.0_dp
         this%basin_imperv_evap = 0.0_dp
         this%basin_imperv_stor = 0.0_dp
-        this%basin_hortonian = 0.0_dp
-        this%basin_contrib_fraction = 0.0_dp
         this%basin_apply_sroff = 0.0_dp
 
         ! TODO: Uncomment once cascades are converted
         ! if (call_cascade == 1) this%strm_seg_in = 0.0_dp
-        !
-        ! if (cascade_flag == 1) then
-        !   this%basin_sroff_down = 0.0_dp
-        !   this%basin_sroff_upslope = 0.0_dp
-        !   this%basin_hortonian_lakes = 0.0_dp
-        !   this%upslope_hortonian = 0.0_dp
-        ! endif
 
-        if (dprst_flag == 1) then
-          this%basin_dprst_sroff = 0.0_dp
-          this%basin_dprst_evap = 0.0_dp
-          this%basin_dprst_seep = 0.0_dp
-          this%basin_dprst_volop = 0.0_dp
-          this%basin_dprst_volcl = 0.0_dp
-        endif
+        ! Initialize arrays for current timestep
+        this%infil = 0.0
+        this%hru_sroffp = 0.0
+        this%contrib_fraction = 0.0
 
         dprst_chk = 0
+
         do k=1, active_hrus
           chru = hru_route_order(k)
-          ! this%hruarea = hru_area(chru)
-          ! this%hruarea_dble = dble(hru_area(chru))
-          ! ihru = chru  ! not sure what this is for
           runoff = 0.0_dp
 
           if (hru_type(chru) == LAKE) then
@@ -315,25 +291,27 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             ! Eventually add code for lake area less than hru_area that includes
             ! soil_moist for fraction of hru_area that is dry bank.
             if (this%infil(chru) + this%sroff(chru) + this%imperv_stor(chru) + this%imperv_evap(chru) > 0.0) then
-              print *, 'srunoff lake ERROR', this%infil(chru), this%sroff(chru), this%imperv_stor(chru), this%imperv_evap(chru), chru
+              print *, 'srunoff lake ERROR', nowtime, chru, this%infil(chru), this%sroff(chru), this%imperv_stor(chru), this%imperv_evap(chru), chru
             endif
 
             if (cascade_flag == 1) then
               this%hortonian_lakes(chru) = this%upslope_hortonian(chru)
-              ! this%basin_hortonian_lakes = this%basin_hortonian_lakes + this%hortonian_lakes(chru) * hru_area_dble(chru)
             endif
 
             cycle
           endif
 
-          this%infil(chru) = 0.0
-          hperv = hru_perv(chru)
+          ! WARNING: Placing this initialization for infil, hru_sroffp, and
+          !          contrib_fraction here would cause the prior values to remain
+          !          when a LAKE hru_type is encountered.
+          ! this%infil(chru) = 0.0
+          ! this%hru_sroffp(chru) = 0.0
+          ! this%contrib_fraction(chru) = 0.0
+
           this%srp = 0.0
           this%sri = 0.0
-          this%hru_sroffp(chru) = 0.0
-          this%contrib_fraction(chru) = 0.0
 
-          if (hru_imperv(chru) > 0.0) then
+          if (hru_area_imperv(chru) > 0.0) then
             this%hru_sroffi(chru) = 0.0
             this%imperv_evap(chru) = 0.0
             this%hru_impervevap(chru) = 0.0
@@ -345,7 +323,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           ! Compute runoff for pervious, impervious, and depression storage area
           ! do IRRIGATION APPLICATION, ONLY DONE HERE, ASSUMES NO SNOW and
           ! only for pervious areas (just like infiltration).
-          ! if (this%use_sroff_transfer == 1) then
+          ! if (this%use_sroff_transfer) then
           !   if (net_apply(chru) > 0.0) then
           !     sra = 0.0
           !     this%infil(chru) = this%infil(chru) + net_apply(chru)
@@ -356,7 +334,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           !
           !       ! ** ADD in water from irrigation application and water-use
           !       !    transfer for pervious portion - sra (if any)
-          !       apply_sroff = dble(sra * hperv)
+          !       apply_sroff = dble(sra * hru_area_perv(chru))
           !       this%basin_apply_sroff = this%basin_apply_sroff + apply_sroff
           !       runoff = runoff + apply_sroff
           !     endif
@@ -364,9 +342,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           ! endif
 
           call this%compute_infil(ctl_data, param_data, model_basin, model_climate, intcp, snow, chru)
-          ! call this%compute_infil(net_rain(chru), net_ppt(chru), this%imperv_stor(chru), &
-          !                    imperv_stor_max(chru), snowmelt(chru), snowinfil_max(chru), &
-          !                    net_snow(chru), pkwater_equiv(chru), this%infil(chru), hru_type(chru))
 
           if (dprst_flag == 1) then
             this%dprst_in(chru) = 0.0_dp
@@ -375,8 +350,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             if (dprst_area_max(chru) > 0.0) then
               dprst_chk = 1
               ! ****** Compute the depression storage component
-              ! only call if total depression surface area for each HRU is > 0.0
-              call this%dprst_comp(ctl_data, param_data, model_basin, model_climate, model_potet, intcp, snow, chru, avail_et)
+              ! Only call if total depression surface area for each HRU is > 0.0
+              call this%dprst_comp(ctl_data, param_data, model_basin, model_climate, model_potet, intcp, snow, model_time, chru, avail_et)
 
               runoff = runoff + this%dprst_sroff_hru(chru) * hru_area_dble(chru)
             endif
@@ -386,7 +361,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           srunoff = 0.0
           if (hru_type(chru) == LAND) then
             ! ******Compute runoff for pervious and impervious area, and depression storage area
-            runoff = runoff + dble(this%srp * hperv + this%sri * hru_imperv(chru))
+            runoff = runoff + dble(this%srp * hru_area_perv(chru) + this%sri * hru_area_imperv(chru))
             srunoff = sngl(runoff / hru_area_dble(chru))
 
             ! TODO: Uncomment when cascade is converted
@@ -410,28 +385,23 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             ! endif
 
             this%hru_sroffp(chru) = this%srp * hru_frac_perv(chru)
-            this%basin_sroffp = this%basin_sroffp + this%srp * hperv
+            this%basin_sroffp = this%basin_sroffp + this%srp * hru_area_perv(chru)
           endif
 
-          this%basin_infil = this%basin_infil + dble(this%infil(chru) * hperv)
-          this%basin_contrib_fraction = this%basin_contrib_fraction + dble(this%contrib_fraction(chru) * hperv)
-
           !******Compute evaporation from impervious area
-          if (hru_imperv(chru) > 0.0) then
+          if (hru_area_imperv(chru) > 0.0) then
             ! NOTE: imperv_stor can get incredibly small (> e-35) which causes
-            !       floating underflow (SIGFPE).
+            !       floating point underflow (SIGFPE).
             ! if (this%imperv_stor(chru) > 0.0) then
             if (this%imperv_stor(chru) > NEARZERO) then
               call this%imperv_et(chru, param_data, potet(chru), snowcov_area(chru), avail_et)
 
               this%hru_impervevap(chru) = this%imperv_evap(chru) * hru_percent_imperv(chru)
-              !if ( this%hru_impervevap(chru)<0.0 ) this%hru_impervevap(chru) = 0.0
+              ! if ( this%hru_impervevap(chru)<0.0 ) this%hru_impervevap(chru) = 0.0
               avail_et = avail_et - this%hru_impervevap(chru)
 
               if (avail_et < 0.0) then
-                this%hru_impervevap(chru) = this%hru_impervevap(chru) + avail_et
-
-                if (this%hru_impervevap(chru) < 0.0) this%hru_impervevap(chru) = 0.0
+                this%hru_impervevap(chru) = max(0.0, this%hru_impervevap(chru) + avail_et)
 
                 this%imperv_evap(chru) = this%hru_impervevap(chru) / hru_percent_imperv(chru)
                 this%imperv_stor(chru) = this%imperv_stor(chru) - avail_et / hru_percent_imperv(chru)
@@ -440,36 +410,37 @@ submodule (PRMS_SRUNOFF) sm_srunoff
 
               this%basin_imperv_evap = this%basin_imperv_evap + dble(this%hru_impervevap(chru) * hru_area(chru))
               this%hru_impervstor(chru) = this%imperv_stor(chru) * hru_percent_imperv(chru)
-              this%basin_imperv_stor = this%basin_imperv_stor + dble(this%imperv_stor(chru) * hru_imperv(chru))
+              this%basin_imperv_stor = this%basin_imperv_stor + dble(this%imperv_stor(chru) * hru_area_imperv(chru))
             endif
 
             this%hru_sroffi(chru) = this%sri * hru_percent_imperv(chru)
-            this%basin_sroffi = this%basin_sroffi + dble(this%sri * hru_imperv(chru))
+            this%basin_sroffi = this%basin_sroffi + dble(this%sri * hru_area_imperv(chru))
           endif
 
-          if (dprst_chk == 1) this%dprst_stor_hru(chru) = (this%dprst_vol_open(chru) + this%dprst_vol_clos(chru)) / hru_area_dble(chru)
+          if (dprst_chk == 1) then
+            this%dprst_stor_hru(chru) = (this%dprst_vol_open(chru) + this%dprst_vol_clos(chru)) / hru_area_dble(chru)
+          endif
 
           this%sroff(chru) = srunoff
           this%hortonian_flow(chru) = srunoff
-          this%basin_hortonian = this%basin_hortonian + dble(srunoff * hru_area(chru))
-          this%basin_sroff = this%basin_sroff + dble(srunoff * hru_area(chru))
         enddo
+
+        ! ****** Compute basin weighted averages (to units of inches/dt)
+        ! rsr, should be land_area???
+        this%basin_contrib_fraction = sum(dble(this%contrib_fraction * hru_area_perv)) * basin_area_inv
+        this%basin_hortonian = sum(dble(this%hortonian_flow * hru_area)) * basin_area_inv
+        this%basin_infil = sum(dble(this%infil * hru_area_perv)) * basin_area_inv
+        this%basin_sroff = sum(dble(this%sroff * hru_area)) * basin_area_inv
 
         if (cascade_flag == 1) then
           ! this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
           this%basin_hortonian_lakes = sum(this%hortonian_lakes * dble(hru_area), mask=active_mask) * basin_area_inv
         endif
 
-        ! ****** Compute basin weighted averages (to units of inches/dt)
-        ! rsr, should be land_area???
-        this%basin_sroff = this%basin_sroff * basin_area_inv
         this%basin_imperv_evap = this%basin_imperv_evap * basin_area_inv
         this%basin_imperv_stor = this%basin_imperv_stor * basin_area_inv
-        this%basin_infil = this%basin_infil * basin_area_inv
         this%basin_sroffp = this%basin_sroffp * basin_area_inv
         this%basin_sroffi = this%basin_sroffi * basin_area_inv
-        this%basin_hortonian = this%basin_hortonian * basin_area_inv
-        this%basin_contrib_fraction = this%basin_contrib_fraction * basin_area_inv
 
         if (cascade_flag == 1) then
           this%basin_sroff_down = this%basin_sroff_down * basin_area_inv
@@ -477,11 +448,11 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         endif
 
         if (dprst_flag == 1) then
-          this%basin_dprst_volop = this%basin_dprst_volop * basin_area_inv
-          this%basin_dprst_volcl = this%basin_dprst_volcl * basin_area_inv
-          this%basin_dprst_evap = this%basin_dprst_evap * basin_area_inv
-          this%basin_dprst_seep = this%basin_dprst_seep * basin_area_inv
-          this%basin_dprst_sroff = this%basin_dprst_sroff * basin_area_inv
+          this%basin_dprst_volop = sum(this%dprst_vol_open) * basin_area_inv
+          this%basin_dprst_volcl = sum(this%dprst_vol_clos) * basin_area_inv
+          this%basin_dprst_evap = sum(dble(this%dprst_evap_hru * hru_area)) * basin_area_inv
+          this%basin_dprst_seep = sum(this%dprst_seep_hru * hru_area_dble) * basin_area_inv
+          this%basin_dprst_sroff = sum(this%dprst_sroff_hru * hru_area_dble) * basin_area_inv
         endif
 
       end associate
@@ -852,7 +823,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 imperv_stor_max => param_data%imperv_stor_max%values, &
                 snowinfil_max => param_data%snowinfil_max%values, &
 
-                hru_imperv => model_basin%hru_imperv, &
+                hru_area_imperv => model_basin%hru_area_imperv, &
 
                 pptmix_nopack => snow%pptmix_nopack, &
                 snowmelt => snow%snowmelt, &
@@ -884,12 +855,15 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         ! ***** If rain/snow event with no antecedent snowpack, compute the
         ! ***** runoff from the rain first and then proceed with the
         ! ***** snowmelt computations.
-        if (pptmix_nopack(idx) == 1) then
+        ! if (pptmix_nopack(idx) == 1) then
+        if (pptmix_nopack(idx)) then
           avail_water = avail_water + net_rain(idx)
           this%infil(idx) = this%infil(idx) + net_rain(idx)
 
-          if (hru_type == LAND) call this%perv_comp(ctl_data, param_data, model_climate, &
-                                                    idx, net_rain(idx), net_rain(idx), this%srp)
+          if (hru_type == LAND) then
+            call this%perv_comp(ctl_data, param_data, model_climate, &
+                                idx, net_rain(idx), net_rain(idx), this%srp)
+          endif
         endif
 
         ! ***** If precipitation on snowpack, all water available to the surface
@@ -939,7 +913,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         endif
 
         ! ****** Impervious area computations
-        if (hru_imperv(idx) > 0.0) then
+        if (hru_area_imperv(idx) > 0.0) then
           this%imperv_stor(idx) = this%imperv_stor(idx) + avail_water
 
           if (hru_type == LAND) then
@@ -956,7 +930,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     !***********************************************************************
     ! Compute depression storage area hydrology
     !***********************************************************************
-    module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, snow, idx, avail_et)
+    module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, snow, model_time, idx, avail_et)
       ! subroutine dprst_comp(Dprst_vol_clos, Dprst_area_clos_max, Dprst_area_clos, &
       !                       Dprst_vol_open_max, Dprst_vol_open, Dprst_area_open_max, &
       !                       Dprst_area_open, Dprst_sroff_hru, Dprst_seep_hru, &
@@ -974,6 +948,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
+      type(Time_t), intent(in) :: model_time
       integer(i32), intent(in) :: idx
       real(r32), intent(inout) :: avail_et
 
@@ -1070,7 +1045,9 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 potet => model_potet%potet, &
 
                 net_rain => intcp%net_rain, &
-                net_snow => intcp%net_snow)
+                net_snow => intcp%net_snow, &
+
+                nowtime => model_time%Nowtime)
 
         ! print *, '-- dprst_comp()'
 
@@ -1081,13 +1058,15 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           inflow = 0.0
         endif
 
-        if (pptmix_nopack(idx) == 1) then
+        ! if (pptmix_nopack(idx) == 1) then
+        if (pptmix_nopack(idx)) then
           inflow = inflow + net_rain(idx)
         endif
 
-        ! ****** If precipitation on snowpack all water available to the surface is considered to be snowmelt
-        ! ****** If there is no snowpack and no precip,then check for melt from last of snowpack.
-        ! ****** If rain/snow mix with no antecedent snowpack, compute snowmelt portion of runoff.
+        ! **** If precipitation on snowpack all water available to the surface
+        ! **** is considered to be snowmelt. If there is no snowpack and
+        ! **** no precip,then check for melt from last of snowpack. If rain/snow
+        ! **** mix with no antecedent snowpack, compute snowmelt portion of runoff.
         if (snowmelt(idx) > 0.0) then
           inflow = inflow + snowmelt(idx)
         elseif (pkwater_equiv(idx) < DNEARZERO) then
@@ -1144,11 +1123,17 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           this%srp = this%srp - dprst_srp / hru_frac_perv(idx)
 
           if (this%srp < 0.0) then
-            if (this%srp < -NEARZERO) print *, 'dprst srp < 0.0', this%srp, dprst_srp
+            if (this%srp < -NEARZERO) then
+              write(*, 9004) MODNAME, 'WARNING: ', nowtime(1:3), idx, ' dprst srp < 0.0 ', this%srp, dprst_srp
+            endif
+
             ! May need to adjust dprst_srp and volumes
             this%srp = 0.0
           endif
         endif
+
+        9004 format(A,A,I4,2('/', I2.2),I7,A,2F10.7)
+        ! 9005 format(A,A,I4,2('/', I2.2),I7,3es12.4e2)
 
         ! Impervious surface runoff
         if (this%sri > 0.0) then
@@ -1170,7 +1155,10 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           this%sri = this%sri - dprst_sri / hru_percent_imperv(idx)
 
           if (this%sri < 0.0) then
-            if (this%sri < -NEARZERO) print *, 'dprst sri < 0.0', this%sri, dprst_sri
+            if (this%sri < -NEARZERO) then
+              write(*, 9004) MODNAME, ' WARNING: ', nowtime(1:3), idx, ' dprst sri < 0.0; (sri, dprst_sri) ', this%sri, dprst_sri
+            endif
+
             ! May need to adjust dprst_sri and volumes
             this%sri = 0.0
           endif
@@ -1330,15 +1318,20 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           ! endif
         endif
 
-        this%basin_dprst_volop = this%basin_dprst_volop + this%dprst_vol_open(idx)
-        this%basin_dprst_volcl = this%basin_dprst_volcl + this%dprst_vol_clos(idx)
-        this%basin_dprst_evap = this%basin_dprst_evap + dble(this%dprst_evap_hru(idx) * hru_area(idx))
-        this%basin_dprst_seep = this%basin_dprst_seep + this%dprst_seep_hru(idx) * hru_area_dble(idx)
-        this%basin_dprst_sroff = this%basin_dprst_sroff + this%dprst_sroff_hru(idx) * hru_area_dble(idx)
+        ! this%basin_dprst_volop = this%basin_dprst_volop + this%dprst_vol_open(idx)
+        ! this%basin_dprst_volcl = this%basin_dprst_volcl + this%dprst_vol_clos(idx)
+        ! this%basin_dprst_evap = this%basin_dprst_evap + dble(this%dprst_evap_hru(idx) * hru_area(idx))
+        ! this%basin_dprst_seep = this%basin_dprst_seep + this%dprst_seep_hru(idx) * hru_area_dble(idx)
+        ! this%basin_dprst_sroff = this%basin_dprst_sroff + this%dprst_sroff_hru(idx) * hru_area_dble(idx)
         avail_et = avail_et - this%dprst_evap_hru(idx)
 
-        if (this%dprst_vol_open_max(idx) > 0.0) this%dprst_vol_open_frac(idx) = sngl(this%dprst_vol_open(idx) / this%dprst_vol_open_max(idx))
-        if (this%dprst_vol_clos_max(idx) > 0.0) this%dprst_vol_clos_frac(idx) = sngl(this%dprst_vol_clos(idx) / this%dprst_vol_clos_max(idx))
+        if (this%dprst_vol_open_max(idx) > 0.0) then
+          this%dprst_vol_open_frac(idx) = sngl(this%dprst_vol_open(idx) / this%dprst_vol_open_max(idx))
+        endif
+
+        if (this%dprst_vol_clos_max(idx) > 0.0) then
+          this%dprst_vol_clos_frac(idx) = sngl(this%dprst_vol_clos(idx) / this%dprst_vol_clos_max(idx))
+        endif
 
         this%dprst_vol_frac(idx) = sngl((this%dprst_vol_open(idx) + this%dprst_vol_clos(idx)) / (this%dprst_vol_open_max(idx) + this%dprst_vol_clos_max(idx)))
         this%dprst_stor_hru(idx) = (this%dprst_vol_open(idx) + this%dprst_vol_clos(idx)) / hru_area_dble(idx)
