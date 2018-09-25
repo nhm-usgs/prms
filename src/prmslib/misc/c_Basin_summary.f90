@@ -10,8 +10,11 @@ module PRMS_BASIN_SUMMARY
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_CLIMATEVARS, only: Climateflow
+  use PRMS_GWFLOW, only: Gwflow
   use PRMS_POTET, only: Potential_ET
   use PRMS_PRECIPITATION, only: Precipitation
+  use PRMS_SOILZONE, only: Soilzone
+  use PRMS_SRUNOFF, only: Srunoff
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   implicit none
@@ -65,7 +68,7 @@ module PRMS_BASIN_SUMMARY
   end interface
 
   interface
-    module subroutine run_Basin_summary(this, ctl_data, model_time, model_solrad, model_precip, model_potet, model_temp)
+    module subroutine run_Basin_summary(this, ctl_data, model_time, model_solrad, model_precip, model_potet, model_temp, model_gwflow, model_soilzone, model_srunoff)
       class(Basin_summary), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Time_t), intent(in) :: model_time
@@ -74,6 +77,9 @@ module PRMS_BASIN_SUMMARY
       class(Precipitation), intent(in) :: model_precip
       class(Potential_ET), intent(in) :: model_potet
       class(Temperature), intent(in) :: model_temp
+      type(Gwflow), intent(in) :: model_gwflow
+      type(Soilzone), intent(in) :: model_soilzone
+      type(Srunoff), intent(in) :: model_srunoff
 
     end subroutine
   end interface
