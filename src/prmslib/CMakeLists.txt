@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.6)
+
 project(prmslib VERSION 0.1 LANGUAGES Fortran)
+cmake_minimum_required(VERSION 3.6)
 
 # Create the library
 # ${PROJECT_NAME} is the name given for the most recent project() call
