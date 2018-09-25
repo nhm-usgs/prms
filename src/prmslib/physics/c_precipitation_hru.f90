@@ -19,6 +19,8 @@ module PRMS_PRECIPITATION_HRU
   type, extends(Precipitation) :: Precipitation_hru
     integer(i32), private :: precip_funit
       !! Precipitation CBH file unit
+    integer(i32), private :: precip_varid
+    integer(i32), private :: precip_idx_offset
 
     contains
       procedure, public :: run => run_Precipitation_hru
