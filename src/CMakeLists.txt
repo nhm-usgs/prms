@@ -1,3 +1,21 @@
+# set(CMAKE_Fortran_FLAGS_INIT "")
+# set(CMAKE_Fortran_FLAGS_DEBUG_INIT "-O0 -g")
+# set(CMAKE_Fortran_FLAGS_MINSIZEREL_INIT "-Os")
+# set(CMAKE_Fortran_FLAGS_RELEASE_INIT "-O2")
+# set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+#
+# set(CMAKE_C_FLAGS_INIT "")
+# set(CMAKE_C_FLAGS_DEBUG_INIT "-O0 -g")
+# set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os")
+# set(CMAKE_C_FLAGS_RELEASE_INIT "-O2")
+# set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+#
+# set(CMAKE_CXX_FLAGS_INIT "")
+# set(CMAKE_CXX_FLAGS_DEBUG_INIT "-O0 -g")
+# set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os")
+# set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2")
+# set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
 cmake_minimum_required(VERSION 3.6)
 project(prms_project LANGUAGES Fortran)
 
@@ -28,6 +46,5 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/prmslib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/prms)
 
 # Add a distclean target to the Makefile
-# ADD_CUSTOM_TARGET(distclean 
+# ADD_CUSTOM_TARGET(distclean
 #     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/distclean.cmake
-
