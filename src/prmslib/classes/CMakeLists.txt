@@ -15,6 +15,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_iArray.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_iScalar.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_iVariable.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_ModelBase.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_rArray.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_rScalar.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_rVariable.f90"
@@ -22,4 +23,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_sVariable.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_control.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_parameters.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_ModelBase.f90"
 )
