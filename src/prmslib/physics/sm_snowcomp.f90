@@ -5,7 +5,7 @@ contains
   ! Snowcomp constructor
   module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin) result(this)
     use prms_constants, only: dp
-    use utils_prms, only: get_array
+    ! use utils_prms, only: get_array
     implicit none
 
     type(Snowcomp) :: this
@@ -24,9 +24,11 @@ contains
 
     ! Local Variables
     integer(i32) :: chru
+    ! integer(i32) :: idx1D
     integer(i32) :: j
 
-    real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
+    real(r32), allocatable :: snarea_curve_2d(:, :)
+    ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
 
     ! -------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
@@ -45,7 +47,7 @@ contains
               hru_area => param_data%hru_area%values, &
               hru_deplcrv => param_data%hru_deplcrv%values, &
               ! settle_const => param_data%settle_const%values(1), &
-              ! snarea_curve => param_data%snarea_curve%values, &
+              snarea_curve => param_data%snarea_curve%values, &
               snarea_thresh => param_data%snarea_thresh%values, &
               snowpack_init => param_data%snowpack_init%values, &
 
@@ -90,20 +92,21 @@ contains
       allocate(this%snsv(nhru))
       allocate(this%tcal(nhru))
 
+
       ! FIXME: This may not get the correct 2D index because of how the
       !        snarea_curve is stored.
       ! NOTE: pan - this does appear to work.
-      snarea_curve_2d => get_array(param_data%snarea_curve%values, (/11, nhru/))
+      ! snarea_curve_2d => get_array(param_data%snarea_curve%values, (/11, nhru/))
 
       this%ai = 0.0_dp
       this%albedo = 0.0
       this%frac_swe = 0.0
       this%freeh2o = 0.0
-      this%iasw = 0
+      this%iasw = .false.
       this%int_alb = 1
       this%iso = 1
       this%lso = 0
-      this%lst = 0
+      this%lst = .false.
       this%mso = 1
       this%pk_def = 0.0
       this%pk_den = 0.0
@@ -112,7 +115,7 @@ contains
       this%pk_precip = 0.0
       this%pk_temp = 0.0
       this%pksv = 0.0_dp
-      this%pptmix_nopack = 0
+      this%pptmix_nopack = .false.
       this%salb = 0.0
       this%scrv = 0.0_dp
       this%slst = 0.0
@@ -142,6 +145,8 @@ contains
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
 
       if (init_vars_from_file==0 .or. init_vars_from_file==2 .or. init_vars_from_file==3) then
+        snarea_curve_2d = reshape(snarea_curve, (/11, nhru/))
+
         do j=1, active_hrus
           chru = hru_route_order(j)
           pkwater_equiv(chru) = dble(snowpack_init(chru))
@@ -159,6 +164,10 @@ contains
 
             this%frac_swe(chru) = sngl(pkwater_equiv(chru) / this%ai(chru)) ! [fraction]
 
+            ! nhru, nmonths
+            ! 11, nhru
+            ! idx1D = (hru_deplcrv(chru) - 1) * 11 + jj
+            ! SHAPE(RESHAPE(snarea_curve, (/11, nhru/)))
             this%snowcov_area(chru) = this%sca_deplcrv(snarea_curve_2d(1:11, hru_deplcrv(chru)), this%frac_swe(chru))
             ! call sca_deplcrv(this%snowcov_area(chru), snarea_curve(11, hru_deplcrv(chru)), this%frac_swe(chru))
           endif
@@ -182,7 +191,10 @@ contains
   !***********************************************************************
   ! Run daily snow estimates
   !***********************************************************************
-  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, model_time, model_basin, model_precip, model_temp, intcp, model_solrad, model_potet, model_transp)
+  module subroutine run_Snowcomp(this, model_climate, ctl_data, param_data, &
+                                 model_time, model_basin, model_precip, &
+                                 model_temp, intcp, model_solrad, model_potet, &
+                                 model_transp)
     use prms_constants, only: dp, LAKE
     use UTILS_PRMS, only: get_array
     implicit none
@@ -304,7 +316,8 @@ contains
       ! this%tcal = 0.0
 
       ! By default, there has not been a mixed event without a snowpack
-      this%pptmix_nopack = 0  ! [flag]
+      ! this%pptmix_nopack = 0  ! [flag]
+      this%pptmix_nopack = .false.  ! [flag]
 
       ! Keep track of the pack water equivalent before it is changed
       ! by precipitation during this time step.
@@ -576,7 +589,8 @@ contains
           if (pkwater_equiv(chru) > 0.0_dp) then
             ! Snow can evaporate when transpiration is not occuring or when
             ! transpiration is occuring with cover types of bare soil or grass.
-            if (transp_on(chru) == 0 .or. (transp_on(chru) == 1 .and. cov_type(chru) < 2)) then
+            ! if (transp_on(chru) == 0 .or. (transp_on(chru) == 1 .and. cov_type(chru) < 2)) then
+            if (.not. transp_on(chru) .or. (transp_on(chru) .and. cov_type(chru) < 2)) then
               call this%snowevap(model_climate, chru, ctl_data, param_data, intcp, model_potet)
             endif
           elseif (pkwater_equiv(chru) < 0.0_dp) then
@@ -611,7 +625,8 @@ contains
             ! If it is during the melt period and snowfall was insufficient to
             ! reset albedo, then reduce the cumulative new snow by the amount
             ! melted during the period (but don't let it be negative).
-            if (this%lst(chru) > 0) then
+            ! if (this%lst(chru) > 0) then
+            if (this%lst(chru)) then
               this%snsv(chru) = this%snsv(chru) - this%snowmelt(chru)
               if (this%snsv(chru) < 0.0) this%snsv(chru) = 0.0
             endif
@@ -632,9 +647,9 @@ contains
           this%pk_depth(chru) = 0.0_dp
           this%pss(chru) = 0.0_dp
           this%snsv(chru) = 0.0
-          this%lst(chru) = 0
+          this%lst(chru) = .false.
           this%pst(chru) = 0.0_dp
-          this%iasw(chru) = 0
+          this%iasw(chru) = .false.
           this%albedo(chru) = 0.0
           this%pk_den(chru) = 0.0
           this%snowcov_area(chru) = 0.0
@@ -796,7 +811,8 @@ contains
           ! All pack water equivalent becomes meltwater.
           snowmelt = snowmelt + sngl(pkwater_equiv)  ! [inches]
           pkwater_equiv = 0.0_dp  ! [inches]
-          iasw = 0  ! snow area does not change
+          ! iasw = 0  ! [flag]
+          iasw = .false.  ! [flag]
 
           ! Set all snowpack states to 0.
           ! snowcov_area = 0.0  ! [fraction of area] ! shouldn't be changed with melt
@@ -1197,7 +1213,8 @@ contains
         ! If this subroutine is called when there is an all-rain day on no
         ! existing snowpack (currently, it will not), then the flag here will be
         ! set inappropriately.
-        this%pptmix_nopack(chru) = 1  ! [flag]
+        ! this%pptmix_nopack(chru) = 1  ! [flag]
+        this%pptmix_nopack(chru) = .true.  ! [flag]
       endif
 
       ! At this point, the subroutine has handled all conditions where there is
@@ -1354,7 +1371,8 @@ contains
         ! If no new snow, check if there was previous new snow that
         ! was not sufficient to reset the albedo (lst=1)
         ! lst can only be greater than 0 during melt season (see below)
-        if (lst > 0) then
+        ! if (lst > 0) then
+        if (lst) then
           ! slst is the number of days (float) since the last new snowfall.
           ! Set the albedo curve back three days from the number of days since
           ! the previous snowfall (see salb assignment below).
@@ -1382,7 +1400,8 @@ contains
           endif
 
           ! Reset the shallow new snow flag and cumulative shallow snow variable (see below).
-          lst = 0  ! [flag]
+          ! lst = 0  ! [flag]
+          lst = .false.  ! [flag]
           snsv = 0.0  ! [inches]
         endif
       elseif (iso == 2) then
@@ -1401,7 +1420,8 @@ contains
             ! (2.1) If there is enough new snow to reset the albedo
             ! Reset number of days since last new snow to 0.
             slst = 0.0  ! [days]
-            lst = 0  ! [flag]
+            ! lst = 0  ! [flag]
+            lst = .false.  ! [flag]
 
             ! Reset the saved new snow to 0.
             snsv = 0.0  ! [inches]
@@ -1423,7 +1443,8 @@ contains
               ! (2.2.1) If accumulated shallow snow is enough to reset the albedo.
               ! Reset the albedo states.
               slst = 0.0  ! [days]
-              lst = 0  ! [flag]
+              ! lst = 0  ! [flag]
+              lst = .false.  ! [flag]
               snsv = 0.0  ! [inches]
             else
               ! (2.2.2) If the accumulated shallow snow is not enough to
@@ -1431,14 +1452,18 @@ contains
 
               ! salb records the number of days since the last new snow
               ! that reset albedo.
-              if (lst == 0) salb = slst  ! [days]
+              ! if (lst == 0) then
+              if (.not. lst) then
+                salb = slst  ! [days]
+              endif
 
               ! Reset the number of days since new snow
               slst = 0.0  ! [days]
 
               ! Set the flag indicating that there is shallow new snow
               ! (i.e. not enough new snow to reset albedo).
-              lst = 1  ! [flag]
+              ! lst = 1  ! [flag]
+              lst = .true.  ! [flag]
             endif
           endif
         endif
@@ -1459,13 +1484,15 @@ contains
           slst = 0.0  ! [days]
 
           ! There is no new shallow snow
-          lst = 0  ! [flag]
+          ! lst = 0  ! [flag]
+          lst = .false.  ! [flag]
         elseif (prmx >= albset_rna) then
           ! (3.2) This is a mixed event and the fraction rain is above
           !       the threshold above which albedo is not reset...
 
           ! There is no new shallow snow.
-          lst = 0  ! [flag]
+          ! lst = 0  ! [flag]
+          lst = .false.  ! [flag]
           ! Albedo continues to decrease on the curve
         elseif (net_snow >= albset_sna) then
           ! (3.3) If it is a mixed event and there is enough new snow to reset albedo...
@@ -1474,7 +1501,8 @@ contains
           slst = 0.0  ! [days]
 
           ! There is no new shallow snow.
-          lst = 0  ! [flag]
+          ! lst = 0  ! [flag]
+          lst = .false.  ! [flag]
         else
           ! (3.4) This is a mixed event and the new snow was not enough to reset the albedo...
 
@@ -1482,14 +1510,20 @@ contains
           slst = slst - 3.0  ! [days]
 
           ! Make sure the number of days since last new snow is not less than 0.
-          if (slst < 0.0) slst = 0.0  ! [days]
+          if (slst < 0.0) then
+            slst = 0.0  ! [days]
+          endif
 
           ! Make sure the number of days since last new snow is not greater than 5.
           ! In effect, if there is any new snow, the albedo can only get so low
           ! in accumulation season, even if the new snow is insufficient to
           ! reset albedo entirely
-          if (slst > 5.0) slst = 5.0  ! [days]
-          lst = 0  ! [flag]
+          if (slst > 5.0) then
+            slst = 5.0  ! [days]
+          endif
+
+          ! lst = 0  ! [flag]
+          lst = .false.  ! [flag]
         endif
 
         snsv = 0.0  ! [inches]
@@ -1948,7 +1982,8 @@ contains
 
         ! Stay on the snow area curve (it will be at the maximum because the pack
         ! water equivalent is equal to ai and it can't be higher).
-        iasw = 0
+        ! iasw = 0
+        iasw = .false.
       else
         ! (2) The pack water equivalent is less than the maximum
 
@@ -1963,7 +1998,8 @@ contains
           ! states changes depending  on whether the previous snow area condition
           ! was on the curve or being interpolated between the curve and 100%.
           ! 2 options below (if-then, else)
-          if (iasw > 0) then
+          ! if (iasw > 0) then
+          if (iasw) then
             ! (2.1.1) The snow area is being interpolated between 100%
             !         and a previous location on the curve...
 
@@ -1984,7 +2020,8 @@ contains
             ! conditions.
             ! First, set the flag to indicate interpolation between 100% and the
             ! previous area should be done.
-            iasw = 1  ! [flag]
+            ! iasw = 1  ! [flag]
+            iasw = .true.  ! [flag]
 
             ! Save the current snow covered area (before the new net snow).
             snowcov_areasv = snowcov_area_ante  ! [inches] PAN: this is [fraction]
@@ -2003,7 +2040,8 @@ contains
           ! starts at 100% if there is any new snow (no need to reset it from the
           ! maximum value set at the beginning of the subroutine).
           RETURN
-        elseif (iasw /= 0) then
+        ! elseif (iasw /= 0) then
+        elseif (iasw) then
           ! (2.2) There was no new snow, but the snow covered area is currently
           !       being interpolated between 100% from a previous new snow and the
           !       snow covered area before that previous new snow...
@@ -2052,7 +2090,8 @@ contains
             !         the previous new snow. I.e. back to original area before new snow.
 
             ! Reset the flag to use the snow area curve
-            iasw = 0  ! [flag]
+            ! iasw = 0  ! [flag]
+            iasw = .false.  ! [flag]
           endif
         endif
 

@@ -58,18 +58,26 @@ module PRMS_SNOW
 
     !****************************************************************
     !   Declared Variables
-    integer(i32), allocatable :: pptmix_nopack(:)
+    logical, allocatable :: pptmix_nopack(:)
       !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
-    integer(i32), allocatable :: lst(:)
+    logical, allocatable :: lst(:)
       !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
-    integer(i32), allocatable :: iasw(:)
+    logical, allocatable :: iasw(:)
       !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
+
     integer(i32), allocatable :: iso(:)
       !! Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
     integer(i32), allocatable :: mso(:)
       !! Flag to indicate if time is before (1) or after (2) the first potnetial day for melt season (melt_look)
     integer(i32), allocatable :: lso(:)
       !! Counter for tracking the number of days the snowpack is at or above 0 degrees Celsius
+
+    ! integer(i32), allocatable :: pptmix_nopack(:)
+    !   !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
+    ! integer(i32), allocatable :: lst(:)
+    !   !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
+    ! integer(i32), allocatable :: iasw(:)
+    !   !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
 
     real(r64) :: basin_snowmelt
       !! Basin area-weighted average snowmelt
