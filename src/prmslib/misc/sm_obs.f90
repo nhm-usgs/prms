@@ -251,24 +251,6 @@ contains
   end subroutine
 
 
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
-
-
-
   !***********************************************************************
   ! check_data_variables - Check data variables and dimensions
   !***********************************************************************
