@@ -42,7 +42,7 @@ module PRMS_SOILZONE
     real(r32), allocatable :: grav_dunnian_flow(:)
     real(r32), allocatable :: gvr2pfr(:)
     real(r32), allocatable :: hru_actet(:)
-      !! (moved from flowvars) Actual ET for each HRU
+      !! Actual ET for each HRU
     real(r32), allocatable :: hru_sz_cascadeflow(:)
     real(r32), allocatable :: perv_actet(:)
     real(r32), allocatable :: pfr_dunnian_flow(:)
@@ -56,9 +56,9 @@ module PRMS_SOILZONE
     real(r32), allocatable :: pref_flow_thrsh(:)
     real(r32), allocatable :: recharge(:)
     real(r32), allocatable :: slow_flow(:)
-      !! (moved from flowvars) Interflow from gravity reservoir storage that flows to the stream network for each HRU
+      !! Interflow from gravity reservoir storage that flows to the stream network for each HRU
     real(r32), allocatable :: slow_stor(:)
-      !! (moved from flowvars) Storage of gravity reservoir for each HRU
+      !! Storage of gravity reservoir for each HRU
     real(r32), allocatable :: snow_free(:)
     real(r32), allocatable :: soil_lower(:)
     real(r32), allocatable :: soil_lower_ratio(:)
@@ -66,18 +66,18 @@ module PRMS_SOILZONE
     real(r32), allocatable :: soil_moist_ante(:)
     real(r32), allocatable :: soil_moist_tot(:)
     real(r32), allocatable :: soil_to_gw(:)
-      !! (moved from flowvars) Portion of excess flow to the capillary reservoir that drains to the associated GWR for each HRU
+      !! Portion of excess flow to the capillary reservoir that drains to the associated GWR for each HRU
     real(r32), allocatable :: soil_to_ssr(:)
-      !! (moved from flowvars) Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU
+      !! Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU
     real(r32), allocatable :: soil_zone_max(:)
     real(r32), allocatable :: ssr_to_gw(:)
       !! Drainage from the gravity-reservoir to the associated GWR for each HRU
     real(r32), allocatable :: ssres_flow(:)
-      !! (moved from flowvars) Interflow from gravity and preferential-flow reservoirs
+      !! Interflow from gravity and preferential-flow reservoirs
     real(r32), allocatable :: ssres_in(:)
-      !! (moved from flowvars) Inflow to the gravity and preferential-flow reservoirs for each HRU
+      !! Inflow to the gravity and preferential-flow reservoirs for each HRU
     real(r32), allocatable :: ssres_stor(:)
-      !! (moved from flowvars) Storage in the gravity and preferential-flow reservoirs for each HRU
+      !! Storage in the gravity and preferential-flow reservoirs for each HRU
     real(r32), allocatable :: ssres_stor_ante(:)
 
     real(r32), allocatable :: swale_actet(:)

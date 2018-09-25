@@ -462,7 +462,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r32) :: dunnianflw
       real(r32) :: dunnianflw_gvr
       real(r32) :: dunnianflw_pfr
-      real(r32) :: gvr_maxin
+      ! real(r32) :: gvr_maxin
       real(r32) :: interflow
       real(r32) :: pervactet
       real(r32) :: pref_flow_maxin
@@ -648,6 +648,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
         ! soil_to_gw for whole HRU
         this%soil_to_gw = 0.0
+        this%soil_to_ssr = 0.0
         this%ssr_to_gw = 0.0
         this%slow_flow = 0.0
         this%ssres_flow = 0.0
@@ -664,11 +665,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
         do k=1, active_hrus
           chru = hru_route_order(k)
-          ! this%hru_actet(chru) = hru_impervevap(chru) + hru_intcpevap(chru) + snow_evap(chru)
-
-          ! if (dprst_flag == 1) then
-          !   this%hru_actet(chru) = this%hru_actet(chru) + dprst_evap_hru(chru)
-          ! endif
 
           ! TODO: 2018-06-21 - Uncomment once lakes are working.
           ! if (hru_type(chru) == LAKE) then ! lake or reservoir
@@ -700,19 +696,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! endif
           ! --------------------------------
 
-          ! soil_to_gw for whole HRU
-          ! WARNING: If hru_type == LAKE then the following are not reset.
-          ! this%soil_to_gw(chru) = 0.0
-          ! this%ssr_to_gw(chru) = 0.0
-          ! this%slow_flow(chru) = 0.0
-          ! this%ssres_flow(chru) = 0.0
-
           avail_potet = max(0.0, potet(chru) - this%hru_actet(chru))
-          ! avail_potet = potet(chru) - this%hru_actet(chru)
-          !
-          ! if (avail_potet < 0.0) then
-          !   avail_potet = 0.0
-          ! endif
 
           ! ******Add infiltration to soil and compute excess
           ! NOTE: hru_area_perv(chru) has to be > 0.0
@@ -720,7 +704,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
           dunnianflw_pfr = 0.0
           dunnianflw_gvr = 0.0
           interflow = 0.0
-          ! pref_flow_maxin = 0.0
 
           ! ****** Add infiltration to soil and compute excess
           !   infil_tot is the depth in whole HRU
@@ -777,7 +760,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%cap_infil_tot(chru) = capwater_maxin * hru_frac_perv(chru)
 
           ! ****** Add infiltration to soil and compute excess
-          gvr_maxin = 0.0
+          ! gvr_maxin = 0.0
           this%cap_waterin(chru) = capwater_maxin
 
           ! Call even if capwater_maxin = 0, just in case soil_moist now > soil_moist_max
@@ -785,14 +768,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
             call this%compute_soilmoist(this%soil2gw_flag(chru), hru_frac_perv(chru), soil_moist_max(chru), &
                                         soil_rechr_max(chru), soil2gw_max(chru), &
                                         this%cap_waterin(chru), soil_moist(chru), &
-                                        soil_rechr(chru), this%soil_to_gw(chru), gvr_maxin)
+                                        soil_rechr(chru), this%soil_to_gw(chru), this%soil_to_ssr(chru))
 
             this%cap_waterin(chru) = this%cap_waterin(chru) * hru_frac_perv(chru)
-            this%basin_sm2gvr_max = this%basin_sm2gvr_max + dble(gvr_maxin * hru_area(chru))
+            this%basin_sm2gvr_max = this%basin_sm2gvr_max + dble(this%soil_to_ssr(chru) * hru_area(chru))
           endif
 
           ! soil_to_ssr for whole HRU
-          this%soil_to_ssr(chru) = gvr_maxin
+          ! this%soil_to_ssr(chru) = gvr_maxin
 
           ! Compute slow interflow and ssr_to_gw
           topfr = 0.0
@@ -804,7 +787,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           !   capacity = (soil_moist_max(chru) - soil_moist(chru)) * hru_frac_perv(chru)
           !   call this%compute_gravflow(chru, capacity, slowcoef_lin(chru), &
           !                         slowcoef_sq(chru), ssr2gw_rate(chru), ssr2gw_exp(chru), &
-          !                         gvr_maxin, this%pref_flow_thrsh(chru), topfr, &
+          !                         this%soil_to_ssr(chru), this%pref_flow_thrsh(chru), topfr, &
           !                         this%ssr_to_gw(chru), this%slow_flow(chru), this%slow_stor(chru), &
           !                         this%gvr2sm(chru), this%soil_to_gw(chru), gwin, hru_type(chru))
           !
@@ -826,11 +809,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! else
           ! if (model_mode(1)%s /= 'GSFLOW') then
           if (.not. gsflow_mode) then
-            availh2o = this%slow_stor(chru) + gvr_maxin
+            availh2o = this%slow_stor(chru) + this%soil_to_ssr(chru)
 
             if (hru_type(chru) == LAND) then
               topfr = max(0.0, availh2o - this%pref_flow_thrsh(chru))
-              ssresin = gvr_maxin - topfr
+              ssresin = this%soil_to_ssr(chru) - topfr
               this%slow_stor(chru) = max(0.0, availh2o - topfr)
 
               ! Compute slow contribution to interflow, if any
@@ -1213,7 +1196,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
 
-
     !***********************************************************************
     ! Compute interflow and flow to groundwater reservoir
     !***********************************************************************
@@ -1236,7 +1218,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       !  slowcoef_sq => slowcoef_sq(chru)
       !  ssr2gw_rate => ssr2gw_rate(chru)
       !  ssr2gw_exp => ssr2gw_exp(chru)
-      !  gvr_maxin => gvr_maxin
+      !  gvr_maxin => this%soil_to_ssr(chru)
       !  pref_flow_thrsh => this%pref_flow_thrsh(chru)
       ! ~gvr2pfr => topfr
       ! ~ssr_to_gw => ssr_to_gw(chru)
@@ -1400,8 +1382,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
     end subroutine
 
 
-
-
     !***********************************************************************
     ! Compute interflow and flow to groundwater reservoir
     !***********************************************************************
@@ -1416,17 +1396,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
       ! ********************************************************************
       ! ****** Compute flow to groundwater
-
-      ssr_to_gw = min(ssr2gw_rate * slow_stor**ssr2gw_exp, slow_stor)
-      ssr_to_gw = max(0.0, ssr_to_gw)
-
-      ! ssr_to_gw = ssr2gw_rate * slow_stor**ssr2gw_exp
-      !
-      ! if (ssr_to_gw < 0.0) then
-      !   ssr_to_gw = 0.0
-      ! elseif (ssr_to_gw > slow_stor) then
-      !   ssr_to_gw = slow_stor
-      ! endif
+      ssr_to_gw = max(0.0, ssr2gw_rate * slow_stor**ssr2gw_exp)
+      ssr_to_gw = min(ssr_to_gw, slow_stor)
 
       slow_stor = slow_stor - ssr_to_gw
     end subroutine
