@@ -26,10 +26,15 @@ module PRMS_SOILZONE
     ! Local Variables
     integer(i32) :: DBGUNT
     integer(i32) :: et_type
-    integer(i32) :: pref_flag
+    ! integer(i32) :: pref_flag
+    logical :: pref_flag
+      !! NOTE: PAN - What is this used for?
 
-    integer(i32), allocatable :: pref_flow_flag(:)
-    integer(i32), allocatable :: soil2gw(:)
+    ! integer(i32), allocatable :: pref_flow_flag(:)
+    logical, allocatable :: pref_flow_flag(:)
+
+    ! integer(i32), allocatable :: soil2gw(:)
+    logical, allocatable, private :: soil2gw_flag(:)
 
     real(r32), allocatable :: cap_infil_tot(:)
     real(r32), allocatable :: cap_waterin(:)
@@ -203,7 +208,7 @@ module PRMS_SOILZONE
   end interface
 
   interface
-    module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, model_time, &
                                    model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
       class(Soilzone) :: this
         !! Soilzone class
@@ -213,6 +218,7 @@ module PRMS_SOILZONE
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
+      type(Time_t), intent(in) :: model_time
       class(Potential_ET), intent(inout) :: model_potet
       class(Precipitation), intent(in) :: model_precip
       type(Climateflow), intent(inout) :: model_climate
@@ -315,10 +321,11 @@ module PRMS_SOILZONE
   end interface
 
   interface
-    module subroutine compute_soilmoist(soil2gw, perv_frac, soil_moist_max, &
+    module subroutine compute_soilmoist(soil2gw_flag, perv_frac, soil_moist_max, &
                                  soil_rechr_max, soil2gw_max, infil, &
                                  soil_moist, soil_rechr, soil_to_gw, soil_to_ssr)
-      integer(i32), intent(in) :: soil2gw
+      ! integer(i32), intent(in) :: soil2gw
+      logical, intent(in) :: soil2gw_flag
       real(r32), intent(in) :: perv_frac
       real(r32), intent(in) :: soil_moist_max
       real(r32), intent(in) :: soil_rechr_max
@@ -333,13 +340,15 @@ module PRMS_SOILZONE
 
 
   interface
-    module subroutine compute_szactet(this, soil_moist_max, soil_rechr_max, &
-                               transp_on, cov_type, soil_type, &
-                               soil_moist, soil_rechr, perv_actet, avail_potet, &
-                               snow_free, potet_rechr, potet_lower)
+    module subroutine compute_szactet(this, model_time, transp_on, cov_type, soil_type, &
+                                      soil_moist_max, soil_rechr_max, snow_free, &
+                                      soil_moist, soil_rechr, avail_potet, &
+                                      potet_rechr, potet_lower, perv_actet)
       class(Soilzone), intent(inout) :: this
         !! Soilzone class
-      integer(i32), intent(in) :: transp_on
+      type(Time_t), intent(in) :: model_time
+      ! integer(i32), intent(in) :: transp_on
+      logical, intent(in) :: transp_on
       integer(i32), intent(in) :: cov_type
       integer(i32), intent(in) :: soil_type
       real(r32), intent(in) :: soil_moist_max
