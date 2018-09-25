@@ -44,6 +44,10 @@ contains
       this%restart_output_unit = this%open_var_save_file()
     endif
 
+    if (this%model_mode%values(1)%s == 'GSFLOW') then
+      this%gsflow_mode = .true.
+    endif
+
     ! TODO: add water_use_flag (composite of other flags)
 
     ! TODO: if print_debug > -2 output control file to model_output_file

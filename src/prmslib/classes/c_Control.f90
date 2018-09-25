@@ -192,6 +192,9 @@ module Control_class
     integer(i32) :: restart_input_unit
       !! File unit to read restart information from
 
+    logical :: gsflow_mode = .false.
+      !! Indicates true if model_mode == 'GSFLOW'
+
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
 
