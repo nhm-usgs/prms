@@ -32,7 +32,7 @@ contains
 
   module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, model_solrad, model_temp)
     use conversions_mod, only: c_to_f
-    use UTILS_PRMS, only: get_array
+    ! use UTILS_PRMS, only: get_array
     implicit none
 
     class(Potet_jh), intent(inout) :: this
@@ -49,11 +49,11 @@ contains
       ! Current HRU
     integer(i32) :: j
       !! Loop variable
-    ! integer(i32) :: idx1D
+    integer(i32) :: idx1D
       !! 1D index from 2D
     real(r32) :: elh
       !! Latent heat of vaporization
-    real(r32), pointer, contiguous :: jh_coef_2d(:,:)
+    ! real(r32), pointer, contiguous :: jh_coef_2d(:,:)
 
     ! ***********************************************************************
     ! 597.3 cal/gm at 0 C is the energy required to change the state of
@@ -84,7 +84,7 @@ contains
               curr_month => model_time%Nowmonth, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
-              ! jh_coef => param_data%jh_coef%values, &
+              jh_coef => param_data%jh_coef%values, &
               jh_coef_hru => param_data%jh_coef_hru%values, &
               hru_area => param_data%hru_area%values, &
 
@@ -95,7 +95,7 @@ contains
 
       ! this%tavg_f = c_to_f(model_temp%tavg)
 
-      jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
+      ! jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
       ! climate%basin_potet = 0.0
 
       ! WARNING: This confusing because tavgc and tavgf are used
@@ -105,14 +105,14 @@ contains
 
       do j=1, model_basin%active_hrus
         chru = model_basin%hru_route_order(j)
-        ! idx1D = (curr_month - 1) * ctl_data%nhru%values(1) + chru
+        idx1D = (curr_month - 1) * nhru + chru
 
         ! WARNING: Use of tavgf will be removed once temp_unit is standardized
         !          to Celsius and jh_coef, jh_coef_hru are re-computed for Celsius.
         ! elh = (597.3 - (0.5653 * sngl(tavg(chru)))) * 2.54
         elh = (597.3 - (0.5653 * tavg(chru))) * 2.54
-        this%potet(chru) = jh_coef_2d(chru, curr_month) * (tavg_f(chru) - &
-                              jh_coef_hru(chru)) * swrad(chru) / elh
+        ! this%potet(chru) = jh_coef_2d(chru, curr_month) * (tavg_f(chru) - &
+        this%potet(chru) = jh_coef(idx1D) * (tavg_f(chru) - jh_coef_hru(chru)) * swrad(chru) / elh
 
         if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
       enddo
