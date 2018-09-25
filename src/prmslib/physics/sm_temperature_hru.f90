@@ -2,7 +2,7 @@ submodule(PRMS_TEMPERATURE_HRU) sm_temperature_hru
 contains
 
   module function constructor_Temperature_hru(ctl_data) result(this)
-    use UTILS_CBH, only: find_current_time, find_header_end
+    use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
     type(Temperature_hru) :: this
@@ -23,6 +23,7 @@ contains
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+              end_time => ctl_data%end_time%values, &
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               tmax_day => ctl_data%tmax_day%values(1), &
@@ -35,32 +36,40 @@ contains
         call this%print_module_info()
       endif
 
-      ! Open and read tmax cbh file
-      call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
-                           'tmax_day', (cbh_binary_flag==1))
-      if (ierr == 1) then
-        istop = 1
-      else
-        call find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
-      endif
+      call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
+                                tmax_day%s, 'tmax', start_time, end_time, nhru)
 
-      ! Open and read tmin cbh file
-      call find_header_end(nhru, this%tmin_funit, ierr, tmin_day%s, &
-                           'tmin_day', (cbh_binary_flag==1))
-      if (ierr == 1) then
-        istop = 1
-      else
-        call find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
-      endif
+      call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
+                                tmin_day%s, 'tmin', start_time, end_time, nhru)
 
-      if (istop == 1) STOP 'ERROR in climate_hru'
+
+      ! ! Open and read tmax cbh file
+      ! call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
+      !                      'tmax_day', (cbh_binary_flag==1))
+      ! if (ierr == 1) then
+      !   istop = 1
+      ! else
+      !   call find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
+      ! endif
+      !
+      ! ! Open and read tmin cbh file
+      ! call find_header_end(nhru, this%tmin_funit, ierr, tmin_day%s, &
+      !                      'tmin_day', (cbh_binary_flag==1))
+      ! if (ierr == 1) then
+      !   istop = 1
+      ! else
+      !   call find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
+      ! endif
+      !
+      ! if (istop == 1) STOP 'ERROR in climate_hru'
     end associate
   end function
 
 
   module subroutine run_Temperature_hru(this, ctl_data, param_data, model_basin, model_time)
     use conversions_mod, only: f_to_c, c_to_f
-    use UTILS_PRMS, only: get_array
+    use UTILS_CBH, only: read_netcdf_cbh_file
+    ! use UTILS_PRMS, only: get_array
     implicit none
 
     class(Temperature_hru), intent(inout) :: this
@@ -71,13 +80,10 @@ contains
 
     ! Local variables
     ! integer(i32) :: chru
+    integer(i32) :: idx1D
     integer(i32) :: ios
     integer(i32) :: jj
-    integer(i32) :: yr, mo, dy, hr, mn, sec
-      !! junk vars to hold time info from files
-
-    real(r32), pointer, contiguous :: tmax_adj_2d(:,:)
-    real(r32), pointer, contiguous :: tmin_adj_2d(:,:)
+    integer(i32) :: datetime(6)
 
     ! Control
     ! nhru, nmonths,
@@ -91,6 +97,7 @@ contains
 
     ! Time_t
     ! curr_month (Nowmonth),
+
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
@@ -98,22 +105,25 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
 
               hru_area => param_data%hru_area%values, &
+              tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
+              tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
 
-              curr_month => model_time%Nowmonth)
+              curr_month => model_time%Nowmonth, &
+              timestep => model_time%Timestep)
 
       ios = 0
 
-      read(this%tmax_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%tmax(jj), jj=1, nhru)
-      read(this%tmin_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%tmin(jj), jj=1, nhru)
+      call read_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, timestep, nhru, this%tmax)
+      call read_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, timestep, nhru, this%tmin)
 
-      ! NOTE: This is dangerous because it circumvents the intent for param_data
-      ! Get 2D access to 1D array
-      tmax_adj_2d => get_array(param_data%tmax_cbh_adj%values, (/nhru, nmonths/))
-      tmin_adj_2d => get_array(param_data%tmin_cbh_adj%values, (/nhru, nmonths/))
+      ! read(this%tmax_funit, *, IOSTAT=ios) datetime, this%tmax
+      ! read(this%tmin_funit, *, IOSTAT=ios) datetime, this%tmin
 
-      ! Adjust the temperatures if needed
-      this%tmax = this%tmax + tmax_adj_2d(:, curr_month)
-      this%tmin = this%tmin + tmin_adj_2d(:, curr_month)
+      do jj=1, nhru
+        idx1D = (curr_month - 1) * nhru + jj
+        this%tmax(jj) = this%tmax(jj) + tmax_cbh_adj(idx1D)
+        this%tmin(jj) = this%tmin(jj) + tmin_cbh_adj(idx1D)
+      end do
 
       ! NOTE: Only used by solar_radiation_degday; remove once temperature units
       !       are standardized.

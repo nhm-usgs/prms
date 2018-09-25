@@ -20,6 +20,12 @@ module PRMS_TEMPERATURE_HRU
       !! Maximum temperature CBH file unit
     integer(i32), private :: tmin_funit
       !! Minimum temperature CBH file unit
+
+    integer(i32), private :: tmax_varid
+    integer(i32), private :: tmin_varid
+    integer(i32), private :: tmax_idx_offset
+    integer(i32), private :: tmin_idx_offset
+    
     contains
       procedure, public :: run => run_Temperature_hru
   end type
