@@ -34,7 +34,8 @@ module PRMS_INTCP
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
 
-    integer(i32) :: use_transfer_intcp
+    ! integer(i32) :: use_transfer_intcp
+    logical :: use_transfer_intcp
 
     ! Declared Variables
     real(r64) :: basin_changeover
@@ -57,8 +58,12 @@ module PRMS_INTCP
     real(r32), allocatable :: net_snow(:)
 
     integer(i32), allocatable, private :: intcp_form(:)
-    integer(i32), allocatable, private :: intcp_on(:)
-    integer(i32), allocatable, private :: intcp_transp_on(:)
+
+    logical, allocatable, private :: intcp_on(:)
+    logical, allocatable, private :: intcp_transp_on(:)
+
+    ! integer(i32), allocatable, private :: intcp_on(:)
+    ! integer(i32), allocatable, private :: intcp_transp_on(:)
 
     contains
       procedure, nopass, private :: intercept
@@ -106,7 +111,8 @@ module PRMS_INTCP
 
   interface
     module subroutine intercept(intcp_on, net_precip, intcp_stor, cov, precip, stor_max)
-      integer(i32), intent(out) :: intcp_on
+      ! integer(i32), intent(out) :: intcp_on
+      logical, intent(out) :: intcp_on
       real(r32), intent(out) :: net_precip
       real(r32), intent(inout) :: intcp_stor
       real(r32), intent(in) :: cov

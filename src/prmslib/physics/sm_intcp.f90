@@ -29,11 +29,12 @@ contains
       endif
 
       ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
-      this%use_transfer_intcp = 0
+      ! this%use_transfer_intcp = 0
+      this%use_transfer_intcp = .false.
 
       ! if (Water_use_flag==1) then
       !   ! irr_type may not exist if not doing water use so can't use associate
-      !   this%use_transfer_intcp = 1
+      !   this%use_transfer_intcp = .true.
       !
       !   allocate(this%gain_inches(nhru))
       !   allocate(this%net_apply(nhru))
@@ -62,7 +63,7 @@ contains
       this%intcp_changeover = 0.0
       this%intcp_evap = 0.0
       this%intcp_form = 0
-      this%intcp_on = 0
+      this%intcp_on = .false.
       this%intcp_stor = 0.0
       this%intcp_transp_on = transp_on
       this%net_ppt = 0.0
@@ -128,7 +129,6 @@ contains
     real(r32) :: diff
     real(r32) :: evrn
     real(r32) :: evsn
-    real(r32) :: harea
     real(r32) :: intcpevap
     real(r32) :: intcpstor
     real(r32) :: last
@@ -211,7 +211,8 @@ contains
       this%basin_net_snow = 0.0_dp
 
       ! zero application rate variables for today
-      if (this%use_transfer_intcp == 1) then
+      ! if (this%use_transfer_intcp == 1) then
+      if (this%use_transfer_intcp) then
         this%basin_hru_apply = 0.0_dp
         this%basin_net_apply = 0.0_dp
         this%net_apply = 0.0
@@ -219,7 +220,6 @@ contains
 
       do j=1, active_hrus
         chru = hru_route_order(j)
-        harea = hru_area(chru)
         this%net_ppt(chru) = hru_ppt(chru)
 
         ! 2D index to 1D
@@ -229,9 +229,9 @@ contains
           ! Lake or bare ground HRUs
           this%net_rain(chru) = hru_rain(chru)
           this%net_snow(chru) = hru_snow(chru)
-          this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * harea)
-          this%basin_net_snow = this%basin_net_snow + dble(hru_snow(chru) * harea)
-          this%basin_net_rain = this%basin_net_rain + dble(hru_rain(chru) * harea)
+          this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
+          this%basin_net_snow = this%basin_net_snow + dble(hru_snow(chru) * hru_area(chru))
+          this%basin_net_rain = this%basin_net_rain + dble(hru_rain(chru) * hru_area(chru))
           CYCLE
         endif
 
@@ -243,20 +243,19 @@ contains
         this%intcp_form(chru) = 0
 
         ! ******Adjust interception amounts for changes in summer/winter cover density
-        if (transp_on(chru) == 1) then
+        if (transp_on(chru)) then
           this%canopy_covden(chru) = covden_sum(chru)
         else
           this%canopy_covden(chru) = covden_win(chru)
         endif
 
         ! *****Determine the amount of interception from rain
-        if (transp_on(chru) == 0 .and. this%intcp_transp_on(chru) == 1) then
+        if (.not. transp_on(chru) .and. this%intcp_transp_on(chru)) then
           ! ***** go from summer to winter cover density
-          this%intcp_transp_on(chru) = 0
+          this%intcp_transp_on(chru) = .false.
 
           if (intcpstor > 0.0) then
             ! assume canopy storage change falls as throughfall
-            ! NOTE: pan - if transp_on == 1 diff will always be zero
             diff = covden_sum(chru) - this%canopy_covden(chru)
             changeover = intcpstor * diff
 
@@ -273,12 +272,12 @@ contains
               endif
 
               intcpstor = 0.0
-              this%intcp_on(chru) = 0
+              this%intcp_on(chru) = .false.
             endif
           endif
-        elseif (transp_on(chru) == 1 .and. this%intcp_transp_on(chru) == 0) then
+        elseif (transp_on(chru) .and. .not. this%intcp_transp_on(chru)) then
           ! ****** go from winter to summer cover density, excess = throughfall
-          this%intcp_transp_on(chru) = 1
+          this%intcp_transp_on(chru) = .true.
 
           if (intcpstor > 0.0) then
             diff = covden_win(chru) - this%canopy_covden(chru)
@@ -297,13 +296,14 @@ contains
               endif
 
               intcpstor = 0.0
-              this%intcp_on(chru) = 0
+              this%intcp_on(chru) = .false.
             endif
           endif
         endif
 
         ! *****Determine the amount of interception from rain
-        if (transp_on(chru) == 1) then
+        ! if (transp_on(chru) == 1) then
+        if (transp_on(chru)) then
           stor = srain_intcp(chru)
         else
           stor = wrain_intcp(chru)
@@ -335,13 +335,13 @@ contains
           endif
 
           netrain = netrain + changeover
-          this%basin_changeover = this%basin_changeover + dble(changeover * harea)
+          this%basin_changeover = this%basin_changeover + dble(changeover * hru_area(chru))
         endif
 
         ! TODO: The following relies on water_use_read.f90 for this to work
         ! NEXT intercept application of irrigation water, but only if
         !  irrigation method (irr_type=hrumeth) is =0 for sprinkler method
-        ! if (this%use_transfer_intcp == 1) then
+        ! if (this%use_transfer_intcp) then
         !   this%gain_inches(chru) = 0.0
         !
         !   if (canopy_gain(chru) > 0.0) then
@@ -350,7 +350,7 @@ contains
         !         print *, 'WARNING, water-use transfer > 0, but irr_type = 2 (ignore), HRU:', chru, ', transfer:', canopy_gain(chru)
         !         canopy_gain(chru) = 0.0
         !       else
-        !         this%gain_inches(chru) = canopy_gain(chru) / sngl(cfs_conv) / this%canopy_covden(chru) / harea
+        !         this%gain_inches(chru) = canopy_gain(chru) / sngl(cfs_conv) / this%canopy_covden(chru) / hru_area(chru)
         !
         !         if (irr_type(chru) == 0) then
         !           call this%intercept(this%intcp_on(chru), this%net_apply(chru), intcpstor, &
@@ -360,8 +360,8 @@ contains
         !         endif
         !       endif
         !
-        !       this%basin_hru_apply = this%basin_hru_apply + dble(this%gain_inches(chru) * harea)
-        !       this%basin_net_apply = this%basin_net_apply + dble(this%net_apply(chru) * harea)
+        !       this%basin_hru_apply = this%basin_hru_apply + dble(this%gain_inches(chru) * hru_area(chru))
+        !       this%basin_net_apply = this%basin_net_apply + dble(this%net_apply(chru) * hru_area(chru))
         !     else
         !       STOP 'ERROR, canopy transfer attempted to HRU with cov_den = 0.0'
         !     endif
@@ -391,7 +391,7 @@ contains
         this%net_ppt(chru) = netrain + netsnow
 
         ! ******compute evaporation or sublimation of interception
-        if (this%intcp_on(chru) == 1) then
+        if (this%intcp_on(chru)) then
           ! If precipitation assume no evaporation or sublimation
           if (hru_ppt(chru) < NEARZERO) then
             evrn = potet(chru) / epan_coef(idx1D)
@@ -411,11 +411,11 @@ contains
               if (z > 0.0) then
                 intcpevap = evsn
                 intcpstor = z
-                this%intcp_on(chru) = 1
+                this%intcp_on(chru) = .true.
               else
                 intcpevap = intcpstor
                 intcpstor = 0.0
-                this%intcp_on(chru) = 0
+                this%intcp_on(chru) = .false.
               endif
             ! elseif ( Intcp_form(chru)==0 ) then
             else
@@ -424,11 +424,11 @@ contains
               if (d > 0.0) then
                 intcpevap = evrn
                 intcpstor = d
-                this%intcp_on(chru) = 1
+                this%intcp_on(chru) = .true.
               else
                 intcpevap = intcpstor
                 intcpstor = 0.0
-                this%intcp_on(chru) = 0
+                this%intcp_on(chru) = .false.
               endif
             endif
           endif
@@ -451,21 +451,16 @@ contains
         this%hru_intcpstor(chru) = intcpstor * this%canopy_covden(chru)
         this%intcp_changeover(chru) = changeover
 
-            ! if (chru == 11) then
-            !   print *, '(intcp) ', hru_ppt(chru), hru_rain(chru), hru_snow(chru), netrain, netsnow
-            ! endif
-
         this%net_rain(chru) = netrain
         this%net_snow(chru) = netsnow
 
-
         !rsr, question about depression storage for basin_net_ppt???
         !     My assumption is that cover density is for the whole HRU
-        this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * harea)
-        this%basin_net_snow = this%basin_net_snow + dble(this%net_snow(chru) * harea)
-        this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * harea)
-        this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * harea)
-        this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * harea)
+        this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
+        this%basin_net_snow = this%basin_net_snow + dble(this%net_snow(chru) * hru_area(chru))
+        this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * hru_area(chru))
+        this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * hru_area(chru))
+        this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * hru_area(chru))
 
       enddo
 
@@ -476,7 +471,8 @@ contains
       this%basin_intcp_evap = this%basin_intcp_evap * basin_area_inv
       this%basin_changeover = this%basin_changeover * basin_area_inv
 
-      if (this%use_transfer_intcp == 1) then
+      ! if (this%use_transfer_intcp == 1) then
+      if (this%use_transfer_intcp) then
         this%basin_net_apply = this%basin_net_apply * basin_area_inv
         this%basin_hru_apply = this%basin_hru_apply * basin_area_inv
       endif
@@ -492,7 +488,8 @@ contains
     implicit none
 
     ! Arguments
-    integer(i32), intent(out) :: intcp_on
+    ! integer(i32), intent(out) :: intcp_on
+    logical, intent(out) :: intcp_on
     real(r32), intent(out) :: net_precip
     real(r32), intent(inout) :: intcp_stor
     real(r32), intent(in) :: cov
@@ -500,7 +497,7 @@ contains
     real(r32), intent(in) :: stor_max
 
     !***********************************************************************
-    intcp_on = 1
+    intcp_on = .true.
 
     net_precip = precip * (1.0 - cov)
     intcp_stor = intcp_stor + precip
