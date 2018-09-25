@@ -64,7 +64,6 @@ contains
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in) :: model_time
-    ! type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
 
     ! Local Variables
