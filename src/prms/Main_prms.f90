@@ -4,10 +4,13 @@
 program prms6
   use variableKind
   use prms_constants
+  ! use, intrinsic :: iso_c_binding, only: c_sizeof
   use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use Simulation_class, only: Simulation
+  ! use ieee_arithmetic
+  ! use ieee_features
   implicit none
 
   character(len=:), allocatable :: control_filename
@@ -33,12 +36,25 @@ program prms6
     !! Starting cpu time value
   real(r64) :: end_ct
     !! Ending cpu time value
+  real(r64) :: dummy_r64
+  real(r32) :: dummy_r32
+  ! real(r32) :: arr_dummy_r32(109951,13505)
 
   ! ---------------------------------------------------------------------------
+  ! call ieee_set_halting_mode(ieee_overflow, .false.)
   call system_clock(count=start_rtc, count_rate=rate_rtc, count_max=max_rtc)
   call cpu_time(time=start_ct)
 
+  print *, 'CLOSEZERO, NEARZERO, DNEARZERO'
   print *, CLOSEZERO, NEARZERO, DNEARZERO
+
+  print *, 'Ranges'
+  print *, 'r32: ', range(dummy_r32)
+  print *, 'smallest r32 value: ', tiny(dummy_r32)
+  print *, 'minexponent of r32: ', minexponent(dummy_r32)
+  print *, 'r64: ', range(dummy_r64)
+
+  ! print *, 'r32 array memory footprint (109951 x 13505):', c_sizeof(arr_dummy_r32)
   write(output_unit, fmt='(a)') repeat('=', 72)
   call get_control_filename(control_filename)
 
@@ -60,6 +76,8 @@ program prms6
   ! Initialize the simulation object
   model_simulation = Simulation(Control_data, Parameter_data)
 
+  write(output_unit, fmt='(a)') repeat('=', 72)
+
   ! Run the simulation
   call model_simulation%run(Control_data, Parameter_data)
 
@@ -67,6 +85,9 @@ program prms6
   !       CBH files,
 
   ! Cleanup everything
+  write(output_unit, fmt='(a)') repeat('-', 72)
+  write(output_unit, fmt='(a)') 'Cleaning up...'
+  write(output_unit, fmt='(a)') repeat('-', 72)
   call model_simulation%cleanup(Control_data)
 
   call cpu_time(time=end_ct)
