@@ -10,7 +10,7 @@ module PRMS_SET_TIME
   implicit none
 
   private
-  public :: Time_t
+  public :: Time_t, compute_julday, julian_to_gregorian, leap_day
 
   character(len=*), parameter :: MODDESC = 'Time_t variables'
   character(len=*), parameter :: MODNAME = 'prms_time'

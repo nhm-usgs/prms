@@ -505,21 +505,4 @@ contains
                      / 12 - 3 * ((year + 4900 + (month - 14) / 12) / 100) / 4
   end function compute_julday
 
-
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
-
 end submodule
