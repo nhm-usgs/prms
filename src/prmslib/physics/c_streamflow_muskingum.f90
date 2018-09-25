@@ -31,7 +31,7 @@ module PRMS_MUSKINGUM
     ! Declared variables
 
     ! NOTE: ts_i, c0, c1, c2, ts moved from Streamflow because they
-    !       are specified to muskingum or muskingum_lake.
+    !       are specific to muskingum or muskingum_lake.
     !       The muskingum_lake class will also declare these variables.
     integer(i32), public, allocatable :: ts_i(:)
       !! used by muskingum and muskingum_lake
@@ -96,7 +96,7 @@ module PRMS_MUSKINGUM
 
   interface
     module subroutine cleanup_Muskingum(this)
-      class(Muskingum) :: this
+      class(Muskingum), intent(inout) :: this
         !! Muskingum class
     end subroutine
   end interface

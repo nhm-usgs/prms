@@ -1,10 +1,10 @@
 module PRMS_STREAMFLOW
+
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
-  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t

@@ -260,8 +260,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
-      ! type(Climateflow), intent(in) :: model_climate
-        !! Climate variables
       class(Potential_ET), intent(in) :: model_potet
       type(Gwflow), intent(in) :: groundwater
         !! Groundwater variables
