@@ -364,8 +364,9 @@ contains
             this%nhru_var_daily(:, jj) = model_temp%tmax_f
           case('tminf')
             this%nhru_var_daily(:, jj) = c_to_f(model_temp%tmin)
-          case('transp_on')
-            this%nhru_var_daily(:, jj) = model_transp%transp_on
+          ! case('transp_on')
+          !   this%nhru_var_daily(:, jj) = model_transp%transp_on
+
           ! case('tminc')
           !   this%nhru_var_daily(:, jj) = climate%tminc
           ! case('tminf')
@@ -478,19 +479,4 @@ contains
     end associate
   end subroutine
 
-  module function module_name() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODNAME
-  end function
-
-  module function version() result(res)
-    implicit none
-
-    character(:), allocatable :: res
-
-    res = MODVERSION
-  end function
 end submodule
