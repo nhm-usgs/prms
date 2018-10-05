@@ -1,22 +1,4 @@
-# set(CMAKE_Fortran_FLAGS_INIT "")
-# set(CMAKE_Fortran_FLAGS_DEBUG_INIT "-O0 -g")
-# set(CMAKE_Fortran_FLAGS_MINSIZEREL_INIT "-Os")
-# set(CMAKE_Fortran_FLAGS_RELEASE_INIT "-O2")
-# set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-#
-# set(CMAKE_C_FLAGS_INIT "")
-# set(CMAKE_C_FLAGS_DEBUG_INIT "-O0 -g")
-# set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os")
-# set(CMAKE_C_FLAGS_RELEASE_INIT "-O2")
-# set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-#
-# set(CMAKE_CXX_FLAGS_INIT "")
-# set(CMAKE_CXX_FLAGS_DEBUG_INIT "-O0 -g")
-# set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os")
-# set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O2")
-# set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.8)
 project(prms_project LANGUAGES Fortran)
 
 # SET(VERSION x.x.x)
