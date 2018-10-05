@@ -81,14 +81,15 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       end associate
     end function
 
+
     module subroutine run_WaterBalance(this, ctl_data, param_data, model_basin, &
                                        model_climate, model_gwflow, model_intcp, &
                                        model_precip, model_snow, model_soilzone, &
                                        model_srunoff, model_time)
       use prms_constants, only: LAKE, DNEARZERO, NEARZERO
-      use, intrinsic :: ieee_arithmetic
-      use, intrinsic :: ieee_exceptions
-      use, intrinsic :: ieee_features, only: ieee_underflow_flag
+      ! use, intrinsic :: ieee_arithmetic
+      ! use, intrinsic :: ieee_exceptions
+      ! use, intrinsic :: ieee_features, only: ieee_underflow_flag
       implicit none
 
       class(WaterBalance), intent(inout) :: this
@@ -137,10 +138,10 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       real(r64) :: wbal
       real(r64) :: dprst_hru_wb
 
-      type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
-      ! type(ieee_flag_type), parameter :: ieee_custom(5) = [ieee_all]
-      type(ieee_status_type) :: status_value
-      logical, dimension(4) :: flag_value
+      ! type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
+      ! ! type(ieee_flag_type), parameter :: ieee_custom(5) = [ieee_all]
+      ! type(ieee_status_type) :: status_value
+      ! logical, dimension(4) :: flag_value
 
 
       ! Control
@@ -194,9 +195,9 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
 
 
       ! ------------------------------------------------------------------------
-      call ieee_get_status(status_value)
-      call ieee_set_halting_mode(ieee_custom, .false.)
-      call ieee_set_flag(ieee_custom, .false.)
+      ! call ieee_get_status(status_value)
+      ! call ieee_set_halting_mode(ieee_custom, .false.)
+      ! call ieee_set_flag(ieee_custom, .false.)
 
 
       associate(cascade_flag => ctl_data%cascade_flag%value, &
@@ -494,31 +495,31 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                     soil_to_ssr(chru) - soil_to_gw(chru) + cap_infil_tot(chru)
 
 
-          call ieee_get_flag(ieee_custom, flag_value)
-          if (any(flag_value)) then
-            error_txt = ''
-
-            ! Only checking for underflow and overflow
-            if (flag_value(1)) then
-              error_txt = 'overflow'
-            elseif (flag_value(2)) then
-              error_txt = 'divide-by-zero'
-            elseif (flag_value(3)) then
-              error_txt = 'ieee_invalid'
-            elseif (flag_value(4)) then
-              error_txt = 'underflow'
-            ! elseif (flag_value(5)) then
-            !   error_txt = 'ieee_inexact'
-            endif
-
-            write(*, 9005) MODNAME, '%run WARNING: ', error_txt, ' occurred in soilbal [hru, soilbal, last_sm, soil_moist, perv_actet] ', nowtime(1:3), chru, soilbal, last_sm, soil_moist(chru), perv_actet(chru)
-
-            call ieee_set_flag(ieee_custom, .false.)
-          endif
-
-          ! ieee_inexact occurs alot and can be ignored
-          call ieee_set_flag(ieee_inexact, .false.)
-          9005 format(A,A,A,A,I4,2('/', I2.2),i7,4es12.4e2)
+          ! call ieee_get_flag(ieee_custom, flag_value)
+          ! if (any(flag_value)) then
+          !   error_txt = ''
+          !
+          !   ! Only checking for underflow and overflow
+          !   if (flag_value(1)) then
+          !     error_txt = 'overflow'
+          !   elseif (flag_value(2)) then
+          !     error_txt = 'divide-by-zero'
+          !   elseif (flag_value(3)) then
+          !     error_txt = 'ieee_invalid'
+          !   elseif (flag_value(4)) then
+          !     error_txt = 'underflow'
+          !   ! elseif (flag_value(5)) then
+          !   !   error_txt = 'ieee_inexact'
+          !   endif
+          !
+          !   write(*, 9005) MODNAME, '%run WARNING: ', error_txt, ' occurred in soilbal [hru, soilbal, last_sm, soil_moist, perv_actet] ', nowtime(1:3), chru, soilbal, last_sm, soil_moist(chru), perv_actet(chru)
+          !
+          !   call ieee_set_flag(ieee_custom, .false.)
+          ! endif
+          !
+          ! ! ieee_inexact occurs alot and can be ignored
+          ! call ieee_set_flag(ieee_inexact, .false.)
+          ! 9005 format(A,A,A,A,I4,2('/', I2.2),i7,4es12.4e2)
 
           ! call ieee_set_status(status_value)
 
