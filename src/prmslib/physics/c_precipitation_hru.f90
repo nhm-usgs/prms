@@ -22,6 +22,8 @@ module PRMS_PRECIPITATION_HRU
     integer(i32), private :: precip_varid
     integer(i32), private :: precip_idx_offset
 
+    logical, private :: has_netcdf_precip
+
     contains
       procedure, public :: run => run_Precipitation_hru
   end type

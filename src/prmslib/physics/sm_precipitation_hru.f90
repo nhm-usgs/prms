@@ -33,24 +33,29 @@ contains
         call this%print_module_info()
       endif
 
-      call open_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, &
-                                precip_day%s, 'prcp', start_time, end_time, nhru)
+      if (precip_day%s(index(precip_day%s, '.')+1:) == 'nc') then
+        call open_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, &
+                                  precip_day%s, 'prcp', start_time, end_time, nhru)
+        this%has_netcdf_precip = .true.
+      else
+        ! Open and read the precipitation cbh file
+        call find_header_end(nhru, this%precip_funit, ierr, precip_day%s, &
+                             'precip_day', (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call find_current_time(ierr, this%precip_funit, start_time, (cbh_binary_flag==1))
+        endif
 
-      ! ! Open and read the precipitation cbh file
-      ! call find_header_end(nhru, this%precip_funit, ierr, precip_day%s, &
-      !                      'precip_day', (cbh_binary_flag==1))
-      ! if (ierr == 1) then
-      !   istop = 1
-      ! else
-      !   call find_current_time(ierr, this%precip_funit, start_time, (cbh_binary_flag==1))
-      ! endif
-      !
-      ! if (istop == 1) STOP 'ERROR in climate_hru'
+        this%has_netcdf_precip = .false.
+      endif
+
+      if (istop == 1) STOP 'ERROR in precipitation_hru'
     end associate
   end function
 
+
   module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time)
-    ! use UTILS_PRMS, only: get_array
     use UTILS_CBH, only: read_netcdf_cbh_file
     implicit none
 
@@ -80,10 +85,12 @@ contains
 
       ios = 0
 
-      call read_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, timestep, nhru, this%hru_ppt)
-
-      ! read(this%precip_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%hru_ppt(jj), jj=1, nhru)
-      ! read(this%precip_funit, *, IOSTAT=ios) datetime, this%hru_ppt
+      if (this%has_netcdf_precip) then
+        call read_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, timestep, nhru, this%hru_ppt)
+      else
+        ! read(this%precip_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%hru_ppt(jj), jj=1, nhru)
+        read(this%precip_funit, *, IOSTAT=ios) datetime, this%hru_ppt
+      endif
 
       this%pptmix = 0
       this%newsnow = 0

@@ -36,32 +36,42 @@ contains
         call this%print_module_info()
       endif
 
-      call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
-                                tmax_day%s, 'tmax', start_time, end_time, nhru)
+      if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
+        ! Read a netcdf file
+        call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
+                                  tmax_day%s, 'tmax', start_time, end_time, nhru)
+        this%has_netcdf_tmax = .true.
+      else
+        ! Open and read tmax cbh file
+        call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
+                             'tmax_day', (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
+        endif
 
-      call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
-                                tmin_day%s, 'tmin', start_time, end_time, nhru)
+        this%has_netcdf_tmax = .false.
+      endif
 
+      if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
+        call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
+                                  tmin_day%s, 'tmin', start_time, end_time, nhru)
+        this%has_netcdf_tmin = .true.
+      else
+        ! Open and read tmin cbh file
+        call find_header_end(nhru, this%tmin_funit, ierr, tmin_day%s, &
+                             'tmin_day', (cbh_binary_flag==1))
+        if (ierr == 1) then
+          istop = 1
+        else
+          call find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
+        endif
 
-      ! ! Open and read tmax cbh file
-      ! call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
-      !                      'tmax_day', (cbh_binary_flag==1))
-      ! if (ierr == 1) then
-      !   istop = 1
-      ! else
-      !   call find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
-      ! endif
-      !
-      ! ! Open and read tmin cbh file
-      ! call find_header_end(nhru, this%tmin_funit, ierr, tmin_day%s, &
-      !                      'tmin_day', (cbh_binary_flag==1))
-      ! if (ierr == 1) then
-      !   istop = 1
-      ! else
-      !   call find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
-      ! endif
-      !
-      ! if (istop == 1) STOP 'ERROR in climate_hru'
+        this%has_netcdf_tmin = .false.
+      endif
+
+      if (istop == 1) STOP 'ERROR in temperature_hru'
     end associate
   end function
 
@@ -69,7 +79,6 @@ contains
   module subroutine run_Temperature_hru(this, ctl_data, param_data, model_basin, model_time)
     use conversions_mod, only: f_to_c, c_to_f
     use UTILS_CBH, only: read_netcdf_cbh_file
-    ! use UTILS_PRMS, only: get_array
     implicit none
 
     class(Temperature_hru), intent(inout) :: this
@@ -113,11 +122,17 @@ contains
 
       ios = 0
 
-      call read_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, timestep, nhru, this%tmax)
-      call read_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, timestep, nhru, this%tmin)
+      if (this%has_netcdf_tmax) then
+        call read_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, timestep, nhru, this%tmax)
+      else
+        read(this%tmax_funit, *, IOSTAT=ios) datetime, this%tmax
+      endif
 
-      ! read(this%tmax_funit, *, IOSTAT=ios) datetime, this%tmax
-      ! read(this%tmin_funit, *, IOSTAT=ios) datetime, this%tmin
+      if (this%has_netcdf_tmin) then
+        call read_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, timestep, nhru, this%tmin)
+      else
+        read(this%tmin_funit, *, IOSTAT=ios) datetime, this%tmin
+      endif
 
       do jj=1, nhru
         idx1D = (curr_month - 1) * nhru + jj

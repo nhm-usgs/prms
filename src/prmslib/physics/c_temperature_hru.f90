@@ -25,7 +25,10 @@ module PRMS_TEMPERATURE_HRU
     integer(i32), private :: tmin_varid
     integer(i32), private :: tmax_idx_offset
     integer(i32), private :: tmin_idx_offset
-    
+
+    logical, private :: has_netcdf_tmax
+    logical, private :: has_netcdf_tmin
+
     contains
       procedure, public :: run => run_Temperature_hru
   end type
