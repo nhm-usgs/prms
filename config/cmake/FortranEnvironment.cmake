@@ -2,6 +2,20 @@
 # All source code follows the free-form fortran format
 enable_language(Fortran)
 
+# This half-assed block is only necessary because CMAKE ignores overriding the
+# *_INIT variables regardless of where they are placed in the scripts.
+if (DEFINED CMAKE_Fortran_FLAGS_RELEASE_INIT AND
+    "${CMAKE_Fortran_FLAGS_RELEASE_INIT}" STREQUAL "${CMAKE_Fortran_FLAGS_RELEASE}")
+  # Overwrite the init values choosen by CMake
+  set(CMAKE_Fortran_FLAGS_RELEASE "-O3" CACHE STRING "" FORCE)
+endif()
+
+if (DEFINED CMAKE_Fortran_FLAGS_DEBUG_INIT AND
+"${CMAKE_Fortran_FLAGS_DEBUG_INIT}" STREQUAL "${CMAKE_Fortran_FLAGS_DEBUG}")
+  # Overwrite the init values choosen by CMake
+  set(CMAKE_Fortran_FLAGS_DEBUG "-O0" CACHE STRING "" FORCE)
+endif()
+
 # Check if linux
 if(UNIX AND NOT APPLE)
   set(LINUX TRUE)
@@ -21,20 +35,33 @@ else()
   message(FATAL_ERROR "CMAKE_BUILD_TYPE not valid, choices are DEBUG, or RELEASE.")
 endif()
 
-find_package(OpenMP)
-if(OPENMP_FOUND)
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+# set (NETCDF_F90 "YES")
+# find_package (NetCDF REQUIRED)
+# include_directories(${NETCDF_INCLUDES})
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${NetCDF_includes}")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${NetCDF_libs}")
+# message(STATUS "** NETCDF_INCLUDES: ${NetCDF_includes}")
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -I/Users/pnorton/local/netcdf-4.6.1/include")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/Users/pnorton/local/netcdf-4.6.1/lib -lnetcdff -L/Users/pnorton/local/netcdf-4.6.1/lib -L/Users/pnorton/local/udunits-2.2.20/lib -L/Users/pnorton/local/openmpi-1.10.2/lib -L/Users/pnorton/local/hdf-4.2.11/lib -L/Users/pnorton/local/jpeg-9b/lib -L/Users/pnorton/local/hdf5-1.8.17/lib -L/Users/pnorton/local/szip-2.1/lib -L/Users/pnorton/local/zlib-1.2.8/lib -L/Users/pnorton/local/libxml2-2.9.3/lib -L/Users/pnorton/local/curl-7.49.1/lib -lnetcdf")
+
+# find_package(OpenMP)
+# if(OPENMP_FOUND)
+#   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+#   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+# endif()
 
 # Set gfortran compile flags
 # message(STATUS "*** Compiler: ${CMAKE_Fortran_COMPILER_ID}")
+
+# ===============================================
+# GNU
 # ===============================================
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   message(STATUS "Getting gfortran flags")
 
   # Set flags for all build types
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2008 -ffree-line-length-none -fno-common -fall-intrinsics")
+  # set(CMAKE_Fortran_FLAGS " -std=f2008 -ffree-line-length-none -fno-common -fall-intrinsics -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2008 -ffree-line-length-none -fno-common -fall-intrinsics -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans")
 
   if(BUILD_SHARED_LIBS)
     # Add any shared library related stuff here
@@ -80,13 +107,19 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     endif()
   endif()
 
-  set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -funroll-all-loops -finline-functions")
-  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -fbacktrace -fbounds-check -finit-real=nan -ffpe-trap=zero,overflow,underflow -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant")
+  # set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -funroll-all-loops -finline-functions")
+  # set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -funroll-all-loops -finline-functions")
+
+  #set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -pg -fbacktrace -fcheck=all -finit-real=nan -ffpe-trap=zero,overflow,underflow -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant")
+  #set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -pg -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -Wall  -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant")
+  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -pg -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -Wall -Wno-unused-dummy-argument")
 
   if(APPLE)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-underscoring")
   endif()
 
+# ===============================================
+# INTEL
 # ===============================================
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   message(STATUS "Getting ifort flags")
