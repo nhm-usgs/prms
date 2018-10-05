@@ -1,36 +1,32 @@
 
 project(prmslib VERSION 0.1 LANGUAGES Fortran)
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.8)
 
 # Create the library
 # ${PROJECT_NAME} is the name given for the most recent project() call
 add_library(${PROJECT_NAME} "")
 
-find_package(coretran REQUIRED CONFIG)
-target_link_libraries(${PROJECT_NAME} coretran)
-# Find the coretran library or stop
-#find_path(CORETRAN_INC_DIR m_allocate.mod HINTS $ENV{CORETRAN_INC})
-#if(NOT CORETRAN_INC_DIR)
-#    message(FATAL_ERROR "coretran include file not found")
-#else()
-#    message("-- Found coretran include file at: " ${CORETRAN_INC_DIR})
-#endif()
-
-#find_library(CORETRAN_LIB_DIR coretran HINTS $ENV{CORETRAN_LIB})
-#if(NOT CORETRAN_LIB_DIR)
-#    message(FATAL_ERROR "coretran library not found")
-#else()
-#    message("-- Found coretran library at: " ${CORETRAN_LIB_DIR})
-#endif()
-
-#set(LIB_DEP ${LIB_DEP} ${CORETRAN_LIB_DIR})
-
 # Link in the library
-#target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_DEP})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
 
+find_package(coretran REQUIRED CONFIG)
+target_link_libraries(${PROJECT_NAME} PUBLIC coretran)
+
+find_package(NetCDF REQUIRED COMPONENTS "F90")
+
+if (NOT BUILD_SHARED_LIBS)
+  # Linking fails for static build with absolute paths on OSX
+  target_link_libraries(${PROJECT_NAME} PUBLIC netcdff netcdf)
+else ()
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_F90_LIBRARIES})
+endif ()
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${NETCDF_INCLUDE_DIRS})
+
+# # Link in the library
+# set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
+
 # Add the include folder that contains the library modules
-#target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CORETRAN_INC_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                                                   $<INSTALL_INTERFACE:include>
                                                   $<INSTALL_INTERFACE:lib>
