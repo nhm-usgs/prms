@@ -112,7 +112,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       type(Time_t), intent(in) :: model_time
 
       ! Local Variables
-      character(len=:), allocatable :: error_txt
+      ! character(len=:), allocatable :: error_txt
 
       integer(i32) :: chru
       integer(i32) :: kk
@@ -485,7 +485,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
             endif
           endif
 
-          last_sm = soil_moist_ante(chru)
+          last_sm = sngl(soil_moist_ante(chru))
           last_ss = ssres_stor_ante(chru)
 
           ! if (chru == 508) then
