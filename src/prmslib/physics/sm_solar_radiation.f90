@@ -1,6 +1,6 @@
 submodule (SOLAR_RADIATION) sm_solar_radiation
 contains
-  module function constructor_SolarRadiation(ctl_data, param_data, model_basin) result(this)
+  module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary) result(this)
     use UTILS_PRMS, only: PRMS_open_module_file
     implicit none
 
@@ -12,6 +12,7 @@ contains
       !! Parameters
     type(Basin), intent(in) :: model_basin
       !! Model basin
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
 
     ! --------------------------------------------------------------------------
@@ -34,6 +35,7 @@ contains
 
     character(len=12) :: output_path
     integer(i32) :: j
+    integer(i32) :: jj
     integer(i32) :: chru
     integer(i32) :: file_unit
     integer(i32) :: nn
@@ -43,6 +45,9 @@ contains
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
               print_debug => ctl_data%print_debug%value, &
               solrad_module => ctl_data%solrad_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
@@ -158,7 +163,30 @@ contains
       !   allocate(this%orad_hru(nhru))
       !   this%orad_hru = 0.0
       ! endif
+      allocate(this%basin_horad)
+      allocate(this%basin_orad)
+      allocate(this%basin_potsw)
+      allocate(this%basin_swrad)
 
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+            case('basin_horad')
+              call basin_summary%set_basin_var(jj, this%basin_horad)
+            case('basin_orad')
+              call basin_summary%set_basin_var(jj, this%basin_orad)
+            case('basin_potsw')
+              call basin_summary%set_basin_var(jj, this%basin_potsw)
+            case('basin_swrad')
+              call basin_summary%set_basin_var(jj, this%basin_swrad)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
     end associate
   end function
 

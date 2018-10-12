@@ -1,6 +1,6 @@
 submodule(PRMS_POTET) sm_potet
 contains
-  module function constructor_Potet(ctl_data) result(this)
+  module function constructor_Potet(ctl_data, basin_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
@@ -8,10 +8,13 @@ contains
       !! Potential_ET class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
+      !! Basin summary
 
     ! Local variables
     integer(i32) :: ierr
     integer(i32) :: istop = 0
+    integer(i32) :: jj
 
     ! Control
     ! nhru, cbh_binary_flag, et_module, humidity_day, stream_temp_flag,
@@ -19,6 +22,9 @@ contains
 
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
@@ -57,6 +63,25 @@ contains
           !       to handle this.
           call find_current_time(ierr, this%humidity_funit, start_time, (cbh_binary_flag==1))
         endif
+      endif
+
+      allocate(this%basin_humidity)
+      allocate(this%basin_potet)
+
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+            case('basin_humidity')
+              call basin_summary%set_basin_var(jj, this%basin_humidity)
+            case('basin_potet')
+              call basin_summary%set_basin_var(jj, this%basin_potet)
+            case default
+              ! pass
+          end select
+        enddo
       endif
     end associate
   end function

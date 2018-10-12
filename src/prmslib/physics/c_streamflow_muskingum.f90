@@ -11,6 +11,7 @@ module PRMS_MUSKINGUM
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_STREAMFLOW, only: Streamflow
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -18,7 +19,7 @@ module PRMS_MUSKINGUM
 
   character(len=*), parameter :: MODDESC = 'Streamflow routing'
   character(len=*), parameter :: MODNAME = 'muskingum'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 15:04:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 18:09:00Z'
 
   type, extends(Streamflow) :: Muskingum
     ! Local Variables
@@ -53,7 +54,7 @@ module PRMS_MUSKINGUM
   interface Muskingum
     !! Muskingum constructor
     module function constructor_Muskingum(ctl_data, param_data, model_basin, &
-                                          model_time) result(this)
+                                          model_time, basin_summary) result(this)
       use prms_constants, only: dp
       implicit none
 
@@ -65,6 +66,8 @@ module PRMS_MUSKINGUM
         !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

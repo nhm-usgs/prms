@@ -3,9 +3,8 @@ submodule (PRMS_SNOW) sm_snowcomp
 
 contains
   ! Snowcomp constructor
-  module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin) result(this)
+  module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary) result(this)
     use prms_constants, only: dp
-    ! use utils_prms, only: get_array
     implicit none
 
     type(Snowcomp) :: this
@@ -16,22 +15,23 @@ contains
       !! Control file parameters
     type(Parameters), intent(in) :: param_data
       !! Parameters
-
     type(Basin), intent(in) :: model_basin
-
-    ! type(Climate), intent(inout) :: model_climate
-    !   !! Climate variables
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
     ! Local Variables
     integer(i32) :: chru
     ! integer(i32) :: idx1D
     integer(i32) :: j
+    integer(i32) :: jj
 
     real(r32), allocatable :: snarea_curve_2d(:, :)
     ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
 
     ! -------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               print_debug => ctl_data%print_debug%value, &
               rst_unit => ctl_data%restart_output_unit, &
@@ -126,11 +126,6 @@ contains
       this%snsv = 0.0
       this%tcal = 0.0
 
-      this%basin_pk_precip = 0.0_dp
-      this%basin_snowevap = 0.0_dp
-      this%basin_snowmelt = 0.0_dp
-      this%basin_tcal = 0.0_dp
-
       this%acum = ACUM_INIT
       this%amlt = AMLT_INIT
 
@@ -140,6 +135,45 @@ contains
       this%denmaxinv = 1.0_dp / dble(den_max)
 
       ! this%settle_const_dble = dble(settle_const)
+
+      allocate(this%basin_pk_precip)
+      allocate(this%basin_pweqv)
+      allocate(this%basin_snowcov)
+      allocate(this%basin_snowdepth)
+      allocate(this%basin_snowevap)
+      allocate(this%basin_snowmelt)
+      allocate(this%basin_tcal)
+
+      this%basin_pk_precip = 0.0_dp
+      this%basin_snowevap = 0.0_dp
+      this%basin_snowmelt = 0.0_dp
+      this%basin_tcal = 0.0_dp
+
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+            case('basin_pk_precip')
+              call basin_summary%set_basin_var(jj, this%basin_pk_precip)
+            case('basin_pweqv')
+              call basin_summary%set_basin_var(jj, this%basin_pweqv)
+            case('basin_snowcov')
+              call basin_summary%set_basin_var(jj, this%basin_snowcov)
+            case('basin_snowdepth')
+              call basin_summary%set_basin_var(jj, this%basin_snowdepth)
+            case('basin_snowevap')
+              call basin_summary%set_basin_var(jj, this%basin_snowevap)
+            case('basin_snowmelt')
+              call basin_summary%set_basin_var(jj, this%basin_snowmelt)
+            case('basin_tcal')
+              call basin_summary%set_basin_var(jj, this%basin_tcal)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
 
       ! TODO: Hookup the read from restart file code
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)

@@ -7,6 +7,7 @@ module PRMS_PRECIPITATION_HRU
   use PRMS_BASIN, only: Basin
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -14,7 +15,7 @@ module PRMS_PRECIPITATION_HRU
 
   character(len=*), parameter :: MODDESC = 'Precip distribution by HRU'
   character(len=*), parameter :: MODNAME = 'precipitation_hru'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:11:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 15:55:00Z'
 
   type, extends(Precipitation) :: Precipitation_hru
     integer(i32), private :: precip_funit
@@ -30,12 +31,13 @@ module PRMS_PRECIPITATION_HRU
 
   interface Precipitation_hru
     !! Precipitation_hru constructor
-    module function constructor_Precipitation_hru(ctl_data, param_data) result(this)
+    module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary) result(this)
       type(Precipitation_hru) :: this
         !! Precipitation_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
     end function
   end interface
 

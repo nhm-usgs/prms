@@ -1,7 +1,7 @@
 submodule(PRMS_TEMPERATURE_HRU) sm_temperature_hru
 contains
 
-  module function constructor_Temperature_hru(ctl_data) result(this)
+  module function constructor_Temperature_hru(ctl_data, basin_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
@@ -9,6 +9,7 @@ contains
       !! Temperature_hru class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -19,7 +20,7 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Temperature = Temperature(ctl_data)
+    this%Temperature = Temperature(ctl_data, basin_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &

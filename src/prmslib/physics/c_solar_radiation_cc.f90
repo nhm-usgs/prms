@@ -19,6 +19,7 @@ module SOLAR_RADIATION_CC
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_SET_TIME, only: Time_t
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -26,12 +27,12 @@ module SOLAR_RADIATION_CC
 
   character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
   character(len=*), parameter :: MODNAME = 'solrad_cc'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 13:47:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:20:00Z'
 
   type, extends(SolarRadiation) :: Solrad_cc
     ! Declared Variables
-    real(r64) :: basin_radadj
-    real(r64) :: basin_cloud_cover
+    real(r64), pointer :: basin_radadj
+    real(r64), pointer :: basin_cloud_cover
     real(r32), allocatable :: cloud_radadj(:)
     real(r32), allocatable :: cloud_cover_hru(:)
 
@@ -42,7 +43,7 @@ module SOLAR_RADIATION_CC
 
   interface Solrad_cc
     !! Solrad_cc constructor
-    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp) result(this)
+    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary) result(this)
       type(Solrad_cc) :: this
         !! Solrad_cc class
       type(Control), intent(in) :: ctl_data
@@ -51,6 +52,8 @@ module SOLAR_RADIATION_CC
         !! Parameters
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

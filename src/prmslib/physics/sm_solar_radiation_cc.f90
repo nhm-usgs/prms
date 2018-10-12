@@ -1,6 +1,6 @@
 submodule(SOLAR_RADIATION_CC) sm_solar_radiation_cc
 contains
-  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp) result(this)
+  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary) result(this)
     use conversions_mod, only: c_to_f
     use prms_constants, only: dp
     implicit none
@@ -12,16 +12,22 @@ contains
       !! Parameters
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
+
+    integer(i32) :: jj
 
     ! Control
     ! nhru, nsol
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin)
+    this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, basin_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
               print_debug => ctl_data%print_debug%value)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
@@ -37,12 +43,32 @@ contains
       this%cloud_cover_hru = 0.0
       this%cloud_radadj = 0.0
 
-      this%basin_cloud_cover = 0.0_dp
-      this%basin_radadj = 0.0_dp
+
 
       ! NOTE: Once units are standardized tmax_f and tmin_f can go away
       this%tmax_f = (c_to_f(model_temp%tmax))
       this%tmin_f = (c_to_f(model_temp%tmin))
+
+      allocate(this%basin_cloud_cover)
+      allocate(this%basin_radadj)
+      this%basin_cloud_cover = 0.0_dp
+      this%basin_radadj = 0.0_dp
+
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+          case('basin_cloud_cover')
+              call basin_summary%set_basin_var(jj, this%basin_cloud_cover)
+            case('basin_radadj')
+              call basin_summary%set_basin_var(jj, this%basin_radadj)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
     end associate
   end function
 

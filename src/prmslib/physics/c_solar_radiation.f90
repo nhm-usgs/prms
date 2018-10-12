@@ -6,6 +6,7 @@ module SOLAR_RADIATION
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use prms_constants, only: dp
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -13,7 +14,7 @@ module SOLAR_RADIATION
 
   character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
   character(len=*), parameter :: MODNAME = 'soltab'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 13:42:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:20:00Z'
 
   integer(r32), parameter :: DAYS_PER_YEAR = 366.0_sp
   real(r64), parameter :: PI = 3.1415926535898_dp
@@ -44,10 +45,10 @@ module SOLAR_RADIATION
     ! Declared Variables
     real(r32) :: orad
 
-    real(r64) :: basin_horad
-    real(r64) :: basin_orad
-    real(r64) :: basin_potsw
-    real(r64) :: basin_swrad
+    real(r64), pointer :: basin_horad
+    real(r64), pointer :: basin_orad
+    real(r64), pointer :: basin_potsw
+    real(r64), pointer :: basin_swrad
 
     ! real(r32), allocatable :: orad_hru(:)
     real(r32), allocatable :: swrad(:)
@@ -63,7 +64,7 @@ module SOLAR_RADIATION
 
   interface SolarRadiation
     !! SolarRadiation constructor
-    module function constructor_SolarRadiation(ctl_data, param_data, model_basin) result(this)
+    module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary) result(this)
       type(SolarRadiation) :: this
         !! SolarRadiation class
       type(Control), intent(in) :: ctl_data
@@ -72,6 +73,8 @@ module SOLAR_RADIATION
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

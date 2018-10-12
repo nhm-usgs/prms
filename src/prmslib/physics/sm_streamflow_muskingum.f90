@@ -1,7 +1,7 @@
 submodule (PRMS_MUSKINGUM) sm_muskingum
   contains
     module function constructor_Muskingum(ctl_data, param_data, model_basin, &
-                                          model_time) result(this)
+                                          model_time, basin_summary) result(this)
       use, intrinsic :: iso_fortran_env, only: output_unit
       use prms_constants, only: dp, NEARZERO
       implicit none
@@ -14,6 +14,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
 
       ! Local variables
       integer(i32) :: cseg
@@ -38,7 +39,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       ! -----------------------------------------------------------------------
       ! Call the parent constructor first
-      this%Streamflow = Streamflow(ctl_data, param_data, model_basin, model_time)
+      this%Streamflow = Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary)
 
       associate(nsegment => ctl_data%nsegment%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
@@ -194,6 +195,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
       end associate
     end function
+
 
     module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
                                     model_potet, groundwater, soil, runoff, &

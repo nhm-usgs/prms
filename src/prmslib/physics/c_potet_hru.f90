@@ -7,6 +7,7 @@ module PRMS_POTET_HRU
   ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_POTET, only: Potential_ET
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -14,7 +15,7 @@ module PRMS_POTET_HRU
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration by HRU'
   character(len=*), parameter :: MODNAME = 'potet_hru'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:01:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:37:00Z'
 
   type, extends(Potential_ET) :: Potet_hru
     integer(i32), private :: et_funit
@@ -23,11 +24,13 @@ module PRMS_POTET_HRU
 
   interface Potet_hru
     !! Potet_hru constructor
-    module function constructor_Potet_hru(ctl_data) result(this)
+    module function constructor_Potet_hru(ctl_data, basin_summary) result(this)
       type(Potet_hru) :: this
         !! Potet_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

@@ -2,16 +2,17 @@ submodule (PRMS_POTET_JH) sm_potet_jh
 contains
   !***********************************************************************
   ! Potet_jh constructor
-  module function constructor_Potet_jh(ctl_data) result(this)
+  module function constructor_Potet_jh(ctl_data, basin_summary) result(this)
     use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Potet_jh) :: this
     type(Control), intent(in) :: ctl_data
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data)
+    this%Potential_ET = Potential_ET(ctl_data, basin_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value)
@@ -32,7 +33,6 @@ contains
 
   module subroutine run_Potet_jh(this, ctl_data, param_data, model_basin, model_time, model_solrad, model_temp)
     use conversions_mod, only: c_to_f
-    ! use UTILS_PRMS, only: get_array
     implicit none
 
     class(Potet_jh), intent(inout) :: this

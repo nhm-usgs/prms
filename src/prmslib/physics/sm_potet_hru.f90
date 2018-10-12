@@ -1,13 +1,12 @@
 submodule(PRMS_POTET_HRU) sm_potet_hru
 contains
-  module function constructor_Potet_hru(ctl_data) result(this)
+  module function constructor_Potet_hru(ctl_data, basin_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     type(Potet_hru) :: this
-      !! Potet_hru class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -18,7 +17,7 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data)
+    this%Potential_ET = Potential_ET(ctl_data, basin_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &

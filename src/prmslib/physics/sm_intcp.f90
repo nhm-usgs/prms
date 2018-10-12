@@ -1,6 +1,6 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_transp) result(this)
+  module function constructor_Interception(ctl_data, model_transp, basin_summary) result(this)
     use prms_constants, only: dp
 
     type(Interception) :: this
@@ -8,6 +8,10 @@ contains
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
     class(Transpiration), intent(in) :: model_transp
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
+      !! Basin summary
+
+    integer(i32) :: jj
 
     ! Control
     ! nhru, init_vars_from_file, print_debug
@@ -17,6 +21,9 @@ contains
 
     ! -------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               print_debug => ctl_data%print_debug%value, &
               transp_on => model_transp%transp_on)
@@ -70,6 +77,15 @@ contains
       this%net_rain = 0.0
       this%net_snow = 0.0
 
+      allocate(this%basin_changeover)
+      allocate(this%basin_hru_apply)
+      allocate(this%basin_intcp_evap)
+      allocate(this%basin_intcp_stor)
+      allocate(this%basin_net_apply)
+      allocate(this%basin_net_ppt)
+      allocate(this%basin_net_rain)
+      allocate(this%basin_net_snow)
+
       this%basin_changeover = 0.0_dp
       this%basin_hru_apply = 0.0_dp
       this%basin_intcp_evap = 0.0_dp
@@ -78,6 +94,34 @@ contains
       this%basin_net_ppt = 0.0_dp
       this%basin_net_rain = 0.0_dp
       this%basin_net_snow = 0.0_dp
+
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+            case('basin_changeover')
+              call basin_summary%set_basin_var(jj, this%basin_changeover)
+            case('basin_hru_apply')
+              call basin_summary%set_basin_var(jj, this%basin_hru_apply)
+            case('basin_intcp_evap')
+              call basin_summary%set_basin_var(jj, this%basin_intcp_evap)
+            case('basin_intcp_stor')
+              call basin_summary%set_basin_var(jj, this%basin_intcp_stor)
+            case('basin_net_apply')
+              call basin_summary%set_basin_var(jj, this%basin_net_apply)
+            case('basin_net_ppt')
+              call basin_summary%set_basin_var(jj, this%basin_net_ppt)
+            case('basin_net_rain')
+              call basin_summary%set_basin_var(jj, this%basin_net_rain)
+            case('basin_net_snow')
+              call basin_summary%set_basin_var(jj, this%basin_net_snow)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
 
       if (init_vars_from_file == 1) then
         ! TODO: hook up reading restart file

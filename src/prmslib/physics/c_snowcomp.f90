@@ -13,6 +13,7 @@ module PRMS_SNOW
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_TRANSPIRATION, only: Transpiration
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -20,7 +21,7 @@ module PRMS_SNOW
 
   character(len=*), parameter :: MODDESC = 'Snow Dynamics'
   character(len=*), parameter :: MODNAME = 'snowcomp'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:13:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 17:04:00Z'
 
   integer(i32), parameter :: MAXALB = 15
 
@@ -79,20 +80,21 @@ module PRMS_SNOW
     ! integer(i32), allocatable :: iasw(:)
     !   !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
 
-    real(r64) :: basin_snowmelt
-      !! Basin area-weighted average snowmelt
-    real(r64) :: basin_pweqv
-      !! Basin area-weighted average snowpack water equivalent
-    real(r64) :: basin_tcal
-      !! Basin area-weighted average net snowpack energy balance
-    real(r64) :: basin_snowcov
-      !! Basin area-weighted average snow-covered area
-    real(r64) :: basin_snowevap
-      !! Basin area-weighted average evaporation and sublimation from snowpack
-    real(r64) :: basin_snowdepth
-      !! Basin area-weighted average snow depth
-    real(r64) :: basin_pk_precip
+    real(r64), pointer :: basin_pk_precip
       !! Basin area-weighted average precipitation added to snowpack
+    real(r64), pointer :: basin_pweqv
+      !! Basin area-weighted average snowpack water equivalent
+    real(r64), pointer :: basin_snowcov
+      !! Basin area-weighted average snow-covered area
+    real(r64), pointer :: basin_snowdepth
+      !! Basin area-weighted average snow depth
+    real(r64), pointer :: basin_snowevap
+      !! Basin area-weighted average evaporation and sublimation from snowpack
+    real(r64), pointer :: basin_snowmelt
+      !! Basin area-weighted average snowmelt
+    real(r64), pointer :: basin_tcal
+      !! Basin area-weighted average net snowpack energy balance
+
 
     real(r32), allocatable :: snowmelt(:)
       !! Snowmelt from snowpack on each HRU [inches]
@@ -144,7 +146,7 @@ module PRMS_SNOW
 
   interface Snowcomp
     !! Snowcomp constructor
-    module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin) result(this)
+    module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary) result(this)
       type(Snowcomp) :: this
         !! Snowcomp class
       type(Climateflow), intent(inout) :: model_climate
@@ -155,6 +157,8 @@ module PRMS_SNOW
         !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

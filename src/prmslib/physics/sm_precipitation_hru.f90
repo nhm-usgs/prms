@@ -1,7 +1,7 @@
 submodule(PRMS_PRECIPITATION_HRU) sm_precipitation_hru
 contains
   !! Precipitation_hru constructor
-  module function constructor_Precipitation_hru(ctl_data, param_data) result(this)
+  module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
@@ -10,6 +10,7 @@ contains
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
     type(Parameters), intent(in) :: param_data
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -17,7 +18,7 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Precipitation = Precipitation(ctl_data, param_data)
+    this%Precipitation = Precipitation(ctl_data, param_data, basin_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &

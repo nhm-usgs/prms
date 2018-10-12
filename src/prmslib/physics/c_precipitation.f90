@@ -7,6 +7,7 @@ module PRMS_PRECIPITATION
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -14,14 +15,14 @@ module PRMS_PRECIPITATION
 
   character(len=*), parameter :: MODDESC = 'Precipitation distribution'
   character(len=*), parameter :: MODNAME = 'precipitation'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 17:09:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 15:55:00Z'
 
   type, extends(ModelBase) :: Precipitation
     ! Basin variables
-    real(r64) :: basin_obs_ppt
-    real(r64) :: basin_ppt
-    real(r64) :: basin_rain
-    real(r64) :: basin_snow
+    real(r64), pointer :: basin_obs_ppt
+    real(r64), pointer :: basin_ppt
+    real(r64), pointer :: basin_rain
+    real(r64), pointer :: basin_snow
 
     real(r32), allocatable :: hru_ppt(:)
     real(r32), allocatable :: hru_rain(:)
@@ -44,12 +45,13 @@ module PRMS_PRECIPITATION
 
   interface Precipitation
     !! Precipitation constructor
-    module function constructor_Precipitation(ctl_data, param_data) result(this)
+    module function constructor_Precipitation(ctl_data, param_data, basin_summary) result(this)
       type(Precipitation) :: this
         !! Precipitation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
     end function
   end interface
 

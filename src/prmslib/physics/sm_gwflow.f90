@@ -1,7 +1,7 @@
 submodule (PRMS_GWFLOW) sm_gwflow
   contains
 
-    module function constructor_Gwflow(ctl_data, param_data, model_basin, &
+    module function constructor_Gwflow(ctl_data, param_data, basin_summary, model_basin, &
                                        model_climate, intcp, soil, runoff) result(this)
       use prms_constants, only: dp, SWALE
       implicit none
@@ -12,6 +12,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
         !! Parameter data
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
@@ -21,22 +22,19 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
       ! Local Variables
       integer(i32) :: chru
-      integer(i32) :: j
+      integer(i32) :: jj
       integer(i32) :: jjj
 
       ! Control
       ! nhru, nlake
       ! cascadegw_flag, dprst_flag, gwr_swale_flag, init_vars_from_file,
-      ! lake_route_flag
-      ! print_debug
+      ! lake_route_flag, print_debug
 
       ! Parameter
-      ! elevlake_init, gwflow_coef, gwstor_init, gwstor_min, hru_area,
-      ! lake_hru_id,
+      ! elevlake_init, gwflow_coef, gwstor_init, gwstor_min, hru_area, lake_hru_id,
 
       ! Basin
-      ! active_gwrs, basin_area_inv, gwr_route_order, gwr_type,
-      ! weir_gate_flag
+      ! active_gwrs, basin_area_inv, gwr_route_order, gwr_type, weir_gate_flag
 
       ! Climateflow
       ! pkwater_equiv
@@ -53,12 +51,16 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! ------------------------------------------------------------------------
       associate(nhru => ctl_data%nhru%value, &
                 nlake => ctl_data%nlake%value, &
+                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+                basinOutVars => ctl_data%basinOutVars%value, &
+                basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascadegw_flag => ctl_data%cascadegw_flag%value, &
                 dprst_flag => ctl_data%dprst_flag%value, &
+                gsflow_mode => ctl_data%gsflow_mode, &
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 ! lake_route_flag => ctl_data%lake_route_flag%value, &
-                model_mode => ctl_data%model_mode%values, &
+                ! model_mode => ctl_data%model_mode%values, &
                 print_debug => ctl_data%print_debug%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
 
@@ -91,9 +93,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
           call this%print_module_info()
         endif
 
-        ! Add trap for sigfpe error
-        ! iret1 = signal(SIGFPE, sigfpe_err, -1)
-
         if (cascadegw_flag > 0) then
           allocate(this%gw_upslope(nhru))
           allocate(this%hru_gw_cascadeflow(nhru))
@@ -105,19 +104,18 @@ submodule (PRMS_GWFLOW) sm_gwflow
         allocate(this%gwres_in(nhru))
         allocate(this%gwres_sink(nhru))
         allocate(this%gwres_stor(nhru))   ! moved from flowvars
-        allocate(this%gwstor_minarea(nhru))
+        ! allocate(this%gwstor_minarea(nhru))
         allocate(this%gwstor_minarea_wb(nhru))
         allocate(this%hru_lateral_flow(nhru))
         allocate(this%hru_storage(nhru))
         allocate(this%hru_streamflow_out(nhru))
 
-
-
         if (dprst_flag == 1) then
           allocate(this%gwin_dprst(nhru))
         endif
 
-        if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
+        ! if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
+        if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. .not. gsflow_mode) then
         ! if (lake_route_flag == 1) then
           allocate(this%lake_seepage(nlake))
           allocate(this%lake_seepage_max(nlake))
@@ -126,11 +124,48 @@ submodule (PRMS_GWFLOW) sm_gwflow
           allocate(this%elevlake(nlake))
         endif
 
+        allocate(this%basin_dnflow)
+        allocate(this%basin_gw_upslope)
+        allocate(this%basin_gwflow)
+        allocate(this%basin_gwin)
+        allocate(this%basin_gwsink)
+        allocate(this%basin_gwstor)
+        allocate(this%basin_gwstor_minarea_wb)
+        allocate(this%basin_lake_seep)
+
+        ! Connect any basin summary variables that need to be output
+        if (basinOutON_OFF == 1) then
+          do jj = 1, basinOutVars
+            ! TODO: This is where the daily basin values are linked based on
+            !       what was requested in basinOutVar_names.
+            select case(basinOutVar_names(jj)%s)
+              case('basin_gwflow')
+                call basin_summary%set_basin_var(jj, this%basin_gwflow)
+              case('basin_gwstor')
+                call basin_summary%set_basin_var(jj, this%basin_gwstor)
+              case('basin_gwin')
+                call basin_summary%set_basin_var(jj, this%basin_gwin)
+              case('basin_gwsink')
+                call basin_summary%set_basin_var(jj, this%basin_gwsink)
+              case('basin_gwstor_minarea_wb')
+                call basin_summary%set_basin_var(jj, this%basin_gwstor_minarea_wb)
+              case('basin_lake_seep')
+                call basin_summary%set_basin_var(jj, this%basin_lake_seep)
+              case('basin_gw_upslope')
+                call basin_summary%set_basin_var(jj, this%basin_gw_upslope)
+              case('basin_dnflow')
+                call basin_summary%set_basin_var(jj, this%basin_dnflow)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
+
         ! Initialize
         this%gwres_stor = 0.0_dp  ! moved from flowvars
 
-        this%gwminarea_flag = 0
-        this%gwstor_minarea = 0.0_dp
+        ! this%gwminarea_flag = 0
+        ! this%gwstor_minarea = 0.0_dp
         this%gwstor_minarea_wb = 0.0_dp
         this%basin_gwstor_minarea_wb = 0.0_dp
 
@@ -149,14 +184,16 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%hru_storage = 0.0_dp
         this%basin_gwstor = 0.0_dp
 
-        do j = 1, active_gwrs
-          chru = gwr_route_order(j)
-          this%basin_gwstor = this%basin_gwstor + this%gwres_stor(chru) * dble(hru_area(chru))
+        this%has_gwstor_minarea = .false.
+        if (any(gwstor_min > 0.0_r32)) then
+          this%has_gwstor_minarea = .true.
+          allocate(this%gwstor_minarea(nhru))
+          this%gwstor_minarea = dble(gwstor_min * hru_area)
+        endif
 
-          if (gwstor_min(chru) > 0.0) then
-            this%gwminarea_flag = 1
-            this%gwstor_minarea(chru) = dble(gwstor_min(chru) * hru_area(chru))
-          endif
+        do jj = 1, active_gwrs
+          chru = gwr_route_order(jj)
+          this%basin_gwstor = this%basin_gwstor + this%gwres_stor(chru) * dble(hru_area(chru))
 
           if (gwflow_coef(chru) > 1.0) then
             if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', chru, gwflow_coef(chru)
@@ -186,8 +223,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
             this%hru_storage(chru) = this%hru_storage(chru) + dprst_stor_hru(chru)
           endif
         enddo
-
-        if (this%gwminarea_flag == 0) deallocate(this%gwstor_minarea)
 
         this%basin_gwstor = this%basin_gwstor * basin_area_inv
 
@@ -245,6 +280,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%gw_in_soil = 0.0_dp
         this%hru_streamflow_out = 0.0_dp
         this%hru_lateral_flow = 0.0_dp
+
       end associate
     end function
 
@@ -281,7 +317,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! TODO: Uncomment when cascade module is converted
       ! real(r32) :: dnflow
 
-      real(r64) :: gwarea
+      ! real(r64) :: gwarea
       real(r64) :: gwflow
       real(r64) :: gwin
       real(r64) :: gwsink
@@ -331,6 +367,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
                 gwflow_coef => param_data%gwflow_coef%values, &
                 gwsink_coef => param_data%gwsink_coef%values, &
+                ! gwstor_min => param_data%gwstor_min%values, &
                 gw_seep_coef => param_data%gw_seep_coef%values, &
                 ! gwr_type => param_data%gwr_type%values, &
                 hru_area => param_data%hru_area%values, &
@@ -441,15 +478,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
         endif
 
         this%basin_gwstor_minarea_wb = 0.0_dp
-        this%basin_gwflow = 0.0_dp
-        this%basin_gwstor = 0.0_dp
         this%basin_gwsink = 0.0_dp
-        this%basin_gwin = 0.0_dp
 
         do j=1, active_gwrs
           chru = gwr_route_order(j)
-          gwarea = hru_area_dble(chru)
-          gwstor = this%gwres_stor(chru) * gwarea  ! acre-inches
+          ! gwarea = hru_area_dble(chru)
+          gwstor = this%gwres_stor(chru) * hru_area_dble(chru)  ! acre-inches
 
           ! soil_to_gw is for whole HRU, not just perv
           this%gw_in_soil(chru) = soil_to_gw(chru) * hru_area(chru)
@@ -457,13 +491,17 @@ submodule (PRMS_GWFLOW) sm_gwflow
           gwin = this%gw_in_soil(chru) + this%gw_in_ssr(chru)
 
           if (cascadegw_flag > 0) then
+            ! WARNING: gw_slope is initialized to zero at line 372
+            !          gw_slope is not updated until the call to
+            !          rungw_cascade (around line 587). This means that the
+            !          gw_upslope is zero when added to gwin and basin_gw_slope.
             gwin = gwin + this%gw_upslope(chru)
             this%basin_gw_upslope = this%basin_gw_upslope + this%gw_upslope(chru)
           endif
 
           if (dprst_flag == 1) then
             ! TODO: rsr, need basin variable for WB
-            this%gwin_dprst(chru) = dprst_seep_hru(chru) * gwarea
+            this%gwin_dprst(chru) = dprst_seep_hru(chru) * hru_area_dble(chru)
             gwin = gwin + this%gwin_dprst(chru)
           endif
 
@@ -473,11 +511,11 @@ submodule (PRMS_GWFLOW) sm_gwflow
           ! endif
 
           gwstor = gwstor + gwin
-          this%basin_gwin = this%basin_gwin + gwin
+          ! this%basin_gwin = this%basin_gwin + gwin
 
-          if (this%gwminarea_flag == 1) then
+          if (this%has_gwstor_minarea) then
             ! Check to be sure gwres_stor >= gwstor_minarea before computing outflows
-              if (gwstor < this%gwstor_minarea(chru)) then
+            if (gwstor < this%gwstor_minarea(chru)) then
               if (gwstor < 0.0_dp) then
                 if (print_debug > -1) then
                   print *, 'Warning, groundwater reservoir for HRU:', chru, &
@@ -491,7 +529,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
               !rsr, keep track of change in storage for WB
               this%gwstor_minarea_wb(chru) = gwstor - gwstor_last
               this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb + this%gwstor_minarea_wb(chru)
-              this%gwstor_minarea_wb(chru) = this%gwstor_minarea_wb(chru) / gwarea
+              this%gwstor_minarea_wb(chru) = this%gwstor_minarea_wb(chru) / hru_area_dble(chru)
 
               if (print_debug > -1) then
                 print *, 'Added to gwres_stor as storage < gwstor_min to GWR:', chru, &
@@ -535,18 +573,16 @@ submodule (PRMS_GWFLOW) sm_gwflow
             !   endif
             ! endif
 
-            this%gwres_sink(chru) = gwsink / gwarea
+            this%gwres_sink(chru) = gwsink / hru_area_dble(chru)
             this%basin_gwsink = this%basin_gwsink + gwsink
           endif
 
-          this%basin_gwstor = this%basin_gwstor + gwstor
-
           ! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
           ! if (chru == 816) then
-          !   write(*, *) chru, gwflow, gwarea, gwstor, gwflow_coef(chru)
+          !   write(*, *) chru, gwflow, hru_area_dble(chru), gwstor, gwflow_coef(chru)
           ! endif
 
-          this%gwres_flow(chru) = gwflow / gwarea
+          this%gwres_flow(chru) = gwflow / hru_area_dble(chru)
 
           ! TODO: Uncomment when cascade module is converted
           ! if (cascadegw_flag > 0) then
@@ -554,19 +590,17 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !     call rungw_cascade(runoff, model_time, chru, ncascade_gwr(chru), this%gwres_flow(chru), dnflow)
           !
           !     this%hru_gw_cascadeflow(chru) = dnflow
-          !     this%basin_dnflow = this%basin_dnflow + dnflow * gwarea
+          !     this%basin_dnflow = this%basin_dnflow + dnflow * hru_area_dble(chru)
           !   endif
           ! endif
 
-          this%basin_gwflow = this%basin_gwflow + this%gwres_flow(chru) * gwarea
-
           ! Leave gwin in inch-acres
           this%gwres_in(chru) = gwin
-          this%gwres_stor(chru) = gwstor / gwarea
+          this%gwres_stor(chru) = gwstor / hru_area_dble(chru)
           this%hru_lateral_flow(chru) = this%gwres_flow(chru) + sroff(chru) + ssres_flow(chru)
 
           ! cfs_conv converts acre-inches per timestep to cfs
-          this%hru_streamflow_out(chru) = gwarea * cfs_conv * this%hru_lateral_flow(chru)
+          this%hru_streamflow_out(chru) = hru_area_dble(chru) * cfs_conv * this%hru_lateral_flow(chru)
           this%hru_storage(chru) = dble(soil_moist_tot(chru) + hru_intcpstor(chru) + hru_impervstor(chru)) + &
                                 this%gwres_stor(chru) + pkwater_equiv(chru)
 
@@ -575,10 +609,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
           endif
         enddo
 
-        this%basin_gwflow = this%basin_gwflow * basin_area_inv
-        this%basin_gwstor = this%basin_gwstor * basin_area_inv
+        ! TODO: Mask by active gwr
+        this%basin_gwflow = sum(this%gwres_flow * hru_area_dble) * basin_area_inv
+        this%basin_gwstor = sum(this%gwres_stor * hru_area_dble) * basin_area_inv
+        this%basin_gwin = sum(this%gwres_in) * basin_area_inv
+
         this%basin_gwsink = this%basin_gwsink * basin_area_inv
-        this%basin_gwin = this%basin_gwin * basin_area_inv
         this%basin_gw_upslope = this%basin_gw_upslope * basin_area_inv
         this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb * basin_area_inv
         this%basin_dnflow = this%basin_dnflow * basin_area_inv

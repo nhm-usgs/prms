@@ -1,6 +1,6 @@
 submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
   contains
-    module function constructor_Solrad_hru(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Solrad_hru(ctl_data, param_data, model_basin, basin_summary) result(this)
       use UTILS_CBH, only: find_current_time, find_header_end
       implicit none
 
@@ -11,6 +11,7 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
 
       ! Local variables
       integer(i32) :: ierr
@@ -21,7 +22,7 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
 
       ! ------------------------------------------------------------------------
       ! Call the parent constructor first
-      this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin)
+      this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, basin_summary)
 
       associate(nhru => ctl_data%nhru%value, &
                 cbh_binary_flag => ctl_data%cbh_binary_flag%value, &

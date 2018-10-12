@@ -6,6 +6,7 @@ module PRMS_TEMPERATURE_HRU
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -13,7 +14,7 @@ module PRMS_TEMPERATURE_HRU
 
   character(len=*), parameter :: MODDESC = 'Temp distribution by HRU'
   character(len=*), parameter :: MODNAME = 'temp_hru'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 15:09:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 15:45:00Z'
 
   type, extends(Temperature) :: Temperature_hru
     integer(i32), private :: tmax_funit
@@ -35,11 +36,13 @@ module PRMS_TEMPERATURE_HRU
 
   interface Temperature_hru
     !! Temperature_hru constructor
-    module function constructor_Temperature_hru(ctl_data) result(this)
+    module function constructor_Temperature_hru(ctl_data, basin_summary) result(this)
       type(Temperature_hru) :: this
         !! Temperature_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

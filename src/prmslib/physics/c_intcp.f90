@@ -15,6 +15,7 @@ module PRMS_INTCP
   use PRMS_POTET, only: Potential_ET
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TRANSPIRATION, only: Transpiration
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   ! use PRMS_SNOW, only: Snowcomp
   implicit none
 
@@ -23,7 +24,7 @@ module PRMS_INTCP
 
   character(len=*), parameter :: MODDESC = 'Canopy Interception'
   character(len=*), parameter :: MODNAME = 'intcp'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:07:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:48:00Z'
 
   type, extends(ModelBase) :: Interception
     ! Local Variables
@@ -38,14 +39,14 @@ module PRMS_INTCP
     logical :: use_transfer_intcp
 
     ! Declared Variables
-    real(r64) :: basin_changeover
-    real(r64) :: basin_hru_apply
-    real(r64) :: basin_intcp_evap
-    real(r64) :: basin_intcp_stor
-    real(r64) :: basin_net_apply
-    real(r64) :: basin_net_ppt
-    real(r64) :: basin_net_rain
-    real(r64) :: basin_net_snow
+    real(r64), pointer :: basin_changeover
+    real(r64), pointer :: basin_hru_apply
+    real(r64), pointer :: basin_intcp_evap
+    real(r64), pointer :: basin_intcp_stor
+    real(r64), pointer :: basin_net_apply
+    real(r64), pointer :: basin_net_ppt
+    real(r64), pointer :: basin_net_rain
+    real(r64), pointer :: basin_net_snow
 
     real(r32), allocatable :: canopy_covden(:)
     real(r32), allocatable :: hru_intcpevap(:)
@@ -73,12 +74,14 @@ module PRMS_INTCP
 
   interface Interception
     !! Intercept constructor
-    module function constructor_Interception(ctl_data, model_transp) result(this)
+    module function constructor_Interception(ctl_data, model_transp, basin_summary) result(this)
       type(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       class(Transpiration), intent(in) :: model_transp
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

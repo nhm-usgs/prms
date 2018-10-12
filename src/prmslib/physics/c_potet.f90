@@ -4,6 +4,7 @@ module PRMS_POTET
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
 
   implicit none
 
@@ -12,16 +13,16 @@ module PRMS_POTET
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 13:58:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:37:00Z'
 
   ! Potential Evapotranspiration class
   type, extends(ModelBase) :: Potential_ET
     integer(i32), private :: humidity_funit
       !! Humidity CBH file unit
 
-    real(r64) :: basin_humidity
+    real(r64), pointer :: basin_humidity
       !! (moved from climateflow.f90)
-    real(r64) :: basin_potet
+    real(r64), pointer :: basin_potet
 
     real(r32), allocatable :: humidity_hru(:)
       !! (moved from climate_hru)
@@ -40,11 +41,13 @@ module PRMS_POTET
 
   interface Potential_ET
     !! Potential_ET constructor
-    module function constructor_Potet(ctl_data) result(this)
+    module function constructor_Potet(ctl_data, basin_summary) result(this)
       type(Potential_ET) :: this
         !! Potential_ET class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

@@ -6,6 +6,7 @@ module PRMS_TEMPERATURE
   use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -13,12 +14,12 @@ module PRMS_TEMPERATURE
 
   character(len=*), parameter :: MODDESC = 'Temperature distribution'
   character(len=*), parameter :: MODNAME = 'temperature'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 15:07:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 15:45:00Z'
 
   type, extends(ModelBase) :: Temperature
-    real(r64) :: basin_temp
-    real(r64) :: basin_tmax
-    real(r64) :: basin_tmin
+    real(r64), pointer :: basin_temp
+    real(r64), pointer :: basin_tmax
+    real(r64), pointer :: basin_tmin
 
     ! NOTE: 2018-07-24 PAN: Changed tavg, tmax, tmin to r64
     !       The additional precision is needed when fahrenheit temperatures are
@@ -39,11 +40,13 @@ module PRMS_TEMPERATURE
 
   interface Temperature
     !! Temperature constructor
-    module function constructor_Temperature(ctl_data) result(this)
+    module function constructor_Temperature(ctl_data, basin_summary) result(this)
       type(Temperature) :: this
         !! Temperature class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

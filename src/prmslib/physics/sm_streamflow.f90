@@ -1,6 +1,6 @@
 submodule (PRMS_STREAMFLOW) sm_streamflow
   contains
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time) result(this)
+    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary) result(this)
       use prms_constants, only: dp, DNEARZERO, FT2_PER_ACRE, NEARZERO
       implicit none
 
@@ -12,6 +12,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
 
       ! Local Variables
       integer(i32) :: i
@@ -19,6 +20,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       integer(i32) :: iseg
       integer(i32) :: isegerr
       integer(i32) :: j
+      integer(i32) :: jj
       integer(i32) :: lval
       integer(i32) :: test
       integer(i32) :: toseg
@@ -45,6 +47,9 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       ! ------------------------------------------------------------------------
       associate(nhru => ctl_data%nhru%value, &
                 nsegment => ctl_data%nsegment%value, &
+                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+                basinOutVars => ctl_data%basinOutVars%value, &
+                basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascade_flag => ctl_data%cascade_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 print_debug => ctl_data%print_debug%value, &
@@ -108,6 +113,41 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%seg_upstream_inflow = 0.0_dp
         ! endif
 
+        
+        allocate(this%basin_cfs)
+        allocate(this%basin_cms)
+        allocate(this%basin_gwflow_cfs)
+        allocate(this%basin_segment_storage)
+        allocate(this%basin_sroff_cfs)
+        allocate(this%basin_ssflow_cfs)
+        allocate(this%basin_stflow_in)
+        allocate(this%basin_stflow_out)
+
+        ! Connect any basin summary variables that need to be output
+        if (basinOutON_OFF == 1) then
+          do jj = 1, basinOutVars
+            ! TODO: This is where the daily basin values are linked based on
+            !       what was requested in basinOutVar_names.
+            select case(basinOutVar_names(jj)%s)
+              case('basin_cfs')
+                call basin_summary%set_basin_var(jj, this%basin_cfs)
+              case('basin_cms')
+                call basin_summary%set_basin_var(jj, this%basin_cms)
+              case('basin_gwflow_cfs')
+                call basin_summary%set_basin_var(jj, this%basin_gwflow_cfs)
+              case('basin_segment_storage')
+                call basin_summary%set_basin_var(jj, this%basin_segment_storage)
+              case('basin_sroff_cfs')
+                call basin_summary%set_basin_var(jj, this%basin_sroff_cfs)
+              case('basin_stflow_in')
+                call basin_summary%set_basin_var(jj, this%basin_stflow_in)
+              case('basin_stflow_out')
+                call basin_summary%set_basin_var(jj, this%basin_stflow_out)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
 
         ! Now initialize everything
 
@@ -241,7 +281,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         enddo
 
         deallocate(x_off)
-
       end associate
     end function
 

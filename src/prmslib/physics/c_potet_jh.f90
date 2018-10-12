@@ -13,6 +13,7 @@ module PRMS_POTET_JH
   use PRMS_POTET, only: Potential_ET
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -20,7 +21,7 @@ module PRMS_POTET_JH
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet_jh'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:00:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:37:00Z'
 
   type, extends(Potential_ET) :: Potet_jh
     ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
@@ -32,11 +33,13 @@ module PRMS_POTET_JH
 
   interface Potet_jh
     !! Potet_jh constructor
-    module function constructor_Potet_jh(ctl_data) result(this)
+    module function constructor_Potet_jh(ctl_data, basin_summary) result(this)
       type(Potet_jh) :: this
         !! Poteh_jh class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

@@ -11,6 +11,7 @@ module PRMS_STREAMFLOW
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
 
   implicit none
 
@@ -19,7 +20,7 @@ module PRMS_STREAMFLOW
 
   character(len=*), parameter :: MODDESC = 'Streamflow initialization'
   character(len=*), parameter :: MODNAME = 'streamflow'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 15:01:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 18:09:00Z'
 
   type, extends(ModelBase) :: Streamflow
       ! Local Variables
@@ -58,22 +59,23 @@ module PRMS_STREAMFLOW
       real(r64), allocatable :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
 
-      real(r64) :: basin_cfs
+      real(r64), pointer :: basin_cfs
         !! Streamflow leaving the basin through the stream network (cfs)
-      real(r64) :: basin_cms
+      real(r64), pointer :: basin_cms
         !! Streamflow leaving the basin through the stream network (cms)
-      real(r64), public :: basin_segment_storage
-      real(r64) :: basin_gwflow_cfs
+      real(r64), public, pointer :: basin_segment_storage
+      real(r64), pointer :: basin_gwflow_cfs
         !! Basin area-weighted average of groundwater flow to the stream network
-      real(r64) :: basin_sroff_cfs
+      real(r64), pointer :: basin_sroff_cfs
         !! Basin area-weighted average surface runoff to the stream network
-      real(r64) :: basin_ssflow_cfs
+      real(r64), pointer :: basin_ssflow_cfs
         !! Interflow leaving the basin through the stream network
-      real(r64) :: basin_stflow_in
+      real(r64), pointer :: basin_stflow_in
         !! Basin area-weighted average lateral flow entering the stream network
-      real(r64) :: basin_stflow_out
+      real(r64), pointer :: basin_stflow_out
         !! Basin area-weighted average streamflow leaving through the stream network
         !! basin_sum, muskingum, muskingum_lake
+
       real(r64), public :: flow_headwater
         !! muskingum, muskingum_lake, strmflow_in_out
       real(r64), public :: flow_in_great_lakes
@@ -115,7 +117,7 @@ module PRMS_STREAMFLOW
 
   interface Streamflow
     !! Streamflow constructor
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time) result(this)
+    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary) result(this)
       type(Streamflow) :: this
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
@@ -124,13 +126,15 @@ module PRMS_STREAMFLOW
         !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 
   interface
     module subroutine run_Streamflow(this, ctl_data, param_data, model_basin, &
-                                  model_potet, groundwater, soil, runoff, &
-                                  model_time, model_solrad)
+                                     model_potet, groundwater, soil, runoff, &
+                                     model_time, model_solrad)
       use prms_constants, only: dp, NEARZERO
       implicit none
 

@@ -17,6 +17,7 @@ module PRMS_POTET_PM
   use PRMS_POTET, only: Potential_ET
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -24,13 +25,13 @@ module PRMS_POTET_PM
 
   character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
   character(len=*), parameter :: MODNAME = 'potet_pm'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:03:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:37:00Z'
 
   type, extends(Potential_ET) :: Potet_pm
     integer(i32), private :: windspeed_funit
       !! Windspeed CBH file unit
 
-    real(r64) :: basin_windspeed
+    real(r64), pointer :: basin_windspeed
 
     real(r32), allocatable :: tempc_dewpt(:)
     real(r32), allocatable :: vp_actual(:)
@@ -45,11 +46,13 @@ module PRMS_POTET_PM
 
   interface Potet_pm
     !! Potet_pm constructor
-    module function constructor_Potet_pm(ctl_data) result(this)
+    module function constructor_Potet_pm(ctl_data, basin_summary) result(this)
       type(Potet_pm) :: this
         !! Poteh_pm class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

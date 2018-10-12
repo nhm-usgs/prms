@@ -1,6 +1,6 @@
 submodule(PRMS_PRECIPITATION) sm_precipitation
 contains
-  module function constructor_Precipitation(ctl_data, param_data) result(this)
+  module function constructor_Precipitation(ctl_data, param_data, basin_summary) result(this)
     use prms_constants, only: FAHRENHEIT
     use conversions_mod, only: f_to_c, c_to_f
     implicit none
@@ -10,12 +10,20 @@ contains
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
     type(Parameters), intent(in) :: param_data
+    type(Basin_summary_ptr), intent(inout) :: basin_summary
+
+    integer(i32) :: jj
 
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               nmonths => ctl_data%nmonths%value, &
               nrain => ctl_data%nrain%value, &
               ntemp => ctl_data%ntemp%value, &
+
+              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+              basinOutVars => ctl_data%basinOutVars%value, &
+              basinOutVar_names => ctl_data%basinOutVar_names%values, &
+
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value, &
@@ -83,6 +91,31 @@ contains
         ! this%tmax_allrain = tmax_allsnow_2d + tmax_allrain_offset_2d
         this%tmax_allrain_c = this%tmax_allrain
         this%tmax_allrain_f = c_to_f(this%tmax_allrain)
+      endif
+
+      allocate(this%basin_obs_ppt)
+      allocate(this%basin_ppt)
+      allocate(this%basin_rain)
+      allocate(this%basin_snow)
+
+      ! Connect any basin summary variables that need to be output
+      if (basinOutON_OFF == 1) then
+        do jj = 1, basinOutVars
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(basinOutVar_names(jj)%s)
+          case('basin_obs_ppt')
+              call basin_summary%set_basin_var(jj, this%basin_obs_ppt)
+            case('basin_ppt')
+              call basin_summary%set_basin_var(jj, this%basin_ppt)
+            case('basin_rain')
+              call basin_summary%set_basin_var(jj, this%basin_rain)
+            case('basin_snow')
+              call basin_summary%set_basin_var(jj, this%basin_snow)
+            case default
+              ! pass
+          end select
+        enddo
       endif
     end associate
   end function

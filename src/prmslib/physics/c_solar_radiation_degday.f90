@@ -9,6 +9,7 @@ module SOLAR_RADIATION_DEGDAY
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -16,7 +17,7 @@ module SOLAR_RADIATION_DEGDAY
 
   character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
   character(len=*), parameter :: MODNAME = 'solrad_degday'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 13:45:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 16:20:00Z'
 
   real(r32), dimension(26), parameter :: SOLF = [.20, .35, .45, .51, .56, .59, &
                                                  .62, .64, .655, .67, .682, .69, &
@@ -32,7 +33,7 @@ module SOLAR_RADIATION_DEGDAY
 
   interface Solrad_degday
     !! Solrad_degday constructor
-    module function constructor_Solrad_degday(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Solrad_degday(ctl_data, param_data, model_basin, basin_summary) result(this)
       type(Solrad_degday) :: this
         !! Solrad_degday class
       type(Control), intent(in) :: ctl_data
@@ -40,6 +41,8 @@ module SOLAR_RADIATION_DEGDAY
       type(Parameters), intent(in) :: param_data
         !! Parameters
       type(Basin), intent(in) :: model_basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 
