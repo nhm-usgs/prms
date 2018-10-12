@@ -91,6 +91,10 @@ module prms_constants
       enumerator :: BARESOIL=0, GRASSES=1, SHRUBS=2, TREES=3, CONIFEROUS=4
     end enum
 
+    ! et_type
+    enum, bind(C)
+      enumerator :: ET_DEFAULT=1, EVAP_ONLY=2, EVAP_PLUS_TRANSP=3
+    end enum
 
     ! hru_type
     enum, bind(C)
