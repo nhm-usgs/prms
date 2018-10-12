@@ -16,37 +16,41 @@ submodule (Simulation_class) sm_simulation
       this%model_basin = Basin(ctl_data, param_data)
       this%model_time = Time_t(ctl_data, this%model_basin)
 
+      if (ctl_data%basinOutON_OFF%value == 1) then
+        this%summary_by_basin = Basin_summary_ptr(ctl_data, param_data)
+      endif
+
       this%model_obs = Obs(ctl_data)
 
-      ! this%temp_hru = Temperature_hru(ctl_data)
-      ! allocate(Temperature_hru::this%model_temp)
-      ! this%model_temp = this%temp_hru
-
       allocate(Temperature_hru::this%model_temp)
-      this%model_temp = Temperature_hru(ctl_data)
+      this%model_temp = Temperature_hru(ctl_data, this%summary_by_basin)
 
       allocate(Precipitation_hru::this%model_precip)
-      this%model_precip = Precipitation_hru(ctl_data, param_data)
+      this%model_precip = Precipitation_hru(ctl_data, param_data, this%summary_by_basin)
 
       this%climate = Climateflow(ctl_data, param_data)
 
       ! this%climate_by_hru = Climate_HRU(ctl_data)
-      this%solrad = Solrad_degday(ctl_data, param_data, this%model_basin)
+      this%solrad = Solrad_degday(ctl_data, param_data, this%model_basin, this%summary_by_basin)
       this%transpiration = Transp_tindex(ctl_data, param_data, this%model_basin)
-      this%potet = Potet_jh(ctl_data)
-      this%intcp = Interception(ctl_data, this%transpiration)
-      this%snow = Snowcomp(this%climate, ctl_data, param_data, this%model_basin)
-      this%runoff = Srunoff(ctl_data, param_data, this%model_basin)
-      this%soil = Soilzone(ctl_data, param_data, this%model_basin, this%climate, this%snow)
-      this%groundwater = Gwflow(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff)
-      this%model_muskingum = Muskingum(ctl_data, param_data, this%model_basin, this%model_time)
+      this%potet = Potet_jh(ctl_data, this%summary_by_basin)
+      this%intcp = Interception(ctl_data, this%transpiration, this%summary_by_basin)
+      this%snow = Snowcomp(this%climate, ctl_data, param_data, this%model_basin, this%summary_by_basin)
+      this%runoff = Srunoff(ctl_data, param_data, this%model_basin, this%summary_by_basin)
+      this%soil = Soilzone(ctl_data, param_data, this%model_basin, this%climate, this%snow, this%summary_by_basin)
+      this%groundwater = Gwflow(ctl_data, param_data, this%summary_by_basin, this%model_basin, this%climate, this%intcp, this%soil, this%runoff)
+      this%model_muskingum = Muskingum(ctl_data, param_data, this%model_basin, this%model_time, this%summary_by_basin)
 
       if (ctl_data%nhruOutON_OFF%value > 0) then
         this%summary_by_hru = Nhru_summary(ctl_data, param_data)
       endif
 
-      if (ctl_data%basinOutON_OFF%value == 1) then
-        this%summary_by_basin = Basin_summary(ctl_data, param_data)
+      ! if (ctl_data%basinOutON_OFF%value == 1) then
+      !   this%summary_by_basin = Basin_summary(ctl_data, param_data)
+      ! endif
+
+      if (ctl_data%print_debug%value == 1) then
+        this%model_waterbal = WaterBalance(ctl_data, param_data, this%groundwater)
       endif
     end function
 
@@ -77,40 +81,60 @@ submodule (Simulation_class) sm_simulation
                                     this%model_basin, this%model_temp)
 
         ! print *, '4'
-        call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, this%solrad, this%model_temp)
+        call this%potet%run(ctl_data, param_data, this%model_basin, this%model_time, &
+                            this%solrad, this%model_temp)
 
         ! print *, '5'
-        call this%intcp%run(ctl_data, param_data, this%model_basin, this%potet, this%model_precip, this%transpiration, this%climate, this%model_time)
+        call this%intcp%run(ctl_data, param_data, this%model_basin, this%potet, &
+                            this%model_precip, this%transpiration, this%climate, this%model_time)
 
         ! print *, '6'
-        call this%snow%run(this%climate, ctl_data, param_data, this%model_time, this%model_basin, this%model_precip, this%model_temp, this%intcp, this%solrad, this%potet, this%transpiration)
+        call this%snow%run(this%climate, ctl_data, param_data, this%model_time, &
+                           this%model_basin, this%model_precip, this%model_temp, &
+                           this%intcp, this%solrad, this%potet, this%transpiration)
 
         ! print *, '7'
-        call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, this%potet, this%intcp, this%snow)
+        call this%runoff%run(ctl_data, param_data, this%model_basin, this%climate, &
+                             this%potet, this%intcp, this%snow, this%model_time)
 
         ! print *, '8'
-        call this%soil%run(ctl_data, param_data, this%model_basin, this%potet, this%model_precip, this%climate, this%intcp, this%snow, this%transpiration, this%runoff)
+        call this%soil%run(ctl_data, param_data, this%model_basin, this%model_time, &
+                           this%potet, this%model_precip, this%climate, this%intcp, &
+                           this%snow, this%transpiration, this%runoff)
 
         ! print *, '9'
-        call this%groundwater%run(ctl_data, param_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_time)
+        call this%groundwater%run(ctl_data, param_data, this%model_basin, &
+                                  this%climate, this%intcp, this%soil, this%runoff, &
+                                  this%model_time)
 
         ! call this%model_route%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad)
 
         ! print *, '10'
-        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, this%potet, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad, this%model_obs)
+        call this%model_muskingum%run(ctl_data, param_data, this%model_basin, &
+                                      this%potet, this%groundwater, this%soil, &
+                                      this%runoff, this%model_time, this%solrad, &
+                                      this%model_obs)
 
         ! ctl_data, param_data, model_basin, model_climate, groundwater, soil, runoff, &
         !   model_time, model_solrad, model_flow, model_obs
 
         if (ctl_data%basinOutON_OFF%value == 1) then
-          call this%summary_by_basin%run(ctl_data, this%model_time, this%solrad, this%model_precip, this%potet, this%model_temp)
+          call this%summary_by_basin%run(ctl_data, this%model_time)
         endif
 
         if (ctl_data%nhruOutON_OFF%value > 0) then
           call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, &
-                                       this%climate, this%groundwater, this%intcp, this%model_precip, this%potet, this%snow, &
+                                       this%climate, this%groundwater, this%intcp, &
+                                       this%model_precip, this%potet, this%snow, &
                                        this%soil, this%solrad, this%runoff, this%model_muskingum, &
                                        this%model_temp, this%transpiration)
+        endif
+
+        if (ctl_data%print_debug%value == 1) then
+          call this%model_waterbal%run(ctl_data, param_data, this%model_basin, &
+                                       this%climate, this%groundwater, this%intcp, &
+                                       this%model_precip, this%snow, this%soil, &
+                                       this%runoff, this%model_time)
         endif
       enddo
     end subroutine
