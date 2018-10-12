@@ -9,6 +9,7 @@ module PRMS_SRUNOFF
   use PRMS_POTET, only: Potential_ET
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SET_TIME, only: Time_t
+  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   implicit none
 
   private
@@ -16,7 +17,7 @@ module PRMS_SRUNOFF
 
   character(len=*), parameter :: MODDESC = 'Surface Runoff'
   character(len=*), parameter :: MODNAME = 'srunoff_smidx'
-  character(len=*), parameter :: MODVERSION = '2018-08-30 14:19:00Z'
+  character(len=*), parameter :: MODVERSION = '2018-10-10 17:23:00Z'
 
   type, extends(ModelBase) :: Srunoff
     ! Local Variables
@@ -24,38 +25,32 @@ module PRMS_SRUNOFF
       !! NOTE: replaces dprst_clos_flag
     logical :: has_open_dprst
       !! NOTE: replaces dprst_open_flag
-    ! integer(i32) :: ihru
 
     real(r32), allocatable :: carea_dif(:)
     real(r32), allocatable :: imperv_stor_ante(:)
 
-    ! real(r32) :: hruarea
-    ! real(r32) :: hruarea_imperv
-    ! real(r32) :: imperv_frac
-    ! real(r32) :: perv_frac
     real(r32) :: sri
     real(r32) :: srp
-
-    ! real(r64) :: hruarea_dble
 
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
 
     ! Declared Variables
-    real(r64) :: basin_apply_sroff
-    real(r64) :: basin_contrib_fraction
-    real(r64) :: basin_hortonian
-    real(r64) :: basin_imperv_evap
-    real(r64) :: basin_imperv_stor
-    real(r64) :: basin_infil
-    real(r64) :: basin_sroff
-    real(r64) :: basin_sroffi
-    real(r64) :: basin_sroffp
+    real(r64), pointer :: basin_apply_sroff
+    real(r64), pointer :: basin_contrib_fraction
+    real(r64), pointer :: basin_hortonian
+    real(r64), pointer :: basin_imperv_evap
+    real(r64), pointer :: basin_imperv_stor
+    real(r64), pointer :: basin_infil
+    real(r64), pointer :: basin_sroff
+    real(r64), pointer :: basin_sroffi
+    real(r64), pointer :: basin_sroffp
 
     ! Used for cascades
-    real(r64) :: basin_hortonian_lakes
-    real(r64) :: basin_sroff_down
-    real(r64) :: basin_sroff_upslope
+    real(r64), pointer :: basin_hortonian_lakes
+    real(r64), pointer :: basin_sroff_down
+    real(r64), pointer :: basin_sroff_upslope
+
 
     real(r32), allocatable :: contrib_fraction(:)
     real(r32), allocatable :: hortonian_flow(:)
@@ -68,22 +63,23 @@ module PRMS_SRUNOFF
       !! (from c_flowvars) Storage on impervious area for each HRU
     real(r32), allocatable :: infil(:)
       !! (from c_flowvars) Infiltration to the capillary and preferential-flow reservoirs from each HRU
-    real(r32), allocatable :: sroff(:)
-      !! (from c_flowvars) Surface runoff to the stream network for each HRU
+
 
     real(r64), allocatable :: hortonian_lakes(:)
     real(r64), allocatable :: hru_hortn_cascflow(:)
+    real(r64), allocatable :: sroff(:)
+      !! (from c_flowvars) Surface runoff to the stream network for each HRU
     real(r64), allocatable :: strm_seg_in(:)
 
     ! Used for cascades
     real(r64), allocatable :: upslope_hortonian(:)
 
     ! Declared Variables for Depression Storage
-    real(r64) :: basin_dprst_evap
-    real(r64) :: basin_dprst_seep
-    real(r64) :: basin_dprst_sroff
-    real(r64) :: basin_dprst_volcl
-    real(r64) :: basin_dprst_volop
+    real(r64), pointer :: basin_dprst_evap
+    real(r64), pointer :: basin_dprst_seep
+    real(r64), pointer :: basin_dprst_sroff
+    real(r64), pointer :: basin_dprst_volcl
+    real(r64), pointer :: basin_dprst_volop
 
     real(r64), allocatable :: dprst_in(:)
     real(r64), allocatable :: dprst_seep_hru(:)
@@ -134,7 +130,7 @@ module PRMS_SRUNOFF
 
   interface Srunoff
     !! Srunoff constructor
-    module function constructor_Srunoff(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary) result(this)
       type(Srunoff) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
@@ -142,6 +138,8 @@ module PRMS_SRUNOFF
       type(Parameters), intent(in) :: param_data
         !! Parameter data
       type(Basin), intent(in) :: model_basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
     end function
   end interface
 

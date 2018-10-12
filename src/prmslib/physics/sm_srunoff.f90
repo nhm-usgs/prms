@@ -1,7 +1,7 @@
 submodule (PRMS_SRUNOFF) sm_srunoff
 
   contains
-    module function constructor_Srunoff(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary) result(this)
       use prms_constants, only: dp
       implicit none
 
@@ -12,10 +12,12 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       type(Parameters), intent(in) :: param_data
         !! Parameter data
       type(Basin), intent(in) :: model_basin
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+        !! Basin summary
 
       ! Local variables
       ! integer(i32) :: chru
-      ! integer(i32) :: jj
+      integer(i32) :: jj
       ! integer(i32) :: kk
       ! integer(i32) :: num_hrus
       ! real(r32) :: frac
@@ -33,6 +35,9 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 nlake => ctl_data%nlake%value, &
                 nsegment => ctl_data%nsegment%value, &
                 nwateruse => ctl_data%nwateruse%value, &
+                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+                basinOutVars => ctl_data%basinOutVars%value, &
+                basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascade_flag => ctl_data%cascade_flag%value, &
                 cascadegw_flag => ctl_data%cascadegw_flag%value, &
                 dprst_flag => ctl_data%dprst_flag%value, &
@@ -115,6 +120,70 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         this%imperv_stor = 0.0
         this%infil = 0.0
         this%sroff = 0.0
+
+        allocate(this%basin_apply_sroff)
+        allocate(this%basin_contrib_fraction)
+        allocate(this%basin_hortonian)
+        allocate(this%basin_imperv_evap)
+        allocate(this%basin_imperv_stor)
+        allocate(this%basin_infil)
+        allocate(this%basin_sroff)
+        allocate(this%basin_sroffi)
+        allocate(this%basin_sroffp)
+        allocate(this%basin_hortonian_lakes)
+        allocate(this%basin_sroff_down)
+        allocate(this%basin_sroff_upslope)
+        allocate(this%basin_dprst_evap)
+        allocate(this%basin_dprst_seep)
+        allocate(this%basin_dprst_sroff)
+        allocate(this%basin_dprst_volcl)
+        allocate(this%basin_dprst_volop)
+
+        ! Connect any basin summary variables that need to be output
+        if (basinOutON_OFF == 1) then
+          do jj = 1, basinOutVars
+            ! TODO: This is where the daily basin values are linked based on
+            !       what was requested in basinOutVar_names.
+            select case(basinOutVar_names(jj)%s)
+              case('basin_apply_sroff')
+                call basin_summary%set_basin_var(jj, this%basin_apply_sroff)
+              case('basin_contrib_fraction')
+                call basin_summary%set_basin_var(jj, this%basin_contrib_fraction)
+              case('basin_hortonian')
+                call basin_summary%set_basin_var(jj, this%basin_hortonian)
+              case('basin_imperv_evap')
+                call basin_summary%set_basin_var(jj, this%basin_imperv_evap)
+              case('basin_imperv_stor')
+                call basin_summary%set_basin_var(jj, this%basin_imperv_stor)
+              case('basin_infil')
+                call basin_summary%set_basin_var(jj, this%basin_infil)
+              case('basin_sroff')
+                call basin_summary%set_basin_var(jj, this%basin_sroff)
+              case('basin_sroffi')
+                call basin_summary%set_basin_var(jj, this%basin_sroffi)
+              case('basin_sroffp')
+                call basin_summary%set_basin_var(jj, this%basin_sroffp)
+              case('basin_hortonian_lakes')
+                call basin_summary%set_basin_var(jj, this%basin_hortonian_lakes)
+              case('basin_sroff_down')
+                call basin_summary%set_basin_var(jj, this%basin_sroff_down)
+              case('basin_sroff_upslope')
+                call basin_summary%set_basin_var(jj, this%basin_sroff_upslope)
+              case('basin_dprst_evap')
+                call basin_summary%set_basin_var(jj, this%basin_dprst_evap)
+              case('basin_dprst_seep')
+                call basin_summary%set_basin_var(jj, this%basin_dprst_seep)
+              case('basin_dprst_sroff')
+                call basin_summary%set_basin_var(jj, this%basin_dprst_sroff)
+              case('basin_dprst_volcl')
+                call basin_summary%set_basin_var(jj, this%basin_dprst_volcl)
+              case('basin_dprst_volop')
+                call basin_summary%set_basin_var(jj, this%basin_dprst_volop)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
 
         if (init_vars_from_file == 0) then
           this%basin_contrib_fraction = 0.0_dp
@@ -931,11 +1000,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
     ! Compute depression storage area hydrology
     !***********************************************************************
     module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, snow, model_time, idx, avail_et)
-      ! subroutine dprst_comp(Dprst_vol_clos, Dprst_area_clos_max, Dprst_area_clos, &
-      !                       Dprst_vol_open_max, Dprst_vol_open, Dprst_area_open_max, &
-      !                       Dprst_area_open, Dprst_sroff_hru, Dprst_seep_hru, &
-      !                       Sro_to_dprst_perv, Sro_to_dprst_imperv, Dprst_evap_hru, &
-      !                       Avail_et, Net_rain, Dprst_in)
       use prms_constants, only: dp, DNEARZERO, NEARZERO
       implicit none
 
