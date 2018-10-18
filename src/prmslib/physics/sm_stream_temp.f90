@@ -763,6 +763,10 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       end associate
     end subroutine
 
+    module subroutine cleanup_StreamTemp(this, ctl_data)
+      class(StreamTemp), intent(in) :: this
+      type(Control), intent(in) :: ctl_data
+    end subroutine
 
     !*******************************************************************************
     !    "equilb"

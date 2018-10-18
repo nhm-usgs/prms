@@ -43,6 +43,13 @@ module conversions_mod
     end function
   end interface
 
+  interface sat_vapor_press
+    pure elemental module function sat_vapor_press_r32(temp_c) result(res)
+      real(r32) :: res
+      real(r32), intent(in) :: temp_c
+        !! Temperature in degree Celsius
+    end function
+  end interface
 
   contains
     !***********************************************************************
@@ -134,7 +141,7 @@ module conversions_mod
     ! Compute saturation vapor pressure over water
     ! Irmak and others (2012), equation 12
     !***********************************************************************
-    pure elemental function sat_vapor_press(temp_c) result(res)
+    pure elemental module function sat_vapor_press_r32(temp_c) result(res)
       implicit none
 
       ! Arguments
