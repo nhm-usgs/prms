@@ -80,6 +80,9 @@ contains
   end function
 
   module subroutine run_Potet_pm(this, ctl_data, param_data, model_basin, model_temp, model_time, model_solrad)
+    use conversions_mod, only: sat_vapor_press
+    implicit none
+
     class(Potet_pm), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
