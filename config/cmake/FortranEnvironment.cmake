@@ -66,7 +66,8 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   if(BUILD_SHARED_LIBS)
     # Add any shared library related stuff here
 
-    if(NOT WIN32)
+    # if(NOT WIN32)
+    if(APPLE)
       # Taken from: https://cmake.org/Wiki/CMake_RPATH_handling#Mac_OS_X_and_the_RPATH
       # use, i.e. don't skip the full RPATH for the build tree
       set(CMAKE_SKIP_BUILD_RPATH FALSE)
