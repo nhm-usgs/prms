@@ -8,7 +8,6 @@ module PRMS_GWFLOW
   use PRMS_INTCP, only: Interception
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
-  ! use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
 
