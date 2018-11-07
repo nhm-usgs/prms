@@ -117,26 +117,26 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       integer(i32) :: chru
       integer(i32) :: kk
 
-      real(r32) :: last_sm
-      real(r32) :: last_ss
-      real(r64) :: soilbal
-      real(r32) :: gvrbal
-      real(r32) :: test
-      real(r32) :: waterin
-      real(r32) :: waterout
-      real(r32) :: hrubal
       real(r32) :: delstor
-      real(r64) :: robal
+      real(r32) :: hrubal
+      real(r32) :: last_sm
 
       real(r64) :: basin_bal
-      real(r64) :: soil_in
-      real(r64) :: gwup
       real(r64) :: basin_robal
       real(r64) :: bsnobal
-      real(r64) :: hru_out
-      real(r64) :: hru_in
-      real(r64) :: wbal
       real(r64) :: dprst_hru_wb
+      real(r64) :: gvrbal
+      real(r64) :: gwup
+      real(r64) :: hru_in
+      real(r64) :: hru_out
+      real(r64) :: last_ss
+      real(r64) :: robal
+      real(r64) :: soil_in
+      real(r64) :: soilbal
+      real(r64) :: test
+      real(r64) :: waterin
+      real(r64) :: waterout
+      real(r64) :: wbal
 
       ! type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
       ! ! type(ieee_flag_type), parameter :: ieee_custom(5) = [ieee_all]
