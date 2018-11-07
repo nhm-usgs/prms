@@ -27,10 +27,10 @@ module PRMS_SRUNOFF
       !! NOTE: replaces dprst_open_flag
 
     real(r32), allocatable :: carea_dif(:)
-    real(r32), allocatable :: imperv_stor_ante(:)
+    real(r64), allocatable :: imperv_stor_ante(:)
 
-    real(r32) :: sri
-    real(r32) :: srp
+    real(r64) :: sri
+    real(r64) :: srp
 
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
@@ -51,28 +51,24 @@ module PRMS_SRUNOFF
     real(r64), pointer :: basin_sroff_down
     real(r64), pointer :: basin_sroff_upslope
 
-
-    real(r32), allocatable :: contrib_fraction(:)
-    real(r32), allocatable :: hortonian_flow(:)
-    real(r32), allocatable :: hru_impervevap(:)
-    real(r32), allocatable :: hru_impervstor(:)
-    real(r32), allocatable :: hru_sroffi(:)
-    real(r32), allocatable :: hru_sroffp(:)
-    real(r32), allocatable :: imperv_evap(:)
-    real(r32), allocatable :: imperv_stor(:)
-      !! (from c_flowvars) Storage on impervious area for each HRU
-    real(r32), allocatable :: infil(:)
-      !! (from c_flowvars) Infiltration to the capillary and preferential-flow reservoirs from each HRU
-
-
+    real(r64), allocatable :: contrib_fraction(:)
+    real(r64), allocatable :: hortonian_flow(:)
     real(r64), allocatable :: hortonian_lakes(:)
     real(r64), allocatable :: hru_hortn_cascflow(:)
+    real(r64), allocatable :: hru_impervevap(:)
+    real(r64), allocatable :: hru_impervstor(:)
+    real(r64), allocatable :: hru_sroffi(:)
+    real(r64), allocatable :: hru_sroffp(:)
+    real(r64), allocatable :: imperv_evap(:)
+    real(r64), allocatable :: imperv_stor(:)
+      !! Storage on impervious area for each HRU
+    real(r64), allocatable :: infil(:)
+      !! Infiltration to the capillary and preferential-flow reservoirs from each HRU
     real(r64), allocatable :: sroff(:)
-      !! (from c_flowvars) Surface runoff to the stream network for each HRU
+      !! Surface runoff to the stream network for each HRU
     real(r64), allocatable :: strm_seg_in(:)
-
-    ! Used for cascades
     real(r64), allocatable :: upslope_hortonian(:)
+      !! Used for cascades
 
     ! Declared Variables for Depression Storage
     real(r64), pointer :: basin_dprst_evap
@@ -94,16 +90,17 @@ module PRMS_SRUNOFF
     real(r64), allocatable :: dprst_vol_open_max(:)
     real(r64), allocatable :: dprst_vol_thres_open(:)
 
-    real(r32), allocatable :: dprst_area_clos(:)
-    real(r32), allocatable :: dprst_area_clos_max(:)
+    real(r64), allocatable :: dprst_area_clos(:)
+    real(r64), allocatable :: dprst_area_clos_max(:)
       !! NOTE: pulled from basin.f90
-    real(r32), allocatable :: dprst_area_open(:)
-    real(r32), allocatable :: dprst_area_open_max(:)
+    real(r64), allocatable :: dprst_area_open(:)
+    real(r64), allocatable :: dprst_area_open_max(:)
       !! NOTE: pulled from basin.f90
-    real(r32), allocatable :: dprst_evap_hru(:)
+    real(r64), allocatable :: dprst_evap_hru(:)
     real(r32), allocatable :: dprst_frac_clos(:)
       !! NOTE: pulled from basin.f90
-    real(r32), allocatable :: dprst_insroff_hru(:)
+    real(r64), allocatable :: dprst_insroff_hru(:)
+
     real(r32), allocatable :: dprst_vol_clos_frac(:)
     real(r32), allocatable :: dprst_vol_frac(:)
     real(r32), allocatable :: dprst_vol_open_frac(:)
@@ -204,7 +201,7 @@ module PRMS_SRUNOFF
       type(Snowcomp), intent(in) :: snow
       type(Time_t), intent(in) :: model_time
       integer(i32), intent(in) :: idx
-      real(r32), intent(inout) :: avail_et
+      real(r64), intent(inout) :: avail_et
     end subroutine
   end interface
 
@@ -215,7 +212,7 @@ module PRMS_SRUNOFF
       type(Parameters), intent(in) :: param_data
       real(r32), intent(in) :: potet
       real(r32), intent(in) :: sca
-      real(r32), intent(in) :: avail_et
+      real(r64), intent(in) :: avail_et
     end subroutine
   end interface
 
@@ -231,7 +228,7 @@ module PRMS_SRUNOFF
       real(r32), intent(in) :: pptp
       real(r32), intent(in) :: ptc
       ! real(r32), intent(inout) :: infil
-      real(r32), intent(inout) :: srp
+      real(r64), intent(inout) :: srp
     end subroutine
   end interface
 
