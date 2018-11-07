@@ -237,45 +237,45 @@ contains
         select case(nhruOutVar_names(jj)%s)
           !
           case('dprst_area_open')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_area_open
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_area_open)
           case('dprst_evap_hru')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_evap_hru
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_evap_hru)
           case('dprst_insroff_hru')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_insroff_hru
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_insroff_hru)
           case('dprst_seep_hru')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_seep_hru
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_seep_hru)
           case('dprst_sroff_hru')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_sroff_hru
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_sroff_hru)
           case('dprst_stor_hru')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_stor_hru
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_stor_hru)
           case('dprst_vol_clos')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_vol_clos
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_vol_clos)
           case('dprst_vol_open')
-            this%nhru_var_daily(:, jj) = model_srunoff%dprst_vol_open
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%dprst_vol_open)
           case('dprst_vol_open_frac')
             this%nhru_var_daily(:, jj) = model_srunoff%dprst_vol_open_frac
           case('freeh2o')
             this%nhru_var_daily(:, jj) = model_snow%freeh2o
           case('gw_in_soil')
-            this%nhru_var_daily(:, jj) = model_gw%gw_in_soil
+            this%nhru_var_daily(:, jj) = sngl(model_gw%gw_in_soil)
           case('gw_in_ssr')
-            this%nhru_var_daily(:, jj) = model_gw%gw_in_ssr
+            this%nhru_var_daily(:, jj) = sngl(model_gw%gw_in_ssr)
           case('gwres_flow')
-            this%nhru_var_daily(:, jj) = model_gw%gwres_flow
+            this%nhru_var_daily(:, jj) = sngl(model_gw%gwres_flow)
           case('gwres_in')
-            this%nhru_var_daily(:, jj) = model_gw%gwres_in
+            this%nhru_var_daily(:, jj) = sngl(model_gw%gwres_in)
           case('hru_actet')
-            this%nhru_var_daily(:, jj) = model_soil%hru_actet
+            this%nhru_var_daily(:, jj) = sngl(model_soil%hru_actet)
           case('hru_impervevap')
-            this%nhru_var_daily(:, jj) = model_srunoff%hru_impervevap
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%hru_impervevap)
           case('hru_impervstor')
-            this%nhru_var_daily(:, jj) = model_srunoff%hru_impervstor
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%hru_impervstor)
           case('hru_intcpevap')
             this%nhru_var_daily(:, jj) = model_intcp%hru_intcpevap
           case('hru_intcpstor')
             this%nhru_var_daily(:, jj) = model_intcp%hru_intcpstor
           case('hru_lateral_flow')
-            this%nhru_var_daily(:, jj) = model_gw%hru_lateral_flow
+            this%nhru_var_daily(:, jj) = sngl(model_gw%hru_lateral_flow)
           case('hru_outflow')
             this%nhru_var_daily(:, jj) = sngl(model_streamflow%hru_outflow)
           case('hru_ppt')
@@ -285,13 +285,13 @@ contains
           case('hru_snow')
             this%nhru_var_daily(:, jj) = model_precip%hru_snow
           case('hru_sroffi')
-            this%nhru_var_daily(:, jj) = model_srunoff%hru_sroffi
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%hru_sroffi)
           case('hru_sroffp')
-            this%nhru_var_daily(:, jj) = model_srunoff%hru_sroffp
+            this%nhru_var_daily(:, jj) = sngl(model_srunoff%hru_sroffp)
           case('hru_storage')
-            this%nhru_var_daily(:, jj) = model_gw%hru_storage
+            this%nhru_var_daily(:, jj) = sngl(model_gw%hru_storage)
           case('hru_streamflow_out')
-            this%nhru_var_daily(:, jj) = model_gw%hru_streamflow_out
+            this%nhru_var_daily(:, jj) = sngl(model_gw%hru_streamflow_out)
           case('net_ppt')
             this%nhru_var_daily(:, jj) = model_intcp%net_ppt
           case('net_rain')
@@ -299,7 +299,7 @@ contains
           case('net_snow')
             this%nhru_var_daily(:, jj) = model_intcp%net_snow
           case('perv_actet')
-            this%nhru_var_daily(:, jj) = model_soil%perv_actet
+            this%nhru_var_daily(:, jj) = sngl(model_soil%perv_actet)
           case('pkwater_equiv')
             this%nhru_var_daily(:, jj) = sngl(climate%pkwater_equiv)
           case('pk_def')
@@ -309,13 +309,13 @@ contains
           case('potet')
             this%nhru_var_daily(:, jj) = model_potet%potet
           case('pref_flow')
-            this%nhru_var_daily(:, jj) = model_soil%pref_flow
+            this%nhru_var_daily(:, jj) = sngl(model_soil%pref_flow)
           case('pref_flow_in')
-            this%nhru_var_daily(:, jj) = model_soil%pref_flow_in
+            this%nhru_var_daily(:, jj) = sngl(model_soil%pref_flow_in)
           case('pref_flow_infil')
-            this%nhru_var_daily(:, jj) = model_soil%pref_flow_infil
+            this%nhru_var_daily(:, jj) = sngl(model_soil%pref_flow_infil)
           case('pref_flow_stor')
-            this%nhru_var_daily(:, jj) = model_soil%pref_flow_stor
+            this%nhru_var_daily(:, jj) = sngl(model_soil%pref_flow_stor)
           case('prmx')
             this%nhru_var_daily(:, jj) = model_precip%prmx
           ! case('seg_inflow')
@@ -331,9 +331,9 @@ contains
           ! case('seg_upstream_inflow')
           !   this%nhru_var_daily(:, jj) = model_streamflow%seg_upstream_inflow
           case('slow_flow')
-            this%nhru_var_daily(:, jj) = model_soil%slow_flow
+            this%nhru_var_daily(:, jj) = sngl(model_soil%slow_flow)
           case('slow_stor')
-            this%nhru_var_daily(:, jj) = model_soil%slow_stor
+            this%nhru_var_daily(:, jj) = sngl(model_soil%slow_stor)
           case('snow_evap')
             this%nhru_var_daily(:, jj) = model_snow%snow_evap
           case('snowcov_area')
@@ -341,13 +341,13 @@ contains
           case('snowmelt')
             this%nhru_var_daily(:, jj) = model_snow%snowmelt
           case('soil_lower')
-            this%nhru_var_daily(:, jj) = model_soil%soil_lower
+            this%nhru_var_daily(:, jj) = sngl(model_soil%soil_lower)
           case('soil_moist_tot')
-            this%nhru_var_daily(:, jj) = model_soil%soil_moist_tot
+            this%nhru_var_daily(:, jj) = sngl(model_soil%soil_moist_tot)
           case('soil_to_gw')
-            this%nhru_var_daily(:, jj) = model_soil%soil_to_gw
+            this%nhru_var_daily(:, jj) = sngl(model_soil%soil_to_gw)
           case('soil_to_ssr')
-            this%nhru_var_daily(:, jj) = model_soil%soil_to_ssr
+            this%nhru_var_daily(:, jj) = sngl(model_soil%soil_to_ssr)
           case('swrad')
             this%nhru_var_daily(:, jj) = model_solrad%swrad
           case('tavg')
