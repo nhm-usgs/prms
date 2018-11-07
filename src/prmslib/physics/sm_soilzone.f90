@@ -16,7 +16,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Basin_summary_ptr), intent(inout) :: basin_summary
 
       ! Local variables
-      ! integer(i32) :: chru
+      integer(i32) :: chru
       integer(i32) :: jj
 
       ! GSFLOW-related variables
@@ -348,108 +348,108 @@ submodule (PRMS_SOILZONE) sm_soilzone
         this%soil_moist_tot = 0.0
         this%soil_zone_max = 0.0
         this%ssres_stor = 0.0
-        soil_moist = 0.0 ! WARNING: Overrides init in climateflow
-        soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
-
-        where (hru_type == SWALE)
-          this%swale_limit = 3.0 * sat_threshold
-          this%pref_flow_thrsh = sat_threshold
-          ! pref_flow_den = 0.0  ! WARNING: parameters are read-only
-        end where
-
-        where (hru_type == LAND)
-          this%pref_flow_thrsh = sat_threshold * (1.0 - pref_flow_den)
-          this%pref_flow_max = sat_threshold - this%pref_flow_thrsh
-        end where
-
-        if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
-          where (hru_type == LAND .or. hru_type == SWALE)
-            this%slow_stor = min(this%ssres_stor, this%pref_flow_thrsh)
-            this%pref_flow_stor = this%ssres_stor - this%slow_stor
-          end where
-        endif
-
-        where (soil2gw_max > 0.)
-          this%soil2gw_flag = .true.
-        end where
-
-        where (hru_type == LAND .and. pref_flow_den > 0.0)
-          this%pref_flow_flag = .true.
-        end where
-
-        this%pref_flag = any(this%pref_flow_flag)
-
-        this%soil_zone_max = sat_threshold + soil_moist_max * hru_frac_perv
-        this%soil_moist_tot = this%ssres_stor + sngl(soil_moist) * hru_frac_perv
-
-        this%soil_lower = soil_moist - soil_rechr
-        this%soil_lower_stor_max = soil_moist_max - soil_rechr_max
-
-        where (this%soil_lower_stor_max > 0.0)
-          this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
-        end where
-
-        ! do chru = 1, nhru
-        !   this%snow_free(chru) = 1.0 - snowcov_area(chru)
+        ! soil_moist = 0.0 ! WARNING: Overrides init in climateflow
+        ! soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
         !
-        !   if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
-        !     ! If inactive or lake
-        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%pref_flow_max(chru) = 0.0
-        !     this%pref_flow_stor(chru) = 0.0
-        !     ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%slow_stor(chru) = 0.0
-        !     this%soil_lower(chru) = 0.0
-        !     this%soil_lower_stor_max(chru) = 0.0
-        !     this%soil_moist_tot(chru) = 0.0
-        !     this%soil_zone_max(chru) = 0.0
-        !     this%ssres_stor(chru) = 0.0
+        ! where (hru_type == SWALE)
+        !   this%swale_limit = 3.0 * sat_threshold
+        !   this%pref_flow_thrsh = sat_threshold
+        !   ! pref_flow_den = 0.0  ! WARNING: parameters are read-only
+        ! end where
         !
-        !     soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
-        !     soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
-        !     cycle
-        !   endif
+        ! where (hru_type == LAND)
+        !   this%pref_flow_thrsh = sat_threshold * (1.0 - pref_flow_den)
+        !   this%pref_flow_max = sat_threshold - this%pref_flow_thrsh
+        ! end where
         !
-        !   if (hru_type(chru) == SWALE) then
-        !     ! swale
-        !     this%swale_limit(chru) = 3.0 * sat_threshold(chru)
-        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%pref_flow_thrsh(chru) = sat_threshold(chru)
-        !     this%pref_flow_max(chru) = 0.0
-        !   else
-        !     ! land
-        !     this%pref_flow_thrsh(chru) = sat_threshold(chru) * (1.0 - pref_flow_den(chru))
-        !     this%pref_flow_max(chru) = sat_threshold(chru) - this%pref_flow_thrsh(chru)
-        !   endif
+        ! if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
+        !   where (hru_type == LAND .or. hru_type == SWALE)
+        !     this%slow_stor = min(this%ssres_stor, this%pref_flow_thrsh)
+        !     this%pref_flow_stor = this%ssres_stor - this%slow_stor
+        !   end where
+        ! endif
         !
-        !   hru_type = LAND or SWALE
-        !   if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
-        !     this%slow_stor(chru) = min(this%ssres_stor(chru), this%pref_flow_thrsh(chru))
-        !     this%pref_flow_stor(chru) = this%ssres_stor(chru) - this%slow_stor(chru)
-        !   endif
+        ! where (soil2gw_max > 0.)
+        !   this%soil2gw_flag = .true.
+        ! end where
         !
-        !   if (soil2gw_max(chru) > 0.0) then
-        !     this%soil2gw_flag(chru) = .true.
-        !   endif
+        ! where (hru_type == LAND .and. pref_flow_den > 0.0)
+        !   this%pref_flow_flag = .true.
+        ! end where
         !
-        !   if (hru_type(chru) == LAND) then
-        !     ! Interflow coefficient values don't matter except for land HRU
-        !     if (pref_flow_den(chru) > 0.0) then
-        !       this%pref_flow_flag(chru) = .true.
-        !       this%pref_flag = .true.
-        !     endif
-        !   endif
+        ! this%pref_flag = any(this%pref_flow_flag)
         !
-        !   this%soil_zone_max(chru) = sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
-        !   this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
+        ! this%soil_zone_max = sat_threshold + soil_moist_max * hru_frac_perv
+        ! this%soil_moist_tot = this%ssres_stor + sngl(soil_moist) * hru_frac_perv
         !
-        !   this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
-        !   this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
+        ! this%soil_lower = soil_moist - soil_rechr
+        ! this%soil_lower_stor_max = soil_moist_max - soil_rechr_max
         !
-        !   if (this%soil_lower_stor_max(chru) > 0.0) then
-        !     this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
-        !   endif
-        ! enddo
+        ! where (this%soil_lower_stor_max > 0.0)
+        !   this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
+        ! end where
+
+        do chru = 1, nhru
+          this%snow_free(chru) = 1.0 - snowcov_area(chru)
+
+          if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
+            ! If inactive or lake
+            ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
+            this%pref_flow_max(chru) = 0.0
+            this%pref_flow_stor(chru) = 0.0
+            ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
+            this%slow_stor(chru) = 0.0
+            this%soil_lower(chru) = 0.0
+            this%soil_lower_stor_max(chru) = 0.0
+            this%soil_moist_tot(chru) = 0.0
+            this%soil_zone_max(chru) = 0.0
+            this%ssres_stor(chru) = 0.0
+
+            soil_moist(chru) = 0.0_dp ! WARNING: Overrides init in climateflow
+            soil_rechr(chru) = 0.0_dp ! WARNING: Overrides init in climateflow
+            cycle
+          endif
+
+          if (hru_type(chru) == SWALE) then
+            ! swale
+            this%swale_limit(chru) = 3.0 * sat_threshold(chru)
+            ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
+            this%pref_flow_thrsh(chru) = sat_threshold(chru)
+            this%pref_flow_max(chru) = 0.0
+          else
+            ! land
+            this%pref_flow_thrsh(chru) = sat_threshold(chru) * (1.0 - pref_flow_den(chru))
+            this%pref_flow_max(chru) = sat_threshold(chru) - this%pref_flow_thrsh(chru)
+          endif
+
+          ! hru_type = LAND or SWALE
+          if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
+            this%slow_stor(chru) = min(this%ssres_stor(chru), this%pref_flow_thrsh(chru))
+            this%pref_flow_stor(chru) = this%ssres_stor(chru) - this%slow_stor(chru)
+          endif
+
+          if (soil2gw_max(chru) > 0.0) then
+            this%soil2gw_flag(chru) = .true.
+          endif
+
+          if (hru_type(chru) == LAND) then
+            ! Interflow coefficient values don't matter except for land HRU
+            if (pref_flow_den(chru) > 0.0) then
+              this%pref_flow_flag(chru) = .true.
+              this%pref_flag = .true.
+            endif
+          endif
+
+          this%soil_zone_max(chru) = sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
+          this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
+
+          this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
+          this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
+
+          if (this%soil_lower_stor_max(chru) > 0.0) then
+            this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
+          endif
+        enddo
 
         this%basin_gvr_stor_frac = sum(dble(this%slow_stor / this%pref_flow_thrsh * hru_area), mask=(this%pref_flow_thrsh > 0.0)) * basin_area_inv
         this%basin_pfr_stor_frac = sum(dble(this%pref_flow_stor / this%pref_flow_max * hru_area), mask=(this%pref_flow_flag)) * basin_area_inv
@@ -570,9 +570,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
                                    model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
       use iso_fortran_env, only: output_unit
       use prms_constants, only: dp, LAKE, LAND, SWALE, NEARZERO, DNEARZERO
-      use ieee_arithmetic
-      use ieee_exceptions
-      use ieee_features
+      ! use ieee_arithmetic
+      ! use ieee_exceptions
+      ! use ieee_features
       implicit none
 
       class(Soilzone) :: this
@@ -615,10 +615,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r64) :: topfr
       real(r64) :: unsatisfied_et
 
-      character(len=:), allocatable :: error_txt
-      type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
-      type(ieee_status_type) :: status_value
-      logical, dimension(4) :: flag_value
+      ! character(len=:), allocatable :: error_txt
+      ! type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
+      ! type(ieee_status_type) :: status_value
+      ! logical, dimension(4) :: flag_value
 
       ! TODO: Uncomment when gsflow module(s) is converted
       ! GSFLOW-related variables
@@ -779,10 +779,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! endif
 
 
-        call ieee_get_status(status_value)
-        call ieee_set_halting_mode(ieee_custom, .false.)
-        call ieee_set_flag(ieee_custom, .false.)
-
+        ! call ieee_get_status(status_value)
+        ! call ieee_set_halting_mode(ieee_custom, .false.)
+        ! call ieee_set_flag(ieee_custom, .false.)
 
 
         if (print_debug == 1) then
@@ -916,17 +915,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! gvr_maxin = 0.0
           this%cap_waterin(chru) = capwater_maxin
 
-          ! if (soil_moist(chru) < DNEARZERO) then
-          !   write(output_unit, 9008) MODNAME, '%run WARNING: soil_moist less than 10e-16,', soil_moist(chru), ', reset to zero ', nowtime(1:3)
-          !   soil_moist(chru) = 0.0
-          ! endif
-          !
-          ! if (soil_rechr(chru) < DNEARZERO) then
-          !   write(output_unit, 9008) MODNAME, '%run WARNING: soil_rechr less than 10e-16,', soil_rechr(chru), ', reset to zero ', nowtime(1:3)
-          !   soil_rechr(chru) = 0.0
-          ! endif
-
-          ! 9008 format(A,A,es12.4e2,A,I4,2('/', I2.2))
 
           ! Call even if capwater_maxin = 0, just in case soil_moist now > soil_moist_max
           if (capwater_maxin + soil_moist(chru) > 0.0_dp) then
@@ -938,6 +926,22 @@ submodule (PRMS_SOILZONE) sm_soilzone
             this%cap_waterin(chru) = this%cap_waterin(chru) * hru_frac_perv(chru)
             this%basin_sm2gvr_max = this%basin_sm2gvr_max + this%soil_to_ssr(chru) * hru_area(chru)
           endif
+
+
+          ! soil_moist and soil_rechr can get quite small leading to instability
+          ! later in the code. Reset to zero when they get too small.
+          ! TODO: PAN - what should the smallest value be?
+          if (soil_moist(chru) > 0.0_dp .and. soil_moist(chru) < DNEARZERO) then
+            write(output_unit, 9008) MODNAME, '%run() WARNING: soil_moist less than 2.2e-16,', chru, soil_moist(chru), ', reset to zero ', nowtime(1:3)
+            soil_moist(chru) = 0.0_dp
+          endif
+
+          if (soil_rechr(chru) > 0.0_dp .and. soil_rechr(chru) < DNEARZERO) then
+            write(output_unit, 9008) MODNAME, '%run() WARNING: soil_rechr less than 2.2e-16,', chru, soil_rechr(chru), ', reset to zero ', nowtime(1:3)
+            soil_rechr(chru) = 0.0_dp
+          endif
+
+          9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
 
           ! soil_to_ssr for whole HRU
           ! this%soil_to_ssr(chru) = gvr_maxin
@@ -1025,7 +1029,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! this%potet_lower(chru) = 0.0
           pervactet = 0.0
 
-          if (soil_moist(chru) > 0.0) then
+          if (soil_moist(chru) > 0.0_dp) then
             call this%compute_szactet(model_time, transp_on(chru), cov_type(chru), &
                                       soil_type(chru), soil_moist_max(chru), &
                                       soil_rechr_max(chru), this%snow_free(chru),  &
@@ -1035,28 +1039,28 @@ submodule (PRMS_SOILZONE) sm_soilzone
           endif
 
 
-
-              call ieee_get_flag(ieee_custom, flag_value)
-              if (any(flag_value)) then
-                error_txt = ''
-
-                ! Only checking for underflow and overflow
-                if (flag_value(1)) then
-                  error_txt = 'overflow'
-                elseif (flag_value(4)) then
-                  error_txt = 'underflow'
-                else
-                  error_txt = 'ieee_divide_by_zero or ieee_invalid'
-                endif
-
-                write(output_unit, 9009) MODNAME, '%run WARNING: ', error_txt, ' occurred []'
-                write(output_unit, 9011) '    ', nowtime(1:3), soil_moist(chru), soil_rechr(chru), this%potet_rechr(chru), this%potet_lower(chru)
-
-                call ieee_set_flag(ieee_custom, .false.)
-              endif
-
-              9009 format(A, A, A, A)
-              9011 format(A,I4, 2('/', I2.2), 4es12.4e2)
+              !
+              ! call ieee_get_flag(ieee_custom, flag_value)
+              ! if (any(flag_value)) then
+              !   error_txt = ''
+              !
+              !   ! Only checking for underflow and overflow
+              !   if (flag_value(1)) then
+              !     error_txt = 'overflow'
+              !   elseif (flag_value(4)) then
+              !     error_txt = 'underflow'
+              !   else
+              !     error_txt = 'ieee_divide_by_zero or ieee_invalid'
+              !   endif
+              !
+              !   write(output_unit, 9009) MODNAME, '%run WARNING: ', error_txt, ' occurred []'
+              !   write(output_unit, 9011) '    ', nowtime(1:3), soil_moist(chru), soil_rechr(chru), this%potet_rechr(chru), this%potet_lower(chru)
+              !
+              !   call ieee_set_flag(ieee_custom, .false.)
+              ! endif
+              !
+              ! 9009 format(A, A, A, A)
+              ! 9011 format(A,I4, 2('/', I2.2), 4es12.4e2)
 
 
           this%hru_actet(chru) = this%hru_actet(chru) + pervactet * hru_frac_perv(chru)
@@ -1601,6 +1605,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
     !***********************************************************************
     module subroutine compute_interflow(coef_lin, coef_sq, ssres_in, storage, &
                                         inter_flow)
+      use prms_constants, only: dp
       implicit none
 
       ! Arguments
@@ -1611,38 +1616,38 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r64), intent(inout) :: inter_flow
 
       ! Local Variables
-      real(r32) :: c1
-      real(r32) :: c2
-      real(r32) :: c3
-      real(r32) :: sos
+      real(r64) :: c1
+      real(r64) :: c2
+      real(r64) :: c3
+      real(r64) :: sos
 
       ! ***********************************************************************
       ! inter_flow is in inches for the timestep
       ! ****** compute interflow
       if (coef_lin <= 0.0 .and. ssres_in <= 0.0) then
-        c1 = coef_sq * sngl(storage)
-        inter_flow = storage * dble(c1 / (1.0 + c1))
+        c1 = dble(coef_sq) * storage
+        inter_flow = storage * (c1 / (1.0_dp + c1))
       elseif (coef_lin > 0.0 .and. coef_sq <= 0.0) then
-        c2 = 1.0 - exp(-coef_lin)
+        c2 = dble(1.0 - exp(-coef_lin))
         inter_flow = ssres_in * (1.0 - c2 / coef_lin) + storage * c2
       elseif (coef_sq > 0.0) then
-        c3 = sqrt(coef_lin**2.0 + 4.0 * coef_sq * sngl(ssres_in))
-        sos = sngl(storage) - ((c3 - coef_lin) / (2.0 * coef_sq))
+        c3 = sqrt(dble(coef_lin**2.0 + 4.0 * coef_sq * ssres_in))
+        sos = storage - ((c3 - coef_lin) / (2.0 * coef_sq))
 
-        if (c3 == 0.0) then
+        if (c3 == 0.0_dp) then
           STOP 'ERROR, in compute_interflow sos=0, please contact code developers'
         endif
 
-        c1 = coef_sq * sos / c3
-        c2 = 1.0 - exp(-c3)
+        c1 = dble(coef_sq) * sos / c3
+        c2 = 1.0_dp - exp(-c3)
 
-        if (1.0 + c1 * c2 > 0.0) then
-          inter_flow = ssres_in + (sos * (1.0 + c1) * c2) / (1.0 + c1 * c2)
+        if (1.0_dp + c1 * c2 > 0.0_dp) then
+          inter_flow = ssres_in + (sos * (1.0_dp + c1) * c2) / (1.0_dp + c1 * c2)
         else
           inter_flow = ssres_in
         endif
       else
-        inter_flow = 0.0
+        inter_flow = 0.0_dp
       endif
 
       ! TODO: Check if inter_flow < 0.0; if so, throw warning, reset to zero
@@ -1670,6 +1675,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! integer(i32), intent(in) :: soil2gw_flag
       logical, intent(in) :: soil2gw_flag
       real(r32), intent(in) :: perv_frac
+        !! Pervious fraction
       real(r32), intent(in) :: soil_moist_max
       real(r32), intent(in) :: soil_rechr_max
       real(r32), intent(in) :: soil2gw_max
@@ -1694,27 +1700,27 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r64) :: excess
 
       !***********************************************************************
-      if (minexponent(soil_moist) - exponent(soil_moist) >= 0) then
-        write(output_unit, 9005) MODNAME, '%compute_soilmoist WARNING: soil_moist underflow, reset to zero'
-        soil_moist = 0.0
-      endif
-
-      if (minexponent(soil_rechr) - exponent(soil_rechr) >= 0) then
-        write(output_unit, 9005) MODNAME, '%compute_soilmoist WARNING: soil_rechr underflow, reset to zero'
-        soil_rechr = 0.0
-      endif
-
-      9005 format(A,A)
+      ! if (minexponent(soil_moist) - exponent(soil_moist) >= 0) then
+      !   write(output_unit, 9005) MODNAME, '%compute_soilmoist WARNING: soil_moist underflow, reset to zero'
+      !   soil_moist = 0.0
+      ! endif
+      !
+      ! if (minexponent(soil_rechr) - exponent(soil_rechr) >= 0) then
+      !   write(output_unit, 9005) MODNAME, '%compute_soilmoist WARNING: soil_rechr underflow, reset to zero'
+      !   soil_rechr = 0.0
+      ! endif
+      !
+      ! 9005 format(A,A)
 
       soil_rechr = min(soil_rechr + infil, dble(soil_rechr_max))
 
       ! soil_moist_max from previous time step or soil_moist_max has
       ! changed for a restart simulation
-      excess = sngl(soil_moist + infil)
+      excess = soil_moist + infil
       soil_moist = min(excess, dble(soil_moist_max))
       excess = (excess - soil_moist_max) * perv_frac
 
-      if (excess > 0.0) then
+      if (excess > 0.0_dp) then
         if (soil2gw_flag) then
           soil_to_gw = min(dble(soil2gw_max), excess)
           excess = excess - soil_to_gw
@@ -1722,7 +1728,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
         if (excess > infil * perv_frac) then
           ! Probably dynamic
-          infil = 0.0
+          infil = 0.0_dp
         else
           !???? what if infil<0 ??? might happen with dynamic and small values,
           !???? maybe ABS < NEARZERO = 0.0
@@ -1742,7 +1748,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                                       soil_moist, soil_rechr, avail_potet, &
                                       potet_rechr, potet_lower, perv_actet)
       use iso_fortran_env, only: output_unit
-      use prms_constants, only: dp, NEARZERO, SAND, LOAM, CLAY, ET_DEFAULT, EVAP_ONLY, EVAP_PLUS_TRANSP
+      use prms_constants, only: dp, DNEARZERO, SAND, LOAM, CLAY, ET_DEFAULT, EVAP_ONLY, EVAP_PLUS_TRANSP
       ! use ieee_arithmetic
       ! use ieee_exceptions
       ! use ieee_features
@@ -1785,7 +1791,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r64), parameter :: ONETHIRD = 1.0_dp / 3.0_dp
       real(r64), parameter :: TWOTHIRDS = 2.0_dp / 3.0_dp
 
-
       real(r64) :: et
       real(r64) :: pctr
       real(r64) :: pcts
@@ -1822,9 +1827,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
         potet_rechr_ante = potet_rechr
         potet_lower_ante = potet_lower
 
-        if (avail_potet < NEARZERO) then
+        if (avail_potet < DNEARZERO) then
           this%et_type = ET_DEFAULT   ! 1
-          avail_potet = 0.0
+          avail_potet = 0.0_dp
         elseif (.not. transp_on) then
           if (snow_free < 0.01) then
             this%et_type = ET_DEFAULT   ! 1
@@ -1939,6 +1944,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
         else
           et = 0.0
         endif
+
+        perv_actet = et
 
         ! 9007 format(A,A)
 
