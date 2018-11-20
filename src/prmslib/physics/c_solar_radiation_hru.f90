@@ -9,6 +9,7 @@ module SOLAR_RADIATION_HRU
   use PRMS_BASIN, only: Basin
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -25,7 +26,7 @@ module SOLAR_RADIATION_HRU
 
   interface Solrad_hru
     !! Solrad_hru constructor
-    module function constructor_Solrad_hru(ctl_data, param_data, model_basin, basin_summary) result(this)
+    module function constructor_Solrad_hru(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Solrad_hru) :: this
         !! Solrad_hru class
       type(Control), intent(in) :: ctl_data
@@ -35,6 +36,8 @@ module SOLAR_RADIATION_HRU
       type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

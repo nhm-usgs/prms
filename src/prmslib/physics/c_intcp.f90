@@ -16,6 +16,7 @@ module PRMS_INTCP
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   ! use PRMS_SNOW, only: Snowcomp
   implicit none
 
@@ -49,14 +50,14 @@ module PRMS_INTCP
     real(r64), pointer :: basin_net_snow
 
     real(r32), allocatable :: canopy_covden(:)
-    real(r32), allocatable :: hru_intcpevap(:)
-    real(r32), allocatable :: hru_intcpstor(:)
+    real(r64), allocatable :: hru_intcpevap(:)
+    real(r64), allocatable :: hru_intcpstor(:)
     real(r32), allocatable :: intcp_evap(:)
     real(r32), allocatable :: intcp_stor(:)
     real(r32), allocatable :: net_apply(:)
-    real(r32), allocatable :: net_ppt(:)
-    real(r32), allocatable :: net_rain(:)
-    real(r32), allocatable :: net_snow(:)
+    real(r64), allocatable :: net_ppt(:)
+    real(r64), allocatable :: net_rain(:)
+    real(r64), allocatable :: net_snow(:)
 
     integer(i32), allocatable, private :: intcp_form(:)
 
@@ -74,7 +75,7 @@ module PRMS_INTCP
 
   interface Interception
     !! Intercept constructor
-    module function constructor_Interception(ctl_data, model_transp, basin_summary) result(this)
+    module function constructor_Interception(ctl_data, model_transp, basin_summary, nhru_summary) result(this)
       type(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
@@ -82,6 +83,8 @@ module PRMS_INTCP
       class(Transpiration), intent(in) :: model_transp
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

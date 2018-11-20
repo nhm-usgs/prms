@@ -1,6 +1,6 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_transp, basin_summary) result(this)
+  module function constructor_Interception(ctl_data, model_transp, basin_summary, nhru_summary) result(this)
     use prms_constants, only: dp
 
     type(Interception) :: this
@@ -9,7 +9,7 @@ contains
       !! Control file parameters
     class(Transpiration), intent(in) :: model_transp
     type(Basin_summary_ptr), intent(inout) :: basin_summary
-      !! Basin summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: jj
 
@@ -25,6 +25,9 @@ contains
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               print_debug => ctl_data%print_debug%value, &
               transp_on => model_transp%transp_on)
 
@@ -117,6 +120,26 @@ contains
               call basin_summary%set_basin_var(jj, this%basin_net_rain)
             case('basin_net_snow')
               call basin_summary%set_basin_var(jj, this%basin_net_snow)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('hru_intcpevap')
+              call nhru_summary%set_nhru_var(jj, this%hru_intcpevap)
+            case('hru_intcpstor')
+              call nhru_summary%set_nhru_var(jj, this%hru_intcpstor)
+            case('net_ppt')
+              call nhru_summary%set_nhru_var(jj, this%net_ppt)
+            case('net_rain')
+              call nhru_summary%set_nhru_var(jj, this%net_rain)
+            case('net_snow')
+              call nhru_summary%set_nhru_var(jj, this%net_snow)
             case default
               ! pass
           end select

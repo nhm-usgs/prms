@@ -2,17 +2,18 @@ submodule (PRMS_POTET_JH) sm_potet_jh
 contains
   !***********************************************************************
   ! Potet_jh constructor
-  module function constructor_Potet_jh(ctl_data, basin_summary) result(this)
+  module function constructor_Potet_jh(ctl_data, basin_summary, nhru_summary) result(this)
     use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Potet_jh) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data, basin_summary)
+    this%Potential_ET = Potential_ET(ctl_data, basin_summary, nhru_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value)

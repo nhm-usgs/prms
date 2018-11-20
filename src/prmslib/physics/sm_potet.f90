@@ -1,15 +1,13 @@
 submodule(PRMS_POTET) sm_potet
 contains
-  module function constructor_Potet(ctl_data, basin_summary) result(this)
+  module function constructor_Potet(ctl_data, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     type(Potential_ET) :: this
-      !! Potential_ET class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Basin_summary_ptr), intent(inout) :: basin_summary
-      !! Basin summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -25,6 +23,9 @@ contains
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
               print_debug => ctl_data%print_debug%value, &
@@ -78,6 +79,20 @@ contains
               call basin_summary%set_basin_var(jj, this%basin_humidity)
             case('basin_potet')
               call basin_summary%set_basin_var(jj, this%basin_potet)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('potet')
+              call nhru_summary%set_nhru_var(jj, this%potet)
+            case('humidity_hru')
+              call nhru_summary%set_nhru_var(jj, this%humidity_hru)
             case default
               ! pass
           end select

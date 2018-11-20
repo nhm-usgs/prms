@@ -7,6 +7,7 @@ module SOLAR_RADIATION
   use PRMS_BASIN, only: Basin
   use prms_constants, only: dp
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -64,7 +65,7 @@ module SOLAR_RADIATION
 
   interface SolarRadiation
     !! SolarRadiation constructor
-    module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary) result(this)
+    module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
       type(SolarRadiation) :: this
         !! SolarRadiation class
       type(Control), intent(in) :: ctl_data
@@ -75,6 +76,8 @@ module SOLAR_RADIATION
         !! Model basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

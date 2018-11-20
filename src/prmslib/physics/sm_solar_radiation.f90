@@ -1,6 +1,6 @@
 submodule (SOLAR_RADIATION) sm_solar_radiation
 contains
-  module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary) result(this)
+  module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
     use UTILS_PRMS, only: PRMS_open_module_file
     implicit none
 
@@ -13,6 +13,7 @@ contains
     type(Basin), intent(in) :: model_basin
       !! Model basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
 
     ! --------------------------------------------------------------------------
@@ -48,9 +49,13 @@ contains
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               print_debug => ctl_data%print_debug%value, &
               solrad_module => ctl_data%solrad_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
+
               hru_lat => param_data%hru_lat%values, &
               hru_type => param_data%hru_type%values, &
               hru_slope => param_data%hru_slope%values, &
@@ -182,6 +187,20 @@ contains
               call basin_summary%set_basin_var(jj, this%basin_potsw)
             case('basin_swrad')
               call basin_summary%set_basin_var(jj, this%basin_swrad)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('orad_hru')
+              call nhru_summary%set_nhru_var(jj, this%orad_hru)
+            case('swrad')
+              call nhru_summary%set_nhru_var(jj, this%swrad)
             case default
               ! pass
           end select

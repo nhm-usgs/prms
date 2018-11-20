@@ -18,6 +18,7 @@ module PRMS_POTET_PM
   use PRMS_TEMPERATURE, only: Temperature
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -46,13 +47,15 @@ module PRMS_POTET_PM
 
   interface Potet_pm
     !! Potet_pm constructor
-    module function constructor_Potet_pm(ctl_data, basin_summary) result(this)
+    module function constructor_Potet_pm(ctl_data, basin_summary, nhru_summary) result(this)
       type(Potet_pm) :: this
         !! Poteh_pm class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

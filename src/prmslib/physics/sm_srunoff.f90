@@ -1,7 +1,7 @@
 submodule (PRMS_SRUNOFF) sm_srunoff
 
   contains
-    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary) result(this)
+    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp
       implicit none
 
@@ -13,7 +13,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
       ! Local variables
       ! integer(i32) :: chru
@@ -46,6 +46,9 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 gwr_transferON_OFF => ctl_data%gwr_transferON_OFF%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 lake_transferON_OFF => ctl_data%lake_transferON_OFF%value, &
+                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+                nhruOutVars => ctl_data%nhruOutVars%value, &
+                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
                 print_debug => ctl_data%print_debug%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 srunoff_module => ctl_data%srunoff_module%values, &
@@ -217,6 +220,42 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         ! Depression storage initialization
         if (dprst_flag == 1) then
           call this%dprst_init(ctl_data, param_data, model_basin)
+        endif
+
+        ! Connect any nhru_summary variables that need to be output
+        if (nhruOutON_OFF == 1) then
+          do jj=1, nhruOutVars
+            select case(nhruOutVar_names(jj)%s)
+              case('dprst_area_open')
+                call nhru_summary%set_nhru_var(jj, this%dprst_area_open)
+              case('dprst_evap_hru')
+                call nhru_summary%set_nhru_var(jj, this%dprst_evap_hru)
+              case('dprst_insroff_hru')
+                call nhru_summary%set_nhru_var(jj, this%dprst_insroff_hru)
+              case('dprst_seep_hru')
+                call nhru_summary%set_nhru_var(jj, this%dprst_seep_hru)
+              case('dprst_sroff_hru')
+                call nhru_summary%set_nhru_var(jj, this%dprst_sroff_hru)
+              case('dprst_stor_hru')
+                call nhru_summary%set_nhru_var(jj, this%dprst_stor_hru)
+              case('dprst_vol_clos')
+                call nhru_summary%set_nhru_var(jj, this%dprst_vol_clos)
+              case('dprst_vol_open')
+                call nhru_summary%set_nhru_var(jj, this%dprst_vol_open)
+              case('dprst_vol_open_frac')
+                call nhru_summary%set_nhru_var(jj, this%dprst_vol_open_frac)
+              case('hru_impervevap')
+                call nhru_summary%set_nhru_var(jj, this%hru_impervevap)
+              case('hru_impervstor')
+                call nhru_summary%set_nhru_var(jj, this%hru_impervstor)
+              case('hru_sroffi')
+                call nhru_summary%set_nhru_var(jj, this%hru_sroffi)
+              case('hru_sroffp')
+                call nhru_summary%set_nhru_var(jj, this%hru_sroffp)
+              case default
+                ! pass
+            end select
+          enddo
         endif
       end associate
     end function
@@ -871,7 +910,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       ! real(r32), intent(inout) :: infil
 
       ! Local Variables
-      real(r32) :: avail_water
+      real(r64) :: avail_water
 
       ! Control
       ! cascade_flag,
@@ -912,9 +951,9 @@ submodule (PRMS_SRUNOFF) sm_srunoff
 
         ! compute runoff from cascading Hortonian flow
         if (cascade_flag == 1) then
-          avail_water = sngl(this%upslope_hortonian(idx))
+          avail_water = this%upslope_hortonian(idx)
 
-          if (avail_water > 0.0) then
+          if (avail_water > 0.0_dp) then
             this%infil(idx) = avail_water
 
             if (hru_type == LAND) then
@@ -923,7 +962,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             endif
           endif
         else
-          avail_water = 0.0
+          avail_water = 0.0_dp
         endif
 
         ! ***** If rain/snow event with no antecedent snowpack, compute the
@@ -955,7 +994,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
               call this%check_capacity(param_data, model_climate, idx)
             else
               ! ****** Snowmelt occurred and depleted the snowpack
-              call this%perv_comp(ctl_data, param_data, model_climate, idx, snowmelt(idx), &
+              call this%perv_comp(ctl_data, param_data, model_climate, idx, dble(snowmelt(idx)), &
                                   net_ppt(idx), this%srp)
             endif
 
@@ -1462,8 +1501,8 @@ submodule (PRMS_SRUNOFF) sm_srunoff
       type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
       integer(i32), intent(in) :: idx
-      real(r32), intent(in) :: pptp
-      real(r32), intent(in) :: ptc
+      real(r64), intent(in) :: pptp
+      real(r64), intent(in) :: ptc
       ! real(r32), intent(inout) :: infil
       real(r64), intent(inout) :: srp
 

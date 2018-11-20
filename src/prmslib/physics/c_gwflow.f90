@@ -10,6 +10,7 @@ module PRMS_GWFLOW
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
 
   implicit none
 
@@ -70,21 +71,24 @@ module PRMS_GWFLOW
 
   interface Gwflow
     !! Gwflow constructor
-    module function constructor_Gwflow(ctl_data, param_data, basin_summary, model_basin, &
-                                       model_climate, intcp, soil, runoff) result(this)
+    module function constructor_Gwflow(ctl_data, param_data, model_basin, &
+                                       model_climate, intcp, soil, runoff, &
+                                       basin_summary, nhru_summary) result(this)
       type(Gwflow) :: this
        !! Gwflow class
       type(Control), intent(in) :: ctl_data
        !! Control file parameters
       type(Parameters), intent(in) :: param_data
        !! Parameter data
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
        !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

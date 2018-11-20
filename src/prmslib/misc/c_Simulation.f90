@@ -9,7 +9,8 @@ module Simulation_class
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_INTCP, only: Interception
   use PRMS_MUSKINGUM, only: Muskingum
-  use PRMS_NHRU_SUMMARY, only: Nhru_summary
+  ! use PRMS_NHRU_SUMMARY, only: Nhru_summary
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   use PRMS_OBS, only: Obs
   use PRMS_POTET_JH, only: Potet_jh
   use PRMS_PRECIPITATION, only: Precipitation
@@ -50,7 +51,7 @@ module Simulation_class
       type(Gwflow) :: groundwater
       ! type(Routing) :: model_route
       type(Muskingum) :: model_muskingum
-      type(Nhru_summary) :: summary_by_hru
+      type(Nhru_summary_ptr) :: summary_by_hru
       ! type(Basin_summary) :: summary_by_basin
       type(Basin_summary_ptr) :: summary_by_basin
       type(WaterBalance) :: model_waterbal

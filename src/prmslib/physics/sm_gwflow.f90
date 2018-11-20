@@ -1,8 +1,8 @@
 submodule (PRMS_GWFLOW) sm_gwflow
   contains
 
-    module function constructor_Gwflow(ctl_data, param_data, basin_summary, model_basin, &
-                                       model_climate, intcp, soil, runoff) result(this)
+    module function constructor_Gwflow(ctl_data, param_data, model_basin, &
+                                       model_climate, intcp, soil, runoff, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp, SWALE
       implicit none
 
@@ -12,13 +12,14 @@ submodule (PRMS_GWFLOW) sm_gwflow
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
         !! Parameter data
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
+      type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
       ! Local Variables
       integer(i32) :: chru
@@ -60,6 +61,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 ! lake_route_flag => ctl_data%lake_route_flag%value, &
+                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+                nhruOutVars => ctl_data%nhruOutVars%value, &
+                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
                 ! model_mode => ctl_data%model_mode%values, &
                 print_debug => ctl_data%print_debug%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
@@ -281,6 +285,29 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%hru_streamflow_out = 0.0_dp
         this%hru_lateral_flow = 0.0_dp
 
+        ! Connect any nhru_summary variables that need to be output
+        if (nhruOutON_OFF == 1) then
+          do jj=1, nhruOutVars
+            select case(nhruOutVar_names(jj)%s)
+              case('gw_in_soil')
+                call nhru_summary%set_nhru_var(jj, this%gw_in_soil)
+              case('gw_in_ssr')
+                call nhru_summary%set_nhru_var(jj, this%gw_in_ssr)
+              case('gwres_flow')
+                call nhru_summary%set_nhru_var(jj, this%gwres_flow)
+              case('gwres_in')
+                call nhru_summary%set_nhru_var(jj, this%gwres_in)
+              case('hru_lateral_flow')
+                call nhru_summary%set_nhru_var(jj, this%hru_lateral_flow)
+              case('hru_storage')
+                call nhru_summary%set_nhru_var(jj, this%hru_storage)
+              case('hru_streamflow_out')
+                call nhru_summary%set_nhru_var(jj, this%hru_streamflow_out)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
       end associate
     end function
 

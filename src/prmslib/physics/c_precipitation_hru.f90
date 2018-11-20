@@ -8,6 +8,7 @@ module PRMS_PRECIPITATION_HRU
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -31,24 +32,28 @@ module PRMS_PRECIPITATION_HRU
 
   interface Precipitation_hru
     !! Precipitation_hru constructor
-    module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary) result(this)
+    module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary, nhru_summary) result(this)
       type(Precipitation_hru) :: this
         !! Precipitation_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
       type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 
   interface
-    module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time)
+    module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
       class(Precipitation_hru), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Time_t), intent(in), optional :: model_time
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end subroutine
   end interface
 

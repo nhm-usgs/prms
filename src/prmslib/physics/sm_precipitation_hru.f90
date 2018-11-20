@@ -1,16 +1,15 @@
 submodule(PRMS_PRECIPITATION_HRU) sm_precipitation_hru
 contains
   !! Precipitation_hru constructor
-  module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary) result(this)
+  module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
     type(Precipitation_hru) :: this
-      !! Precipitation_hru class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Parameters), intent(in) :: param_data
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -18,7 +17,7 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Precipitation = Precipitation(ctl_data, param_data, basin_summary)
+    this%Precipitation = Precipitation(ctl_data, param_data, basin_summary, nhru_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -56,7 +55,7 @@ contains
   end function
 
 
-  module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time)
+  module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
     use UTILS_CBH, only: read_netcdf_cbh_file
     implicit none
 
@@ -66,6 +65,8 @@ contains
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      !! Summary by HRU module
 
     ! Local variables
     integer(i32) :: ios
@@ -107,6 +108,11 @@ contains
       !                                     snow_adj_2d(:, curr_month), &
       !                                     adjmix_rain_2d(:, curr_month))
 
+      ! If any precipitation output variables are specified then we set pointers
+      ! to the arrays for the nhru_summary module.
+      if (this%has_hru_summary_vars) then
+        call this%set_nhru_summary_ptrs(ctl_data, nhru_summary)
+      end if
     end associate
   end subroutine
 

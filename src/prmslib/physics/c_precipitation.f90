@@ -8,6 +8,7 @@ module PRMS_PRECIPITATION
   use PRMS_BASIN, only: Basin
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -18,6 +19,8 @@ module PRMS_PRECIPITATION
   character(len=*), parameter :: MODVERSION = '2018-10-10 15:55:00Z'
 
   type, extends(ModelBase) :: Precipitation
+    logical :: has_hru_summary_vars
+
     ! Basin variables
     real(r64), pointer :: basin_obs_ppt
     real(r64), pointer :: basin_ppt
@@ -41,28 +44,32 @@ module PRMS_PRECIPITATION
     contains
       procedure, public :: run => run_Precipitation
       procedure, public :: set_precipitation_form
+      procedure, public :: set_nhru_summary_ptrs
   end type
 
   interface Precipitation
     !! Precipitation constructor
-    module function constructor_Precipitation(ctl_data, param_data, basin_summary) result(this)
+    module function constructor_Precipitation(ctl_data, param_data, basin_summary, nhru_summary) result(this)
       type(Precipitation) :: this
         !! Precipitation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
       type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 
   interface
-    module subroutine run_Precipitation(this, ctl_data, param_data, model_basin, model_temp, model_time)
+    module subroutine run_Precipitation(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
       class(Precipitation), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Time_t), intent(in), optional :: model_time
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
     end subroutine
   end interface
 
@@ -81,6 +88,14 @@ module PRMS_PRECIPITATION
         !! Array of snow adjustments
       real(r32), optional, intent(in) :: rainmix_adj(:)
         !! Array of rain mixture adjustments
+    end subroutine
+  end interface
+
+  interface
+    module subroutine set_nhru_summary_ptrs(this, ctl_data, nhru_summary)
+      class(Precipitation), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
     end subroutine
   end interface
 end module

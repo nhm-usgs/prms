@@ -1,16 +1,15 @@
 submodule(PRMS_PRECIPITATION) sm_precipitation
 contains
-  module function constructor_Precipitation(ctl_data, param_data, basin_summary) result(this)
+  module function constructor_Precipitation(ctl_data, param_data, basin_summary, nhru_summary) result(this)
     use prms_constants, only: FAHRENHEIT
     use conversions_mod, only: f_to_c, c_to_f
     implicit none
 
     type(Precipitation) :: this
-      !! Precipitation class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Parameters), intent(in) :: param_data
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: jj
 
@@ -23,8 +22,10 @@ contains
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
-
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value, &
 
@@ -117,17 +118,47 @@ contains
           end select
         enddo
       endif
+
+      this%has_hru_summary_vars = .false.
+
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('hru_ppt')
+              this%has_hru_summary_vars = .true.
+              exit
+            case('hru_rain')
+              this%has_hru_summary_vars = .true.
+              exit
+            case('hru_snow')
+              this%has_hru_summary_vars = .true.
+              exit
+            case('prmx')
+              this%has_hru_summary_vars = .true.
+              exit
+            case('newsnow')
+              this%has_hru_summary_vars = .true.
+              exit
+            case('pptmix')
+              this%has_hru_summary_vars = .true.
+              exit
+            case default
+              ! pass
+          end select
+        end do
+      end if
     end associate
   end function
 
 
-  module subroutine run_Precipitation(this, ctl_data, param_data, model_basin, model_temp, model_time)
+  module subroutine run_Precipitation(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
     class(Precipitation), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! --------------------------------------------------------------------------
   end subroutine
@@ -258,4 +289,40 @@ contains
     end associate
   end subroutine
 
+
+  module subroutine set_nhru_summary_ptrs(this, ctl_data, nhru_summary)
+    implicit none
+
+    class(Precipitation), intent(inout) :: this
+    type(Control), intent(in) :: ctl_data
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+
+    integer(i32) :: jj
+
+    ! --------------------------------------------------------------------------
+    associate(nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values)
+
+      ! Connect any nhru_summary variables that need to be output
+      do jj=1, nhruOutVars
+        select case(nhruOutVar_names(jj)%s)
+          case('hru_ppt')
+            call nhru_summary%set_nhru_var(jj, this%hru_ppt)
+          case('hru_rain')
+            call nhru_summary%set_nhru_var(jj, this%hru_rain)
+          case('hru_snow')
+            call nhru_summary%set_nhru_var(jj, this%hru_snow)
+          case('prmx')
+            call nhru_summary%set_nhru_var(jj, this%prmx)
+          ! case('newsnow')
+          !   call nhru_summary%set_nhru_var(jj, this%newsnow)
+          ! case('pptmix')
+          !   call nhru_summary%set_nhru_var(jj, this%pptmix)
+          case default
+            ! pass
+        end select
+      enddo
+    end associate
+  end subroutine
 end submodule

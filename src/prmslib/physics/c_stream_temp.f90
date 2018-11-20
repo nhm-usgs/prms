@@ -148,9 +148,6 @@ module PRMS_STRMTEMP
 
     ! ! control parameters
     ! integer(i32) :: stream_temp_shade_flag
-
-
-
   end type
 
   interface StreamTemp

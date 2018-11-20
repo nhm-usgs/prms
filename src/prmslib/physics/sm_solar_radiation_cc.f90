@@ -1,6 +1,6 @@
 submodule(SOLAR_RADIATION_CC) sm_solar_radiation_cc
 contains
-  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary) result(this)
+  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
     use conversions_mod, only: c_to_f
     use prms_constants, only: dp
     implicit none
@@ -13,6 +13,7 @@ contains
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: jj
 
@@ -21,13 +22,16 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, basin_summary)
+    this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, basin_summary, nhru_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               print_debug => ctl_data%print_debug%value)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
@@ -42,8 +46,6 @@ contains
 
       this%cloud_cover_hru = 0.0
       this%cloud_radadj = 0.0
-
-
 
       ! NOTE: Once units are standardized tmax_f and tmin_f can go away
       this%tmax_f = (c_to_f(model_temp%tmax))
@@ -64,6 +66,20 @@ contains
               call basin_summary%set_basin_var(jj, this%basin_cloud_cover)
             case('basin_radadj')
               call basin_summary%set_basin_var(jj, this%basin_radadj)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('cloud_radadj')
+              call nhru_summary%set_nhru_var(jj, this%cloud_radadj)
+            case('cloud_cover_hru')
+              call nhru_summary%set_nhru_var(jj, this%cloud_cover_hru)
             case default
               ! pass
           end select

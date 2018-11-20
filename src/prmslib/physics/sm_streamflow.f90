@@ -1,6 +1,6 @@
 submodule (PRMS_STREAMFLOW) sm_streamflow
   contains
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary) result(this)
+    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp, DNEARZERO, FT2_PER_ACRE, NEARZERO
       implicit none
 
@@ -13,6 +13,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
       ! Local Variables
       integer(i32) :: i
@@ -52,6 +53,9 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
                 basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascade_flag => ctl_data%cascade_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
+                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+                nhruOutVars => ctl_data%nhruOutVars%value, &
+                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
                 print_debug => ctl_data%print_debug%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
@@ -113,7 +117,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%seg_upstream_inflow = 0.0_dp
         ! endif
 
-        
+
         allocate(this%basin_cfs)
         allocate(this%basin_cms)
         allocate(this%basin_gwflow_cfs)
@@ -281,6 +285,30 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         enddo
 
         deallocate(x_off)
+
+        ! Connect any nhru_summary variables that need to be output
+        if (nhruOutON_OFF == 1) then
+          do jj=1, nhruOutVars
+            select case(nhruOutVar_names(jj)%s)
+            case('hru_outflow')
+                call nhru_summary%set_nhru_var(jj, this%hru_outflow)
+              case('seg_inflow')
+                call nhru_summary%set_nhru_var(jj, this%seg_inflow)
+              case('seg_lateral_inflow')
+                call nhru_summary%set_nhru_var(jj, this%seg_lateral_inflow)
+              case('seg_outflow')
+                call nhru_summary%set_nhru_var(jj, this%seg_outflow)
+              case('seg_sroff')
+                call nhru_summary%set_nhru_var(jj, this%seg_sroff)
+              case('seg_ssflow')
+                call nhru_summary%set_nhru_var(jj, this%seg_ssflow)
+              case('seg_upstream_inflow')
+                call nhru_summary%set_nhru_var(jj, this%seg_upstream_inflow)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
       end associate
     end function
 

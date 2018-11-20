@@ -12,6 +12,7 @@ module PRMS_STREAMFLOW
   use PRMS_SRUNOFF, only: Srunoff
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
 
   implicit none
 
@@ -117,7 +118,7 @@ module PRMS_STREAMFLOW
 
   interface Streamflow
     !! Streamflow constructor
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary) result(this)
+    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
       type(Streamflow) :: this
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
@@ -128,6 +129,8 @@ module PRMS_STREAMFLOW
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

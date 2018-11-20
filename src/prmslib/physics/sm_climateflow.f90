@@ -3,17 +3,23 @@ submodule (PRMS_CLIMATEVARS) sm_climateflow
 contains
   !***********************************************************************
   ! Climateflow constructor
-  module function constructor_Climateflow(ctl_data, param_data) result(this)
+  module function constructor_Climateflow(ctl_data, param_data, nhru_summary) result(this)
     use UTILS_PRMS, only: check_restart
     implicit none
 
     type(Climateflow) :: this
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
+    integer(i32) :: jj
+    
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value, &
 
@@ -42,6 +48,21 @@ contains
       allocate(this%pkwater_equiv(nhru))
       this%pkwater_equiv = 0.0_dp
 
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('pkwater_equiv')
+              call nhru_summary%set_nhru_var(jj, this%pkwater_equiv)
+            case('soil_moist')
+              call nhru_summary%set_nhru_var(jj, this%soil_moist)
+            case('soil_rechr')
+              call nhru_summary%set_nhru_var(jj, this%soil_rechr)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
 
       ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
       !       and ssstor_init_frac

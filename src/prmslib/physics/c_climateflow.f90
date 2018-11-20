@@ -8,6 +8,7 @@ module PRMS_CLIMATEVARS
   use Control_class, only: Control
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -60,13 +61,15 @@ module PRMS_CLIMATEVARS
 
   interface Climateflow
     !! Climateflow constructor
-    module function constructor_Climateflow(ctl_data, param_data) result(this)
+    module function constructor_Climateflow(ctl_data, param_data, nhru_summary) result(this)
       type(Climateflow) :: this
         !! Climateflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Parameters), intent(in) :: param_data
         !! Parameters
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

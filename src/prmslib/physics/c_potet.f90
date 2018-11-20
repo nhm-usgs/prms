@@ -5,7 +5,7 @@ module PRMS_POTET
   use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -41,13 +41,15 @@ module PRMS_POTET
 
   interface Potential_ET
     !! Potential_ET constructor
-    module function constructor_Potet(ctl_data, basin_summary) result(this)
+    module function constructor_Potet(ctl_data, basin_summary, nhru_summary) result(this)
       type(Potential_ET) :: this
         !! Potential_ET class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

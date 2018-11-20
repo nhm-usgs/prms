@@ -20,6 +20,7 @@ module SOLAR_RADIATION_CC
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -43,7 +44,7 @@ module SOLAR_RADIATION_CC
 
   interface Solrad_cc
     !! Solrad_cc constructor
-    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary) result(this)
+    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
       type(Solrad_cc) :: this
         !! Solrad_cc class
       type(Control), intent(in) :: ctl_data
@@ -54,6 +55,8 @@ module SOLAR_RADIATION_CC
       class(Temperature), intent(in) :: model_temp
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 

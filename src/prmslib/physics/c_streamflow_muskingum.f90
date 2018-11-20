@@ -12,6 +12,7 @@ module PRMS_MUSKINGUM
   use PRMS_STREAMFLOW, only: Streamflow
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -54,7 +55,7 @@ module PRMS_MUSKINGUM
   interface Muskingum
     !! Muskingum constructor
     module function constructor_Muskingum(ctl_data, param_data, model_basin, &
-                                          model_time, basin_summary) result(this)
+                                          model_time, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp
       implicit none
 
@@ -68,6 +69,7 @@ module PRMS_MUSKINGUM
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
     end function
   end interface
 

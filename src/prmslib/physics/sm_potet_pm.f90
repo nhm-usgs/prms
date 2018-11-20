@@ -1,15 +1,13 @@
 submodule(PRMS_POTET_PM) sm_potet_pm
 contains
-  module function constructor_Potet_pm(ctl_data, basin_summary) result(this)
+  module function constructor_Potet_pm(ctl_data, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     type(Potet_pm) :: this
-      !! Poteh_pm class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Basin_summary_ptr), intent(inout) :: basin_summary
-      !! Basin summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: ierr
     integer(i32) :: istop
@@ -20,13 +18,16 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data, basin_summary)
+    this%Potential_ET = Potential_ET(ctl_data, basin_summary, nhru_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               windspeed_day => ctl_data%windspeed_day%values(1))
@@ -71,6 +72,26 @@ contains
           select case(basinOutVar_names(jj)%s)
             case('basin_windspeed')
               call basin_summary%set_basin_var(jj, this%basin_windspeed)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+          case('tempc_dewpt')
+              call nhru_summary%set_nhru_var(jj, this%tempc_dewpt)
+            case('vp_actual')
+              call nhru_summary%set_nhru_var(jj, this%vp_actual)
+            case('vp_sat')
+              call nhru_summary%set_nhru_var(jj, this%vp_sat)
+            case('vp_slope')
+              call nhru_summary%set_nhru_var(jj, this%vp_slope)
+            case('windspeed_hru')
+              call nhru_summary%set_nhru_var(jj, this%windspeed_hru)
             case default
               ! pass
           end select

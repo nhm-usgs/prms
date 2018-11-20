@@ -3,20 +3,17 @@ submodule (PRMS_SNOW) sm_snowcomp
 
 contains
   ! Snowcomp constructor
-  module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary) result(this)
+  module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
     use prms_constants, only: dp
     implicit none
 
     type(Snowcomp) :: this
-      !! Snowcomp class
     type(Climateflow), intent(inout) :: model_climate
-      !! Climateflow
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Parameters), intent(in) :: param_data
-      !! Parameters
     type(Basin), intent(in) :: model_basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
+    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! Local Variables
     integer(i32) :: chru
@@ -33,6 +30,9 @@ contains
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+              nhruOutVars => ctl_data%nhruOutVars%value, &
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               print_debug => ctl_data%print_debug%value, &
               rst_unit => ctl_data%restart_output_unit, &
 
@@ -217,6 +217,28 @@ contains
         this%pkwater_ante = pkwater_equiv
         this%pss = pkwater_equiv
         this%pst = pkwater_equiv
+      endif
+
+      ! Connect any nhru_summary variables that need to be output
+      if (nhruOutON_OFF == 1) then
+        do jj=1, nhruOutVars
+          select case(nhruOutVar_names(jj)%s)
+            case('freeh2o')
+              call nhru_summary%set_nhru_var(jj, this%freeh2o)
+            case('pk_def')
+              call nhru_summary%set_nhru_var(jj, this%pk_def)
+            case('pk_ice')
+              call nhru_summary%set_nhru_var(jj, this%pk_ice)
+            case('snow_evap')
+              call nhru_summary%set_nhru_var(jj, this%snow_evap)
+            case('snowcov_area')
+              call nhru_summary%set_nhru_var(jj, this%snowcov_area)
+            case('snowmelt')
+              call nhru_summary%set_nhru_var(jj, this%snowmelt)
+            case default
+              ! pass
+          end select
+        enddo
       endif
     end associate
   end function

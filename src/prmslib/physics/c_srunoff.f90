@@ -10,6 +10,7 @@ module PRMS_SRUNOFF
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -127,7 +128,7 @@ module PRMS_SRUNOFF
 
   interface Srunoff
     !! Srunoff constructor
-    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary) result(this)
+    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Srunoff) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
@@ -137,6 +138,8 @@ module PRMS_SRUNOFF
       type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 
@@ -225,8 +228,8 @@ module PRMS_SRUNOFF
       type(Climateflow), intent(in) :: model_climate
       ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
-      real(r32), intent(in) :: pptp
-      real(r32), intent(in) :: ptc
+      real(r64), intent(in) :: pptp
+      real(r64), intent(in) :: ptc
       ! real(r32), intent(inout) :: infil
       real(r64), intent(inout) :: srp
     end subroutine

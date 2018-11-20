@@ -1,6 +1,6 @@
 submodule (PRMS_SOILZONE) sm_soilzone
   contains
-    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_climate, snow, basin_summary) result(this)
+    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_climate, snow, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp, INACTIVE, LAND, LAKE, SWALE
       implicit none
 
@@ -14,6 +14,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Climateflow), intent(inout) :: model_climate
       type(Snowcomp), intent(in) :: snow
       type(Basin_summary_ptr), intent(inout) :: basin_summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
       ! Local variables
       integer(i32) :: chru
@@ -55,6 +56,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 gsflow_mode => ctl_data%gsflow_mode, &
                 ! model_mode => ctl_data%model_mode%values, &
+                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
+                nhruOutVars => ctl_data%nhruOutVars%value, &
+                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
                 print_debug => ctl_data%print_debug%value, &
 
                 hru_area => param_data%hru_area%values, &
@@ -562,6 +566,40 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !     enddo
         !   endif
         ! endif
+
+        ! Connect any nhru_summary variables that need to be output
+        if (nhruOutON_OFF == 1) then
+          do jj=1, nhruOutVars
+            select case(nhruOutVar_names(jj)%s)
+              case('hru_actet')
+                call nhru_summary%set_nhru_var(jj, this%hru_actet)
+              case('perv_actet')
+                call nhru_summary%set_nhru_var(jj, this%perv_actet)
+              case('pref_flow')
+                call nhru_summary%set_nhru_var(jj, this%pref_flow)
+              case('pref_flow_in')
+                call nhru_summary%set_nhru_var(jj, this%pref_flow_in)
+              case('pref_flow_infil')
+                call nhru_summary%set_nhru_var(jj, this%pref_flow_infil)
+              case('pref_flow_stor')
+                call nhru_summary%set_nhru_var(jj, this%pref_flow_stor)
+              case('slow_flow')
+                call nhru_summary%set_nhru_var(jj, this%slow_flow)
+              case('slow_stor')
+                call nhru_summary%set_nhru_var(jj, this%slow_stor)
+              case('soil_lower')
+                call nhru_summary%set_nhru_var(jj, this%soil_lower)
+              case('soil_moist_tot')
+                call nhru_summary%set_nhru_var(jj, this%soil_moist_tot)
+              case('soil_to_gw')
+                call nhru_summary%set_nhru_var(jj, this%soil_to_gw)
+              case('soil_to_ssr')
+                call nhru_summary%set_nhru_var(jj, this%soil_to_ssr)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
       end associate
     end function
 

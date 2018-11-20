@@ -14,6 +14,7 @@ module PRMS_SNOW
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
+  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
 
   private
@@ -146,7 +147,7 @@ module PRMS_SNOW
 
   interface Snowcomp
     !! Snowcomp constructor
-    module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary) result(this)
+    module function constructor_Snowcomp(model_climate, ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Snowcomp) :: this
         !! Snowcomp class
       type(Climateflow), intent(inout) :: model_climate
@@ -159,6 +160,8 @@ module PRMS_SNOW
         !! Model basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
+      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+        !! Summary by HRU module
     end function
   end interface
 
