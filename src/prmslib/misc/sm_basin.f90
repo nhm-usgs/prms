@@ -70,9 +70,6 @@ contains
       this%active_mask = .false.
       where (hru_type /= INACTIVE) this%active_mask = .true.
 
-      ! NOTE: what is the purpose of inactive hru_type? It's not currently used
-      !       in the NHM paramdb.
-
       ! Allocate the hru_route_order array for the number of active HRUs
       allocate(this%hru_route_order(count(this%active_mask)))
 
@@ -81,13 +78,15 @@ contains
         allocate(this%gwr_route_order(nhru))
       endif
 
-      if (et_module(1)%s == 'potet_pm' .or. et_module(1)%s == 'potet_pm_sta' .or. &
-          et_module(1)%s == 'potet_pt') then
-        allocate(this%hru_elev_feet(nhru))
-        allocate(this%hru_elev_meters(nhru))
-      elseif (precip_module(1)%s == 'ide_dist' .or. stream_temp_flag == 1) then
-        allocate(this%hru_elev_meters(nhru))
-      endif
+      ! NOTE: It appears that hru_elev_feet is no longer used.
+      ! NOTE: Elevation will be expected to use units meters.
+      ! if (et_module(1)%s == 'potet_pm' .or. et_module(1)%s == 'potet_pm_sta' .or. &
+      !     et_module(1)%s == 'potet_pt') then
+      !   allocate(this%hru_elev_feet(nhru))
+      !   allocate(this%hru_elev_meters(nhru))
+      ! elseif (precip_module(1)%s == 'ide_dist' .or. stream_temp_flag == 1) then
+      !   allocate(this%hru_elev_meters(nhru))
+      ! endif
 
       if (nlake > 0) then
         allocate(this%lake_area(nlake))

@@ -44,8 +44,8 @@ module PRMS_BASIN
     integer(i32), allocatable :: hru_route_order(:)
 
     real(r32), allocatable :: dprst_area_max(:)
-    real(r32), allocatable :: hru_elev_feet(:)
-    real(r32), allocatable :: hru_elev_meters(:)
+    ! real(r32), allocatable :: hru_elev_feet(:)
+    ! real(r32), allocatable :: hru_elev_meters(:)
     real(r32), allocatable :: hru_frac_perv(:)
     real(r32), allocatable :: hru_area_imperv(:)
     real(r32), allocatable :: hru_area_perv(:)

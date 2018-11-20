@@ -142,13 +142,13 @@ contains
     ! nhru, stream_temp_flag, strmtemp_humidity_flag,
 
     ! Basin
-    ! active_hrus, active_mask, basin_area_inv, hru_elev_meters, hru_route_order,
+    ! active_hrus, active_mask, basin_area_inv, hru_route_order,
 
     ! Climate
     ! tavgc, tmaxc, tminc,
 
     ! Parameters
-    ! crop_coef, hru_area, pm_d_coef, pm_n_coef,
+    ! crop_coef, hru_area, hru_elev, pm_d_coef, pm_n_coef,
 
     ! SolarRadiation
     ! soltab_potsw, swrad,
@@ -164,7 +164,7 @@ contains
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
-              hru_elev_meters => model_basin%hru_elev_meters, &
+              ! hru_elev_meters => model_basin%hru_elev_meters, &
               hru_route_order => model_basin%hru_route_order, &
 
               tavg => model_temp%tavg, &
@@ -173,6 +173,7 @@ contains
 
               crop_coef => param_data%crop_coef%values, &
               hru_area => param_data%hru_area%values, &
+              hru_elev => param_data%hru_elev%values, &
               pm_d_coef => param_data%pm_d_coef%values, &
               pm_n_coef => param_data%pm_n_coef%values, &
 
@@ -195,7 +196,7 @@ contains
 
         ! ATMOSPHERIC PRESSURE FOR ALTITUDE, KPA:
         ! prsr = 101.3 - 0.003215*Hru_elev_feet(chru)
-        prsr = 101.3 * (((293.0 - 0.0065 * hru_elev_meters(chru)) / 293.0)**5.26)
+        prsr = 101.3 * (((293.0 - 0.0065 * hru_elev(chru)) / 293.0)**5.26)
 
         ! LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
         ! elh = 597.3 - 0.5653*tavgc(chru) ! same as potet_jh
