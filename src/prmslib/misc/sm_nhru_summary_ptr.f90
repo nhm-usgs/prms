@@ -3,21 +3,16 @@ contains
   !***********************************************************************
   ! Climateflow constructor
   module function constructor_Nhru_summary_ptr(ctl_data, param_data) result(this)
-    use prms_constants, only: MAXFILE_LENGTH
+    use prms_constants, only: MAXFILE_LENGTH, dp
     use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
-
     implicit none
 
     type(Nhru_summary_ptr) :: this
     type(Control), intent(in) :: ctl_data
     type(Parameters), intent(in) :: param_data
 
-    ! Functions
-    INTRINSIC CHAR
-
+    ! Local variables
     integer(i32) :: ios
-    ! integer(i32) :: ierr = 0
-    ! integer(i32) :: size
     integer(i32) :: jj
     integer(i32) :: j
     character(len=MAXFILE_LENGTH) :: fileName
@@ -37,21 +32,16 @@ contains
       if (print_debug > -2) then
         ! Output module and version information
         call this%print_module_info()
-      endif
+      end if
 
-      ! NOTE: NhruOutON_OFF=2 is an undocumented feature
+      ! NOTE: NhruOutON_OFF=2 is an undocumented feature.
       !       Parameter nhm_id is needed for this.
 
       if (nhruOutVars == 0) then
-        if (ctl_data%model_mode%values(1)%s /= 'DOCUMENTATION') then
-          print *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
-          STOP
-          !          print *, 'no nhru_summary output is produced'
-          !          NhruOutON_OFF = 0
-          ! Inputerror_flag = 1
-          return
-        endif
-      endif
+        print *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
+        STOP
+        return
+      end if
 
       this%begin_results = .true.
       this%begyr = start_time(YEAR)
@@ -63,26 +53,21 @@ contains
 
       write (this%output_fmt, 9001) nhru
 
-      ! NOTE: removed checks for datatype and size
-
-      if (this%double_vars == 1) then
-        allocate(this%nhru_var_dble(nhru, nhruOutVars))
-        this%nhru_var_dble = 0.0D0
-      endif
-
       this%daily_flag = 0
       if (ANY([DAILY, DAILY_MONTHLY]==nhruOut_freq)) then
         this%daily_flag = 1
         allocate(this%dailyunit(nhruOutVars))
-      endif
+      end if
 
       this%monthly_flag = 0
-      if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==nhruOut_freq)) this%monthly_flag = 1
+      if (ANY([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY]==nhruOut_freq)) then
+        this%monthly_flag = 1
+      end if
 
       if (ANY([MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
         this%yeardays = 0
         allocate(this%nhru_var_yearly(nhru, nhruOutVars))
-        this%nhru_var_yearly = 0.0D0
+        this%nhru_var_yearly = 0.0_dp
 
         allocate(this%yearlyunit(nhruOutVars))
 
@@ -90,10 +75,10 @@ contains
       elseif (this%monthly_flag == 1) then
         ! this%monthdays = 0.0D0
         allocate(this%nhru_var_monthly(nhru, nhruOutVars))
-        this%nhru_var_monthly = 0.0D0
+        this%nhru_var_monthly = 0.0_dp
 
         allocate(this%monthlyunit(nhruOutVars))
-      endif
+      end if
 
       write(this%output_fmt2, 9002) nhru
       ! allocate(this%nhru_var_daily(nhru, nhruOutVars))
@@ -110,8 +95,8 @@ contains
 
           if (nhruOutON_OFF < 2) then
             write (this%dailyunit(jj), this%output_fmt2) (j, j=1, nhru)
-          endif
-        endif
+          end if
+        end if
 
         if (nhruOut_freq == MEAN_YEARLY) then
           fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
@@ -136,13 +121,13 @@ contains
           else
             fileName = ctl_data%nhruOutBaseFileName%values(1)%s // &
                        ctl_data%nhruOutVar_names%values(jj)%s // '_monthly.csv'
-          endif
+          end if
 
           call PRMS_open_output_file(this%monthlyunit(jj), fileName, 'xxx', 0, ios)
           if (ios /= 0) STOP 'in nhru_summary, monthly'
 
           if (NhruOutON_OFF < 2) write (this%monthlyunit(jj), this%output_fmt2) (j, j=1, nhru)
-        endif
+        end if
       enddo
 
       if (nhruOutON_OFF == 2) then
@@ -153,9 +138,9 @@ contains
                   write (this%yearlyunit(jj), this%output_fmt2) (nhm_id(j), j=1, nhru)
               elseif (this%monthly_flag == 1) then
                   write (this%monthlyunit(jj), this%output_fmt2) (nhm_id(j), j=1, nhru)
-              endif
+              end if
           enddo
-      endif
+      end if
 
       9001 FORMAT ('(I4, 2(''-'',I2.2),', I6, '('',''ES10.3))')
       9002 FORMAT ('("Date "', I6, '('',''I6))')
@@ -173,6 +158,7 @@ contains
                                      ! model_soil, model_solrad, model_srunoff, model_streamflow, model_temp, &
                                      ! model_transp)
     use conversions_mod, only: c_to_f
+    use prms_constants, only: dp
     implicit none
 
     class(Nhru_summary_ptr), intent(inout) :: this
@@ -214,21 +200,8 @@ contains
           this%begin_results = .true.
         else
           RETURN
-        endif
-      endif
-
-      !-----------------------------------------------------------------------
-      ! do concurrent(jj=1: nhruOutVars)
-      ! ! do jj = 1, nhruOutVars
-      !   select case(nhruOutVar_names(jj)%s)
-
-      !     ! case('transp_on')
-      !     !   this%nhru_var_daily(:, jj) = model_transp%transp_on
-
-      !     case default
-      !       ! pass
-      !   end select
-      ! end do
+        end if
+      end if
 
       write_month = .false.
       write_year = .false.
@@ -241,7 +214,7 @@ contains
         if (last_day_of_simulation) then
         ! if (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
           last_day = .true.
-        endif
+        end if
 
         if (this%lastyear /= curr_year .or. last_day) then
           if ((curr_month == st_month .and. curr_day == st_day) .or. last_day) then
@@ -250,7 +223,7 @@ contains
                 do concurrent (j=1:active_hrus)
                   this%nhru_var_yearly(hru_route_order(j), jj) = this%nhru_var_yearly(hru_route_order(j), jj) / this%yeardays
                 end do
-              endif
+              end if
 
               write (this%yearlyunit(jj), this%output_fmt3) this%lastyear, (this%nhru_var_yearly(j, jj), j=1, nhru)
             enddo
@@ -258,8 +231,8 @@ contains
             this%nhru_var_yearly = 0.0d0
             this%yeardays = 0
             this%lastyear = curr_year
-          endif
-        endif
+          end if
+        end if
 
         this%yeardays = this%yeardays + 1
       elseif (this%monthly_flag == 1) then
@@ -269,22 +242,10 @@ contains
           elseif (last_day_of_simulation) then
           ! elseif (curr_year == en_year .and. curr_month == en_month .and. curr_day == en_day) then
             write_month = .true.
-          endif
+          end if
 
           ! this%monthdays = this%monthdays + 1.0d0
-      endif
-
-      ! if (this%double_vars == 1) then
-      !   do jj = 1, nhruOutVars
-      !     ! TODO: figure out how to handle this
-      !     ! if (Nhru_var_type(jj) == 3) then
-      !     !   do j = 1, model_time%active_hrus
-      !     !     chru = model_time%hru_route_order(j)
-      !     !     this%nhru_var_daily(chru, jj) = SNGL(this%nhru_var_dble(chru, jj))
-      !     !   enddo
-      !     ! endif
-      !   enddo
-      ! endif
+      end if
 
       if (ANY([MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
         do jj = 1, nhruOutVars
@@ -298,7 +259,7 @@ contains
           end do
         enddo
         RETURN
-      endif
+      end if
 
       if (this%monthly_flag == 1) then
         do jj = 1, nhruOutVars
@@ -314,11 +275,11 @@ contains
               if (nhruOut_freq == MEAN_MONTHLY) then
                 this%nhru_var_monthly(hru_route_order(j), jj) = this%nhru_var_monthly(hru_route_order(j), jj) / model_time%last_day_of_month(curr_month)
                 ! this%nhru_var_monthly(hru_route_order(j), jj) = this%nhru_var_monthly(hru_route_order(j), jj) / this%monthdays
-              endif
-            endif
+              end if
+            end if
           end do
         enddo
-      endif
+      end if
 
       do jj=1, nhruOutVars
         if (this%daily_flag == 1) then
@@ -329,22 +290,22 @@ contains
             write (this%dailyunit(jj), this%output_fmt) curr_year, curr_month, curr_day, &
                                                         (this%nhru_var_daily(jj)%ptr_r64(j), j=1, nhru)
           else
-            write(*, *) 'No output array for variable', jj
+            write(*, *) MODNAME, 'No output array for variable', jj
           end if
           ! write (this%dailyunit(jj), this%output_fmt) curr_year, curr_month, curr_day, &
           !                                             (this%nhru_var_daily(j, jj), j = 1, nhru)
-        endif
+        end if
 
         if (write_month) then
           write (this%monthlyunit(jj), this%output_fmt) curr_year, curr_month, curr_day, &
                                                         (this%nhru_var_monthly(j, jj), j=1, nhru)
-        endif
+        end if
       enddo
 
       if (write_month) then
         ! this%monthdays = 0.0d0
-        this%nhru_var_monthly = 0.0d0
-      endif
+        this%nhru_var_monthly = 0.0_dp
+      end if
     end associate
   end subroutine
 

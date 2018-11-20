@@ -17,7 +17,7 @@ submodule (Simulation_class) sm_simulation
       this%model_time = Time_t(ctl_data, this%model_basin)
 
       if (ctl_data%basinOutON_OFF%value == 1) then
-        this%summary_by_basin = Basin_summary_ptr(ctl_data, param_data)
+        this%summary_by_basin = Basin_summary_ptr(ctl_data)
       endif
 
       if (ctl_data%nhruOutON_OFF%value > 0) then

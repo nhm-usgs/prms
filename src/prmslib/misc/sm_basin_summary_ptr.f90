@@ -3,13 +3,13 @@ submodule (PRMS_BASIN_SUMMARY_PTR) sm_basin_summary_ptr
 contains
   !***********************************************************************
   ! Basin_summary constructor
-  module function constructor_Basin_summary_ptr(ctl_data, param_data) result(this)
+  module function constructor_Basin_summary_ptr(ctl_data) result(this)
+    use prms_constants, only: dp
     use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
     implicit none
 
     type(Basin_summary_ptr) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
 
     integer(i32) :: ios
     integer(i32) :: ierr
@@ -74,7 +74,7 @@ contains
         this%monthly_flag = 1
 
         allocate(this%basin_var_monthly(basinOutVars))
-        this%basin_var_monthly = 0.0D0
+        this%basin_var_monthly = 0.0_dp
 
         if (basinOut_freq == MEAN_MONTHLY) then
             fileName = ctl_data%basinOutBaseFileName%values(1)%s // '_meanmonthly.csv'
@@ -91,7 +91,7 @@ contains
       ! Allocate/initialize the yearly array for year-based frequencies
       if (ANY([MEAN_YEARLY, YEARLY]==basinOut_freq)) then
         allocate(this%basin_var_yearly(basinOutVars))
-        this%basin_var_yearly = 0.0D0
+        this%basin_var_yearly = 0.0_dp
 
         write(this%output_fmt3, 9003) basinOutVars
 
@@ -120,7 +120,7 @@ contains
   !     Output set of declared variables in CSV format
   !***********************************************************************
   module subroutine run_Basin_summary_ptr(this, ctl_data, model_time)
-    use prms_constants, only: MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
+    use prms_constants, only: dp, MAXFILE_LENGTH, DAILY, DAILY_MONTHLY, MONTHLY, &
                               MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
     implicit none
 
@@ -188,7 +188,7 @@ contains
           write_month = .true.
         endif
 
-        this%monthdays = this%monthdays + 1.0D0
+        this%monthdays = this%monthdays + 1.0_dp
         ! this%basin_var_monthly = this%basin_var_monthly + this%basin_var_daily
 
         if (write_month) then

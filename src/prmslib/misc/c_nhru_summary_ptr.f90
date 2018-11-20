@@ -31,7 +31,6 @@ MODULE PRMS_NHRU_SUMMARY_PTR
       !! Used to trigger processing in the run_Nhru_summary routine
     integer(i32) :: begyr
     integer(i32) :: daily_flag
-    integer(i32) :: double_vars = 0
     integer(i32) :: lastyear
     integer(i32) :: monthly_flag
     integer(i32) :: yeardays
@@ -48,7 +47,6 @@ MODULE PRMS_NHRU_SUMMARY_PTR
 
     type(var_ptrs), allocatable :: nhru_var_daily(:)
 
-    real(r64), allocatable :: nhru_var_dble(:, :)
     real(r64), allocatable :: nhru_var_monthly(:, :)
     real(r64), allocatable :: nhru_var_yearly(:, :)
 

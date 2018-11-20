@@ -55,13 +55,11 @@ module PRMS_BASIN_SUMMARY_PTR
 
   interface Basin_summary_ptr
     !! Basin_summary constructor
-    module function constructor_Basin_summary_ptr(ctl_data, param_data) result(this)
+    module function constructor_Basin_summary_ptr(ctl_data) result(this)
       type(Basin_summary_ptr) :: this
         !! Basin_summary class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
     end function
   end interface
 
