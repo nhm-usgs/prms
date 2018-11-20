@@ -154,9 +154,6 @@ contains
   !     Output set of declared variables in R compatible format
   !***********************************************************************
   module subroutine run_nhru_summary_ptr(this, ctl_data, model_time, model_basin)
-                                     ! climate, model_gw, model_intcp, model_precip, model_potet, model_snow, &
-                                     ! model_soil, model_solrad, model_srunoff, model_streamflow, model_temp, &
-                                     ! model_transp)
     use conversions_mod, only: c_to_f
     use prms_constants, only: dp
     implicit none
