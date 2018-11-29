@@ -46,6 +46,17 @@ contains
       allocate(this%potet(nhru))
       this%potet = 0.0
 
+      ! TODO: Figure this out (pulled from climateflow)
+      ! if (ctl_data%et_module%values(1)%s /= 'potet_pm' .and. &
+      !     ctl_data%et_module%values(1)%s /= 'potet_pt') then
+      !   ! ?anything needed?
+      ! else
+      !   ! This is confusing because humidity_percent appears to only be used
+      !   ! by potet_pm and potet_pt. But it's forced to 1.0 in this case which
+      !   ! overrides the parameter values.
+      !   humidity_percent = 1.0
+      ! endif
+
       if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
           (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
         allocate(this%humidity_hru(nhru))
