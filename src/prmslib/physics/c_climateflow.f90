@@ -42,7 +42,7 @@ module PRMS_CLIMATEVARS
     ! real(r32) :: solrad_tmax
     ! real(r32) :: solrad_tmin
 
-    ! NOTE: Why both units? When are these variables needed
+    ! NOTE: Why both units? When are these variables needed?
     ! real(r32), allocatable :: psta_elev_feet(:)
     ! real(r32), allocatable :: psta_elev_meters(:)
     ! real(r32), allocatable :: tsta_elev_feet(:)
