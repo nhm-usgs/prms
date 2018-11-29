@@ -61,6 +61,22 @@ contains
       this%pptmix = 0
       this%newsnow = 0
 
+      ! TODO: PAN - these variables don't appear to be used anymore
+      ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
+      !     ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
+      !     ctl_data%precip_module%values(1)%s == 'xyz_dist') then
+      !   allocate(this%psta_elev_feet(nrain))
+      !   allocate(this%psta_elev_meters(nrain))
+      !
+      !   if (elev_units == FEET) then
+      !     this%psta_elev_feet = psta_elev
+      !     this%psta_elev_meters = psta_elev * FEET2METERS
+      !   else
+      !     this%psta_elev_meters = psta_elev
+      !     this%psta_elev_feet = psta_elev * METERS2FEET
+      !   endif
+      ! endif
+
       ! ------------------------------------------------------------------------
       ! Set tmax_allrain in units of the input values
       ! tmax_allsnow must be in the units of the input values
