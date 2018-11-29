@@ -287,7 +287,7 @@ contains
             write (this%dailyunit(jj), this%output_fmt) curr_year, curr_month, curr_day, &
                                                         (this%nhru_var_daily(jj)%ptr_r64(j), j=1, nhru)
           else
-            write(*, *) MODNAME, 'No output array for variable', jj
+            write(*, *) MODNAME, 'No output array for variable index:', jj
           end if
           ! write (this%dailyunit(jj), this%output_fmt) curr_year, curr_month, curr_day, &
           !                                             (this%nhru_var_daily(j, jj), j = 1, nhru)
