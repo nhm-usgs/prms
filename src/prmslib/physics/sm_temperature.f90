@@ -42,6 +42,26 @@ contains
       allocate(this%basin_tmax)
       allocate(this%basin_tmin)
 
+
+      ! TODO: PAN - these variables don't appear to be used anymore
+      ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
+      !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
+      !   allocate(this%tsta_elev_feet(ntemp))
+      !   allocate(this%tsta_elev_meters(ntemp))
+      !
+      !   if (elev_units == FEET) then
+      !     this%tsta_elev_feet = tsta_elev
+      !     this%tsta_elev_meters = tsta_elev * FEET2METERS
+      !   else
+      !     this%tsta_elev_meters = tsta_elev
+      !     this%tsta_elev_feet = tsta_elev * METERS2FEET
+      !   endif
+      ! endif
+
+      ! TODO: PAN - these look like copies of tmax_adj and tmin_adj
+      !           - used by temp_1sta_laps and temp_dist2
+      ! allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
+
       ! Connect any basin summary variables that need to be output
       if (basinOutON_OFF == 1) then
         do jj=1, basinOutVars
