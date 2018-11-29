@@ -13,7 +13,7 @@ contains
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: jj
-    
+
     ! ------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
@@ -66,56 +66,6 @@ contains
 
       ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
       !       and ssstor_init_frac
-
-      ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
-      !     ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
-      !     ctl_data%precip_module%values(1)%s == 'xyz_dist') then
-      !   allocate(this%psta_elev_feet(nrain))
-      !   allocate(this%psta_elev_meters(nrain))
-      !
-      !   if (elev_units == FEET) then
-      !     this%psta_elev_feet = psta_elev
-      !     this%psta_elev_meters = psta_elev * FEET2METERS
-      !   else
-      !     this%psta_elev_meters = psta_elev
-      !     this%psta_elev_feet = psta_elev * METERS2FEET
-      !   endif
-      ! endif
-
-      ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
-      !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
-      !   allocate(this%tsta_elev_feet(ntemp))
-      !   allocate(this%tsta_elev_meters(ntemp))
-      !
-      !   if (elev_units == FEET) then
-      !     this%tsta_elev_feet = tsta_elev
-      !     this%tsta_elev_meters = tsta_elev * FEET2METERS
-      !   else
-      !     this%tsta_elev_meters = tsta_elev
-      !     this%tsta_elev_feet = tsta_elev * METERS2FEET
-      !   endif
-      ! endif
-
-      ! allocate(this%tmax_aspect_adjust(nhru, 12), this%tmin_aspect_adjust(nhru, 12))
-
-      ! TODO: Figure this out
-      ! if (ctl_data%et_module%values(1)%s /= 'potet_pm' .and. &
-      !     ctl_data%et_module%values(1)%s /= 'potet_pt') then
-      !   ! ?anything needed?
-      ! else
-      !   ! This is confusing because humidity_percent appears to only be used
-      !   ! by potet_pm and potet_pt. But it's forced to 1.0 in this case which
-      !   ! overrides the parameter values.
-      !   humidity_percent = 1.0
-      ! endif
-
-      ! NOTE: Doesn't appear to be used by stream_temp; computed in ccsolrad
-      ! For stream temperature
-      ! if (ctl_data%solrad_module%values(1)%s == 'ccsolrad' .or. &
-      !     ctl_data%solrad_module%values(1)%s == 'ddsolrad' .or. &
-      !     ctl_data%stream_temp_flag%value == 1) then
-      !   allocate(this%cloud_cover_hru(nhru))
-      ! endif
 
       ! if (init_vars_from_file == 1) then
       !   ! read(rst_unit) modname_rst
