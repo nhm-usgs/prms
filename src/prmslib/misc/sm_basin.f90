@@ -78,16 +78,6 @@ contains
         allocate(this%gwr_route_order(nhru))
       endif
 
-      ! NOTE: It appears that hru_elev_feet is no longer used.
-      ! NOTE: Elevation will be expected to use units meters.
-      ! if (et_module(1)%s == 'potet_pm' .or. et_module(1)%s == 'potet_pm_sta' .or. &
-      !     et_module(1)%s == 'potet_pt') then
-      !   allocate(this%hru_elev_feet(nhru))
-      !   allocate(this%hru_elev_meters(nhru))
-      ! elseif (precip_module(1)%s == 'ide_dist' .or. stream_temp_flag == 1) then
-      !   allocate(this%hru_elev_meters(nhru))
-      ! endif
-
       if (nlake > 0) then
         allocate(this%lake_area(nlake))
         this%lake_area = 0.0_dp
@@ -105,13 +95,11 @@ contains
       enddo
       this%active_hrus = j
 
-      ! if (model_mode(1)%s /= 'GSFLOW' .or. cascadegw_flag > 0) then
       if (.not. gsflow_mode .or. cascadegw_flag > 0) then
          this%active_gwrs = this%active_hrus
 
          ! WARNING: This modifies a parameter
          ! this%gwr_type = this%hru_type
-
          this%gwr_route_order = this%hru_route_order
       endif
 
@@ -160,6 +148,7 @@ contains
       this%numlakes_check = 0
       this%numlake_hrus = 0
 
+      ! TODO: 2018-11-29 PAN - would this belong better in muskingum_lake?
       ! if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. model_mode(1)%s /= 'GSFLOW') then
       if (nlake > 0 .and. strmflow_module(1)%s == 'muskingum_lake' .and. .not. gsflow_mode) then
         if (any([BCWEIR, GATEOP]==lake_type)) then
