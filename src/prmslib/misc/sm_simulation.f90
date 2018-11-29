@@ -128,11 +128,6 @@ submodule (Simulation_class) sm_simulation
 
         if (ctl_data%nhruOutON_OFF%value > 0) then
           call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin)
-          ! call this%summary_by_hru%run(ctl_data, this%model_time, this%model_basin, &
-          !                              this%climate, this%groundwater, this%intcp, &
-          !                              this%model_precip, this%potet, this%snow, &
-          !                              this%soil, this%solrad, this%runoff, this%model_muskingum, &
-          !                              this%model_temp, this%transpiration)
         endif
 
         if (ctl_data%print_debug%value == 1) then
