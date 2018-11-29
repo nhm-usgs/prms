@@ -305,9 +305,9 @@ module UTILS_CBH
       use netcdf
       implicit none
 
-      integer, intent ( in) :: status
+      integer, intent(in) :: status
 
-      if(status /= nf90_noerr) then
+      if (status /= nf90_noerr) then
         print *, trim(nf90_strerror(status))
         stop "Stopped"
       end if
