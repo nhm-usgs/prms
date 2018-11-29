@@ -164,7 +164,6 @@ contains
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
-              ! hru_elev_meters => model_basin%hru_elev_meters, &
               hru_route_order => model_basin%hru_route_order, &
 
               tavg => model_temp%tavg, &
