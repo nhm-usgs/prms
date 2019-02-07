@@ -1,12 +1,11 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_transp, basin_summary, nhru_summary) result(this)
+  module function constructor_Interception(ctl_data, model_basin, model_transp, basin_summary, nhru_summary) result(this)
     use prms_constants, only: dp
 
     type(Interception) :: this
-      !! Interception class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
+    type(Basin), intent(in) :: model_basin
     class(Transpiration), intent(in) :: model_transp
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
@@ -20,15 +19,18 @@ contains
     ! transp_on,
 
     ! -------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               init_vars_from_file => ctl_data%init_vars_from_file%value, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOutVars => ctl_data%nhruOutVars%value, &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+              param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
+
+              nhru => model_basin%nhru, &
+
               transp_on => model_transp%transp_on)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
@@ -37,6 +39,23 @@ contains
         ! Output module and version information
         call this%print_module_info()
       endif
+
+
+      ! Parameters
+      allocate(this%covden_sum(nhru))
+      call param_hdl%get_variable('covden_sum', this%covden_sum)
+
+      allocate(this%covden_win(nhru))
+      call param_hdl%get_variable('covden_win', this%covden_win)
+
+      allocate(this%snow_intcp(nhru))
+      call param_hdl%get_variable('snow_intcp', this%snow_intcp)
+
+      allocate(this%srain_intcp(nhru))
+      call param_hdl%get_variable('srain_intcp', this%srain_intcp)
+
+      allocate(this%wrain_intcp(nhru))
+      call param_hdl%get_variable('wrain_intcp', this%wrain_intcp)
 
       ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       ! this%use_transfer_intcp = 0
@@ -153,6 +172,7 @@ contains
     end associate
   end function
 
+
   module subroutine cleanup_Interception(this)
     class(Interception) :: this
       !! Interception class
@@ -160,20 +180,17 @@ contains
     ! TODO: Add write restart file stuff
   end subroutine
 
-  module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
+
+  module subroutine run_Interception(this, ctl_data, model_basin, &
                                      model_potet, model_precip, model_transp, model_climate, model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
                               LAKE, NEARZERO, DNEARZERO
     implicit none
 
     class(Interception) :: this
-      !! Interception class
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
-    type(Parameters), intent(in) :: param_data
-      !! Parameters
+    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
-      !! Basin variables
     class(Potential_ET), intent(in) :: model_potet
     class(Precipitation), intent(inout) :: model_precip
     class(Transpiration), intent(in) :: model_transp
@@ -187,7 +204,7 @@ contains
     ! Local Variables
     integer(i32) :: chru
     integer(i32) :: j
-    integer(i32) :: idx1D
+    ! integer(i32) :: idx1D
       !! Used for conversion of 2D index to 1D index
 
     real(r32) :: changeover
@@ -226,33 +243,36 @@ contains
     ! Transpiration
     ! transp_on,
 
+    ! TODO: Add the following later
+    ! nevap (in potet_pan)
+    ! epan_coef (in potet_pan) - but always required in intcp
+    ! hru_pansta (in potet_pan)
+
     ! --------------------------------------------------------------------------
-    associate(nevap => ctl_data%nevap%value, &
-              nhru => ctl_data%nhru%value, &
-              et_module => ctl_data%et_module%values, &
+    associate(et_module => ctl_data%et_module%values, &
               print_debug => ctl_data%print_debug%value, &
 
               Nowmonth => model_time%Nowmonth, &
               Nowyear => model_time%Nowyear, &
               Cfs_conv => model_time%Cfs_conv, &
 
+              nhru => model_basin%nhru, &
               basin_area_inv => model_basin%basin_area_inv, &
+              cov_type => model_basin%cov_type, &
               active_hrus => model_basin%active_hrus, &
+              hru_area => model_basin%hru_area, &
               hru_route_order => model_basin%hru_route_order, &
+              hru_type => model_basin%hru_type, &
 
-              hru_area => param_data%hru_area%values, &
-              hru_pansta => param_data%hru_pansta%values, &
-              hru_type => param_data%hru_type%values, &
-              covden_sum => param_data%covden_sum%values, &
-              covden_win => param_data%covden_win%values, &
-              cov_type => param_data%cov_type%values, &
-              epan_coef => param_data%epan_coef%values, &
-              potet_sublim => param_data%potet_sublim%values, &
-              snow_intcp => param_data%snow_intcp%values, &
-              srain_intcp => param_data%srain_intcp%values, &
-              wrain_intcp => param_data%wrain_intcp%values, &
+              ! covden_sum => param_data%covden_sum%values, &
+              ! covden_win => param_data%covden_win%values, &
+              ! snow_intcp => param_data%snow_intcp%values, &
+              ! srain_intcp => param_data%srain_intcp%values, &
+              ! wrain_intcp => param_data%wrain_intcp%values, &
 
+              epan_coef => model_potet%epan_coef, &
               potet => model_potet%potet, &
+              potet_sublim => model_potet%potet_sublim, &
 
               hru_ppt => model_precip%hru_ppt, &
               hru_rain => model_precip%hru_rain, &
@@ -290,7 +310,7 @@ contains
         this%net_ppt(chru) = hru_ppt(chru)
 
         ! 2D index to 1D
-        idx1D = (Nowmonth - 1) * nhru + chru
+        ! idx1D = (Nowmonth - 1) * nhru + chru
 
         if (hru_type(chru) == LAKE .or. cov_type(chru) == BARESOIL) then
           ! Lake or bare ground HRUs
@@ -311,9 +331,9 @@ contains
 
         ! ******Adjust interception amounts for changes in summer/winter cover density
         if (transp_on(chru)) then
-          this%canopy_covden(chru) = covden_sum(chru)
+          this%canopy_covden(chru) = this%covden_sum(chru)
         else
-          this%canopy_covden(chru) = covden_win(chru)
+          this%canopy_covden(chru) = this%covden_win(chru)
         endif
 
         ! *****Determine the amount of interception from rain
@@ -323,19 +343,19 @@ contains
 
           if (intcpstor > 0.0) then
             ! assume canopy storage change falls as throughfall
-            diff = covden_sum(chru) - this%canopy_covden(chru)
+            diff = this%covden_sum(chru) - this%canopy_covden(chru)
             changeover = intcpstor * diff
 
             if (this%canopy_covden(chru) > 0.0) then
               if (changeover < 0.0) then
                 ! covden_win > covden_sum, adjust intcpstor to same volume, and lower depth
-                intcpstor = intcpstor * covden_sum(chru) / this%canopy_covden(chru)
+                intcpstor = intcpstor * this%covden_sum(chru) / this%canopy_covden(chru)
                 changeover = 0.0
               endif
             else
               if (print_debug > -1) then
                 print *, 'covden_win=0 at winter change over with canopy storage, HRU:', chru, &
-                         'intcp_stor:', intcpstor, ' covden_sum:', covden_sum(chru)
+                         'intcp_stor:', intcpstor, ' covden_sum:', this%covden_sum(chru)
               endif
 
               intcpstor = 0.0
@@ -347,19 +367,19 @@ contains
           this%intcp_transp_on(chru) = .true.
 
           if (intcpstor > 0.0) then
-            diff = covden_win(chru) - this%canopy_covden(chru)
+            diff = this%covden_win(chru) - this%canopy_covden(chru)
             changeover = intcpstor * diff
 
             if (this%canopy_covden(chru) > 0.0) then
               if (changeover < 0.0) then
                 ! covden_sum > covden_win, adjust intcpstor to same volume, and lower depth
-                intcpstor = intcpstor * covden_win(chru) / this%canopy_covden(chru)
+                intcpstor = intcpstor * this%covden_win(chru) / this%canopy_covden(chru)
                 changeover = 0.0
               endif
             else
               if (print_debug > -1) then
                 print *, 'covden_sum=0 at summer change over with canopy storage, HRU:', chru, &
-                         'intcp_stor:', intcpstor, ' covden_win:', covden_win(chru)
+                         'intcp_stor:', intcpstor, ' covden_win:', this%covden_win(chru)
               endif
 
               intcpstor = 0.0
@@ -371,9 +391,9 @@ contains
         ! *****Determine the amount of interception from rain
         ! if (transp_on(chru) == 1) then
         if (transp_on(chru)) then
-          stor = srain_intcp(chru)
+          stor = this%srain_intcp(chru)
         else
-          stor = wrain_intcp(chru)
+          stor = this%wrain_intcp(chru)
         endif
 
         if (hru_rain(chru) > 0.0) then
@@ -441,7 +461,7 @@ contains
             this%intcp_form(chru) = 1
 
             if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
-              stor = snow_intcp(chru)
+              stor = this%snow_intcp(chru)
               call this%intercept(this%intcp_on(chru), netsnow, intcpstor, this%canopy_covden(chru), &
                                   hru_snow(chru), stor)
 
@@ -461,7 +481,8 @@ contains
         if (this%intcp_on(chru)) then
           ! If precipitation assume no evaporation or sublimation
           if (hru_ppt(chru) < NEARZERO) then
-            evrn = potet(chru) / epan_coef(idx1D)
+            ! evrn = potet(chru) / epan_coef(idx1D)
+            evrn = potet(chru) / epan_coef(chru, Nowmonth)
             evsn = potet_sublim(chru) * potet(chru)
 
             ! TODO: Uncomment when potet_pan module is added

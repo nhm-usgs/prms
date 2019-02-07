@@ -1,10 +1,11 @@
 submodule(PRMS_TEMPERATURE) sm_temperature
 contains
-  module function constructor_Temperature(ctl_data, basin_summary, nhru_summary) result(this)
+  module function constructor_Temperature(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
     type(Temperature) :: this
       !! Temperature class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
+    type(Basin), intent(in) :: model_basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
@@ -14,14 +15,16 @@ contains
     ! nhru,
 
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              print_debug => ctl_data%print_debug%value, &
+    associate(print_debug => ctl_data%print_debug%value, &
               basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values)
+              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+              param_hdl => ctl_data%param_file_hdl, &
+
+              nhru => model_basin%nhru)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -30,6 +33,11 @@ contains
         call this%print_module_info()
       endif
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Read the parameters for the temperature module
+      call param_hdl%get_variable('temp_units', this%temp_units)
+
+      ! Setup class variables
       allocate(this%tavg(nhru))
       allocate(this%tmax(nhru))
       allocate(this%tmin(nhru))
@@ -125,12 +133,12 @@ contains
     end associate
   end function
 
-  module subroutine run_Temperature(this, ctl_data, param_data, model_basin, model_time, nhru_summary)
+  module subroutine run_Temperature(this, ctl_data, model_basin, model_time, nhru_summary)
     implicit none
 
     class(Temperature), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in), optional :: model_time
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary

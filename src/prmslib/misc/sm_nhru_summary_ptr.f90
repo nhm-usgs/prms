@@ -2,14 +2,15 @@ submodule (PRMS_NHRU_SUMMARY_PTR) sm_nhru_summary_ptr
 contains
   !***********************************************************************
   ! Climateflow constructor
-  module function constructor_Nhru_summary_ptr(ctl_data, param_data) result(this)
+  module function constructor_Nhru_summary_ptr(ctl_data, model_basin) result(this)
     use prms_constants, only: MAXFILE_LENGTH, dp
     use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
     implicit none
 
     type(Nhru_summary_ptr) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    type(Basin), intent(in) :: model_basin
+    ! type(Parameters), intent(in) :: param_data
 
     ! Local variables
     integer(i32) :: ios
@@ -18,14 +19,15 @@ contains
     character(len=MAXFILE_LENGTH) :: fileName
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              print_debug => ctl_data%print_debug%value, &
+    associate(print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               end_time => ctl_data%end_time%values, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOut_freq => ctl_data%nhruOut_freq%value, &
               nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhm_id => param_data%nhm_id%values)
+
+              nhru => model_basin%nhru, &
+              nhm_id => model_basin%nhm_id)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -188,7 +190,8 @@ contains
               nhruOutVars => ctl_data%nhruOutVars%value, &
               nhruOut_freq => ctl_data%nhruOut_freq%value, &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
-              nhru => ctl_data%nhru%value, &
+
+              nhru => model_basin%nhru, &
               active_hrus => model_basin%active_hrus, &
               hru_route_order => model_basin%hru_route_order)
 

@@ -7,7 +7,6 @@ module PRMS_BASIN_SUMMARY_PTR
                             MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   implicit none
 

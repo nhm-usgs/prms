@@ -2,7 +2,6 @@ module PRMS_PRECIPITATION_HRU
   use variableKind
   use prms_constants, only: dp
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_PRECIPITATION, only: Precipitation
@@ -19,6 +18,12 @@ module PRMS_PRECIPITATION_HRU
   character(len=*), parameter :: MODVERSION = '2018-10-10 15:55:00Z'
 
   type, extends(Precipitation) :: Precipitation_hru
+    ! Parameters for precipitation by HRU
+    real(r32), allocatable :: rain_cbh_adj(:, :)
+    real(r32), allocatable :: snow_cbh_adj(:, :)
+    real(r32), allocatable :: adjmix_rain(:, :)
+
+    ! Other variables
     integer(i32), private :: precip_funit
       !! Precipitation CBH file unit
     integer(i32), private :: precip_varid
@@ -32,12 +37,13 @@ module PRMS_PRECIPITATION_HRU
 
   interface Precipitation_hru
     !! Precipitation_hru constructor
-    module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary, nhru_summary) result(this)
+    module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
       type(Precipitation_hru) :: this
         !! Precipitation_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
       type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
         !! Summary by HRU module
@@ -45,10 +51,9 @@ module PRMS_PRECIPITATION_HRU
   end interface
 
   interface
-    module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
+    module subroutine run_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_time, nhru_summary)
       class(Precipitation_hru), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Time_t), intent(in), optional :: model_time

@@ -3,7 +3,6 @@ module PRMS_TRANSPIRATION
   use prms_constants, only: sp, dp
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use prms_constants, only: dp
   implicit none
@@ -18,7 +17,7 @@ module PRMS_TRANSPIRATION
   type, extends(ModelBase) :: Transpiration
     ! integer(i32) :: basin_transp_on
     logical :: basin_transp_on
-    
+
     logical, allocatable :: transp_on(:)
     ! integer(i32), allocatable :: transp_on(:)
 
@@ -28,11 +27,12 @@ module PRMS_TRANSPIRATION
 
   interface Transpiration
     !! Transpiration constructor
-    module function constructor_Transpiration(ctl_data) result(this)
+    module function constructor_Transpiration(ctl_data, model_basin) result(this)
       type(Transpiration) :: this
         !! Transpiration class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin), intent(in) :: model_basin
     end function
   end interface
 

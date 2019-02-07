@@ -1,7 +1,6 @@
 module PRMS_MUSKINGUM
   use variableKind
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_OBS, only: Obs
@@ -23,6 +22,12 @@ module PRMS_MUSKINGUM
   character(len=*), parameter :: MODVERSION = '2018-10-10 18:09:00Z'
 
   type, extends(Streamflow) :: Muskingum
+    ! Parameters
+    real(r32), allocatable :: x_coef(:)
+      !! The amount of attenuation of the flow wave, called the Muskingum routing weighting factor; enter 0.0 for reservoirs, diversions, and segment(s) flowing out of the basin
+    real(r32), allocatable :: K_coef(:)
+      !! Travel time of flood wave from one segment to the next downstream segment, called the Muskingum storage coefficient; enter 1.0 for reservoirs, diversions, and segment(s) flowing out of the basin
+
     ! Local Variables
     real(r64), allocatable :: currinsum(:)
     real(r64), allocatable :: inflow_ts(:)
@@ -54,7 +59,7 @@ module PRMS_MUSKINGUM
 
   interface Muskingum
     !! Muskingum constructor
-    module function constructor_Muskingum(ctl_data, param_data, model_basin, &
+    module function constructor_Muskingum(ctl_data, model_basin, &
                                           model_time, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp
       implicit none
@@ -63,8 +68,6 @@ module PRMS_MUSKINGUM
         !! Muskingum class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
@@ -73,8 +76,9 @@ module PRMS_MUSKINGUM
     end function
   end interface
 
+
   interface
-    module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Muskingum(this, ctl_data, model_basin, &
                                     model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
       use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
@@ -84,8 +88,6 @@ module PRMS_MUSKINGUM
         !! Muskingum class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(in) :: model_potet

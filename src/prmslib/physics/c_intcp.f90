@@ -8,7 +8,6 @@ module PRMS_INTCP
   use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
@@ -28,10 +27,24 @@ module PRMS_INTCP
   character(len=*), parameter :: MODVERSION = '2018-10-10 16:48:00Z'
 
   type, extends(ModelBase) :: Interception
+    ! Dimensions
+
+    ! Parameters
+    real(r32), allocatable :: covden_sum(:)
+      !! Summer vegetation cover density for the major vegetation type in each HRU
+    real(r32), allocatable :: covden_win(:)
+      !! Winter vegetation cover density for the major vegetation type in each HRU
+    real(r32), allocatable :: snow_intcp(:)
+      !! Snow interception storage capacity for the major vegetation type in each HRU
+    real(r32), allocatable :: srain_intcp(:)
+      !! Summer rain interception storage capacity for the major vegetation type in each HRU
+    real(r32), allocatable :: wrain_intcp(:)
+      !! Winter rain interception storage capacity for the major vegetation type in each HRU
+
     ! Local Variables
     real(r32), allocatable :: gain_inches(:)
     real(r32), allocatable :: intcp_changeover(:)
-    real(r32), allocatable :: intcp_stor_ante(:)
+    real(r64), allocatable :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
@@ -75,11 +88,12 @@ module PRMS_INTCP
 
   interface Interception
     !! Intercept constructor
-    module function constructor_Interception(ctl_data, model_transp, basin_summary, nhru_summary) result(this)
+    module function constructor_Interception(ctl_data, model_basin, model_transp, basin_summary, nhru_summary) result(this)
       type(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin), intent(in) :: model_basin
       class(Transpiration), intent(in) :: model_transp
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
@@ -89,14 +103,12 @@ module PRMS_INTCP
   end interface
 
   interface
-    module subroutine run_Interception(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Interception(this, ctl_data, model_basin, &
                                        model_potet, model_precip, model_transp, model_climate, model_time)
       class(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(in) :: model_potet

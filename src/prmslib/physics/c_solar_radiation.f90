@@ -3,7 +3,6 @@ module SOLAR_RADIATION
   use prms_constants, only: sp, dp
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use prms_constants, only: dp
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
@@ -24,6 +23,27 @@ module SOLAR_RADIATION
   real(r64), parameter :: PI_12 = 12.0_dp / PI      ! PI_12 ~ 3.8197186342055
 
   type, extends(ModelBase) :: SolarRadiation
+    ! Dimensions
+    integer(i32) :: nsol = 0
+      !! Number of solar radiation stations
+
+    ! Parameters
+    integer(i32) :: basin_solsta
+    integer(i32) :: rad_conv
+      !! Conversion factor to langleys for measured solar radiation
+    integer(i32), allocatable :: hru_solsta(:)
+    real(r32), allocatable :: ppt_rad_adj(:, :)
+      !! Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is multiplied by radj_sppt or radj_wppt precipitation adjustment factor
+    real(r32), allocatable :: radj_sppt(:)
+    real(r32), allocatable :: radj_wppt(:)
+    real(r32), allocatable :: radmax(:, :)
+      !! Monthly (January to December maximum fraction of the potential solar radiation that may reach the ground due to haze, dust, smog, and so forth, for each HRU
+
+    ! Time-series input variables
+    real(r32), allocatable :: solrad(:)
+      !! Solar radiation at each measurement station
+
+    ! Other variables
     logical :: has_basin_obs_station
       !! When true has a main solar radiation station
     logical :: has_hru_obs_station
@@ -65,13 +85,11 @@ module SOLAR_RADIATION
 
   interface SolarRadiation
     !! SolarRadiation constructor
-    module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_SolarRadiation(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
       type(SolarRadiation) :: this
         !! SolarRadiation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary

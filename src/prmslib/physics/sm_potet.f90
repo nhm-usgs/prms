@@ -1,11 +1,12 @@
 submodule(PRMS_POTET) sm_potet
 contains
-  module function constructor_Potet(ctl_data, basin_summary, nhru_summary) result(this)
+  module function constructor_Potet(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     type(Potential_ET) :: this
     type(Control), intent(in) :: ctl_data
+    type(Basin), intent(in) :: model_basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
@@ -19,8 +20,7 @@ contains
     ! strmtemp_humidity_flag,
 
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
@@ -28,13 +28,17 @@ contains
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
+              param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
 
               ! NOTE: humidity_day needs a default value to be associated
               ! humidity_day => ctl_data%humidity_day%values(1), &
               start_time => ctl_data%start_time%values, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
-              strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value)
+              strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
+
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -42,6 +46,12 @@ contains
         ! Output module and version information
         call this%print_module_info()
       endif
+
+      allocate(this%epan_coef(nhru, nmonths))
+      call param_hdl%get_variable('epan_coef', this%epan_coef)
+
+      allocate(this%potet_sublim(nhru))
+      call param_hdl%get_variable('potet_sublim', this%potet_sublim)
 
       allocate(this%potet(nhru))
       this%potet = 0.0
@@ -112,10 +122,10 @@ contains
     end associate
   end function
 
-  module subroutine run_Potet(this, ctl_data, param_data, model_basin)
+  module subroutine run_Potet(this, ctl_data, model_basin)
     class(Potential_ET), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
 
     ! Local variables
@@ -133,12 +143,13 @@ contains
     ! hru_area,
 
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              et_module => ctl_data%et_module%values(1), &
+    associate(et_module => ctl_data%et_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
+
+              nhru => model_basin%nhru, &
               basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => param_data%hru_area%values)
+              hru_area => model_basin%hru_area)
 
       ! Humidity
       if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &

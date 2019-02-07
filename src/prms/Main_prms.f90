@@ -7,7 +7,7 @@ program prms6
   ! use, intrinsic :: iso_c_binding, only: c_sizeof
   use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
+  ! use Parameters_class, only: Parameters
   use Simulation_class, only: Simulation
   ! use ieee_arithmetic
   ! use ieee_features
@@ -17,7 +17,7 @@ program prms6
     !! Name of the control file
   type(Control) :: Control_data
     !! Class of control file related parameters
-  type(Parameters) :: Parameter_data
+  ! type(Parameters) :: Parameter_data
     !! Class of input parameters
   type(Simulation) :: model_simulation
     !! PRMS model simulation class
@@ -68,18 +68,18 @@ program prms6
 
   ! TODO: How to handle allocation and reading of parameter variables depending
   !       on which physics modules are selected?
-  Parameter_data = Parameters(Control_data)
+  ! Parameter_data = Parameters(Control_data)
 
   ! TODO: Need routines for setting up output variables
 
 
   ! Initialize the simulation object
-  model_simulation = Simulation(Control_data, Parameter_data)
+  model_simulation = Simulation(Control_data)
 
   write(output_unit, fmt='(a)') repeat('=', 72)
 
   ! Run the simulation
-  call model_simulation%run(Control_data, Parameter_data)
+  call model_simulation%run(Control_data)
 
   ! TODO: Open, position, and read any ancillary data including:
   !       CBH files,

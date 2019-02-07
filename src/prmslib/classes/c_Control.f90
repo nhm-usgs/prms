@@ -6,6 +6,8 @@ module Control_class
   use sArray_class, only: sArray
   use iScalar_class, only: iScalar
   use rScalar_class, only: rScalar
+  use PRMS_FILE_IO, only: FileIO
+  use PRMS_FILE_IO_NETCDF, only: FileIO_netcdf
   implicit none
 
   private
@@ -16,38 +18,6 @@ module Control_class
   character(len=*), parameter :: MODVERSION = '2018-04-05 13:50:00Z'
 
   type Control
-    ! Allowed dimensions
-    type(iScalar) :: ncascade
-    type(iScalar) :: ncascdgw
-    type(iScalar) :: nconsumed
-    type(iScalar) :: ndays
-    type(iScalar) :: ndepl
-    type(iScalar) :: ndeplval
-    type(iScalar) :: nevap
-    type(iScalar) :: nexternal
-    type(iScalar) :: ngw
-    type(iScalar) :: ngwcell
-    type(iScalar) :: nhru
-    type(iScalar) :: nhrucell
-    type(iScalar) :: nhumid
-    type(iScalar) :: nlake
-    type(iScalar) :: nlakeelev
-    type(iScalar) :: nlapse
-    type(iScalar) :: nmonths
-    type(iScalar) :: nobs
-    type(iScalar) :: npoigages
-    type(iScalar) :: nrain
-    type(iScalar) :: nratetbl
-    type(iScalar) :: nsegment
-    type(iScalar) :: nsnow
-    type(iScalar) :: nsol
-    type(iScalar) :: nssr
-    type(iScalar) :: nsub
-    type(iScalar) :: ntemp
-    type(iScalar) :: nwateruse
-    type(iScalar) :: nwind
-    type(iScalar) :: one
-
     ! Control variables
     type(iScalar) :: aniOutON_OFF
     type(sArray) :: aniOutVar_names
@@ -197,6 +167,10 @@ module Control_class
 
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
+
+    type(FileIO_netcdf) :: param_file_hdl
+    ! class(FileIO), allocatable :: param_file_hdl
+      !! Parameter file handle to opened file
 
     contains
       procedure, public :: read => read_Control

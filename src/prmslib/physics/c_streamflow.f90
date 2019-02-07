@@ -3,7 +3,6 @@ module PRMS_STREAMFLOW
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_POTET, only: Potential_ET
@@ -24,6 +23,21 @@ module PRMS_STREAMFLOW
   character(len=*), parameter :: MODVERSION = '2018-10-10 18:09:00Z'
 
   type, extends(ModelBase) :: Streamflow
+      ! Parameters
+      integer(i32), allocatable :: hru_segment(:)
+        !! Segment index to which an HRU contributes lateral flows (surface runoff, interflow, and groundwater discharge)
+      integer(i32), allocatable :: obsin_segment(:)
+        !! Index of measured streamflow station that replaces inflow to a segment
+      integer(i32), allocatable :: obsout_segment(:)
+        !! Index of measured streamflow station that replaces outflow from a segment
+      real(r32), allocatable :: segment_flow_init(:)
+        !! Initial flow in each stream segment
+      integer(i32), allocatable :: segment_type(:)
+        !! Segment type (0=segment; 1= headwater; 2=lake; 3=replace inflow; 4=inbound to NHM; 5=outbound from NHM; 6=inbound to region; 7=outbound from region; 8=drains to ocean; 9=sink; 10=inbound from Great Lakes; 11=outbound to Great Lakes)
+      integer(i32), allocatable :: tosegment(:)
+        !! Index of downstream segment to which the segment streamflow flows; for segments that do not flow to another segment enter 0
+
+
       ! Local Variables
       integer(i32), private :: noarea_flag
       real(r64), private :: segment_area
@@ -118,13 +132,11 @@ module PRMS_STREAMFLOW
 
   interface Streamflow
     !! Streamflow constructor
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
+    module function constructor_Streamflow(ctl_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
       type(Streamflow) :: this
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
@@ -135,7 +147,7 @@ module PRMS_STREAMFLOW
   end interface
 
   interface
-    module subroutine run_Streamflow(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Streamflow(this, ctl_data, model_basin, &
                                      model_potet, groundwater, soil, runoff, &
                                      model_time, model_solrad)
       use prms_constants, only: dp, NEARZERO
@@ -145,8 +157,6 @@ module PRMS_STREAMFLOW
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(in) :: model_potet

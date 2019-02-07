@@ -1,15 +1,11 @@
 submodule (PRMS_STREAMFLOW) sm_streamflow
   contains
-    module function constructor_Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
+    module function constructor_Streamflow(ctl_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp, DNEARZERO, FT2_PER_ACRE, NEARZERO
       implicit none
 
       type(Streamflow) :: this
-        !! Streamflow class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
@@ -46,9 +42,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       ! Timestep_seconds
 
       ! ------------------------------------------------------------------------
-      associate(nhru => ctl_data%nhru%value, &
-                nsegment => ctl_data%nsegment%value, &
-                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+      associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
                 basinOutVars => ctl_data%basinOutVars%value, &
                 basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascade_flag => ctl_data%cascade_flag%value, &
@@ -56,17 +50,20 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
                 nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
                 nhruOutVars => ctl_data%nhruOutVars%value, &
                 nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+                param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
 
-                hru_segment => param_data%hru_segment%values, &
+                ! hru_segment => param_data%hru_segment%values, &
                 ! K_coef => param_data%K_coef%values, &
-                obsin_segment => param_data%obsin_segment%values, &
-                segment_type => param_data%segment_type%values, &
-                tosegment => param_data%tosegment%values, &
+                ! obsin_segment => param_data%obsin_segment%values, &
+                ! segment_type => param_data%segment_type%values, &
+                ! tosegment => param_data%tosegment%values, &
                 ! x_coef => param_data%x_coef%values, &
 
+                nhru => model_basin%nhru, &
+                nsegment => model_basin%nsegment, &
                 active_hrus => model_basin%active_hrus, &
                 hru_area_dble => model_basin%hru_area_dble, &
                 hru_route_order => model_basin%hru_route_order, &
@@ -80,6 +77,30 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           call this%print_module_info()
         endif
 
+        ! Parameters
+        allocate(this%hru_segment(nhru))
+        call param_hdl%get_variable('hru_segment', this%hru_segment)
+
+        allocate(this%obsin_segment(nsegment))
+        call param_hdl%get_variable('obsin_segment', this%obsin_segment)
+
+        if (param_hdl%var_exists('obsout_segment')) then
+          allocate(this%obsout_segment(nsegment))
+          call param_hdl%get_variable('obsout_segment', this%obsout_segment)
+        end if
+
+        allocate(this%segment_flow_init(nsegment))
+        call param_hdl%get_variable('segment_flow_init', this%segment_flow_init)
+
+        allocate(this%segment_type(nsegment))
+        call param_hdl%get_variable('segment_type', this%segment_type)
+
+        allocate(this%tosegment(nsegment))
+        call param_hdl%get_variable('tosegment', this%tosegment)
+
+
+
+        ! Other variables
         allocate(this%hru_outflow(nhru))
 
         allocate(this%seg_lateral_inflow(nsegment))
@@ -206,12 +227,11 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         this%noarea_flag = 0
 
         if (cascade_flag == 0) then
-          ! if ( getparam(MODNAME, 'hru_segment', Nhru, 'integer', hru_segment)/=0 ) CALL read_error(2, 'hru_segment')
           this%segment_hruarea = 0.0_dp
 
           do j=1, active_hrus
             i = hru_route_order(j)
-            iseg = hru_segment(i)
+            iseg = this%hru_segment(i)
 
             if (iseg > 0) then
               this%segment_hruarea(iseg) = this%segment_hruarea(iseg) + hru_area_dble(i)
@@ -234,8 +254,8 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         ! Begin the loops for ordering segments
         do j=1, nsegment
-          iseg = obsin_segment(j)
-          toseg = tosegment(j)
+          iseg = this%obsin_segment(j)
+          toseg = this%tosegment(j)
 
           if (toseg == j) then
             print *, 'ERROR, tosegment value (', toseg, ') equals itself for segment:', j
@@ -257,6 +277,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         x_off = 0
         this%segment_order = 0
         lval = 0
+
         do while (lval < nsegment)
           do i=1, nsegment
             ! If segment "i" has not been crossed out consider it, else continue
@@ -265,7 +286,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             ! Test to see if segment "i" is the to segment from other segments
             test = 1
             do j=1, nsegment
-              if (tosegment(j) == i) then
+              if (this%tosegment(j) == i) then
                 ! If segment "i" is a to segment, test to see if the originating
                 ! segment has been crossed off the list.  If all have been, then
                 ! put the segment in as an ordered segment.
@@ -313,23 +334,17 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
     end function
 
 
-    module subroutine run_Streamflow(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Streamflow(this, ctl_data, model_basin, &
                                   model_potet, groundwater, soil, runoff, &
                                   model_time, model_solrad)
       use prms_constants, only: dp, FT2_PER_ACRE, NEARZERO
       implicit none
 
       class(Streamflow) :: this
-        !! Streamflow class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
-        !! Basin variables
       class(Potential_ET), intent(in) :: model_potet
       type(Gwflow), intent(in) :: groundwater
-        !! Groundwater variables
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
       type(Time_t), intent(in) :: model_time
@@ -373,14 +388,14 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       ! segment_gain, segment_transfer
 
       !***********************************************************************
-      associate(nsegment => ctl_data%nsegment%value, &
-                cascade_flag => ctl_data%cascade_flag%value, &
+      associate(cascade_flag => ctl_data%cascade_flag%value, &
 
-                hru_area => param_data%hru_area%values, &
-                hru_segment => param_data%hru_segment%values, &
-                tosegment => param_data%tosegment%values, &
+                ! hru_segment => param_data%hru_segment%values, &
+                ! tosegment => param_data%tosegment%values, &
 
+                nsegment => model_basin%nsegment, &
                 active_hrus => model_basin%active_hrus, &
+                hru_area => model_basin%hru_area, &
                 hru_route_order => model_basin%hru_route_order, &
 
                 potet => model_potet%potet, &
@@ -424,7 +439,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%hru_outflow(j) = dble(sroff(j) + ssres_flow(j) + gwres_flow(j)) * tocfs
 
           if (cascade_flag == 0) then
-            i = hru_segment(j)
+            i = this%hru_segment(j)
 
             if (i > 0) then
               this%seg_gwflow(i) = this%seg_gwflow(i) + gwres_flow(j)
@@ -462,9 +477,9 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             if (this%segment_hruarea(i) > NEARZERO) then
               this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
               this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
-            elseif (tosegment(i) > 0) then
-              this%seginc_swrad(i) = this%seginc_swrad(tosegment(i))
-              this%seginc_potet(i) = this%seginc_potet(tosegment(i))
+            elseif (this%tosegment(i) > 0) then
+              this%seginc_swrad(i) = this%seginc_swrad(this%tosegment(i))
+              this%seginc_potet(i) = this%seginc_potet(this%tosegment(i))
             elseif (i > 1) then
               ! Set to next segment id
               this%seginc_swrad(i) = this%seginc_swrad(i-1)

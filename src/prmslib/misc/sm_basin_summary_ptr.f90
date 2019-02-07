@@ -137,6 +137,7 @@ contains
     associate(curr_year => model_time%Nowtime(YEAR), &
               curr_month => model_time%Nowtime(MONTH), &
               curr_day => model_time%Nowtime(DAY), &
+              
               st_year => ctl_data%start_time%values(YEAR), &
               st_month => ctl_data%start_time%values(MONTH), &
               st_day => ctl_data%start_time%values(DAY), &

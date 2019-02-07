@@ -1,29 +1,27 @@
 #file(GLOB sources "${CMAKE_CURRENT_LIST_DIR}/*.f90")
 target_sources(${PROJECT_NAME} PRIVATE
-    #"${CMAKE_CURRENT_LIST_DIR}/old/base_datatypes.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_prms_time.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_basin.f90"
-    # "${CMAKE_CURRENT_LIST_DIR}/c_Basin_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_basin_summary_ptr.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_constants.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_conversions.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_utils_cbh.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/Datetime_class.f90"
-    # "${CMAKE_CURRENT_LIST_DIR}/c_nhru_summary.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_FileIO.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_FileIO_netcdf.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_nhru_summary_ptr.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_obs.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_Simulation.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_water_balance.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_prms_time.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_basin.f90"
-    # "${CMAKE_CURRENT_LIST_DIR}/sm_basin_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_basin_summary_ptr.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_FileIO_netcdf.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_obs.f90"
-    # "${CMAKE_CURRENT_LIST_DIR}/sm_nhru_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_nhru_summary_ptr.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_simulation.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_water_balance.f90"
-  "${CMAKE_CURRENT_LIST_DIR}/m_utils_prms.f90")
+    "${CMAKE_CURRENT_LIST_DIR}/m_utils_prms.f90")
 
 # The simulation code must always be compiled without any optimization.
 # Any optimization will result in a segault early in execution.

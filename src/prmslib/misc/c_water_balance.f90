@@ -3,7 +3,6 @@ module PRMS_WATER_BALANCE
   use prms_constants, only: dp, sp
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
@@ -60,19 +59,18 @@ module PRMS_WATER_BALANCE
 
   interface WaterBalance
     !! WaterBalance constructor
-    module function constructor_WaterBalance(ctl_data, param_data, model_gwflow) result(this)
+    module function constructor_WaterBalance(ctl_data, model_basin, model_gwflow) result(this)
       type(WaterBalance) :: this
         !! WaterBalance class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
+      type(Basin), intent(in) :: model_basin
       type(Gwflow), intent(in) :: model_gwflow
     end function
   end interface
 
   interface
-    module subroutine run_WaterBalance(this, ctl_data, param_data, model_basin, &
+    module subroutine run_WaterBalance(this, ctl_data, model_basin, &
                                        model_climate, model_gwflow, model_intcp, &
                                        model_precip, model_snow, model_soilzone, &
                                        model_srunoff, model_time)
@@ -80,8 +78,6 @@ module PRMS_WATER_BALANCE
         !! WaterBalance class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate

@@ -2,7 +2,6 @@ module PRMS_GWFLOW
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
@@ -22,6 +21,26 @@ module PRMS_GWFLOW
   character(len=*), parameter :: MODVERSION = '2018-10-10 17:53:00Z'
 
   type, extends(ModelBase) :: Gwflow
+    ! Dimensions
+    integer(i32) :: ngw
+      !! Number of groundwater reservoirs
+
+    ! Parameters
+    real(r32), allocatable :: gwflow_coef(:)
+    real(r32), allocatable :: gwsink_coef(:)
+    real(r32), allocatable :: gwstor_init(:)
+    real(r32), allocatable :: gwstor_min(:)
+
+    ! NOTE: manual says the following is part of muskingum_lake but only gwflow uses
+    !       them when weir_gate_flag == 1 (set in Basin module)
+    real(r32), allocatable :: elevlake_init(:)
+      !! Initial lake surface elevation for each lake using broad-crested weir routing or gate opening routing
+    real(r32), allocatable :: gw_seep_coef(:)
+      !! Linear coefficient in equation to compute lakebed seepage to the GWR and groundwater discharge to each lake using broad-crested weir routing or gate opening routing
+    real(r32), allocatable :: lake_seep_elev(:)
+      !! Elevation over which lakebed seepage to the GWR occurs for lake HRUs using broad-crested weir routing or gate opening routing
+
+
     ! Local Variables
     real(r64), allocatable :: gwstor_minarea(:)
     real(r64), allocatable :: gwin_dprst(:)
@@ -71,15 +90,13 @@ module PRMS_GWFLOW
 
   interface Gwflow
     !! Gwflow constructor
-    module function constructor_Gwflow(ctl_data, param_data, model_basin, &
+    module function constructor_Gwflow(ctl_data, model_basin, &
                                        model_climate, intcp, soil, runoff, &
                                        basin_summary, nhru_summary) result(this)
       type(Gwflow) :: this
        !! Gwflow class
       type(Control), intent(in) :: ctl_data
        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-       !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
        !! Climate variables
@@ -93,14 +110,12 @@ module PRMS_GWFLOW
   end interface
 
   interface
-    module subroutine run_Gwflow(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Gwflow(this, ctl_data, model_basin, &
                                    model_climate, intcp, soil, runoff, model_time)
       class(Gwflow), intent(inout) :: this
         !! Gwflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       ! type(Cascade), intent(in) :: model_cascade

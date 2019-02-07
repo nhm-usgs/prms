@@ -2,7 +2,6 @@ module PRMS_SRUNOFF
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
@@ -21,6 +20,49 @@ module PRMS_SRUNOFF
   character(len=*), parameter :: MODVERSION = '2018-10-10 17:23:00Z'
 
   type, extends(ModelBase) :: Srunoff
+    ! Parameters
+    real(r32), allocatable :: carea_max(:)
+      !! Maximum possible area contributing to surface runoff expressed as a portion of the HRU area
+    real(r32), allocatable :: carea_min(:)
+      !! Minimum possible area contributing to surface runoff expressed as a portion of the area for each HRU
+    real(r32), allocatable :: imperv_stor_max(:)
+      !! Maximum impervious area retention storage for each HRU
+    real(r32), allocatable :: smidx_coef(:)
+      !! Coefficient in non-linear contributing area algorithm for each HRU
+    real(r32), allocatable :: smidx_exp(:)
+      !! Exponent in non-linear contributing area algorithm for each HRU
+    real(r32), allocatable :: snowinfil_max(:)
+      !! Maximum snow infiltration per day for each HRU
+
+    ! NOTE: The following dprst_* parameters are only needed when dprst_flag = 1
+
+    real(r32), allocatable :: dprst_depth_avg(:)
+      !! Average depth of storage depressions at maximum storage capacity
+    real(r32), allocatable :: dprst_et_coef(:)
+      !! Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage
+    real(r32), allocatable :: dprst_flow_coef(:)
+      !! Coefficient in linear flow routing equation for open surface depressions for each HRU
+
+    real(r32), allocatable :: dprst_frac_init(:)
+      !! Fraction of maximum surface-depression storage that contains water at the start of a simulation
+    real(r32), allocatable :: dprst_frac_open(:)
+      !! Fraction of open surface-depression storage area within an HRU that can generate surface runoff as a function of storage volume
+    real(r32), allocatable :: dprst_seep_rate_clos(:)
+      !! Coefficient used in linear seepage flow equation for closed surface depressions for each HRU
+    real(r32), allocatable :: dprst_seep_rate_open(:)
+      !! Coefficient used in linear seepage flow equation for open surface depressions for each HRU
+    real(r32), allocatable :: op_flow_thres(:)
+      !! Fraction of open depression storage above which surface runoff occurs; any water above maximum open storage capacity spills as surface runoff
+    real(r32), allocatable :: sro_to_dprst_imperv(:)
+      !! Fraction of impervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
+    real(r32), allocatable :: sro_to_dprst_perv(:)
+      !! Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
+    real(r32), allocatable :: va_clos_exp(:)
+      !! Coefficient in the exponential equation relating maximum surface area to the fraction that closed depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
+    real(r32), allocatable :: va_open_exp(:)
+      !! Coefficient in the exponential equation relating maximum surface area to the fraction that open depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
+
+
     ! Local Variables
     logical :: has_closed_dprst
       !! NOTE: replaces dprst_clos_flag
@@ -128,13 +170,11 @@ module PRMS_SRUNOFF
 
   interface Srunoff
     !! Srunoff constructor
-    module function constructor_Srunoff(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_Srunoff(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Srunoff) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
@@ -144,15 +184,13 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine run_Srunoff(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Srunoff(this, ctl_data, model_basin, &
                                   model_climate, model_potet, intcp, snow, &
                                   model_time)
       class(Srunoff), intent(inout) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
@@ -173,9 +211,8 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine check_capacity(this, param_data, model_climate, idx)
+    module subroutine check_capacity(this, model_climate, idx)
       class(Srunoff), intent(inout) :: this
-      type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
       ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
@@ -183,20 +220,18 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine dprst_init(this, ctl_data, param_data, model_basin)
+    module subroutine dprst_init(this, ctl_data, model_basin)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
     end subroutine
   end interface
 
   interface
-    module subroutine dprst_comp(this, ctl_data, param_data, model_basin, model_climate, model_potet, intcp, &
+    module subroutine dprst_comp(this, ctl_data, model_basin, model_climate, model_potet, intcp, &
                                  snow, model_time, idx, avail_et)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
       class(Potential_ET), intent(in) :: model_potet
@@ -209,10 +244,10 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine imperv_et(this, idx, param_data, potet, sca, avail_et)
+    module subroutine imperv_et(this, model_basin, idx, potet, sca, avail_et)
       class(Srunoff), intent(inout) :: this
+      type(Basin), intent(in) :: model_basin
       integer(i32), intent(in) :: idx
-      type(Parameters), intent(in) :: param_data
       real(r32), intent(in) :: potet
       real(r32), intent(in) :: sca
       real(r64), intent(in) :: avail_et
@@ -220,11 +255,10 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine perv_comp(this, ctl_data, param_data, model_climate, idx, &
+    module subroutine perv_comp(this, ctl_data, model_climate, idx, &
                                 pptp, ptc, srp)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Climateflow), intent(in) :: model_climate
       ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
@@ -236,11 +270,10 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine compute_infil(this, ctl_data, param_data, model_basin, model_climate, &
+    module subroutine compute_infil(this, ctl_data, model_basin, model_climate, &
                                     intcp, snow, idx)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
       ! type(Flowvars), intent(in) :: model_flow

@@ -1,17 +1,13 @@
 submodule (PRMS_MUSKINGUM) sm_muskingum
   contains
-    module function constructor_Muskingum(ctl_data, param_data, model_basin, &
+    module function constructor_Muskingum(ctl_data, model_basin, &
                                           model_time, basin_summary, nhru_summary) result(this)
       use, intrinsic :: iso_fortran_env, only: output_unit
       use prms_constants, only: dp, NEARZERO
       implicit none
 
       type(Muskingum) :: this
-        !! Muskingum class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Basin_summary_ptr), intent(inout) :: basin_summary
@@ -40,17 +36,16 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       ! -----------------------------------------------------------------------
       ! Call the parent constructor first
-      this%Streamflow = Streamflow(ctl_data, param_data, model_basin, model_time, basin_summary, nhru_summary)
+      this%Streamflow = Streamflow(ctl_data, model_basin, model_time, basin_summary, nhru_summary)
 
-      associate(nsegment => ctl_data%nsegment%value, &
-                init_vars_from_file => ctl_data%init_vars_from_file%value, &
+      associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+                param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
-                segment_flow_init => param_data%segment_flow_init%values, &
+
+                nsegment => model_basin%nsegment, &
                 basin_area_inv => model_basin%basin_area_inv, &
-                ! seg_outflow => model_flow%seg_outflow, &
-                cfs_conv => model_time%cfs_conv, &
-                K_coef => param_data%K_coef%values, &
-                x_coef => param_data%x_coef%values)
+
+                cfs_conv => model_time%cfs_conv)
 
         call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -59,6 +54,15 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           call this%print_module_info()
         endif
 
+        ! Parameters
+        allocate(this%x_coef(nsegment))
+        call param_hdl%get_variable('x_coef', this%x_coef)
+
+        allocate(this%K_coef(nsegment))
+        call param_hdl%get_variable('K_coef', this%K_coef)
+
+
+        ! Other variables
         allocate(this%c0(nsegment))
         allocate(this%c1(nsegment))
         allocate(this%c2(nsegment))
@@ -83,8 +87,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           !   K_coef(cseg) = 24.0
           ! endif
 
-          k = K_coef(cseg)
-          x = x_coef(cseg)
+          k = this%K_coef(cseg)
+          x = this%x_coef(cseg)
 
           ! Check the values of k and x to make sure that Muskingum routing is stable
           if (k < 1.0) then
@@ -177,7 +181,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2) then
           do cseg = 1, nsegment
-            this%seg_outflow(cseg) = segment_flow_init(cseg)
+            this%seg_outflow(cseg) = this%segment_flow_init(cseg)
           enddo
 
           ! deallocate (segment_flow_init)
@@ -198,7 +202,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
     end function
 
 
-    module subroutine run_Muskingum(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Muskingum(this, ctl_data, model_basin, &
                                     model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
       use, intrinsic :: iso_fortran_env, only: output_unit
@@ -206,26 +210,15 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       implicit none
 
       class(Muskingum), intent(inout) :: this
-        !! Muskingum class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
-        !! Basin variables
       class(Potential_ET), intent(in) :: model_potet
-        !! Potential Evapotranspiration
       type(Gwflow), intent(in) :: groundwater
-        !! Groundwater variables
       type(Soilzone), intent(in) :: soil
-        !! Soilzone
       type(Srunoff), intent(in) :: runoff
-        !! Surface runoff
       type(Time_t), intent(in) :: model_time
       class(SolarRadiation), intent(in) :: model_solrad
-        !! Solar radiation
       type(Obs), intent(in) :: model_obs
-        !! Observations
 
       ! Local Variables
       integer(i32) :: cseg
@@ -284,18 +277,10 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       !     c0, c1, and c2: initialized in the "init" part of this module
 
       ! Call parent class run routine first
-      call this%run_Streamflow(ctl_data, param_data, model_basin, model_potet, &
+      call this%run_Streamflow(ctl_data, model_basin, model_potet, &
                                groundwater, soil, runoff, model_time, model_solrad)
 
-      associate(nsegment => ctl_data%nsegment%value, &
-
-                obsin_segment => param_data%obsin_segment%values, &
-                ! FIXME: 2018-06-26 PAN - obsout_segment doesn't always exist in the
-                !                         parameter file.
-                ! obsout_segment => param_data%obsout_segment%values, &
-                segment_type => param_data%segment_type%values, &
-                tosegment => param_data%tosegment%values, &
-
+      associate(nsegment => model_basin%nsegment, &
                 basin_area_inv => model_basin%basin_area_inv, &
 
                 basin_gwflow => groundwater%basin_gwflow, &
@@ -326,8 +311,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             ! of the upstream segments plus the lateral HRU inflow plus any gains.
             currin = this%seg_lateral_inflow(iorder)
 
-            if (obsin_segment(iorder) > 0) then
-              this%seg_upstream_inflow(iorder) = streamflow_cfs(obsin_segment(iorder))
+            if (this%obsin_segment(iorder) > 0) then
+              this%seg_upstream_inflow(iorder) = streamflow_cfs(this%obsin_segment(iorder))
             endif
 
             currin = currin + this%seg_upstream_inflow(iorder)
@@ -360,11 +345,11 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
               this%inflow_ts(iorder) = 0.0_dp
             endif
 
-            ! FIXME: 2018-06-26 PAN - obsout_segment doesn't always exist in the
-            !                         parameter file
-            ! if (obsout_segment(iorder) > 0) then
-            !   this%outflow_ts(iorder) = streamflow_cfs(obsout_segment(iorder))
-            ! endif
+            if (allocated(this%obsout_segment)) then
+              if (this%obsout_segment(iorder) > 0) then
+                this%outflow_ts(iorder) = streamflow_cfs(this%obsout_segment(iorder))
+              endif
+            end if
 
             ! Water-use removed/added in routing module
             ! Check for negative flow
@@ -392,7 +377,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             ! this value is used, it will be divided by the number of hours in the
             ! segment's simulation time step, giving the mean flow rate over that
             ! period of time.
-            toseg = tosegment(iorder)
+            toseg = this%tosegment(iorder)
 
             if (toseg > 0) then
               this%seg_upstream_inflow(toseg) = this%seg_upstream_inflow(toseg) + this%outflow_ts(iorder)
@@ -458,21 +443,21 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         this%seg_inflow = this%seg_inflow * ONE_24TH
         this%seg_upstream_inflow = this%currinsum * ONE_24TH
 
-        this%flow_headwater = sum(this%seg_outflow, mask=(Segment_type == 1))
-        this%flow_to_lakes = sum(this%seg_outflow, mask=(Segment_type == 2))
-        this%flow_replacement = sum(this%seg_outflow, mask=(Segment_type == 3))
-        this%flow_in_nation = sum(this%seg_outflow, mask=(Segment_type == 4))
-        this%flow_out_NHM = sum(this%seg_outflow, mask=(Segment_type == 5))
-        this%flow_in_region = sum(this%seg_outflow, mask=(Segment_type == 6))
-        this%flow_out_region = sum(this%seg_outflow, mask=(Segment_type == 7))
-        this%flow_to_ocean = sum(this%seg_outflow, mask=(Segment_type == 8))
-        this%flow_terminus = sum(this%seg_outflow, mask=(Segment_type == 9))
-        this%flow_in_great_lakes = sum(this%seg_outflow, mask=(Segment_type == 10))
-        this%flow_to_great_lakes = sum(this%seg_outflow, mask=(Segment_type == 11))
+        this%flow_headwater = sum(this%seg_outflow, mask=(this%segment_type == 1))
+        this%flow_to_lakes = sum(this%seg_outflow, mask=(this%segment_type == 2))
+        this%flow_replacement = sum(this%seg_outflow, mask=(this%segment_type == 3))
+        this%flow_in_nation = sum(this%seg_outflow, mask=(this%segment_type == 4))
+        this%flow_out_NHM = sum(this%seg_outflow, mask=(this%segment_type == 5))
+        this%flow_in_region = sum(this%seg_outflow, mask=(this%segment_type == 6))
+        this%flow_out_region = sum(this%seg_outflow, mask=(this%segment_type == 7))
+        this%flow_to_ocean = sum(this%seg_outflow, mask=(this%segment_type == 8))
+        this%flow_terminus = sum(this%seg_outflow, mask=(this%segment_type == 9))
+        this%flow_in_great_lakes = sum(this%seg_outflow, mask=(this%segment_type == 10))
+        this%flow_to_great_lakes = sum(this%seg_outflow, mask=(this%segment_type == 11))
 
         area_fac = cfs_conv / basin_area_inv
 
-        this%flow_out = sum(this%seg_outflow, mask=(tosegment == 0))
+        this%flow_out = sum(this%seg_outflow, mask=(this%tosegment == 0))
         this%segment_delta_flow = sum(this%seg_inflow - this%seg_outflow)
         this%basin_segment_storage = sum(this%segment_delta_flow) / area_fac
 

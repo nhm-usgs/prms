@@ -1,6 +1,6 @@
 submodule (SOLAR_RADIATION) sm_solar_radiation
 contains
-  module function constructor_SolarRadiation(ctl_data, param_data, model_basin, basin_summary, nhru_summary) result(this)
+  module function constructor_SolarRadiation(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
     use UTILS_PRMS, only: PRMS_open_module_file
     implicit none
 
@@ -8,7 +8,7 @@ contains
       !! SolarRadiation class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
       !! Parameters
     type(Basin), intent(in) :: model_basin
       !! Model basin
@@ -44,22 +44,23 @@ contains
     real(r64) :: basin_sunhrs(366)
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              nsol => ctl_data%nsol%value, &
-              basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
               basinOutVars => ctl_data%basinOutVars%value, &
               basinOutVar_names => ctl_data%basinOutVar_names%values, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOutVars => ctl_data%nhruOutVars%value, &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+              param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
               solrad_module => ctl_data%solrad_module%values(1), &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
 
-              hru_lat => param_data%hru_lat%values, &
-              hru_type => param_data%hru_type%values, &
-              hru_slope => param_data%hru_slope%values, &
-              hru_aspect => param_data%hru_aspect%values, &
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths, &
+              hru_lat => model_basin%hru_lat, &
+              hru_type => model_basin%hru_type, &
+              hru_slope => model_basin%hru_slope, &
+              hru_aspect => model_basin%hru_aspect, &
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
               basin_lat => model_basin%basin_lat, &
@@ -71,6 +72,23 @@ contains
         ! Output module and version information
         call this%print_module_info()
       endif
+
+      ! Read dimensions
+      this%nsol = param_hdl%get_dimension('nsol')
+
+      ! Read parameters
+      allocate(this%ppt_rad_adj(nhru, nmonths))
+      call param_hdl%get_variable('ppt_rad_adj', this%ppt_rad_adj)
+
+      allocate(this%radj_sppt(nhru))
+      call param_hdl%get_variable('radj_sppt', this%radj_sppt)
+
+      allocate(this%radj_wppt(nhru))
+      call param_hdl%get_variable('radj_wppt', this%radj_wppt)
+
+      allocate(this%radmax(nhru, nmonths))
+      call param_hdl%get_variable('radmax', this%radmax)
+
 
       allocate(this%swrad(nhru))
       this%swrad = 0.0
@@ -85,22 +103,34 @@ contains
 
       this%has_basin_obs_station = .false.
       this%has_hru_obs_station = .false.
+      this%radiation_cv_factor = 1.0
 
-      if (nsol > 0) then
-        if (param_data%hru_solsta%exists()) then
+      if (this%nsol > 0) then
+        ! TODO: Hookup code to read the solar radiation data
+        allocate(this%solrad(this%nsol))
+        this%solrad = 0.0
+
+        if (param_hdl%var_exists('hru_solsta')) then
+        ! if (param_data%hru_solsta%exists()) then
+          allocate(this%hru_solsta(this%nsol))
+          call param_hdl%get_variable('hru_solsta', this%hru_solsta)
+
           ! If no radiation stations are available for the active HRUs
           ! then the sum of hru_solsta is 0
-          this%has_hru_obs_station = sum(param_data%hru_solsta%values, mask=active_mask) > 0
+          this%has_hru_obs_station = sum(this%hru_solsta, mask=active_mask) > 0
         endif
 
-        if (param_data%basin_solsta%exists()) then
-          this%has_basin_obs_station = (param_data%basin_solsta%values(1) > 0)
+        if (param_hdl%var_exists('basin_solsta')) then
+        ! if (param_data%basin_solsta%exists()) then
+          call param_hdl%get_variable('basin_solsta', this%basin_solsta)
+          this%has_basin_obs_station = (this%basin_solsta > 0)
         endif
-      endif
 
-      this%radiation_cv_factor = 1.0
-      if (param_data%rad_conv%exists()) then
-        this%radiation_cv_factor = param_data%rad_conv%values(1)
+        if (param_hdl%var_exists('rad_conv')) then
+        ! if (param_data%rad_conv%exists()) then
+          call param_hdl%get_variable('rad_conv', this%rad_conv)
+          this%radiation_cv_factor = this%rad_conv
+        endif
       endif
 
       this%hru_cossl = 0.0

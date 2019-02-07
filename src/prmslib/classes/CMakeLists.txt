@@ -8,7 +8,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 #    "${CMAKE_CURRENT_LIST_DIR}/Array_class.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_Control.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_Object.f90"
-    "${CMAKE_CURRENT_LIST_DIR}/c_Parameter.f90"
+    # "${CMAKE_CURRENT_LIST_DIR}/c_Parameter.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_String.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_dArray.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_dVariable.f90"
@@ -22,6 +22,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_sArray.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_sVariable.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_control.f90"
-    "${CMAKE_CURRENT_LIST_DIR}/sm_parameters.f90"
+    # "${CMAKE_CURRENT_LIST_DIR}/sm_parameters.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_ModelBase.f90"
 )

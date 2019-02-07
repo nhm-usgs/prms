@@ -7,7 +7,6 @@ module PRMS_BASIN
   use iso_fortran_env, only: output_unit
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   implicit none
 
   private
@@ -18,6 +17,41 @@ module PRMS_BASIN
   character(len=*), parameter :: MODVERSION = '2018-08-30 13:22:00Z'
 
   type, extends(ModelBase) :: Basin
+    ! Dimensions
+    integer(i32) :: nconsumed = 0
+      !! TODO: does this belong here?
+    integer(i32) :: nhru
+      !! Number of HRUs in model
+    integer(i32) :: nlake = 0
+    integer(i32) :: nmonths
+    integer(i32) :: nobs = 0
+    integer(i32) :: nsegment
+      !! Number of stream segments in model
+    integer(i32) :: nwateruse = 0
+      !! TODO: does this belong here?
+
+    ! Parameters
+    integer(i32), allocatable :: cov_type(:)
+      !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
+    real(r32), allocatable :: dprst_frac(:)
+      !! Fraction of each HRU area that has surface depressions
+    real(r32), allocatable :: hru_area(:)
+    real(r32), allocatable :: hru_aspect(:)
+    real(r32), allocatable :: hru_elev(:)
+    real(r32), allocatable :: hru_lat(:)
+    real(r32), allocatable :: hru_lon(:)
+    real(r32), allocatable :: hru_percent_imperv(:)
+    real(r32), allocatable :: hru_slope(:)
+    integer(i32), allocatable :: hru_type(:)
+    real(r32), allocatable :: hru_x(:)
+    real(r32), allocatable :: hru_y(:)
+    integer(i32), allocatable :: lake_hru_id(:)
+    integer(i32), allocatable :: lake_type(:)
+    integer(i32), allocatable :: nhm_id(:)
+      !! NHM identification number for each HRU
+
+
+    ! Local and computed variables
     real(r64) :: active_area
     real(r64) :: basin_area_inv
     real(r64) :: basin_lat
@@ -58,13 +92,11 @@ module PRMS_BASIN
 
   interface Basin
     !! Basin constructor
-    module function constructor_Basin(ctl_data, param_data) result(this)
+    module function constructor_Basin(ctl_data) result(this)
       type(Basin) :: this
         !! Basin class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
     end function
   end interface
 

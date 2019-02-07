@@ -3,7 +3,6 @@ module PRMS_TEMPERATURE
   use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
@@ -18,6 +17,9 @@ module PRMS_TEMPERATURE
   character(len=*), parameter :: MODVERSION = '2018-10-10 15:45:00Z'
 
   type, extends(ModelBase) :: Temperature
+    ! Parameters
+    integer(i32) :: temp_units = 0
+
     logical :: has_hru_summary_vars
 
     real(r64), pointer :: basin_temp
@@ -44,11 +46,12 @@ module PRMS_TEMPERATURE
 
   interface Temperature
     !! Temperature constructor
-    module function constructor_Temperature(ctl_data, basin_summary, nhru_summary) result(this)
+    module function constructor_Temperature(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Temperature) :: this
         !! Temperature class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
@@ -57,10 +60,9 @@ module PRMS_TEMPERATURE
   end interface
 
   interface
-    module subroutine run_Temperature(this, ctl_data, param_data, model_basin, model_time, nhru_summary)
+    module subroutine run_Temperature(this, ctl_data, model_basin, model_time, nhru_summary)
       class(Temperature), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in), optional :: model_time
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary

@@ -1,13 +1,15 @@
 submodule(PRMS_PRECIPITATION_HRU) sm_precipitation_hru
 contains
   !! Precipitation_hru constructor
-  module function constructor_Precipitation_hru(ctl_data, param_data, basin_summary, nhru_summary) result(this)
+  module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
     type(Precipitation_hru) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
+    type(Basin), intent(in) :: model_basin
+    class(Temperature), intent(in) :: model_temp
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
@@ -17,14 +19,17 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Precipitation = Precipitation(ctl_data, param_data, basin_summary, nhru_summary)
+    this%Precipitation = Precipitation(ctl_data, model_basin, model_temp, basin_summary, nhru_summary)
 
-    associate(nhru => ctl_data%nhru%value, &
-              cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+    associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               end_time => ctl_data%end_time%values, &
               precip_day => ctl_data%precip_day%values(1), &
               print_debug => ctl_data%print_debug%value, &
-              start_time => ctl_data%start_time%values)
+              start_time => ctl_data%start_time%values, &
+              param_hdl => ctl_data%param_file_hdl, &
+
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -33,6 +38,19 @@ contains
         call this%print_module_info()
       endif
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Setup parameters
+      allocate(this%rain_cbh_adj(nhru, nmonths))
+      call param_hdl%get_variable('rain_cbh_adj', this%rain_cbh_adj)
+
+      allocate(this%snow_cbh_adj(nhru, nmonths))
+      call param_hdl%get_variable('snow_cbh_adj', this%snow_cbh_adj)
+
+      allocate(this%adjmix_rain(nhru, nmonths))
+      call param_hdl%get_variable('adjmix_rain', this%adjmix_rain)
+
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Open the CBH file
       if (precip_day%s(index(precip_day%s, '.')+1:) == 'nc') then
         call open_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, &
                                   precip_day%s, 'prcp', start_time, end_time, nhru)
@@ -55,13 +73,13 @@ contains
   end function
 
 
-  module subroutine run_Precipitation_hru(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
+  module subroutine run_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_time, nhru_summary)
     use UTILS_CBH, only: read_netcdf_cbh_file
     implicit none
 
     class(Precipitation_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time
@@ -77,13 +95,13 @@ contains
               day_of_year => model_time%day_of_year, &
               timestep => model_time%Timestep, &
 
-              nhru => ctl_data%nhru%value, &
-              nmonths => ctl_data%nmonths%value, &
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths, &
+              hru_area => model_basin%hru_area)
 
-              hru_area => param_data%hru_area%values, &
-              rain_cbh_adj => param_data%rain_cbh_adj%values, &
-              snow_cbh_adj => param_data%snow_cbh_adj%values, &
-              adjmix_rain => param_data%adjmix_rain%values)
+              ! rain_cbh_adj => param_data%rain_cbh_adj%values, &
+              ! snow_cbh_adj => param_data%snow_cbh_adj%values, &
+              ! adjmix_rain => param_data%adjmix_rain%values)
 
       ios = 0
 
@@ -100,9 +118,9 @@ contains
       this%hru_rain = 0.0
       this%hru_snow = 0.0
 
-      call this%set_precipitation_form(ctl_data, param_data, model_basin, model_temp, &
-                                       curr_month, rain_cbh_adj, snow_cbh_adj, &
-                                       adjmix_rain)
+      call this%set_precipitation_form(ctl_data, model_basin, model_temp, &
+                                       curr_month, this%rain_cbh_adj, this%snow_cbh_adj, &
+                                       this%adjmix_rain)
       ! call this%set_precipitation_form(ctl_data, param_data, model_basin, model_temp, &
       !                                     curr_month, rain_adj_2d(:, curr_month), &
       !                                     snow_adj_2d(:, curr_month), &

@@ -1,16 +1,17 @@
 submodule(PRMS_TRANSPIRATION) sm_transpiration
 contains
-  module function constructor_Transpiration(ctl_data) result(this)
+  module function constructor_Transpiration(ctl_data, model_basin) result(this)
     type(Transpiration) :: this
       !! Transpiration class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
+    type(Basin), intent(in) :: model_basin
 
     ! Control
     ! nhru,
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              print_debug => ctl_data%print_debug%value)
+    associate(print_debug => ctl_data%print_debug%value, &
+              nhru => model_basin%nhru)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 

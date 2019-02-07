@@ -1,15 +1,12 @@
 submodule (PRMS_WATER_BALANCE) sm_water_balance
   contains
-    module function constructor_WaterBalance(ctl_data, param_data, model_gwflow) result(this)
+    module function constructor_WaterBalance(ctl_data, model_basin, model_gwflow) result(this)
       use UTILS_PRMS, only: PRMS_open_module_file
       implicit none
 
       type(WaterBalance) :: this
-        !! WaterBalance class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
+      type(Basin), intent(in) :: model_basin
       type(Gwflow), intent(in) :: model_gwflow
 
       ! Control
@@ -20,9 +17,10 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
 
 
       ! ------------------------------------------------------------------------
-      associate(nhru => ctl_data%nhru%value, &
-                cascade_flag => ctl_data%cascade_flag%value, &
+      associate(cascade_flag => ctl_data%cascade_flag%value, &
                 print_debug => ctl_data%print_debug%value, &
+
+                nhru => model_basin%nhru, &
 
                 basin_gwstor => model_gwflow%basin_gwstor, &
                 gwres_stor => model_gwflow%gwres_stor, &
@@ -82,7 +80,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
     end function
 
 
-    module subroutine run_WaterBalance(this, ctl_data, param_data, model_basin, &
+    module subroutine run_WaterBalance(this, ctl_data, model_basin, &
                                        model_climate, model_gwflow, model_intcp, &
                                        model_precip, model_snow, model_soilzone, &
                                        model_srunoff, model_time)
@@ -96,8 +94,6 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
         !! WaterBalance class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
@@ -204,27 +200,21 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 cascadegw_flag => ctl_data%cascadegw_flag%value, &
                 dprst_flag => ctl_data%dprst_flag%value, &
 
-                cov_type => param_data%cov_type%values, &
-                dprst_frac => param_data%dprst_frac%values, &
-                hru_percent_imperv => param_data%hru_percent_imperv%values, &
-                hru_type => param_data%hru_type%values, &
-                pref_flow_den => param_data%pref_flow_den%values, &
-                snow_intcp => param_data%snow_intcp%values, &
-                soil_moist_max => param_data%soil_moist_max%values, &
-                srain_intcp => param_data%srain_intcp%values, &
-                sro_to_dprst_perv => param_data%sro_to_dprst_perv%values, &
-                wrain_intcp => param_data%wrain_intcp%values, &
-
                 active_hrus => model_basin%active_hrus, &
                 basin_area_inv => model_basin%basin_area_inv, &
+                cov_type => model_basin%cov_type, &
                 dprst_area_max => model_basin%dprst_area_max, &
+                dprst_frac => model_basin%dprst_frac, &
                 hru_area_dble => model_basin%hru_area_dble, &
-                hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_area_perv => model_basin%hru_area_perv, &
+                hru_frac_perv => model_basin%hru_frac_perv, &
+                hru_percent_imperv => model_basin%hru_percent_imperv, &
                 hru_route_order => model_basin%hru_route_order, &
+                hru_type => model_basin%hru_type, &
 
                 pkwater_equiv => model_climate%pkwater_equiv, &
                 soil_moist => model_climate%soil_moist, &
+                soil_moist_max => model_climate%soil_moist_max, &
                 soil_rechr => model_climate%soil_rechr, &
 
                 gwin_dprst => model_gwflow%gwin_dprst, &
@@ -251,7 +241,10 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 net_ppt => model_intcp%net_ppt, &
                 net_rain => model_intcp%net_rain, &
                 net_snow => model_intcp%net_snow, &
+                snow_intcp => model_intcp%snow_intcp, &
+                srain_intcp => model_intcp%srain_intcp, &
                 use_transfer_intcp => model_intcp%use_transfer_intcp, &
+                wrain_intcp => model_intcp%wrain_intcp, &
 
                 hru_ppt => model_precip%hru_ppt, &
                 hru_rain => model_precip%hru_rain, &
@@ -277,6 +270,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 perv_actet => model_soilzone%perv_actet, &
                 pfr_dunnian_flow => model_soilzone%pfr_dunnian_flow, &
                 pref_flow => model_soilzone%pref_flow, &
+                pref_flow_den => model_soilzone%pref_flow_den, &
                 pref_flow_infil => model_soilzone%pref_flow_infil, &
                 pref_flow_max => model_soilzone%pref_flow_max, &
                 pref_flow_stor => model_soilzone%pref_flow_stor, &
@@ -316,6 +310,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 imperv_stor_ante => model_srunoff%imperv_stor_ante, &
                 infil => model_srunoff%infil, &
                 sroff => model_srunoff%sroff, &
+                sro_to_dprst_perv => model_srunoff%sro_to_dprst_perv, &
                 upslope_hortonian => model_srunoff%upslope_hortonian, &
                 use_sroff_transfer => model_srunoff%use_sroff_transfer, &
 

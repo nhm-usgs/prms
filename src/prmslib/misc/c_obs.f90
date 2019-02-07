@@ -5,7 +5,6 @@ module PRMS_OBS
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_SET_TIME, only: Time_t
   implicit none
@@ -37,7 +36,7 @@ module PRMS_OBS
     real(r64), allocatable :: streamflow_cms(:)
 
     contains
-      procedure, public :: run => run_Obs
+      ! procedure, public :: run => run_Obs
       procedure, public :: cleanup => cleanup_Obs
         !! Final cleanup code after simulation
   end type
@@ -60,14 +59,14 @@ module PRMS_OBS
     end subroutine
   end interface
 
-  interface
-    module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
-      class(Obs), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
-      type(Time_t), intent(in) :: model_time
-      type(Basin), intent(in) :: model_basin
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
+  !     class(Obs), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     type(Parameters), intent(in) :: param_data
+  !     type(Time_t), intent(in) :: model_time
+  !     type(Basin), intent(in) :: model_basin
+  !   end subroutine
+  ! end interface
 
 end module

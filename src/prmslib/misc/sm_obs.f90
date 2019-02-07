@@ -14,118 +14,118 @@ contains
       !! Used to verify module name when reading from restart file
 
     ! ------------------------------------------------------------------------
-    associate(nevap => ctl_data%nevap%value, &
-              nhumid => ctl_data%nhumid%value, &
-              nlakeelev => ctl_data%nlakeelev%value, &
-              nobs => ctl_data%nobs%value, &
-              nrain => ctl_data%nrain%value, &
-              nratetbl => ctl_data%nratetbl%value, &
-              nsnow => ctl_data%nsnow%value, &
-              nsol => ctl_data%nsol%value, &
-              ntemp => ctl_data%ntemp%value, &
-              nwind => ctl_data%nwind%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              rst_unit => ctl_data%restart_output_unit, &
-              print_debug => ctl_data%print_debug%value)
-
-      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
-
-      if (print_debug > -2) then
-        ! Output module and version information
-        call this%print_module_info()
-      endif
-
-      if (nobs > 0) then
-        allocate(this%runoff(nobs))
-        allocate(this%streamflow_cfs(nobs))
-        allocate(this%streamflow_cms(nobs))
-
-        if (init_vars_from_file == 0) then
-          this%runoff = 0.0
-          this%streamflow_cfs = 0.0_dp
-          this%streamflow_cms = 0.0_dp
-        endif
-      endif
-
-      if (nrain > 0) then
-        allocate(this%precip(nrain))
-
-        if (init_vars_from_file == 0) then
-          this%precip = 0.0
-        endif
-      endif
-
-      if (ntemp > 0) then
-        allocate(this%tmin(ntemp))
-        allocate(this%tmax(ntemp))
-
-        if (init_vars_from_file == 0) then
-          this%tmax = 0.0
-          this%tmin = 0.0
-        endif
-      endif
-
-      if (nsol > 0) then
-        allocate(this%solrad(nsol))
-        this%solrad = 0.0
-      endif
-
-      if (nsnow > 0) then
-        allocate(this%snowdepth(nsnow))
-        this%snowdepth = 0.0
-      endif
-
-      if (nevap > 0) then
-        allocate(this%pan_evap(nevap))
-        this%pan_evap = 0.0
-      endif
-
-      if (nhumid > 0) then
-        allocate(this%humidity(nhumid))
-        this%humidity = 0.0
-      endif
-
-      if (nwind > 0) then
-        allocate(this%wind_speed(nwind))
-        this%wind_speed = 0.0
-      endif
-
-      ! Lake variables
-      if (nratetbl > 0) then
-        allocate(this%gate_ht(nratetbl))
-        this%gate_ht = 0.0
-      endif
-
-      if (nlakeelev > 0) then
-        allocate(this%lake_elev(nlakeelev))
-        this%lake_elev = 0.0
-      endif
-
-      if (init_vars_from_file == 1) then
-      !     read(rst_unit) modname_rst
-      !     call check_restart(MODNAME, modname_rst)
-      !     read(rst_unit) nrain_test, ntemp_test, nobs_test
-      !     ierr = 0
-      !
-      !     call check_restart_dimen('nrain', nrain_test, nrain, ierr)
-      !     call check_restart_dimen('ntemp', ntemp_test, ntemp, ierr)
-      !     call check_restart_dimen('nobs', nobs_test, nobs, ierr)
-      !     if (ierr == 1) STOP
-      !
-      !     if (nrain > 0) read (rst_unit) this%precip
-      !
-      !     if (ntemp > 0) then
-      !       read(rst_unit) this%tmax
-      !       read(rst_unit) this%tmin
-      !     endif
-      !
-      !     if (nobs > 0) then
-      !       read(rst_unit) this%runoff
-      !       read(rst_unit) this%streamflow_cfs
-      !       read(rst_unit) this%streamflow_cms
-      !     endif
-      endif
-    end associate
+    ! associate(nevap => ctl_data%nevap%value, &
+    !           nhumid => ctl_data%nhumid%value, &
+    !           nlakeelev => ctl_data%nlakeelev%value, &
+    !           nobs => ctl_data%nobs%value, &
+    !           nrain => ctl_data%nrain%value, &
+    !           nratetbl => ctl_data%nratetbl%value, &
+    !           nsnow => ctl_data%nsnow%value, &
+    !           nsol => ctl_data%nsol%value, &
+    !           ntemp => ctl_data%ntemp%value, &
+    !           nwind => ctl_data%nwind%value, &
+    !           init_vars_from_file => ctl_data%init_vars_from_file%value, &
+    !           rst_unit => ctl_data%restart_output_unit, &
+    !           print_debug => ctl_data%print_debug%value)
+    !
+    !   call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+    !
+    !   if (print_debug > -2) then
+    !     ! Output module and version information
+    !     call this%print_module_info()
+    !   endif
+    !
+    !   if (nobs > 0) then
+    !     allocate(this%runoff(nobs))
+    !     allocate(this%streamflow_cfs(nobs))
+    !     allocate(this%streamflow_cms(nobs))
+    !
+    !     if (init_vars_from_file == 0) then
+    !       this%runoff = 0.0
+    !       this%streamflow_cfs = 0.0_dp
+    !       this%streamflow_cms = 0.0_dp
+    !     endif
+    !   endif
+    !
+    !   if (nrain > 0) then
+    !     allocate(this%precip(nrain))
+    !
+    !     if (init_vars_from_file == 0) then
+    !       this%precip = 0.0
+    !     endif
+    !   endif
+    !
+    !   if (ntemp > 0) then
+    !     allocate(this%tmin(ntemp))
+    !     allocate(this%tmax(ntemp))
+    !
+    !     if (init_vars_from_file == 0) then
+    !       this%tmax = 0.0
+    !       this%tmin = 0.0
+    !     endif
+    !   endif
+    !
+    !   if (nsol > 0) then
+    !     allocate(this%solrad(nsol))
+    !     this%solrad = 0.0
+    !   endif
+    !
+    !   if (nsnow > 0) then
+    !     allocate(this%snowdepth(nsnow))
+    !     this%snowdepth = 0.0
+    !   endif
+    !
+    !   if (nevap > 0) then
+    !     allocate(this%pan_evap(nevap))
+    !     this%pan_evap = 0.0
+    !   endif
+    !
+    !   if (nhumid > 0) then
+    !     allocate(this%humidity(nhumid))
+    !     this%humidity = 0.0
+    !   endif
+    !
+    !   if (nwind > 0) then
+    !     allocate(this%wind_speed(nwind))
+    !     this%wind_speed = 0.0
+    !   endif
+    !
+    !   ! Lake variables
+    !   if (nratetbl > 0) then
+    !     allocate(this%gate_ht(nratetbl))
+    !     this%gate_ht = 0.0
+    !   endif
+    !
+    !   if (nlakeelev > 0) then
+    !     allocate(this%lake_elev(nlakeelev))
+    !     this%lake_elev = 0.0
+    !   endif
+    !
+    !   if (init_vars_from_file == 1) then
+    !   !     read(rst_unit) modname_rst
+    !   !     call check_restart(MODNAME, modname_rst)
+    !   !     read(rst_unit) nrain_test, ntemp_test, nobs_test
+    !   !     ierr = 0
+    !   !
+    !   !     call check_restart_dimen('nrain', nrain_test, nrain, ierr)
+    !   !     call check_restart_dimen('ntemp', ntemp_test, ntemp, ierr)
+    !   !     call check_restart_dimen('nobs', nobs_test, nobs, ierr)
+    !   !     if (ierr == 1) STOP
+    !   !
+    !   !     if (nrain > 0) read (rst_unit) this%precip
+    !   !
+    !   !     if (ntemp > 0) then
+    !   !       read(rst_unit) this%tmax
+    !   !       read(rst_unit) this%tmin
+    !   !     endif
+    !   !
+    !   !     if (nobs > 0) then
+    !   !       read(rst_unit) this%runoff
+    !   !       read(rst_unit) this%streamflow_cfs
+    !   !       read(rst_unit) this%streamflow_cms
+    !   !     endif
+    !   endif
+    ! end associate
   end function
 
 
@@ -136,119 +136,119 @@ contains
     type(Control), intent(in) :: ctl_data
 
     ! ------------------------------------------------------------------------
-    associate(nrain => ctl_data%nrain%value, &
-              ntemp => ctl_data%ntemp%value, &
-              nobs => ctl_data%nobs%value, &
-              rst_unit => ctl_data%restart_output_unit)
-
-      write(rst_unit) MODNAME
-      write(rst_unit) nrain, ntemp, nobs
-
-      if (nrain > 0) then
-        write(rst_unit) this%precip
-      endif
-
-      if (ntemp > 0) then
-        write(rst_unit) this%tmax
-        write(rst_unit) this%tmin
-      endif
-
-      if (nobs > 0) then
-        write(rst_unit) this%runoff
-        write(rst_unit) this%streamflow_cfs
-        write(rst_unit) this%streamflow_cms
-      endif
-    end associate
+    ! associate(nrain => ctl_data%nrain%value, &
+    !           ntemp => ctl_data%ntemp%value, &
+    !           nobs => ctl_data%nobs%value, &
+    !           rst_unit => ctl_data%restart_output_unit)
+    !
+    !   write(rst_unit) MODNAME
+    !   write(rst_unit) nrain, ntemp, nobs
+    !
+    !   if (nrain > 0) then
+    !     write(rst_unit) this%precip
+    !   endif
+    !
+    !   if (ntemp > 0) then
+    !     write(rst_unit) this%tmax
+    !     write(rst_unit) this%tmin
+    !   endif
+    !
+    !   if (nobs > 0) then
+    !     write(rst_unit) this%runoff
+    !     write(rst_unit) this%streamflow_cfs
+    !     write(rst_unit) this%streamflow_cms
+    !   endif
+    ! end associate
   end subroutine
 
 
-  module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
-    use prms_constants, only: CFS2CMS_CONV
-    implicit none
-
-    class(Obs), intent(inout) :: this
-    type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
-    type(Time_t), intent(in) :: model_time
-    type(Basin), intent(in) :: model_basin
-
-    ! Local Variables
-    ! integer(i32) :: i
-
-    ! Control
-    ! nevap, nobs, nrain, nsnow, nsol, ntemp,
-    ! precip_module
-
-    ! Parameter
-    ! rain_code, runoff_units
-
-    ! Basin
-
-    ! Time_t
-    ! Nowmonth
-
-    ! --------------------------------------------------------------------------
-    ! TODO: Need to write a read_var routine before this can be used.
-    ! if (nobs > 0) then
-    !   if ( readvar(MODNAME, 'runoff')/=0 ) call read_error(9, 'runoff')
-    !
-    !   if (runoff_units == 1) then
-    !     do i=1, nobs
-    !       this%streamflow_cms(i) = dble(this%runoff(i))
-    !       this%streamflow_cfs(i) = this%streamflow_cms(i) / CFS2CMS_CONV
-    !     enddo
-    !   else
-    !     do i=1, nobs
-    !       this%streamflow_cfs(i) = dble(this%runoff(i))
-    !       this%streamflow_cms(i) = this%streamflow_cfs(i) * CFS2CMS_CONV
-    !     enddo
-    !   endif
-    ! endif
-    !
-    ! if (nrain > 0) then
-    !   if ( readvar(MODNAME, 'precip')/=0 ) call read_error(9, 'precip')
-    ! endif
-    !
-    ! if (ntemp > 0) then
-    !   if ( readvar(MODNAME, 'tmax')/=0 ) call read_error(9, 'tmax')
-    !   if ( readvar(MODNAME, 'tmin')/=0 ) call read_error(9, 'tmin')
-    ! endif
-    !
-    ! if (nsol > 0) then
-    !   if ( readvar(MODNAME, 'solrad')/=0 ) call read_error(9, 'solrad')
-    ! endif
-    !
-    ! if (nevap > 0) then
-    !   if ( readvar(MODNAME, 'pan_evap')/=0 ) call read_error(9, 'pan_evap')
-    ! endif
-    !
-    ! if (nsnow > 0) then
-    !   if ( readvar(MODNAME, 'snowdepth')/=0 ) call read_error(9, 'snowdepth')
-    ! endif
-    !
-    ! if (precip_module%s == 'xyz_dist') then
-    !   if (rain_code(Nowmonth) == 4) then
-    !     if ( readvar(MODNAME, 'rain_day')/=0 ) call read_error(9, 'rain_day')
-    !   endif
-    ! endif
-    !
-    ! if (nlakeelev > 0) then
-    !   if ( readvar(MODNAME, 'lake_elev')/=0 ) call read_error(9, 'lake_elev')
-    ! endif
-    !
-    ! if (nratetbl > 0) then
-    !   if ( readvar(MODNAME, 'gate_ht')/=0 ) call read_error(9, 'gate_ht')
-    ! endif
-    !
-    ! if (nhumid > 0) then
-    !   if ( readvar(MODNAME, 'humidity')/=0 ) call read_error(9, 'humidity')
-    ! endif
-    !
-    ! if (nwind > 0) then
-    !   if ( readvar(MODNAME, 'wind_speed')/=0 ) call read_error(9, 'wind_speed')
-    ! endif
-
-  end subroutine
+  ! module subroutine run_Obs(this, ctl_data, param_data, model_time, model_basin)
+  !   use prms_constants, only: CFS2CMS_CONV
+  !   implicit none
+  !
+  !   class(Obs), intent(inout) :: this
+  !   type(Control), intent(in) :: ctl_data
+  !   type(Parameters), intent(in) :: param_data
+  !   type(Time_t), intent(in) :: model_time
+  !   type(Basin), intent(in) :: model_basin
+  !
+  !   ! Local Variables
+  !   ! integer(i32) :: i
+  !
+  !   ! Control
+  !   ! nevap, nobs, nrain, nsnow, nsol, ntemp,
+  !   ! precip_module
+  !
+  !   ! Parameter
+  !   ! rain_code, runoff_units
+  !
+  !   ! Basin
+  !
+  !   ! Time_t
+  !   ! Nowmonth
+  !
+  !   ! --------------------------------------------------------------------------
+  !   ! TODO: Need to write a read_var routine before this can be used.
+  !   ! if (nobs > 0) then
+  !   !   if ( readvar(MODNAME, 'runoff')/=0 ) call read_error(9, 'runoff')
+  !   !
+  !   !   if (runoff_units == 1) then
+  !   !     do i=1, nobs
+  !   !       this%streamflow_cms(i) = dble(this%runoff(i))
+  !   !       this%streamflow_cfs(i) = this%streamflow_cms(i) / CFS2CMS_CONV
+  !   !     enddo
+  !   !   else
+  !   !     do i=1, nobs
+  !   !       this%streamflow_cfs(i) = dble(this%runoff(i))
+  !   !       this%streamflow_cms(i) = this%streamflow_cfs(i) * CFS2CMS_CONV
+  !   !     enddo
+  !   !   endif
+  !   ! endif
+  !   !
+  !   ! if (nrain > 0) then
+  !   !   if ( readvar(MODNAME, 'precip')/=0 ) call read_error(9, 'precip')
+  !   ! endif
+  !   !
+  !   ! if (ntemp > 0) then
+  !   !   if ( readvar(MODNAME, 'tmax')/=0 ) call read_error(9, 'tmax')
+  !   !   if ( readvar(MODNAME, 'tmin')/=0 ) call read_error(9, 'tmin')
+  !   ! endif
+  !   !
+  !   ! if (nsol > 0) then
+  !   !   if ( readvar(MODNAME, 'solrad')/=0 ) call read_error(9, 'solrad')
+  !   ! endif
+  !   !
+  !   ! if (nevap > 0) then
+  !   !   if ( readvar(MODNAME, 'pan_evap')/=0 ) call read_error(9, 'pan_evap')
+  !   ! endif
+  !   !
+  !   ! if (nsnow > 0) then
+  !   !   if ( readvar(MODNAME, 'snowdepth')/=0 ) call read_error(9, 'snowdepth')
+  !   ! endif
+  !   !
+  !   ! if (precip_module%s == 'xyz_dist') then
+  !   !   if (rain_code(Nowmonth) == 4) then
+  !   !     if ( readvar(MODNAME, 'rain_day')/=0 ) call read_error(9, 'rain_day')
+  !   !   endif
+  !   ! endif
+  !   !
+  !   ! if (nlakeelev > 0) then
+  !   !   if ( readvar(MODNAME, 'lake_elev')/=0 ) call read_error(9, 'lake_elev')
+  !   ! endif
+  !   !
+  !   ! if (nratetbl > 0) then
+  !   !   if ( readvar(MODNAME, 'gate_ht')/=0 ) call read_error(9, 'gate_ht')
+  !   ! endif
+  !   !
+  !   ! if (nhumid > 0) then
+  !   !   if ( readvar(MODNAME, 'humidity')/=0 ) call read_error(9, 'humidity')
+  !   ! endif
+  !   !
+  !   ! if (nwind > 0) then
+  !   !   if ( readvar(MODNAME, 'wind_speed')/=0 ) call read_error(9, 'wind_speed')
+  !   ! endif
+  !
+  ! end subroutine
 
 
   !***********************************************************************

@@ -3,7 +3,6 @@ module PRMS_PRECIPITATION
   use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_TEMPERATURE, only: Temperature
@@ -19,6 +18,13 @@ module PRMS_PRECIPITATION
   character(len=*), parameter :: MODVERSION = '2018-10-10 15:55:00Z'
 
   type, extends(ModelBase) :: Precipitation
+    ! Parameters for precipitation
+    integer(i32) :: precip_units
+    real(r32), allocatable :: tmax_allsnow(:, :)
+    real(r32), allocatable :: tmax_allrain_offset(:, :)
+
+
+    ! Other variables
     logical :: has_hru_summary_vars
 
     ! Basin variables
@@ -49,12 +55,13 @@ module PRMS_PRECIPITATION
 
   interface Precipitation
     !! Precipitation constructor
-    module function constructor_Precipitation(ctl_data, param_data, basin_summary, nhru_summary) result(this)
+    module function constructor_Precipitation(ctl_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
       type(Precipitation) :: this
         !! Precipitation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
+      type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
       type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
         !! Summary by HRU module
@@ -62,10 +69,9 @@ module PRMS_PRECIPITATION
   end interface
 
   interface
-    module subroutine run_Precipitation(this, ctl_data, param_data, model_basin, model_temp, model_time, nhru_summary)
+    module subroutine run_Precipitation(this, ctl_data, model_basin, model_temp, model_time, nhru_summary)
       class(Precipitation), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Time_t), intent(in), optional :: model_time
@@ -74,19 +80,18 @@ module PRMS_PRECIPITATION
   end interface
 
   interface
-    module subroutine set_precipitation_form(this, ctl_data, param_data, model_basin, model_temp, &
+    module subroutine set_precipitation_form(this, ctl_data, model_basin, model_temp, &
                                              month, rain_adj, snow_adj, rainmix_adj)
       class(Precipitation), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       integer(i32), intent(in) :: month
-      real(r32), optional, intent(in) :: rain_adj(:)
+      real(r32), optional, intent(in) :: rain_adj(:, :)
         !! Array of rain adjustments
-      real(r32), optional, intent(in) :: snow_adj(:)
+      real(r32), optional, intent(in) :: snow_adj(:, :)
         !! Array of snow adjustments
-      real(r32), optional, intent(in) :: rainmix_adj(:)
+      real(r32), optional, intent(in) :: rainmix_adj(:, :)
         !! Array of rain mixture adjustments
     end subroutine
   end interface

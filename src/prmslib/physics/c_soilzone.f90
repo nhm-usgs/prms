@@ -2,7 +2,6 @@ module PRMS_SOILZONE
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_INTCP, only: Interception
@@ -25,6 +24,47 @@ module PRMS_SOILZONE
   character(len=*), parameter :: MODVERSION = '2018-10-10 17:46:00Z'
 
   type, extends(ModelBase) :: Soilzone
+    ! Dimensions
+    integer(i32) :: nhrucell = 0
+      !! (?should be in map_results?)
+
+    ! Parameters
+    real(r32), allocatable :: fastcoef_lin(:)
+      !! Linear coefficient in equation to route preferential-flow storage down slope for each HRU
+    real(r32), allocatable :: fastcoef_sq(:)
+      !! Non-linear coefficient in equation to route preferential-flow storage down slope for each HRU
+    integer(i32), allocatable :: gvr_hru_id(:)
+      !! (?should be in map_results?) Index of the HRU associated with each gravity reservoir
+    ! real(r32), allocatable :: lake_evap_adj(:)
+      !!
+    real(r32), allocatable :: pref_flow_den(:)
+      !! Fraction of the soil zone in which preferential flow occurs for each HRU
+    real(r32), allocatable :: sat_threshold(:)
+      !! Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and total soil saturation for each HRU
+    real(r32), allocatable :: slowcoef_lin(:)
+      !! Linear coefficient in equation to route gravity-reservoir storage down slope for each HRU
+    real(r32), allocatable :: slowcoef_sq(:)
+      !! Non-linear coefficient in equation to route gravity- reservoir storage down slope for each HRU
+    integer(i32), allocatable :: soil_type(:)
+      !! Soil type of each HRU (1=sand; 2=loam; 3=clay)
+      ! NOTE: PAN - manual shows this as part of ET, but I only see it used in soilzone.
+    real(r32), allocatable :: soil2gw_max(:)
+      !! Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
+    real(r32), allocatable :: ssr2gw_exp(:)
+      !! Non-linear coefficient in equation used to route water from the gravity reservoirs to the GWR for each HRU
+      ! NOTE: ?should be nssr?
+    real(r32), allocatable :: ssr2gw_rate(:)
+      !! Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
+      ! NOTE: ?should be nssr?
+    real(r32), allocatable :: ssstor_init_frac(:)
+      !! Initial fraction of available water in the gravity plus preferential-flow reservoirs (fraction of sat_threshold) for each HRU
+      ! NOTE: ?should be nssr?
+
+
+
+
+
+
     ! Local Variables
     integer(i32) :: DBGUNT
     integer(i32) :: et_type
@@ -197,13 +237,11 @@ module PRMS_SOILZONE
 
   interface Soilzone
     !! Soilzone constructor
-    module function constructor_Soilzone(ctl_data, param_data, model_basin, model_climate, snow, basin_summary, nhru_summary) result(this)
+    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, basin_summary, nhru_summary) result(this)
       type(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(inout) :: model_climate
       ! type(Flowvars), intent(inout) :: model_flow
@@ -216,14 +254,12 @@ module PRMS_SOILZONE
   end interface
 
   interface
-    module subroutine run_Soilzone(this, ctl_data, param_data, model_basin, model_time, &
+    module subroutine run_Soilzone(this, ctl_data, model_basin, model_time, &
                                    model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
       class(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       type(Time_t), intent(in) :: model_time
@@ -276,7 +312,7 @@ module PRMS_SOILZONE
   end interface
 
   interface
-    module subroutine compute_gravflow(this, ctl_data, param_data, runoff, &
+    module subroutine compute_gravflow(this, ctl_data, runoff, &
                                        ihru, capacity, slowcoef_lin, &
                                        slowcoef_sq, ssr2gw_rate, ssr2gw_exp, &
                                        gvr_maxin, pref_flow_thrsh, gvr2pfr, &
@@ -286,8 +322,6 @@ module PRMS_SOILZONE
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Srunoff), intent(in) :: runoff
       integer(i32), intent(in) :: ihru
       real(r32), intent(inout) :: capacity

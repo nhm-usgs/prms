@@ -3,30 +3,27 @@ submodule (PRMS_CLIMATEVARS) sm_climateflow
 contains
   !***********************************************************************
   ! Climateflow constructor
-  module function constructor_Climateflow(ctl_data, param_data, nhru_summary) result(this)
+  module function constructor_Climateflow(ctl_data, model_basin, nhru_summary) result(this)
     use UTILS_PRMS, only: check_restart
     implicit none
 
     type(Climateflow) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    type(Basin), intent(in) :: model_basin
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     integer(i32) :: jj
 
     ! ------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              init_vars_from_file => ctl_data%init_vars_from_file%value, &
+    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOutVars => ctl_data%nhruOutVars%value, &
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
               rst_unit => ctl_data%restart_output_unit, &
+              param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
 
-              soil_rechr_init_frac => param_data%soil_rechr_init_frac%values, &
-              soil_rechr_max_frac => param_data%soil_rechr_max_frac%values, &
-              soil_moist_init_frac => param_data%soil_moist_init_frac%values, &
-              soil_moist_max => param_data%soil_moist_max%values)
+              nhru => model_basin%nhru)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -35,14 +32,30 @@ contains
         call this%print_module_info()
       endif
 
+      ! Parameters
+      allocate(this%soil_moist_init_frac(nhru))
+      call param_hdl%get_variable('soil_moist_init_frac', this%soil_moist_init_frac)
+
+      allocate(this%soil_moist_max(nhru))
+      call param_hdl%get_variable('soil_moist_max', this%soil_moist_max)
+
+      allocate(this%soil_rechr_init_frac(nhru))
+      call param_hdl%get_variable('soil_rechr_init_frac', this%soil_rechr_init_frac)
+
+      allocate(this%soil_rechr_max_frac(nhru))
+      call param_hdl%get_variable('soil_rechr_max_frac', this%soil_rechr_max_frac)
+
+
+      ! Other variables
+
       ! Soilzone variables
       allocate(this%soil_moist(nhru))
       allocate(this%soil_rechr_max(nhru))
       allocate(this%soil_rechr(nhru))
 
-      this%soil_moist = soil_moist_init_frac * soil_moist_max
-      this%soil_rechr_max = soil_rechr_max_frac * soil_moist_max
-      this%soil_rechr = soil_rechr_init_frac * this%soil_rechr_max
+      this%soil_moist = this%soil_moist_init_frac * this%soil_moist_max
+      this%soil_rechr_max = this%soil_rechr_max_frac * this%soil_moist_max
+      this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
 
       ! Snow
       allocate(this%pkwater_equiv(nhru))

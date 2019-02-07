@@ -1,7 +1,7 @@
 submodule(PRMS_TEMPERATURE_HRU) sm_temperature_hru
 contains
 
-  module function constructor_Temperature_hru(ctl_data, basin_summary, nhru_summary) result(this)
+  module function constructor_Temperature_hru(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
@@ -9,6 +9,7 @@ contains
       !! Temperature_hru class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
+    type(Basin), intent(in) :: model_basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
@@ -19,17 +20,20 @@ contains
     ! Control
     ! nhru, cbh_binary_flag, print_debug, start_time, tmax_day, tmin_day,
 
-    ! --------------------------------------------------------------------------
+    ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Temperature = Temperature(ctl_data, basin_summary, nhru_summary)
+    this%Temperature = Temperature(ctl_data, model_basin, basin_summary, nhru_summary)
 
-    associate(nhru => ctl_data%nhru%value, &
-              cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+    associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               end_time => ctl_data%end_time%values, &
               print_debug => ctl_data%print_debug%value, &
               start_time => ctl_data%start_time%values, &
               tmax_day => ctl_data%tmax_day%values(1), &
-              tmin_day => ctl_data%tmin_day%values(1))
+              tmin_day => ctl_data%tmin_day%values(1), &
+              param_hdl => ctl_data%param_file_hdl, &
+
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -38,6 +42,17 @@ contains
         call this%print_module_info()
       endif
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Read the parameters for the temperature by HRU module
+      allocate(this%tmax_cbh_adj(nhru, nmonths))
+      call param_hdl%get_variable('tmax_cbh_adj', this%tmax_cbh_adj)
+      ! write(*, *) this%tmax_cbh_adj(:,1)
+
+      allocate(this%tmin_cbh_adj(nhru, nmonths))
+      call param_hdl%get_variable('tmin_cbh_adj', this%tmin_cbh_adj)
+
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Open netcdf or ascii-base cbh files
       if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
         ! Read a netcdf file
         call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
@@ -78,21 +93,21 @@ contains
   end function
 
 
-  module subroutine run_Temperature_hru(this, ctl_data, param_data, model_basin, model_time, nhru_summary)
+  module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, nhru_summary)
     use conversions_mod, only: f_to_c, c_to_f
     use UTILS_CBH, only: read_netcdf_cbh_file
     implicit none
 
     class(Temperature_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
+    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in), optional :: model_time
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
 
     ! Local variables
     ! integer(i32) :: chru
-    integer(i32) :: idx1D
+    ! integer(i32) :: idx1D
     integer(i32) :: ios
     integer(i32) :: jj
     integer(i32) :: datetime(6)
@@ -111,14 +126,13 @@ contains
     ! curr_month (Nowmonth),
 
     ! --------------------------------------------------------------------------
-    associate(nhru => ctl_data%nhru%value, &
-              nmonths => ctl_data%nmonths%value, &
+    associate(basin_area_inv => model_basin%basin_area_inv, &
+              nhru => model_basin%nhru, &
+              nmonths => model_basin%nmonths, &
+              hru_area => model_basin%hru_area, &
 
-              basin_area_inv => model_basin%basin_area_inv, &
-
-              hru_area => param_data%hru_area%values, &
-              tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
-              tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
+              ! tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
+              ! tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
 
               curr_month => model_time%Nowmonth, &
               timestep => model_time%Timestep)
@@ -138,9 +152,11 @@ contains
       endif
 
       do jj=1, nhru
-        idx1D = (curr_month - 1) * nhru + jj
-        this%tmax(jj) = this%tmax(jj) + tmax_cbh_adj(idx1D)
-        this%tmin(jj) = this%tmin(jj) + tmin_cbh_adj(idx1D)
+        this%tmax(jj) = this%tmax(jj) + this%tmax_cbh_adj(jj, curr_month)
+        this%tmin(jj) = this%tmin(jj) + this%tmin_cbh_adj(jj, curr_month)
+        ! idx1D = (curr_month - 1) * nhru + jj
+        ! this%tmax(jj) = this%tmax(jj) + tmax_cbh_adj(idx1D)
+        ! this%tmin(jj) = this%tmin(jj) + tmin_cbh_adj(idx1D)
       end do
 
       ! NOTE: Only used by solar_radiation_degday; remove once temperature units

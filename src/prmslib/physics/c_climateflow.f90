@@ -6,7 +6,6 @@ module PRMS_CLIMATEVARS
   use prms_constants, only: dp
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   implicit none
@@ -19,6 +18,21 @@ module PRMS_CLIMATEVARS
   character(len=*), parameter :: MODVERSION = '2018-08-30 13:40:00Z'
 
   type, extends(ModelBase) :: Climateflow
+    ! Parameters
+    ! These are parameters that have conflicts that prevent them from being
+    ! placed in their correct module.
+    real(r32), allocatable :: soil_moist_init_frac(:)
+      !! Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max for each HRU
+    real(r32), allocatable :: soil_moist_max(:)
+      !! Maximum available water holding capacity of capillary reservoir from land surface to rooting depth of the major vegetation type of each HRU
+    real(r32), allocatable :: soil_rechr_init_frac(:)
+      !! Initial fraction of available water in the capillary reservoir where losses occur as both evaporation and transpiration (upper zone of capillary reservoir) for each HRU
+    real(r32), allocatable :: soil_rechr_max_frac(:)
+      !! Fraction of the capillary reservoir water-holding capacity (soil_moist_max) where losses occur as both evaporation and transpiration (upper zone of capillary reservoir) for each HRU
+
+
+    ! Other variables
+
     ! Variables related to flows from soilzone, smbal, ssflow, srunoff_carea, srunoff_smidx
     ! WARNING: soil_moist, soil_rechr, soil_rechr_max are depended on
     !          by BOTH Srunoff and Soilzone.
@@ -52,8 +66,6 @@ module PRMS_CLIMATEVARS
     ! real(r32), allocatable :: tmax_aspect_adjust(:, :)
     ! real(r32), allocatable :: tmin_aspect_adjust(:, :)
 
-
-
     contains
       procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
@@ -61,13 +73,12 @@ module PRMS_CLIMATEVARS
 
   interface Climateflow
     !! Climateflow constructor
-    module function constructor_Climateflow(ctl_data, param_data, nhru_summary) result(this)
+    module function constructor_Climateflow(ctl_data, model_basin, nhru_summary) result(this)
       type(Climateflow) :: this
         !! Climateflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
+      type(Basin), intent(in) :: model_basin
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
         !! Summary by HRU module
     end function

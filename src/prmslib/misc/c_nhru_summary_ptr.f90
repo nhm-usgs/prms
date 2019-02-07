@@ -7,7 +7,6 @@ MODULE PRMS_NHRU_SUMMARY_PTR
                             MEAN_MONTHLY, MEAN_YEARLY, YEARLY, YEAR, MONTH, DAY
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   implicit none
@@ -60,13 +59,12 @@ MODULE PRMS_NHRU_SUMMARY_PTR
 
   interface Nhru_summary_ptr
     !! Nhru_summary constructor
-    module function constructor_Nhru_summary_ptr(ctl_data, param_data) result(this)
+    module function constructor_Nhru_summary_ptr(ctl_data, model_basin) result(this)
       type(Nhru_summary_ptr) :: this
         !! Nhru_summary_ptr class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
+      type(Basin), intent(in) :: model_basin
     end function
   end interface
 

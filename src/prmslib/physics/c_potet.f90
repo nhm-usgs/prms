@@ -2,7 +2,6 @@ module PRMS_POTET
   use variableKind
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
   use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
@@ -17,6 +16,16 @@ module PRMS_POTET
 
   ! Potential Evapotranspiration class
   type, extends(ModelBase) :: Potential_ET
+    ! Parameters
+
+    ! NOTE: epan_coef is always used by intcp even though it is only required by the potet_pan module
+    real(r32), allocatable :: epan_coef(:, :)
+      !! Monthly (January to December) evaporation pan coefficient for each HRU
+    real(r32), allocatable :: potet_sublim(:)
+      !! Fraction of potential ET that is sublimated from snow in the canopy and snowpack for each HRU
+
+
+    ! Other variables
     integer(i32), private :: humidity_funit
       !! Humidity CBH file unit
 
@@ -41,11 +50,12 @@ module PRMS_POTET
 
   interface Potential_ET
     !! Potential_ET constructor
-    module function constructor_Potet(ctl_data, basin_summary, nhru_summary) result(this)
+    module function constructor_Potet(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
       type(Potential_ET) :: this
         !! Potential_ET class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
         !! Basin summary
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
@@ -54,10 +64,9 @@ module PRMS_POTET
   end interface
 
   interface
-    module subroutine run_Potet(this, ctl_data, param_data, model_basin)
+    module subroutine run_Potet(this, ctl_data, model_basin)
       class(Potential_ET), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
     end subroutine
   end interface

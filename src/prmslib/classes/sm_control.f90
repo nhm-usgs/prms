@@ -11,6 +11,10 @@ contains
     type(Control) :: this
     character(len=*), intent(in) :: control_filename
 
+    ! Local variables
+    integer(i32) :: numfiles
+      !! Number of parameter filenames in the control file
+
     ! --------------------------------------------------------------------------
     ! if (print_debug > -2) then
       ! Output module and version information
@@ -18,18 +22,18 @@ contains
     ! endif
 
     ! Initialize certain dimensions with default values
-    this%ndays = iScalar(366)
-    this%one = iScalar(1)
-    this%nevap = iScalar(0)
-    this%nhumid = iScalar(0)
-    this%nlakeelev = iScalar(0)
-    this%nobs = iScalar(0)
-    this%nrain = iScalar(0)
-    this%nratetbl = iScalar(0)
-    this%nsol = iScalar(0)
-    this%nsnow = iScalar(0)
-    this%ntemp = iScalar(0)
-    this%nwind = iScalar(0)
+    ! this%ndays = iScalar(366)
+    ! this%one = iScalar(1)
+    ! this%nevap = iScalar(0)
+    ! this%nhumid = iScalar(0)
+    ! this%nlakeelev = iScalar(0)
+    ! this%nobs = iScalar(0)
+    ! this%nrain = iScalar(0)
+    ! this%nratetbl = iScalar(0)
+    ! this%nsol = iScalar(0)
+    ! this%nsnow = iScalar(0)
+    ! this%ntemp = iScalar(0)
+    ! this%nwind = iScalar(0)
 
     ! Initialize defaults for some control file parameters
     this%prms_warmup = iScalar(0)
@@ -47,6 +51,22 @@ contains
     if (this%model_mode%values(1)%s == 'GSFLOW') then
       this%gsflow_mode = .true.
     endif
+
+    numfiles = size(this%param_file%values)
+    if (numfiles > 1) then
+      write(*, *) 'Only one parameter filename is currently supported'
+    end if
+
+    ! Example for checking file suffix
+    write(*, *) this%param_file%values(1)%s
+    if (this%param_file%values(1)%s(index(this%param_file%values(1)%s, '.')+1:) == 'nc') then
+      write(*, *) 'Parameter netcdf file'
+      ! The parameter file is in netCDF format
+      ! allocate(Temperature_hru::this%model_temp)
+      ! this%model_temp = Temperature_hru(ctl_data, this%summary_by_basin, this%summary_by_hru)
+      ! allocate(FileIO_netcdf::this%param_file_hdl)
+      this%param_file_hdl = FileIO_netcdf(filename=this%param_file%values(1)%s)
+    end if
 
     ! TODO: add water_use_flag (composite of other flags)
 

@@ -1,20 +1,15 @@
 submodule (PRMS_GWFLOW) sm_gwflow
   contains
 
-    module function constructor_Gwflow(ctl_data, param_data, model_basin, &
+    module function constructor_Gwflow(ctl_data, model_basin, &
                                        model_climate, intcp, soil, runoff, basin_summary, nhru_summary) result(this)
       use prms_constants, only: dp, SWALE
       implicit none
 
       type(Gwflow) :: this
-        !! Gwflow class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
-        !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
@@ -50,9 +45,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! dprst_stor_hru, hru_impervstor
 
       ! ------------------------------------------------------------------------
-      associate(nhru => ctl_data%nhru%value, &
-                nlake => ctl_data%nlake%value, &
-                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
+      associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
                 basinOutVars => ctl_data%basinOutVars%value, &
                 basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 cascadegw_flag => ctl_data%cascadegw_flag%value, &
@@ -65,20 +58,23 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 nhruOutVars => ctl_data%nhruOutVars%value, &
                 nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
                 ! model_mode => ctl_data%model_mode%values, &
+                param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
 
-                elevlake_init => param_data%elevlake_init%values, &
-                gwflow_coef => param_data%gwflow_coef%values, &
-                gwstor_init => param_data%gwstor_init%values, &
-                gwstor_min => param_data%gwstor_min%values, &
-                hru_area => param_data%hru_area%values, &
-                lake_hru_id => param_data%lake_hru_id%values, &
+                ! elevlake_init => param_data%elevlake_init%values, &
+                ! gwflow_coef => param_data%gwflow_coef%values, &
+                ! gwstor_init => param_data%gwstor_init%values, &
+                ! gwstor_min => param_data%gwstor_min%values, &
 
+                nhru => model_basin%nhru, &
+                nlake => model_basin%nlake, &
                 active_gwrs => model_basin%active_gwrs, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
                 gwr_type => model_basin%gwr_type, &
+                hru_area => model_basin%hru_area, &
+                lake_hru_id => model_basin%lake_hru_id, &
                 weir_gate_flag => model_basin%weir_gate_flag, &
 
                 pkwater_equiv => model_climate%pkwater_equiv, &
@@ -97,6 +93,37 @@ submodule (PRMS_GWFLOW) sm_gwflow
           call this%print_module_info()
         endif
 
+        ! Dimensions
+        this%ngw = param_hdl%get_dimension('ngw')
+        if (this%ngw == 0) then
+          this%ngw = nhru
+        endif
+
+        ! Parameters
+        allocate(this%gwflow_coef(this%ngw))
+        call param_hdl%get_variable('gwflow_coef', this%gwflow_coef)
+
+        allocate(this%gwsink_coef(this%ngw))
+        call param_hdl%get_variable('gwsink_coef', this%gwsink_coef)
+
+        allocate(this%gwstor_init(this%ngw))
+        call param_hdl%get_variable('gwstor_init', this%gwstor_init)
+
+        allocate(this%gwstor_min(this%ngw))
+        call param_hdl%get_variable('gwstor_min', this%gwstor_min)
+
+        if (weir_gate_flag == 1) then
+          allocate(this%elevlake_init(this%ngw))
+          call param_hdl%get_variable('elevlake_init', this%elevlake_init)
+
+          allocate(this%gw_seep_coef(this%ngw))
+          call param_hdl%get_variable('gw_seep_coef', this%gw_seep_coef)
+
+          allocate(this%lake_seep_elev(nlake))
+          call param_hdl%get_variable('lake_seep_elev', this%lake_seep_elev)
+        end if
+
+        ! Other variables
         if (cascadegw_flag > 0) then
           allocate(this%gw_upslope(nhru))
           allocate(this%hru_gw_cascadeflow(nhru))
@@ -175,7 +202,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 6) then
           do chru=1, nhru
-            this%gwres_stor(chru) = dble(gwstor_init(chru))
+            this%gwres_stor(chru) = dble(this%gwstor_init(chru))
           enddo
         endif
 
@@ -189,18 +216,18 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%basin_gwstor = 0.0_dp
 
         this%has_gwstor_minarea = .false.
-        if (any(gwstor_min > 0.0_r32)) then
+        if (any(this%gwstor_min > 0.0_r32)) then
           this%has_gwstor_minarea = .true.
           allocate(this%gwstor_minarea(nhru))
-          this%gwstor_minarea = dble(gwstor_min * hru_area)
+          this%gwstor_minarea = dble(this%gwstor_min * hru_area)
         endif
 
         do jj = 1, active_gwrs
           chru = gwr_route_order(jj)
           this%basin_gwstor = this%basin_gwstor + this%gwres_stor(chru) * dble(hru_area(chru))
 
-          if (gwflow_coef(chru) > 1.0) then
-            if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', chru, gwflow_coef(chru)
+          if (this%gwflow_coef(chru) > 1.0) then
+            if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', chru, this%gwflow_coef(chru)
           endif
 
           ! TODO: Uncomment once gwr_type has been created in parameter file
@@ -236,7 +263,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
         if (weir_gate_flag == 1) then
           if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 4) then
-            this%elevlake = elevlake_init
+            this%elevlake = this%elevlake_init
           endif
 
           this%lake_seepage_max = 0.0_dp
@@ -313,23 +340,17 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
 
 
-    module subroutine run_Gwflow(this, ctl_data, param_data, model_basin, &
+    module subroutine run_Gwflow(this, ctl_data, model_basin, &
                                    model_climate, intcp, soil, runoff, model_time)
       ! USE PRMS_WATER_USE, ONLY: gwr_transfers_on, gwr_transfer, gwr_gain
       use prms_constants, only: dp, LAKE, BCWEIR, GATEOP, SWALE
       implicit none
 
       class(Gwflow), intent(inout) :: this
-        !! Gwflow class
       type(Control), intent(in) :: ctl_data
-        !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
-        !! Basin variables
       ! type(Cascade), intent(in) :: model_cascade
       type(Climateflow), intent(in) :: model_climate
-        !! Climate variables
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
@@ -392,20 +413,20 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 print_debug => ctl_data%print_debug%value, &
 
-                gwflow_coef => param_data%gwflow_coef%values, &
-                gwsink_coef => param_data%gwsink_coef%values, &
+                ! gwflow_coef => param_data%gwflow_coef%values, &
+                ! gwsink_coef => param_data%gwsink_coef%values, &
                 ! gwstor_min => param_data%gwstor_min%values, &
-                gw_seep_coef => param_data%gw_seep_coef%values, &
+                ! gw_seep_coef => param_data%gw_seep_coef%values, &
                 ! gwr_type => param_data%gwr_type%values, &
-                hru_area => param_data%hru_area%values, &
-                lake_hru_id => param_data%lake_hru_id%values, &
-                lake_seep_elev => param_data%lake_seep_elev%values, &
-                lake_type => param_data%lake_type%values, &
+                ! lake_seep_elev => param_data%lake_seep_elev%values, &
 
                 active_gwrs => model_basin%active_gwrs, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
+                hru_area => model_basin%hru_area, &
                 hru_area_dble => model_basin%hru_area_dble, &
+                lake_hru_id => model_basin%lake_hru_id, &
+                lake_type => model_basin%lake_type, &
                 weir_gate_flag => model_basin%weir_gate_flag, &
 
                 ! ncascade_gwr => model_cascade%ncascade_gwr, &
@@ -448,7 +469,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
             ! What happens when lake goes dry? Need lake bottom elevation ?
             if (lake_type(jjj) == BCWEIR .or. lake_type(jjj) == GATEOP) then
-              this%lake_seepage_max(jjj) = dble((this%elevlake(jjj) - lake_seep_elev(jjj)) * 12.0 * gw_seep_coef(j))  ! units = inches
+              this%lake_seepage_max(jjj) = dble((this%elevlake(jjj) - this%lake_seep_elev(jjj)) * 12.0 * this%gw_seep_coef(j))  ! units = inches
             endif
           enddo
 
@@ -578,14 +599,14 @@ submodule (PRMS_GWFLOW) sm_gwflow
             this%gwres_sink(chru) = 0.0_dp
           else
             ! Compute groundwater discharge
-            gwflow = gwstor * dble(gwflow_coef(chru))
+            gwflow = gwstor * dble(this%gwflow_coef(chru))
 
             ! Reduce storage by outflow
             gwstor = gwstor - gwflow
 
-            if (gwsink_coef(chru) > 0.0) then
+            if (this%gwsink_coef(chru) > 0.0) then
               ! if gwsink_coef > 1, could have had negative gwstor
-              gwsink = min(gwstor * dble(gwsink_coef(chru)), gwstor)
+              gwsink = min(gwstor * dble(this%gwsink_coef(chru)), gwstor)
               gwstor = gwstor - gwsink
             endif
 

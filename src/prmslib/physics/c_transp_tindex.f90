@@ -6,7 +6,6 @@ MODULE PRMS_TRANSP_TINDEX
   use variableKind
   use prms_constants, only: YEAR, MONTH, DAY
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TRANSPIRATION, only: Transpiration
@@ -21,6 +20,15 @@ MODULE PRMS_TRANSP_TINDEX
   character(len=*), PARAMETER :: MODVERSION = '2018-08-30 13:54:00Z'
 
   type, extends(Transpiration) :: Transp_tindex
+    ! Parameters
+    integer(i32), allocatable :: transp_beg(:)
+      !! Month to begin summing maximum air temperature for each HRU; when sum is greater than or equal to transp_tmax, transpiration begins
+    integer(i32), allocatable :: transp_end(:)
+      !! Month to stop transpiration computations; transpiration is computed thru end of previous month
+    real(r32), allocatable :: transp_tmax(:)
+      !! Temperature index to determine the specific date of the start of the transpiration period;’ the maximum air temperature for each HRU is summed starting with the first day of month transp_beg; when the sum exceeds this index, transpiration begins
+
+
     ! Local Variables
     ! integer(i32), allocatable :: transp_check(:)
     logical, allocatable, private :: transp_check(:)
@@ -40,15 +48,14 @@ MODULE PRMS_TRANSP_TINDEX
 
   interface Transp_tindex
     !! Transp_tindex constructor
-    module function constructor_Transp_tindex(ctl_data, param_data, model_basin) result(this)
+    module function constructor_Transp_tindex(ctl_data, model_basin, model_temp) result(this)
       type(Transp_tindex) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin information
+      class(Temperature), intent(in) :: model_temp
     end function
   end interface
 
@@ -60,10 +67,9 @@ MODULE PRMS_TRANSP_TINDEX
   end interface
 
   interface
-    module subroutine run_Transp_tindex(this, ctl_data, param_data, model_time, model_basin, model_temp)
+    module subroutine run_Transp_tindex(this, ctl_data, model_time, model_basin, model_temp)
       class(Transp_tindex), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
