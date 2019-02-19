@@ -8,6 +8,7 @@ module Control_class
   use rScalar_class, only: rScalar
   use PRMS_FILE_IO, only: FileIO
   use PRMS_FILE_IO_NETCDF, only: FileIO_netcdf
+  use PRMS_OUTVAR_LIST, only: outvar_list
   implicit none
 
   private
@@ -165,6 +166,9 @@ module Control_class
     logical :: gsflow_mode = .false.
       !! Indicates true if model_mode == 'GSFLOW'
 
+    type(outvar_list) :: output_variables
+      !! List of all possible output variables for PRMS
+
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
 
@@ -174,6 +178,7 @@ module Control_class
 
     contains
       procedure, public :: read => read_Control
+      procedure, private :: load_output_variables
       procedure, private :: open_model_output_file
       procedure, private :: open_var_save_file
   end type
@@ -192,6 +197,12 @@ module Control_class
     module subroutine read_Control(this)
       class(Control), intent(inout) :: this
         !! Control Class
+    end subroutine
+  end interface
+
+  interface
+    module subroutine load_output_variables(this)
+      class(Control), intent(inout) :: this
     end subroutine
   end interface
 

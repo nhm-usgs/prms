@@ -68,6 +68,10 @@ contains
       this%param_file_hdl = FileIO_netcdf(filename=this%param_file%values(1)%s)
     end if
 
+    ! Load the list of output variables
+    call this%load_output_variables()
+
+
     ! TODO: add water_use_flag (composite of other flags)
 
     ! TODO: if print_debug > -2 output control file to model_output_file
@@ -151,6 +155,19 @@ contains
 
     call closeFile(this%control_filename, iUnit, '', istat)
     1   format(a)
+  end subroutine
+
+  module subroutine load_output_variables(this)
+    class(Control), intent(inout) :: this
+
+    ! --------------------------------------------------------------------------
+    this%output_variables = outvar_list()
+
+    ! Freakin' long list of all possible output variables
+    ! ##########################################
+    ! code from external file
+    include 'sm_output_variables_code.inc'
+    ! ##########################################
   end subroutine
 
 
