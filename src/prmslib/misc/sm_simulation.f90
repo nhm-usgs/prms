@@ -20,8 +20,10 @@ submodule (Simulation_class) sm_simulation
       endif
 
       if (ctl_data%nhruOutON_OFF%value > 0) then
-        this%summary_by_hru = Nhru_summary_ptr(ctl_data, this%model_basin)
+        this%summary_by_hru = Nhru_summary_ptr(ctl_data, this%model_basin, this%model_time)
       endif
+
+      ! this%summary_crap = Summary(ctl_data, this%model_basin, this%model_time)
 
       this%model_obs = Obs(ctl_data)
 
@@ -132,6 +134,7 @@ submodule (Simulation_class) sm_simulation
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
+      call this%summary_by_hru%cleanup()
       ! if (ctl_data%save_vars_to_file%value == 1) then
       !   ! Write the important model information to the restart file
       !   write(ctl_data%restart_output_unit) this%model_time%timestep, &
