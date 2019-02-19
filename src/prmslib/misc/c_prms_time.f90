@@ -21,10 +21,20 @@ module PRMS_SET_TIME
   type, extends(ModelBase) :: Time_t
     ! integer(i32) :: Yrdays  ! only used by last_day_of_month()
     integer(i32) :: Summer_flag
+    integer(i32) :: days_in_model
+      !! Total number of days in model given start and end dates
     integer(i32) :: day_of_year ! was Jday
     integer(i32) :: day_of_solar_year
     integer(i32) :: day_of_water_year
+    integer(i32) :: days_since_start
+      !! Number of days since the start date of the model simulation
     integer(i32) :: Julian_day_absolute
+    integer(i32) :: months
+    integer(i32) :: months_in_model
+      !! Total number of months in the model
+    integer(i32) :: years_in_model
+      !! Years in model rounded to nearest full year
+
     integer(i32) :: Nowtime(6)
     integer(i32) :: Nowday
     integer(i32) :: Nowmonth
@@ -33,6 +43,12 @@ module PRMS_SET_TIME
     integer(i32) :: Nowminute
     integer(i32) :: Number_timesteps
     integer(i32) :: Timestep
+    integer(i32) :: start_jdn
+      !! Julian day number of model start date
+    integer(i32) :: end_jdn
+      !! Julian day number of model end date
+    character(len=10) :: start_string
+      !! String representation of model start date
 
     real(r32) :: Timestep_hours
     real(r32) :: Timestep_days

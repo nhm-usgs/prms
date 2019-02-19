@@ -16,7 +16,7 @@ contains
     INTRINSIC SNGL
 
     ! Local Variables
-    integer(i32) :: startday
+    ! integer(i32) :: startday
       !! Julian day of model start_time
     integer(i32) :: endday
       !! Julian day of model end_time
@@ -46,13 +46,29 @@ contains
       this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', hemisphere)
       this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', hemisphere)
 
-      startday = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
+      this%start_jdn = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
+      this%end_jdn = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
+      this%days_in_model = this%end_jdn - this%start_jdn + 1
+
+      this%months_in_model = (model_end(YEAR) - model_start(YEAR) - 1) * 12 + &
+                             (12 - model_start(MONTH) + 1) + model_end(MONTH)
+
+      this%years_in_model = model_end(YEAR) - model_start(YEAR)
+      if (model_start(MONTH) <= model_end(MONTH)) then
+        this%years_in_model = this%years_in_model + 1
+      end if
+
       endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
+      this%days_since_start = 0
       this%Nowtime = model_start
 
-      this%Number_timesteps = endday - startday + 1
+      write(this%start_string, 9001) model_start(YEAR), model_start(MONTH), model_start(DAY)
+      9001 format(I4, '-', I2.2, '-', I2.2)
+      ! write(*, *) 'start_string: ' // this%start_string
+
+      this%Number_timesteps = endday - this%start_jdn + 1
       this%Timestep = 0
-      this%Julian_day_absolute = startday
+      this%Julian_day_absolute = this%start_jdn
 
       this%Nowyear = this%Nowtime(YEAR)
       this%Nowmonth = this%Nowtime(MONTH)
@@ -124,6 +140,7 @@ contains
       this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'now', 'solar', hemisphere)
       this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'now', 'water', hemisphere)
       this%Julian_day_absolute = this%Julian_day_absolute + 1
+      this%days_since_start = this%compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3)) - this%start_jdn
 
       ! TODO: ?why? is this here? It shouldn't be.
       ! call read_data_line(this%Nowtime, var_data)
@@ -203,7 +220,7 @@ contains
         STOP 'ERROR, invalid call to dattim'
       endif
     end associate
-  end subroutine dattim
+  end subroutine
 
 
   !***********************************************************************
@@ -218,7 +235,7 @@ contains
     !***********************************************************************
     !deltim = lisfunction() ! need to make routine to get time step increment
     res = 24.0_dp
-  end function deltim
+  end function
 
 
   !***********************************************************************
@@ -397,7 +414,7 @@ contains
     endif
 
     9001 FORMAT ('    Date: ', I4, 2('/', I2.2), I3.2, ':', I2.2, /)
-  end subroutine print_date
+  end subroutine
 
   !***********************************************************************
   ! Return the last day of the given month
@@ -446,7 +463,7 @@ contains
             if (MOD(year, 400) /= 0) res = .false.
         endif
     endif
-  end function leap_day
+  end function
 
   !***********************************************************************
   ! julian_to_gregorian
@@ -500,9 +517,9 @@ contains
     integer(i32), intent(in) :: day
 
     !***********************************************************************
-    julian_day = day - 32075 + 1461 * (year + 4800 + (month - 14) / 12) / 4 &
-                     + 367 * (month - 2 - (month - 14) / 12 * 12) &
-                     / 12 - 3 * ((year + 4900 + (month - 14) / 12) / 100) / 4
-  end function compute_julday
+    julian_day = day - 32075 + 1461 * (year + 4800 + (month - 14) / 12) / 4 + &
+                     367 * (month - 2 - (month - 14) / 12 * 12) / 12 - &
+                     3 * ((year + 4900 + (month - 14) / 12) / 100) / 4
+  end function
 
 end submodule
