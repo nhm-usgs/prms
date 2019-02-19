@@ -60,6 +60,9 @@ program prms6
 
   Control_data = Control(control_filename)
 
+  ! write(*, *) 'Traversing output variables'
+  ! call Control_data%output_variables%traverse(print_outvar_key)
+
   ! TODO: Other stuff to consider
   ! - variable: kkiter; Current iteration in GSFLOW simulation (when model_mode=GSFLOW)
   ! - code behavior when init_vars_from_file==1
@@ -163,4 +166,17 @@ contains
     endif
   end subroutine
 
+  subroutine print_outvar_key(key, datatype, done)
+    implicit none
+
+    character(len=*), intent(in) :: key
+    character(len=*), intent(in) :: datatype
+    logical, intent(out) :: done
+
+    print *, '-------------------------'
+    print *, 'Variable: ', key
+    print *, 'datatype: ', datatype
+
+    done = .false.
+  end subroutine
 end program
