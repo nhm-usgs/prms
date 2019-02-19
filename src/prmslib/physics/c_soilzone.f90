@@ -61,10 +61,6 @@ module PRMS_SOILZONE
       ! NOTE: ?should be nssr?
 
 
-
-
-
-
     ! Local Variables
     integer(i32) :: DBGUNT
     integer(i32) :: et_type
