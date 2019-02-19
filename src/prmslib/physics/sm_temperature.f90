@@ -138,7 +138,6 @@ contains
 
     class(Temperature), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in), optional :: model_time
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary

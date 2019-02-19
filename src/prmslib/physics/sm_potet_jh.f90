@@ -48,10 +48,8 @@ contains
 
     class(Potet_jh), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in) :: model_time
-    ! type(Climateflow), intent(in) :: climate
     class(SolarRadiation), intent(in) :: model_solrad
     class(Temperature), intent(in) :: model_temp
 
@@ -72,7 +70,7 @@ contains
     ! elh is the latent heat of vaporization (not including the *2.54)
 
     ! Control
-    ! 
+    !
 
     ! Time_t
     ! curr_month

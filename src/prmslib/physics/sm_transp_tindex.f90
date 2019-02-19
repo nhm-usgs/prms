@@ -10,7 +10,6 @@ contains
 
     type(Transp_tindex) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
 
@@ -169,7 +168,6 @@ contains
 
     class(Transp_tindex), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp

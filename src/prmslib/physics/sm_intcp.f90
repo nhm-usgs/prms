@@ -87,17 +87,17 @@ contains
       if (print_debug == 1) allocate(this%intcp_stor_ante(nhru))
 
       this%canopy_covden = 0.0
-      this%hru_intcpevap = 0.0
-      this%hru_intcpstor = 0.0
+      this%hru_intcpevap = 0.0_dp
+      this%hru_intcpstor = 0.0_dp
       this%intcp_changeover = 0.0
       this%intcp_evap = 0.0
       this%intcp_form = 0
       this%intcp_on = .false.
       this%intcp_stor = 0.0
       this%intcp_transp_on = transp_on
-      this%net_ppt = 0.0
-      this%net_rain = 0.0
-      this%net_snow = 0.0
+      this%net_ppt = 0.0_dp
+      this%net_rain = 0.0_dp
+      this%net_snow = 0.0_dp
 
       allocate(this%basin_changeover)
       allocate(this%basin_hru_apply)
@@ -189,7 +189,6 @@ contains
 
     class(Interception) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Potential_ET), intent(in) :: model_potet
     class(Precipitation), intent(inout) :: model_precip

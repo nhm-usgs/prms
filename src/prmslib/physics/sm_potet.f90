@@ -125,7 +125,6 @@ contains
   module subroutine run_Potet(this, ctl_data, model_basin)
     class(Potential_ET), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
 
     ! Local variables

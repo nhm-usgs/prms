@@ -9,8 +9,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      ! type(Parameters), intent(in) :: param_data
-        !! Parameter data
       type(Basin), intent(in) :: model_basin
       type(Basin_summary_ptr), intent(inout) :: basin_summary
       type(Nhru_summary_ptr), intent(inout) :: nhru_summary
@@ -292,8 +290,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
          !! Srunoff class
        type(Control), intent(in) :: ctl_data
          !! Control file parameters
-       ! type(Parameters), intent(in) :: param_data
-         !! Parameters
        type(Basin), intent(in) :: model_basin
          !! Basin variables
        type(Climateflow), intent(in) :: model_climate

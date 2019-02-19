@@ -8,8 +8,6 @@ contains
       !! SolarRadiation class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
-    ! type(Parameters), intent(in) :: param_data
-      !! Parameters
     type(Basin), intent(in) :: model_basin
       !! Model basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary

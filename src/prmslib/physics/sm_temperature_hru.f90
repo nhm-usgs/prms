@@ -100,7 +100,6 @@ contains
 
     class(Temperature_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Time_t), intent(in), optional :: model_time
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
@@ -170,7 +169,7 @@ contains
       this%tavg_f = real(this%tmax + this%tmin, r32) * 0.5
       ! this%tavg_f = (sngl(this%tmax) + sngl(this%tmin)) * 0.5
 
-      ! WARNING: Assuming CBH in Fahrenheit; conversion to Celsius can be remove
+      ! WARNING: Assuming CBH in Fahrenheit; conversion to Celsius can be removed
       !          once parameter files are standardized on Celsius temp units.
       this%tmax = f_to_c(this%tmax)
       this%tmin = f_to_c(this%tmin)

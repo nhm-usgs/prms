@@ -7,7 +7,6 @@ contains
 
     type(Precipitation_hru) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Basin_summary_ptr), intent(inout) :: basin_summary
@@ -79,7 +78,6 @@ contains
 
     class(Precipitation_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time

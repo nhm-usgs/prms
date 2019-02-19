@@ -8,7 +8,6 @@ contains
 
     type(Solrad_degday) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     type(Basin_summary_ptr), intent(inout) :: basin_summary
     type(Nhru_summary_ptr), intent(inout) :: nhru_summary
