@@ -304,9 +304,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
            this%hru_gw_cascadeflow = 0.0
         endif
 
-        this%gwres_flow = 0.0
-        this%gwres_in = 0.0
-        this%gwres_sink = 0.0
+        this%gwres_flow = 0.0_dp
+        this%gwres_in = 0.0_dp
+        this%gwres_sink = 0.0_dp
         this%gw_in_ssr = 0.0_dp
         this%gw_in_soil = 0.0_dp
         this%hru_streamflow_out = 0.0_dp
@@ -343,7 +343,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
     module subroutine run_Gwflow(this, ctl_data, model_basin, &
                                    model_climate, intcp, soil, runoff, model_time)
       ! USE PRMS_WATER_USE, ONLY: gwr_transfers_on, gwr_transfer, gwr_gain
-      use prms_constants, only: dp, LAKE, BCWEIR, GATEOP, SWALE
+      use iso_fortran_env, only: output_unit
+      use prms_constants, only: dp, LAKE, BCWEIR, GATEOP, SWALE, DNEARZERO
       implicit none
 
       class(Gwflow), intent(inout) :: this
@@ -445,7 +446,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 hru_impervstor => runoff%hru_impervstor, &
                 sroff => runoff%sroff, &
 
-                cfs_conv => model_time%cfs_conv)
+                cfs_conv => model_time%cfs_conv, &
+                nowtime => model_time%Nowtime)
 
         if (cascadegw_flag > 0) then
           this%gw_upslope = 0.0_dp
@@ -603,6 +605,15 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
             ! Reduce storage by outflow
             gwstor = gwstor - gwflow
+
+            ! WARNING: PAN - added 2019-02-19 to handle SIGFPE error when writing
+            !          gwres_flow to netcdf summary file.
+            if (gwflow > 0.0_dp .and. gwflow < DNEARZERO) then
+              write(output_unit, 9008) MODNAME, '%run() WARNING: gwflow less than 2.2e-16,', chru, gwflow, ', reset to zero ', nowtime(1:3)
+              gwflow = 0.0_dp
+            endif
+
+            9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
 
             if (this%gwsink_coef(chru) > 0.0) then
               ! if gwsink_coef > 1, could have had negative gwstor
