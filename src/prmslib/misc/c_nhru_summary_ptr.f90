@@ -26,6 +26,12 @@ type :: var_ptrs
   integer(i32), pointer, dimension(:) :: ptr_i32 => null()
 end type
 
+type :: var_arrays
+  real(r64), allocatable :: arr_r64(:)
+  real(r32), allocatable :: arr_r32(:)
+  integer(i32), allocatable :: arr_i32(:)
+end type
+
 type, extends(ModelBase) :: Nhru_summary_ptr
   ! Module Variables
   logical :: begin_results
@@ -52,14 +58,10 @@ type, extends(ModelBase) :: Nhru_summary_ptr
   integer(i32), allocatable, private :: nhru_outvar_id(:)
   integer(i32), private :: time_varid
 
-  ! integer(i32), allocatable :: dailyunit(:)
-  ! integer(i32), allocatable :: monthlyunit(:)
-  ! integer(i32), allocatable :: yearlyunit(:)
-
   type(var_ptrs), allocatable :: nhru_var_daily(:)
   ! type(var_ptrs), allocatable :: nsegment_var_daily(:)
 
-  real(r64), allocatable :: nhru_var_summary(:, :)
+  type(var_arrays), allocatable :: nhru_var_summary(:)
   ! real(r64), allocatable :: nsegment_var_summary(:, :)
   ! real(r64), allocatable :: nhru_var_monthly(:, :)
   ! real(r64), allocatable :: nhru_var_yearly(:, :)
@@ -75,7 +77,21 @@ type, extends(ModelBase) :: Nhru_summary_ptr
 
     procedure, private :: create_netcdf
     procedure, nopass, private :: err_check
-    ! procedure, private :: write_netcdf
+    procedure, private :: reset_summary_vars
+
+    generic, private :: write_netcdf => write_netcdf_i32_0d, write_netcdf_i32_1d, &
+                                        write_netcdf_r32_0d, write_netcdf_r32_1d, &
+                                        write_netcdf_r64_0d, write_netcdf_r64_1d, &
+                                        write_netcdf_var_arr, write_netcdf_var_ptr
+    procedure, private :: write_netcdf_i32_0d
+    procedure, private :: write_netcdf_i32_1d
+    procedure, private :: write_netcdf_r32_0d
+    procedure, private :: write_netcdf_r32_1d
+    procedure, private :: write_netcdf_r64_0d
+    procedure, private :: write_netcdf_r64_1d
+    procedure, private :: write_netcdf_var_arr
+    procedure, private :: write_netcdf_var_ptr
+
 end type
 
 interface Nhru_summary_ptr
@@ -116,6 +132,12 @@ interface
   end subroutine
 end interface
 
+interface
+  module subroutine reset_summary_vars(this)
+    class(Nhru_summary_ptr), intent(inout) :: this
+  end subroutine
+end interface
+
 interface set_nhru_var
   module subroutine set_nhru_var_r32(this, idx, var)
     class(Nhru_summary_ptr), intent(inout) :: this
@@ -133,6 +155,80 @@ interface set_nhru_var
     class(Nhru_summary_ptr), intent(inout) :: this
     integer(i32), intent(in) :: idx
     integer(i32), target, intent(in) :: var(:)
+  end subroutine
+end interface
+
+interface write_netcdf
+  module subroutine write_netcdf_i32_0d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    integer(i32), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_i32_1d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    integer(i32), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_r32_0d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r32), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_r32_1d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r32), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_r64_0d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r64), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_r64_1d(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r64), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_var_ptr(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    type(var_ptrs), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+  end subroutine
+
+  module subroutine write_netcdf_var_arr(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    type(var_arrays), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
   end subroutine
 end interface
 

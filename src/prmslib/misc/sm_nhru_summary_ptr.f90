@@ -1,11 +1,12 @@
 submodule (PRMS_NHRU_SUMMARY_PTR) sm_nhru_summary_ptr
 use netcdf
+use prms_constants, only: dp
 
 contains
   !**************************************************************************
   ! Climateflow constructor
   module function constructor_Nhru_summary_ptr(ctl_data, model_basin, model_time) result(this)
-    use prms_constants, only: MAXFILE_LENGTH, dp
+    use prms_constants, only: MAXFILE_LENGTH
     use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
     implicit none
 
@@ -15,9 +16,6 @@ contains
     type(Time_t), intent(in) :: model_time
 
     ! Local variables
-    ! integer(i32) :: ios
-    ! integer(i32) :: jj
-    ! integer(i32) :: j
     character(len=MAXFILE_LENGTH) :: fileName
     character(len=:), allocatable :: suffix
 
@@ -93,8 +91,9 @@ contains
 
       if (any([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
         write(*,*) '-- allocated nhru_var_summary'
-        allocate(this%nhru_var_summary(nhru, nhruOutVars))
-        this%nhru_var_summary = 0.0_dp
+        allocate(this%nhru_var_summary(nhruOutVars))
+        ! allocate(this%nhru_var_summary(nhru, nhruOutVars))
+        ! this%nhru_var_summary = 0.0_dp
       end if
 
       fileName = ctl_data%nhruOutBaseFileName%values(1)%s // suffix // '.nc'
@@ -111,7 +110,7 @@ contains
   !***********************************************************************
   module subroutine run_Nhru_summary_ptr(this, ctl_data, model_time, model_basin)
     use conversions_mod, only: c_to_f
-    use prms_constants, only: dp
+    ! use prms_constants, only: dp
     implicit none
 
     class(Nhru_summary_ptr), intent(inout) :: this
@@ -174,7 +173,16 @@ contains
           if ((curr_month == st_month .and. curr_day == st_day) .or. last_day_of_simulation) then
             if (nhruOut_freq == MEAN_YEARLY) then
               ! Compute the mean summary values
-              this%nhru_var_summary = this%nhru_var_summary / this%yeardays
+              do jj=1, nhruOutVars
+                if (allocated(this%nhru_var_summary(jj)%arr_i32)) then
+                  ! NOTE: Is the mean of an integer ever needed?
+                  this%nhru_var_summary(jj)%arr_i32 = this%nhru_var_summary(jj)%arr_i32 / this%yeardays
+                else if (allocated(this%nhru_var_summary(jj)%arr_r32)) then
+                  this%nhru_var_summary(jj)%arr_r32 = this%nhru_var_summary(jj)%arr_r32 / this%yeardays
+                else if (allocated(this%nhru_var_summary(jj)%arr_r64)) then
+                  this%nhru_var_summary(jj)%arr_r64 = this%nhru_var_summary(jj)%arr_r64 / this%yeardays
+                end if
+              end do
             end if
 
             ! Write the yearly summary values
@@ -182,20 +190,19 @@ contains
             start = (/ 1, this%time_index_yearly /)
 
             ! Write the timestep
-            call this%err_check(nf90_put_var(this%nhru_file_hdl, this%time_varid, days_since_start, &
-                                            start=[this%time_index_yearly]))
+            call this%write_netcdf(this%nhru_file_hdl, this%time_varid, days_since_start, &
+                                            start=[this%time_index_yearly])
 
             ! Write the output variables
             do jj=1, nhruOutVars
-              call this%err_check(nf90_put_var(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
-                                              this%nhru_var_summary(:, jj), &
-                                              start=start, count=rcount))
+              call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
+                                     this%nhru_var_summary(jj), start=start, ocount=rcount)
             end do
 
             this%time_index_yearly = this%time_index_yearly + 1
-            this%nhru_var_summary = 0.0_dp
             this%yeardays = 0
             this%prioryear = curr_year
+            call this%reset_summary_vars()
           end if
         end if
 
@@ -203,14 +210,13 @@ contains
 
         ! Compute running totals
         do jj=1, nhruOutVars
-          do concurrent (j=1:active_hrus)
-            chru = hru_route_order(j)
-            if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
-              this%nhru_var_summary(chru, jj) = this%nhru_var_summary(chru, jj) + dble(this%nhru_var_daily(jj)%ptr_r32(chru))
-            else if (associated(this%nhru_var_daily(jj)%ptr_r64)) then
-              this%nhru_var_summary(chru, jj) = this%nhru_var_summary(chru, jj) + this%nhru_var_daily(jj)%ptr_r64(chru)
-            end if
-          end do
+          if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
+            this%nhru_var_summary(jj)%arr_r32 = this%nhru_var_summary(jj)%arr_r32 + this%nhru_var_daily(jj)%ptr_r32
+          else if (associated(this%nhru_var_daily(jj)%ptr_r64)) then
+            this%nhru_var_summary(jj)%arr_r64 = this%nhru_var_summary(jj)%arr_r64 + this%nhru_var_daily(jj)%ptr_r64
+          else if (associated(this%nhru_var_daily(jj)%ptr_i32)) then
+            this%nhru_var_summary(jj)%arr_i32 = this%nhru_var_summary(jj)%arr_i32 + this%nhru_var_daily(jj)%ptr_i32
+          end if
         enddo
       elseif (this%is_monthly_freq) then
         ! ===================================
@@ -221,22 +227,33 @@ contains
           write_month = .true.
         end if
 
+        ! TODO: Could *_var_summary(nhru, nOutVars) be changed to
+        !       *_var_summary(nOutVars) -> ptr_*
+        !       If this worked then any sized dimension could be handled without
+        !       conditionals for dimension name in the loop below.
         ! Compute running totals
         do jj=1, nhruOutVars
-          do concurrent (j=1:active_hrus)
-            chru = hru_route_order(j)
-            if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
-              this%nhru_var_summary(chru, jj) = this%nhru_var_summary(chru, jj) + dble(this%nhru_var_daily(jj)%ptr_r32(chru))
-            else if (associated(this%nhru_var_daily(jj)%ptr_r64)) then
-              this%nhru_var_summary(chru, jj) = this%nhru_var_summary(chru, jj) + this%nhru_var_daily(jj)%ptr_r64(chru)
-            end if
-          end do
+          if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
+            this%nhru_var_summary(jj)%arr_r32 = this%nhru_var_summary(jj)%arr_r32 + this%nhru_var_daily(jj)%ptr_r32
+          else if (associated(this%nhru_var_daily(jj)%ptr_r64)) then
+            this%nhru_var_summary(jj)%arr_r64 = this%nhru_var_summary(jj)%arr_r64 + this%nhru_var_daily(jj)%ptr_r64
+          else if (associated(this%nhru_var_daily(jj)%ptr_i32)) then
+            this%nhru_var_summary(jj)%arr_i32 = this%nhru_var_summary(jj)%arr_i32 + this%nhru_var_daily(jj)%ptr_i32
+          end if
         enddo
 
         if (write_month) then
           if (nhruOut_freq == MEAN_MONTHLY) then
             ! Compute the mean values for the month
-            this%nhru_var_summary = this%nhru_var_summary / model_time%last_day_of_month(curr_month)
+            do jj=1, nhruOutVars
+              if (allocated(this%nhru_var_summary(jj)%arr_i32)) then
+                this%nhru_var_summary(jj)%arr_i32 = this%nhru_var_summary(jj)%arr_i32 / model_time%last_day_of_month(curr_month)
+              else if (allocated(this%nhru_var_summary(jj)%arr_r32)) then
+                this%nhru_var_summary(jj)%arr_r32 = this%nhru_var_summary(jj)%arr_r32 / model_time%last_day_of_month(curr_month)
+              else if (allocated(this%nhru_var_summary(jj)%arr_r64)) then
+                this%nhru_var_summary(jj)%arr_r64 = this%nhru_var_summary(jj)%arr_r64 / model_time%last_day_of_month(curr_month)
+              end if
+            end do
           end if
 
           ! Write out the monthly summary values
@@ -244,18 +261,17 @@ contains
           start = (/ 1, this%time_index_monthly /)
 
           ! Write the timestep
-          call this%err_check(nf90_put_var(this%nhru_file_hdl, this%time_varid, days_since_start, &
-                                           start=[this%time_index_monthly]))
+          call this%write_netcdf(this%nhru_file_hdl, this%time_varid, days_since_start, &
+                                 start=[this%time_index_monthly])
 
           ! Write the output variables
           do jj=1, nhruOutVars
-            call this%err_check(nf90_put_var(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
-                                             this%nhru_var_summary(:, jj), &
-                                             start=start, count=rcount))
+            call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
+                                   this%nhru_var_summary(jj), start=start, ocount=rcount)
           end do
 
           this%time_index_monthly = this%time_index_monthly + 1
-          this%nhru_var_summary = 0.0_dp
+          call this%reset_summary_vars()
         end if
       end if
 
@@ -264,23 +280,12 @@ contains
         start = (/ 1, days_since_start+1 /)
 
         ! Write the timestep
-        call this%err_check(nf90_put_var(this%nhru_file_hdl, this%time_varid, days_since_start, &
-                                        start=[days_since_start+1]))
+        call this%write_netcdf(this%nhru_file_hdl, this%time_varid, days_since_start, &
+                               start=[days_since_start+1])
         do jj=1, nhruOutVars
-          ! Write to netcdf file
-          if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
-            ! Floats
-            call this%err_check(nf90_put_var(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
-                                             this%nhru_var_daily(jj)%ptr_r32, &
-                                             start=start, count=rcount))
-          else if (associated(this%nhru_var_daily(jj)%ptr_r64)) then
-            ! Doubles
-            call this%err_check(nf90_put_var(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
-                                             this%nhru_var_daily(jj)%ptr_r64, &
-                                             start=start, count=rcount))
-          else
-            write(*, *) MODNAME, 'No output array for variable index:', jj
-          end if
+          ! Write daily values to netcdf file
+          call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
+                                 this%nhru_var_daily(jj), start=start, ocount=rcount)
         end do
       end if
     end associate
@@ -344,6 +349,7 @@ contains
         call this%err_check(nf90_def_dim(this%nhru_file_hdl, 'time', years_in_model, time_dimid))
       end if
 
+      ! TODO: Also add dimensions for nsegment and possibly nsub
       call this%err_check(nf90_def_dim(this%nhru_file_hdl, "nhru", nhru, nhru_dimid))
 
       ! The dimids array is used to pass the IDs of the dimensions of the
@@ -369,9 +375,11 @@ contains
       call this%err_check(nf90_put_att(this%nhru_file_hdl, nhm_id_varid, &
                                        'units', 'none'))
 
+      ! TODO: Add nhm_seg (for nsegment dimension)
+
+
       ! Define the nhru-based output variables
       do jj = 1, nhruOutVars
-        ! TODO: Figure out how to set the datatype correctly
         outvar_name = ctl_data%nhruOutVar_names%values(jj)%s
 
         ! Pull variable information from control class
@@ -379,6 +387,9 @@ contains
                                   outvar_dimensions, outvar_datatype, &
                                   outvar_desc, outvar_units)
 
+        ! TODO: Add variable with specific outvar_dimensions (e.g. nsegment)
+        !       plus the time dimension. If the outvar_dimensions is 'one' then
+        !       add the variable with just the time dimension.
         call this%err_check(nf90_def_var(this%nhru_file_hdl, outvar_name, &
                                          outvar_datatype, dimids, this%nhru_outvar_id(jj), &
                                          shuffle=.true., &
@@ -402,6 +413,8 @@ contains
       ! Write the nhm_id values to the file
       call this%err_check(nf90_put_var(this%nhru_file_hdl, nhm_id_varid, nhm_id))
 
+      ! TODO: Write the nhm_seg values to the file
+
       ! Close the file. This frees up any internal netCDF resources
       ! associated with the file, and flushes any buffers.
       ! call this%err_check(nf90_close(this%nhru_file_hdl))
@@ -422,6 +435,25 @@ contains
     end if
   end subroutine
 
+  module subroutine reset_summary_vars(this)
+    class(Nhru_summary_ptr), intent(inout) :: this
+
+    integer(i32) :: jj
+
+    ! --------------------------------------------------------------------------
+    ! Reset all summary variables to zero
+    if (allocated(this%nhru_var_summary)) then
+      do jj=1, size(this%nhru_var_summary)
+        if (allocated(this%nhru_var_summary(jj)%arr_i32)) then
+          this%nhru_var_summary(jj)%arr_i32 = 0
+        else if (allocated(this%nhru_var_summary(jj)%arr_r32)) then
+          this%nhru_var_summary(jj)%arr_r32 = 0.0
+        else if (allocated(this%nhru_var_summary(jj)%arr_r64)) then
+          this%nhru_var_summary(jj)%arr_r64 = 0.0_dp
+        end if
+      end do
+    end if
+  end subroutine
 
 
   module subroutine set_nhru_var_r64(this, idx, var)
@@ -434,6 +466,13 @@ contains
     ! --------------------------------------------------------------------------
     ! write(*,*) '  - r64_outvar set'
     this%nhru_var_daily(idx)%ptr_r64 => var
+
+    if (allocated(this%nhru_var_summary)) then
+      if (.not. allocated(this%nhru_var_summary(idx)%arr_r64)) then
+        allocate(this%nhru_var_summary(idx)%arr_r64(size(var, 1)))
+        this%nhru_var_summary(idx)%arr_r64 = 0.0_dp
+      end if
+    end if
   end subroutine
 
   module subroutine set_nhru_var_r32(this, idx, var)
@@ -446,6 +485,13 @@ contains
     ! --------------------------------------------------------------------------
     ! write(*,*) '  - r32_outvar set'
     this%nhru_var_daily(idx)%ptr_r32 => var
+
+    if (allocated(this%nhru_var_summary)) then
+      if (.not. allocated(this%nhru_var_summary(idx)%arr_r32)) then
+        allocate(this%nhru_var_summary(idx)%arr_r32(size(var, 1)))
+        this%nhru_var_summary(idx)%arr_r32 = 0.0
+      end if
+    end if
   end subroutine
 
   module subroutine set_nhru_var_i32(this, idx, var)
@@ -458,7 +504,184 @@ contains
     ! --------------------------------------------------------------------------
     ! write(*,*) '  - i32_outvar set'
     this%nhru_var_daily(idx)%ptr_i32 => var
+
+    if (allocated(this%nhru_var_summary)) then
+      if (.not. allocated(this%nhru_var_summary(idx)%arr_i32)) then
+        allocate(this%nhru_var_summary(idx)%arr_i32(size(var, 1)))
+        this%nhru_var_summary(idx)%arr_i32 = 0
+      end if
+    end if
   end subroutine
+
+  module subroutine write_netcdf_i32_0d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    integer(r32), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      write(output_unit, *) MODNAME, '%write_netcdf_r32_0d() WARNING: Count not allowed for scalars.'
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_i32_1d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    integer(i32), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_r32_0d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r32), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      write(output_unit, *) MODNAME, '%write_netcdf_r32_0d() WARNING: Count not allowed for scalars.'
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_r32_1d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r32), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_r64_0d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r64), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      write(output_unit, *) MODNAME, '%write_netcdf_r32_0d() WARNING: Count not allowed for scalars.'
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_r64_1d(this, ncid, varid, data, start, ocount)
+    use netcdf
+    implicit none
+
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    real(r64), intent(in) :: data(:)
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    if (present(ocount)) then
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
+    else
+      call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_var_arr(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    type(var_arrays), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    ! if (present(ocount)) then
+    !   call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
+    ! else
+    !   call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    ! end if
+
+    if (allocated(data%arr_r32)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%arr_r32, start=start, count=ocount))
+    else if (allocated(data%arr_r64)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%arr_r64, start=start, count=ocount))
+    else if (allocated(data%arr_i32)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%arr_i32, start=start, count=ocount))
+    else
+      write(*, *) MODNAME, '%run() No output array for variable id: ', varid
+    end if
+  end subroutine
+
+  module subroutine write_netcdf_var_ptr(this, ncid, varid, data, start, ocount)
+    class(Nhru_summary_ptr), intent(in) :: this
+    integer(i32), intent(in) :: ncid
+    integer(i32), intent(in) :: varid
+    type(var_ptrs), intent(in) :: data
+    integer(i32), intent(in) :: start(:)
+    integer(i32), optional, intent(in) :: ocount(:)
+
+    ! --------------------------------------------------------------------------
+    ! if (present(ocount)) then
+    !   call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
+    ! else
+    !   call this%err_check(nf90_put_var(ncid, varid, data, start=start))
+    ! end if
+
+    if (associated(data%ptr_r32)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%ptr_r32, start=start, count=ocount))
+    else if (associated(data%ptr_r64)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%ptr_r64, start=start, count=ocount))
+    else if (associated(data%ptr_i32)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%ptr_i32, start=start, count=ocount))
+    else
+      write(*, *) MODNAME, '%run() No output array for variable id: ', varid
+    end if
+  end subroutine
+
 
   module subroutine cleanup_Nhru_summary_ptr(this)
     use netcdf
