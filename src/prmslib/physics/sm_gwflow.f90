@@ -414,13 +414,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 print_debug => ctl_data%print_debug%value, &
 
-                ! gwflow_coef => param_data%gwflow_coef%values, &
-                ! gwsink_coef => param_data%gwsink_coef%values, &
-                ! gwstor_min => param_data%gwstor_min%values, &
-                ! gw_seep_coef => param_data%gw_seep_coef%values, &
-                ! gwr_type => param_data%gwr_type%values, &
-                ! lake_seep_elev => param_data%lake_seep_elev%values, &
-
                 active_gwrs => model_basin%active_gwrs, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
@@ -603,15 +596,15 @@ submodule (PRMS_GWFLOW) sm_gwflow
             ! Compute groundwater discharge
             gwflow = gwstor * dble(this%gwflow_coef(chru))
 
-            ! Reduce storage by outflow
-            gwstor = gwstor - gwflow
-
             ! WARNING: PAN - added 2019-02-19 to handle SIGFPE error when writing
             !          gwres_flow to netcdf summary file.
             if (gwflow > 0.0_dp .and. gwflow < DNEARZERO) then
               write(output_unit, 9008) MODNAME, '%run() WARNING: gwflow less than 2.2e-16,', chru, gwflow, ', reset to zero ', nowtime(1:3)
               gwflow = 0.0_dp
             endif
+
+            ! Reduce storage by outflow
+            gwstor = gwstor - gwflow
 
             9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
 
