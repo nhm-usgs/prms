@@ -149,6 +149,8 @@ contains
       if (nhruOutON_OFF == 1) then
         do jj=1, nhruOutVars
           select case(nhruOutVar_names(jj)%s)
+            case('intcp_form')
+              call nhru_summary%set_nhru_var(jj, this%intcp_form)
             case('hru_intcpevap')
               call nhru_summary%set_nhru_var(jj, this%hru_intcpevap)
             case('hru_intcpstor')
