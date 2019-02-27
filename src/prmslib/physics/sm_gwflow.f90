@@ -599,7 +599,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
             ! WARNING: PAN - added 2019-02-19 to handle SIGFPE error when writing
             !          gwres_flow to netcdf summary file.
             if (gwflow > 0.0_dp .and. gwflow < DNEARZERO) then
-              write(output_unit, 9008) MODNAME, '%run() WARNING: gwflow less than 2.2e-16,', chru, gwflow, ', reset to zero ', nowtime(1:3)
+              ! write(output_unit, 9008) MODNAME, '%run() WARNING: gwflow less than 2.2e-16,', chru, gwflow, ', reset to zero ', nowtime(1:3)
               gwflow = 0.0_dp
             endif
 
