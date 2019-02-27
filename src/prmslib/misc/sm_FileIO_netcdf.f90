@@ -72,11 +72,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
         call this%err_check(nf90_inq_dimid(this%file_hdl, name, dimid))
         call this%err_check(nf90_inquire_dimension(this%file_hdl, dimid, len=res))
       else
-<<<<<<< HEAD
         write(*, *) '  Dimension: ', trim(name), ' does not exist, default to 0.'
-=======
-        write(*, *) 'Dimension: ', trim(name), ' does not exist, default to 0.'
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
         res = 0
       end if
     end function
@@ -148,11 +144,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -172,11 +164,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -196,11 +184,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -220,11 +204,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -245,11 +225,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
       ! write(*, *) '-- in get_variable_r32_1d'
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -276,11 +252,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
       ! ------------------------------------------------------------------------
       ! write(*, *) '-- in get_variable_r32_2d'
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! call this%err_check(nf90_inquire_variable(this%file_hdl, varid=varid, ndims=num_dims))
@@ -323,11 +295,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
@@ -347,11 +315,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Get the varid of the data variable, based on its name.
-<<<<<<< HEAD
       ! write(output_unit, *) 'Loading ', name
-=======
-      write(output_unit, *) 'Loading ', name
->>>>>>> f0a07dc2b6dbeddcf07ecca895f7a22fc78a7425
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
 
       ! Read the data
