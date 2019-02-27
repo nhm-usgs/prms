@@ -25,10 +25,7 @@ contains
               end_time => ctl_data%end_time%values, &
               nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
               nhruOut_freq => ctl_data%nhruOut_freq%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-
-              nhru => model_basin%nhru, &
-              nhm_id => model_basin%nhm_id)
+              nhruOutVars => ctl_data%nhruOutVars%value)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -87,6 +84,7 @@ contains
       end if
 
       allocate(this%nhru_outvar_id(nhruOutVars))
+      allocate(this%nhru_outvar_size(nhruOutVars))
       allocate(this%nhru_var_daily(nhruOutVars))
 
       if (any([MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY]==nhruOut_freq)) then
@@ -149,6 +147,8 @@ contains
               nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
 
               nhru => model_basin%nhru, &
+              nsegment => model_basin%nsegment, &
+              nsub => model_basin%nsub, &
               active_hrus => model_basin%active_hrus, &
               hru_route_order => model_basin%hru_route_order)
 
@@ -208,7 +208,7 @@ contains
 
         this%yeardays = this%yeardays + 1
 
-        ! Compute running totals
+        ! Compute yearly running totals
         do jj=1, nhruOutVars
           if (associated(this%nhru_var_daily(jj)%ptr_r32)) then
             this%nhru_var_summary(jj)%arr_r32 = this%nhru_var_summary(jj)%arr_r32 + this%nhru_var_daily(jj)%ptr_r32
@@ -276,7 +276,7 @@ contains
       end if
 
       if (this%is_daily_freq) then
-        rcount = (/ nhru, 1 /)
+        ! rcount = (/ nhru, 1 /)
         start = (/ 1, days_since_start+1 /)
 
         ! Write the timestep
@@ -284,8 +284,15 @@ contains
                                start=[days_since_start+1])
         do jj=1, nhruOutVars
           ! Write daily values to netcdf file
-          call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
-                                 this%nhru_var_daily(jj), start=start, ocount=rcount)
+          if (this%nhru_outvar_size(jj) == 1) then
+            call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
+                                   this%nhru_var_daily(jj), &
+                                   start=[days_since_start+1])
+          else
+            rcount = (/ this%nhru_outvar_size(jj), 1 /)
+            call this%write_netcdf(this%nhru_file_hdl, this%nhru_outvar_id(jj), &
+                                   this%nhru_var_daily(jj), start=start, ocount=rcount)
+          end if
         end do
       end if
     end associate
@@ -306,8 +313,13 @@ contains
     ! an ID for each one.
     integer(i32) :: dimids(2)
     integer(i32) :: nhru_dimid
+    integer(i32) :: nsegment_dimid
+    integer(i32) :: nsub_dimid
     integer(i32) :: time_dimid
     integer(i32) :: nhm_id_varid
+    integer(i32) :: nhm_seg_varid
+    integer(i32) :: ov_dimid
+      !! dimid for current output variable being created
 
     integer(i32) :: jj
     character(len=:), allocatable :: outvar_dimensions
@@ -324,7 +336,10 @@ contains
               output_variables => ctl_data%output_variables, &
 
               nhru => model_basin%nhru, &
+              nsegment => model_basin%nsegment, &
+              nsub => model_basin%nsub, &
               nhm_id => model_basin%nhm_id, &
+              nhm_seg => model_basin%nhm_seg, &
 
               days_in_model => model_time%days_in_model, &
               months_in_model => model_time%months_in_model, &
@@ -337,11 +352,13 @@ contains
       !       Using NF90_CLOBBER (netcdf3) with an unlimited time dimension
       !       results in faster writing but larger file sizes (file sizes are
       !       still smaller than ASCII files).
+      ! write(*, *) 'Create output netcdf'
       call this%err_check(nf90_create(filename, NF90_NETCDF4, this%nhru_file_hdl))
 
       ! Define the dimensions. NetCDF will hand back an ID for each.
       ! call this%err_check(nf90_def_dim(this%nhru_file_hdl, 'time', NF90_UNLIMITED, time_dimid))
       if (this%is_daily_freq) then
+        ! write(*, *) '  add time dimension'
         call this%err_check(nf90_def_dim(this%nhru_file_hdl, 'time', days_in_model, time_dimid))
       else if (this%is_monthly_freq) then
         call this%err_check(nf90_def_dim(this%nhru_file_hdl, 'time', months_in_model, time_dimid))
@@ -350,11 +367,19 @@ contains
       end if
 
       ! TODO: Also add dimensions for nsegment and possibly nsub
+      write(*, *) '  add nhru dimension'
       call this%err_check(nf90_def_dim(this%nhru_file_hdl, "nhru", nhru, nhru_dimid))
+      write(*, *) '  add nsegment dimension'
+      call this%err_check(nf90_def_dim(this%nhru_file_hdl, "nsegment", nsegment, nsegment_dimid))
+
+      if (nsub > 0) then
+        write(*, *) '  add nsub dimension'
+        call this%err_check(nf90_def_dim(this%nhru_file_hdl, "nsub", nsub, nsub_dimid))
+      end if
 
       ! The dimids array is used to pass the IDs of the dimensions of the
       ! variables. Note that in fortran arrays are stored in column-major format.
-      dimids = (/ nhru_dimid, time_dimid /)
+      ! dimids = (/ nhru_dimid, time_dimid /)
 
       ! Define the variable for the time dimension
       days_since = 'days since ' // start_string // ' 00:00:00'
@@ -375,8 +400,16 @@ contains
       call this%err_check(nf90_put_att(this%nhru_file_hdl, nhm_id_varid, &
                                        'units', 'none'))
 
-      ! TODO: Add nhm_seg (for nsegment dimension)
+      ! Always include nhm_seg as a variable
+      write(*, *) '  add nhm_seg dimension'
+      call this%err_check(nf90_def_var(this%nhru_file_hdl, &
+                                       'nhm_seg', NF90_INT, nsegment_dimid, nhm_seg_varid))
+      call this%err_check(nf90_put_att(this%nhru_file_hdl, nhm_seg_varid, &
+                                       'long_name', 'NHM segment id'))
+      call this%err_check(nf90_put_att(this%nhru_file_hdl, nhm_seg_varid, &
+                                       'units', 'none'))
 
+      ! TODO: Add nsub-related variable
 
       ! Define the nhru-based output variables
       do jj = 1, nhruOutVars
@@ -387,13 +420,39 @@ contains
                                   outvar_dimensions, outvar_datatype, &
                                   outvar_desc, outvar_units)
 
+        write(*, *) '  Create var: ', outvar_name, '    dims: ', outvar_dimensions
+
+
+
         ! TODO: Add variable with specific outvar_dimensions (e.g. nsegment)
         !       plus the time dimension. If the outvar_dimensions is 'one' then
         !       add the variable with just the time dimension.
-        call this%err_check(nf90_def_var(this%nhru_file_hdl, outvar_name, &
-                                         outvar_datatype, dimids, this%nhru_outvar_id(jj), &
-                                         shuffle=.true., &
-                                         deflate_level=5))
+        if (outvar_dimensions == 'one') then
+          ! 1D - e.g. each timestep writes a scalar
+
+          ! Save the array size for this variable to an array for later
+          this%nhru_outvar_size(jj) = 1
+
+          call this%err_check(nf90_def_var(this%nhru_file_hdl, outvar_name, &
+                                           outvar_datatype, time_dimid, this%nhru_outvar_id(jj), &
+                                           shuffle=.true., &
+                                           deflate_level=5))
+        else
+          ! 2D output variable (e.g. time, nhru)
+          ! Get the dimid for the outvar dimension
+          call this%err_check(nf90_inq_dimid(this%nhru_file_hdl, outvar_dimensions, &
+                                            ov_dimid))
+          dimids = (/ ov_dimid, time_dimid /)
+
+          ! Save the array size for this variable to an array for later
+          call this%err_check(nf90_inquire_dimension(this%nhru_file_hdl, ov_dimid, &
+                            len=this%nhru_outvar_size(jj)))
+
+          call this%err_check(nf90_def_var(this%nhru_file_hdl, outvar_name, &
+                                          outvar_datatype, dimids, this%nhru_outvar_id(jj), &
+                                          shuffle=.true., &
+                                          deflate_level=5))
+        end if
 
         ! Add attributes for each variable
         call this%err_check(nf90_put_att(this%nhru_file_hdl, &
@@ -412,6 +471,9 @@ contains
 
       ! Write the nhm_id values to the file
       call this%err_check(nf90_put_var(this%nhru_file_hdl, nhm_id_varid, nhm_id))
+
+      ! Write the nhm_seg values to the file
+      call this%err_check(nf90_put_var(this%nhru_file_hdl, nhm_seg_varid, nhm_seg))
 
       ! TODO: Write the nhm_seg values to the file
 
@@ -511,6 +573,17 @@ contains
         this%nhru_var_summary(idx)%arr_i32 = 0
       end if
     end if
+  end subroutine
+
+  module subroutine set_var_r64_0D(this, idx, var)
+    implicit none
+
+    class(Nhru_summary_ptr), intent(inout) :: this
+    integer(i32), intent(in) :: idx
+    real(r64), target, intent(in) :: var
+
+    ! --------------------------------------------------------------------------
+    this%nhru_var_daily(idx)%scalar_r64 => var
   end subroutine
 
   module subroutine write_netcdf_i32_0d(this, ncid, varid, data, start, ocount)
@@ -677,6 +750,8 @@ contains
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_r64, start=start, count=ocount))
     else if (associated(data%ptr_i32)) then
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_i32, start=start, count=ocount))
+    else if (associated(data%scalar_r64)) then
+      call this%err_check(nf90_put_var(ncid, varid, data%scalar_r64, start=start))
     else
       write(*, *) MODNAME, '%run() No output array for variable id: ', varid
     end if

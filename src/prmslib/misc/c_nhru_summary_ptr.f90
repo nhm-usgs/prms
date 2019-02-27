@@ -24,6 +24,7 @@ type :: var_ptrs
   real(r64), pointer, dimension(:) :: ptr_r64 => null()
   real(r32), pointer, dimension(:) :: ptr_r32 => null()
   integer(i32), pointer, dimension(:) :: ptr_i32 => null()
+  real(r64), pointer :: scalar_r64 => null()
 end type
 
 type :: var_arrays
@@ -56,6 +57,8 @@ type, extends(ModelBase) :: Nhru_summary_ptr
 
   integer(i32), private :: nhru_file_hdl
   integer(i32), allocatable, private :: nhru_outvar_id(:)
+  integer(i32), allocatable, private :: nhru_outvar_size(:)
+    !! Size of each output variable array
   integer(i32), private :: time_varid
 
   type(var_ptrs), allocatable :: nhru_var_daily(:)
@@ -70,10 +73,12 @@ type, extends(ModelBase) :: Nhru_summary_ptr
     procedure, private :: set_nhru_var_r32
     procedure, private :: set_nhru_var_r64
     procedure, private :: set_nhru_var_i32
+    procedure, private :: set_var_r64_0D
     procedure, public :: cleanup => cleanup_Nhru_summary_ptr
     procedure, public :: run => run_Nhru_summary_ptr
     generic, public :: set_nhru_var => set_nhru_var_r32, set_nhru_var_r64, &
-                                       set_nhru_var_i32
+                                       set_nhru_var_i32, &
+                                       set_var_r64_0D
 
     procedure, private :: create_netcdf
     procedure, nopass, private :: err_check
@@ -155,6 +160,12 @@ interface set_nhru_var
     class(Nhru_summary_ptr), intent(inout) :: this
     integer(i32), intent(in) :: idx
     integer(i32), target, intent(in) :: var(:)
+  end subroutine
+
+  module subroutine set_var_r64_0D(this, idx, var)
+    class(Nhru_summary_ptr), intent(inout) :: this
+    integer(i32), intent(in) :: idx
+    real(r64), target, intent(in) :: var
   end subroutine
 end interface
 

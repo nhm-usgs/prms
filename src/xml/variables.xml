@@ -1,37 +1,11 @@
 <?xml version="1.0" ?>
 <variables>
-    <variable name="dprst_area_clos_max">
-        <type>F</type>
-        <units>acres</units>
-        <desc>Aggregate sum of closed surface-depression storage areas of each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
     <variable name="dprst_area_max">
         <type>F</type>
         <units>acres</units>
         <desc>Aggregate sum of surface-depression storage areas of each HRU</desc>
         <modules>
             <module>basin</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="dprst_area_open_max">
-        <type>F</type>
-        <units>acres</units>
-        <desc>Aggregate sum of open surface-depression storage areas of each HRU</desc>
-        <modules>
-            <module>srunoff</module>
         </modules>
         <dimensions>
             <dimension name="nhru">
@@ -989,32 +963,6 @@
             </dimension>
         </dimensions>
     </variable>
-    <variable name="gwres_stor">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Storage in each GWR</desc>
-        <modules>
-            <module>gwflow</module>
-        </modules>
-        <dimensions>
-            <dimension name="ngw">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="lake_vol">
-        <type>D</type>
-        <units>acre-feet</units>
-        <desc>Storage in each lake using broad-crested weir or gate opening routing</desc>
-        <modules>
-            <module>gwflow</module>
-        </modules>
-        <dimensions>
-            <dimension name="nlake">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
     <variable name="basin_gwflow">
         <type>D</type>
         <units>inches</units>
@@ -1197,6 +1145,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="gwres_stor">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Storage in each GWR</desc>
+        <modules>
+            <module>gwflow</module>
+        </modules>
+        <dimensions>
+            <dimension name="ngw">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="gwstor_minarea_wb">
         <type>D</type>
         <units>inches</units>
@@ -1284,6 +1245,19 @@
         </modules>
         <dimensions>
             <dimension name="ngw">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="lake_vol">
+        <type>D</type>
+        <units>acre-feet</units>
+        <desc>Storage in each lake using broad-crested weir or gate opening routing</desc>
+        <modules>
+            <module>gwflow</module>
+        </modules>
+        <dimensions>
+            <dimension name="nlake">
                 <position>1</position>
             </dimension>
         </dimensions>
@@ -1925,32 +1899,6 @@
             </dimension>
         </dimensions>
     </variable>
-    <variable name="tmax">
-        <type>F</type>
-        <units>temp_units</units>
-        <desc>Maximum air temperature at each measurement station</desc>
-        <modules>
-            <module>obs</module>
-        </modules>
-        <dimensions>
-            <dimension name="ntemp">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="tmin">
-        <type>F</type>
-        <units>temp_units</units>
-        <desc>Minimum air temperature at each measurement station</desc>
-        <modules>
-            <module>obs</module>
-        </modules>
-        <dimensions>
-            <dimension name="ntemp">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
     <variable name="wind_speed">
         <type>F</type>
         <units>mph</units>
@@ -1990,6 +1938,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="humidity_hru">
+        <type>F</type>
+        <units>percentage</units>
+        <desc>Relative humidity of each HRU</desc>
+        <modules>
+            <module>potet</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="potet">
         <type>F</type>
         <units>inches</units>
@@ -2003,15 +1964,15 @@
             </dimension>
         </dimensions>
     </variable>
-    <variable name="humidity_hru">
-        <type>F</type>
-        <units>percentage</units>
-        <desc>Relative humidity of each HRU</desc>
+    <variable name="basin_windspeed">
+        <type>D</type>
+        <units>meters/second</units>
+        <desc>Basin area-weighted average wind speed</desc>
         <modules>
-            <module>potet</module>
+            <module>potet_pm</module>
         </modules>
         <dimensions>
-            <dimension name="nhru">
+            <dimension name="one">
                 <position>1</position>
             </dimension>
         </dimensions>
@@ -2077,19 +2038,6 @@
         </modules>
         <dimensions>
             <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_windspeed">
-        <type>D</type>
-        <units>meters/second</units>
-        <desc>Basin area-weighted average wind speed</desc>
-        <modules>
-            <module>potet_pm</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
                 <position>1</position>
             </dimension>
         </dimensions>
@@ -3043,214 +2991,6 @@
             </dimension>
         </dimensions>
     </variable>
-    <variable name="basin_lakeevap">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin area-weighted average lake evaporation</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_perv_et">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin area-weighted average ET from capillary reservoirs</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_soil_moist">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin area-weighted average capillary reservoir storage</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_soil_to_gw">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin average excess flow to capillary reservoirs that drains to GWRs</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_ssflow">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_ssstor">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin weighted average gravity and preferential-flow reservoir storage</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="basin_swale_et">
-        <type>D</type>
-        <units>inches</units>
-        <desc>Basin area-weighted average ET from swale HRUs</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="one">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="hru_actet">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Actual ET for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="slow_flow">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Interflow from gravity reservoir storage that flows to the stream network for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="slow_stor">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Storage of gravity reservoir for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="soil_to_gw">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Portion of excess flow to the capillary reservoir that drains to the associated GWR for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="soil_to_ssr">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="ssr_to_gw">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Drainage from the gravity-reservoir to the associated GWR for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nssr">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="ssres_flow">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Interflow from gravity and preferential-flow reservoirs to the stream network for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nssr">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="ssres_in">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Inflow to the gravity and preferential-flow reservoirs for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nssr">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="ssres_stor">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Storage in the gravity and preferential-flow reservoirs for each HRU</desc>
-        <modules>
-            <module>soilzone</module>
-        </modules>
-        <dimensions>
-            <dimension name="nssr">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
     <variable name="basin_cap_infil_tot">
         <type>D</type>
         <units>inches</units>
@@ -3433,6 +3173,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="basin_lakeevap">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin area-weighted average lake evaporation</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="basin_lakeinsz">
         <type>D</type>
         <units>inches</units>
@@ -3450,6 +3203,19 @@
         <type>D</type>
         <units>inches</units>
         <desc>Basin area-weighted average precipitation on lake HRUs</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="basin_perv_et">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin area-weighted average ET from capillary reservoirs</desc>
         <modules>
             <module>soilzone</module>
         </modules>
@@ -3589,6 +3355,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="basin_soil_moist">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin area-weighted average capillary reservoir storage</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="basin_soil_moist_tot">
         <type>D</type>
         <units>inches</units>
@@ -3628,10 +3407,62 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="basin_soil_to_gw">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin average excess flow to capillary reservoirs that drains to GWRs</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="basin_ssflow">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="basin_ssin">
         <type>D</type>
         <units>inches</units>
         <desc>Basin area-weighted average inflow to gravity and preferential-flow reservoir storage</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="basin_ssstor">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin weighted average gravity and preferential-flow reservoir storage</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="basin_swale_et">
+        <type>D</type>
+        <units>inches</units>
+        <desc>Basin area-weighted average ET from swale HRUs</desc>
         <modules>
             <module>soilzone</module>
         </modules>
@@ -3823,6 +3654,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="hru_actet">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Actual ET for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="hru_sz_cascadeflow">
         <type>F</type>
         <units>inches</units>
@@ -3940,6 +3784,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="pref_flow_in">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Infiltration and flow from gravity reservoir to the preferential-flow reservoir</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="pref_flow_infil">
         <type>F</type>
         <units>inches</units>
@@ -3996,6 +3853,32 @@
         <type>F</type>
         <units>inches</units>
         <desc>Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="slow_flow">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Interflow from gravity reservoir storage that flows to the stream network for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="slow_stor">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Storage of gravity reservoir for each HRU</desc>
         <modules>
             <module>soilzone</module>
         </modules>
@@ -4109,6 +3992,32 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="soil_to_gw">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Portion of excess flow to the capillary reservoir that drains to the associated GWR for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="soil_to_ssr">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="soil_zone_max">
         <type>F</type>
         <units>inches</units>
@@ -4122,15 +4031,54 @@
             </dimension>
         </dimensions>
     </variable>
-    <variable name="pref_flow_in">
+    <variable name="ssr_to_gw">
         <type>F</type>
         <units>inches</units>
-        <desc>Infiltration and flow from gravity reservoir to the preferential-flow reservoir</desc>
+        <desc>Drainage from the gravity-reservoir to the associated GWR for each HRU</desc>
         <modules>
             <module>soilzone</module>
         </modules>
         <dimensions>
-            <dimension name="nhru">
+            <dimension name="nssr">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="ssres_flow">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Interflow from gravity and preferential-flow reservoirs to the stream network for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nssr">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="ssres_in">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Inflow to the gravity and preferential-flow reservoirs for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nssr">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="ssres_stor">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Storage in the gravity and preferential-flow reservoirs for each HRU</desc>
+        <modules>
+            <module>soilzone</module>
+        </modules>
+        <dimensions>
+            <dimension name="nssr">
                 <position>1</position>
             </dimension>
         </dimensions>
@@ -4307,71 +4255,6 @@
             </dimension>
             <dimension name="nhru">
                 <position>2</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="dprst_vol_clos">
-        <type>D</type>
-        <units>acre-inches</units>
-        <desc>Storage volume in closed surface depressions for each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="dprst_vol_open">
-        <type>D</type>
-        <units>acre-inches</units>
-        <desc>Storage volume in open surface depressions for each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="imperv_stor">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Storage on impervious area for each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="infil">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Infiltration to the capillary and preferential-flow reservoirs for each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
-            </dimension>
-        </dimensions>
-    </variable>
-    <variable name="sroff">
-        <type>F</type>
-        <units>inches</units>
-        <desc>Surface runoff to the stream network for each HRU</desc>
-        <modules>
-            <module>srunoff</module>
-        </modules>
-        <dimensions>
-            <dimension name="nhru">
-                <position>1</position>
             </dimension>
         </dimensions>
     </variable>
@@ -4609,10 +4492,36 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="dprst_area_clos_max">
+        <type>F</type>
+        <units>acres</units>
+        <desc>Aggregate sum of closed surface-depression storage areas of each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="dprst_area_open">
         <type>F</type>
         <units>acres</units>
         <desc>Surface area of open surface depressions based on storage volume for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="dprst_area_open_max">
+        <type>F</type>
+        <units>acres</units>
+        <desc>Aggregate sum of open surface-depression storage areas of each HRU</desc>
         <modules>
             <module>srunoff</module>
         </modules>
@@ -4687,6 +4596,19 @@
             </dimension>
         </dimensions>
     </variable>
+    <variable name="dprst_vol_clos">
+        <type>D</type>
+        <units>acre-inches</units>
+        <desc>Storage volume in closed surface depressions for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
     <variable name="dprst_vol_clos_frac">
         <type>F</type>
         <units>decimal fraction</units>
@@ -4704,6 +4626,19 @@
         <type>F</type>
         <units>decimal fraction</units>
         <desc>Fraction of surface-depression storage of the maximum storage for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="dprst_vol_open">
+        <type>D</type>
+        <units>acre-inches</units>
+        <desc>Storage volume in open surface depressions for each HRU</desc>
         <modules>
             <module>srunoff</module>
         </modules>
@@ -4821,6 +4756,45 @@
         <type>F</type>
         <units>inches</units>
         <desc>Evaporation from impervious area for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="imperv_stor">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Storage on impervious area for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="infil">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Infiltration to the capillary and preferential-flow reservoirs for each HRU</desc>
+        <modules>
+            <module>srunoff</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="sroff">
+        <type>F</type>
+        <units>inches</units>
+        <desc>Surface runoff to the stream network for each HRU</desc>
         <modules>
             <module>srunoff</module>
         </modules>
@@ -5619,6 +5593,58 @@
         </modules>
         <dimensions>
             <dimension name="one">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="tmax_hru">
+        <type>F</type>
+        <units>degC</units>
+        <desc>Maximum air temperature distributed to each HRU</desc>
+        <modules>
+            <module>temperature</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="tmin_hru">
+        <type>F</type>
+        <units>degC</units>
+        <desc>Minimum air temperature distributed to each HRU</desc>
+        <modules>
+            <module>temperature</module>
+        </modules>
+        <dimensions>
+            <dimension name="nhru">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="tmax_sta">
+        <type>F</type>
+        <units>degC</units>
+        <desc>Maximum air temperature at each measurement station</desc>
+        <modules>
+            <module>temperature</module>
+        </modules>
+        <dimensions>
+            <dimension name="ntemp">
+                <position>1</position>
+            </dimension>
+        </dimensions>
+    </variable>
+    <variable name="tmin_sta">
+        <type>F</type>
+        <units>degC</units>
+        <desc>Minimum air temperature at each measurement station</desc>
+        <modules>
+            <module>temperature</module>
+        </modules>
+        <dimensions>
+            <dimension name="ntemp">
                 <position>1</position>
             </dimension>
         </dimensions>
