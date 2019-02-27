@@ -311,7 +311,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         if (nhruOutON_OFF == 1) then
           do jj=1, nhruOutVars
             select case(nhruOutVar_names(jj)%s)
-            case('hru_outflow')
+              case('hru_outflow')
                 call nhru_summary%set_nhru_var(jj, this%hru_outflow)
               case('seg_inflow')
                 call nhru_summary%set_nhru_var(jj, this%seg_inflow)
