@@ -21,12 +21,15 @@ module PRMS_BASIN
     integer(i32) :: nconsumed = 0
       !! TODO: does this belong here?
     integer(i32) :: nhru
-      !! Number of HRUs in model
+      !! Number of hydrologic response units
     integer(i32) :: nlake = 0
+      !! Number of lakes
     integer(i32) :: nmonths
     integer(i32) :: nobs = 0
     integer(i32) :: nsegment
-      !! Number of stream segments in model
+      !! Number of stream-channel segments
+    integer(i32) :: nsub = 0
+      !! Number of internal subbasins
     integer(i32) :: nwateruse = 0
       !! TODO: does this belong here?
 
@@ -49,6 +52,8 @@ module PRMS_BASIN
     integer(i32), allocatable :: lake_type(:)
     integer(i32), allocatable :: nhm_id(:)
       !! NHM identification number for each HRU
+    integer(i32), allocatable :: nhm_seg(:)
+      !! NHM segment identification
 
 
     ! Local and computed variables

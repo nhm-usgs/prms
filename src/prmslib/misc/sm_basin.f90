@@ -51,6 +51,7 @@ contains
       ! Load dimensions
       this%nhru = param_hdl%get_dimension('nhru')
       this%nsegment = param_hdl%get_dimension('nsegment')
+      this%nsub = param_hdl%get_dimension('nsub')
       this%nmonths = param_hdl%get_dimension('nmonths')
       ! TODO: additional dimensions nlake and nobs
 
@@ -85,6 +86,9 @@ contains
       allocate(this%nhm_id(this%nhru))
       call param_hdl%get_variable('nhm_id', this%nhm_id)
 
+      allocate(this%nhm_seg(this%nsegment))
+      call param_hdl%get_variable('nhm_seg', this%nhm_seg)
+
       ! TODO: parameters that aren't coded yet
       ! dprst_frac_open
       ! hru_aspect
@@ -95,7 +99,6 @@ contains
       ! hru_y
       ! lake_hru_id
       ! lake_type
-      ! nhm_id
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Allocate non-parameter arrays
