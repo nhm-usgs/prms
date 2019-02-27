@@ -16,7 +16,7 @@ module Control_class
 
   character(len=*), parameter :: MODDESC = 'Control File'
   character(len=*), parameter :: MODNAME = 'Control_class'
-  character(len=*), parameter :: MODVERSION = '2018-04-05 13:50:00Z'
+  character(len=*), parameter :: MODVERSION = '2019-02-01 13:50:00Z'
 
   type Control
     ! Control variables
@@ -172,8 +172,8 @@ module Control_class
     character(len=:), allocatable, private :: Version_read_control_file
     character(len=:), allocatable, private :: control_filename
 
-    type(FileIO_netcdf) :: param_file_hdl
     ! class(FileIO), allocatable :: param_file_hdl
+    type(FileIO_netcdf) :: param_file_hdl
       !! Parameter file handle to opened file
 
     contains
