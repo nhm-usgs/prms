@@ -12,7 +12,8 @@ contains
     integer(i32) :: jj
 
     ! Control
-    ! nhru,
+    ! print_debug, basinOutON_OFF, basinOutVars, basinOutVar_names,
+    ! nhruOutON_OFF, nhruOutVars, nhruOutVar_names, param_file_hdl
 
     ! --------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
@@ -125,6 +126,8 @@ contains
             case('tmin')
               this%has_hru_summary_vars = .true.
               exit
+            case('basin_tmax')
+              call nhru_summary%set_nhru_var(jj, this%basin_tmax)
             case default
               ! pass
           end select
