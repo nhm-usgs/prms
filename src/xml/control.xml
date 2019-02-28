@@ -6,6 +6,24 @@
         <numvals>1</numvals>
         <desc>empty</desc>
     </control_param>
+    <control_param name="outVarON_OFF">
+        <default>0</default>
+        <type>1</type>
+        <numvals>1</numvals>
+        <desc>empty</desc>
+    </control_param>
+    <control_param name="outVar_names">
+        <default>none</default>
+        <type>4</type>
+        <numvals>1</numvals>
+        <desc>empty</desc>
+    </control_param>
+    <control_param name="outVar_base_filename">
+        <default>none</default>
+        <type>4</type>
+        <numvals>1</numvals>
+        <desc>empty</desc>
+    </control_param>
     <control_param name="basinOutON_OFF">
         <default>0</default>
         <type>1</type>
