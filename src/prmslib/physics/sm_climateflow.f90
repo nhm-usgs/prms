@@ -3,22 +3,21 @@ submodule (PRMS_CLIMATEVARS) sm_climateflow
 contains
   !***********************************************************************
   ! Climateflow constructor
-  module function constructor_Climateflow(ctl_data, model_basin, nhru_summary) result(this)
+  module function constructor_Climateflow(ctl_data, model_basin, model_summary) result(this)
     use UTILS_PRMS, only: check_restart
     implicit none
 
     type(Climateflow) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: jj
 
     ! ------------------------------------------------------------------------
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+              outVarON_OFF => ctl_data%outVarON_OFF%value, &
+              outVar_names => ctl_data%outVar_names, &
               rst_unit => ctl_data%restart_output_unit, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
@@ -62,15 +61,15 @@ contains
       this%pkwater_equiv = 0.0_dp
 
       ! Connect any nhru_summary variables that need to be output
-      if (nhruOutON_OFF == 1) then
-        do jj=1, nhruOutVars
-          select case(nhruOutVar_names(jj)%s)
+      if (outVarON_OFF == 1) then
+        do jj=1, outVar_names%size()
+          select case(outVar_names%values(jj)%s)
             case('pkwater_equiv')
-              call nhru_summary%set_nhru_var(jj, this%pkwater_equiv)
+              call model_summary%set_summary_var(jj, this%pkwater_equiv)
             case('soil_moist')
-              call nhru_summary%set_nhru_var(jj, this%soil_moist)
+              call model_summary%set_summary_var(jj, this%soil_moist)
             case('soil_rechr')
-              call nhru_summary%set_nhru_var(jj, this%soil_rechr)
+              call model_summary%set_summary_var(jj, this%soil_rechr)
             case default
               ! pass
           end select

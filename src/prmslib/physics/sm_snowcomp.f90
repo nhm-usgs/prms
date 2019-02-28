@@ -3,7 +3,7 @@ submodule (PRMS_SNOW) sm_snowcomp
 
 contains
   ! Snowcomp constructor
-  module function constructor_Snowcomp(ctl_data, model_basin, model_climate, basin_summary, nhru_summary) result(this)
+  module function constructor_Snowcomp(ctl_data, model_basin, model_climate, model_summary) result(this)
     use prms_constants, only: dp
     implicit none
 
@@ -11,8 +11,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(inout) :: model_climate
-    type(Basin_summary_ptr), intent(inout) :: basin_summary
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     ! Local Variables
     integer(i32) :: chru
@@ -24,13 +23,9 @@ contains
     ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
 
     ! -------------------------------------------------------------------------
-    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-              basinOutVars => ctl_data%basinOutVars%value, &
-              basinOutVar_names => ctl_data%basinOutVar_names%values, &
-              init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              outVarON_OFF => ctl_data%outVarON_OFF%value, &
+              outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
               rst_unit => ctl_data%restart_output_unit, &
@@ -44,15 +39,6 @@ contains
               hru_route_order => model_basin%hru_route_order, &
 
               pkwater_equiv => model_climate%pkwater_equiv)
-
-              ! den_init => param_data%den_init%values(1), &
-              ! den_max => param_data%den_max%values(1), &
-              ! freeh2o_cap => param_data%freeh2o_cap%values, &
-              ! hru_deplcrv => param_data%hru_deplcrv%values, &
-              ! ! settle_const => param_data%settle_const%values(1), &
-              ! snarea_curve => param_data%snarea_curve%values, &
-              ! snarea_thresh => param_data%snarea_thresh%values, &
-              ! snowpack_init => param_data%snowpack_init%values, &
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -196,26 +182,38 @@ contains
       this%basin_snowmelt = 0.0_dp
       this%basin_tcal = 0.0_dp
 
-      ! Connect any basin summary variables that need to be output
-      if (basinOutON_OFF == 1) then
-        do jj = 1, basinOutVars
+      ! Connect summary variables that need to be output
+      if (outVarON_OFF == 1) then
+        do jj = 1, outVar_names%size()
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
-          select case(basinOutVar_names(jj)%s)
+          select case(outVar_names%values(jj)%s)
             case('basin_pk_precip')
-              call basin_summary%set_basin_var(jj, this%basin_pk_precip)
+              call model_summary%set_summary_var(jj, this%basin_pk_precip)
             case('basin_pweqv')
-              call basin_summary%set_basin_var(jj, this%basin_pweqv)
+              call model_summary%set_summary_var(jj, this%basin_pweqv)
             case('basin_snowcov')
-              call basin_summary%set_basin_var(jj, this%basin_snowcov)
+              call model_summary%set_summary_var(jj, this%basin_snowcov)
             case('basin_snowdepth')
-              call basin_summary%set_basin_var(jj, this%basin_snowdepth)
+              call model_summary%set_summary_var(jj, this%basin_snowdepth)
             case('basin_snowevap')
-              call basin_summary%set_basin_var(jj, this%basin_snowevap)
+              call model_summary%set_summary_var(jj, this%basin_snowevap)
             case('basin_snowmelt')
-              call basin_summary%set_basin_var(jj, this%basin_snowmelt)
+              call model_summary%set_summary_var(jj, this%basin_snowmelt)
             case('basin_tcal')
-              call basin_summary%set_basin_var(jj, this%basin_tcal)
+              call model_summary%set_summary_var(jj, this%basin_tcal)
+            case('freeh2o')
+              call model_summary%set_summary_var(jj, this%freeh2o)
+            case('pk_def')
+              call model_summary%set_summary_var(jj, this%pk_def)
+            case('pk_ice')
+              call model_summary%set_summary_var(jj, this%pk_ice)
+            case('snow_evap')
+              call model_summary%set_summary_var(jj, this%snow_evap)
+            case('snowcov_area')
+              call model_summary%set_summary_var(jj, this%snowcov_area)
+            case('snowmelt')
+              call model_summary%set_summary_var(jj, this%snowmelt)
             case default
               ! pass
           end select
@@ -264,28 +262,6 @@ contains
         this%pkwater_ante = pkwater_equiv
         this%pss = pkwater_equiv
         this%pst = pkwater_equiv
-      endif
-
-      ! Connect any nhru_summary variables that need to be output
-      if (nhruOutON_OFF == 1) then
-        do jj=1, nhruOutVars
-          select case(nhruOutVar_names(jj)%s)
-            case('freeh2o')
-              call nhru_summary%set_nhru_var(jj, this%freeh2o)
-            case('pk_def')
-              call nhru_summary%set_nhru_var(jj, this%pk_def)
-            case('pk_ice')
-              call nhru_summary%set_nhru_var(jj, this%pk_ice)
-            case('snow_evap')
-              call nhru_summary%set_nhru_var(jj, this%snow_evap)
-            case('snowcov_area')
-              call nhru_summary%set_nhru_var(jj, this%snowcov_area)
-            case('snowmelt')
-              call nhru_summary%set_nhru_var(jj, this%snowmelt)
-            case default
-              ! pass
-          end select
-        enddo
       endif
     end associate
   end function

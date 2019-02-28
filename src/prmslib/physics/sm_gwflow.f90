@@ -2,7 +2,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
   contains
 
     module function constructor_Gwflow(ctl_data, model_basin, &
-                                       model_climate, intcp, soil, runoff, basin_summary, nhru_summary) result(this)
+                                       model_climate, intcp, soil, runoff, model_summary) result(this)
       use prms_constants, only: dp, SWALE
       implicit none
 
@@ -13,8 +13,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
 
       ! Local Variables
       integer(i32) :: chru
@@ -45,18 +44,14 @@ submodule (PRMS_GWFLOW) sm_gwflow
       ! dprst_stor_hru, hru_impervstor
 
       ! ------------------------------------------------------------------------
-      associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-                basinOutVars => ctl_data%basinOutVars%value, &
-                basinOutVar_names => ctl_data%basinOutVar_names%values, &
-                cascadegw_flag => ctl_data%cascadegw_flag%value, &
+      associate(cascadegw_flag => ctl_data%cascadegw_flag%value, &
                 dprst_flag => ctl_data%dprst_flag%value, &
                 gsflow_mode => ctl_data%gsflow_mode, &
                 gwr_swale_flag => ctl_data%gwr_swale_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 ! lake_route_flag => ctl_data%lake_route_flag%value, &
-                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-                nhruOutVars => ctl_data%nhruOutVars%value, &
-                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+                outVarON_OFF => ctl_data%outVarON_OFF%value, &
+                outVar_names => ctl_data%outVar_names, &
                 ! model_mode => ctl_data%model_mode%values, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
@@ -164,28 +159,40 @@ submodule (PRMS_GWFLOW) sm_gwflow
         allocate(this%basin_gwstor_minarea_wb)
         allocate(this%basin_lake_seep)
 
-        ! Connect any basin summary variables that need to be output
-        if (basinOutON_OFF == 1) then
-          do jj = 1, basinOutVars
-            ! TODO: This is where the daily basin values are linked based on
-            !       what was requested in basinOutVar_names.
-            select case(basinOutVar_names(jj)%s)
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
+            select case(outVar_names%values(jj)%s)
               case('basin_gwflow')
-                call basin_summary%set_basin_var(jj, this%basin_gwflow)
+                call model_summary%set_summary_var(jj, this%basin_gwflow)
               case('basin_gwstor')
-                call basin_summary%set_basin_var(jj, this%basin_gwstor)
+                call model_summary%set_summary_var(jj, this%basin_gwstor)
               case('basin_gwin')
-                call basin_summary%set_basin_var(jj, this%basin_gwin)
+                call model_summary%set_summary_var(jj, this%basin_gwin)
               case('basin_gwsink')
-                call basin_summary%set_basin_var(jj, this%basin_gwsink)
+                call model_summary%set_summary_var(jj, this%basin_gwsink)
               case('basin_gwstor_minarea_wb')
-                call basin_summary%set_basin_var(jj, this%basin_gwstor_minarea_wb)
+                call model_summary%set_summary_var(jj, this%basin_gwstor_minarea_wb)
               case('basin_lake_seep')
-                call basin_summary%set_basin_var(jj, this%basin_lake_seep)
+                call model_summary%set_summary_var(jj, this%basin_lake_seep)
               case('basin_gw_upslope')
-                call basin_summary%set_basin_var(jj, this%basin_gw_upslope)
+                call model_summary%set_summary_var(jj, this%basin_gw_upslope)
               case('basin_dnflow')
-                call basin_summary%set_basin_var(jj, this%basin_dnflow)
+                call model_summary%set_summary_var(jj, this%basin_dnflow)
+              case('gw_in_soil')
+                call model_summary%set_summary_var(jj, this%gw_in_soil)
+              case('gw_in_ssr')
+                call model_summary%set_summary_var(jj, this%gw_in_ssr)
+              case('gwres_flow')
+                call model_summary%set_summary_var(jj, this%gwres_flow)
+              case('gwres_in')
+                call model_summary%set_summary_var(jj, this%gwres_in)
+              case('hru_lateral_flow')
+                call model_summary%set_summary_var(jj, this%hru_lateral_flow)
+              case('hru_storage')
+                call model_summary%set_summary_var(jj, this%hru_storage)
+              case('hru_streamflow_out')
+                call model_summary%set_summary_var(jj, this%hru_streamflow_out)
               case default
                 ! pass
             end select
@@ -311,30 +318,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%gw_in_soil = 0.0_dp
         this%hru_streamflow_out = 0.0_dp
         this%hru_lateral_flow = 0.0_dp
-
-        ! Connect any nhru_summary variables that need to be output
-        if (nhruOutON_OFF == 1) then
-          do jj=1, nhruOutVars
-            select case(nhruOutVar_names(jj)%s)
-              case('gw_in_soil')
-                call nhru_summary%set_nhru_var(jj, this%gw_in_soil)
-              case('gw_in_ssr')
-                call nhru_summary%set_nhru_var(jj, this%gw_in_ssr)
-              case('gwres_flow')
-                call nhru_summary%set_nhru_var(jj, this%gwres_flow)
-              case('gwres_in')
-                call nhru_summary%set_nhru_var(jj, this%gwres_in)
-              case('hru_lateral_flow')
-                call nhru_summary%set_nhru_var(jj, this%hru_lateral_flow)
-              case('hru_storage')
-                call nhru_summary%set_nhru_var(jj, this%hru_storage)
-              case('hru_streamflow_out')
-                call nhru_summary%set_nhru_var(jj, this%hru_streamflow_out)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
       end associate
     end function
 

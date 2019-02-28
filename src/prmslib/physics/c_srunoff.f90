@@ -8,8 +8,7 @@ module PRMS_SRUNOFF
   use PRMS_POTET, only: Potential_ET
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SET_TIME, only: Time_t
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -170,16 +169,13 @@ module PRMS_SRUNOFF
 
   interface Srunoff
     !! Srunoff constructor
-    module function constructor_Srunoff(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_Srunoff(ctl_data, model_basin, model_summary) result(this)
       type(Srunoff) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

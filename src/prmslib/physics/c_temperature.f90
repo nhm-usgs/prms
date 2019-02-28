@@ -5,8 +5,7 @@ module PRMS_TEMPERATURE
   use Control_class, only: Control
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -46,34 +45,31 @@ module PRMS_TEMPERATURE
 
   interface Temperature
     !! Temperature constructor
-    module function constructor_Temperature(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_Temperature(ctl_data, model_basin, model_summary) result(this)
       type(Temperature) :: this
         !! Temperature class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 
   interface
-    module subroutine run_Temperature(this, ctl_data, model_basin, model_time, nhru_summary)
+    module subroutine run_Temperature(this, ctl_data, model_basin, model_time, model_summary)
       class(Temperature), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in), optional :: model_time
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
 
   interface
-    module subroutine set_nhru_summary_ptrs(this, ctl_data, nhru_summary)
+    module subroutine set_nhru_summary_ptrs(this, ctl_data, model_summary)
       class(Temperature), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
 end module

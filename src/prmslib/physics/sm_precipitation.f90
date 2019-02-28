@@ -1,6 +1,6 @@
 submodule(PRMS_PRECIPITATION) sm_precipitation
 contains
-  module function constructor_Precipitation(ctl_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
+  module function constructor_Precipitation(ctl_data, model_basin, model_temp, model_summary) result(this)
     use prms_constants, only: FAHRENHEIT
     use conversions_mod, only: f_to_c, c_to_f
     implicit none
@@ -9,19 +9,14 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
-    type(Basin_summary_ptr), intent(inout) :: basin_summary
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: jj
 
     ! --------------------------------------------------------------------------
-    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-              basinOutVars => ctl_data%basinOutVars%value, &
-              basinOutVar_names => ctl_data%basinOutVar_names%values, &
-              init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              outVarON_OFF => ctl_data%outVarON_OFF%value, &
+              outVar_names => ctl_data%outVar_names, &
               rst_unit => ctl_data%restart_output_unit, &
               print_debug => ctl_data%print_debug%value, &
               param_hdl => ctl_data%param_file_hdl, &
@@ -132,31 +127,20 @@ contains
       allocate(this%basin_rain)
       allocate(this%basin_snow)
 
-      ! Connect any basin summary variables that need to be output
-      if (basinOutON_OFF == 1) then
-        do jj = 1, basinOutVars
-          ! TODO: This is where the daily basin values are linked based on
-          !       what was requested in basinOutVar_names.
-          select case(basinOutVar_names(jj)%s)
-          case('basin_obs_ppt')
-              call basin_summary%set_basin_var(jj, this%basin_obs_ppt)
-            case('basin_ppt')
-              call basin_summary%set_basin_var(jj, this%basin_ppt)
-            case('basin_rain')
-              call basin_summary%set_basin_var(jj, this%basin_rain)
-            case('basin_snow')
-              call basin_summary%set_basin_var(jj, this%basin_snow)
-            case default
-              ! pass
-          end select
-        enddo
-      endif
-
       this%has_hru_summary_vars = .false.
 
-      if (nhruOutON_OFF == 1) then
-        do jj=1, nhruOutVars
-          select case(nhruOutVar_names(jj)%s)
+      ! Connect summary variables that need to be output
+      if (outVarON_OFF == 1) then
+        do jj = 1, outVar_names%size()
+          select case(outVar_names%values(jj)%s)
+            case('basin_obs_ppt')
+              call model_summary%set_summary_var(jj, this%basin_obs_ppt)
+            case('basin_ppt')
+              call model_summary%set_summary_var(jj, this%basin_ppt)
+            case('basin_rain')
+              call model_summary%set_summary_var(jj, this%basin_rain)
+            case('basin_snow')
+              call model_summary%set_summary_var(jj, this%basin_snow)
             case('hru_ppt')
               this%has_hru_summary_vars = .true.
               exit
@@ -184,13 +168,13 @@ contains
   end function
 
 
-  module subroutine run_Precipitation(this, ctl_data, model_basin, model_temp, model_time, nhru_summary)
+  module subroutine run_Precipitation(this, ctl_data, model_basin, model_temp, model_time, model_summary)
     class(Precipitation), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     ! --------------------------------------------------------------------------
   end subroutine
@@ -322,31 +306,29 @@ contains
   end subroutine
 
 
-  module subroutine set_nhru_summary_ptrs(this, ctl_data, nhru_summary)
+  module subroutine set_summary_ptrs(this, ctl_data, model_summary)
     implicit none
 
     class(Precipitation), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: jj
 
     ! --------------------------------------------------------------------------
-    associate(nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values)
+    associate(outVar_names => ctl_data%outVar_names)
 
       ! Connect any nhru_summary variables that need to be output
-      do jj=1, nhruOutVars
-        select case(nhruOutVar_names(jj)%s)
+      do jj=1, outVar_names%size()
+        select case(outVar_names%values(jj)%s)
           case('hru_ppt')
-            call nhru_summary%set_nhru_var(jj, this%hru_ppt)
+            call model_summary%set_summary_var(jj, this%hru_ppt)
           case('hru_rain')
-            call nhru_summary%set_nhru_var(jj, this%hru_rain)
+            call model_summary%set_summary_var(jj, this%hru_rain)
           case('hru_snow')
-            call nhru_summary%set_nhru_var(jj, this%hru_snow)
+            call model_summary%set_summary_var(jj, this%hru_snow)
           case('prmx')
-            call nhru_summary%set_nhru_var(jj, this%prmx)
+            call model_summary%set_summary_var(jj, this%prmx)
           ! case('newsnow')
           !   call nhru_summary%set_nhru_var(jj, this%newsnow)
           ! case('pptmix')

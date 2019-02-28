@@ -5,8 +5,7 @@ module PRMS_TEMPERATURE_HRU
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_TEMPERATURE, only: Temperature
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -41,26 +40,23 @@ module PRMS_TEMPERATURE_HRU
 
   interface Temperature_hru
     !! Temperature_hru constructor
-    module function constructor_Temperature_hru(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
       type(Temperature_hru) :: this
         !! Temperature_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 
   interface
-    module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, nhru_summary)
+    module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, model_summary)
       class(Temperature_hru), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in), optional :: model_time
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
 end module

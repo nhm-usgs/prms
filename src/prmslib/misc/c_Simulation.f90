@@ -2,12 +2,10 @@ module Simulation_class
   use variableKind
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
-  use PRMS_BASIN_SUMMARY_PTR, only: Basin_summary_ptr
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
   use PRMS_INTCP, only: Interception
   use PRMS_MUSKINGUM, only: Muskingum
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
   use PRMS_OBS, only: Obs
   use PRMS_POTET_JH, only: Potet_jh
   use PRMS_PRECIPITATION, only: Precipitation
@@ -16,6 +14,7 @@ module Simulation_class
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
+  use PRMS_SUMMARY, only: Summary
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_TEMPERATURE_HRU, only: Temperature_hru
   use PRMS_TRANSP_TINDEX, only: Transp_tindex
@@ -45,8 +44,7 @@ module Simulation_class
       type(Gwflow) :: groundwater
       ! ! type(Routing) :: model_route
       type(Muskingum) :: model_muskingum
-      type(Nhru_summary_ptr) :: summary_by_hru
-      type(Basin_summary_ptr) :: summary_by_basin
+      type(Summary) :: model_summary
       type(WaterBalance) :: model_waterbal
     contains
       procedure, public :: run => run_Simulation
@@ -72,8 +70,6 @@ module Simulation_class
 
   interface
     module subroutine cleanup_Simulation(this, ctl_data)
-      implicit none
-
       class(Simulation), intent(in) :: this
       type(Control), intent(in) :: ctl_data
     end subroutine

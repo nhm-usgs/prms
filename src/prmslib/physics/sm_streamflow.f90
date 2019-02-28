@@ -1,6 +1,6 @@
 submodule (PRMS_STREAMFLOW) sm_streamflow
   contains
-    module function constructor_Streamflow(ctl_data, model_basin, model_time, basin_summary, nhru_summary) result(this)
+    module function constructor_Streamflow(ctl_data, model_basin, model_time, model_summary) result(this)
       use prms_constants, only: dp, DNEARZERO, FT2_PER_ACRE, NEARZERO
       implicit none
 
@@ -8,8 +8,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
 
       ! Local Variables
       integer(i32) :: i
@@ -42,25 +41,14 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       ! Timestep_seconds
 
       ! ------------------------------------------------------------------------
-      associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-                basinOutVars => ctl_data%basinOutVars%value, &
-                basinOutVar_names => ctl_data%basinOutVar_names%values, &
-                cascade_flag => ctl_data%cascade_flag%value, &
+      associate(cascade_flag => ctl_data%cascade_flag%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
-                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-                nhruOutVars => ctl_data%nhruOutVars%value, &
-                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+                outVarON_OFF => ctl_data%outVarON_OFF%value, &
+                outVar_names => ctl_data%outVar_names, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
-
-                ! hru_segment => param_data%hru_segment%values, &
-                ! K_coef => param_data%K_coef%values, &
-                ! obsin_segment => param_data%obsin_segment%values, &
-                ! segment_type => param_data%segment_type%values, &
-                ! tosegment => param_data%tosegment%values, &
-                ! x_coef => param_data%x_coef%values, &
 
                 nhru => model_basin%nhru, &
                 nsegment => model_basin%nsegment, &
@@ -97,8 +85,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         allocate(this%tosegment(nsegment))
         call param_hdl%get_variable('tosegment', this%tosegment)
-
-
 
         ! Other variables
         allocate(this%hru_outflow(nhru))
@@ -148,26 +134,38 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         allocate(this%basin_stflow_in)
         allocate(this%basin_stflow_out)
 
-        ! Connect any basin summary variables that need to be output
-        if (basinOutON_OFF == 1) then
-          do jj = 1, basinOutVars
-            ! TODO: This is where the daily basin values are linked based on
-            !       what was requested in basinOutVar_names.
-            select case(basinOutVar_names(jj)%s)
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
+            select case(outVar_names%values(jj)%s)
               case('basin_cfs')
-                call basin_summary%set_basin_var(jj, this%basin_cfs)
+                call model_summary%set_summary_var(jj, this%basin_cfs)
               case('basin_cms')
-                call basin_summary%set_basin_var(jj, this%basin_cms)
+                call model_summary%set_summary_var(jj, this%basin_cms)
               case('basin_gwflow_cfs')
-                call basin_summary%set_basin_var(jj, this%basin_gwflow_cfs)
+                call model_summary%set_summary_var(jj, this%basin_gwflow_cfs)
               case('basin_segment_storage')
-                call basin_summary%set_basin_var(jj, this%basin_segment_storage)
+                call model_summary%set_summary_var(jj, this%basin_segment_storage)
               case('basin_sroff_cfs')
-                call basin_summary%set_basin_var(jj, this%basin_sroff_cfs)
+                call model_summary%set_summary_var(jj, this%basin_sroff_cfs)
               case('basin_stflow_in')
-                call basin_summary%set_basin_var(jj, this%basin_stflow_in)
+                call model_summary%set_summary_var(jj, this%basin_stflow_in)
               case('basin_stflow_out')
-                call basin_summary%set_basin_var(jj, this%basin_stflow_out)
+                call model_summary%set_summary_var(jj, this%basin_stflow_out)
+              case('hru_outflow')
+                call model_summary%set_summary_var(jj, this%hru_outflow)
+              case('seg_inflow')
+                call model_summary%set_summary_var(jj, this%seg_inflow)
+              case('seg_lateral_inflow')
+                call model_summary%set_summary_var(jj, this%seg_lateral_inflow)
+              case('seg_outflow')
+                call model_summary%set_summary_var(jj, this%seg_outflow)
+              case('seg_sroff')
+                call model_summary%set_summary_var(jj, this%seg_sroff)
+              case('seg_ssflow')
+                call model_summary%set_summary_var(jj, this%seg_ssflow)
+              case('seg_upstream_inflow')
+                call model_summary%set_summary_var(jj, this%seg_upstream_inflow)
               case default
                 ! pass
             end select
@@ -306,30 +304,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         enddo
 
         deallocate(x_off)
-
-        ! Connect any nhru_summary variables that need to be output
-        if (nhruOutON_OFF == 1) then
-          do jj=1, nhruOutVars
-            select case(nhruOutVar_names(jj)%s)
-              case('hru_outflow')
-                call nhru_summary%set_nhru_var(jj, this%hru_outflow)
-              case('seg_inflow')
-                call nhru_summary%set_nhru_var(jj, this%seg_inflow)
-              case('seg_lateral_inflow')
-                call nhru_summary%set_nhru_var(jj, this%seg_lateral_inflow)
-              case('seg_outflow')
-                call nhru_summary%set_nhru_var(jj, this%seg_outflow)
-              case('seg_sroff')
-                call nhru_summary%set_nhru_var(jj, this%seg_sroff)
-              case('seg_ssflow')
-                call nhru_summary%set_nhru_var(jj, this%seg_ssflow)
-              case('seg_upstream_inflow')
-                call nhru_summary%set_nhru_var(jj, this%seg_upstream_inflow)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
       end associate
     end function
 

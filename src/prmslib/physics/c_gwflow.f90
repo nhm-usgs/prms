@@ -8,8 +8,7 @@ module PRMS_GWFLOW
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
 
   implicit none
 
@@ -92,7 +91,7 @@ module PRMS_GWFLOW
     !! Gwflow constructor
     module function constructor_Gwflow(ctl_data, model_basin, &
                                        model_climate, intcp, soil, runoff, &
-                                       basin_summary, nhru_summary) result(this)
+                                       model_summary) result(this)
       type(Gwflow) :: this
        !! Gwflow class
       type(Control), intent(in) :: ctl_data
@@ -103,9 +102,7 @@ module PRMS_GWFLOW
       type(Interception), intent(in) :: intcp
       type(Soilzone), intent(in) :: soil
       type(Srunoff), intent(in) :: runoff
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

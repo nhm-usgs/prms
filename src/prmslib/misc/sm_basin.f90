@@ -37,10 +37,6 @@ contains
               strmflow_module => ctl_data%strmflow_module%values, &
               param_hdl => ctl_data%param_file_hdl)
 
-              ! dprst_frac_open => param_data%dprst_frac_open%values, &
-              ! lake_hru_id => param_data%lake_hru_id%values, &
-              ! lake_type => param_data%lake_type%values)
-
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
       if (print_debug > -2) then

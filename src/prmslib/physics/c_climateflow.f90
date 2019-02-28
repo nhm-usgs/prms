@@ -7,7 +7,7 @@ module PRMS_CLIMATEVARS
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -73,14 +73,13 @@ module PRMS_CLIMATEVARS
 
   interface Climateflow
     !! Climateflow constructor
-    module function constructor_Climateflow(ctl_data, model_basin, nhru_summary) result(this)
+    module function constructor_Climateflow(ctl_data, model_basin, model_summary) result(this)
       type(Climateflow) :: this
         !! Climateflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

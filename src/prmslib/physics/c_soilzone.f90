@@ -11,8 +11,7 @@ module PRMS_SOILZONE
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_TRANSPIRATION, only: Transpiration
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
 
   implicit none
 
@@ -233,7 +232,7 @@ module PRMS_SOILZONE
 
   interface Soilzone
     !! Soilzone constructor
-    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, basin_summary, nhru_summary) result(this)
+    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_summary) result(this)
       type(Soilzone) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
@@ -242,10 +241,7 @@ module PRMS_SOILZONE
       type(Climateflow), intent(inout) :: model_climate
       ! type(Flowvars), intent(inout) :: model_flow
       type(Snowcomp), intent(in) :: snow
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

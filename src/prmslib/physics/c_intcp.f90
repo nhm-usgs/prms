@@ -14,8 +14,7 @@ module PRMS_INTCP
   use PRMS_POTET, only: Potential_ET
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TRANSPIRATION, only: Transpiration
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   ! use PRMS_SNOW, only: Snowcomp
   implicit none
 
@@ -88,17 +87,14 @@ module PRMS_INTCP
 
   interface Interception
     !! Intercept constructor
-    module function constructor_Interception(ctl_data, model_basin, model_transp, basin_summary, nhru_summary) result(this)
+    module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
       type(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       class(Transpiration), intent(in) :: model_transp
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

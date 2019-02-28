@@ -8,8 +8,7 @@ module SOLAR_RADIATION_DEGDAY
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TEMPERATURE, only: Temperature
-  use PRMS_BASIN_SUMMARY_PTR, only: basin_summary_ptr
-  use PRMS_NHRU_SUMMARY_PTR, only: Nhru_summary_ptr
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -44,16 +43,13 @@ module SOLAR_RADIATION_DEGDAY
 
   interface Solrad_degday
     !! Solrad_degday constructor
-    module function constructor_Solrad_degday(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
+    module function constructor_Solrad_degday(ctl_data, model_basin, model_summary) result(this)
       type(Solrad_degday) :: this
         !! Solrad_degday class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-        !! Basin summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-        !! Summary by HRU module
+      type(Summary), intent(inout) :: model_summary
     end function
   end interface
 

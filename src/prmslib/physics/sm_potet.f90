@@ -1,14 +1,13 @@
 submodule(PRMS_POTET) sm_potet
 contains
-  module function constructor_Potet(ctl_data, model_basin, basin_summary, nhru_summary) result(this)
+  module function constructor_Potet(ctl_data, model_basin, model_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     type(Potential_ET) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
-    type(Basin_summary_ptr), intent(inout) :: basin_summary
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -20,12 +19,8 @@ contains
     ! strmtemp_humidity_flag,
 
     ! --------------------------------------------------------------------------
-    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-              basinOutVars => ctl_data%basinOutVars%value, &
-              basinOutVar_names => ctl_data%basinOutVar_names%values, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+    associate(outVarON_OFF => ctl_data%outVarON_OFF%value, &
+              outVar_names => ctl_data%outVar_names, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               et_module => ctl_data%et_module%values(1), &
               param_hdl => ctl_data%param_file_hdl, &
@@ -90,30 +85,20 @@ contains
       allocate(this%basin_humidity)
       allocate(this%basin_potet)
 
-      ! Connect any basin summary variables that need to be output
-      if (basinOutON_OFF == 1) then
-        do jj = 1, basinOutVars
+      ! Connect summary variables that need to be output
+      if (outVarON_OFF == 1) then
+        do jj = 1, outVar_names%size()
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
-          select case(basinOutVar_names(jj)%s)
+          select case(outVar_names%values(jj)%s)
             case('basin_humidity')
-              call basin_summary%set_basin_var(jj, this%basin_humidity)
+              call model_summary%set_summary_var(jj, this%basin_humidity)
             case('basin_potet')
-              call basin_summary%set_basin_var(jj, this%basin_potet)
-            case default
-              ! pass
-          end select
-        enddo
-      endif
-
-      ! Connect any nhru_summary variables that need to be output
-      if (nhruOutON_OFF == 1) then
-        do jj=1, nhruOutVars
-          select case(nhruOutVar_names(jj)%s)
+              call model_summary%set_summary_var(jj, this%basin_potet)
             case('potet')
-              call nhru_summary%set_nhru_var(jj, this%potet)
+              call model_summary%set_summary_var(jj, this%potet)
             case('humidity_hru')
-              call nhru_summary%set_nhru_var(jj, this%humidity_hru)
+              call model_summary%set_summary_var(jj, this%humidity_hru)
             case default
               ! pass
           end select

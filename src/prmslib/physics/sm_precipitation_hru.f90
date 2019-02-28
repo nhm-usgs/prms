@@ -1,7 +1,7 @@
 submodule(PRMS_PRECIPITATION_HRU) sm_precipitation_hru
 contains
   !! Precipitation_hru constructor
-  module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, basin_summary, nhru_summary) result(this)
+  module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, model_summary) result(this)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
@@ -9,8 +9,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
-    type(Basin_summary_ptr), intent(inout) :: basin_summary
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     ! Local variables
     integer(i32) :: ierr
@@ -18,7 +17,7 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Precipitation = Precipitation(ctl_data, model_basin, model_temp, basin_summary, nhru_summary)
+    this%Precipitation = Precipitation(ctl_data, model_basin, model_temp, model_summary)
 
     associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               end_time => ctl_data%end_time%values, &
@@ -72,7 +71,7 @@ contains
   end function
 
 
-  module subroutine run_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_time, nhru_summary)
+  module subroutine run_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_time, model_summary)
     use UTILS_CBH, only: read_netcdf_cbh_file
     implicit none
 
@@ -81,8 +80,7 @@ contains
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in), optional :: model_time
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
-      !! Summary by HRU module
+    type(Summary), intent(inout) :: model_summary
 
     ! Local variables
     integer(i32) :: ios
@@ -96,10 +94,6 @@ contains
               nhru => model_basin%nhru, &
               nmonths => model_basin%nmonths, &
               hru_area => model_basin%hru_area)
-
-              ! rain_cbh_adj => param_data%rain_cbh_adj%values, &
-              ! snow_cbh_adj => param_data%snow_cbh_adj%values, &
-              ! adjmix_rain => param_data%adjmix_rain%values)
 
       ios = 0
 
@@ -119,18 +113,13 @@ contains
       call this%set_precipitation_form(ctl_data, model_basin, model_temp, &
                                        curr_month, this%rain_cbh_adj, this%snow_cbh_adj, &
                                        this%adjmix_rain)
-      ! call this%set_precipitation_form(ctl_data, param_data, model_basin, model_temp, &
-      !                                     curr_month, rain_adj_2d(:, curr_month), &
-      !                                     snow_adj_2d(:, curr_month), &
-      !                                     adjmix_rain_2d(:, curr_month))
 
       ! If any precipitation output variables are specified then we set pointers
       ! to the arrays for the nhru_summary module.
       if (this%has_hru_summary_vars) then
-        call this%set_nhru_summary_ptrs(ctl_data, nhru_summary)
+        call this%set_summary_ptrs(ctl_data, model_summary)
       end if
     end associate
   end subroutine
-
 
 end submodule

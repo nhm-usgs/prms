@@ -1,14 +1,13 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_basin, model_transp, basin_summary, nhru_summary) result(this)
+  module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
     use prms_constants, only: dp
 
     type(Interception) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Transpiration), intent(in) :: model_transp
-    type(Basin_summary_ptr), intent(inout) :: basin_summary
-    type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+    type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: jj
 
@@ -19,13 +18,9 @@ contains
     ! transp_on,
 
     ! -------------------------------------------------------------------------
-    associate(basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-              basinOutVars => ctl_data%basinOutVars%value, &
-              basinOutVar_names => ctl_data%basinOutVar_names%values, &
-              init_vars_from_file => ctl_data%init_vars_from_file%value, &
-              nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-              nhruOutVars => ctl_data%nhruOutVars%value, &
-              nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+              outVarON_OFF => ctl_data%outVarON_OFF%value, &
+              outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
 
@@ -117,50 +112,38 @@ contains
       this%basin_net_rain = 0.0_dp
       this%basin_net_snow = 0.0_dp
 
-      ! Connect any basin summary variables that need to be output
-      if (basinOutON_OFF == 1) then
-        do jj = 1, basinOutVars
-          ! TODO: This is where the daily basin values are linked based on
-          !       what was requested in basinOutVar_names.
-          select case(basinOutVar_names(jj)%s)
+      ! Connect summary variables that need to be output
+      if (outVarON_OFF == 1) then
+        do jj = 1, outVar_names%size()
+          select case(outVar_names%values(jj)%s)
             case('basin_changeover')
-              call basin_summary%set_basin_var(jj, this%basin_changeover)
+              call model_summary%set_summary_var(jj, this%basin_changeover)
             case('basin_hru_apply')
-              call basin_summary%set_basin_var(jj, this%basin_hru_apply)
+              call model_summary%set_summary_var(jj, this%basin_hru_apply)
             case('basin_intcp_evap')
-              call basin_summary%set_basin_var(jj, this%basin_intcp_evap)
+              call model_summary%set_summary_var(jj, this%basin_intcp_evap)
             case('basin_intcp_stor')
-              call basin_summary%set_basin_var(jj, this%basin_intcp_stor)
+              call model_summary%set_summary_var(jj, this%basin_intcp_stor)
             case('basin_net_apply')
-              call basin_summary%set_basin_var(jj, this%basin_net_apply)
+              call model_summary%set_summary_var(jj, this%basin_net_apply)
             case('basin_net_ppt')
-              call basin_summary%set_basin_var(jj, this%basin_net_ppt)
+              call model_summary%set_summary_var(jj, this%basin_net_ppt)
             case('basin_net_rain')
-              call basin_summary%set_basin_var(jj, this%basin_net_rain)
+              call model_summary%set_summary_var(jj, this%basin_net_rain)
             case('basin_net_snow')
-              call basin_summary%set_basin_var(jj, this%basin_net_snow)
-            case default
-              ! pass
-          end select
-        enddo
-      endif
-
-      ! Connect any nhru_summary variables that need to be output
-      if (nhruOutON_OFF == 1) then
-        do jj=1, nhruOutVars
-          select case(nhruOutVar_names(jj)%s)
+              call model_summary%set_summary_var(jj, this%basin_net_snow)
             case('intcp_form')
-              call nhru_summary%set_nhru_var(jj, this%intcp_form)
+              call model_summary%set_summary_var(jj, this%intcp_form)
             case('hru_intcpevap')
-              call nhru_summary%set_nhru_var(jj, this%hru_intcpevap)
+              call model_summary%set_summary_var(jj, this%hru_intcpevap)
             case('hru_intcpstor')
-              call nhru_summary%set_nhru_var(jj, this%hru_intcpstor)
+              call model_summary%set_summary_var(jj, this%hru_intcpstor)
             case('net_ppt')
-              call nhru_summary%set_nhru_var(jj, this%net_ppt)
+              call model_summary%set_summary_var(jj, this%net_ppt)
             case('net_rain')
-              call nhru_summary%set_nhru_var(jj, this%net_rain)
+              call model_summary%set_summary_var(jj, this%net_rain)
             case('net_snow')
-              call nhru_summary%set_nhru_var(jj, this%net_snow)
+              call model_summary%set_summary_var(jj, this%net_snow)
             case default
               ! pass
           end select

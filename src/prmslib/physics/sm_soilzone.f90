@@ -1,6 +1,6 @@
 submodule (PRMS_SOILZONE) sm_soilzone
   contains
-    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, basin_summary, nhru_summary) result(this)
+    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_summary) result(this)
       use prms_constants, only: dp, INACTIVE, LAND, LAKE, SWALE
       implicit none
 
@@ -9,8 +9,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(inout) :: model_climate
       type(Snowcomp), intent(in) :: snow
-      type(Basin_summary_ptr), intent(inout) :: basin_summary
-      type(Nhru_summary_ptr), intent(inout) :: nhru_summary
+      type(Summary), intent(inout) :: model_summary
 
       ! Local variables
       integer(i32) :: chru
@@ -42,15 +41,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
       ! -----------------------------------------------------------------------
       associate(cascade_flag => ctl_data%cascade_flag%value, &
-                basinOutON_OFF => ctl_data%basinOutON_OFF%value, &
-                basinOutVars => ctl_data%basinOutVars%value, &
-                basinOutVar_names => ctl_data%basinOutVar_names%values, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 gsflow_mode => ctl_data%gsflow_mode, &
                 ! model_mode => ctl_data%model_mode%values, &
-                nhruOutON_OFF => ctl_data%nhruOutON_OFF%value, &
-                nhruOutVars => ctl_data%nhruOutVars%value, &
-                nhruOutVar_names => ctl_data%nhruOutVar_names%values, &
+                outVarON_OFF => ctl_data%outVarON_OFF%value, &
+                outVar_names => ctl_data%outVar_names, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
 
@@ -275,94 +270,118 @@ submodule (PRMS_SOILZONE) sm_soilzone
         allocate(this%basin_sz_stor_frac)
         allocate(this%basin_sz2gw)
 
-        ! Connect any basin summary variables that need to be output
-        if (basinOutON_OFF == 1) then
-          do jj = 1, basinOutVars
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
             ! TODO: This is where the daily basin values are linked based on
             !       what was requested in basinOutVar_names.
-            select case(basinOutVar_names(jj)%s)
+            select case(outVar_names%values(jj)%s)
               case('basin_actet')
-                call basin_summary%set_basin_var(jj, this%basin_actet)
+                call model_summary%set_summary_var(jj, this%basin_actet)
               case('basin_cap_infil_tot')
-                call basin_summary%set_basin_var(jj, this%basin_cap_infil_tot)
+                call model_summary%set_summary_var(jj, this%basin_cap_infil_tot)
               case('basin_cap_up_max')
-                call basin_summary%set_basin_var(jj, this%basin_cap_up_max)
+                call model_summary%set_summary_var(jj, this%basin_cap_up_max)
               case('basin_capwaterin')
-                call basin_summary%set_basin_var(jj, this%basin_capwaterin)
+                call model_summary%set_summary_var(jj, this%basin_capwaterin)
               case('basin_cpr_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_cpr_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_cpr_stor_frac)
               case('basin_dncascadeflow')
-                call basin_summary%set_basin_var(jj, this%basin_dncascadeflow)
+                call model_summary%set_summary_var(jj, this%basin_dncascadeflow)
               case('basin_dndunnianflow')
-                call basin_summary%set_basin_var(jj, this%basin_dndunnianflow)
+                call model_summary%set_summary_var(jj, this%basin_dndunnianflow)
               case('basin_dninterflow')
-                call basin_summary%set_basin_var(jj, this%basin_dninterflow)
+                call model_summary%set_summary_var(jj, this%basin_dninterflow)
               case('basin_dunnian')
-                call basin_summary%set_basin_var(jj, this%basin_dunnian)
+                call model_summary%set_summary_var(jj, this%basin_dunnian)
               case('basin_dunnian_gvr')
-                call basin_summary%set_basin_var(jj, this%basin_dunnian_gvr)
+                call model_summary%set_summary_var(jj, this%basin_dunnian_gvr)
               case('basin_dunnian_pfr')
-                call basin_summary%set_basin_var(jj, this%basin_dunnian_pfr)
+                call model_summary%set_summary_var(jj, this%basin_dunnian_pfr)
               case('basin_gvr2pfr')
-                call basin_summary%set_basin_var(jj, this%basin_gvr2pfr)
+                call model_summary%set_summary_var(jj, this%basin_gvr2pfr)
               case('basin_gvr2sm')
-                call basin_summary%set_basin_var(jj, this%basin_gvr2sm)
+                call model_summary%set_summary_var(jj, this%basin_gvr2sm)
               case('basin_gvr_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_gvr_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_gvr_stor_frac)
               case('basin_interflow_max')
-                call basin_summary%set_basin_var(jj, this%basin_interflow_max)
+                call model_summary%set_summary_var(jj, this%basin_interflow_max)
               case('basin_lakeevap')
-                call basin_summary%set_basin_var(jj, this%basin_lakeevap)
+                call model_summary%set_summary_var(jj, this%basin_lakeevap)
               case('basin_lakeinsz')
-                call basin_summary%set_basin_var(jj, this%basin_lakeinsz)
+                call model_summary%set_summary_var(jj, this%basin_lakeinsz)
               case('basin_lakeprecip')
-                call basin_summary%set_basin_var(jj, this%basin_lakeprecip)
+                call model_summary%set_summary_var(jj, this%basin_lakeprecip)
               case('basin_perv_et')
-                call basin_summary%set_basin_var(jj, this%basin_perv_et)
+                call model_summary%set_summary_var(jj, this%basin_perv_et)
               case('basin_pfr_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_pfr_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_pfr_stor_frac)
               case('basin_pref_flow_infil')
-                call basin_summary%set_basin_var(jj, this%basin_pref_flow_infil)
+                call model_summary%set_summary_var(jj, this%basin_pref_flow_infil)
               case('basin_pref_stor')
-                call basin_summary%set_basin_var(jj, this%basin_pref_stor)
+                call model_summary%set_summary_var(jj, this%basin_pref_stor)
               case('basin_prefflow')
-                call basin_summary%set_basin_var(jj, this%basin_prefflow)
+                call model_summary%set_summary_var(jj, this%basin_prefflow)
               case('basin_recharge')
-                call basin_summary%set_basin_var(jj, this%basin_recharge)
+                call model_summary%set_summary_var(jj, this%basin_recharge)
               case('basin_slowflow')
-                call basin_summary%set_basin_var(jj, this%basin_slowflow)
+                call model_summary%set_summary_var(jj, this%basin_slowflow)
               case('basin_slstor')
-                call basin_summary%set_basin_var(jj, this%basin_slstor)
+                call model_summary%set_summary_var(jj, this%basin_slstor)
               case('basin_sm2gvr')
-                call basin_summary%set_basin_var(jj, this%basin_sm2gvr)
+                call model_summary%set_summary_var(jj, this%basin_sm2gvr)
               case('basin_sm2gvr_max')
-                call basin_summary%set_basin_var(jj, this%basin_sm2gvr_max)
+                call model_summary%set_summary_var(jj, this%basin_sm2gvr_max)
               case('basin_soil_lower_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_soil_lower_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_soil_lower_stor_frac)
               case('basin_soil_moist')
-                call basin_summary%set_basin_var(jj, this%basin_soil_moist)
+                call model_summary%set_summary_var(jj, this%basin_soil_moist)
               case('basin_soil_moist_tot')
-                call basin_summary%set_basin_var(jj, this%basin_soil_moist_tot)
+                call model_summary%set_summary_var(jj, this%basin_soil_moist_tot)
               case('basin_soil_rechr')
-                call basin_summary%set_basin_var(jj, this%basin_soil_rechr)
+                call model_summary%set_summary_var(jj, this%basin_soil_rechr)
               case('basin_soil_rechr_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_soil_rechr_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_soil_rechr_stor_frac)
               case('basin_soil_to_gw')
-                call basin_summary%set_basin_var(jj, this%basin_soil_to_gw)
+                call model_summary%set_summary_var(jj, this%basin_soil_to_gw)
               case('basin_ssflow')
-                call basin_summary%set_basin_var(jj, this%basin_ssflow)
+                call model_summary%set_summary_var(jj, this%basin_ssflow)
               case('basin_ssin')
-                call basin_summary%set_basin_var(jj, this%basin_ssin)
+                call model_summary%set_summary_var(jj, this%basin_ssin)
               case('basin_ssstor')
-                call basin_summary%set_basin_var(jj, this%basin_ssstor)
+                call model_summary%set_summary_var(jj, this%basin_ssstor)
               case('basin_swale_et')
-                call basin_summary%set_basin_var(jj, this%basin_swale_et)
+                call model_summary%set_summary_var(jj, this%basin_swale_et)
               case('basin_sz_gwin')
-                call basin_summary%set_basin_var(jj, this%basin_sz_gwin)
+                call model_summary%set_summary_var(jj, this%basin_sz_gwin)
               case('basin_sz_stor_frac')
-                call basin_summary%set_basin_var(jj, this%basin_sz_stor_frac)
+                call model_summary%set_summary_var(jj, this%basin_sz_stor_frac)
               case('basin_sz2gw')
-                call basin_summary%set_basin_var(jj, this%basin_sz2gw)
+                call model_summary%set_summary_var(jj, this%basin_sz2gw)
+              case('hru_actet')
+                call model_summary%set_summary_var(jj, this%hru_actet)
+              case('perv_actet')
+                call model_summary%set_summary_var(jj, this%perv_actet)
+              case('pref_flow')
+                call model_summary%set_summary_var(jj, this%pref_flow)
+              case('pref_flow_in')
+                call model_summary%set_summary_var(jj, this%pref_flow_in)
+              case('pref_flow_infil')
+                call model_summary%set_summary_var(jj, this%pref_flow_infil)
+              case('pref_flow_stor')
+                call model_summary%set_summary_var(jj, this%pref_flow_stor)
+              case('slow_flow')
+                call model_summary%set_summary_var(jj, this%slow_flow)
+              case('slow_stor')
+                call model_summary%set_summary_var(jj, this%slow_stor)
+              case('soil_lower')
+                call model_summary%set_summary_var(jj, this%soil_lower)
+              case('soil_moist_tot')
+                call model_summary%set_summary_var(jj, this%soil_moist_tot)
+              case('soil_to_gw')
+                call model_summary%set_summary_var(jj, this%soil_to_gw)
+              case('soil_to_ssr')
+                call model_summary%set_summary_var(jj, this%soil_to_ssr)
               case default
                 ! pass
             end select
@@ -610,40 +629,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !     enddo
         !   endif
         ! endif
-
-        ! Connect any nhru_summary variables that need to be output
-        if (nhruOutON_OFF == 1) then
-          do jj=1, nhruOutVars
-            select case(nhruOutVar_names(jj)%s)
-              case('hru_actet')
-                call nhru_summary%set_nhru_var(jj, this%hru_actet)
-              case('perv_actet')
-                call nhru_summary%set_nhru_var(jj, this%perv_actet)
-              case('pref_flow')
-                call nhru_summary%set_nhru_var(jj, this%pref_flow)
-              case('pref_flow_in')
-                call nhru_summary%set_nhru_var(jj, this%pref_flow_in)
-              case('pref_flow_infil')
-                call nhru_summary%set_nhru_var(jj, this%pref_flow_infil)
-              case('pref_flow_stor')
-                call nhru_summary%set_nhru_var(jj, this%pref_flow_stor)
-              case('slow_flow')
-                call nhru_summary%set_nhru_var(jj, this%slow_flow)
-              case('slow_stor')
-                call nhru_summary%set_nhru_var(jj, this%slow_stor)
-              case('soil_lower')
-                call nhru_summary%set_nhru_var(jj, this%soil_lower)
-              case('soil_moist_tot')
-                call nhru_summary%set_nhru_var(jj, this%soil_moist_tot)
-              case('soil_to_gw')
-                call nhru_summary%set_nhru_var(jj, this%soil_to_gw)
-              case('soil_to_ssr')
-                call nhru_summary%set_nhru_var(jj, this%soil_to_ssr)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
       end associate
     end function
 
