@@ -106,6 +106,9 @@ module Control_class
     type(iScalar) :: nsubOut_format
     type(iScalar) :: nsubOut_freq
     type(iScalar) :: orad_flag
+    type(iScalar) :: outVarON_OFF
+    type(sArray) :: outVar_base_filename
+    type(sArray) :: outVar_names
     type(sArray) :: param_file
     type(iScalar) :: parameter_check_flag
     type(sArray) :: potet_day
@@ -153,7 +156,6 @@ module Control_class
     type(sArray) :: var_save_file
     type(sArray) :: windspeed_day
     type(sArray) :: wrain_intcp_dynamic
-
 
     ! Non-control file variables
     integer(i32) :: model_output_unit

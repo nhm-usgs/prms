@@ -344,6 +344,18 @@ select case(buf)
     this%orad_flag%name = last
     call this%orad_flag%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
+  case('outVarON_OFF')
+    this%outVarON_OFF%name = last
+    call this%outVarON_OFF%read(iUnit)
+    line = line + 1 + ENTRY_OFFSET
+  case('outVar_base_filename')
+    this%outVar_base_filename%name = last
+    call this%outVar_base_filename%read(iUnit)
+    line = line + 1 + ENTRY_OFFSET
+  case('outVar_names')
+    this%outVar_names%name = last
+    call this%outVar_names%read(iUnit)
+    line = line + this%outVar_names%size() + ENTRY_OFFSET
   case('param_file')
     this%param_file%name = last
     call this%param_file%read(iUnit)
