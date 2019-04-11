@@ -4,7 +4,9 @@ contains
   !***********************************************************************
   ! Climateflow constructor
   module function constructor_Climateflow(ctl_data, model_basin, model_summary) result(this)
+    use iso_fortran_env, only: output_unit, error_unit
     use UTILS_PRMS, only: check_restart
+    use prms_constants, only: INACTIVE, LAKE
     implicit none
 
     type(Climateflow) :: this
@@ -22,7 +24,8 @@ contains
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
 
-              nhru => model_basin%nhru)
+              nhru => model_basin%nhru, &
+              hru_type => model_basin%hru_type)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -55,6 +58,35 @@ contains
       this%soil_moist = this%soil_moist_init_frac * this%soil_moist_max
       this%soil_rechr_max = this%soil_rechr_max_frac * this%soil_moist_max
       this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
+
+      do jj=1, nhru
+        if (hru_type(jj) == INACTIVE .or. hru_type(jj) == LAKE) cycle
+
+        if (this%soil_rechr_max(jj) > this%soil_moist_max(jj)) then
+          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_max > soil_moist_max (HRU=', jj, ')'
+          this%soil_rechr_max(jj) = this%soil_moist_max(jj)
+        end if
+
+        if (this%soil_rechr(jj) > this%soil_rechr_max(jj)) then
+          ! NOTE: PRMS5 has 'soil_rechr_init > soil_rechr_max'
+          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_rechr_max (HRU=', jj, ')'
+          this%soil_rechr(jj) = this%soil_rechr_max(jj)
+        end if
+
+        if (this%soil_moist(jj) > this%soil_moist_max(jj)) then
+          ! NOTE: PRMS5 has 'soil_moist_init > soil_moist_max'
+          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_moist_init_frac > soil_moist_max (HRU=', jj, ')'
+          this%soil_moist(jj) = this%soil_moist_max(jj)
+        end if
+
+        if (this%soil_rechr(jj) > this%soil_moist(jj)) then
+          ! NOTE: PRMS5 has 'soil_rechr_init > soil_moist_init'
+          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_moist_init_frac (HRU=', jj, ')'
+          this%soil_rechr(jj) = this%soil_moist(jj)
+        end if
+      end do
+
+      9012 format(2X, A, A, I0, A)
 
       ! Snow
       allocate(this%pkwater_equiv(nhru))

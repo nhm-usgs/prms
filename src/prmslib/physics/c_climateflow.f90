@@ -37,9 +37,9 @@ module PRMS_CLIMATEVARS
     ! WARNING: soil_moist, soil_rechr, soil_rechr_max are depended on
     !          by BOTH Srunoff and Soilzone.
     !          soil_moist and soil_rechr supply antecedent conditions to Srunoff.
-    real(r64), allocatable :: soil_moist(:)
+    real(r32), allocatable :: soil_moist(:)
       !! Storage of capillary reservoir for each HRU
-    real(r64), allocatable :: soil_rechr(:)
+    real(r32), allocatable :: soil_rechr(:)
       !! Storage for recharge zone (upper portion) of the capillary reservoir that is available for both evaporation and transpiration
     real(r32), allocatable :: soil_rechr_max(:)
       !! Maximum storage for soil recharge zone (upper portion of capillary reservoir where losses occur as both evporation and transpiration)
