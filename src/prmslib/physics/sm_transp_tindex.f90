@@ -45,9 +45,6 @@ contains
               hru_route_order => model_basin%hru_route_order, &
 
               temp_units => model_temp%temp_units)
-              ! transp_beg => param_data%transp_beg%values, &
-              ! transp_end => param_data%transp_end%values, &
-              ! transp_tmax => param_data%transp_tmax%values)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -200,9 +197,6 @@ contains
 
               curr_month => model_time%Nowmonth, &
               curr_day => model_time%Nowday)
-
-              ! transp_beg => param_data%transp_beg%values, &
-              ! transp_end => param_data%transp_end%values)
 
       ! Set switch for active transpiration period
       this%basin_transp_on = .false.
