@@ -7,6 +7,7 @@ module PRMS_BASIN
   use iso_fortran_env, only: output_unit
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
+  use PRMS_SET_TIME, only: Time_t
   implicit none
 
   private
@@ -36,14 +37,15 @@ module PRMS_BASIN
     ! Parameters
     integer(i32), allocatable :: cov_type(:)
       !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
-    real(r32), allocatable :: dprst_frac(:)
-      !! Fraction of each HRU area that has surface depressions
+    ! real(r32), allocatable :: dprst_frac(:)
+    !   !! Fraction of each HRU area that has surface depressions
     real(r32), allocatable :: hru_area(:)
     real(r32), allocatable :: hru_aspect(:)
     real(r32), allocatable :: hru_elev(:)
     real(r32), allocatable :: hru_lat(:)
     real(r32), allocatable :: hru_lon(:)
-    real(r32), allocatable :: hru_percent_imperv(:)
+    ! real(r32), allocatable :: hru_percent_imperv(:)
+      ! TODO: move hru_percent_imperv to srunoff.f90
     real(r32), allocatable :: hru_slope(:)
     integer(i32), allocatable :: hru_type(:)
     real(r32), allocatable :: hru_x(:)
@@ -82,16 +84,23 @@ module PRMS_BASIN
     integer(i32), allocatable :: gwr_type(:)
     integer(i32), allocatable :: hru_route_order(:)
 
-    real(r32), allocatable :: dprst_area_max(:)
-    real(r32), allocatable :: hru_frac_perv(:)
-    real(r32), allocatable :: hru_area_imperv(:)
-    real(r32), allocatable :: hru_area_perv(:)
+    ! real(r32), allocatable :: dprst_area_max(:)
+    ! real(r32), allocatable :: hru_frac_perv(:)
+    ! real(r32), allocatable :: hru_area_imperv(:)
+    ! real(r32), allocatable :: hru_area_perv(:)
 
     real(r64), allocatable :: hru_area_dble(:)
 
     ! TODO: 2018-09-11 PAN Possibly move lake_area to muskingum_lake class
     real(r64), allocatable :: lake_area(:)
 
+    integer(i32) :: covtype_unit
+      !! File handle to dynamic cov_type parameter file
+    integer(i32) :: dyn_output_unit
+    integer(i32) :: next_dyn_covtype_date(3)
+    integer(i32), allocatable :: covtype_chgs(:)
+    contains
+      procedure, public :: run => run_Basin
 
   end type
 
@@ -105,4 +114,13 @@ module PRMS_BASIN
     end function
   end interface
 
+  interface
+    module subroutine run_Basin(this, ctl_data, model_time)
+      class(Basin), intent(inout) :: this
+        !! Basin class
+      type(Control), intent(in) :: ctl_data
+        !! Control file parameters
+      type(Time_t), intent(in) :: model_time
+    end subroutine
+  end interface
 end module
