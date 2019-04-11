@@ -22,11 +22,7 @@ module PRMS_PRECIPITATION
     real(r32), allocatable :: tmax_allsnow(:, :)
     real(r32), allocatable :: tmax_allrain_offset(:, :)
 
-
-    ! Other variables
-    logical :: has_hru_summary_vars
-
-    ! Basin variables
+    ! Output variables
     real(r64), pointer :: basin_obs_ppt
     real(r64), pointer :: basin_ppt
     real(r64), pointer :: basin_rain
@@ -37,14 +33,18 @@ module PRMS_PRECIPITATION
     real(r32), allocatable :: hru_snow(:)
     real(r32), allocatable :: prmx(:)
 
-    real(r32), allocatable :: tmax_allrain(:, :)
-    real(r32), allocatable :: tmax_allrain_c(:, :)
-    real(r32), allocatable :: tmax_allrain_f(:, :)
-    real(r32), allocatable :: tmax_allsnow_c(:, :)
-    real(r32), allocatable :: tmax_allsnow_f(:, :)
-
     integer(i32), allocatable :: newsnow(:)
     integer(i32), allocatable :: pptmix(:)
+
+    ! Local variables
+    real(r32), allocatable, private :: tmax_allrain(:, :)
+    real(r32), allocatable, private :: tmax_allrain_c(:, :)
+    real(r32), allocatable :: tmax_allrain_f(:, :)
+    real(r32), allocatable :: tmax_allsnow_c(:, :)
+    real(r32), allocatable, private :: tmax_allsnow_f(:, :)
+
+    ! Other variables
+    logical :: has_hru_summary_vars
 
     contains
       procedure, public :: run => run_Precipitation

@@ -26,10 +26,6 @@ contains
 
               temp_units => model_temp%temp_units)
 
-              ! elev_units => param_data%elev_units%values(1), &
-              ! tmax_allsnow => param_data%tmax_allsnow%values, &
-              ! tmax_allrain_offset => param_data%tmax_allrain_offset%values)
-
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
       if (print_debug > -2) then
@@ -226,9 +222,6 @@ contains
               active_hrus => model_basin%active_hrus, &
               basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
-
-              ! hru_area => param_data%hru_area%values, &
-              ! precip_units => param_data%precip_units%values(1), &
 
               tmax => model_temp%tmax, &
               tmin => model_temp%tmin, &
