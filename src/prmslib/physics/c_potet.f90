@@ -28,6 +28,7 @@ module PRMS_POTET
     integer(i32), private :: humidity_funit
       !! Humidity CBH file unit
 
+    ! Output variables
     real(r64), pointer :: basin_humidity
       !! (moved from climateflow.f90)
     real(r64), pointer :: basin_potet
