@@ -1,5 +1,6 @@
 module PRMS_SRUNOFF
   use variableKind
+  use iso_fortran_env, only: output_unit
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
@@ -24,6 +25,8 @@ module PRMS_SRUNOFF
       !! Maximum possible area contributing to surface runoff expressed as a portion of the HRU area
     real(r32), allocatable :: carea_min(:)
       !! Minimum possible area contributing to surface runoff expressed as a portion of the area for each HRU
+    real(r32), allocatable :: hru_percent_imperv(:)
+      !! Fraction of each HRU area that is impervious
     real(r32), allocatable :: imperv_stor_max(:)
       !! Maximum impervious area retention storage for each HRU
     real(r32), allocatable :: smidx_coef(:)
@@ -41,7 +44,8 @@ module PRMS_SRUNOFF
       !! Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage
     real(r32), allocatable :: dprst_flow_coef(:)
       !! Coefficient in linear flow routing equation for open surface depressions for each HRU
-
+    real(r32), allocatable :: dprst_frac(:)
+      !! Fraction of each HRU area that has surface depressions
     real(r32), allocatable :: dprst_frac_init(:)
       !! Fraction of maximum surface-depression storage that contains water at the start of a simulation
     real(r32), allocatable :: dprst_frac_open(:)
@@ -65,11 +69,12 @@ module PRMS_SRUNOFF
     ! Local Variables
     logical :: has_closed_dprst
       !! NOTE: replaces dprst_clos_flag
+    logical, private :: has_dynamic_params
     logical :: has_open_dprst
       !! NOTE: replaces dprst_open_flag
 
     real(r32), allocatable :: carea_dif(:)
-    real(r64), allocatable :: imperv_stor_ante(:)
+    real(r32), allocatable :: imperv_stor_ante(:)
 
     real(r64) :: sri
     real(r64) :: srp
@@ -77,8 +82,12 @@ module PRMS_SRUNOFF
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
 
-    ! Declared Variables
     real(r64), pointer :: basin_apply_sroff
+    real(r32), allocatable :: hru_area_imperv(:)
+    real(r32), allocatable :: hru_area_perv(:)
+
+
+    ! Output variables
     real(r64), pointer :: basin_contrib_fraction
     real(r64), pointer :: basin_hortonian
     real(r64), pointer :: basin_imperv_evap
@@ -88,74 +97,110 @@ module PRMS_SRUNOFF
     real(r64), pointer :: basin_sroffi
     real(r64), pointer :: basin_sroffp
 
-    ! Used for cascades
+    real(r32), allocatable :: dprst_area_max(:)
+    real(r32), allocatable :: hru_frac_perv(:)
+
+
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Cascades
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~
+    ! output variables
     real(r64), pointer :: basin_hortonian_lakes
     real(r64), pointer :: basin_sroff_down
     real(r64), pointer :: basin_sroff_upslope
 
-    real(r64), allocatable :: contrib_fraction(:)
-    real(r64), allocatable :: hortonian_flow(:)
+    real(r32), allocatable :: contrib_fraction(:)
+    real(r32), allocatable :: hortonian_flow(:)
     real(r64), allocatable :: hortonian_lakes(:)
+      !! r64 is correct
     real(r64), allocatable :: hru_hortn_cascflow(:)
-    real(r64), allocatable :: hru_impervevap(:)
-    real(r64), allocatable :: hru_impervstor(:)
-    real(r64), allocatable :: hru_sroffi(:)
-    real(r64), allocatable :: hru_sroffp(:)
-    real(r64), allocatable :: imperv_evap(:)
-    real(r64), allocatable :: imperv_stor(:)
+      !! r64 is correct
+    real(r32), allocatable :: hru_impervevap(:)
+    real(r32), allocatable :: hru_impervstor(:)
+    real(r32), allocatable :: hru_sroffi(:)
+    real(r32), allocatable :: hru_sroffp(:)
+    real(r32), allocatable :: imperv_evap(:)
+    real(r32), allocatable :: imperv_stor(:)
       !! Storage on impervious area for each HRU
-    real(r64), allocatable :: infil(:)
+    real(r32), allocatable :: infil(:)
       !! Infiltration to the capillary and preferential-flow reservoirs from each HRU
-    real(r64), allocatable :: sroff(:)
+    real(r32), allocatable :: sroff(:)
       !! Surface runoff to the stream network for each HRU
     real(r64), allocatable :: strm_seg_in(:)
+      !! r64 is correct
     real(r64), allocatable :: upslope_hortonian(:)
-      !! Used for cascades
+      !! Used for cascades; r64 is correct
 
-    ! Declared Variables for Depression Storage
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Depression storage
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~
+    real(r32), allocatable :: dprst_frac_clos(:)
+      !! NOTE: pulled from basin.f90
+    real(r64), allocatable :: dprst_in(:)
+    real(r64), allocatable :: dprst_stor_ante(:)
+    real(r64), allocatable :: dprst_vol_clos_max(:)
+    real(r64), allocatable :: dprst_vol_open_max(:)
+    real(r64), allocatable :: dprst_vol_thres_open(:)
+
+    ! Next two variables are only allocated if
+    ! imperv_frac_flag == 1 or dprst_frac_flag == 1
+    real(r32), allocatable :: soil_moist_chg(:)
+    real(r32), allocatable :: soil_rechr_chg(:)
+
+    logical :: srunoff_updated_soil
+
+    ! Output variables
     real(r64), pointer :: basin_dprst_evap
     real(r64), pointer :: basin_dprst_seep
     real(r64), pointer :: basin_dprst_sroff
     real(r64), pointer :: basin_dprst_volcl
     real(r64), pointer :: basin_dprst_volop
 
-    real(r64), allocatable :: dprst_in(:)
     real(r64), allocatable :: dprst_seep_hru(:)
+      !! r64 is correct
     real(r64), allocatable :: dprst_sroff_hru(:)
-    real(r64), allocatable :: dprst_stor_ante(:)
+      !! r64 is correct
     real(r64), allocatable :: dprst_stor_hru(:)
+      !! r64 is correct
     real(r64), allocatable :: dprst_vol_clos(:)
       !! (from flowvars) Storage volume in closed surface depressions for each HRU
-    real(r64), allocatable :: dprst_vol_clos_max(:)
+      !! r64 is correct
     real(r64), allocatable :: dprst_vol_open(:)
       !! (from flowvars) Storage volume in open surface depressions for each HRU
-    real(r64), allocatable :: dprst_vol_open_max(:)
-    real(r64), allocatable :: dprst_vol_thres_open(:)
-
-    real(r64), allocatable :: dprst_area_clos(:)
-    real(r64), allocatable :: dprst_area_clos_max(:)
+      !! r64 is correct
+    real(r32), allocatable :: dprst_area_clos(:)
+    real(r32), allocatable :: dprst_area_clos_max(:)
       !! NOTE: pulled from basin.f90
-    real(r64), allocatable :: dprst_area_open(:)
-    real(r64), allocatable :: dprst_area_open_max(:)
+    real(r32), allocatable :: dprst_area_open(:)
+    real(r32), allocatable :: dprst_area_open_max(:)
       !! NOTE: pulled from basin.f90
-    real(r64), allocatable :: dprst_evap_hru(:)
-    real(r32), allocatable :: dprst_frac_clos(:)
-      !! NOTE: pulled from basin.f90
-    real(r64), allocatable :: dprst_insroff_hru(:)
-
+    real(r32), allocatable :: dprst_evap_hru(:)
+    real(r32), allocatable :: dprst_insroff_hru(:)
     real(r32), allocatable :: dprst_vol_clos_frac(:)
     real(r32), allocatable :: dprst_vol_frac(:)
     real(r32), allocatable :: dprst_vol_open_frac(:)
 
-! ! Declared Parameters
-!       real(r32), allocatable :: Smidx_coef(:), Smidx_exp(:)
-!       real(r32), allocatable :: Carea_min(:), Carea_max(:)
-! ! Declared Parameters for Depression Storage
-!       real(r32), allocatable :: Op_flow_thres(:), Sro_to_dprst_perv(:)
-!       real(r32), allocatable :: Va_clos_exp(:), Va_open_exp(:)
-!       real(r32), allocatable :: Dprst_flow_coef(:), Dprst_frac_init(:)
-!       real(r32), allocatable :: Dprst_seep_rate_open(:), Dprst_seep_rate_clos(:)
-!       real(r32), allocatable :: Dprst_depth_avg(:), Sro_to_dprst_imperv(:), Dprst_et_coef(:)
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Dynamic parameter variables
+    integer(i32) :: dyn_output_unit
+      !! File handle to open dynamic parameter log file
+    integer(i32), private :: imperv_frac_unit
+    integer(i32) :: next_dyn_imperv_frac_date(3)
+    real(r32), allocatable :: imperv_frac_chgs(:)
+
+    integer(i32), private :: imperv_stor_unit
+    integer(i32) :: next_dyn_imperv_stor_date(3)
+    real(r32), allocatable :: imperv_stor_chgs(:)
+
+    integer(i32), private :: dprst_frac_unit
+    integer(i32) :: next_dyn_dprst_frac_date(3)
+    real(r32), allocatable :: dprst_frac_chgs(:)
+
+    integer(i32), private :: dprst_depth_unit
+    integer(i32) :: next_dyn_dprst_depth_date(3)
+    real(r32), allocatable :: dprst_depth_chgs(:)
+    ! integer(i32) :: dyn_output_unit
+
     contains
       procedure, public :: run => run_Srunoff
       procedure, public :: cleanup => cleanup_Srunoff
@@ -165,6 +210,8 @@ module PRMS_SRUNOFF
       procedure, private :: compute_infil
       procedure, private :: imperv_et
       procedure, private :: perv_comp
+      procedure, private :: read_dyn_params
+      procedure, nopass, private :: depression_surface_area
   end type
 
   interface Srunoff
@@ -216,6 +263,16 @@ module PRMS_SRUNOFF
   end interface
 
   interface
+    elemental module function depression_surface_area(volume, volume_max, area_max, va_exp) result(res)
+      real(r32) :: res
+      real(r64), intent(in) :: volume
+      real(r64), intent(in) :: volume_max
+      real(r32), intent(in) :: area_max
+      real(r32), intent(in) :: va_exp
+    end function
+  end interface
+
+  interface
     module subroutine dprst_init(this, ctl_data, model_basin)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
@@ -235,18 +292,18 @@ module PRMS_SRUNOFF
       type(Snowcomp), intent(in) :: snow
       type(Time_t), intent(in) :: model_time
       integer(i32), intent(in) :: idx
-      real(r64), intent(inout) :: avail_et
+      real(r32), intent(inout) :: avail_et
     end subroutine
   end interface
 
   interface
-    module subroutine imperv_et(this, model_basin, idx, potet, sca, avail_et)
+    module subroutine imperv_et(this, idx, potet, sca, avail_et)
       class(Srunoff), intent(inout) :: this
-      type(Basin), intent(in) :: model_basin
+      ! type(Basin), intent(in) :: model_basin
       integer(i32), intent(in) :: idx
       real(r32), intent(in) :: potet
       real(r32), intent(in) :: sca
-      real(r64), intent(in) :: avail_et
+      real(r32), intent(in) :: avail_et
     end subroutine
   end interface
 
@@ -258,10 +315,20 @@ module PRMS_SRUNOFF
       type(Climateflow), intent(in) :: model_climate
       ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
-      real(r64), intent(in) :: pptp
-      real(r64), intent(in) :: ptc
+      real(r32), intent(in) :: pptp
+      real(r32), intent(in) :: ptc
       ! real(r32), intent(inout) :: infil
       real(r64), intent(inout) :: srp
+    end subroutine
+  end interface
+
+  interface
+    module subroutine read_dyn_params(this, ctl_data, model_basin, model_time, model_climate)
+      class(Srunoff), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Basin), intent(in) :: model_basin
+      type(Time_t), intent(in) :: model_time
+      type(Climateflow), intent(in) :: model_climate
     end subroutine
   end interface
 
