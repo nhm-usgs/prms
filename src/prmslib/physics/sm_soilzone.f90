@@ -1,6 +1,6 @@
 submodule (PRMS_SOILZONE) sm_soilzone
   contains
-    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_summary) result(this)
+    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_runoff, model_summary) result(this)
       use prms_constants, only: dp, INACTIVE, LAND, LAKE, SWALE
       implicit none
 
@@ -9,6 +9,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(inout) :: model_climate
       type(Snowcomp), intent(in) :: snow
+      type(Srunoff), intent(inout) :: model_runoff
       type(Summary), intent(inout) :: model_summary
 
       ! Local variables
@@ -54,8 +55,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 nsegment => model_basin%nsegment, &
                 basin_area_inv => model_basin%basin_area_inv, &
                 hru_area => model_basin%hru_area, &
-                hru_area_perv => model_basin%hru_area_perv, &
-                hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_type => model_basin%hru_type, &
 
                 soil_moist => model_climate%soil_moist, &
@@ -63,7 +62,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 soil_rechr => model_climate%soil_rechr, &
                 soil_rechr_max => model_climate%soil_rechr_max, &
 
-                snowcov_area => snow%snowcov_area)
+                snowcov_area => snow%snowcov_area, &
+
+                hru_area_perv => model_runoff%hru_area_perv, &
+                hru_frac_perv => model_runoff%hru_frac_perv)
 
         call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -121,9 +123,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! NOTE: ssstor_init_frac should have dimensions of nssr
         allocate(this%ssstor_init_frac(nhru))
         call param_hdl%get_variable('ssstor_init_frac', this%ssstor_init_frac)
-
-
-
 
 
         ! TODO: 2018-06-21 - Uncomment once cascade module is converted.
@@ -393,25 +392,25 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
         ! Initialize
         this%snow_free = 1.0 - snowcov_area
-        this%pref_flow_max = 0.0_dp
-        this%pref_flow_stor = 0.0_dp
-        this%slow_stor = 0.0_dp
-        this%soil_lower = 0.0_dp
-        this%soil_lower_stor_max = 0.0_dp
-        this%soil_moist_tot = 0.0_dp
+        this%pref_flow_max = 0.0
+        this%pref_flow_stor = 0.0
+        this%slow_stor = 0.0
+        this%soil_lower = 0.0
+        this%soil_lower_stor_max = 0.0
+        this%soil_moist_tot = 0.0
         this%soil_zone_max = 0.0
 
-        this%hru_actet = 0.0_dp
+        this%hru_actet = 0.0
         this%grav_dunnian_flow = 0.0_dp
         this%pfr_dunnian_flow = 0.0_dp
         this%pref_flag = .false.
         this%pref_flow_flag = .false.
-        this%pref_flow_thrsh = 0.0_dp
-        this%slow_flow = 0.0_dp
+        this%pref_flow_thrsh = 0.0
+        this%slow_flow = 0.0
         this%soil2gw_flag = .false.
-        this%soil_lower_ratio = 0.0_dp
-        this%ssres_flow = 0.0_dp
-        this%ssres_stor = dble(this%ssstor_init_frac * this%sat_threshold)
+        this%soil_lower_ratio = 0.0
+        this%ssres_flow = 0.0
+        this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
         this%swale_limit = 0.0
 
 
@@ -460,20 +459,20 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%snow_free(chru) = 1.0 - snowcov_area(chru)
 
           if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
-            ! If inactive or lake
+            ! inactive or lake
             ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-            this%pref_flow_max(chru) = 0.0_dp
-            this%pref_flow_stor(chru) = 0.0_dp
+            this%pref_flow_max(chru) = 0.0
+            this%pref_flow_stor(chru) = 0.0
             ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
-            this%slow_stor(chru) = 0.0_dp
-            this%soil_lower(chru) = 0.0_dp
-            this%soil_lower_stor_max(chru) = 0.0_dp
-            this%soil_moist_tot(chru) = 0.0_dp
+            this%slow_stor(chru) = 0.0
+            this%soil_lower(chru) = 0.0
+            this%soil_lower_stor_max(chru) = 0.0
+            this%soil_moist_tot(chru) = 0.0
             this%soil_zone_max(chru) = 0.0
-            this%ssres_stor(chru) = 0.0_dp
+            this%ssres_stor(chru) = 0.0
 
-            soil_moist(chru) = 0.0_dp ! WARNING: Overrides init in climateflow
-            soil_rechr(chru) = 0.0_dp ! WARNING: Overrides init in climateflow
+            soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
+            soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
             cycle
           endif
 
@@ -481,12 +480,18 @@ submodule (PRMS_SOILZONE) sm_soilzone
             ! swale
             this%swale_limit(chru) = 3.0 * this%sat_threshold(chru)
             ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-            this%pref_flow_thrsh(chru) = dble(this%sat_threshold(chru))
-            this%pref_flow_max(chru) = 0.0_dp
+            this%pref_flow_thrsh(chru) = this%sat_threshold(chru)
+            this%pref_flow_max(chru) = 0.0
           else
             ! land
-            this%pref_flow_thrsh(chru) = dble(this%sat_threshold(chru) * (1.0 - this%pref_flow_den(chru)))
-            this%pref_flow_max(chru) = dble(this%sat_threshold(chru) - this%pref_flow_thrsh(chru))
+            this%pref_flow_thrsh(chru) = this%sat_threshold(chru) * (1.0 - this%pref_flow_den(chru))
+            this%pref_flow_max(chru) = this%sat_threshold(chru) - this%pref_flow_thrsh(chru)
+
+            ! Interflow coefficient values don't matter except for land HRU
+            if (this%pref_flow_den(chru) > 0.0) then
+              this%pref_flow_flag(chru) = .true.
+              this%pref_flag = .true.
+            endif
           endif
 
           ! hru_type = LAND or SWALE
@@ -499,19 +504,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
             this%soil2gw_flag(chru) = .true.
           endif
 
-          if (hru_type(chru) == LAND) then
-            ! Interflow coefficient values don't matter except for land HRU
-            if (this%pref_flow_den(chru) > 0.0) then
-              this%pref_flow_flag(chru) = .true.
-              this%pref_flag = .true.
-            endif
-          endif
-
           this%soil_zone_max(chru) = this%sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
-          this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * dble(hru_frac_perv(chru))
+          this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
 
           this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
-          this%soil_lower_stor_max(chru) = dble(soil_moist_max(chru) - soil_rechr_max(chru))
+          this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
 
           if (this%soil_lower_stor_max(chru) > 0.0) then
             this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
@@ -549,21 +546,21 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !   endif
         ! endif
 
-        this%cap_infil_tot = 0.0_dp
-        this%cap_waterin = 0.0_dp
+        this%cap_infil_tot = 0.0
+        this%cap_waterin = 0.0
         this%gvr2pfr = 0.0_dp
-        this%perv_actet = 0.0_dp
-        this%potet_lower = 0.0_dp
-        this%potet_rechr = 0.0_dp
-        this%pref_flow = 0.0_dp
-        this%pref_flow_in = 0.0_dp
-        this%pref_flow_infil = 0.0_dp
-        this%recharge = 0.0_dp
-        this%swale_actet = 0.0_dp
-        this%unused_potet = 0.0_dp  ! dimension nhru
+        this%perv_actet = 0.0
+        this%potet_lower = 0.0
+        this%potet_rechr = 0.0
+        this%pref_flow = 0.0
+        this%pref_flow_in = 0.0
+        this%pref_flow_infil = 0.0
+        this%recharge = 0.0
+        this%swale_actet = 0.0
+        this%unused_potet = 0.0  ! dimension nhru
 
         ! TODO: Aren't basin variables already initialized?
-        ! Initialize scalers
+        ! Initialize scalars
         ! if (init_vars_from_file == 0) call init_basin_vars()
 
         ! Initialize arrays (dimensioned nhrucell)
@@ -634,9 +631,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
     module subroutine run_Soilzone(this, ctl_data, model_basin, model_time, &
-                                   model_potet, model_precip, model_climate, intcp, snow, model_transp, runoff)
-      use iso_fortran_env, only: output_unit
-      use prms_constants, only: dp, LAKE, LAND, SWALE, NEARZERO, DNEARZERO
+                                   model_potet, model_precip, model_climate, intcp, snow, model_transp, model_runoff)
+      use iso_fortran_env, only: output_unit, error_unit
+      use prms_constants, only: dp, sp, LAKE, LAND, SWALE, NEARZERO, DNEARZERO
       ! use ieee_arithmetic
       ! use ieee_exceptions
       ! use ieee_features
@@ -652,7 +649,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
       class(Transpiration), intent(in) :: model_transp
-      type(Srunoff), intent(inout) :: runoff
+      type(Srunoff), intent(inout) :: model_runoff
 
       ! Local Variables
       integer(i32) :: chru
@@ -660,21 +657,21 @@ submodule (PRMS_SOILZONE) sm_soilzone
       integer(i32) :: update_potet
 
       real(r64) :: avail_potet
-      real(r64) :: availh2o
-      real(r64) :: cap_upflow_max
-      real(r64) :: capwater_maxin
-      real(r64) :: dunnianflw
-      real(r64) :: dunnianflw_gvr
-      real(r64) :: dunnianflw_pfr
+      real(r32) :: availh2o
+      real(r32) :: cap_upflow_max
+      real(r32) :: capwater_maxin
+      real(r32) :: dunnianflw
+      real(r32) :: dunnianflw_gvr
+      real(r32) :: dunnianflw_pfr
       real(r64) :: gwin
       ! real(r32) :: gvr_maxin
       real(r64) :: interflow
-      real(r64) :: pervactet
-      real(r64) :: pref_flow_maxin
-      real(r64) :: prefflow
-      real(r64) :: ssresin
-      real(r64) :: topfr
-      real(r64) :: unsatisfied_et
+      real(r32) :: pervactet
+      real(r32) :: pref_flow_maxin
+      real(r32) :: prefflow
+      real(r32) :: ssresin
+      real(r32) :: topfr
+      real(r32) :: unsatisfied_et
 
       ! character(len=:), allocatable :: error_txt
       ! type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
@@ -735,18 +732,21 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 basin_area_inv => model_basin%basin_area_inv, &
                 cov_type => model_basin%cov_type, &
                 hru_area => model_basin%hru_area, &
-                hru_area_perv => model_basin%hru_area_perv, &
-                hru_frac_perv => model_basin%hru_frac_perv, &
                 hru_route_order => model_basin%hru_route_order, &
                 hru_type => model_basin%hru_type, &
 
-                basin_sroff => runoff%basin_sroff, &
-                dprst_evap_hru => runoff%dprst_evap_hru, &
-                dprst_seep_hru => runoff%dprst_seep_hru, &
-                hru_impervevap => runoff%hru_impervevap, &
-                infil => runoff%infil, &
-                sroff => runoff%sroff, &
-                strm_seg_in => runoff%strm_seg_in, &
+                basin_sroff => model_runoff%basin_sroff, &
+                dprst_evap_hru => model_runoff%dprst_evap_hru, &
+                dprst_seep_hru => model_runoff%dprst_seep_hru, &
+                hru_area_perv => model_runoff%hru_area_perv, &
+                hru_frac_perv => model_runoff%hru_frac_perv, &
+                hru_impervevap => model_runoff%hru_impervevap, &
+                infil => model_runoff%infil, &
+                soil_moist_chg => model_runoff%soil_moist_chg, &
+                soil_rechr_chg => model_runoff%soil_rechr_chg, &
+                sroff => model_runoff%sroff, &
+                srunoff_updated_soil => model_runoff%srunoff_updated_soil, &
+                strm_seg_in => model_runoff%strm_seg_in, &
 
                 basin_potet => model_potet%basin_potet, &
                 potet => model_potet%potet, &
@@ -761,18 +761,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
                 snow_evap => snow%snow_evap, &
                 snowcov_area => snow%snowcov_area, &
-
-                ! fastcoef_lin => param_data%fastcoef_lin%values, &
-                ! fastcoef_sq => param_data%fastcoef_sq%values, &
-                ! lake_evap_adj => param_data%lake_evap_adj%values, &
-                ! pref_flow_den => param_data%pref_flow_den%values, &
-                ! sat_threshold => param_data%sat_threshold%values, &
-                ! soil_type => param_data%soil_type%values, &
-                ! soil2gw_max => param_data%soil2gw_max%values, &
-                ! slowcoef_lin => param_data%slowcoef_lin%values, &
-                ! slowcoef_sq => param_data%slowcoef_sq%values, &
-                ! ssr2gw_exp => param_data%ssr2gw_exp%values, &
-                ! ssr2gw_rate => param_data%ssr2gw_rate%values, &
 
                 soil_rechr => model_climate%soil_rechr, &
                 soil_rechr_max => model_climate%soil_rechr_max, &
@@ -844,6 +832,17 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! call ieee_set_halting_mode(ieee_custom, .false.)
         ! call ieee_set_flag(ieee_custom, .false.)
 
+        if (srunoff_updated_soil) then
+          ! Dynamic parameters in srunoff resulted in changes to soil_moist
+          ! and soil_rechr.
+          ! NOTE: Should this occur before or after the GSFLOW-related
+          !       code above?
+          soil_moist = soil_moist_chg
+          soil_rechr = soil_rechr_chg
+
+          this%basin_soil_moist = sum(dble(soil_moist * hru_area_perv), mask=active_mask) * basin_area_inv
+          this%basin_soil_rechr = sum(dble(soil_rechr * hru_area_perv), mask=active_mask) * basin_area_inv
+        end if
 
         if (print_debug == 1) then
           this%soil_moist_ante = soil_moist
@@ -851,6 +850,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%last_soil_moist = this%basin_soil_moist
           this%last_ssstor = this%basin_ssstor
         endif
+
 
         ! TODO: Do basin variables need to be initialized for each timestep?
         basin_sroff = 0.0_dp
@@ -860,14 +860,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
         update_potet = 0
 
         ! soil_to_gw for whole HRU
-        this%soil_to_gw = 0.0_dp
-        this%soil_to_ssr = 0.0_dp
-        this%ssr_to_gw = 0.0_dp
-        this%slow_flow = 0.0_dp
-        this%ssres_flow = 0.0_dp
+        this%soil_to_gw = 0.0
+        this%soil_to_ssr = 0.0
+        this%ssr_to_gw = 0.0
+        this%slow_flow = 0.0
+        this%ssres_flow = 0.0
 
-        this%potet_rechr = 0.0_dp
-        this%potet_lower = 0.0_dp
+        this%potet_rechr = 0.0
+        this%potet_lower = 0.0
         this%snow_free = 1.0 - snowcov_area
 
         this%hru_actet = hru_impervevap + hru_intcpevap + snow_evap
@@ -913,9 +913,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
           ! ******Add infiltration to soil and compute excess
           ! NOTE: hru_area_perv(chru) has to be > 0.0
-          dunnianflw = 0.0_dp
-          dunnianflw_pfr = 0.0_dp
-          dunnianflw_gvr = 0.0_dp
+          dunnianflw = 0.0
+          dunnianflw_pfr = 0.0
+          dunnianflw_gvr = 0.0
           interflow = 0.0_dp
 
           ! ****** Add infiltration to soil and compute excess
@@ -931,30 +931,30 @@ submodule (PRMS_SOILZONE) sm_soilzone
           !   infil for pervious portion of HRU
           capwater_maxin = infil(chru)
 
-          if (exponent(capwater_maxin) - range(capwater_maxin) >= 0) then
-            write(*, 9005) MODNAME, ' WARNING: capwater_maxin less than TINY resetting to zero.', capwater_maxin
-            capwater_maxin = 0.0_dp
-          endif
+          ! if (exponent(capwater_maxin) - range(capwater_maxin) >= 0) then
+          !   write(*, 9005) MODNAME, ' WARNING: capwater_maxin less than TINY resetting to zero.', capwater_maxin
+          !   capwater_maxin = 0.0_dp
+          ! endif
 
           9005 format(A, A, es12.4e2)
 
           ! Compute preferential flow and storage, and any dunnian flow
-          prefflow = 0.0_dp
+          prefflow = 0.0
           if (this%pref_flow_flag(chru)) then
-            this%pref_flow_infil(chru) = 0.0_dp
-            pref_flow_maxin = 0.0_dp
+            this%pref_flow_infil(chru) = 0.0
+            pref_flow_maxin = 0.0
 
             if (capwater_maxin > 0.0) then
               ! pref_flow for whole HRU
-              pref_flow_maxin = capwater_maxin * dble(this%pref_flow_den(chru))
+              pref_flow_maxin = capwater_maxin * this%pref_flow_den(chru)
               capwater_maxin = capwater_maxin - pref_flow_maxin
               pref_flow_maxin = pref_flow_maxin * hru_frac_perv(chru)
 
               ! Compute contribution to preferential-flow reservoir storage
               this%pref_flow_stor(chru) = this%pref_flow_stor(chru) + pref_flow_maxin
-              dunnianflw_pfr = max(0.0_dp, this%pref_flow_stor(chru) - this%pref_flow_max(chru))
+              dunnianflw_pfr = max(0.0, this%pref_flow_stor(chru) - this%pref_flow_max(chru))
 
-              if (dunnianflw_pfr > 0.0_dp) then
+              if (dunnianflw_pfr > 0.0) then
                 this%pref_flow_stor(chru) = this%pref_flow_max(chru)
               endif
 
@@ -965,7 +965,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           endif
 
           if (cascade_flag == 1) then
-            cap_upflow_max = (this%upslope_dunnianflow(chru) + this%upslope_interflow(chru)) / hru_frac_perv(chru)
+            cap_upflow_max = sngl(this%upslope_dunnianflow(chru) + this%upslope_interflow(chru)) / hru_frac_perv(chru)
             capwater_maxin = capwater_maxin + cap_upflow_max
             this%basin_cap_up_max = this%basin_cap_up_max + cap_upflow_max * hru_area_perv(chru)
           endif
@@ -978,7 +978,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
 
           ! Call even if capwater_maxin = 0, just in case soil_moist now > soil_moist_max
-          if (capwater_maxin + soil_moist(chru) > 0.0_dp) then
+          if (capwater_maxin + soil_moist(chru) > 0.0) then
             call this%compute_soilmoist(this%soil2gw_flag(chru), hru_frac_perv(chru), soil_moist_max(chru), &
                                         soil_rechr_max(chru), this%soil2gw_max(chru), &
                                         this%cap_waterin(chru), soil_moist(chru), &
@@ -992,23 +992,29 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! soil_moist and soil_rechr can get quite small leading to instability
           ! later in the code. Reset to zero when they get too small.
           ! TODO: PAN - what should the smallest value be?
-          if (soil_moist(chru) > 0.0_dp .and. soil_moist(chru) < DNEARZERO) then
-            write(output_unit, 9008) MODNAME, '%run() WARNING: soil_moist less than 2.2e-16,', chru, soil_moist(chru), ', reset to zero ', nowtime(1:3)
-            soil_moist(chru) = 0.0_dp
-          endif
 
-          if (soil_rechr(chru) > 0.0_dp .and. soil_rechr(chru) < DNEARZERO) then
-            write(output_unit, 9008) MODNAME, '%run() WARNING: soil_rechr less than 2.2e-16,', chru, soil_rechr(chru), ', reset to zero ', nowtime(1:3)
-            soil_rechr(chru) = 0.0_dp
-          endif
+          ! if (soil_moist(chru) > 0.0_dp .and. soil_moist(chru) < DNEARZERO) then
+          ! if (exponent(soil_moist(chru)) - exponent(tiny(0.0_sp)) <= 2) then
+          !   ! write(output_unit, 9008) MODNAME, '%run() WARNING: soil_moist less than 2.2e-16,', chru, soil_moist(chru), ', reset to zero ', nowtime(1:3)
+          !   write(output_unit, 9008) MODNAME, '%run() WARNING: soil_moist(', chru, ') =',  soil_moist(chru), ' (<2.2e-16). Reset to zero ', nowtime(1:3)
+          !   soil_moist(chru) = 0.0
+          ! endif
 
-          9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
+
+          ! ! if (soil_rechr(chru) > 0.0_dp .and. soil_rechr(chru) < DNEARZERO) then
+          ! if (exponent(soil_rechr(chru)) - exponent(tiny(0.0_sp)) <= 2) then
+          !   ! write(output_unit, 9008) MODNAME, '%run() WARNING: soil_rechr less than 2.2e-16,', chru, soil_rechr(chru), ', reset to zero ', nowtime(1:3)
+          !   write(output_unit, 9008) MODNAME, '%run() WARNING: soil_rechr(', chru, ') =' , soil_rechr(chru), ' (<2.2e-16). Reset to zero ', nowtime(1:3)
+          !   soil_rechr(chru) = 0.0
+          ! endif
+
+          9008 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
 
           ! soil_to_ssr for whole HRU
           ! this%soil_to_ssr(chru) = gvr_maxin
 
           ! Compute slow interflow and ssr_to_gw
-          topfr = 0.0_dp
+          topfr = 0.0
 
           ! TODO: 2018-06-21 Uncomment when GSFLOW stuff is figured out.
           ! ! if (model_mode(1)%s == 'GSFLOW') then
@@ -1042,9 +1048,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
             availh2o = this%slow_stor(chru) + this%soil_to_ssr(chru)
 
             if (hru_type(chru) == LAND) then
-              topfr = max(0.0_dp, availh2o - this%pref_flow_thrsh(chru))
+              topfr = max(0.0, availh2o - this%pref_flow_thrsh(chru))
               ssresin = this%soil_to_ssr(chru) - topfr
-              this%slow_stor(chru) = max(0.0_dp, availh2o - topfr)
+              this%slow_stor(chru) = max(0.0, availh2o - topfr)
 
               ! Compute slow contribution to interflow, if any
               if (this%slow_stor(chru) > NEARZERO) then
@@ -1063,11 +1069,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! Compute contribution to Dunnian flow from PFR, if any
           if (this%pref_flow_flag(chru)) then
             availh2o = this%pref_flow_stor(chru) + topfr
-            dunnianflw_gvr = max(0.0_dp, availh2o - this%pref_flow_max(chru))
+            dunnianflw_gvr = max(0.0, availh2o - this%pref_flow_max(chru))
 
-            if (dunnianflw_gvr > 0.0_dp) then
+            if (dunnianflw_gvr > 0.0) then
               ! topfr = topfr - dunnianflw_gvr
-              topfr = max(0.0_dp, topfr - dunnianflw_gvr)
+              topfr = max(0.0, topfr - dunnianflw_gvr)
             endif
 
             this%pref_flow_in(chru) = this%pref_flow_infil(chru) + topfr
@@ -1090,7 +1096,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! this%potet_lower(chru) = 0.0
           pervactet = 0.0
 
-          if (soil_moist(chru) > 0.0_dp) then
+          if (soil_moist(chru) > 0.0) then
             call this%compute_szactet(model_time, transp_on(chru), cov_type(chru), &
                                       this%soil_type(chru), soil_moist_max(chru), &
                                       soil_rechr_max(chru), this%snow_free(chru),  &
@@ -1123,6 +1129,24 @@ submodule (PRMS_SOILZONE) sm_soilzone
               ! 9009 format(A, A, A, A)
               ! 9011 format(A,I4, 2('/', I2.2), 4es12.4e2)
 
+          ! NOTE: 2019-04-02 PAN - pervactet is reset to zero if it gets outside
+          !       of the normal range for real32 numbers. Otherwise hru_actet
+          !       (which is real32) can end up with denormal numbers.
+          ! if (exponent(pervactet) - exponent(tiny(0.0_sp)) <= 1) then
+          !   write(output_unit, 9017) MODNAME, '%run() WARNING: pervactet(', chru, ') =', pervactet, ' is too small, resetting to zero. ', nowtime(1:3)
+          !   ! 9017 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
+          !   pervactet = 0.0_dp
+          ! end if
+
+          ! if (exponent(soil_moist(chru)) - exponent(tiny(0.0_sp)) <= 3) then
+          !   write(output_unit, 9008) MODNAME, '%run() WARNING: soil_moist(', chru, ') =',  soil_moist(chru), ' is too small. Reset to zero (after compute_szactet) ', nowtime(1:3)
+          !   soil_moist(chru) = 0.0
+          ! endif
+
+          ! if (exponent(soil_rechr(chru)) - exponent(tiny(0.0_sp)) <= 3) then
+          !   write(output_unit, 9008) MODNAME, '%run() WARNING: soil_rechr(', chru, ') =' , soil_rechr(chru), ' is too small. Reset to zero (after compute_szactet) ', nowtime(1:3)
+          !   soil_rechr(chru) = 0.0
+          ! endif
 
           this%hru_actet(chru) = this%hru_actet(chru) + pervactet * hru_frac_perv(chru)
           avail_potet = dble(potet(chru)) - this%hru_actet(chru)
@@ -1175,13 +1199,13 @@ submodule (PRMS_SOILZONE) sm_soilzone
           else
             ! For swales
             availh2o = this%slow_stor(chru) - this%sat_threshold(chru)
-            this%swale_actet(chru) = 0.0_dp
+            this%swale_actet(chru) = 0.0
 
-            if (availh2o > 0.0_dp) then
+            if (availh2o > 0.0) then
               ! If ponding, as storage > sat_threshold
               unsatisfied_et = potet(chru) - this%hru_actet(chru)
 
-              if (unsatisfied_et > 0.0_dp) then
+              if (unsatisfied_et > 0.0) then
                 availh2o = min(availh2o, unsatisfied_et)
                 this%swale_actet(chru) = availh2o
                 this%hru_actet(chru) = this%hru_actet(chru) + this%swale_actet(chru)
@@ -1207,7 +1231,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           !   this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
           ! endif
 
-          this%ssres_in(chru) = this%soil_to_ssr(chru) + this%pref_flow_infil(chru) + gwin
+          this%ssres_in(chru) = this%soil_to_ssr(chru) + this%pref_flow_infil(chru) + sngl(gwin)
           ! this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
 
           ! ! DEBUG: This can be removed after debugging
@@ -1225,58 +1249,69 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
           this%grav_dunnian_flow(chru) = dunnianflw_gvr
           this%unused_potet(chru) = potet(chru) - this%hru_actet(chru)
-          this%basin_actet = this%basin_actet + this%hru_actet(chru) * hru_area(chru)
+          ! this%basin_actet = this%basin_actet + this%hru_actet(chru) * hru_area(chru)
+
+          ! NOTE: 2019-04-02 PAN - soil_moist is reset to zero if it gets outside
+          !       of the normal range for real32 numbers. Otherwise soil_moist_tot
+          !       (which is real32) can end up with denormal numbers.
+          ! if (exponent(soil_moist(chru)) - exponent(tiny(0.0_sp)) <= 1) then
+          !   write(output_unit, 9017) MODNAME, '%run() WARNING: soil_moist(', chru, ') =', soil_moist(chru), ' is too small, resetting to zero. ', nowtime(1:3)
+          !   soil_moist(chru) = 0.0
+          !   9017 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
+          ! end if
         enddo
 
         where (this%soil_lower_stor_max > 0.0)
           this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
         end where
 
-        this%soil_moist_tot = this%ssres_stor + soil_moist * hru_frac_perv
+        this%soil_moist_tot = sngl(this%ssres_stor + soil_moist * dble(hru_frac_perv))
         this%recharge = this%soil_to_gw + this%ssr_to_gw
 
         if (dprst_flag == 1) then
-          this%recharge = this%recharge + dprst_seep_hru
+          this%recharge = this%recharge + sngl(dprst_seep_hru)
         endif
 
         ! Compute basin totals
-        this%basin_cap_infil_tot = sum(this%cap_infil_tot * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_capwaterin = sum(this%cap_waterin * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_dunnian = sum(this%dunnian_flow * hru_area, mask=(hru_type == LAND)) * basin_area_inv
+        this%basin_actet = sum(dble(this%hru_actet * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_cap_infil_tot = sum(dble(this%cap_infil_tot * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_capwaterin = sum(dble(this%cap_waterin * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_dunnian = sum(dble(this%dunnian_flow * hru_area), mask=(hru_type == LAND)) * basin_area_inv
         this%basin_dunnian_gvr = sum(this%grav_dunnian_flow * hru_area, mask=active_mask) * basin_area_inv
         this%basin_dunnian_pfr = sum(this%pfr_dunnian_flow * hru_area, mask=(this%pfr_dunnian_flow > 0.0)) * basin_area_inv
         this%basin_gvr2pfr = sum(this%gvr2pfr * hru_area, mask=(this%pref_flow_flag)) * basin_area_inv
-        this%basin_gvr_stor_frac = sum(this%slow_stor / this%pref_flow_thrsh * hru_area, mask=(this%pref_flow_thrsh > 0.0)) * basin_area_inv
-        this%basin_pfr_stor_frac = sum(this%pref_flow_stor / this%pref_flow_max * hru_area, mask=(this%pref_flow_flag)) * basin_area_inv
-        this%basin_pref_flow_infil = sum(this%pref_flow_infil * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_pref_stor = sum(this%pref_flow_stor * hru_area, mask=(this%pref_flow_flag)) * basin_area_inv
-        this%basin_prefflow = sum(this%pref_flow * hru_area, mask=(this%pref_flow_flag)) * basin_area_inv
-        this%basin_recharge = sum(this%recharge * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_slowflow = sum(this%slow_flow * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_slstor = sum(this%slow_stor * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_sm2gvr = sum(this%soil_to_ssr * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_soil_moist_tot = sum(this%soil_moist_tot * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_soil_to_gw = sum(this%soil_to_gw * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_ssflow = sum(this%ssres_flow * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_ssin = sum(this%ssres_in * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_ssstor = sum(this%ssres_stor * hru_area, mask=active_mask) * basin_area_inv
-        this%basin_sz2gw = sum(this%ssr_to_gw * hru_area, mask=active_mask) * basin_area_inv
+        this%basin_gvr_stor_frac = sum(dble(this%slow_stor / this%pref_flow_thrsh * hru_area), mask=(this%pref_flow_thrsh > 0.0)) * basin_area_inv
+        this%basin_pfr_stor_frac = sum(dble(this%pref_flow_stor / this%pref_flow_max * hru_area), mask=(this%pref_flow_flag)) * basin_area_inv
+        this%basin_pref_flow_infil = sum(dble(this%pref_flow_infil * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_pref_stor = sum(dble(this%pref_flow_stor * hru_area), mask=(this%pref_flow_flag)) * basin_area_inv
+        this%basin_prefflow = sum(dble(this%pref_flow * hru_area), mask=(this%pref_flow_flag)) * basin_area_inv
+        this%basin_recharge = sum(dble(this%recharge * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_slowflow = sum(dble(this%slow_flow * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_slstor = sum(dble(this%slow_stor * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_sm2gvr = sum(dble(this%soil_to_ssr * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_soil_moist_tot = sum(dble(this%soil_moist_tot * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_soil_to_gw = sum(dble(this%soil_to_gw * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_ssflow = sum(dble(this%ssres_flow * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_ssin = sum(dble(this%ssres_in * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_ssstor = sum(dble(this%ssres_stor * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_sz2gw = sum(dble(this%ssr_to_gw * hru_area), mask=active_mask) * basin_area_inv
 
         ! NOTE: Each r32 variable must be converted to r64 individually or a
         !       SIGFPE can occur when soil_moist_tot is divided by soil_zone_max
-        this%basin_sz_stor_frac = sum(this%soil_moist_tot / dble(this%soil_zone_max) * dble(hru_area)) * basin_area_inv
+        ! this%basin_sz_stor_frac = sum(this%soil_moist_tot / dble(this%soil_zone_max) * dble(hru_area)) * basin_area_inv
+        this%basin_sz_stor_frac = sum(dble(this%soil_moist_tot / this%soil_zone_max * hru_area)) * basin_area_inv
 
 
         ! TODO: PAN Is it correct to use basin_area_inv with hru_area_perv??
         this%basin_cpr_stor_frac = sum(dble(soil_moist / soil_moist_max * hru_area_perv), mask=active_mask) * basin_area_inv
-        this%basin_perv_et = sum(this%perv_actet * hru_area_perv, mask=active_mask) * basin_area_inv
-        this%basin_soil_lower_stor_frac = sum(this%soil_lower_ratio * hru_area_perv, mask=active_mask) * basin_area_inv
-        this%basin_soil_moist = sum(soil_moist * hru_area_perv, mask=active_mask) * basin_area_inv
-        this%basin_soil_rechr = sum(soil_rechr * hru_area_perv, mask=active_mask) * basin_area_inv
-        this%basin_soil_rechr_stor_frac = sum(soil_rechr / dble(soil_rechr_max * hru_area_perv), mask=active_mask) * basin_area_inv
+        this%basin_perv_et = sum(dble(this%perv_actet * hru_area_perv), mask=active_mask) * basin_area_inv
+        this%basin_soil_lower_stor_frac = sum(dble(this%soil_lower_ratio * hru_area_perv), mask=active_mask) * basin_area_inv
+        this%basin_soil_moist = sum(dble(soil_moist * hru_area_perv), mask=active_mask) * basin_area_inv
+        this%basin_soil_rechr = sum(dble(soil_rechr * hru_area_perv), mask=active_mask) * basin_area_inv
+        this%basin_soil_rechr_stor_frac = sum(dble(soil_rechr / (soil_rechr_max * hru_area_perv)), mask=active_mask) * basin_area_inv
 
 
-        this%basin_actet = this%basin_actet * basin_area_inv
+        ! this%basin_actet = this%basin_actet * basin_area_inv
         this%basin_cap_up_max = this%basin_cap_up_max * basin_area_inv
         this%basin_dncascadeflow = this%basin_dncascadeflow * basin_area_inv
         this%basin_dndunnianflow = this%basin_dndunnianflow * basin_area_inv
@@ -1322,7 +1357,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
       ! Arguments
       real(r32), intent(inout) :: capacity
-      real(r64), intent(inout) :: depth
+      real(r32), intent(inout) :: depth
       real(r64), intent(in) :: frac
       real(r32), intent(inout) :: gvr2sm
       real(r32), intent(inout) :: input
@@ -1342,7 +1377,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
       ! Take all gravity water and put in capillary
       if (to_sm > depth) then
-        to_sm = sngl(depth)
+        to_sm = depth
       endif
 
       ! Compute adjustment to soil moist to get to field capacity
@@ -1512,12 +1547,12 @@ submodule (PRMS_SOILZONE) sm_soilzone
       integer(i32) :: igvr
       integer(i32) :: j
 
-      real(r64) :: depth
+      real(r32) :: depth
       real(r64) :: extra_water
-      real(r64) :: gvrin_actual
+      real(r32) :: gvrin_actual
       real(r32) :: input
       real(r32) :: perc
-      real(r64) :: slowflow
+      real(r32) :: slowflow
 
       real(r64) :: frac
       real(r64) :: slflow
@@ -1566,11 +1601,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
           endif
 
           if (hru_type == 1) then
-            extra_water = max(0.0_dp, depth - pref_flow_thrsh)
+            extra_water = max(0.0_dp, dble(depth - pref_flow_thrsh))
 
-            if (extra_water > 0.0) then
+            if (extra_water > 0.0_dp) then
               ! Compute contribution to preferential-flow reservoir storage
-              topfr = topfr + dble(extra_water) * frac
+              topfr = topfr + extra_water * frac
               depth = pref_flow_thrsh
             endif
             gvrin_actual = max(0.0, input - sngl(extra_water))
@@ -1587,12 +1622,12 @@ submodule (PRMS_SOILZONE) sm_soilzone
           if (depth > 0.0) then
             if (ssr2gw_rate > NEARZERO) then
               ! Use VKS instead of rate  ???????????????
-              perc = ssr2gw_rate * sngl(depth**ssr2gw_exp)
+              perc = ssr2gw_rate * depth**ssr2gw_exp
 
               if (perc < 0.0) then
                 perc = 0.0
               elseif (perc > depth) then
-                perc = sngl(depth)
+                perc = depth
               endif
 
               depth = depth - perc
@@ -1640,12 +1675,12 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! Arguments
       real(r32), intent(in) :: ssr2gw_rate
       real(r32), intent(in) :: ssr2gw_exp
-      real(r64), intent(inout) :: ssr_to_gw
-      real(r64), intent(inout) :: slow_stor
+      real(r32), intent(inout) :: ssr_to_gw
+      real(r32), intent(inout) :: slow_stor
 
       ! ********************************************************************
       ! ****** Compute flow to groundwater
-      ssr_to_gw = max(0.0_dp, ssr2gw_rate * slow_stor**ssr2gw_exp)
+      ssr_to_gw = max(0.0, ssr2gw_rate * slow_stor**ssr2gw_exp)
       ssr_to_gw = min(ssr_to_gw, slow_stor)
 
       slow_stor = slow_stor - ssr_to_gw
@@ -1663,9 +1698,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! Arguments
       real(r32), intent(in) :: coef_lin
       real(r32), intent(in) :: coef_sq
-      real(r64), intent(in) :: ssres_in
-      real(r64), intent(inout) :: storage
-      real(r64), intent(inout) :: inter_flow
+      real(r32), intent(in) :: ssres_in
+      real(r32), intent(inout) :: storage
+      real(r32), intent(inout) :: inter_flow
 
       ! Local Variables
       real(r64) :: c1
@@ -1678,10 +1713,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! ****** compute interflow
       if (coef_lin <= 0.0 .and. ssres_in <= 0.0) then
         c1 = dble(coef_sq) * storage
-        inter_flow = storage * (c1 / (1.0_dp + c1))
+        inter_flow = storage * sngl(c1 / (1.0_dp + c1))
       elseif (coef_lin > 0.0 .and. coef_sq <= 0.0) then
         c2 = dble(1.0 - exp(-coef_lin))
-        inter_flow = ssres_in * (1.0 - c2 / coef_lin) + storage * c2
+        inter_flow = ssres_in * sngl(1.0 - c2 / coef_lin) + storage * sngl(c2)
       elseif (coef_sq > 0.0) then
         c3 = sqrt(dble(coef_lin**2.0 + 4.0 * coef_sq * ssres_in))
         sos = storage - ((c3 - coef_lin) / (2.0 * coef_sq))
@@ -1694,12 +1729,12 @@ submodule (PRMS_SOILZONE) sm_soilzone
         c2 = 1.0_dp - exp(-c3)
 
         if (1.0_dp + c1 * c2 > 0.0_dp) then
-          inter_flow = ssres_in + (sos * (1.0_dp + c1) * c2) / (1.0_dp + c1 * c2)
+          inter_flow = ssres_in + sngl((sos * (1.0_dp + c1) * c2) / (1.0_dp + c1 * c2))
         else
           inter_flow = ssres_in
         endif
       else
-        inter_flow = 0.0_dp
+        inter_flow = 0.0
       endif
 
       ! TODO: Check if inter_flow < 0.0; if so, throw warning, reset to zero
@@ -1731,11 +1766,11 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r32), intent(in) :: soil_moist_max
       real(r32), intent(in) :: soil_rechr_max
       real(r32), intent(in) :: soil2gw_max
-      real(r64), intent(inout) :: infil
-      real(r64), intent(inout) :: soil_moist
-      real(r64), intent(inout) :: soil_rechr
-      real(r64), intent(inout) :: soil_to_gw
-      real(r64), intent(inout) :: soil_to_ssr
+      real(r32), intent(inout) :: infil
+      real(r32), intent(inout) :: soil_moist
+      real(r32), intent(inout) :: soil_rechr
+      real(r32), intent(inout) :: soil_to_gw
+      real(r32), intent(inout) :: soil_to_ssr
 
       !  Soil2gw => this%soil2gw_flag(chru)
       !  perv_frac => perv_frac               local
@@ -1749,7 +1784,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! *Soil_to_ssr => gvr_maxin             local
 
       ! Local Variables
-      real(r64) :: excess
+      real(r32) :: excess
 
       !***********************************************************************
       ! if (minexponent(soil_moist) - exponent(soil_moist) >= 0) then
@@ -1764,30 +1799,30 @@ submodule (PRMS_SOILZONE) sm_soilzone
       !
       ! 9005 format(A,A)
 
-      soil_rechr = min(soil_rechr + infil, dble(soil_rechr_max))
+      soil_rechr = min(soil_rechr + infil, soil_rechr_max)
 
       ! soil_moist_max from previous time step or soil_moist_max has
       ! changed for a restart simulation
       excess = soil_moist + infil
-      soil_moist = min(excess, dble(soil_moist_max))
+      soil_moist = min(excess, soil_moist_max)
       excess = (excess - soil_moist_max) * perv_frac
 
-      if (excess > 0.0_dp) then
+      if (excess > 0.0) then
         if (soil2gw_flag) then
-          soil_to_gw = min(dble(soil2gw_max), excess)
+          soil_to_gw = min(soil2gw_max, excess)
           excess = excess - soil_to_gw
         endif
 
         if (excess > infil * perv_frac) then
           ! Probably dynamic
-          infil = 0.0_dp
+          infil = 0.0
         else
           !???? what if infil<0 ??? might happen with dynamic and small values,
           !???? maybe ABS < NEARZERO = 0.0
           infil = infil - excess / perv_frac
         endif
 
-        soil_to_ssr = max(0.0_dp, excess)
+        soil_to_ssr = max(0.0, excess)
       endif
     end subroutine
 
@@ -1800,7 +1835,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                                       soil_moist, soil_rechr, avail_potet, &
                                       potet_rechr, potet_lower, perv_actet)
       use iso_fortran_env, only: output_unit
-      use prms_constants, only: dp, DNEARZERO, SAND, LOAM, CLAY, ET_DEFAULT, EVAP_ONLY, EVAP_PLUS_TRANSP
+      use prms_constants, only: dp, sp, DNEARZERO, SAND, LOAM, CLAY, ET_DEFAULT, EVAP_ONLY, EVAP_PLUS_TRANSP
       ! use ieee_arithmetic
       ! use ieee_exceptions
       ! use ieee_features
@@ -1819,12 +1854,12 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r32), intent(in) :: soil_moist_max
       real(r32), intent(in) :: soil_rechr_max
       real(r32), intent(in) :: snow_free
-      real(r64), intent(inout) :: soil_moist
-      real(r64), intent(inout) :: soil_rechr
+      real(r32), intent(inout) :: soil_moist
+      real(r32), intent(inout) :: soil_rechr
       real(r64), intent(inout) :: avail_potet
-      real(r64), intent(inout) :: potet_rechr
-      real(r64), intent(inout) :: potet_lower
-      real(r64), intent(out) :: perv_actet
+      real(r32), intent(inout) :: potet_rechr
+      real(r32), intent(inout) :: potet_lower
+      real(r32), intent(out) :: perv_actet
 
       !  soil_moist_max => soil_moist_max(chru)
       !  soil_rechr_max => soil_rechr_max(chru) (Climateflow)
@@ -1843,16 +1878,16 @@ submodule (PRMS_SOILZONE) sm_soilzone
       real(r64), parameter :: ONETHIRD = 1.0_dp / 3.0_dp
       real(r64), parameter :: TWOTHIRDS = 2.0_dp / 3.0_dp
 
-      real(r64) :: et
-      real(r64) :: pctr
-      real(r64) :: pcts
+      real(r32) :: et
+      real(r32) :: pctr
+      real(r32) :: pcts
 
-      real(r64) :: soil_moist_ante
-      real(r64) :: soil_rechr_ante
+      real(r32) :: soil_moist_ante
+      real(r32) :: soil_rechr_ante
       real(r64) :: avail_potet_ante
 
-      real(r64) :: potet_rechr_ante
-      real(r64) :: potet_lower_ante
+      real(r32) :: potet_rechr_ante
+      real(r32) :: potet_lower_ante
 
       ! character(len=:), allocatable :: error_txt
       ! type(ieee_flag_type), parameter :: ieee_custom(4) = [ieee_usual, ieee_underflow]
@@ -1910,42 +1945,42 @@ submodule (PRMS_SOILZONE) sm_soilzone
         if (any([EVAP_ONLY, EVAP_PLUS_TRANSP]==this%et_type)) then
           pcts = soil_moist / soil_moist_max
           pctr = soil_rechr / soil_rechr_max
-          potet_lower = avail_potet
-          potet_rechr = avail_potet
+          potet_lower = sngl(avail_potet)
+          potet_rechr = sngl(avail_potet)
 
           select case(soil_type)
             case(SAND)
               ! ****** sandy soil
               if (pcts < 0.25) then
-                potet_lower = 0.5 * pcts * avail_potet
+                potet_lower = 0.5 * pcts * sngl(avail_potet)
               endif
 
               if (pctr < 0.25) then
-                potet_rechr = 0.5 * pctr * avail_potet
+                potet_rechr = 0.5 * pctr * sngl(avail_potet)
               endif
 
             case(LOAM)
               ! ****** loam soil
               if (pcts < 0.5) then
-                potet_lower = pcts * avail_potet
+                potet_lower = pcts * sngl(avail_potet)
               endif
 
               if (pctr < 0.5) then
-                potet_rechr = pctr * avail_potet
+                potet_rechr = pctr * sngl(avail_potet)
               endif
 
             case(CLAY)
               ! ****** clay soil
               if (pcts < TWOTHIRDS .and. pcts > ONETHIRD) then
-                potet_lower = pcts * avail_potet
+                potet_lower = pcts * sngl(avail_potet)
               elseif (pcts <= ONETHIRD) then
-                potet_lower = 0.5 * pcts * avail_potet
+                potet_lower = 0.5 * pcts * sngl(avail_potet)
               endif
 
               if (pctr < TWOTHIRDS .and. pctr > ONETHIRD) then
-                potet_rechr = pctr * avail_potet
+                potet_rechr = pctr * sngl(avail_potet)
               elseif (pctr <= ONETHIRD) then
-                potet_rechr = 0.5 * pctr * avail_potet
+                potet_rechr = 0.5 * pctr * sngl(avail_potet)
               endif
             case default
               ! pass
@@ -1966,9 +2001,26 @@ submodule (PRMS_SOILZONE) sm_soilzone
             potet_rechr = potet_rechr * snow_free
           endif
 
+          ! if (exponent(potet_rechr) - exponent(tiny(0.0_sp)) <= 2) then
+          !   write(output_unit, 9008) MODNAME, '%compute_szactet() WARNING: potet_rechr =',  potet_rechr, ' (<2.2e-16). Reset to zero ', nowtime(1:3)
+          !   potet_rechr = 0.0
+          ! endif
+
+          ! if (exponent(soil_moist) - exponent(tiny(0.0_sp)) <= 2) then
+          !   write(output_unit, 9008) MODNAME, '%compute_szactet() WARNING: soil_moist =',  soil_moist, ' (<2.2e-16). Reset to zero ', nowtime(1:3)
+          !   soil_moist = 0.0
+          ! endif
+
+          ! if (exponent(soil_rechr) - exponent(tiny(0.0_sp)) <= 2) then
+          !   write(output_unit, 9008) MODNAME, '%compute_szactet() WARNING: soil_rechr =' , soil_rechr, ' (<2.2e-16). Reset to zero ', nowtime(1:3)
+          !   soil_rechr = 0.0
+          ! endif
+
+          ! 9008 format(A, A, es11.3e3, A, I4, 2('/', I2.2))
+
           if (potet_rechr > soil_rechr) then
             potet_rechr = soil_rechr
-            soil_rechr = 0.0_dp
+            soil_rechr = 0.0
           else
             soil_rechr = soil_rechr - potet_rechr
           endif
@@ -1976,7 +2028,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           if (this%et_type == EVAP_ONLY .or. potet_rechr >= potet_lower) then
             if (potet_rechr > soil_moist) then
               potet_rechr = soil_moist
-              soil_moist = 0.0_dp
+              soil_moist = 0.0
             else
               soil_moist = soil_moist - potet_rechr
             endif
@@ -1984,7 +2036,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
             et = potet_rechr
           elseif (potet_lower > soil_moist) then
             et = soil_moist
-            soil_moist = 0.0_dp
+            soil_moist = 0.0
           else
             soil_moist = soil_moist - potet_lower
             et = potet_lower
