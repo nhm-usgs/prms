@@ -330,42 +330,8 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       integer(i32) :: jj
       real(r64) :: tocfs
 
-      ! Control
-      ! nsegment,
-      ! cascade_flag,
-
-      ! Parameter
-      ! hru_area, hru_segment, tosegment,
-
-      ! Basin
-      ! active_hrus, hru_route_order,
-
-      ! Gwflow
-      ! gwres_flow
-
-      ! Potential_ET
-      ! potet,
-
-      ! Soilzone
-      ! ssres_flow
-
-      ! SolarRadiation
-      ! swrad
-
-      ! Srunoff
-      ! sroff, strm_seg_in,
-
-      ! Time_t
-      ! cfs_conv, Timestep_seconds,
-
-      ! Water use
-      ! segment_gain, segment_transfer
-
       !***********************************************************************
       associate(cascade_flag => ctl_data%cascade_flag%value, &
-
-                ! hru_segment => param_data%hru_segment%values, &
-                ! tosegment => param_data%tosegment%values, &
 
                 nsegment => model_basin%nsegment, &
                 active_hrus => model_basin%active_hrus, &

@@ -21,18 +21,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       real(r32) :: x
       real(r32) :: x_max
 
-      ! Control
-      ! nsegment, init_vars_from_file,
-
-      ! Parameter
-      ! segment_flow_init
-
-      ! Basin
-      ! basin_area_inv
-
-      ! Time_t
-      ! cfs_conv
-
       ! -----------------------------------------------------------------------
       ! Call the parent constructor first
       this%Streamflow = Streamflow(ctl_data, model_basin, model_time, model_summary)
@@ -60,7 +48,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         allocate(this%K_coef(nsegment))
         call param_hdl%get_variable('K_coef', this%K_coef)
 
-
         ! Other variables
         allocate(this%c0(nsegment))
         allocate(this%c1(nsegment))
@@ -71,12 +58,12 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         ! Compute the three constants in the Muskingum routing equation based
         ! on the values of K_coef and a routing period of 1 hour. See the notes
         ! at the top of this file.
-        this%c0 = 0.0
-        this%c1 = 0.0
-        this%c2 = 0.0
+        this%c0 = 0.0_dp
+        this%c1 = 0.0_dp
+        this%c2 = 0.0_dp
 
         ! Make sure K > 0
-        this%ts = 1.0
+        this%ts = 1.0_dp
         ierr = 0
 
         do cseg=1, nsegment
@@ -118,7 +105,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             this%ts_i(cseg) = 24
           endif
 
-          ! x must be <= t/(2K) the C coefficents will be negative. Check for
+          ! x must be <= t / (2K) or the C coefficents will be negative. Check for
           ! this for all segments with this%ts >= minimum this%ts (1 hour).
           if (this%ts(cseg) > 0.1) then
             x_max = this%ts(cseg) / (2.0 * k)
@@ -153,15 +140,15 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           !  c2 as is, reduce c1 by c0 and set c0=0
 
           ! SHORT travel time
-          if (this%c2(cseg) < 0.0) then
+          if (this%c2(cseg) < 0.0_dp) then
             this%c1(cseg) = this%c1(cseg) + this%c2(cseg)
-            this%c2(cseg) = 0.0
+            this%c2(cseg) = 0.0_dp
           endif
 
           ! LONG travel time
-          if (this%c0(cseg) < 0.0) then
+          if (this%c0(cseg) < 0.0_dp) then
             this%c1(cseg) = this%c1(cseg) + this%c0(cseg)
-            this%c0(cseg) = 0.0
+            this%c0(cseg) = 0.0_dp
           endif
 
         enddo
@@ -197,6 +184,11 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         enddo
 
         this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
+
+        write(output_unit, *) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
+        write(output_unit, *) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
+        write(output_unit, *) '  Muskingum coefficient (min(c2), max(c2)): ', minval(this%c2), maxval(this%c2)
+        write(output_unit, *) '  Muskingum coefficient (min(ts), max(ts)): ', minval(this%ts), maxval(this%ts)
       end associate
     end function
 
@@ -205,7 +197,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
                                     model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
       use, intrinsic :: iso_fortran_env, only: output_unit
-      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH
+      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, DNEARZERO
       implicit none
 
       class(Muskingum), intent(inout) :: this
@@ -227,30 +219,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       real(r64) :: area_fac
       real(r64) :: currin
-
-      ! Control
-      ! nsegment,
-
-      ! Parameter
-      ! obsin_segment, obsout_segment, segment_type, tosegment,
-
-      ! Basin
-      ! basin_area_inv
-
-      ! Gwflow
-      ! basin_gwflow
-
-      ! Obs
-      ! streamflow_cfs
-
-      ! Soilzone
-      ! basin_ssflow
-
-      ! Srunoff
-      ! basin_sroff
-
-      ! Time_t
-      ! cfs_conv
 
       ! ------------------------------------------------------------------------
 
@@ -290,7 +258,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
                 basin_sroff => runoff%basin_sroff, &
 
-                cfs_conv => model_time%cfs_conv)
+                cfs_conv => model_time%cfs_conv, &
+                curr_time => model_time%Nowtime)
 
         this%pastin = this%seg_inflow
         this%pastout = this%seg_outflow
@@ -325,6 +294,17 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
               ! Compute routed streamflow
 
               if (this%ts_i(iorder) > 0) then
+                ! NOTE: PAN - outflow_ts can get small enough to result in denormalized
+                !             values. Kick out a warning and reset to zero if this
+                !             happens.
+                ! if (exponent(this%outflow_ts(iorder)) < 0 .and. exponent(this%outflow_ts(iorder)) - exponent(tiny(0.0_dp)) <= 1) then
+                if (exponent(this%outflow_ts(iorder)) - exponent(tiny(0.0_dp)) <= 1) then
+                  write(output_unit, 9016) MODNAME, '%run() WARNING: outflow_ts(', iorder, ') =', this%outflow_ts(iorder), ' is too small, resetting to zero. ', curr_time(1:3)
+                  9016 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
+                  this%outflow_ts(iorder) = 0.0_dp
+                  ! write(output_unit, *) '  outflow_ts(iorder): ', iorder, this%outflow_ts(iorder), exponent(this%outflow_ts(iorder)), range(0.0_dp)
+                end if
+
                 ! Muskingum routing equation
                 this%outflow_ts(iorder) = this%inflow_ts(iorder) * this%c0(iorder) + &
                                           this%pastin(iorder) * this%c1(iorder) + &
@@ -366,6 +346,16 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             ! seg_outflow (the mean daily flow rate for each segment) will be
             ! the average of the hourly values.
             this%seg_outflow(iorder) = this%seg_outflow(iorder) + this%outflow_ts(iorder)
+
+            ! NOTE: 2019-04-02 PAN - seg_outflow is reset to zero if it gets outside
+            !       of the normal range for real64 numbers. Otherwise we can end
+            !       up with denormal numbers.
+            if (exponent(this%seg_outflow(iorder)) - exponent(tiny(0.0_dp)) <= 4) then
+              write(output_unit, 9017) MODNAME, '%run() WARNING: seg_outflow(', iorder, ') =', this%seg_outflow(iorder), ' is too small, resetting to zero. ', curr_time(1:3)
+              9017 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
+
+              this%seg_outflow(iorder) = 0.0_dp
+            end if
 
             ! pastout is equal to the this%inflow_ts on the previous routed timestep
             this%pastout(iorder) = this%outflow_ts(iorder)

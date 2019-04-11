@@ -42,13 +42,13 @@ module PRMS_MUSKINGUM
     integer(i32), public, allocatable :: ts_i(:)
       !! used by muskingum and muskingum_lake
 
-    real(r32), public, allocatable :: c0(:)
+    real(r64), public, allocatable :: c0(:)
       !! used by muskingum and muskingum_lake
-    real(r32), public, allocatable :: c1(:)
+    real(r64), public, allocatable :: c1(:)
       !! used by muskingum and muskingum_lake
-    real(r32), public, allocatable :: c2(:)
+    real(r64), public, allocatable :: c2(:)
       !! used by muskingum and muskingum_lake
-    real(r32), public, allocatable :: ts(:)
+    real(r64), public, allocatable :: ts(:)
       !! used by muskingum and muskingum_lake
 
     contains
