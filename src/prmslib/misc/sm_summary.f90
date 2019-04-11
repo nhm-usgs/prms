@@ -85,9 +85,9 @@ contains
     type(Basin), intent(in) :: model_basin
 
     ! Local Variables
-    integer(i32) :: j
+    ! integer(i32) :: j
     integer(i32) :: jj
-    integer(i32) :: chru
+    ! integer(i32) :: chru
     integer(i32) :: noutvars
     ! logical :: write_month
     ! logical :: write_year
@@ -149,6 +149,41 @@ contains
     end associate
   end subroutine
 
+  module function chunk_shape_2d(dims, val_size, chunk_size) result(res)
+    integer(i32) :: res(2)
+    integer(i32), intent(in) :: dims(2)
+    integer(i32), intent(in) :: val_size
+    integer(i32), intent(in) :: chunk_size
+
+    integer(i32) :: starting_chunk(2)
+    integer(i32) :: starting_size
+    integer(i32) :: cnk_size
+    integer(i32) :: xx
+    integer(i32) :: yy
+
+    real(r32) :: chunk_percent
+    real(r32) :: nvals_in_chunk
+    real(r32) :: nvals_total
+
+    ! -------------------------------------------------------------------------
+    nvals_in_chunk = float(chunk_size / val_size)
+    nvals_total = float(dims(1) * dims(2))
+    chunk_percent = (nvals_in_chunk / nvals_total)**0.5
+
+    starting_chunk = int(dims * chunk_percent)
+    starting_size = product(starting_chunk)
+    res = starting_chunk
+
+    do xx=0, 1
+      do yy=0, 1
+        cnk_size = int((starting_chunk(1) + xx) * (starting_chunk(2) + yy))
+
+        if (cnk_size > starting_size .and. cnk_size <= nvals_in_chunk) then
+          res = (/ starting_chunk(1) + xx, starting_chunk(2) + yy /)
+        end if
+      end do
+    end do
+  end function
 
   module subroutine create_netcdf(this, ctl_data, model_basin, model_time, filename)
     use netcdf
@@ -162,6 +197,7 @@ contains
 
     ! When we create netCDF files, variables and dimensions, we get back
     ! an ID for each one.
+    integer(i32) :: cnk_sizes(2)
     integer(i32) :: dimids(2)
     integer(i32) :: nhru_dimid
     integer(i32) :: noutvars
@@ -209,6 +245,7 @@ contains
       !       still smaller than ASCII files).
       ! write(*, *) 'Create output netcdf'
       call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl))
+                          ! cache_size=33554432))
 
       ! Define the dimensions. NetCDF will hand back an ID for each.
       ! call this%err_check(nf90_def_dim(this%file_hdl, 'time', NF90_UNLIMITED, time_dimid))
@@ -275,10 +312,12 @@ contains
           ! Save the array size for this variable to an array for later
           this%outvar_size(jj) = 1
 
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                                  outvar_datatype, time_dimid, this%outvar_id(jj)))
           call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
                                            outvar_datatype, time_dimid, this%outvar_id(jj), &
                                            shuffle=.true., &
-                                           deflate_level=5))
+                                           deflate_level=1))
         else
           ! 2D output variable (e.g. time, nhru)
           ! Get the dimid for the outvar dimension
@@ -290,10 +329,16 @@ contains
           call this%err_check(nf90_inquire_dimension(this%file_hdl, ov_dimid, &
                                                      len=this%outvar_size(jj)))
 
+          cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
+          ! write(output_unit, *) 'cnk_sizes: ', cnk_sizes
+
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                                  outvar_datatype, dimids, this%outvar_id(jj)))
           call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
                                            outvar_datatype, dimids, this%outvar_id(jj), &
                                            shuffle=.true., &
-                                           deflate_level=5))
+                                           deflate_level=1, &
+                                           chunksizes=cnk_sizes))
         end if
 
         ! Add attributes for each variable

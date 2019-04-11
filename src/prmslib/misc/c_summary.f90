@@ -65,6 +65,7 @@ type, extends(ModelBase) :: Summary
     procedure, private :: create_netcdf
     procedure, nopass, private :: err_check
 
+    procedure, nopass, private :: chunk_shape_2d
     generic, private :: write_netcdf => write_netcdf_i32_0d, write_netcdf_i32_1d, &
                                         write_netcdf_r32_0d, write_netcdf_r32_1d, &
                                         write_netcdf_r64_0d, write_netcdf_r64_1d, &
@@ -99,6 +100,15 @@ interface
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
   end subroutine
+end interface
+
+interface
+  module function chunk_shape_2d(dims, val_size, chunk_size) result(res)
+    integer(i32) :: res(2)
+    integer(i32), intent(in) :: dims(2)
+    integer(i32), intent(in) :: val_size
+    integer(i32), intent(in) :: chunk_size
+  end function
 end interface
 
 interface
