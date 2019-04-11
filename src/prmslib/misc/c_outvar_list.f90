@@ -1,7 +1,7 @@
 module PRMS_OUTVAR_LIST
   use PRMS_OUTVAR_NODE
   use variableKind
-  use iso_fortran_env, only: output_unit
+  use iso_fortran_env, only: output_unit, error_unit
   implicit none
 
   private
@@ -128,11 +128,11 @@ module PRMS_OUTVAR_LIST
     module subroutine get_outvar_info(this, key, dimensions, datatype, description, units)
       class(outvar_list), intent(in) :: this
       character(len=*), intent(in) :: key
-      character(len=:), allocatable, intent(inout) :: dimensions
+      character(len=:), allocatable, intent(out) :: dimensions
       ! character(len=:), allocatable, intent(inout) :: datatype
-      integer(i32), intent(inout) :: datatype
-      character(len=:), allocatable, intent(inout) :: description
-      character(len=:), allocatable, intent(inout) :: units
+      integer(i32), intent(out) :: datatype
+      character(len=:), allocatable, intent(out) :: description
+      character(len=:), allocatable, intent(out) :: units
     end subroutine
   end interface
 

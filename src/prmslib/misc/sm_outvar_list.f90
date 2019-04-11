@@ -133,11 +133,11 @@ contains
   module subroutine get_outvar_info(this, key, dimensions, datatype, description, units)
     class(outvar_list), intent(in) :: this
     character(len=*), intent(in) :: key
-    character(len=:), allocatable, intent(inout) :: dimensions
-    integer(i32), intent(inout) :: datatype
+    character(len=:), allocatable, intent(out) :: dimensions
+    integer(i32), intent(out) :: datatype
     ! character(len=:), allocatable, intent(inout) :: datatype
-    character(len=:), allocatable, intent(inout) :: description
-    character(len=:), allocatable, intent(inout) :: units
+    character(len=:), allocatable, intent(out) :: description
+    character(len=:), allocatable, intent(out) :: units
 
     ! Private variables
     type(outvar_node), pointer :: ptr_node
@@ -150,6 +150,9 @@ contains
       datatype = ptr_node%datatype
       description = ptr_node%description
       units = ptr_node%units
+    else
+      write(error_unit, *) 'get_node() ERROR: ', key, ' is not a valid output variable.'
+      stop
     end if
   end subroutine
 
