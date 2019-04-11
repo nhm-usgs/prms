@@ -19,7 +19,7 @@ contains
     integer(i32) :: j
     integer(i32) :: jj
 
-    real(r32), allocatable :: snarea_curve_2d(:, :)
+    ! real(r32), allocatable :: snarea_curve_2d(:, :)
     ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
 
     ! -------------------------------------------------------------------------
@@ -36,6 +36,7 @@ contains
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
               hru_area => model_basin%hru_area, &
+              hru_area_dble => model_basin%hru_area_dble, &
               hru_route_order => model_basin%hru_route_order, &
 
               pkwater_equiv => model_climate%pkwater_equiv)
@@ -224,7 +225,7 @@ contains
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
 
       if (init_vars_from_file==0 .or. init_vars_from_file==2 .or. init_vars_from_file==3) then
-        snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
+        this%snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
 
         do j=1, active_hrus
           chru = hru_route_order(j)
@@ -247,14 +248,14 @@ contains
             ! 11, nhru
             ! idx1D = (hru_deplcrv(chru) - 1) * 11 + jj
             ! SHAPE(RESHAPE(snarea_curve, (/11, nhru/)))
-            this%snowcov_area(chru) = this%sca_deplcrv(snarea_curve_2d(1:11, this%hru_deplcrv(chru)), this%frac_swe(chru))
+            this%snowcov_area(chru) = this%sca_deplcrv(this%snarea_curve_2d(1:11, this%hru_deplcrv(chru)), this%frac_swe(chru))
             ! call sca_deplcrv(this%snowcov_area(chru), snarea_curve(11, hru_deplcrv(chru)), this%frac_swe(chru))
           endif
         enddo
 
-        this%basin_pweqv = sum(dble(pkwater_equiv * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_pweqv = sum(pkwater_equiv * hru_area_dble, mask=active_mask) * basin_area_inv
         this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
-        this%basin_snowdepth = sum(dble(this%pk_depth * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
 
         ! NOTE: can deallocate parameter snowpack_init at this point
         ! deallocate(param_data%snowpack_init%values)
@@ -329,22 +330,9 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               cov_type => model_basin%cov_type, &
               hru_area => model_basin%hru_area, &
+              hru_area_dble => model_basin%hru_area_dble, &
               hru_type => model_basin%hru_type, &
               hru_route_order => model_basin%hru_route_order, &
-
-              ! albset_rna => param_data%albset_rna%values(1), &
-              ! albset_rnm => param_data%albset_rnm%values(1), &
-              ! albset_sna => param_data%albset_sna%values(1), &
-              ! albset_snm => param_data%albset_snm%values(1), &
-              ! den_max => param_data%den_max%values(1), &
-              ! cecn_coef => param_data%cecn_coef%values, &
-              ! emis_noppt => param_data%emis_noppt%values, &
-              ! freeh2o_cap => param_data%freeh2o_cap%values, &
-              ! melt_force => param_data%melt_force%values, &
-              ! melt_look => param_data%melt_look%values, &
-              ! rad_trncf => param_data%rad_trncf%values, &
-              ! settle_const => param_data%settle_const%values(1), &
-              ! snarea_thresh => param_data%snarea_thresh%values, &
 
               basin_horad => model_solrad%basin_horad, &
               orad => model_solrad%orad, &
@@ -750,11 +738,11 @@ contains
 
 
       this%basin_snowmelt = sum(dble(this%snowmelt * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_pweqv = sum(dble(pkwater_equiv * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_pweqv = sum(pkwater_equiv * hru_area_dble, mask=active_mask) * basin_area_inv
       this%basin_snowevap = sum(dble(this%snow_evap * hru_area), mask=active_mask) * basin_area_inv
       this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
       this%basin_pk_precip = sum(dble(this%pk_precip * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_snowdepth = sum(dble(this%pk_depth * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
       this%basin_tcal = sum(dble(this%tcal * hru_area), mask=active_mask) * basin_area_inv
 
       ! Area normalize basin totals
@@ -817,9 +805,7 @@ contains
 
               print_debug => ctl_data%print_debug%value, &
 
-              ! den_max => param_data%den_max%values(1), &
               freeh2o_cap => this%freeh2o_cap(chru), &
-
               freeh2o => this%freeh2o(chru), &
               iasw => this%iasw(chru), &
               pk_def => this%pk_def(chru), &
@@ -1114,8 +1100,6 @@ contains
               tavg => model_temp%tavg, &
               tmax => model_temp%tmax, &
               tmin => model_temp%tmin)
-
-              ! freeh2o_cap => param_data%freeh2o_cap%values)
 
       ! 2D index to 1D
       ! idx1D = (month - 1) * nhru + chru
@@ -1704,7 +1688,7 @@ contains
       !! Measured radiation
 
     ! Local Variables
-    real(r32), PARAMETER :: ONETHIRD = 1.0/3.0
+    real(r32), PARAMETER :: ONETHIRD = 1.0 / 3.0
 
     ! integer(i32) :: idx1D
       !! 2D index to 1D array
@@ -1987,7 +1971,7 @@ contains
       !! Difference between the water equivalent before the last new snow and the previous water equivalent [inches]
     real(r64) :: fracy
       !! Ratio of the unmelted amount of previous new snow in the snow pack to the value of 3/4 of previous new snow [fraction]
-    real(r32), pointer :: snarea_curve_2d(:, :)
+    ! real(r32), pointer :: snarea_curve_2d(:, :)
       !! Pointer to 2D version of 1D snarea_curve
 
     ! this
@@ -2013,14 +1997,14 @@ contains
               snowcov_areasv => this%snowcov_areasv(chru))
 
       ! DANGER: TODO: Not the best way to do this; fix it.
-      snarea_curve_2d => get_array(this%snarea_curve, (/11, nhru/))
+      ! snarea_curve_2d => get_array(this%snarea_curve, (/11, nhru/))
 
       !***********************************************************************
       snowcov_area_ante = snowcov_area
 
       ! Reset snowcover area to the maximum
       ! snowcov_area = snarea_curve_2d(11, chru)  ! [fraction of area]
-      snowcov_area = snarea_curve_2d(11, this%hru_deplcrv(chru))  ! [fraction of area]
+      snowcov_area = this%snarea_curve_2d(11, this%hru_deplcrv(chru))  ! [fraction of area]
 
       ! Track the maximum pack water equivalent for the current snow pack.
       if (pkwater_equiv > pst) pst = pkwater_equiv  ! [inches]
@@ -2169,7 +2153,7 @@ contains
         ! snow covered area curve.  So at this point it must interpolate between
         ! points on the snow covered area curve (not the same as interpolating
         ! between 100% and the previous spot on the snow area depletion curve).
-        snowcov_area = this%sca_deplcrv(snarea_curve_2d(1:11, this%hru_deplcrv(chru)), frac_swe)
+        snowcov_area = this%sca_deplcrv(this%snarea_curve_2d(1:11, this%hru_deplcrv(chru)), frac_swe)
 
         ! call this%sca_deplcrv(snowcov_area, snarea_curve, frac_swe)
       endif

@@ -25,9 +25,9 @@ module PRMS_SNOW
   integer(i32), parameter :: MAXALB = 15
 
   real(r32), parameter :: ACUM_INIT(MAXALB) = [0.80, 0.77, 0.75, 0.72, 0.70, 0.69, 0.68, &
-                                       0.67, 0.66, 0.65, 0.64, 0.63, 0.62, 0.61, 0.60]
+                                               0.67, 0.66, 0.65, 0.64, 0.63, 0.62, 0.61, 0.60]
   real(r32), parameter :: AMLT_INIT(MAXALB) = [0.72, 0.65, 0.60, 0.58, 0.56, 0.54, 0.52, &
-                                       0.50, 0.48, 0.46, 0.44, 0.43, 0.42, 0.41, 0.40]
+                                               0.50, 0.48, 0.46, 0.44, 0.43, 0.42, 0.41, 0.40]
 
   type, extends(ModelBase) :: Snowcomp
     ! Dimensions
@@ -73,57 +73,14 @@ module PRMS_SNOW
     integer(i32), allocatable :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
+    real(r32), allocatable :: snarea_curve_2d(:, :)
+      !! 2D copy of parameter snarea_curve
 
-    ! Other variables
-    integer(i32), allocatable :: int_alb(:)
-      !! Flag to indicate: 1) accumlation season curve; 2) use of the melt season curve [flag]
-    real(r64), private :: deninv
-    real(r64), private :: denmaxinv
-    ! real(r64) :: settle_const_dble
-    !     real(r32), SAVE :: Setden, Set1
-
-    real(r32) :: acum(MAXALB)
-    real(r32) :: amlt(MAXALB)
-
-    real(r64), allocatable :: scrv(:)
-      !! Snowpack water equivalent plus a portion of new snow on each HRU
-    real(r64), allocatable :: pss(:)
-      !! Previous snowpack water equivalent plus new snow [inches]
-    real(r64), allocatable :: pksv(:)
-      !! Snowpack water equivalent when there is new snow and in melt phase [inches]
-    real(r64), allocatable :: pst(:)
-      !! While a snowpack exists, pst tracks the maximum snow water equivalent of that snowpack [inches]
-
-    real(r32), allocatable :: salb(:)
-      !! Days since last new snow to reset albedo for each HRU
-    real(r32), allocatable :: slst(:)
-      !! Days since last new snow for each HRU [days]
-    real(r32), allocatable :: snowcov_areasv(:)
-      !! Snow cover fraction when there is new snow and in melt phase [fraction]
-
-    !****************************************************************
-    !   Declared Variables
-    logical, allocatable :: pptmix_nopack(:)
-      !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
-    logical, allocatable :: lst(:)
-      !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
-    logical, allocatable :: iasw(:)
-      !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
-
-    integer(i32), allocatable :: iso(:)
-      !! Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
-    integer(i32), allocatable :: mso(:)
-      !! Flag to indicate if time is before (1) or after (2) the first potnetial day for melt season (melt_look)
-    integer(i32), allocatable :: lso(:)
-      !! Counter for tracking the number of days the snowpack is at or above 0 degrees Celsius
-
-    ! integer(i32), allocatable :: pptmix_nopack(:)
-    !   !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
-    ! integer(i32), allocatable :: lst(:)
-    !   !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
-    ! integer(i32), allocatable :: iasw(:)
-    !   !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
-
+    ! Output variables
+    real(r64), allocatable :: ai(:)
+      !! Maximum snowpack for each HRU
+    real(r32), allocatable :: albedo(:)
+      !! Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU [fraction]
     real(r64), pointer :: basin_pk_precip
       !! Basin area-weighted average precipitation added to snowpack
     real(r64), pointer :: basin_pweqv
@@ -138,41 +95,74 @@ module PRMS_SNOW
       !! Basin area-weighted average snowmelt
     real(r64), pointer :: basin_tcal
       !! Basin area-weighted average net snowpack energy balance
-
-
-    real(r32), allocatable :: snowmelt(:)
-      !! Snowmelt from snowpack on each HRU [inches]
-    real(r32), allocatable :: snow_evap(:)
-      !! Evaporation and sublimation from snowpack on each HRU
-    real(r32), allocatable :: albedo(:)
-      !! Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU [fraction]
-    real(r32), allocatable :: pk_temp(:)
-      !! Temperature of the snowpack on each HRU [degree C]
-    real(r32), allocatable :: pk_den(:)
-      !! Density of the snowpack on each HRU [fraction of depth]
-    real(r32), allocatable :: pk_def(:)
-      !! Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degreees Celsius [cal/cm^2]
-    real(r32), allocatable :: pk_ice(:)
-      !! Storage of frozen water in the snowpack on each HRU [inches]
-    real(r32), allocatable :: freeh2o(:)
-      !! Storage of free liquid water in the snowpack on each HRU [inches]
-    real(r32), allocatable :: snowcov_area(:)
-      !! Snow-covered area on each HRU prior to melt and sublimation unless snowpack is depleted [fraction]
-    real(r32), allocatable :: tcal(:)
-      !! Net snowpack energy balance on each HRU
-    real(r32), allocatable :: snsv(:)
-      !! Tracks the cumulative amount of new snow until there is enough to reset the albedo curve (albset_snm or albset_sna) [inches]
-    real(r32), allocatable :: pk_precip(:)
-      !! Precipitation added to snowpack for each HRU [inches]
     real(r32), allocatable :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU
-
+    real(r32), allocatable :: freeh2o(:)
+      !! Storage of free liquid water in the snowpack on each HRU [inches]
+    logical, allocatable :: iasw(:)
+      !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
+    integer(i32), allocatable :: int_alb(:)
+      !! Flag to indicate: 1) accumlation season curve; 2) use of the melt season curve [flag]
+    integer(i32), allocatable :: iso(:)
+      !! Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
+    integer(i32), allocatable :: lso(:)
+      !! Counter for tracking the number of days the snowpack is at or above 0 degrees Celsius
+    logical, allocatable :: lst(:)
+      !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
+    integer(i32), allocatable :: mso(:)
+      !! Flag to indicate if time is before (1) or after (2) the first potnetial day for melt season (melt_look)
+    real(r32), allocatable :: pk_def(:)
+      !! Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degreees Celsius [cal/cm^2]
+    real(r32), allocatable :: pk_den(:)
+      !! Density of the snowpack on each HRU [fraction of depth]
     real(r64), allocatable :: pk_depth(:)
       !! Depth of snowpack on each HRU [inches]
+      ! r64 is correct
+    real(r32), allocatable :: pk_ice(:)
+      !! Storage of frozen water in the snowpack on each HRU [inches]
+    real(r32), allocatable :: pk_precip(:)
+      !! Precipitation added to snowpack for each HRU [inches]
+    real(r32), allocatable :: pk_temp(:)
+      !! Temperature of the snowpack on each HRU [degree C]
+    real(r64), allocatable :: pksv(:)
+      !! Snowpack water equivalent when there is new snow and in melt phase [inches]
     real(r64), allocatable :: pkwater_ante(:)
       !! Antecedent snowpack water equivalent on each HRU
-    real(r64), allocatable :: ai(:)
-      !! Maximum snowpack for each HRU
+    logical, allocatable :: pptmix_nopack(:)
+      !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
+    real(r64), allocatable :: pss(:)
+      !! Previous snowpack water equivalent plus new snow [inches]
+    real(r64), allocatable :: pst(:)
+      !! While a snowpack exists, pst tracks the maximum snow water equivalent of that snowpack [inches]
+    real(r32), allocatable :: salb(:)
+      !! Days since last new snow to reset albedo for each HRU
+    real(r64), allocatable :: scrv(:)
+      !! Snowpack water equivalent plus a portion of new snow on each HRU
+    real(r32), allocatable :: slst(:)
+      !! Days since last new snow for each HRU [days]
+    real(r32), allocatable :: snow_evap(:)
+      !! Evaporation and sublimation from snowpack on each HRU
+    real(r32), allocatable :: snowcov_area(:)
+      !! Snow-covered area on each HRU prior to melt and sublimation unless snowpack is depleted [fraction]
+    real(r32), allocatable :: snowcov_areasv(:)
+      !! Snow cover fraction when there is new snow and in melt phase [fraction]
+    real(r32), allocatable :: snowmelt(:)
+      !! Snowmelt from snowpack on each HRU [inches]
+    real(r32), allocatable :: snsv(:)
+      !! Tracks the cumulative amount of new snow until there is enough to reset the albedo curve (albset_snm or albset_sna) [inches]
+    real(r32), allocatable :: tcal(:)
+      !! Net snowpack energy balance on each HRU
+
+
+
+    ! Other variables
+    real(r64), private :: deninv
+    real(r64), private :: denmaxinv
+    ! real(r64) :: settle_const_dble
+    !     real(r32), SAVE :: Setden, Set1
+
+    real(r32) :: acum(MAXALB)
+    real(r32) :: amlt(MAXALB)
 
     contains
       procedure, public :: run => run_Snowcomp
