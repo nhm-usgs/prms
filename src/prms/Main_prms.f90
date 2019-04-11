@@ -48,12 +48,18 @@ program prms6
   print *, 'CLOSEZERO, NEARZERO, DNEARZERO'
   print *, CLOSEZERO, NEARZERO, DNEARZERO
 
+  dummy_r32 = 0.0
+  dummy_r64 = 0.0
+
   print *, 'Ranges'
   print *, 'r32: ', range(dummy_r32)
   print *, 'smallest r32 value: ', tiny(dummy_r32)
   print *, 'minexponent of r32: ', minexponent(dummy_r32)
-  print *, 'r64: ', range(dummy_r64)
 
+  write(output_unit, *) 'r64: ', radix(dummy_r64), exponent(tiny(dummy_r64)), exponent(huge(dummy_r64))
+  write(output_unit, *) 'smallest r64 value: ', tiny(dummy_r64)
+  write(output_unit, *) 'precision of r64: ', precision(dummy_r64)
+  write(output_unit, *) 'range of r64: ', range(dummy_r64)
   ! print *, 'r32 array memory footprint (109951 x 13505):', c_sizeof(arr_dummy_r32)
   write(output_unit, fmt='(a)') repeat('=', 72)
   call get_control_filename(control_filename)
