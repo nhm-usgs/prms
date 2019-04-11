@@ -43,7 +43,7 @@ module PRMS_INTCP
     ! Local Variables
     real(r32), allocatable :: gain_inches(:)
     real(r32), allocatable :: intcp_changeover(:)
-    real(r64), allocatable :: intcp_stor_ante(:)
+    real(r32), allocatable :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
@@ -51,8 +51,9 @@ module PRMS_INTCP
     ! integer(i32) :: use_transfer_intcp
     logical :: use_transfer_intcp
 
-    ! Declared Variables
     real(r64), pointer :: basin_changeover
+
+    ! Output variables
     real(r64), pointer :: basin_hru_apply
     real(r64), pointer :: basin_intcp_evap
     real(r64), pointer :: basin_intcp_stor
@@ -62,15 +63,17 @@ module PRMS_INTCP
     real(r64), pointer :: basin_net_snow
 
     real(r32), allocatable :: canopy_covden(:)
-    real(r64), allocatable :: hru_intcpevap(:)
-    real(r64), allocatable :: hru_intcpstor(:)
+    real(r32), allocatable :: hru_intcpevap(:)
+    real(r32), allocatable :: hru_intcpstor(:)
     real(r32), allocatable :: intcp_evap(:)
     real(r32), allocatable :: intcp_stor(:)
     real(r32), allocatable :: net_apply(:)
-    real(r64), allocatable :: net_ppt(:)
-    real(r64), allocatable :: net_rain(:)
-    real(r64), allocatable :: net_snow(:)
+    real(r32), allocatable :: net_ppt(:)
+    real(r32), allocatable :: net_rain(:)
+    real(r32), allocatable :: net_snow(:)
 
+
+    ! Local variables
     integer(i32), allocatable, private :: intcp_form(:)
 
     logical, allocatable, private :: intcp_on(:)
