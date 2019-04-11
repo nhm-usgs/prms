@@ -4,6 +4,7 @@ submodule (Simulation_class) sm_simulation
     !***********************************************************************
     ! Simulation constructor
     module function constructor_Simulation(ctl_data) result(this)
+      use iso_fortran_env, only: output_unit
       implicit none
 
       type(Simulation) :: this
@@ -12,8 +13,12 @@ submodule (Simulation_class) sm_simulation
       ! ------------------------------------------------------------------------
 
       ! Initialize the simulation modules
+      ! this%model_basin = Basin(ctl_data)
+      ! this%model_time = Time_t(ctl_data, this%model_basin%hemisphere)
+
+      this%model_time = Time_t(ctl_data)
       this%model_basin = Basin(ctl_data)
-      this%model_time = Time_t(ctl_data, this%model_basin)
+      call this%model_time%set_hemisphere(this%model_basin%hemisphere)
 
       if (ctl_data%outVarON_OFF%value == 1) then
         this%model_summary = Summary(ctl_data, this%model_basin, this%model_time)
@@ -45,7 +50,7 @@ submodule (Simulation_class) sm_simulation
       this%intcp = Interception(ctl_data, this%model_basin, this%transpiration, this%model_summary)
       this%snow = Snowcomp(ctl_data, this%model_basin, this%climate, this%model_summary)
       this%runoff = Srunoff(ctl_data, this%model_basin, this%model_summary)
-      this%soil = Soilzone(ctl_data, this%model_basin, this%climate, this%snow, this%model_summary)
+      this%soil = Soilzone(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
       this%groundwater = Gwflow(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
       this%model_muskingum = Muskingum(ctl_data, this%model_basin, this%model_time, this%model_summary)
 
@@ -55,6 +60,7 @@ submodule (Simulation_class) sm_simulation
     end function
 
     module subroutine run_Simulation(this, ctl_data)
+      use iso_fortran_env, only: output_unit
       implicit none
 
       class(Simulation), intent(inout) :: this
@@ -62,8 +68,13 @@ submodule (Simulation_class) sm_simulation
 
       ! ------------------------------------------------------------------------
       do
-        if (.not. this%model_time%next(ctl_data, this%model_basin)) exit
+        if (.not. this%model_time%next(ctl_data)) exit
         ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
+
+        write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
+        9008 format(A, I4, 2('/', I2.2))
+
+        call this%model_basin%run(ctl_data, this%model_time)
 
         call this%model_temp%run(ctl_data, this%model_basin, this%model_time, this%model_summary)
         ! print *, '1'
@@ -134,7 +145,11 @@ submodule (Simulation_class) sm_simulation
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
-      call this%model_summary%cleanup()
+      if (ctl_data%outVarON_OFF%value == 1) then
+        call this%model_summary%cleanup()
+      end if
+
+      call this%runoff%cleanup()
       ! if (ctl_data%save_vars_to_file%value == 1) then
       !   ! Write the important model information to the restart file
       !   write(ctl_data%restart_output_unit) this%model_time%timestep, &
