@@ -44,9 +44,9 @@ module PRMS_WATER_BALANCE
     real(r64), private, allocatable :: hru_storage_ante(:)
 
     ! Declared variables
-    real(r64), private :: basin_capillary_wb
-    real(r64), private :: basin_gravity_wb
-    real(r64), private :: basin_soilzone_wb
+    ! real(r64), private :: basin_capillary_wb
+    ! real(r64), private :: basin_gravity_wb
+    ! real(r64), private :: basin_soilzone_wb
 
     contains
       procedure, public :: run => run_WaterBalance
