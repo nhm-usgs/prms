@@ -3,14 +3,15 @@ submodule (PRMS_SET_TIME) sm_prms_time
 contains
   !***********************************************************************
   ! Time_t constructor
-  module function constructor_Time(ctl_data, model_basin) result(this)
+  module function constructor_Time(ctl_data, hemisphere) result(this)
     use prms_constants, only: dp, FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
-                              HOUR_PER_DAY, MIN_PER_HOUR
+                              HOUR_PER_DAY, MIN_PER_HOUR, NORTHERN
     implicit none
 
     type(Time_t) :: this
     type(Control), intent(in) :: ctl_data
-    type(Basin), intent(in) :: model_basin
+    integer(i32), optional, intent(in) :: hemisphere
+    ! type(Basin), intent(in) :: model_basin
 
     ! Functions
     INTRINSIC SNGL
@@ -25,9 +26,7 @@ contains
     ! ------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               model_start => ctl_data%start_time%values, &
-              model_end => ctl_data%end_time%values, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hemisphere => model_basin%hemisphere)
+              model_end => ctl_data%end_time%values)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -36,15 +35,21 @@ contains
         call this%print_module_info()
       endif
 
-      ! original declare stuff
-      this%Timestep_seconds = SECS_PER_DAY
-      this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
-      this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
+      this%Nowtime = model_start
 
-      ! original init stuff
-      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'start', 'calendar', hemisphere)
-      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'start', 'solar', hemisphere)
-      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'start', 'water', hemisphere)
+      ! Default to the northern hemisphere if hemisphere was not specified
+      if (present(hemisphere)) then
+        call this%set_hemisphere(hemisphere)
+      else
+        call this%set_hemisphere(NORTHERN)
+      end if
+
+      ! original declare stuff
+      ! this%Timestep_seconds = SECS_PER_DAY
+      ! this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+      ! TODO: If cfs2inches is really needed it should not be in the time object
+      !       causing a dependency to the Basin object.
+      ! this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
 
       this%start_jdn = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
       this%end_jdn = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
@@ -60,7 +65,6 @@ contains
 
       endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
       this%days_since_start = 0
-      this%Nowtime = model_start
 
       write(this%start_string, 9001) model_start(YEAR), model_start(MONTH), model_start(DAY)
       9001 format(I4, '-', I2.2, '-', I2.2)
@@ -76,25 +80,11 @@ contains
       this%Nowhour = this%Nowtime(HOUR)
       this%Nowminute = this%Nowtime(MINUTE)
 
-      ! Summer is based on equinox:
-      !   Julian days 79 to 265 for Northern hemisphere
-      !   Julian day 265 to 79 in Southern hemisphere
-      this%Summer_flag = 1 ! 1 = summer, 0 = winter
-      if (hemisphere == NORTHERN) then
-        ! Northern Hemisphere
-        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
-      else
-        ! Southern Hemisphere
-        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
-      endif
-
       dt = deltim()
       this%Timestep_hours = SNGL(dt)
       this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
       this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
       this%Timestep_seconds = dt * SECS_PER_HOUR
-      this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
-      this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
 
       ! Check to see if in a daily or subdaily time step
       if (this%Timestep_hours > HOUR_PER_DAY) then
@@ -107,83 +97,84 @@ contains
     end associate
   end function
 
+  module subroutine update_summer_flag(this)
+    class(Time_t), intent(inout) :: this
+    ! ------------------------------------------------------------------------
+    ! Summer is based on equinox:
+    !   Julian days 79 to 265 for Northern hemisphere
+    !   Julian day 265 to 79 in Southern hemisphere
+    this%Summer_flag = 1 ! 1 = summer, 0 = winter
+    if (this%hemisphere == NORTHERN) then
+      ! Northern Hemisphere
+      if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
+    else
+      ! Southern Hemisphere
+      if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
+    endif
+  end subroutine
 
-  module function next(this, ctl_data, model_basin) result(res)
-    ! use Control_class, only: Control
-    ! use PRMS_BASIN, only: Basin
+  module function next(this, ctl_data) result(res)
     use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                               HOUR_PER_DAY, MIN_PER_HOUR
 
     logical :: res
     class(Time_t), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Basin), intent(in) :: model_basin
 
     real(r64) :: dt
 
     ! ------------------------------------------------------------------------
-    associate(basin_area_inv => model_basin%basin_area_inv, &
-              hemisphere => model_basin%hemisphere)
+    res = .true.
+    this%Timestep = this%Timestep + 1
 
-      res = .true.
-      this%Timestep = this%Timestep + 1
+    if (this%Timestep > this%Number_timesteps) then
+      !! End of simulation reached
+      res = .false.
+      return
+    endif
 
-      if (this%Timestep > this%Number_timesteps) then
-        !! End of simulation reached
-        res = .false.
-        return
-      endif
+    this%Nowtime = julian_to_gregorian(this%Julian_day_absolute)
+    this%day_of_year = this%ordinal_date(this%Nowtime, 'calendar', this%hemisphere)
+    this%day_of_solar_year = this%ordinal_date(this%Nowtime, 'solar', this%hemisphere)
+    this%day_of_water_year = this%ordinal_date(this%Nowtime, 'water', this%hemisphere)
 
-      call this%dattim(ctl_data, 'now', this%Nowtime)
+    call this%update_summer_flag()
 
-      this%day_of_year = this%ordinal_date(ctl_data, model_basin, 'now', 'calendar', hemisphere)
-      this%day_of_solar_year = this%ordinal_date(ctl_data, model_basin, 'now', 'solar', hemisphere)
-      this%day_of_water_year = this%ordinal_date(ctl_data, model_basin, 'now', 'water', hemisphere)
-      this%Julian_day_absolute = this%Julian_day_absolute + 1
-      this%days_since_start = this%compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3)) - this%start_jdn
+    this%Julian_day_absolute = this%Julian_day_absolute + 1
+    this%days_since_start = this%compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3)) - this%start_jdn
 
-      ! TODO: ?why? is this here? It shouldn't be.
-      ! call read_data_line(this%Nowtime, var_data)
+    ! TODO: ?why? is this here? It shouldn't be.
+    ! call read_data_line(this%Nowtime, var_data)
 
-      this%Nowyear = this%Nowtime(1)
-      this%Nowmonth = this%Nowtime(2)
-      this%Nowday = this%Nowtime(3)
-      this%Nowhour = this%Nowtime(4)
-      this%Nowminute = this%Nowtime(5)
+    this%Nowyear = this%Nowtime(1)
+    this%Nowmonth = this%Nowtime(2)
+    this%Nowday = this%Nowtime(3)
+    this%Nowhour = this%Nowtime(4)
+    this%Nowminute = this%Nowtime(5)
 
-      ! Summer is based on equinox:
-      !   Julian days 79 to 265 for Northern hemisphere
-      !   Julian day 265 to 79 in Southern hemisphere
-      this%Summer_flag = 1 ! 1 = summer, 0 = winter
-      if (hemisphere == NORTHERN) then
-        ! Northern Hemisphere
-        if (this%day_of_year < 79 .OR. this%day_of_year > 265) this%Summer_flag = 0 ! Equinox
-      else
-        ! Southern Hemisphere
-        if (this%day_of_year > 79 .AND. this%day_of_year < 265) this%Summer_flag = 0 ! Equinox
-      endif
+    ! TODO: This stuff shouldn't change once it's initialized
+    dt = deltim()
+    this%Timestep_hours = SNGL(dt)
+    this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
+    this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
+    this%Timestep_seconds = dt * SECS_PER_HOUR
+    this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
 
-      ! TODO: This stuff shouldn't change once it's initialized
-      dt = deltim()
-      this%Timestep_hours = SNGL(dt)
-      this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
-      this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-      this%Timestep_seconds = dt * SECS_PER_HOUR
-      this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
-      this%Cfs2inches = basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
+    ! TODO: If cfs2inches is really needed it should not be in the time object
+    !       causing a dependency to the Basin object.
+    ! this%Cfs2inches = basin_area_inv * 12.0D0 * this%Timestep_seconds / FT2_PER_ACRE
 
-      ! print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
-      !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
+    ! print *, this%Timestep, ": ", this%Nowtime(1), this%Nowtime(2), this%Nowtime(3), &
+    !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
 
-      ! Check to see if in a daily or subdaily time step
-      if (this%Timestep_hours > HOUR_PER_DAY) then
-        print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
-        STOP
-      elseif (this%Timestep_hours < HOUR_PER_DAY) then
-        print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
-        STOP
-      endif
-    end associate
+    ! Check to see if in a daily or subdaily time step
+    if (this%Timestep_hours > HOUR_PER_DAY) then
+      print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
+      STOP
+    elseif (this%Timestep_hours < HOUR_PER_DAY) then
+      print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
+      STOP
+    endif
   end function
 
 
@@ -250,18 +241,14 @@ contains
   !
   ! 2017-10-30 PAN: moved here from utils_prms.f90
   !***********************************************************************
-  module function ordinal_date(this, ctl_data, model_basin, Date_type, Year_type, hemisphere) result(res)
+  module function ordinal_date(this, datetime, Year_type, hemisphere) result(res)
+    use prms_constants, only: YEAR, MONTH, DAY
     implicit none
 
     ! Arguments
     integer(i32) :: res
     class(Time_t) :: this
-    type(Control), intent(in) :: ctl_data
-      !! Control file data
-    type(Basin), intent(in) :: model_basin
-      !! Basin class for the model
-    character(len=*), intent(in) :: Date_type
-      !! One of: "start", "end", "now"
+    integer(i32), intent(in) :: datetime(6)
     character(len=*), intent(in) :: Year_type
       !! One of: "calendar", "solar", "water", "absolute"
     integer(i32), intent(in) :: hemisphere
@@ -271,29 +258,18 @@ contains
     integer(i32) :: reftime_year
     integer(i32) :: reftime_month
     integer(i32) :: reftime_day
-    integer(i32) :: time_array(6)
-    integer(i32) :: year
-    integer(i32) :: month
-    integer(i32) :: day
+    ! integer(i32) :: time_array(6)
+    integer(i32) :: yr
+    integer(i32) :: mo
+    integer(i32) :: dy
     integer(i32) :: absolute_julday
     integer(i32) :: relative_julday
     logical :: found
 
     !***********************************************************************
-    if (Date_type == 'end') then
-      time_array = ctl_data%end_time%values
-    elseif (Date_type == 'now') then
-      time_array = this%Nowtime
-    elseif (Date_type == 'start') then
-      time_array = ctl_data%start_time%values
-    else
-      print *, 'ERROR, invalid argument to compute Julian Day: ', Date_type
-      STOP
-    endif
-
-    year = time_array(1)
-    month = time_array(2)
-    day = time_array(3)
+    yr = datetime(YEAR)
+    mo = datetime(MONTH)
+    dy = datetime(DAY)
 
     found = .false.
 
@@ -301,20 +277,20 @@ contains
     if (Year_type == 'solar') then
       found = .true.
 
-      if (model_basin%hemisphere == NORTHERN) then ! Northern
-        if (month == 12 .AND. day > 21) then
-          reftime_year = year
+      if (hemisphere == NORTHERN) then ! Northern
+        if (mo == 12 .AND. dy > 21) then
+          reftime_year = yr
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 12
         reftime_day = 21
       else ! Southern
-        if (month == 6 .AND. day > 20) then
-          reftime_year = year;
+        if (mo == 6 .AND. dy > 20) then
+          reftime_year = yr;
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 6
@@ -323,20 +299,20 @@ contains
     elseif (Year_type == 'water') then
       found = .true.
 
-      if (model_basin%hemisphere == NORTHERN) then ! Northern
-        if (month > 9) then
-          reftime_year = year
+      if (hemisphere == NORTHERN) then ! Northern
+        if (mo > 9) then
+          reftime_year = yr
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 9
         reftime_day = 30
       else ! Southern
-        if (month > 3) then
-          reftime_year = year
+        if (mo > 3) then
+          reftime_year = yr
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 3
@@ -345,20 +321,20 @@ contains
     elseif (Year_type == 'spring') then
       found = .true.
 
-      if (model_basin%hemisphere == NORTHERN) then ! Northern
-        if (month > 3 .OR. (month == 3 .AND. day > 20)) then
-          reftime_year = year
+      if (hemisphere == NORTHERN) then ! Northern
+        if (mo > 3 .OR. (mo == 3 .AND. dy > 20)) then
+          reftime_year = yr
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 3
         reftime_day = 20
       else ! Southern
-        if (month > 9 .OR. (month == 9 .AND. day > 22)) then
-          reftime_year = year
+        if (mo > 9 .OR. (mo == 9 .AND. dy > 22)) then
+          reftime_year = yr
         else
-          reftime_year = year - 1
+          reftime_year = yr - 1
         endif
 
         reftime_month = 9
@@ -366,7 +342,7 @@ contains
       endif
     elseif (Year_type == 'calendar') then
       found = .true.
-      reftime_year = year - 1
+      reftime_year = yr - 1
       reftime_month = 12
       reftime_day = 31
     endif
@@ -377,7 +353,7 @@ contains
     endif
 
     ! set actual Julian Day
-    absolute_julday = compute_julday(year, month, day)
+    absolute_julday = compute_julday(yr, mo, dy)
 
     ! relative_julday = 0
 
@@ -414,6 +390,26 @@ contains
     endif
 
     9001 FORMAT ('    Date: ', I4, 2('/', I2.2), I3.2, ':', I2.2, /)
+  end subroutine
+
+  module subroutine set_hemisphere(this, hemisphere)
+    use iso_fortran_env, only: output_unit
+    implicit none
+
+    class(Time_t), intent(inout) :: this
+    integer(i32), intent(in) :: hemisphere
+    ! --------------------------------------------------------------------------
+    if (hemisphere > 1) then
+      write(output_unit, *) 'ERROR: set_hemisphere() - Hemisphere must be either 0 (NORTHERN) or 1 (SOUTHERN)'
+      stop
+    end if
+    this%hemisphere = hemisphere
+
+    this%day_of_year = this%ordinal_date(this%Nowtime, 'calendar', this%hemisphere)
+    this%day_of_solar_year = this%ordinal_date(this%Nowtime, 'solar', this%hemisphere)
+    this%day_of_water_year = this%ordinal_date(this%Nowtime, 'water', this%hemisphere)
+
+    call this%update_summer_flag()
   end subroutine
 
   !***********************************************************************

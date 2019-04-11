@@ -6,7 +6,6 @@ module PRMS_SET_TIME
   use prms_constants, only: NORTHERN, SOUTHERN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
-  use PRMS_BASIN, only: Basin
   implicit none
 
   private
@@ -29,6 +28,7 @@ module PRMS_SET_TIME
     integer(i32) :: days_since_start
       !! Number of days since the start date of the model simulation
     integer(i32) :: Julian_day_absolute
+    integer(i32), private :: hemisphere
     integer(i32) :: months
     integer(i32) :: months_in_model
       !! Total number of months in the model
@@ -54,7 +54,7 @@ module PRMS_SET_TIME
     real(r32) :: Timestep_days
     real(r32) :: Timestep_minutes
 
-    real(r64) :: Cfs2inches
+    ! real(r64) :: Cfs2inches
     real(r64) :: Cfs_conv
     real(r64) :: Timestep_seconds
 
@@ -63,6 +63,7 @@ module PRMS_SET_TIME
       procedure, public :: next
         !! Advance to next timestep
       procedure, public :: print_date
+      procedure, public :: set_hemisphere
 
       procedure, nopass, public :: compute_julday
       procedure, nopass, public :: julian_to_gregorian
@@ -71,17 +72,18 @@ module PRMS_SET_TIME
       procedure, private :: dattim
       procedure, nopass, private :: deltim
       procedure, private :: ordinal_date
+      procedure, private :: update_summer_flag
   end type
 
   interface Time_t
     !! Time_t constructor
-    module function constructor_Time(ctl_data, model_basin) result(this)
+    module function constructor_Time(ctl_data, hemisphere) result(this)
       type(Time_t) :: this
         !! Time_t class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Basin), intent(in) :: model_basin
-        !! Model basin
+      integer(i32), optional, intent(in) :: hemisphere
+        !! Which hemisphere is the model in (0=NORTHERN, 1=SOUTHERN)
     end function
   end interface
 
@@ -94,11 +96,10 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function next(this, ctl_data, model_basin) result(res)
+    module function next(this, ctl_data) result(res)
       logical :: res
       class(Time_t), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Basin), intent(in) :: model_basin
     end function
   end interface
 
@@ -120,14 +121,13 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function ordinal_date(this, ctl_data, model_basin, Date_type, Year_type, hemisphere) result(res)
+    module function ordinal_date(this, datetime, Year_type, hemisphere) result(res)
       integer(i32) :: res
       class(Time_t) :: this
-      type(Control), intent(in) :: ctl_data
+      ! type(Control), intent(in) :: ctl_data
         !! Control file data
-      type(Basin), intent(in) :: model_basin
-        !! Basin class for the model
-      character(len=*), intent(in) :: Date_type
+      integer(i32), intent(in) :: datetime(6)
+      ! character(len=*), intent(in) :: Date_type
         !! One of: "start", "end", "now"
       character(len=*), intent(in) :: Year_type
         !! One of: "calendar", "solar", "water", "absolute"
@@ -140,6 +140,20 @@ module PRMS_SET_TIME
     module subroutine print_date(this, Flag)
       class(Time_t), intent(in) :: this
       integer(i32), intent(in) :: Flag
+    end subroutine
+  end interface
+
+  interface
+    module subroutine set_hemisphere(this, hemisphere)
+      class(Time_t), intent(inout) :: this
+      integer(i32), intent(in) :: hemisphere
+        !! 0=NORTHERN, 1=SOUTHERN
+    end subroutine
+  end interface
+
+  interface
+    module subroutine update_summer_flag(this)
+      class(Time_t), intent(inout) :: this
     end subroutine
   end interface
 
