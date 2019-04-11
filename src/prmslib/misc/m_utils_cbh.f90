@@ -37,7 +37,7 @@ module UTILS_CBH
       iret = 0
       do
         if (use_stream_) then
-          ! Stream access file (aka binary)
+          ! Stream access to file (aka binary)
           read(iunit, IOSTAT=iret) yr, mo, dy
         else
           read(iunit, *, IOSTAT=iret) yr, mo, dy
@@ -174,7 +174,9 @@ module UTILS_CBH
           endif
         enddo
       endif
-    end subroutine find_header_end
+    end subroutine
+
+
 
     subroutine open_netcdf_cbh_file(iunit, varid, idx_offset, filename, param_name, start_time, end_time, model_nhru)
       use netcdf
