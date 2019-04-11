@@ -88,10 +88,10 @@ contains
             case('tavg')
               this%has_hru_summary_vars = .true.
               exit
-            case('tmax')
+            case('tmax_hru')
               this%has_hru_summary_vars = .true.
               exit
-            case('tmin')
+            case('tmin_hru')
               this%has_hru_summary_vars = .true.
               exit
             case default
@@ -131,9 +131,9 @@ contains
         select case(outVar_names%values(jj)%s)
           case('tavg')
             call model_summary%set_summary_var(jj, this%tavg)
-          case('tmax')
+          case('tmax_hru')
             call model_summary%set_summary_var(jj, this%tmax)
-          case('tmin')
+          case('tmin_hru')
             call model_summary%set_summary_var(jj, this%tmin)
           case default
             ! pass
