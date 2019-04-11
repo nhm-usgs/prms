@@ -42,6 +42,15 @@ module SOLAR_RADIATION
     real(r32), allocatable :: solrad(:)
       !! Solar radiation at each measurement station
 
+    ! Output variables
+    real(r64), pointer :: basin_horad
+    real(r64), pointer :: basin_orad
+    real(r64), pointer :: basin_potsw
+    real(r64), pointer :: basin_swrad
+    real(r32) :: orad
+    real(r32), allocatable :: orad_hru(:)
+    real(r32), allocatable :: swrad(:)
+
     ! Other variables
     logical :: has_basin_obs_station
       !! When true has a main solar radiation station
@@ -49,8 +58,6 @@ module SOLAR_RADIATION
       !! When true has solar radiation stations available
     real(r32) :: radiation_cv_factor
       !! Conversion factor to Langleys for measured radiation. Defaults to 1.0, but can be overridden by parameter rad_conv
-
-    real(r32), allocatable :: orad_hru(:)
 
     ! WARNING: tmax_f and tmin_f will be removed once ccov_slope and ccov_intcp
     !          are converted to match Celsius temp_unit.
@@ -63,16 +70,7 @@ module SOLAR_RADIATION
     real(r64), allocatable :: soltab_sunhrs(:, :)
 
     ! Declared Variables
-    real(r32) :: orad
-
-    real(r64), pointer :: basin_horad
-    real(r64), pointer :: basin_orad
-    real(r64), pointer :: basin_potsw
-    real(r64), pointer :: basin_swrad
-
     ! real(r32), allocatable :: orad_hru(:)
-    real(r32), allocatable :: swrad(:)
-
     real(r64), allocatable :: soltab_potsw(:, :)
     real(r64), allocatable :: soltab_horad_potsw(:, :)
 
