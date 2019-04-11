@@ -574,7 +574,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
             endif
 
             gwflow = 0.0_dp
-            this%gwres_sink(chru) = 0.0_dp
+            this%gwres_sink(chru) = 0.0
           else
             ! Compute groundwater discharge
             gwflow = gwstor * dble(this%gwflow_coef(chru))
@@ -589,7 +589,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
             ! Reduce storage by outflow
             gwstor = gwstor - gwflow
 
-            9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
+            ! 9008 format(A, A, I6, es12.4e2, A, I4, 2('/', I2.2))
 
             if (this%gwsink_coef(chru) > 0.0) then
               ! if gwsink_coef > 1, could have had negative gwstor
@@ -608,7 +608,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
             !   endif
             ! endif
 
-            this%gwres_sink(chru) = gwsink / hru_area_dble(chru)
+            this%gwres_sink(chru) = sngl(gwsink / hru_area_dble(chru))
             this%basin_gwsink = this%basin_gwsink + gwsink
           endif
 
@@ -617,7 +617,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !   write(*, *) chru, gwflow, hru_area_dble(chru), gwstor, gwflow_coef(chru)
           ! endif
 
-          this%gwres_flow(chru) = gwflow / hru_area_dble(chru)
+          this%gwres_flow(chru) = sngl(gwflow / hru_area_dble(chru))
 
           ! TODO: Uncomment when cascade module is converted
           ! if (cascadegw_flag > 0) then
@@ -632,7 +632,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
           ! Leave gwin in inch-acres
           this%gwres_in(chru) = gwin
           this%gwres_stor(chru) = gwstor / hru_area_dble(chru)
-          this%hru_lateral_flow(chru) = this%gwres_flow(chru) + sroff(chru) + ssres_flow(chru)
+          this%hru_lateral_flow(chru) = dble(this%gwres_flow(chru) + sroff(chru) + ssres_flow(chru))
 
           ! cfs_conv converts acre-inches per timestep to cfs
           this%hru_streamflow_out(chru) = hru_area_dble(chru) * cfs_conv * this%hru_lateral_flow(chru)
@@ -645,7 +645,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         enddo
 
         ! TODO: Mask by active gwr
-        this%basin_gwflow = sum(this%gwres_flow * hru_area_dble) * basin_area_inv
+        this%basin_gwflow = sum(dble(this%gwres_flow * hru_area)) * basin_area_inv
         this%basin_gwstor = sum(this%gwres_stor * hru_area_dble) * basin_area_inv
         this%basin_gwin = sum(this%gwres_in) * basin_area_inv
 

@@ -48,9 +48,11 @@ module PRMS_GWFLOW
     logical :: has_gwstor_minarea
     ! integer(i32) :: gwminarea_flag
 
-    ! Declared Variables
     real(r64), pointer :: basin_dnflow
     real(r64), pointer :: basin_gw_upslope
+
+
+    ! Output variables
     real(r64), pointer :: basin_gwflow
     real(r64), pointer :: basin_gwin
     real(r64), pointer :: basin_gwsink
@@ -59,25 +61,38 @@ module PRMS_GWFLOW
     real(r64), pointer :: basin_lake_seep
 
     real(r32), allocatable :: elevlake(:)
-    real(r64), allocatable :: gwres_flow(:)
-    real(r64), allocatable :: gwres_sink(:)
-    real(r64), allocatable :: hru_gw_cascadeflow(:)
+    real(r32), allocatable :: gwres_flow(:)
+    real(r32), allocatable :: gwres_sink(:)
+    real(r32), allocatable :: hru_gw_cascadeflow(:)
 
     real(r64), allocatable :: gw_in_soil(:)
+      ! r64 is correct
     real(r64), allocatable :: gw_in_ssr(:)
+      ! r64 is correct
     real(r64), allocatable :: gw_seep_lakein(:)
+      ! r64 is correct
     real(r64), allocatable :: gw_upslope(:)
+      ! r64 is correct
     real(r64), allocatable :: gwres_in(:)
+      ! r64 is correct
     real(r64), allocatable :: gwres_stor(:)
       !! (moved from flowvars) Storage in each GWR
+      ! r64 is correct
     real(r64), allocatable :: gwstor_minarea_wb(:)
+      ! r64 is correct
     real(r64), allocatable :: hru_lateral_flow(:)
+      ! r64 is correct
     real(r64), allocatable :: hru_storage(:)
+      ! r64 is correct
     real(r64), allocatable :: hru_streamflow_out(:)
+      ! r64 is correct
     real(r64), allocatable :: lake_seepage(:)
+      ! r64 is correct
     real(r64), allocatable :: lake_seepage_gwr(:)
+      ! r64 is correct
     real(r64), allocatable :: lake_vol(:)
       !! (moved from flowvars) Storage in each lake using broad-crested weir or gate opening routing
+      ! r64 is correct
 
     contains
       procedure, public :: run => run_Gwflow
