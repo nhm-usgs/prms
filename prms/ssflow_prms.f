@@ -14,10 +14,8 @@
       REAL, SAVE, ALLOCATABLE :: Ssrcoef_lin(:), Ssrcoef_sq(:)
       REAL, SAVE, ALLOCATABLE :: Ssstor_init(:), Ssr2gw_exp(:)
 !   Local Variables
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ssflow_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Soil Zone')
+      CHARACTER(LEN=11), PARAMETER :: MODNAME = 'ssflow_prms'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
       END MODULE PRMS_SSFLOW    
 
 !***********************************************************************
@@ -49,22 +47,23 @@
 !***********************************************************************
       INTEGER FUNCTION ssdecl()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nssr, Print_debug,
-     +    Version_ssflow_prms, Ssflow_prms_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nssr, Version_ssflow_prms,
+     +    Ssflow_prms_nc
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
+! Local Variable
+      INTEGER:: n
 !***********************************************************************
       ssdecl = 1
 
       Version_ssflow_prms =
-     +'$Id: ssflow_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
-      Ssflow_prms_nc = INDEX( Version_ssflow_prms, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
-     +        Version_ssflow_prms(:Ssflow_prms_nc))/=0 ) STOP
-      ENDIF
+     +'$Id: ssflow_prms.f 4773 2012-08-22 23:32:17Z rsregan $'
+      Ssflow_prms_nc = INDEX( Version_ssflow_prms, 'Z' )
+      n = INDEX( Version_ssflow_prms, '.f' ) + 1
+      IF ( declmodule(Version_ssflow_prms(6:n), PROCNAME,
+     +     Version_ssflow_prms(n+2:Ssflow_prms_nc))/=0 ) STOP
 
 ! Declare Variables
       IF ( declvar(MODNAME, 'basin_ssin', 'one', 1, 'double',
@@ -147,7 +146,7 @@
 !***********************************************************************
       INTEGER FUNCTION ssinit()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Nhru, Nssr, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Nssr
       USE PRMS_FLOWVARS, ONLY: Basin_ssstor, Ssres_stor
       USE PRMS_BASIN, ONLY: Timestep, Ssres_area, Hru_ssres, Hru_type,
      +    Basin_area_inv, NEARZERO, Active_hrus, Hru_route_order
@@ -196,8 +195,8 @@
             Ssres_stor(j) = 0.0
           ENDIF
         ELSEIF ( Ssrcoef_lin(j)<NEARZERO ) THEN
-          IF ( Print_debug>-1 ) PRINT *, 'HRU:', j, Ssrcoef_lin(j),
-     +          ' ssrcoef_lin <= 0.0, it is set to last HRU value'
+          PRINT *, 'HRU:', j, Ssrcoef_lin(j),
+     +             ' ssrcoef_lin <= 0.0, it is set to last HRU value'
           IF ( j>1 ) THEN
             Ssrcoef_lin(j) = Ssrcoef_lin(j-1)
           ELSE

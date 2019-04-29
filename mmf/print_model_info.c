@@ -1,5 +1,5 @@
 /*
- * $Id: print_model_info.c 5648 2010-05-28 18:48:15Z markstro $
+ * $Id: print_model_info.c 6903 2012-05-15 17:41:28Z markstro $
  */
 #define PRINT_MODEL_INFO_C
 #include <string.h>
@@ -36,10 +36,11 @@ int print_model_info (void) {
    * write header
    */
 
+	(void)fprintf(model_info_file, "PRMS Module Name File\n");
 	(void)fprintf(model_info_file, "%s\n", model_name);
 	(void)fprintf(model_info_file, "============\n\n");
 
-	(void)fprintf(model_info_file, "Printout of module call order, version, variables, and parameters.\n\n");
+	(void)fprintf(model_info_file, "Module versions used in the application, listed in computation order.\n\n");
 
 	for (i = 0; i < module_db->count; i++) {
 		// print module name

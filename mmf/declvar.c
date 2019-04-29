@@ -6,9 +6,9 @@
  *
  * Returns 0 if successful, 1 otherwise.
 
- * $Id: declvar.c 5702 2010-07-28 20:42:46Z rsregan $
+ * $Id: declvar.c 6387 2012-02-10 20:44:24Z markstro $
  *
-   $Revision: 5702 $
+   $Revision: 6387 $
         $Log: declvar.c,v $
         Revision 1.17  1999/10/22 17:14:35  markstro
         Added private variables
@@ -151,7 +151,7 @@ long declvar (char *module, char *name, char *dimen, long maxsize, char *type,
   long i, size;
 
   PUBVAR **vars, *var;
-//  MODULE_DATA *mod_data;
+  //MODULE_DATA *mod_data;
 
   /*
    * realloc if too large

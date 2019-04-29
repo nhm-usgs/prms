@@ -38,7 +38,7 @@
 !   In the musroute module, czero, cone, and ctwo are solved in
 !   the intialization function
 !
-! rsr, changed nsfres to nsegment, forcing nhru=ngw=nssr, thus don't need
+! rsr, changed nlake to nsegment, forcing nhru=ngw=nssr, thus don't need
 !      ssr_segment and gw_segment
 !      final segment will be the last segment in the order array
 !***********************************************************************
@@ -51,6 +51,8 @@
       REAL, SAVE, ALLOCATABLE :: Czero(:), Cone(:), Ctwo(:)
       REAL, SAVE, ALLOCATABLE :: Pastinflow(:), Pastoutflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:)
+      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'musroute'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Segment_cfs(:), Tosegment_cfs(:)
       REAL, SAVE, ALLOCATABLE :: Seginc_ssflow(:), Seginc_sroff(:)
@@ -60,12 +62,6 @@
       INTEGER, SAVE, ALLOCATABLE :: Tosegment(:), Hru_segment(:)
       INTEGER, SAVE, ALLOCATABLE :: Obsin_segment(:), Segment_type(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='musroute')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Streamflow Routing')
-      
       END MODULE PRMS_MUSROUTE
 
 !***********************************************************************
@@ -97,21 +93,21 @@
 !***********************************************************************
       INTEGER FUNCTION musroute_decl()
       USE PRMS_MUSROUTE
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Print_debug, &
-          Version_musroute, Musroute_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Version_musroute, Musroute_nc
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar, getdim
+      INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
+! Local Variables
+      INTEGER :: i
 !***********************************************************************
       musroute_decl = 1
 
-      Version_musroute = '$Id: musroute.f90 4078 2012-01-05 23:47:36Z rsregan $'
-      Musroute_nc = INDEX( Version_musroute, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME, Version_musroute(:Musroute_nc))/=0 ) STOP
-      ENDIF
+      Version_musroute = '$Id: musroute.f90 4881 2012-10-04 20:37:56Z rsregan $'
+      Musroute_nc = INDEX( Version_musroute, 'Z' )
+      i = INDEX ( Version_musroute, '.f90' ) + 3
+      IF ( declmodule(Version_musroute(6:i), PROCNAME, Version_musroute(i+2:Musroute_nc))/=0 ) STOP
 
       ALLOCATE ( Obsin_segment(Nsegment) )
       IF ( declparam(MODNAME, 'obsin_segment', 'nsegment', 'integer', &
@@ -228,7 +224,8 @@
 !***********************************************************************
       INTEGER FUNCTION musroute_init()
       USE PRMS_MUSROUTE
-      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Nsegmentp1, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Nsegmentp1
+!      USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_BASIN, ONLY: Hru_area, NEARZERO, Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -321,12 +318,12 @@
         ENDDO
       ENDDO
 !      Order(Nsegment) = Final_segment !rsr, don't need, as found above
-      IF ( Print_debug>-1 ) THEN
-        PRINT *, 'Stream Network Routing Order:'
-        WRITE (*, '(10I5)') Order
-        PRINT *, 'tosegment:'
-        WRITE (*, '(10I5)') Tosegment
-      ENDIF
+!      IF ( Print_debug>-1 ) THEN
+!        PRINT *, 'Stream Network Routing Order:'
+!        WRITE (*, '(10I5)') Order
+!        PRINT *, 'tosegment:'
+!        WRITE (*, '(10I5)') Tosegment
+!      ENDIF
       DEALLOCATE ( x_off )
 
       IF ( Timestep==0 ) THEN
@@ -389,9 +386,10 @@
       INTEGER FUNCTION musroute_run()
       USE PRMS_MUSROUTE
       USE PRMS_MODULE, ONLY: Nsegment, Nsegmentp1
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_stflow, Basin_sroff_cfs, &
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_stflow_in, Basin_sroff_cfs, &
           Hru_area, Basin_area_inv, Basin_cfs, Hru_route_order, &
-          Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, Active_hrus, DNEARZERO
+          Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, Active_hrus, DNEARZERO, &
+          Basin_stflow_out
       USE PRMS_CLIMATEVARS, ONLY: Swrad
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Ssres_flow, Sroff, Basin_sroff
       USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday, Cfs_conv, Nowtime, Streamflow_cfs
@@ -489,9 +487,11 @@
 
       ENDDO
 
-      Basin_stflow = Basin_sroff + Basin_gwflow + Basin_ssflow
+      Basin_stflow_in = Basin_sroff + Basin_gwflow + Basin_ssflow
 !      Basin_cfs = Segment_cfs(Final_segment)
       Basin_cfs = Flow_out
+      area_fac = Cfs_conv/Basin_area_inv
+      Basin_stflow_out = Basin_cfs/area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
 
       area_fac = Cfs_conv/Basin_area_inv

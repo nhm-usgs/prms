@@ -19,9 +19,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: readvar.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: readvar.c 6789 2012-04-20 16:51:47Z rsregan $
  *
-   $Revision: 3058 $
+   $Revision: 6789 $
         $Log: readvar.c,v $
         Revision 1.8  1996/04/09 21:04:14  markstro
         (1) Work on control files
@@ -145,9 +145,7 @@ long readvar (char *module, char *name) {
 */
 
 	if (found == -1) {
-		(void)fprintf(stderr, "ERROR - readvar\n");
-		(void)fprintf(stderr, "Attempting to read var '%s'\n", vkey);
-		(void)fprintf(stderr, "Variable not found in data file\n");
+		(void)fprintf(stderr, "\nERROR: Attempting to read variable %s, which is not in Data File\n", vkey);
 		return (1);
 	}
 

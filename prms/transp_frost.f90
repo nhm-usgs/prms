@@ -3,7 +3,7 @@
 ! on time between the last spring and the first fall killing frost.
 !***********************************************************************
       INTEGER FUNCTION transp_frost()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Print_debug, Version_transp_frost, Transp_frost_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru, Version_transp_frost, Transp_frost_nc
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_OBS, ONLY: Jsol
@@ -16,10 +16,8 @@
       INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
 ! Local Variables
       INTEGER :: i, j
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='transp_frost')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Transpiration Period')
+      CHARACTER(LEN=12), PARAMETER :: MODNAME = 'transp_frost'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
 !***********************************************************************
       transp_frost = 1
 
@@ -41,11 +39,10 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp_frost = '$Id: transp_frost.f90 4077 2012-01-05 23:46:06Z rsregan $'
-        Transp_frost_nc = INDEX( Version_transp_frost, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, Version_transp_frost(:Transp_frost_nc))/=0 ) STOP
-        ENDIF
+        Version_transp_frost = '$Id: transp_frost.f90 4231 2012-02-29 21:08:30Z rsregan $'
+        Transp_frost_nc = INDEX( Version_transp_frost, 'Z' )
+        i = INDEX( Version_transp_frost, '.f90' ) + 3
+        IF ( declmodule(Version_transp_frost(6:i), PROCNAME, Version_transp_frost(i+2:Transp_frost_nc))/=0 ) STOP
 
         ALLOCATE ( Spring_frost(Nhru) )
         IF ( declparam(MODNAME, 'spring_frost', 'nhru', 'integer', &

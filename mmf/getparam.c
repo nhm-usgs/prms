@@ -7,9 +7,9 @@
  *
  * Returns 0 if successful, 1 otherwise.
  *
- * $Id: getparam.c 6154 2011-12-13 19:17:49Z markstro $
+ * $Id: getparam.c 7361 2012-08-14 20:28:23Z markstro $
  *
-   $Revision: 6154 $
+   $Revision: 7361 $
         $Log: getparam.c,v $
         Revision 1.10  1997/03/26 17:04:14  markstro
         Added function getdataname
@@ -150,7 +150,7 @@ long getparam (char *module, char *name, int maxsize, char *type, double *pval) 
 
 // check that type is possible
 	if((var_type != M_LONG) && (var_type != M_FLOAT) && (var_type != M_DOUBLE) && (var_type != M_STRING)) {
-		(void)fprintf(stderr, "ERROR: data type for parameter %s in module %s has inconsistent uses.\n\n", pkey, module);
+		(void)fprintf(stderr, "\nERROR: data type for parameter %s in module %s has inconsistent uses.\n", pkey, module);
 		return(1);
 	}
 
@@ -158,18 +158,19 @@ long getparam (char *module, char *name, int maxsize, char *type, double *pval) 
 	param = param_addr(pkey);
 
 	if (param == NULL) {
-		(void)fprintf(stderr, "ERROR: getting parameter %s in module %s, but parameter is not found.\n\n", pkey, module);
+		(void)fprintf(stderr, "\nERROR: getting parameter %s in module %s, but parameter is not found.\n", pkey, module);
 		return(1);
 	}
 
-//  Check to see if the parameter values were set in the parameter file
+//  Check to see if the parameter values were set in the Parameter File
 	if (param->read_in == 0) {
-		(void)fprintf(stderr,"WARNING: parameter %s is used by module %s but values are not set in the parameter file.  Module default values are being used.\n\n", pkey, module);
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", pkey, module);
+		(void)fprintf(stderr,"         Module default values are being used.\n");
 	}
 
 // check that there is enough space allocated in the calling routine
 	if (param->size > maxsize) {
-		(void)fprintf(stderr, "ERROR: parameter %s declared array size is not big enough in module %s.\n\n", pkey, module);
+		(void)fprintf(stderr, "\nERROR: parameter %s declared array size is not big enough in module %s.\n", pkey, module);
 		return(1);
 	}
 
@@ -207,8 +208,10 @@ static long paramcopy (PARAM *param, double *pval, int maxsize) {
 				memcpy ((char *)pval, (char *)param->value, param->size * sizeof(double));
 				break;
 
-			case M_STRING:
-				memcpy ((char *)pval, (char *)param->value, param->size * sizeof(char *));
+			case M_STRING:  // DANGER fortran string size hardwired to 16 characters
+ 	  			for (i = 0; i < param->size; i++) {
+					memcpy ((char *)pval+i, *((char **)param->value+i), 16 * sizeof(char *));
+                }
 				break;
 		}
 	} else {
@@ -459,7 +462,7 @@ long getparamfile_ (char *dinfo, ftnlen len) {
 \*--------------------------------------------------------------------*/
 
 long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, ftnint *pindex, char *pstring,
-	       ftnlen mnamelen, ftnlen pnamelen, ftnlen ptypelen) {
+	       ftnlen mnamelen, ftnlen pnamelen, ftnlen ptypelen, ftnlen pslen) {
 
   char *module, *name, *type;
   int maxsize;
@@ -494,21 +497,23 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
 
   if (param == NULL) {
     (void)fprintf(stderr,
-	    "ERROR - getparamstring - parameter not found.\n");
-    (void)fprintf(stderr, "Key:   '%s'\n", name);
+		"\nERROR: - parameter %s is not found.\n", name);
+//    (void)fprintf(stderr, "Key:   '%s'\n", name);
     return(1);
   }
 
   /*
-  **  Check to see if the parameter values were set in the parameter file
+  **  Check to see if the parameter values were set in the Parameter File
   */
   if (param->read_in == 0) {
-    (void)fprintf(stderr,
-	    "getparamstring - parameter %s is used but values are not set in the parameter file.  Module default values are being used.\n", name);
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", name, module);
+		(void)fprintf(stderr,"         Module default values are being used.\n");
+//	  (void)fprintf(stderr,
+//	    "getparamstring - parameter %s is used but values are not set in the Parameter File.  Module default values are being used.\n", name);
   }
 
 //   strncpy (pstring, (char *)(param->value)[*pindex], 80);
-   strncpy (pstring, *((char **)param->value + *pindex), 80);
+   strncpy (pstring, *((char **)param->value + *pindex), pslen);
 
    return(0);
 

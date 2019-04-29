@@ -14,9 +14,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: load_param.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: load_param.c 6757 2012-04-19 23:30:52Z rsregan $
  *
-   $Revision: 6064 $
+   $Revision: 6757 $
         $Log: load_param.c,v $
         Revision 1.5  1996/02/19 20:00:15  markstro
         Now lints pretty clean
@@ -173,27 +173,26 @@ long load_param (PARAM *param) {
 
 			if (dmin[i] > dmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - min value exceeds max value.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"ERROR: minimum value exceeds maximum value.\n");
+				(void)fprintf(stderr, "Parameter is: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Min and max strings are:\nMin: '%s'\nMax: '%s'\n",
+				    "Default minimum and maximum values are:\nMin: '%s'\nMax: '%s'\n",
 				    param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+//				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
 				(void)fprintf(stderr,
-				    "Min = %lf, max = %lf\n", dmin[i], dmax[i]);
+				    "Assigned minimum value = %lf, Specified maximum value = %lf\n", dmin[i], dmax[i]);
 				return(1);
 			}
 
 			if (dval[i] < dmin[i] || dval[i] > dmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - default value out of range.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"\nERROR: assigned value is out of range for Parameter: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Val, min and max strings are:\nVal: '%s'\nMin: '%s'\nMax: '%s'\n",
+				    "       Default: '%s'\n       Minimum: '%s'\n       Maximum: '%s'\n",
 				    param->value_string, param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+				(void)fprintf(stderr, "       Assigned values are:\n");
 				(void)fprintf(stderr,
-				    "Val = %lf, min = %lf, max = %lf\n",
+				    "       Value = %lf, Minimum = %lf, Maximum = %lf\n",
 				    dval[i], dmin[i], dmax[i]);
 				return(1);
 			}
@@ -212,27 +211,26 @@ long load_param (PARAM *param) {
 
 			if (fmin[i] > fmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - min value exceeds max value.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"ERROR: minimum value exceeds maximum value.\n");
+				(void)fprintf(stderr, "Parameter is: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Min and max strings are:\nMin: '%s'\nMax: '%s'\n",
+				    "Default minimum and maximum values are:\nMin: '%s'\nMax: '%s'\n",
 				    param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+//				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
 				(void)fprintf(stderr,
-				    "Min = %f, max = %f\n", fmin[i], fmax[i]);
+				    "Assigned minimum = %f, maximum = %f\n", fmin[i], fmax[i]);
 				return(1);
 			}
 
 			if (fval[i] < fmin[i] || fval[i] > fmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - default value out of range.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"\nERROR: assigned value is out of range for Parameter: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Val, min and max strings are:\nVal: '%s'\nMin: '%s'\nMax: '%s'\n",
+				    "       Default: '%s'\n       Minimum: '%s'\n       Maximum: '%s'\n",
 				    param->value_string, param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+				(void)fprintf(stderr, "       Assigned values are:\n");
 				(void)fprintf(stderr,
-				    "Val = %f, min = %f, max = %f\n",
+				    "       Value = %f, Minimum = %f, Maximum = %f\n",
 				    fval[i], fmin[i], fmax[i]);
 				return(1);
 			}
@@ -251,27 +249,26 @@ long load_param (PARAM *param) {
 
 			if (lmin[i] > lmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - min value exceeds max value.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"ERROR: minimum value exceeds maximum value.\n");
+				(void)fprintf(stderr, "Parameter is: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Min and max strings are:\nMin: '%s'\nMax: '%s'\n",
+				    "Default Minimum and maximum values are:\nMin: '%s'\nMax: '%s'\n",
 				    param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+//				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
 				(void)fprintf(stderr,
-				    "Min = %ld, max = %ld\n", lmin[i], lmax[i]);
+				    "Assigned minimum = %ld, maximum = %ld\n", lmin[i], lmax[i]);
 				return(1);
 			}
 
 			if (lval[i] < lmin[i] || lval[i] > lmax[i]) {
 				(void)fprintf(stderr,
-				    "ERROR - load_param - default value out of range.\n");
-				(void)fprintf(stderr, "Key is: '%s'\n", param->key);
+					"\nERROR: assigned value is out of range for Parameter: '%s'\n", param->key);
 				(void)fprintf(stderr,
-				    "Val, min and max strings are:\nVal: '%s'\nMin: '%s'\nMax: '%s'\n",
+				    "       Default: '%s'\n       Minimum: '%s'\n       Maximum: '%s'\n",
 				    param->value_string, param->min_string, param->max_string);
-				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
+				(void)fprintf(stderr, "       Assigned values are:\n");
 				(void)fprintf(stderr,
-				    "Val = %ld, min = %ld, max = %ld\n",
+				    "       Value = %ld, Minimum = %ld, Maximum = %ld\n",
 				    lval[i], lmin[i], lmax[i]);
 				return(1);
 			}

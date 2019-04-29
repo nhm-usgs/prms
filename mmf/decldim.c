@@ -14,9 +14,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: decldim.c 5648 2010-05-28 18:48:15Z markstro $
+ * $Id: decldim.c 6868 2012-05-08 21:56:34Z markstro $
  *
-   $Revision: 5648 $
+   $Revision: 6868 $
         $Log: decldim.c,v $
         Revision 1.13  1996/09/10 16:25:21  markstro
         Unknown
@@ -141,10 +141,14 @@ long decldim (char *name, long value, long max, char *descr) {
 * check that name does not already exist
 */
 
-   if (dim_addr(name) != NULL) {
-      (void)fprintf(stderr,
-          "ERROR - decldim - dimension '%s' already exists.\n", name);
-      return(1);
+
+	dim = dim_addr(name);
+   if (dim != NULL) {
+		// This dimension has already been declared. Set the size to the
+		// value of the last call.
+		dim->value = value;
+
+      return(0);
    }
 
    if (Mdebuglevel >= M_FULLDEBUG) {
@@ -242,7 +246,7 @@ long declfix_ (char *dname, ftnint *dval, ftnint *dmax, char *ddescr, ftnlen nam
 long declmodule (char *mod_name, char * modType, char *id) {
 	char *foo, *cp;
 
-	printf ("%s:%s (%s)\n", modType, mod_name, id);
+	printf ("%s %s, version: %s\n", modType, mod_name, id);
 
 	foo = strdup (id);
 	foo = foo + 5;

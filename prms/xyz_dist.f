@@ -12,8 +12,8 @@
 !              revised Wed Mar  8 09:06:18 MST 2000
 !              revised Thu Feb  3 10:00:00 MST 2005
 ! temp_nsta - number of temperature stations used
-! temp_nuse(temp_nsta) - indicies of temp stations used
-! rain_nsta - number of precip stations used
+! temp_nuse(temp_nsta) - indicies of temperature stations used
+! rain_nsta - number of precipitation stations used
 ! rain_nuse (rain_nsta) - indicies of rain stations used
 !rsr, note tmax_allsnow and tmax_allrain assumed to be in Fahrenheit
 !***********************************************************************
@@ -21,6 +21,8 @@
       IMPLICIT NONE
 !   Local Variables
       INTEGER, PARAMETER :: MAXLAPSE = 3
+      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'xyz_dist'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Climate Distribuition'
       INTEGER, SAVE :: Nlapse, Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
@@ -56,12 +58,6 @@
 !     PptMTH = psta_month_ppt
       REAL, SAVE, ALLOCATABLE :: TmaxMTH(:, :), TminMTH(:, :)
       REAL, SAVE, ALLOCATABLE :: PptMTH(:, :)
-
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='xyz_dist')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Climate Distribution')
-      
       END MODULE PRMS_XYZ_DIST
 
 !***********************************************************************
@@ -71,12 +67,14 @@
       USE PRMS_MODULE, ONLY: Process
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: xyzdecl, xyzinit, xyzrun
+      INTEGER, EXTERNAL :: xyzdecl, xyzinit, xyzrun, xyzsetdims
 !***********************************************************************
       xyz_dist = 0
 
       IF ( Process(:3)=='run' ) THEN
         xyz_dist = xyzrun()
+      ELSEIF ( Process(:7)=='setdims' ) THEN
+        xyz_dist = xyzsetdims()
       ELSEIF ( Process(:4)=='decl' ) THEN
         xyz_dist = xyzdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
@@ -84,6 +82,27 @@
       ENDIF
 
       END FUNCTION xyz_dist
+
+!***********************************************************************
+!     xyzsetdims - declares xyz_dist specific dimensions
+!***********************************************************************
+      INTEGER FUNCTION xyzsetdims()
+      USE PRMS_XYZ_DIST, ONLY: Nlapse
+      IMPLICIT NONE
+! Functions
+      INTEGER, EXTERNAL :: declfix
+      EXTERNAL read_error
+!***********************************************************************
+      xyzsetdims = 1
+
+      IF ( declfix('nlapse', 3, 3,
+     +     'Number of lapse rates in X, Y, and Z directions')
+     +     /=0 ) CALL read_error(7, 'nlapse')
+      Nlapse = 3
+
+      xyzsetdims = 0
+      END FUNCTION xyzsetdims
+!***********************************************************************
 
 !***********************************************************************
 !     xyzdecl - set up parameters for temperature computations
@@ -99,31 +118,24 @@
 !***********************************************************************
       INTEGER FUNCTION xyzdecl()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Model, Nhru, Print_debug, Version_xyz_dist,
-     +    Xyz_dist_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Version_xyz_dist, Xyz_dist_nc
       USE PRMS_CLIMATEVARS, ONLY: Ntemp, Nrain
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar, getdim
+      INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
+! Local Variables
+      INTEGER :: n
 !***********************************************************************
       xyzdecl = 1
 
       Version_xyz_dist =
-     +'$Id: xyz_dist.f 4080 2012-01-05 23:49:07Z rsregan $'
-      Xyz_dist_nc = INDEX( Version_xyz_dist, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
-     +        Version_xyz_dist(:Xyz_dist_nc))/=0 ) STOP
-      ENDIF
-
-      Nlapse = getdim('nlapse')
-      IF ( Nlapse==-1 ) CALL read_error(6, 'nlapse')
-      IF ( Nlapse/=3 .AND. Model/=99 ) THEN
-        PRINT *, 'ERROR, xyz_dist expecting nlapse = 3', Nlapse
-        STOP
-      ENDIF
+     +'$Id: xyz_dist.f 4554 2012-06-06 16:42:32Z rsregan $'
+      Xyz_dist_nc = INDEX( Version_xyz_dist, 'Z' )
+      n = INDEX( Version_xyz_dist, '.f' ) + 1
+      IF ( declmodule(Version_xyz_dist(6:n), PROCNAME,
+     +                Version_xyz_dist(n+2:Xyz_dist_nc))/=0 ) STOP
 
       IF ( declvar(MODNAME, 'is_rain_day', 'one', 1, 'integer',
      +     'Flag to indicate if it is raining anywhere in the basin',
@@ -203,7 +215,7 @@
       ALLOCATE ( Rain_STAx(Nrain), Pstaelev(Nrain) )
       IF ( declparam(MODNAME, 'psta_x', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'X for each precip station (albers)',
+     +     'X for each precipitation station (albers)',
      +     'Longitude (X) for each precipitation measurement station'//
      +     ' in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'psta_x')
@@ -211,7 +223,7 @@
       ALLOCATE ( Rain_STAy(Nrain) )
       IF ( declparam(MODNAME, 'psta_y', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'Y for each precip station (albers)',
+     +     'Y for each precipitation station (albers)',
      +     'Latitude (Y) for each precipitation measurement station'//
      +     ' in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'psta_y')
@@ -235,8 +247,9 @@
       ALLOCATE ( Psta_nuse(Nrain), Rain_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
-     +     'The subset of precip stations used in the distribution'//
-     +     ' regression (0=station not used; 1=station used)',
+     +     'The subset of precipitation stations used in the'//
+     +     ' distribution regression (0=station not used;'//
+     +     ' 1=station used)',
      +     'The subset of precipitation measurement stations used in'//
      +     ' the distribution regression (0=station not used;'//
      +     ' 1=station used)',
@@ -245,8 +258,8 @@
       ALLOCATE (Psta_freq_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_freq_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
-     +     'The subset of precip stations used to determine if'//
-     +     ' there is precip in the basin (0=station not used;'//
+     +     'The subset of precipitation stations used to determine if'//
+     +     ' there is distribution in the basin (0=station not used;'//
      +     ' 1=station used)',
      +     'The subset of precipitation measurement stations used to'//
      +     ' determine if there is precipitation in the basin'//
@@ -326,28 +339,32 @@
 
       IF ( declparam(MODNAME, 'tmax_add', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
-     +     'Max temp additive term for climate station transform',
+     +     'Maximum temperature additive term for climate station'//
+     +     ' transform',
      +     'Mean value for the climate station transformation'//
      +     ' equation for maximum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_add')
 
       IF ( declparam(MODNAME, 'tmax_div', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
-     +     'Max temp divisor term for climate station transform',
+     +     'Maximum temperature divisor term for climate station'//
+     +     ' transform',
      +     'Standard deviation for the climate station transformation'//
      +     ' equation for maximum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_div')
 
       IF ( declparam(MODNAME, 'tmin_add', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
-     +     'Min temp additive term for climate station transform',
+     +     'Minimum temperature additive term for climate station'//
+     +     ' transform',
      +     'Mean value for the climate station transformation'//
      +     ' equation for minimum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmin_add')
 
       IF ( declparam(MODNAME, 'tmin_div', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
-     +     'Min temp divisor term for climate station transform',
+     +     'Minimum temperature divisor term for climate station'//
+     +     ' transform',
      +     'Standard deviation for the climate station transformation'//
      +     ' equation for minimum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmin_div')
@@ -660,7 +677,7 @@
       USE PRMS_OBS, ONLY: Tmax, Tmin 
       IMPLICIT NONE
 ! Functions
-      INTRINSIC FLOAT, ABS
+      INTRINSIC FLOAT, ABS, SNGL
       EXTERNAL temp_set
       REAL, EXTERNAL :: c_to_f
 ! Arguments
@@ -671,13 +688,14 @@
       DOUBLE PRECISION, INTENT(IN) :: Temp_meanx, Temp_meany, Temp_meanz
 ! Local Variables
       INTEGER :: i, j, ntmin, ntmax, ii
-      REAL :: tmax_hru, tmin_hru, ztmax, ztmin
+      REAL :: tmax_hru_sngl, tmin_hru_sngl
+      DOUBLE PRECISION :: tmax_hru, tmin_hru, ztmax, ztmin
       DOUBLE PRECISION :: intmax, intmin, xmax, xmin, intercept, x1
       DOUBLE PRECISION :: sumtmin, sumtmax, xtmin, xtmax, ytmin
       DOUBLE PRECISION :: ytmax, stmax, stmin
-      REAL :: zrain, xrain, yrain
-      REAL :: maxlapse1, maxlapse2, maxlapse3
-      REAL :: minlapse1, minlapse2, minlapse3
+      DOUBLE PRECISION :: zrain, xrain, yrain
+      DOUBLE PRECISION :: maxlapse1, maxlapse2, maxlapse3
+      DOUBLE PRECISION :: minlapse1, minlapse2, minlapse3
 !***********************************************************************
       sumtmin = 0.0D0
       sumtmax = 0.0D0
@@ -696,13 +714,13 @@
       minlapse2 = Min_lapse(2)
       minlapse3 = Min_lapse(3)
 
-! Do not Transform the coordinates of the temp stations
+! Do not Transform the coordinates of the temperature stations
 ! until after summing
 
       DO j = 1, Temp_nsta
         i = Temp_nuse(j)
 
-        IF ( Tmax(i)>-89.0 ) THEN
+        IF ( Tmax(i)>-99.0 ) THEN
           ntmax = ntmax + 1
 !         sumtmax = sumtmax + ((Tmax(i)+Tmax_add)/Tmax_div)
           sumtmax = sumtmax + Tmax(i)
@@ -711,7 +729,7 @@
           ztmax = ztmax + Temp_STAelev(i)
         ENDIF
 
-        IF ( Tmin(i)>-89.0 ) THEN
+        IF ( Tmin(i)>-99.0 ) THEN
           ntmin = ntmin + 1
 !         sumtmin = sumtmin + ((Tmin(i)+Tmin_add)/Tmin_div)
           sumtmin = sumtmin + Tmin(i)
@@ -803,7 +821,7 @@
      +              (minlapse3*Solradelev+intmin))*Tmin_div - Tmin_add
 
 !
-!  Compute temperatures at precip stations.
+!  Compute temperatures at distribution stations.
 !
       DO i = 1, Nrain
         zrain = Pstaelev(i)
@@ -847,7 +865,7 @@
         tmax_hru = (tmax_hru*Tmax_div) - Tmax_add
         tmin_hru = (tmin_hru*Tmin_div) - Tmin_add
 !
-!  Temp adjustment by HRU
+!  Temperature adjustment by HRU
 !
         tmax_hru = tmax_hru + Tmax_adj(i)
         tmin_hru = tmin_hru + Tmin_adj(i)
@@ -863,7 +881,9 @@
 !
 !  Now sort out units.
 !
-        CALL temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i),
+        tmax_hru_sngl = SNGL(tmax_hru)
+        tmin_hru_sngl = SNGL(tmin_hru)
+        CALL temp_set(i, tmax_hru_sngl, tmin_hru_sngl,Tmaxf(i),Tminf(i),
      +       Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), Hru_area(i))
       ENDDO
 
@@ -890,7 +910,7 @@
       USE PRMS_OBS, ONLY: Precip, Nowtime, Rain_day
       IMPLICIT NONE
 ! Functions
-      INTRINSIC FLOAT, ABS
+      INTRINSIC FLOAT, ABS, SNGL
       EXTERNAL precip_form
 ! Arguments
 !   Declared Parameters
@@ -903,9 +923,10 @@
 ! Local Variables
       INTEGER :: i, j, err_chk, nppt, nsta_used, ii
 !dbg  INTEGER :: iy, id, im
-      REAL :: intppt, intercept, sppt
+      REAL :: ppt_sngl
+      DOUBLE PRECISION :: intppt, intercept, sppt
       DOUBLE PRECISION :: sum_obs, sumppt, xppt, yppt, zppt
-      REAL :: pptlapse1, pptlapse2, pptlapse3, ppt
+      DOUBLE PRECISION :: pptlapse1, pptlapse2, pptlapse3, ppt
 !***********************************************************************
       pptlapse1 = Ppt_lapse(1)
       pptlapse2 = Ppt_lapse(2)
@@ -957,7 +978,7 @@
         ENDIF
 
         IF ( Precip_xyz(i)<0.0 ) THEN
-        !make sure negative precip values are < -99.0
+        !make sure negative precipitation values are < -99.0
           Precip_xyz(i) = -100.0
         ELSEIF ( Precip_xyz(i)>NEARZERO ) THEN
           IF ( Tmax_rain_sta(i)<=Tmax_allsnow ) THEN
@@ -974,7 +995,7 @@
           ELSE
             Precip_xyz(i) = (Precip_xyz(i)*Adjust_rain) + Precip_xyz(i)
           ENDIF
-        ELSE !ignore very small precip values
+        ELSE !ignore very small precipitation values
           Precip_xyz(i) = 0.0
         ENDIF
 
@@ -1059,9 +1080,10 @@
           ppt = ppt*Ppt_div - Ppt_add
 
 !******Ignore small amounts of precipitation on HRU
-          IF ( ppt>NEARZERO ) THEN
+          IF ( ppt>DNEARZERO ) THEN
             IF ( Precip_units==1 ) ppt = ppt*MM2INCH
-            CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i),
+            ppt_sngl = SNGL(ppt)
+            CALL precip_form(ppt_sngl, Hru_ppt(i), Hru_rain(i),
      +           Hru_snow(i), Tmaxf(i), Tminf(i), Pptmix(i),
      +           Newsnow(i), Prmx(i), Tmax_allrain, 1.0, 1.0,
      +           Adjmix_rain, Hru_area(i), sum_obs)
@@ -1097,7 +1119,7 @@
       DOUBLE PRECISION, INTENT(OUT) :: Temp_meanx, Temp_meany,Temp_meanz
 ! Local Variables
       INTEGER :: i, j
-      REAL :: rain_n, temp_n
+      DOUBLE PRECISION :: rain_n, temp_n
 !***********************************************************************
       rain_n = 1.0D0/FLOAT(Rain_nsta)
       temp_n = 1.0D0/FLOAT(Temp_nsta)

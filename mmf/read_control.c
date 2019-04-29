@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: read_control.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: read_control.c 6786 2012-04-20 16:25:53Z rsregan $
  *
-   $Revision: 6064 $
+   $Revision: 6786 $
         $Log: read_control.c,v $
         Revision 1.21  1996/08/28 15:24:10  markstro
         Unknown
@@ -158,12 +158,12 @@ static char *rc (char *control_name) {
 **   get type
 */
       if (!fgets_rc (line, MAXDATALNLEN, control_file)) {
-         (void)sprintf (buf, "read_control: reading type; key = %s", key);
+         (void)sprintf (buf, "WARNING: reading type; key = %s", key);
          return (buf);
       }
 
       if (!(type = atol(line))) {
-         (void)sprintf (buf, "read_control: invalid type; key = %s, line = %s", key, line);
+         (void)sprintf (buf, "WARNING: invalid type; key = %s, line = %s", key, line);
          return (buf);
       }
 
@@ -174,7 +174,7 @@ static char *rc (char *control_name) {
      }
      
 	  if (cp->set_in_file > 0) {
-		   printf ("\n\nread_control: %s is duplicated in the control file %s.\n\n\n", key, control_name);
+		   printf ("\n\nWARNING: %s is duplicated in the control file %s.\n\n", key, control_name);
 	  }
 
 //  Set the values to what was just read from the file

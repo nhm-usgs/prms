@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: setup_cont.c 6341 2012-01-27 23:39:55Z rsregan $
+ * $Id: setup_cont.c 7488 2012-09-14 17:58:03Z rsregan $
  *
-   $Revision: 6341 $
+   $Revision: 7488 $
         $Log: setup_cont.c,v $
         Revision 1.31  1999/08/24 16:34:16  markstro
         Version 1.1.1
@@ -137,7 +137,7 @@
 extern void decl_control_string (char *key, char *valstr);
 extern void decl_control_int_array (char *key, long size, long *valstr);
 extern void decl_control_float_array (char *key, long size, float *valstr);
-extern void decl_control_string_array (char *valstr, char *key, long size);
+extern void decl_control_string_array (char *key, long size, char *valstr);
 
 /**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
@@ -166,7 +166,7 @@ void setup_cont (void) {
         decl_control_string ("temp_module", "temp_1sta");
         decl_control_string ("et_module", "potet_jh");
         decl_control_string ("srunoff_module", "srunoff_smidx");
-        decl_control_string ("solrad_module", "ddsolrad_hru");
+        decl_control_string ("solrad_module", "ddsolrad");
         decl_control_string ("soltab_module", "soltab");
         decl_control_string ("soilzone_module", "soilzone");
         decl_control_string ("stats_module", "null");
@@ -177,11 +177,12 @@ void setup_cont (void) {
         decl_control_string ("transp_module", "transp_tindex");
         decl_control_string ("gsflow_output_file", "gsflow.out");
         decl_control_string ("gsflow_csv_file", "gsflow.csv");
+        decl_control_string ("capillary_module", "null");
 
 /*
         cval = (char *)umalloc (sizeof (long));
         cval[0] = "recharge";
-        decl_control_string_array (cval, "mapOutVar_names", 20);
+        decl_control_string_array ("mapOutVar_names", 20, cval);
 */
 
         lval = (long *)umalloc (sizeof (long));
@@ -226,6 +227,62 @@ void setup_cont (void) {
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
+		decl_control_int_array ("dyn_imperv_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_intcp_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_covden_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_covtype_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_transp_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_potet_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_soil_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_radtrncf_flag", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dyn_dprst_flag", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("segment_transferON_OFF", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("gwr_transferON_OFF", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("external_transferON_OFF", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("lake_transferON_OFF", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dprst_transferON_OFF", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
 		decl_control_int_array ("seg2hru_flag", 1, lval);
 
 		lval = (long *)umalloc (sizeof (long));
@@ -236,10 +293,6 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("mbInit_flag", 1, lval);
 
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("gwflow_flag", 1, lval);
-
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("musroute_flag", 1, lval);
@@ -247,10 +300,6 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("orad_flag", 1, lval);
-
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("app_div_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -263,20 +312,38 @@ void setup_cont (void) {
 **	file names
 */
         decl_control_string ("executable_desc", "MOWS executable");
-        decl_control_string ("executable_model", "prms-iv");
+        decl_control_string ("executable_model", "prmsIV");
         decl_control_string ("data_file", "prms.data");
         decl_control_string ("param_file", "prms.params");
         decl_control_string ("var_save_file", "prms_ic.out");
         decl_control_string ("var_init_file", "prms_ic.in");
         //decl_control_string ("stats_output_file", "stats.out");
-        decl_control_string ("stat_var_file", "tsv.out");
-        decl_control_string ("ani_output_file", "tsd.out");
+        decl_control_string ("stat_var_file", "statvar.out");
+        decl_control_string ("ani_output_file", "animation.out");
         decl_control_string ("model_output_file", "prms.out");
         decl_control_string ("tmax_day", "tmax.day");
         decl_control_string ("tmin_day", "tmin.day");
         decl_control_string ("precip_day", "precip.day");
         decl_control_string ("swrad_day", "swrad.day");
         decl_control_string ("potet_day", "potet.day");
+        decl_control_string ("transp_day", "transp.day");
+        decl_control_string ("covden_dynamic", "dyncovden");
+        decl_control_string ("dprst_area_dynamic", "dyndprst");
+        decl_control_string ("dprst_depth_dynamic", "dyndprst");
+		decl_control_string ("snow_intcp_dynamic", "dynsnowintcp");
+		decl_control_string ("srain_intcp_dynamic", "dynsrainintcp");
+		decl_control_string ("wrain_intcp_dynamic", "dynwrainintcp");
+		decl_control_string ("imperv_frac_dynamic", "dynimperv");
+		decl_control_string ("imperv_stor_dynamic", "dynimperv");
+		decl_control_string ("covtype_dynamic", "dyncovtype");
+		decl_control_string ("jhcoef_dynamic", "dynjhcoef");
+		decl_control_string ("potet_coef_dynamic", "dynpotetcoef");
+		decl_control_string ("transpbeg_dynamic", "dyntranspbeg");
+		decl_control_string ("transpend_dynamic", "dyntranspend");
+		decl_control_string ("soilrechr_dynamic", "dynsoilrechr");
+		decl_control_string ("soilmoist_dynamic", "dynsoilmoist");
+		decl_control_string ("radtrncf_dynamic", "dynradtrncf");
+		decl_control_string ("csv_output_file", "prms_summary.csv");
 /*
 **	run start and end times
 */
@@ -358,6 +425,10 @@ void setup_cont (void) {
 		lval[0] = 50;
         decl_control_int_array ("dispGraphsBuffSize", 1, lval);
 
+// CSV output
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+        decl_control_int_array ("csvON_OFF", 1, lval);
 /*
 **  Env file
 */
@@ -377,4 +448,3 @@ void setup_cont (void) {
 /**7****************** LOCAL FUNCTION DEFINITIONS *********************/
 
 /**8************************** TEST DRIVER ****************************/
-

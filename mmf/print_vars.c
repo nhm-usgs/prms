@@ -1,9 +1,9 @@
 /**************************************************************************
  * print_vars.c: prints the var data base to a file
  *
- * $Id: print_vars.c 5644 2010-05-25 13:32:09Z markstro $
+ * $Id: print_vars.c 6757 2012-04-19 23:30:52Z rsregan $
  *
-   $Revision: 5644 $
+   $Revision: 6757 $
         $Log: print_vars.c,v $
         Revision 1.10  1999/10/22 17:14:37  markstro
         Added private variables
@@ -76,10 +76,10 @@ int print_vars (void) {
    * write header
    */
 
-  (void)fprintf(var_file, "Program MMS                     \n");
+  (void)fprintf(var_file, "PRMS\n");
   (void)fprintf(var_file, "============\n\n");
 
-  (void)fprintf(var_file, "Printout of variables after a run.\n\n");
+  (void)fprintf(var_file, "Description of variables required in the application.\n\n");
 
   /*
    * write file names

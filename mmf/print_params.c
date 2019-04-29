@@ -1,9 +1,9 @@
 /**************************************************************************
  * print_params.c: prints the param data base to a file
  *
- * $Id: print_params.c 5648 2010-05-28 18:48:15Z markstro $
+ * $Id: print_params.c 6757 2012-04-19 23:30:52Z rsregan $
  *
-   $Revision: 5648 $
+   $Revision: 6757 $
         $Log: print_params.c,v $
         Revision 1.15  2001/11/27 16:00:10  markstro
         Unknown
@@ -82,7 +82,7 @@ int print_params (void) {
 
   if ((param_file = fopen (pathname, "w")) == NULL) {
     (void)fprintf(stderr,
-	    "ERROR - print_params - creating file '%s'\n", pathname);
+		"ERROR: creating Parameter Name File: '%s'\n", pathname);
     perror("");
     return(1);
   }
@@ -91,10 +91,10 @@ int print_params (void) {
    * write header
    */
 
-  (void)fprintf(param_file, "Program MMS                     \n");
+  (void)fprintf(param_file, "PRMS\n");
   (void)fprintf(param_file, "============\n\n");
 
-  (void)fprintf(param_file, "Printout of parameters.\n\n");
+  (void)fprintf(param_file, "Description of dimensions and parameters required in the application.\n\n");
 
   /*
    * write file name

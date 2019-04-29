@@ -40,12 +40,8 @@
       DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682,
      +          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73,
      +          .734, .738, .742, .746, .75/
-     
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ddsolrad')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Solar Radiation')
-      
+      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'ddsolrad'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ddsolrad = 1
 
@@ -127,12 +123,11 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_ddsolrad =
-     +'$Id: ddsolrad.f 3788 2011-10-20 20:29:06Z rsregan $'
-        Ddsolrad_nc = INDEX( Version_ddsolrad, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME,
-     +         Version_ddsolrad(:Ddsolrad_nc))/=0 ) STOP
-        ENDIF
+     +'$Id: ddsolrad.f 4233 2012-02-29 21:27:34Z rsregan $'
+        Ddsolrad_nc = INDEX( Version_ddsolrad, 'Z' )
+        k = INDEX( Version_ddsolrad, '.f' ) + 1
+        IF ( declmodule(Version_ddsolrad(6:k), PROCNAME,
+     +       Version_ddsolrad(k+2:Ddsolrad_nc))/=0 ) STOP
 
 ! Declare Parameters
         ALLOCATE ( Dday_slope(12) )

@@ -24,6 +24,8 @@
      +' ====================================================='//
      +'=============================================================='//
      +'========================'
+      CHARACTER(LEN=9), PARAMETER :: MODNAME = 'basin_sum'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'
 !   Declared Private Variables
       INTEGER, SAVE :: Totdays
       LOGICAL, SAVE :: Dprt, Mprt, Yprt, Tprt
@@ -44,27 +46,20 @@
       REAL, SAVE :: Basin_intcp_evap_yr, Basin_intcp_evap_tot
       REAL, SAVE :: Obsq_inches_yr, Obsq_inches_tot
 !   Declared Variables
-      REAL, SAVE :: Basin_net_ppt_mo
-      REAL, SAVE :: Basin_max_temp_mo, Basin_min_temp_mo, Basin_potet_mo
-      REAL, SAVE :: Basin_actet_mo, Basin_et_mo, Basin_ppt_mo
-      REAL, SAVE :: Basin_snowmelt_mo, Basin_gwflow_mo, Basin_ssflow_mo
-      REAL, SAVE :: Basin_sroff_mo, Basin_stflow_mo, Obsq_inches_mo
-      REAL, SAVE :: Basin_intcp_evap_mo, Basin_storage, Basin_et
-      REAL, SAVE, ALLOCATABLE :: Hru_et_yr(:)
-      REAL, SAVE :: Basin_storvol, Obsq_inches
-!   Declared Variables from other modules - srunoff
-      DOUBLE PRECISION :: Basin_dprst_evap, Basin_dprst_volcl
-      DOUBLE PRECISION :: Basin_dprst_volop
+      DOUBLE PRECISION, SAVE :: Basin_net_ppt_mo, Obsq_inches_mo
+      DOUBLE PRECISION, SAVE :: Basin_max_temp_mo, Basin_min_temp_mo
+      DOUBLE PRECISION, SAVE :: Basin_actet_mo, Basin_et_mo
+      DOUBLE PRECISION, SAVE :: Basin_snowmelt_mo, Basin_gwflow_mo
+      DOUBLE PRECISION, SAVE :: Basin_sroff_mo, Basin_stflow_mo
+      DOUBLE PRECISION, SAVE :: Basin_intcp_evap_mo, Basin_storage
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_et_yr(:)
+      DOUBLE PRECISION, SAVE :: Basin_storvol, Basin_potet_mo, Basin_et
+      DOUBLE PRECISION, SAVE :: Basin_ssflow_mo, Basin_ppt_mo
+      REAL, SAVE :: Obsq_inches
 !   Declared Variables from other modules - strmflow
-      DOUBLE PRECISION :: Basin_sfres_stor, Basin_2ndstflow
+      DOUBLE PRECISION :: Basin_lake_stor, Basin_2ndstflow
 !   Declared Parameters
       INTEGER, SAVE :: Print_type, Print_freq, Outlet_sta
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='basin_sum')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Summary')
-      
       END MODULE PRMS_BASINSUM
 
 !***********************************************************************
@@ -95,8 +90,7 @@
 !***********************************************************************
       INTEGER FUNCTION sumbdecl()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Model, Nhru, Print_debug,
-     +    Version_basin_sum, Basin_sum_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Version_basin_sum,Basin_sum_nc
       USE PRMS_OBS, ONLY: Nobs
       IMPLICIT NONE
 ! Functions
@@ -104,90 +98,91 @@
       INTEGER, EXTERNAL :: declmodule, declpri, declparam, declvar
       INTEGER, EXTERNAL :: getdim
       EXTERNAL read_error
+! Local Variables
+      INTEGER :: n
 !***********************************************************************
       sumbdecl = 1
 
       Version_basin_sum =
-     +'$Id: basin_sum.f 4077 2012-01-05 23:46:06Z rsregan $'
-      IF ( Print_debug>-1 ) THEN
-        Basin_sum_nc = INDEX( Version_basin_sum, ' $' ) + 1
-        IF ( declmodule(MODNAME, PROCNAME,
-     +   Version_basin_sum(:Basin_sum_nc))/=0 ) STOP
-      ENDIF
+     +'$Id: basin_sum.f 4747 2012-08-17 19:44:44Z rsregan $'
+      Basin_sum_nc = INDEX( Version_basin_sum, 'Z' )
+      n = INDEX( Version_basin_sum, '.f' ) + 1
+      IF ( declmodule(Version_basin_sum(6:n), PROCNAME,
+     +                Version_basin_sum(n+2:Basin_sum_nc))/=0 ) STOP
 
       IF ( declpri('sumb_last_basin_stor', 1, 'real', Last_basin_stor)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_watbal_sum', 1, 'real', Watbal_sum)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_obs_runoff_mo', 1, 'real', Obs_runoff_mo)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_cfs_mo', 1, 'real', Basin_cfs_mo)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_obs_runoff_yr', 1, 'real', Obs_runoff_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_cfs_yr', 1, 'real', Basin_cfs_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_net_ppt_yr', 1, 'real', Basin_net_ppt_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_max_temp_yr', 1, 'real',
-     +     Basin_max_temp_yr).NE.0 ) RETURN
+     +     Basin_max_temp_yr)/=0 ) RETURN
       IF ( declpri('sumb_basin_min_temp_yr', 1, 'real',
-     +     Basin_min_temp_yr).NE.0 ) RETURN
+     +     Basin_min_temp_yr)/=0 ) RETURN
       IF ( declpri('sumb_basin_potet_yr', 1, 'real', Basin_potet_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_actet_yr', 1, 'real', Basin_actet_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_snowmelt_yr', 1, 'real',
-     +     Basin_snowmelt_yr).NE.0 ) RETURN
+     +     Basin_snowmelt_yr)/=0 ) RETURN
       IF ( declpri('sumb_basin_gwflow_yr', 1, 'real', Basin_gwflow_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_ssflow_yr', 1, 'real', Basin_ssflow_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_sroff_yr', 1, 'real', Basin_sroff_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_ppt_yr', 1, 'real', Basin_ppt_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_et_yr', 1, 'real', Basin_et_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_stflow_yr', 1, 'real', Basin_stflow_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_obsq_inches_yr', 1, 'real', Obsq_inches_yr)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_intcp_evap_yr', 1, 'real',
-     +     Basin_intcp_evap_yr).NE.0 ) RETURN
+     +     Basin_intcp_evap_yr)/=0 ) RETURN
       IF ( declpri('sumb_obs_runoff_tot', 1, 'real', Obs_runoff_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_cfs_tot', 1, 'real', Basin_cfs_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_ppt_tot', 1, 'real', Basin_ppt_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_net_ppt_tot', 1, 'real',
-     +     Basin_net_ppt_tot).NE.0 ) RETURN
+     +     Basin_net_ppt_tot)/=0 ) RETURN
       IF ( declpri('sumb_basin_max_temp_tot', 1, 'real',
-     +     Basin_max_temp_tot).NE.0 ) RETURN
+     +     Basin_max_temp_tot)/=0 ) RETURN
       IF ( declpri('sumb_basin_min_temp_tot', 1, 'real',
-     +     Basin_min_temp_tot).NE.0 ) RETURN
+     +     Basin_min_temp_tot)/=0 ) RETURN
       IF ( declpri('sumb_basin_potet_tot', 1, 'real', Basin_potet_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_actet_tot', 1, 'real', Basin_actet_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_et_tot', 1, 'real', Basin_et_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_snowmelt_tot', 1, 'real',
-     +     Basin_snowmelt_tot).NE.0 ) RETURN
+     +     Basin_snowmelt_tot)/=0 ) RETURN
       IF ( declpri('sumb_basin_gwflow_tot', 1, 'real', Basin_gwflow_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_ssflow_tot', 1, 'real', Basin_ssflow_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_sroff_tot', 1, 'real', Basin_sroff_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_stflow_tot', 1, 'real', Basin_stflow_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_obsq_inches_tot', 1, 'real', Obsq_inches_tot)
-     +     .NE.0 ) RETURN
+     +     /=0 ) RETURN
       IF ( declpri('sumb_basin_intcp_evap_tot', 1, 'real',
-     +     Basin_intcp_evap_tot).NE.0 ) RETURN
-      IF ( declpri('sumb_totdays', 1, 'integer', Totdays).NE.0 ) RETURN
+     +     Basin_intcp_evap_tot)/=0 ) RETURN
+      IF ( declpri('sumb_totdays', 1, 'integer', Totdays)/=0 ) RETURN
 
 ! declare parameters
       IF ( Nobs>0 .OR. Model==99 ) THEN
@@ -196,7 +191,7 @@
      +       'Index of measurement station to use for basin outlet',
      +       'Index of measured streamflow station corresponding to'//
      +       ' the basin outlet',
-     +       'none').NE.0 ) CALL read_error(1, 'outlet_sta')
+     +       'none')/=0 ) CALL read_error(1, 'outlet_sta')
       ENDIF
 
       IF ( declparam(MODNAME, 'print_type', 'one', 'integer',
@@ -205,7 +200,7 @@
      +     'Flag to select the type of results written to the output'//
      +     ' file (0=measured and simulated flow only;'//
      +     ' 1=water balance table; 2=detailed output)',
-     +     'none').NE.0 ) CALL read_error(1, 'print_type')
+     +     'none')/=0 ) CALL read_error(1, 'print_type')
 
       IF ( declparam(MODNAME, 'print_freq', 'one', 'integer',
      +     '1', '0', '15',
@@ -214,29 +209,29 @@
      +     ' add index numbers, e.g., daily plus yearly = 10;'//
      +     ' yearly plus total = 3 (0=none; 1=run totals; 2=yearly;'//
      +     ' 4=monthly; 8=daily; or additive combinations)',
-     +     'none').NE.0 ) CALL read_error(1, 'print_freq')
+     +     'none')/=0 ) CALL read_error(1, 'print_freq')
 
-      IF ( declvar(MODNAME, 'basin_intcp_evap_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_intcp_evap_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average interception evaporation',
      +     'inches',
-     +     Basin_intcp_evap_mo).NE.0 )
+     +     Basin_intcp_evap_mo)/=0 )
      +     CALL read_error(3, 'basin_intcp_evap_mo')
 
-      IF ( declvar(MODNAME, 'basin_storage', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_storage', 'one', 1, 'double',
      +     'Basin area-weighted average storage in all water'//
      +     ' storage reservoirs',
      +     'inches',
-     +     Basin_storage).NE.0 ) CALL read_error(3, 'basin_storage')
+     +     Basin_storage)/=0 ) CALL read_error(3, 'basin_storage')
 
 !******************basin_storage volume:
-      IF ( declvar(MODNAME, 'basin_storvol', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_storvol', 'one', 1, 'double',
      +     'Basin area-weighted average storage volume in all'//
      +     ' water storage reservoirs',
      +     'acre-inches',
-     +     Basin_storvol).NE.0 ) CALL read_error(3, 'basin_storvol')
+     +     Basin_storvol)/=0 ) CALL read_error(3, 'basin_storvol')
 
       ! kept for downward compatibility, set equal to basin_actet
-      IF ( declvar(MODNAME, 'basin_et', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_et', 'one', 1, 'double',
      +     'Basin area-weighted average actual ET',
      +     'inches',
      +     Basin_et)/=0 ) CALL read_error(3, 'basin_et')
@@ -244,82 +239,82 @@
       IF ( declvar(MODNAME, 'obsq_inches', 'one', 1, 'real',
      +     'Measured streamflow at specified outlet station',
      +     'inches',
-     +     Obsq_inches).NE.0 ) CALL read_error(3, 'obsq_inches')
+     +     Obsq_inches)/=0 ) CALL read_error(3, 'obsq_inches')
 
-      IF ( declvar(MODNAME, 'basin_ppt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_ppt_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average precipitation',
      +     'inches',
-     +     Basin_ppt_mo).NE.0 ) CALL read_error(3, 'basin_ppt_mo')
+     +     Basin_ppt_mo)/=0 ) CALL read_error(3, 'basin_ppt_mo')
 
-      IF ( declvar(MODNAME, 'basin_net_ppt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_net_ppt_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average net precipitation',
      +     'inches',
-     +     Basin_net_ppt_mo).NE.0 )
+     +     Basin_net_ppt_mo)/=0 )
      +     CALL read_error(3, 'basin_net_ppt_mo')
 
-      IF ( declvar(MODNAME, 'basin_max_temp_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_max_temp_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average maximum air temperature',
      +     'degrees',
-     +     Basin_max_temp_mo).NE.0 )
+     +     Basin_max_temp_mo)/=0 )
      +     CALL read_error(3, 'basin_max_temp_mo')
 
-      IF ( declvar(MODNAME, 'basin_min_temp_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_min_temp_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average minimum air temperature',
      +     'degrees',
-     +     Basin_min_temp_mo).NE.0 )
+     +     Basin_min_temp_mo)/=0 )
      +     CALL read_error(3, 'basin_min_temp_mo')
 
-      IF ( declvar(MODNAME, 'basin_potet_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_potet_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average potential ET',
      +     'inches',
-     +     Basin_potet_mo).NE.0 ) CALL read_error(3, 'basin_potet_mo')
+     +     Basin_potet_mo)/=0 ) CALL read_error(3, 'basin_potet_mo')
 
-      IF ( declvar(MODNAME, 'basin_actet_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_actet_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average actual ET',
      +     'inches',
-     +     Basin_actet_mo).NE.0 ) CALL read_error(3, 'basin_actet_mo')
+     +     Basin_actet_mo)/=0 ) CALL read_error(3, 'basin_actet_mo')
 
-      IF ( declvar(MODNAME, 'basin_et_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_et_mo', 'one', 1, 'double',
      +     'Total monthly basin_et',
      +     'inches',
-     +     Basin_et_mo).NE.0 ) RETURN
+     +     Basin_et_mo)/=0 ) RETURN
 
-      IF ( declvar(MODNAME, 'basin_snowmelt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_snowmelt_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average snowmelt',
      +     'inches',
-     +     Basin_snowmelt_mo).NE.0 )
+     +     Basin_snowmelt_mo)/=0 )
      +     CALL read_error(3, 'basin_snowmelt_mo')
 
-      IF ( declvar(MODNAME, 'basin_gwflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_gwflow_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average groundwater discharge',
      +     'inches',
-     +     Basin_gwflow_mo).NE.0 ) CALL read_error(3, 'basin_gwflow_mo')
+     +     Basin_gwflow_mo)/=0 ) CALL read_error(3, 'basin_gwflow_mo')
 
-      IF ( declvar(MODNAME, 'basin_ssflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_ssflow_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average interflow',
      +     'inches',
-     +     Basin_ssflow_mo).NE.0 ) CALL read_error(3, 'basin_ssflow_mo')
+     +     Basin_ssflow_mo)/=0 ) CALL read_error(3, 'basin_ssflow_mo')
 
-      IF ( declvar(MODNAME, 'basin_sroff_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_sroff_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average surface runoff',
      +     'inches',
-     +     Basin_sroff_mo).NE.0 ) CALL read_error(3, 'basin_sroff_mo')
+     +     Basin_sroff_mo)/=0 ) CALL read_error(3, 'basin_sroff_mo')
 
-      IF ( declvar(MODNAME, 'basin_stflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_stflow_mo', 'one', 1, 'double',
      +     'Monthly area-weighted average simulated streamflow',
      +     'inches',
-     +     Basin_stflow_mo).NE.0 ) CALL read_error(3, 'basin_stflow_mo')
+     +     Basin_stflow_mo)/=0 ) CALL read_error(3, 'basin_stflow_mo')
 
-      IF ( declvar(MODNAME, 'obsq_inches_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'obsq_inches_mo', 'one', 1, 'double',
      +     'Measured streamflow at specified outlet station',
      +     'inches',
-     +     Obsq_inches_mo).NE.0 ) CALL read_error(3, 'obsq_inches_mo')
+     +     Obsq_inches_mo)/=0 ) CALL read_error(3, 'obsq_inches_mo')
 
       ALLOCATE (Hru_et_yr(Nhru))
-      IF ( declvar(MODNAME, 'hru_et_yr', 'nhru', Nhru, 'real',
+      IF ( declvar(MODNAME, 'hru_et_yr', 'nhru', Nhru, 'double',
      +     'Yearly area-weighted average actual ET for each HRU',
      +     'inches',
-     +     Hru_et_yr).NE.0 ) CALL read_error(3, 'hru_et_yr')
+     +     Hru_et_yr)/=0 ) CALL read_error(3, 'hru_et_yr')
 
       sumbdecl = 0
       END FUNCTION sumbdecl
@@ -330,10 +325,11 @@
 !***********************************************************************
       INTEGER FUNCTION sumbinit()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Strmflow_flag, Dprst_flag, Print_debug
+      USE PRMS_MODULE, ONLY: Strmflow_flag, Print_debug
       USE PRMS_BASIN, ONLY: Timestep, Endtime
       USE PRMS_FLOWVARS, ONLY: Basin_imperv_stor, Basin_soil_moist,
-     +    Basin_ssstor
+     +    Basin_ssstor, Basin_dprst_volcl, Basin_dprst_volop,
+     +    Basin_dprst_evap 
       USE PRMS_OBS, ONLY: Nobs
       USE PRMS_INTCP, ONLY: Basin_intcp_stor
       USE PRMS_SNOW, ONLY: Basin_pweqv
@@ -349,7 +345,7 @@
 
       IF ( Nobs>0 ) THEN
         IF ( getparam(MODNAME, 'outlet_sta', 1, 'integer', Outlet_sta)
-     +       .NE.0 ) CALL read_error(2, 'outlet_sta')
+     +       /=0 ) CALL read_error(2, 'outlet_sta')
         IF ( Outlet_sta<1 .OR. Outlet_sta>Nobs ) THEN
           PRINT *, 'Warning, invalid value specified for outlet_sta:',
      +             Outlet_sta, ' set to nobs:', Nobs
@@ -358,48 +354,30 @@
       ENDIF
 
       IF ( getparam(MODNAME, 'print_type', 1, 'integer', Print_type)
-     +     .NE.0 ) CALL read_error(2, 'print_type')
+     +     /=0 ) CALL read_error(2, 'print_type')
 
       IF ( getparam(MODNAME, 'print_freq', 1, 'integer', Print_freq)
-     +     .NE.0 ) CALL read_error(2, 'print_freq')
+     +     /=0 ) CALL read_error(2, 'print_freq')
 
       IF ( Strmflow_flag==2 ) THEN
-        IF ( getvar(MODNAME, 'basin_sfres_stor', 1, 'double',
-     +       Basin_sfres_stor).NE.0 )
-     +       CALL read_error(4, 'basin_sfres_stor')
+        IF ( getvar(MODNAME, 'basin_lake_stor', 1, 'double',
+     +       Basin_lake_stor)/=0 )
+     +       CALL read_error(4, 'basin_lake_stor')
       ELSE
-        Basin_sfres_stor = 0.0D0
+        Basin_lake_stor = 0.0D0
       ENDIF
 
 !***********************************************************************
-!    Next two variables for depression storage
-      IF ( Dprst_flag>0 ) THEN
-        IF ( getvar(MODNAME, 'basin_dprst_volcl', 1, 'double', 
-     +       Basin_dprst_volcl).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_volcl')
-
-        IF ( getvar(MODNAME, 'basin_dprst_volop', 1, 'double',
-     +       Basin_dprst_volop).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_volop')
-
-        IF ( getvar(MODNAME, 'basin_dprst_evap', 1, 'double', 
-     +       Basin_dprst_evap).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_evap')
-      ELSE
-        Basin_dprst_volcl = 0.0D0
-        Basin_dprst_volop = 0.0D0
-        Basin_dprst_evap = 0.0D0
-      ENDIF
 
       Last_basin_stor = Basin_soil_moist + Basin_intcp_stor +
      +                  Basin_gwstor + Basin_ssstor + Basin_pweqv +
-     +                  Basin_imperv_stor + Basin_sfres_stor +
+     +                  Basin_imperv_stor + Basin_lake_stor +
      +                  Basin_dprst_volop + Basin_dprst_volcl
 
 !******Set daily print switch
       pftemp = Print_freq
 
-      IF ( pftemp.GE.8 ) THEN
+      IF ( pftemp>7 ) THEN
         Dprt = .TRUE.
         pftemp = pftemp - 8
       ELSE
@@ -407,7 +385,7 @@
       ENDIF
 
 !******Set monthly print switch
-      IF ( pftemp.GE.4 ) THEN
+      IF ( pftemp>3 ) THEN
         Mprt = .TRUE.
         pftemp = pftemp - 4
       ELSE
@@ -415,7 +393,7 @@
       ENDIF
 
 !******Set yearly print switch
-      IF ( pftemp.GE.2 ) THEN
+      IF ( pftemp>1 ) THEN
         Yprt = .TRUE.
         pftemp = pftemp - 2
       ELSE
@@ -423,7 +401,7 @@
       ENDIF
 
 !******Set total print switch
-      IF ( pftemp.EQ.1 ) THEN
+      IF ( pftemp==1 ) THEN
         Tprt = .TRUE.
       ELSE
         Tprt = .FALSE.
@@ -436,20 +414,20 @@
 !******Zero all mo yr to that aren't variables
         Obs_runoff_mo = 0.
         Basin_cfs_mo = 0.
-        Basin_ppt_mo = 0.
-        Basin_net_ppt_mo = 0.
-        Basin_max_temp_mo = 0.
-        Basin_min_temp_mo = 0.
-        Basin_intcp_evap_mo = 0.
-        Basin_potet_mo = 0.
-        Basin_actet_mo = 0.
-        Basin_et_mo = 0.
-        Basin_snowmelt_mo = 0.
-        Basin_gwflow_mo = 0.
-        Basin_ssflow_mo = 0.
-        Basin_sroff_mo = 0.
-        Basin_stflow_mo = 0.
-        Obsq_inches_mo = 0.
+        Basin_ppt_mo = 0.0D0
+        Basin_net_ppt_mo = 0.0D0
+        Basin_max_temp_mo = 0.0D0
+        Basin_min_temp_mo = 0.0D0
+        Basin_intcp_evap_mo = 0.0D0
+        Basin_potet_mo = 0.0D0
+        Basin_actet_mo = 0.0D0
+        Basin_et_mo = 0.0D0
+        Basin_snowmelt_mo = 0.0D0
+        Basin_gwflow_mo = 0.0D0
+        Basin_ssflow_mo = 0.0D0
+        Basin_sroff_mo = 0.0D0
+        Basin_stflow_mo = 0.0D0
+        Obsq_inches_mo = 0.0D0
 
         Obs_runoff_yr = 0.
         Basin_cfs_yr = 0.
@@ -485,27 +463,27 @@
         Basin_stflow_tot = 0.
         Obsq_inches_tot = 0.
 
-        Hru_et_yr = 0.
+        Hru_et_yr = 0.0D0
 
         Totdays = 0
         Obsq_inches = 0.
 
-        Basin_storage = 0.
-        Basin_storvol = 0.
-        Basin_et = 0.
-        Basin_2ndstflow = 0.
+        Basin_storage = 0.0D0
+        Basin_storvol = 0.0D0
+        Basin_et = 0.0D0
+        Basin_2ndstflow = 0.0D0
       ENDIF
 
 !******Set header print switch (1 prints a new header after every month
 !****** summary, 2 prints a new header after every year summary
       Header_prt = 0
-      IF ( Print_freq.EQ.6 .OR. Print_freq.EQ.7 .OR. Print_freq.EQ.10
-     +     .OR. Print_freq.EQ.11 ) Header_prt = 1
-      IF ( Print_freq.GE.12 ) Header_prt = 2
+      IF ( Print_freq==6 .OR. Print_freq==7 .OR. Print_freq==10
+     +     .OR. Print_freq==11 ) Header_prt = 1
+      IF ( Print_freq>=12 ) Header_prt = 2
 !$$$ Commented out since this prevented detailed report at yearly
 !$$$ frequency. Intent unclear. RMTW
 !$$$      
-      IF ( Print_freq.EQ.2 .OR. Print_freq.EQ.3 ) Print_type = 3
+      IF ( Print_freq==2 .OR. Print_freq==3 ) Print_type = 3
       IF ( Print_freq==0 .AND. Print_type==0 ) Print_type = 4
 
 !  Put a header on the output file (regardless of Timestep)
@@ -515,11 +493,11 @@
 ! rmtw - Print span dashes and initial storage
 !
 !
-      IF ( Print_type.EQ.1 ) THEN
+      IF ( Print_type==1 ) THEN
         WRITE (Buffer48, "(35X,F9.4)") Last_basin_stor
         CALL opstr(Buffer48(:44))
 
-      ELSEIF ( Print_type.EQ.2 ) THEN
+      ELSEIF ( Print_type==2 ) THEN
         WRITE (Buffer120, 9001) Basin_intcp_stor, 
      +                          Basin_soil_moist, Basin_pweqv,
      +                          Basin_gwstor, Basin_ssstor
@@ -529,7 +507,7 @@
       Endjday = julian('end', 'calendar')
       Endyr = Endtime(1)
 
-      IF ( Print_debug.EQ.4 ) OPEN (BALUNT, FILE='basin_sum.dbg')
+      IF ( Print_debug==4 ) OPEN (BALUNT, FILE='basin_sum.dbg')
 
  9001 FORMAT (39X, F6.2, 18X, 2F6.2, F13.2, F6.2)
 
@@ -541,14 +519,16 @@
 !***********************************************************************
       INTEGER FUNCTION sumbrun()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Strmflow_flag, Dprst_flag, Cascade_flag,
-     +    Print_debug, Nhru
+      USE PRMS_MODULE, ONLY: Strmflow_flag, Print_debug
+      USE PRMS_CASCADE, ONLY: Cascade_flag
       USE PRMS_BASIN, ONLY: Cfs2inches, Basin_area_inv,
-     +    Active_hrus, Hru_route_order, Basin_cfs, Basin_stflow
+     +    Active_hrus, Hru_route_order, Basin_cfs, Basin_stflow_in,
+     +    Basin_stflow_out
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_lakeevap,
      +    Basin_actet, Basin_perv_et, Basin_swale_et, Hru_actet,
      +    Basin_sroff, Strm_farfield, Basin_imperv_evap, Basin_ssstor,
-     +    Basin_imperv_stor, Basin_soil_moist
+     +    Basin_imperv_stor, Basin_soil_moist, Basin_dprst_volcl,
+     +    Basin_dprst_volop, Basin_dprst_evap, Basin_glacr_melt
       USE PRMS_CLIMATEVARS, ONLY: Orad, Basin_ppt, Basin_potet,
      +    Basin_tmax, Basin_tmin
       USE PRMS_OBS, ONLY: Jday, Nobs, Modays, Yrdays, Streamflow_cfs,
@@ -563,7 +543,7 @@
       EXTERNAL :: header_print, read_error, opstr
 ! Local variables
       INTEGER :: i, j, wyday, endrun
-      REAL :: wat_bal, obsrunoff, strmfarflow_inches
+      DOUBLE PRECISION :: wat_bal, obsrunoff, strmfarflow_inches
 !***********************************************************************
       sumbrun = 1
 
@@ -579,31 +559,16 @@
         Basin_cfs = Basin_cfs - Strm_farfield
         strmfarflow_inches = Strm_farfield*Cfs2inches
       ELSE
-        strmfarflow_inches = 0.0
-      ENDIF
-
-      IF ( Dprst_flag>0 ) THEN
-!***** Two variable added for depression storage
-        IF ( getvar(MODNAME, 'basin_dprst_volop', 1, 'double',
-     +       Basin_dprst_volop).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_volop')
-
-        IF ( getvar(MODNAME, 'basin_dprst_volcl', 1, 'double',
-     +       Basin_dprst_volcl).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_volcl')
-
-        IF ( getvar(MODNAME, 'basin_dprst_evap', 1, 'double',
-     +       Basin_dprst_evap).NE.0 )
-     +       CALL read_error(4, 'basin_dprst_evap')
+        strmfarflow_inches = 0.0D0
       ENDIF
 
       IF ( Strmflow_flag==2 ) THEN
-        IF ( getvar(MODNAME, 'basin_sfres_stor', 1, 'double',
-     +       Basin_sfres_stor).NE.0 )
-     +       CALL read_error(4, 'basin_sfres_stor')
+        IF ( getvar(MODNAME, 'basin_lake_stor', 1, 'double',
+     +       Basin_lake_stor)/=0 )
+     +       CALL read_error(4, 'basin_lake_stor')
         IF ( Nratetbl>0 ) THEN
           IF ( getvar(MODNAME, 'basin_2ndstflow', 1, 'double',
-     +         Basin_2ndstflow).NE.0 )
+     +         Basin_2ndstflow)/=0 )
      +         CALL read_error(4, 'basin_2ndstflow')
         ENDIF
       ENDIF
@@ -614,22 +579,23 @@
       Basin_storage = Basin_soil_moist + Basin_intcp_stor +
      +                Basin_gwstor + Basin_ssstor + Basin_pweqv +
      +                Basin_imperv_stor
-     +                + Basin_sfres_stor + Basin_dprst_volop
+     +                + Basin_lake_stor + Basin_dprst_volop
      +                + Basin_dprst_volcl
 
 ! volume calculation for storage
       Basin_storvol = Basin_storage/Basin_area_inv
 
       Basin_et = Basin_actet
-      obsrunoff = 0.0
+      obsrunoff = 0.0D0
       IF ( Nobs>0 ) obsrunoff = Streamflow_cfs(Outlet_sta)
       Obsq_inches = obsrunoff*Cfs2inches
 
       wat_bal = Last_basin_stor - Basin_storage + Basin_ppt
-     +          - Basin_actet - Basin_stflow - Basin_gwsink
+     +          - Basin_actet - Basin_stflow_in - Basin_gwsink
      +          - Basin_2ndstflow - strmfarflow_inches
+     +          + Basin_glacr_melt
 
-      IF ( Print_debug.EQ.4 ) THEN
+      IF ( Print_debug==4 ) THEN
         WRITE (BALUNT,"(A,2I4,7F8.4)") ' bsto-sm-in-gw-ss-sn-iv ',
      +         Nowmonth, Nowday, Basin_storage, Basin_soil_moist,
      +         Basin_intcp_stor, Basin_gwstor, Basin_ssstor,
@@ -641,7 +607,7 @@
      +         Basin_swale_et + Basin_dprst_evap
 
         WRITE (BALUNT,"(A,I6,7F8.4,/)") ' bal-pp-et-st-ls-bs-gs ',
-     +         Nowday, wat_bal, Basin_ppt, Basin_actet, Basin_stflow,
+     +         Nowday, wat_bal, Basin_ppt, Basin_actet, Basin_stflow_in,
      +         Last_basin_stor, Basin_storage, Basin_gwsink
       ENDIF
 
@@ -652,52 +618,53 @@
 !******Check for daily print
 
       IF ( Dprt ) THEN
-        IF ( Print_type.EQ.0 ) THEN
+        IF ( Print_type==0 ) THEN
           WRITE (Buffer40, "(I7,2I5,F11.2,F12.2)") Nowyear,
      +           Nowmonth, Nowday, obsrunoff, Basin_cfs
           CALL opstr(Buffer40)
 
-        ELSEIF ( Print_type.EQ.1 ) THEN
+        ELSEIF ( Print_type==1 ) THEN
           WRITE (Buffer120,"(I7,2I5,8F9.3)") Nowyear,
      +           Nowmonth, Nowday, Basin_ppt, Basin_actet,Basin_storage,
-     +           Basin_stflow-strmfarflow_inches, Obsq_inches, wat_bal,
+     +           Basin_stflow_in-strmfarflow_inches, Obsq_inches,
+     +           wat_bal,
      +           Watbal_sum, strmfarflow_inches
           CALL opstr(Buffer120(:89))
 
-        ELSEIF ( Print_type.EQ.2 ) THEN
+        ELSEIF ( Print_type==2 ) THEN
           WRITE ( Buffer160, 9001 ) Nowyear, Nowmonth, Nowday, Orad,
      +            Basin_tmax, Basin_tmin, Basin_ppt, Basin_net_ppt,
      +            Basin_intcp_stor, Basin_intcp_evap, Basin_potet,
      +            Basin_actet, Basin_soil_moist, Basin_pweqv,
      +            Basin_snowmelt, Basin_gwstor, Basin_ssstor,
      +            Basin_gwflow, Basin_ssflow, Basin_sroff,
-     +            Basin_stflow-strmfarflow_inches, Basin_cfs,
+     +            Basin_stflow_in-strmfarflow_inches, Basin_cfs,
      +            obsrunoff, Basin_lakeevap
           CALL opstr(Buffer160(:154))
 
         ENDIF
       ENDIF
-      IF ( Print_debug.EQ.4 ) WRITE (BALUNT, *) 'wat_bal =', wat_bal,
+      IF ( Print_debug==4 ) WRITE (BALUNT, *) 'wat_bal =', wat_bal,
      +                               ' watbal_sum=', Watbal_sum
 
 !******Compute monthly values
       IF ( Nowday==1 ) THEN
         Obs_runoff_mo = 0.
         Basin_cfs_mo = 0.
-        Basin_ppt_mo = 0.
-        Basin_net_ppt_mo = 0.
-        Basin_max_temp_mo = 0.
-        Basin_min_temp_mo = 0.
-        Basin_intcp_evap_mo = 0.
-        Basin_potet_mo = 0.
-        Basin_actet_mo = 0.
-        Basin_et_mo = 0.
-        Basin_snowmelt_mo = 0.
-        Basin_gwflow_mo = 0.
-        Basin_ssflow_mo = 0.
-        Basin_sroff_mo = 0.
-        Basin_stflow_mo = 0.
-        Obsq_inches_mo = 0.
+        Basin_ppt_mo = 0.0D0
+        Basin_net_ppt_mo = 0.0D0
+        Basin_max_temp_mo = 0.0D0
+        Basin_min_temp_mo = 0.0D0
+        Basin_intcp_evap_mo = 0.0D0
+        Basin_potet_mo = 0.0D0
+        Basin_actet_mo = 0.0D0
+        Basin_et_mo = 0.0D0
+        Basin_snowmelt_mo = 0.0D0
+        Basin_gwflow_mo = 0.0D0
+        Basin_ssflow_mo = 0.0D0
+        Basin_sroff_mo = 0.0D0
+        Basin_stflow_mo = 0.0D0
+        Obsq_inches_mo = 0.0D0
       ENDIF
 
       Obs_runoff_mo = Obs_runoff_mo + obsrunoff
@@ -715,7 +682,7 @@
       Basin_gwflow_mo = Basin_gwflow_mo + Basin_gwflow
       Basin_ssflow_mo = Basin_ssflow_mo + Basin_ssflow
       Basin_sroff_mo = Basin_sroff_mo + Basin_sroff
-      Basin_stflow_mo = Basin_stflow_mo + Basin_stflow
+      Basin_stflow_mo = Basin_stflow_mo + Basin_stflow_in
 
       IF ( Nowday==Modays(Nowmonth) ) THEN
         Basin_max_temp_mo = Basin_max_temp_mo/Modays(Nowmonth)
@@ -724,20 +691,20 @@
         Basin_cfs_mo = Basin_cfs_mo/Modays(Nowmonth)
 
         IF ( Mprt ) THEN
-          IF ( Print_type.EQ.0 ) THEN
+          IF ( Print_type==0 ) THEN
             IF ( Dprt ) CALL opstr(DASHS(:40))
             WRITE (Buffer40, "(I7,I5,F16.2,F12.2)") Nowyear,
      +             Nowmonth, Obs_runoff_mo, Basin_cfs_mo
             CALL opstr(Buffer40)
 
-          ELSEIF ( Print_type.EQ.1 .OR. Print_type.EQ.3 ) THEN
+          ELSEIF ( Print_type==1 .OR. Print_type==3 ) THEN
             IF ( Dprt ) CALL opstr(DASHS(:62))
             WRITE (Buffer80, "(I7,I5,5X,5F9.3)") Nowyear,
      +             Nowmonth, Basin_ppt_mo, Basin_actet_mo,Basin_storage,
      +             Basin_stflow_mo, Obsq_inches_mo
             CALL opstr(Buffer80(:62))
 
-          ELSEIF ( Print_type.EQ.2 ) THEN
+          ELSEIF ( Print_type==2 ) THEN
             IF ( Dprt ) CALL opstr(DASHS)
 
             WRITE (Buffer160, 9006) Nowyear, Nowmonth,Basin_max_temp_mo,
@@ -771,14 +738,14 @@
         Basin_gwflow_yr = Basin_gwflow_yr + Basin_gwflow
         Basin_ssflow_yr = Basin_ssflow_yr + Basin_ssflow
         Basin_sroff_yr = Basin_sroff_yr + Basin_sroff
-        Basin_stflow_yr = Basin_stflow_yr + Basin_stflow
+        Basin_stflow_yr = Basin_stflow_yr + Basin_stflow_in
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           Hru_et_yr(i) = Hru_et_yr(i) + Hru_actet(i)
         ENDDO
 
-        IF ( wyday.EQ.Yrdays ) THEN
-          IF ( Print_type.EQ.0 ) THEN
+        IF ( wyday==Yrdays ) THEN
+          IF ( Print_type==0 ) THEN
 
             Obs_runoff_yr = Obs_runoff_yr/Yrdays
             Basin_cfs_yr = Basin_cfs_yr/Yrdays
@@ -788,14 +755,14 @@
             CALL opstr(Buffer40)
 
 ! ****annual summary here
-          ELSEIF ( Print_type.EQ.1 .OR. Print_type.EQ.3 ) THEN
+          ELSEIF ( Print_type==1 .OR. Print_type==3 ) THEN
             IF ( Mprt .OR. Dprt ) CALL opstr(EQULS(:62))
             WRITE (Buffer80, "(I7,10X,5F9.3)") Nowyear, Basin_ppt_yr,
      +             Basin_actet_yr, Basin_storage, Basin_stflow_yr,
      +             Obsq_inches_yr
             CALL opstr(Buffer80(:62))
 
-          ELSEIF ( Print_type.EQ.2 ) THEN
+          ELSEIF ( Print_type==2 ) THEN
             Basin_max_temp_yr = Basin_max_temp_yr/Yrdays
             Basin_min_temp_yr = Basin_min_temp_yr/Yrdays
             Obs_runoff_yr = Obs_runoff_yr/Yrdays
@@ -827,13 +794,13 @@
           Basin_sroff_yr = 0.
           Basin_stflow_yr = 0.
           Obsq_inches_yr = 0.
-          Hru_et_yr = 0.
+          Hru_et_yr = 0.0D0
 
         ENDIF
       ENDIF
 
 !******Print heading if needed
-      IF ( endrun.EQ.0 ) THEN
+      IF ( endrun==0 ) THEN
         IF ( (Header_prt==2 .AND. Nowday==Modays(Nowmonth)) .OR.
      +       (Header_prt==1 .AND. wyday==Yrdays) ) THEN
           Buffer32 = ' '
@@ -861,11 +828,11 @@
         Basin_gwflow_tot = Basin_gwflow_tot + Basin_gwflow
         Basin_ssflow_tot = Basin_ssflow_tot + Basin_ssflow
         Basin_sroff_tot = Basin_sroff_tot + Basin_sroff
-        Basin_stflow_tot = Basin_stflow_tot + Basin_stflow
+        Basin_stflow_tot = Basin_stflow_tot + Basin_stflow_in
 
-        IF ( endrun.EQ.1 ) THEN
+        IF ( endrun==1 ) THEN
 
-          IF ( Print_type.EQ.0 ) THEN
+          IF ( Print_type==0 ) THEN
             Obs_runoff_tot = Obs_runoff_tot/Totdays
             Basin_cfs_tot = Basin_cfs_tot/Totdays
             CALL opstr(STARS(:40))
@@ -874,7 +841,7 @@
             CALL opstr(Buffer48(:41))
           ENDIF
 
-          IF ( Print_type.EQ.1 .OR. Print_type.EQ.3 ) THEN
+          IF ( Print_type==1 .OR. Print_type==3 ) THEN
             CALL opstr(STARS(:62))
             WRITE (Buffer80, 9005) ' Total for run', Basin_ppt_tot,
      +                            Basin_actet_tot, Basin_storage,
@@ -882,7 +849,7 @@
             CALL opstr(Buffer80(:62))
           ENDIF
 
-          IF ( Print_type.EQ.2 ) THEN
+          IF ( Print_type==2 ) THEN
             Obs_runoff_tot = Obs_runoff_tot/Totdays
             Basin_cfs_tot = Basin_cfs_tot/Totdays
             CALL opstr(STARS)
@@ -922,13 +889,13 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Print_type
 !***********************************************************************
-      IF ( Print_type.EQ.0 ) THEN
+      IF ( Print_type==0 ) THEN
         CALL opstr('1  Year Month Day   Measured   Simulated')
         CALL opstr('                      (cfs)      (cfs)')
         CALL opstr(DASHS(:40))
 
 !  This writes the water balance table header.
-      ELSEIF ( Print_type.EQ.1 ) THEN
+      ELSEIF ( Print_type==1 ) THEN
         CALL opstr(
      +'1  Year Month Day   Precip     ET    Storage S-Runoff M-Runoff'//
      +'   Watbal  WBalSum  Strmfar')
@@ -937,7 +904,7 @@
         CALL opstr(DASHS(:89))
 
 !  This writes the detailed table header.
-      ELSEIF ( Print_type.EQ.2 ) THEN
+      ELSEIF ( Print_type==2 ) THEN
         CALL opstr(
      +    '1Year mo day srad  tmx  tmn  ppt  n-ppt  ints  intl potet'//
      +    ' actet  smav pweqv   melt gwsto sssto gwflow ssflow  sroff'//
@@ -949,7 +916,7 @@
         CALL opstr(DASHS)
 
 !  This writes the water balance table header.
-      ELSEIF ( Print_type.EQ.3 ) THEN
+      ELSEIF ( Print_type==3 ) THEN
         CALL opstr(
      + '1  Year Month Day   Precip     ET    Storage S-Runoff M-Runoff')
         WRITE (Buffer80, 9002)
@@ -962,4 +929,3 @@
  9002 FORMAT (17X, 5(' (inches)'))
 
       END SUBROUTINE header_print
-

@@ -10,7 +10,7 @@
  * REF      :
  * REVIEW   :
  * PR NRS   :
- * $Id: mmf.c 5803 2010-12-08 22:38:20Z markstro $
+ * $Id: mmf.c 6789 2012-04-20 16:51:47Z rsregan $
  *
  -*/
 
@@ -69,7 +69,7 @@ int main (int argc, char *argv[]) {
 	*/
 	module_db = ALLOC_list ("Module Data Base", 0, 100);
 
-   //declmodule("PRMS system library", "$Id: mmf.c 5803 2010-12-08 22:38:20Z markstro $");
+   //declmodule("PRMS system library", "$Id: mmf.c 6789 2012-04-20 16:51:47Z rsregan $");
 
   /*
   **	parse the command-line arguments
@@ -139,8 +139,8 @@ int main (int argc, char *argv[]) {
 */
 
     if (call_setdims()) {
-      (void)fprintf(stderr, "ERROR - mmf\n");
-      (void)fprintf(stderr, "Calling function 'call_setdims'\n");
+	  (void)fprintf(stderr, "\nERROR: Calling function 'call_setdims'\n");
+      exit (1);
     }
     
 
@@ -150,24 +150,26 @@ int main (int argc, char *argv[]) {
     if (stat (*control_svar("param_file"), &stbuf) != -1) {
        if (stbuf.st_size) {
       } else {
-	     (void)fprintf (stderr,buf, "Parameter file: %s is empty.",
+	     (void)fprintf (stderr,buf, "Parameter File: %s is empty.",
 		               *control_svar("param_file"));
-      }
+        exit (1);
+	   }
     }
     
     err = read_dims (*control_svar("param_file"));
     if (err) {
-      (void)fprintf (stderr,"MMS - Warning: %s\n", err);
-    }
+		(void)fprintf (stderr,"\nERROR: reading dimensions from Parameter File\n");
+        exit (1);
+	}
 
 
 	fname =   control_svar ("param_file");
     num_param_files = control_var_size ("param_file");
 
     if (call_modules("declare")) {
-      (void)fprintf(stderr, "ERROR - mmf\n");
-      (void)fprintf(stderr, "Calling function 'call_modules'\n");
-    }
+		(void)fprintf(stderr, "\nERROR: in declare procedure, in function 'call_modules'\n");
+        exit (1);
+	}
     
     /*
     **	read in parameter values from parameter file
@@ -179,14 +181,15 @@ int main (int argc, char *argv[]) {
 		if (stat (fname[i], &stbuf) != -1) {
 		   if (stbuf.st_size) {
 		  } else {
-			 (void)fprintf (stderr,buf, "Parameter file: %s is empty.",
+			  (void)fprintf (stderr,buf, "ERROR: Parameter file: %s is empty.",
 						   fname[i]);
-		  }
+			  exit (1);
+		   }
 		}
 	    
 		err = read_params (fname[i], i);
 		if (err) {
-		  (void)fprintf (stderr,"MMS - Warning: %s\n", err);
+			(void)fprintf (stderr,"\nWARNING: %s\n", err);
 		}
 	}
     
@@ -194,7 +197,7 @@ int main (int argc, char *argv[]) {
     **  get data info string into the global
     */
     err = READ_data_info ();
-    if (err) (void)fprintf (stderr,"MMS - Warning: %s", err);
+    if (err) (void)fprintf (stderr,"\nMMS - Warning: %s", err);
 
     /*
     **	get start and end time

@@ -9,8 +9,7 @@
 ! Needs computed variable tmax set in the temperature module
 !***********************************************************************
       INTEGER FUNCTION precip_laps()
-      USE PRMS_MODULE, ONLY: Process, Model, Nhru, Print_debug, &
-          Version_precip_laps, Precip_laps_nc
+      USE PRMS_MODULE, ONLY: Process, Model, Nhru, Version_precip_laps, Precip_laps_nc
       USE PRMS_BASIN, ONLY: Hru_elev, Active_hrus, NEARZERO, &
           Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
@@ -35,12 +34,8 @@
       REAL elh_diff, elp_diff, pmo_diff, pmo_rate, adj_p
       REAL allrain_f_mo, adjmix_mo, ppt
       DOUBLE PRECISION :: sum_obs
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='precip_laps')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Precipitation Distribution')
-      
+      CHARACTER(LEN=11), PARAMETER :: MODNAME = 'precip_laps'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Precipitation Distribution'
 !***********************************************************************
       precip_laps = 1
 
@@ -59,7 +54,7 @@
           Hru_rain(i) = 0.0
           Hru_snow(i) = 0.0
           Prmx(i) = 0.0
-          Newsnow(i) = 0.0
+          Newsnow(i) = 0
           Pptmix(i) = 0
           ip = Hru_psta(i)
           ppt = Precip(ip)
@@ -84,11 +79,10 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip_laps = '$Id: precip_laps.f90 4077 2012-01-05 23:46:06Z rsregan $'
-        Precip_laps_nc = INDEX( Version_precip_laps, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, Version_precip_laps(:Precip_laps_nc))/=0 )STOP
-        ENDIF
+        Version_precip_laps = '$Id: precip_laps.f90 4347 2012-03-21 19:46:27Z rsregan $'
+        Precip_laps_nc = INDEX( Version_precip_laps, 'Z' )
+        i = INDEX ( Version_precip_laps, '.f90' ) + 3
+        IF ( declmodule(Version_precip_laps(6:i), PROCNAME, Version_precip_laps(i+2:Precip_laps_nc))/=0 ) STOP
 
 ! Declare parameters
         ALLOCATE ( Hru_psta(Nhru) )
@@ -102,7 +96,7 @@
         ALLOCATE (Padj_rn(Nrain, 12))
         IF ( declparam(MODNAME, 'padj_rn', 'nrain,nmonths', 'real', &
              '1.0', '-2.0', '10.0', &
-             'Rain adjustment factor, by month for each precip station', &
+             'Rain adjustment factor, by month for each precipitation station', &
              'Monthly (January to December) factor to adjust'// &
              ' precipitation lapse rate computed between station hru_psta'// &
              ' and station hru_plaps; positive factors are mutiplied'// &
@@ -113,7 +107,7 @@
         ALLOCATE ( Padj_sn(Nrain, 12) )
         IF ( declparam(MODNAME, 'padj_sn', 'nrain,nmonths', 'real', &
              '1.0', '-2.0', '10.0', &
-             'Snow adjustment factor, by month for each precip station', &
+             'Snow adjustment factor, by month for each precipitation station', &
              'Monthly (January to December) factor to adjust'// &
              ' precipitation lapse rate computed between station hru_psta'// &
              ' and station hru_plaps; positive factors are mutiplied'// &
@@ -194,7 +188,7 @@
       ENDIF
 
  9002 FORMAT ('Warning, bad precipitation value:', F10.3, &
-              '; precip station:', I3, '; Time:', I5, 2('/', I2.2), I3, &
+              '; precipitation station:', I3, '; Time:', I5, 2('/', I2.2), I3, &
               2(':', I2.2), '; value set to 0.0')
 
       precip_laps = 0

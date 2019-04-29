@@ -16,9 +16,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: declparam.c 6045 2011-10-03 19:46:59Z markstro $
+ * $Id: declparam.c 6387 2012-02-10 20:44:24Z markstro $
  *
-   $Revision: 6045 $
+   $Revision: 6387 $
         $Log: declparam.c,v $
         Revision 1.21  2001/05/04 20:58:22  markstro
         Added the xml print file

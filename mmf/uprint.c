@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: uprint.c 5739 2010-10-01 18:02:03Z rsregan $
+ * $Id: uprint.c 6387 2012-02-10 20:44:24Z markstro $
  *
-   $Revision: 5739 $
+   $Revision: 6387 $
         $Log: uprint.c,v $
         Revision 1.10  1996/04/29 16:23:26  markstro
         Unknown

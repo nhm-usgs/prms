@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: read_datainfo.c 5737 2010-09-30 23:36:13Z rsregan $
+ * $Id: read_datainfo.c 6844 2012-05-04 16:55:46Z markstro $
  *
-   $Revision: 5737 $
+   $Revision: 6844 $
         $Log: read_datainfo.c,v $
         Revision 1.15  2000/03/07 20:35:18  markstro
         Added comments to data file header
@@ -154,24 +154,9 @@ char *read_datainfo (FILE_DATA *fd) {
                return (err_buf);
             }
 
-            if ((var = var_addr(key)) == NULL) {
-               (void)sprintf (err_buf,
-                  "Variable %s not declared at line number %ld in\n%s\n%s",
-                  key, nline, fd->name, line);
-               return (err_buf);
-            }
-
-/*
-**   make space for data base entry, load pointer to var
-*/
-
-            Mcheckbase[Mnreads] = (READCHECK *) umalloc(sizeof(READCHECK));
-            Mcheckbase[Mnreads]->var = var;
-
 /*
 **   get size of var in data file
 */
-
             countstr = strtok(NULL, " \t");
 
             if (countstr == NULL) {
@@ -183,39 +168,58 @@ char *read_datainfo (FILE_DATA *fd) {
             errno = 0;
             count = strtol (countstr, &endptr, 10);
 
-            if (errno || (count < 0)) {
-               (void)sprintf (err_buf,"Decoding %s at line number %ld in\n%s\n%s",
-                  countstr, nline, fd->name, line);
-               return (err_buf);
-            }
+				if (count > 0) {  // Old style Data files have variables with size 0. PRMS should now skip over these, as if they are not there.
 
-            Mcheckbase[Mnreads]->count = count;
+					if ((var = var_addr(key)) == NULL) {
+						(void)sprintf (err_buf,
+							"Variable %s not declared at line number %ld in\n%s\n%s",
+							key, nline, fd->name, line);
+						return (err_buf);
+					}
 
-/* 
-**   allocate enough room to read variables in, depending on variable type
-*/
+	/*
+	**   make space for data base entry, load pointer to var
+	*/
 
-            if (Mcheckbase[Mnreads]->var) {
-               switch (Mcheckbase[Mnreads]->var->type) {
-                  case M_LONG :
-                     Mcheckbase[Mnreads]->Types.valuel = (long *)umalloc(count * 
-                        sizeof(long));
-                     break;
-     
-                  case M_FLOAT :
-                     Mcheckbase[Mnreads]->Types.valuef = (float *)umalloc(count *
-                        sizeof(float));
-                     break;
-     
-                  case M_DOUBLE :
-                     Mcheckbase[Mnreads]->Types.valued=(double *)umalloc(count *
-                        sizeof(double));
-                     break;
+					Mcheckbase[Mnreads] = (READCHECK *) umalloc(sizeof(READCHECK));
+					Mcheckbase[Mnreads]->var = var;
 
-               }
-            }           
-            Mnreads++;
-         }
+
+
+					if (errno || (count < 0)) {
+						(void)sprintf (err_buf,"Decoding %s at line number %ld in\n%s\n%s",
+							countstr, nline, fd->name, line);
+						return (err_buf);
+					}
+
+					Mcheckbase[Mnreads]->count = count;
+
+	/* 
+	**   allocate enough room to read variables in, depending on variable type
+	*/
+
+					if (Mcheckbase[Mnreads]->var) {
+						switch (Mcheckbase[Mnreads]->var->type) {
+							case M_LONG :
+								Mcheckbase[Mnreads]->Types.valuel = (long *)umalloc(count * 
+									sizeof(long));
+								break;
+	     
+							case M_FLOAT :
+								Mcheckbase[Mnreads]->Types.valuef = (float *)umalloc(count *
+									sizeof(float));
+								break;
+	     
+							case M_DOUBLE :
+								Mcheckbase[Mnreads]->Types.valued=(double *)umalloc(count *
+									sizeof(double));
+								break;
+
+						}
+					}           
+					Mnreads++;
+				}
+			}
       }
    }
 

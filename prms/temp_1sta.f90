@@ -9,7 +9,7 @@
 !     hru_tsta, hru_elev, hru_area, temp_units, basin_tsta
 !***********************************************************************
       INTEGER FUNCTION temp_1sta()
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Version_temp_1sta, Temp_1sta_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru, Version_temp_1sta, Temp_1sta_nc
       USE PRMS_BASIN, ONLY: Hru_elev, Starttime, Hru_area, &
           Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tmax_adj, Tmin_adj, Tsta_elev, Ntemp, &
@@ -30,10 +30,8 @@
       REAL, SAVE, ALLOCATABLE :: tcrn(:), tcrx(:), elfac(:), tmax_prev(:), tmin_prev(:)
       REAL, SAVE :: solrad_tmax_good, solrad_tmin_good
       INTEGER, SAVE, ALLOCATABLE :: tmax_cnt(:), tmin_cnt(:), nuse_tsta(:)
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='temp_1sta')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Temperature Distribution')
+      CHARACTER(LEN=9), PARAMETER :: MODNAME = 'temp_1sta'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Temperature Distribution'
 !***********************************************************************
       temp_1sta = 1
 
@@ -43,10 +41,10 @@
         DO i = 1, Ntemp
           k = 0
           IF ( nuse_tsta(i)>0 ) THEN
-            IF ( Tmax(i)<-89.0 .OR. Tmax(i)>150.0 ) THEN
+            IF ( Tmax(i)<-99.0 .OR. Tmax(i)>150.0 ) THEN
               tmax_cnt(i) = tmax_cnt(i) + 1
               IF ( tmax_cnt(i)<Max_missing ) THEN
-                PRINT 9001, 'tmax', tmx, i, Nowyear, Nowmonth, Nowday, tmax_prev(i)
+                PRINT 9001, 'tmax', Tmax(i), i, Nowyear, Nowmonth, Nowday, tmax_prev(i)
                 Tmax(i) = tmax_prev(i)
                 k = 1
                 kk = 1
@@ -58,10 +56,10 @@
               tmax_prev(i) = Tmax(i)
               tmax_cnt(i) = 0
             ENDIF
-            IF ( Tmin(i)<-89.0 .OR. Tmin(i)>150.0 ) THEN
+            IF ( Tmin(i)<-99.0 .OR. Tmin(i)>150.0 ) THEN
               tmin_cnt(i) = tmin_cnt(i) + 1
               IF ( tmin_cnt(i)<Max_missing ) THEN
-                PRINT 9001, 'tmin', tmn, i, Nowyear, Nowmonth, Nowday, tmin_prev(i)
+                PRINT 9001, 'tmin', Tmin(i), i, Nowyear, Nowmonth, Nowday, tmin_prev(i)
                 Tmin(i) = tmin_prev(i)
                 k = 1
                 kkk = 1
@@ -103,14 +101,14 @@
         Basin_temp = Basin_temp*Basin_area_inv
         Solrad_tmax = Tmax(Basin_tsta)
         Solrad_tmin = Tmin(Basin_tsta)
-        IF ( Solrad_tmax<-89.0 .OR. Solrad_tmax>150.0 ) THEN
+        IF ( Solrad_tmax<-99.0 .OR. Solrad_tmax>150.0 ) THEN
           PRINT *, 'Bad temperature data to set solrad_tmax:', Solrad_tmax, ' using last valid value'
           PRINT *, 'Value set to', solrad_tmax_good, ' Date:', Nowyear, Nowmonth, Nowday
           Solrad_tmax = solrad_tmax_good
         ELSE
           solrad_tmax_good = Solrad_tmax
         ENDIF
-        IF ( Solrad_tmin<-89.0 .OR. Solrad_tmin>150.0 ) THEN
+        IF ( Solrad_tmin<-99.0 .OR. Solrad_tmin>150.0 ) THEN
           PRINT *, 'Bad temperature data to set solrad_tmin:', Solrad_tmin, ' using last valid value'
           PRINT *, 'Value set to', solrad_tmin_good, ' Date:', Nowyear, Nowmonth, Nowday
           Solrad_tmin = solrad_tmin_good
@@ -119,11 +117,10 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_temp_1sta = '$Id: temp_1sta.f90 4116 2012-01-18 19:45:09Z rsregan $'
-        Temp_1sta_nc = INDEX( Version_temp_1sta, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, Version_temp_1sta(:Temp_1sta_nc))/=0 ) STOP
-        ENDIF
+        Version_temp_1sta = '$Id: temp_1sta.f90 4486 2012-05-08 15:41:47Z rsregan $'
+        Temp_1sta_nc = INDEX( Version_temp_1sta, 'Z' )
+        i = INDEX( Version_temp_1sta, '.f90' ) + 3
+        IF ( declmodule(Version_temp_1sta(6:i), PROCNAME, Version_temp_1sta(i+2:Temp_1sta_nc))/=0 ) STOP
 
         ALLOCATE ( Tmax_lapse(12) )
         IF ( declparam(MODNAME, 'tmax_lapse', 'nmonths', 'real', &
@@ -184,4 +181,3 @@
 
       temp_1sta = 0
       END FUNCTION temp_1sta
-

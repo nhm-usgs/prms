@@ -15,9 +15,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: dprint.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: dprint.c 6387 2012-02-10 20:44:24Z markstro $
  *
-   $Revision: 3058 $
+   $Revision: 6387 $
         $Log: dprint.c,v $
         Revision 1.5  1996/02/19 19:59:54  markstro
         Now lints pretty clean

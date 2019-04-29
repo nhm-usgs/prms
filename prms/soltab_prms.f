@@ -50,17 +50,40 @@
       USE PRMS_MODULE, ONLY: Process
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: solrdecl, solrinit
+      INTEGER, EXTERNAL :: solrdecl, solrinit, solrsetdims
 !***********************************************************************
       soltab_prms = 0
 
       IF ( Process(:4)=='decl' ) THEN
         soltab_prms = solrdecl()
+      ELSEIF ( Process(:7)=='setdims' ) THEN
+        soltab_prms = solrsetdims()
       ELSEIF ( Process(:4)=='init' ) THEN
         soltab_prms = solrinit()
       ENDIF
 
       END FUNCTION soltab_prms
+
+!***********************************************************************
+!     solrsetdims - declares soltab_prms module specific dimensions
+!***********************************************************************
+      INTEGER FUNCTION solrsetdims()
+      IMPLICIT NONE
+! Functions
+      INTEGER, EXTERNAL :: decldim
+      EXTERNAL read_error
+! Local Variables
+      ! Maximum values are no longer limits
+      INTEGER, PARAMETER :: MAXDIM = 500
+!***********************************************************************
+      solrsetdims = 1
+
+      IF ( decldim('nradpl', 1, MAXDIM,
+     +     'Number of solar radiation planes (deprecated)')/=0 )
+     +     CALL read_error(7, 'nradpl')
+
+      solrsetdims = 0
+      END FUNCTION solrsetdims
 
 !***********************************************************************
 !     solrdecl - set up parameters for solar radiation computations
@@ -69,8 +92,7 @@
 !***********************************************************************
       INTEGER FUNCTION solrdecl()
       USE PRMS_SOLTAB_RADPL
-      USE PRMS_MODULE, ONLY: Print_debug, Version_soltab_prms,
-     +    Soltab_prms_nc
+      USE PRMS_MODULE, ONLY: Version_soltab_prms, Soltab_prms_nc
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
@@ -79,12 +101,11 @@
       solrdecl = 1
 
       Version_soltab_prms =
-     +'$Id: soltab_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
+     +'$Id: soltab_prms.f 4481 2012-05-04 23:11:47Z rsregan $'
       Soltab_prms_nc = INDEX( Version_soltab_prms, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
+
+      IF ( declmodule(MODNAME, PROCNAME,
      +           Version_soltab_prms(:Soltab_prms_nc))/=0 ) STOP
-      ENDIF
 
       Nradpl = getdim('nradpl')
       IF ( Nradpl.EQ.-1 ) RETURN

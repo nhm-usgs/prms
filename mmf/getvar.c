@@ -19,9 +19,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: getvar.c 6059 2011-10-05 17:53:22Z markstro $
+ * $Id: getvar.c 7446 2012-08-30 21:41:41Z rsregan $
  *
-   $Revision: 6059 $
+   $Revision: 7446 $
         $Log: getvar.c,v $
         Revision 1.8  1996/04/09 21:04:06  markstro
         (1) Work on control files
@@ -269,6 +269,29 @@ long getvartype_ (char *vname, ftnlen vnamelen) {
 	return (var->type);
 }
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION		: getvarsize_
+ | COMMENT		: called from Fortran, sorts out args and returns the variable size()
+ | PARAMETERS   :
+ | RETURN VALUE : size of the array for input variable
+ | RESTRICTIONS : variable must be declared
+\*--------------------------------------------------------------------*/
+long getvarsize_ (char *vname, ftnlen vnamelen) {
+	char vkey[128];
+	PUBVAR *var;
+  
+    strncpy (vkey, vname, 128);
+/*
+* get pointer to variable with key
+*/
+	if (!(var = var_addr (vkey))) {
+		(void)fprintf(stderr, "ERROR - getvartype - variable not found.\n");
+		(void)fprintf(stderr, "Key:   '%s'\n", vkey);
+		return(-1);
+	}
+
+	return (var->size);
+}
 /**8************************** TEST DRIVER ****************************/
 
 /**7****************** LOCAL FUNCTION DEFINITIONS *********************/

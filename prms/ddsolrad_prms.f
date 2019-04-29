@@ -13,7 +13,6 @@
       MODULE PRMS_DDSOLRAD_RADPL
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: Nradpl
       REAL, SAVE, ALLOCATABLE :: Plrad(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
@@ -58,26 +57,23 @@
 !***********************************************************************
       INTEGER FUNCTION ddsoldecl()
       USE PRMS_DDSOLRAD_RADPL
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Version_ddsolrad_prms,
+      USE PRMS_MODULE, ONLY: Nhru, Version_ddsolrad_prms,
      +    Ddsolrad_prms_nc
+      USE PRMS_SOLTAB_RADPL, ONLY: Nradpl
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getdim
+      INTEGER, EXTERNAL :: declmodule, declparam
 !***********************************************************************
       ddsoldecl = 1
 
       Version_ddsolrad_prms =
-     +'$Id: ddsolrad_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
+     +'$Id: ddsolrad_prms.f 4467 2012-05-04 15:57:55Z rsregan $'
       Ddsolrad_prms_nc = INDEX( Version_ddsolrad_prms, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
+
+      IF ( declmodule(MODNAME, PROCNAME,
      +                  Version_ddsolrad_prms(:Ddsolrad_prms_nc))/=0 )
      +       STOP
-      ENDIF
-
-      Nradpl = getdim('nradpl')
-      IF ( Nradpl.EQ.-1 ) RETURN
 
       ALLOCATE (Plrad(Nradpl))
 
@@ -178,7 +174,8 @@
      +    Basin_obs_ppt, Tmax_allrain, Ppt_rad_adj, Basin_solsta,
      +    Basin_horad, Basin_potsw, Radj_sppt, Radj_wppt, Swrad,
      +    Hru_solsta, Radmax, Rad_conv
-      USE PRMS_SOLTAB_RADPL, ONLY: Hemisphere, Radpl_soltab, Radpl_cossl
+      USE PRMS_SOLTAB_RADPL, ONLY: Nradpl, Hemisphere, Radpl_soltab,
+     +    Radpl_cossl
       USE PRMS_OBS, ONLY: Solrad, Jday, Nowmonth
       IMPLICIT NONE
       INTRINSIC INT

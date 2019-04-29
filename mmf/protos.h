@@ -1,5 +1,5 @@
 /*
- *  $Id: protos.h 6056 2011-10-05 15:18:49Z markstro $
+ *  $Id: protos.h 6387 2012-02-10 20:44:24Z markstro $
  */
 
 /**1************* SWITCH FOR DEFINITION AND DECLARATION ***************/
@@ -407,7 +407,7 @@ EXTERN long declfix (char *, long, long, char *);
 EXTERN long declfix_ (char *, ftnint *, ftnint *, char *, ftnlen, ftnlen);
 
 /***  declmodule.c    **************************************************/
-EXTERN long declmodule (char *, char *, char*);
+EXTERN long declmodule (char *, char *, char *);
 
 /***  decl_control.c  **************************************************/
 #undef EXTERN

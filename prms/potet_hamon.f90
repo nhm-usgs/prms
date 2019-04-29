@@ -3,8 +3,7 @@
 ! formulation (Hamon, 1961); modification of potet_hamon_prms
 !***********************************************************************
       INTEGER FUNCTION potet_hamon()
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, &
-          Version_potet_hamon, Potet_hamon_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru, Version_potet_hamon, Potet_hamon_nc
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
@@ -19,12 +18,8 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='potet_hamon')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Potential Evapotranspiration')
-      
+      CHARACTER(LEN=11), PARAMETER :: MODNAME = 'potet_hamon'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
       potet_hamon = 1
 
@@ -45,16 +40,15 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_hamon = '$Id: potet_hamon.f90 3796 2011-10-25 16:42:38Z rsregan $'
-        Potet_hamon_nc = INDEX( Version_potet_hamon, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, Version_potet_hamon(:Potet_hamon_nc))/=0 ) STOP
-        ENDIF
+        Version_potet_hamon = '$Id: potet_hamon.f90 4347 2012-03-21 19:46:27Z rsregan $'
+        Potet_hamon_nc = INDEX( Version_potet_hamon, 'Z' )
+        i = INDEX( Version_potet_hamon, '.f90' ) + 3
+        IF ( declmodule(Version_potet_hamon(6:i), PROCNAME, Version_potet_hamon(i+2:Potet_hamon_nc))/=0 ) STOP
 
         ALLOCATE ( Hamon_coef(12) )
         IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real', &
              '0.0055', '0.004', '0.008', &
-             'Monthly air temp coefficient - Hamon', &
+             'Monthly air temperature coefficient - Hamon', &
              'Monthly (January to December) air temperature coefficient used in Hamon potential ET computations', &
              '????')/=0 ) CALL read_error(1, 'hamon_coef')
 

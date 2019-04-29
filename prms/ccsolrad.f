@@ -33,12 +33,8 @@
       INTEGER, SAVE :: observed_flag
       INTEGER :: j, jj, k
       REAL :: pptadj, ccov, radadj
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ccsolrad')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Solar Radiation')
-      
+      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'ccsolrad'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ccsolrad = 1
 
@@ -109,12 +105,12 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_ccsolrad =
-     +'$Id: ccsolrad.f 3794 2011-10-25 16:35:49Z rsregan $'
-        Ccsolrad_nc = INDEX( Version_ccsolrad, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME,
-     +                    Version_ccsolrad(:Ccsolrad_nc))/=0 ) STOP
-        ENDIF
+     +'$Id: ccsolrad.f 4233 2012-02-29 21:27:34Z rsregan $'
+        Ccsolrad_nc = INDEX( Version_ccsolrad, 'Z' )
+        k = INDEX( Version_ccsolrad, '.f' ) + 1
+        IF ( declmodule(Version_ccsolrad(6:k), PROCNAME,
+     +       Version_ccsolrad(k+2:Ccsolrad_nc))/=0 ) STOP
+
 
 ! Declare Parameters
         ALLOCATE ( Ccov_slope(12) )

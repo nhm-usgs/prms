@@ -20,20 +20,15 @@
       INTEGER, PARAMETER :: BALUNT = 195, DBGUNT = 895
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:)
       DOUBLE PRECISION, SAVE :: Last_soil_moist
+      CHARACTER(LEN=10), PARAMETER :: MODNAME = 'smbal_prms'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_soil_rechr
-      REAL, SAVE, ALLOCATABLE :: Soil_rechr(:)
       REAL, SAVE, ALLOCATABLE :: Perv_actet(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Soil_type(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_init(:)
       REAL, SAVE, ALLOCATABLE :: Soil_rechr_init(:), Soil2gw_max(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='smbal_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Soil Zone')
-      
       END MODULE PRMS_SMBAL
 
 !***********************************************************************
@@ -65,32 +60,24 @@
 !***********************************************************************
       INTEGER FUNCTION smdecl()
       USE PRMS_SMBAL
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Version_smbal_prms,
-     +    Smbal_prms_nc
+      USE PRMS_MODULE, ONLY: Nhru, Version_smbal_prms, Smbal_prms_nc
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
+! Local Variable
+      INTEGER :: n
 !***********************************************************************
       smdecl = 1
 
       Version_smbal_prms =
-     +'$Id: smbal_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
-      Smbal_prms_nc = INDEX( Version_smbal_prms, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
-     +         Version_smbal_prms(:Smbal_prms_nc))/=0 ) STOP
-      ENDIF
+     +'$Id: smbal_prms.f 4773 2012-08-22 23:32:17Z rsregan $'
+      Smbal_prms_nc = INDEX( Version_smbal_prms, 'Z' )
+      n = INDEX( Version_smbal_prms, '.f' ) + 1
+      IF ( declmodule(Version_smbal_prms(6:n), PROCNAME,
+     +     Version_smbal_prms(n+2:Smbal_prms_nc))/=0 ) STOP
 
 ! Declare Variables
-      ALLOCATE (Soil_rechr(Nhru))
-      IF ( declvar(MODNAME, 'soil_rechr', 'nhru', Nhru, 'real',
-     +     'Current moisture content of soil recharge zone, ie, the'//
-     +     ' portion of the soil profile from which evaporation can'//
-     +     ' take place',
-     +     'inches',
-     +     Soil_rechr).NE.0 ) RETURN
-
       IF ( declvar(MODNAME, 'basin_soil_rechr', 'one', 1, 'double',
      +     'Basin area-weighted average for soil_rechr',
      +     'inches',
@@ -149,7 +136,7 @@
       USE PRMS_BASIN, ONLY: Timestep, Hru_perv, Hru_type, NEARZERO,
      +    Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Soil_moist_max, Soil_rechr_max,
-     +    Basin_soil_moist, Soil_moist
+     +    Basin_soil_moist, Soil_moist, Soil_rechr
       USE PRMS_OBS, ONLY: Nowyear
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -253,14 +240,14 @@
       USE PRMS_SMBAL
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Dprst_flag
       USE PRMS_BASIN, ONLY: Hru_area, Hru_perv, Hru_frac_perv,
-     +    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
+     +    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type,
+     +    Cov_type
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Potet
       USE PRMS_FLOWVARS, ONLY: Basin_actet, Hru_actet, Soil_to_gw,
      +    Basin_soil_to_gw, Soil_to_ssr, Basin_perv_et, Basin_lakeevap,
      +    Soil_rechr_max, Soil_moist_max, Hru_impervevap, Infil,
-     +    Basin_soil_moist, Soil_moist
+     +    Basin_soil_moist, Soil_moist, Hru_intcpevap, Soil_rechr
       USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday
-      USE PRMS_INTCP, ONLY: Hru_intcpevap, Cov_type
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       IMPLICIT NONE
       INTRINSIC MIN, ABS

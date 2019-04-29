@@ -7,7 +7,7 @@
 !   Declared Parameters: hamon_coef, hru_radpl
 !***********************************************************************
       INTEGER FUNCTION potet_hamon_prms()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Print_debug,
+      USE PRMS_MODULE, ONLY: Process, Nhru,
      +    Version_potet_hamon_prms, Potet_hamon_prms_nc
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area,
      +    Basin_area_inv
@@ -17,13 +17,12 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getdim, getparam
+      INTEGER, EXTERNAL :: declmodule, declparam, getparam
       EXTERNAL read_error
 ! Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
       REAL, SAVE, ALLOCATABLE :: Hamon_coef(:)
 !   Local Variables
-      INTEGER, SAVE :: Nradpl
       INTEGER :: i, ir, j
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
       
@@ -52,16 +51,12 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_potet_hamon_prms =
-     +'$Id: potet_hamon_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
+     +'$Id: potet_hamon_prms.f 4467 2012-05-04 15:57:55Z rsregan $'
         Potet_hamon_prms_nc = INDEX( Version_potet_hamon_prms, ' $' ) +1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, 
+        
+        IF ( declmodule(MODNAME, PROCNAME, 
      +               Version_potet_hamon_prms(:Potet_hamon_prms_nc)
      +                    )/=0 ) STOP
-        ENDIF
-
-        Nradpl = getdim('nradpl')
-        IF ( Nradpl==-1 ) CALL read_error(6, 'nradpl')
 
         ALLOCATE ( Hru_radpl(Nhru) )
         IF ( declparam(MODNAME, 'hru_radpl', 'nhru', 'integer',
@@ -73,7 +68,7 @@
         ALLOCATE ( Hamon_coef(12) )
         IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real',
      +       '0.0055', '0.004', '0.008',
-     +       'Monthly air temp coefficient - Hamon',
+     +       'Monthly air temperature coefficient - Hamon',
      +       'Monthly (January to December) air temperature'//
      +       ' coefficient used in Hamon potential ET computations',
      +       '????')/=0 ) CALL read_error(1, 'hamon_coef')

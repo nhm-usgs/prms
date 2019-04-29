@@ -16,6 +16,8 @@
       REAL, SAVE :: Dalr
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
       REAL, SAVE, ALLOCATABLE :: Temp_wght_elev(:), Prcp_wght_elev(:)
+      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'ide_dist'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Climate Distribuition'
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Parameters
@@ -28,12 +30,6 @@
       INTEGER, SAVE :: Ndist_tsta, Ndist_psta
       REAL, SAVE :: Dist_exp
       REAL, SAVE, ALLOCATABLE :: Temp_wght_dist(:), Prcp_wght_dist(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ide_dist')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Climate Distribuition')
-      
       END MODULE PRMS_IDE
 
 !***********************************************************************
@@ -62,34 +58,34 @@
 !***********************************************************************
       INTEGER FUNCTION idedecl()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Version_ide_dist,
-     +    Ide_dist_nc
+      USE PRMS_MODULE, ONLY: Nhru, Version_ide_dist, Ide_dist_nc
       USE PRMS_CLIMATEVARS, ONLY: Ntemp, Nrain
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
+! Local Variables
+      INTEGER :: n
 !***********************************************************************
       idedecl = 1
 
       Version_ide_dist =
-     +'$Id: ide_dist.f 4077 2012-01-05 23:46:06Z rsregan $'
-      Ide_dist_nc = INDEX( Version_ide_dist, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME,
-     +          Version_ide_dist(:Ide_dist_nc))/=0 ) STOP
-      ENDIF
+     +'$Id: ide_dist.f 4347 2012-03-21 19:46:27Z rsregan $'
+      Ide_dist_nc = INDEX( Version_ide_dist, 'Z' )
+      n = INDEX( Version_ide_dist, '.f' ) + 1
+      IF ( declmodule(Version_ide_dist(6:n), PROCNAME,
+     +                Version_ide_dist(n+2:Ide_dist_nc))/=0 ) STOP
 
       ALLOCATE (Tmax_rain_sta(Nrain))
       IF ( declvar(MODNAME, 'tmax_rain_sta', 'nrain', Nrain, 'real',
-     +     'Maximum temperature distributed to the precip stations',
+     +  'Maximum temperature distributed to the precipitation stations',
      +     'degrees F',
      +     Tmax_rain_sta).NE.0 ) CALL read_error(3, 'tmax_rain_sta')
 
       ALLOCATE (Tmin_rain_sta(Nrain))
       IF ( declvar(MODNAME, 'tmin_rain_sta', 'nrain', Nrain, 'real',
-     +     'Minimum temperature distributed to the precip stations',
+     +  'Minimum temperature distributed to the precipitation stations',
      +     'degrees F',
      +     Tmin_rain_sta).NE.0 ) CALL read_error(3, 'tmin_rain_sta')
 
@@ -125,7 +121,7 @@
       ALLOCATE (Psta_x(Nrain))
       IF ( declparam(MODNAME, 'psta_x', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'X for each precip station (albers)',
+     +     'X for each precipitation station (albers)',
      +     'Longitude (X) for each precipitation measurement station'//
      +     ' in albers projection',
      +     'meters').NE.0 ) CALL read_error(1, 'psta_x')
@@ -133,7 +129,7 @@
       ALLOCATE (Psta_y(Nrain))
       IF ( declparam(MODNAME, 'psta_y', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'Y for each precip station (albers)',
+     +     'Y for each precipitation station (albers)',
      +     'Latitude (Y) for each precipitation measurement station'//
      +     ' in albers projection',
      +     'meters').NE.0 ) CALL read_error(1, 'psta_y')
@@ -158,10 +154,12 @@
       ALLOCATE (Psta_nuse(Nrain), Rain_nuse(Nrain))
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
-     +     'The subset of precip stations used in the distribution'//
-     +     ' regression (0=station not used; 1=station used)',
-     +     'The subset of precip stations used in the distribution'//
-     +     ' regression (0=station not used; 1=station used)',
+     +     'The subset of precipitation stations used in the'//
+     +     ' distribution regression (0=station not used;'//
+     +     ' 1=station used)',
+     +     'The subset of precipitation stations used in the'//
+     +     ' distribution regression (0=station not used;'//
+     +     ' 1=station used)',
      +     'none').NE.0 ) CALL read_error(1, 'psta_nuse')
 
 ! New parameters:
@@ -369,9 +367,9 @@
       REAL, INTENT(IN) :: Temp_wght_dist, Temp_wght_elev
 ! Local Variables
       INTEGER n, nn, itype
-      REAL dat_elev, x, y, z, x1, tmax_hru, tmin_hru
+      REAL x, y, z, x1, tmax_hru, tmin_hru
       REAL centroid_x, centroid_y
-      DOUBLE PRECISION dat_dist
+      DOUBLE PRECISION dat_dist, dat_elev
 !***********************************************************************
       ide_temp_run = 0
 
@@ -391,7 +389,7 @@
 !----------------
 !----------------
         itype = 1
-        dat_elev = 0.0
+        dat_elev = 0.0D0
         dat_dist = 0.0D0
         x = Hru_x(n)
         y = Hru_y(n)
@@ -404,12 +402,12 @@
      +            Tsta_elev_meters, z, Tmax, dat_elev, itype)
         tmax_hru = (Temp_wght_dist*dat_dist) + (Temp_wght_elev*dat_elev)
 !
-!  Temp adjustment by HRU
+!  Temperature adjustment by HRU
 !
         tmax_hru = tmax_hru + Tmax_adj(n)
 
         itype = -1
-        dat_elev = 0.0
+        dat_elev = 0.0D0
         dat_dist = 0.0D0
         IF ( Temp_wght_dist.GT.0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
@@ -419,7 +417,7 @@
      +            Tsta_elev_meters, z, Tmin, dat_elev, itype)
         tmin_hru = (Temp_wght_dist*dat_dist) + (Temp_wght_elev*dat_elev)
 !
-!  Temp adjustment by HRU
+!  Temperature adjustment by HRU
 !
         tmin_hru = tmin_hru + Tmin_adj(n)
         IF ( Temp_units==1 ) THEN
@@ -456,7 +454,7 @@
 !     basin_centroid_x
 !     basin_centroid_y
       itype = 1
-      dat_elev = 0.0
+      dat_elev = 0.0D0
       dat_dist = 0.0D0
       centroid_x = Basin_centroid_x
       centroid_y = Basin_centroid_y
@@ -479,11 +477,11 @@
       Solrad_tmin = (Temp_wght_dist*dat_dist)
      +              + (Temp_wght_elev*dat_elev)
 !
-!  Compute temperatures at precip stations.
+!  Compute temperatures at precipitation stations.
 !
       DO n = 1, Nrain
         itype = 1
-        dat_elev = 0.0
+        dat_elev = 0.0D0
         dat_dist = 0.0D0
         x = Psta_x(n)
         y = Psta_y(n)
@@ -497,7 +495,7 @@
         Tmax_rain_sta(n) = (Temp_wght_dist*dat_dist)
      +                     + (Temp_wght_elev*dat_elev)
         itype = -1
-        dat_elev = 0.0
+        dat_elev = 0.0D0
         dat_dist = 0.0D0
         IF ( Temp_wght_dist.GT.0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
@@ -524,7 +522,7 @@
      +    Rain_nuse, Rain_nsta, Tmax_rain_sta, Tmin_rain_sta,
      +    Ndist_psta, Dist_exp
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Hru_elev_meters,
-     +    Hru_route_order, Active_hrus, NEARZERO, MM2INCH
+     +    Hru_route_order, Active_hrus, DNEARZERO, MM2INCH
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Prmx, Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_snow, Tmax_allsnow, Psta_elev_meters, Basin_obs_ppt,
@@ -539,8 +537,8 @@
       REAL, INTENT(IN) :: Adjust_snow, Adjust_rain, Adjmix_rain
 ! Local variables
       INTEGER i, j, err_chk, n, itype, allmissing, nn
-      REAL dat_elev, x, y, z, ppt
-      DOUBLE PRECISION dat_dist, sum_obs
+      REAL x, y, z, ppt_sngl
+      DOUBLE PRECISION dat_dist, sum_obs, dat_elev, ppt
 !***********************************************************************
       ide_rain_run = 0
 !
@@ -567,7 +565,7 @@
             Precip(i) = (Precip(i)*Adjust_rain) + Precip(i)
           ENDIF
           allmissing = 1
-        ELSE !make sure negative precip values are < -99.0
+        ELSE !make sure negative precipitation values are < -99.0
           Precip(i) = -100.0
         ENDIF
  
@@ -601,7 +599,7 @@
         Hru_ppt(n) = 0.0
 
 ! Calculate prcp at given HRU:
-        dat_elev = 0.0
+        dat_elev = 0.0D0
         dat_dist = 0.0D0
         x = Hru_x(n)
         y = Hru_y(n)
@@ -614,13 +612,14 @@
         IF ( Prcp_wght_elev>0.0 )
      +       CALL compute_elv(Nrain, Rain_nsta, Rain_nuse,
      +            Psta_elev_meters, z, Precip, dat_elev, itype)
-        IF ( dat_elev<0.0 ) dat_elev = 0.0
+        IF ( dat_elev<0.0D0 ) dat_elev = 0.0D0
 
         ppt = (Prcp_wght_dist*dat_dist) + (Prcp_wght_elev*dat_elev)
 
-        IF ( ppt>NEARZERO ) THEN
+        IF ( ppt>DNEARZERO ) THEN
           IF ( Precip_units==1 ) ppt = ppt*MM2INCH
-          CALL precip_form(ppt, Hru_ppt(n), Hru_rain(n), Hru_snow(n),
+          ppt_sngl = SNGL(ppt)
+          CALL precip_form(ppt_sngl, Hru_ppt(n),Hru_rain(n),Hru_snow(n),
      +         Tmaxf(n), Tminf(n), Pptmix(n), Newsnow(n), Prmx(n),
      +         Tmax_allrain, 1.0, 1.0, Adjmix_rain, Hru_area(n),
      +         sum_obs)
@@ -657,7 +656,7 @@
       INTEGER :: idist, jj, k, i, j, allmissing
       INTEGER, DIMENSION(Imax) :: ndist_sta, rb
       DOUBLE PRECISION :: sum, dist_mean
-      REAL, DIMENSION(Imax) :: dist, ra, wght_dist
+      DOUBLE PRECISION, DIMENSION(Imax) :: dist, wght_dist, ra
 !***********************************************************************
 !----------------
 !----------------
@@ -665,10 +664,10 @@
       allmissing = 0
       DO j = 1, Nsta
         i = Nuse(j)
-        dist(i) = -9999.0
+        dist(i) = -9999.0D0
         IF ( Dat(i)>-95.0 ) THEN
           dist(i) = SQRT(((Sta_x(i)-X)**2+(Sta_y(i)-Y)**2))
-          IF ( dist(i)<1.1 ) dist(i) = 1.1
+          IF ( dist(i)<1.1D0 ) dist(i) = 1.1D0
           allmissing = 1
         ENDIF
       ENDDO
@@ -683,7 +682,7 @@
       jj = 0
       DO j = 1, Nsta
         i = Nuse(j)
-        IF ( dist(i)/=-9999.0 ) THEN
+        IF ( dist(i)/=-9999.0D0 ) THEN
           jj = jj + 1
           ra(jj) = dist(i)
           rb(jj) = i
@@ -691,7 +690,7 @@
       ENDDO
       IF ( jj>1 ) CALL SORT2I(Imax, jj, ra, rb)
       idist = Ndist
-      IF ( Ndist.GT.jj ) idist = jj
+      IF ( Ndist>jj ) idist = jj
       sum = 0.0D0
       DO k = 1, idist
         j = rb(k)
@@ -701,7 +700,7 @@
       DO k = 1, idist
         j = rb(k)
         ndist_sta(k) = j
-        wght_dist(k) = 1.0/((dist(j)/dist_mean)**Dist_exp)
+        wght_dist(k) = 1.0D0/((dist(j)/dist_mean)**Dist_exp)
       ENDDO
 !
       sum = 0.0D0
@@ -736,13 +735,14 @@
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse
       REAL, INTENT(IN) :: Z
       REAL, DIMENSION(Imax), INTENT(IN) :: Data, Sta_z
-      REAL, INTENT(OUT) :: Dat_elev
+      DOUBLE PRECISION, INTENT(OUT) :: Dat_elev
 ! Local Variables
       INTEGER nn, j1, j2, num, n, i, j
       INTEGER, DIMENSION(Imax) :: rb
-      REAL, DIMENSION(Imax) :: dat, dat0, elev, xmnelv, xmndat
-      REAL :: slope, b, ave, sdev, xmax, xmin
-      DOUBLE PRECISION :: sumdat, sumelv
+      DOUBLE PRECISION, DIMENSION(Imax) :: dat0, elev, xmnelv, xmndat
+      DOUBLE PRECISION :: slope, b
+      DOUBLE PRECISION, DIMENSION(Imax) :: dat
+      DOUBLE PRECISION :: sumdat, sumelv, sdev, ave, xmax, xmin
 !***********************************************************************
 !
 ! Temperature calculations
@@ -752,10 +752,9 @@
 !       (DALR = 5.4oF/1000 meters)
 !      dalr = 0.0177
 !-----------------------------------------------------------------------------------------------------
-      slope = -999.0
-      b = -999.0
-      ave = -999.0
-!
+      slope = -999.0D0
+      b = -999.0D0
+      ave = -999.0D0
 !
 ! First get rid of missing data
       n = 0
@@ -782,13 +781,13 @@
       IF ( Itype==2 ) THEN
         nn = 0
         DO n = 1, num
-          IF ( dat(n)>0.0 ) THEN
+          IF ( dat(n)>0.0D0 ) THEN
             nn = nn + 1
             dat0(nn) = dat(n)
           ENDIF
         ENDDO
         IF ( nn<3 ) THEN
-          Dat_elev = 0.0
+          Dat_elev = 0.0D0
           RETURN
         ENDIF
         CALL moments(Imax, dat0, nn, ave, sdev)
@@ -796,18 +795,18 @@
 !
 ! To get general elevation for the basin --
 ! remove daily points > or < then 2STD from mean
-      xmin = ave - (2.0*sdev)
-      IF ( Itype==2 ) xmin = 0.0
-      xmax = ave + (2.0*sdev)
+      xmin = ave - (2.0D0*sdev)
+      IF ( Itype==2 ) xmin = 0.0D0
+      xmax = ave + (2.0D0*sdev)
       DO i = 1, num
-        IF ( dat(i)>xmax ) dat(i) = -99.0
-        IF ( dat(i)<xmin ) dat(i) = -99.0
+        IF ( dat(i)>xmax ) dat(i) = -99.0D0
+        IF ( dat(i)<xmin ) dat(i) = -99.0D0
       ENDDO
 !
       n = 0
-      ave = 0.0
+      ave = 0.0D0
       DO i = 1, num
-        IF ( dat(i)>-90.0 ) THEN
+        IF ( dat(i)>-90.0D0 ) THEN
           n = n + 1
           dat(n) = dat(i)
           elev(n) = elev(i)
@@ -827,7 +826,7 @@
       CALL SORT2(Imax, num, elev, dat)
 !
 ! get a 3 station moving average (increasing elevation)
-      ave = 0.0
+      ave = 0.0D0
       nn = 0
       DO i = 1, num - 2
         sumelv = 0.0D0
@@ -863,10 +862,10 @@
         j2 = rb(num)
         slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1))
         b = xmndat(j1) - (slope*xmnelv(j1))
-        IF ( ABS(Itype).EQ.1 ) THEN
+        IF ( ABS(Itype)==1 ) THEN
           IF ( ABS(slope)>Dalr ) THEN
-            IF ( slope<0.0 ) slope = Dalr*(-1.0)
-            IF ( slope>0.0 ) slope = Dalr
+            IF ( slope<0.0D0 ) slope = Dalr*(-1.0)
+            IF ( slope>0.0D0 ) slope = Dalr
           ENDIF
         ENDIF
         Dat_elev = (slope*Z) + b
@@ -898,14 +897,14 @@
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, N
-      REAL, DIMENSION(Imax), INTENT(INOUT) :: Ra, Rb
+      DOUBLE PRECISION, DIMENSION(Imax), INTENT(INOUT) :: Ra, Rb
 ! Local Variables
       INTEGER l, ir, i, j
-      REAL rra, rrb
+      DOUBLE PRECISION rra, rrb
 !***********************************************************************
       l = N/2 + 1
       ir = N
- 100  IF ( l.GT.1 ) THEN
+ 100  IF ( l>1 ) THEN
         l = l - 1
         rra = Ra(l)
         rrb = Rb(l)
@@ -915,7 +914,7 @@
         Ra(ir) = Ra(1)
         Rb(ir) = Rb(1)
         ir = ir - 1
-        IF ( ir.EQ.1 ) THEN
+        IF ( ir==1 ) THEN
           Ra(1) = rra
           Rb(1) = rrb
           RETURN
@@ -924,11 +923,11 @@
       i = l
       j = l + l
       DO
-        IF ( j.LE.ir ) THEN
-          IF ( j.LT.ir ) THEN
-            IF ( Ra(j).LT.Ra(j+1) ) j = j + 1
+        IF ( j<=ir ) THEN
+          IF ( j<ir ) THEN
+            IF ( Ra(j)<Ra(j+1) ) j = j + 1
           ENDIF
-          IF ( rra.LT.Ra(j) ) THEN
+          IF ( rra<Ra(j) ) THEN
             Ra(i) = Ra(j)
             Rb(i) = Rb(j)
             i = j
@@ -953,14 +952,14 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, N
       INTEGER, DIMENSION(Imax), INTENT(INOUT) :: Rb
-      REAL, DIMENSION(Imax), INTENT(INOUT) :: Ra
+      DOUBLE PRECISION, DIMENSION(Imax), INTENT(INOUT) :: Ra
 ! Local Variables
       INTEGER l, ir, i, j, rrb
-      REAL rra
+      DOUBLE PRECISION rra
 !***********************************************************************
       l = N/2 + 1
       ir = N
- 100  IF ( l.GT.1 ) THEN
+ 100  IF ( l>1 ) THEN
         l = l - 1
         rra = Ra(l)
         rrb = Rb(l)
@@ -970,7 +969,7 @@
         Ra(ir) = Ra(1)
         Rb(ir) = Rb(1)
         ir = ir - 1
-        IF ( ir.EQ.1 ) THEN
+        IF ( ir==1 ) THEN
           Ra(1) = rra
           Rb(1) = rrb
           RETURN
@@ -979,11 +978,11 @@
       i = l
       j = l + l
       DO
-        IF ( j.LE.ir ) THEN
-          IF ( j.LT.ir ) THEN
-            IF ( Ra(j).LT.Ra(j+1) ) j = j + 1
+        IF ( j<=ir ) THEN
+          IF ( j<ir ) THEN
+            IF ( Ra(j)<Ra(j+1) ) j = j + 1
           ENDIF
-          IF ( rra.LT.Ra(j) ) THEN
+          IF ( rra<Ra(j) ) THEN
             Ra(i) = Ra(j)
             Rb(i) = Rb(j)
             i = j
@@ -999,7 +998,6 @@
       ENDDO
 
       END SUBROUTINE SORT2I
-
 !
 !***********************************************************************
 !***********************************************************************
@@ -1007,13 +1005,13 @@
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, N
-      REAL, DIMENSION(Imax), INTENT(IN) :: Data
-      REAL, INTENT(OUT) :: Ave, Sdev
+      DOUBLE PRECISION, DIMENSION(Imax), INTENT(IN) :: Data
+      DOUBLE PRECISION, INTENT(OUT) :: Sdev, Ave
 ! Local Variables
       DOUBLE PRECISION :: var, s, p
       INTEGER :: j
 !***********************************************************************
-      Sdev = 0.0
+      Sdev = 0.0D0
       IF ( N<2 ) THEN
 !        PRINT *, 'N must be at least 2'
 !  markstro      STOP

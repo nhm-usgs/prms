@@ -7,7 +7,7 @@
 !         --Declared variables basin_lapse_max and basin_lapse_min
 !           They are computed in function t2dist2run
 !       calculations now use all the stations and distance weight for
-!       interpolating values, evens out distribution of temp and can
+!       interpolating values, evens out distribution of temperature and can
 !       smooth out if bad data, and still accounts for local effects
 !
 ! Variables needed from DATA FILE: tmax, tmin
@@ -18,6 +18,8 @@
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
       REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
+      CHARACTER(LEN=10), PARAMETER:: MODNAME ='temp_dist2'
+      CHARACTER(LEN=26), PARAMETER:: PROCNAME='Temperature Distribution'
 !   Declared Variables
       REAL, SAVE :: Basin_lapse_max, Basin_lapse_min
 !   Declared Parameters
@@ -29,11 +31,6 @@
       REAL, SAVE, ALLOCATABLE :: Lapsemax_min(:), Lapsemax_max(:)
       REAL, SAVE, ALLOCATABLE :: Tsta_xlong(:), Tsta_ylat(:)
       REAL, SAVE, ALLOCATABLE :: Hru_xlong(:), Hru_ylat(:)
-! Local Variables
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='temp_dist2')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Temperature Distribution')
       END MODULE PRMS_TEMP_DIST2
 
 !***********************************************************************
@@ -67,7 +64,7 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Model, Nhru, Print_debug, Temp_dist2_nc,
+      USE PRMS_MODULE, ONLY: Model, Nhru, Temp_dist2_nc,
      +    Version_temp_dist2
       USE PRMS_CLIMATEVARS, ONLY: Ntemp
       IMPLICIT NONE
@@ -75,16 +72,17 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
+! Local Variables
+      INTEGER :: i
 !***********************************************************************
       t2dist2decl = 1
 
       Version_temp_dist2 =
-     +'$Id: temp_dist2.f 4081 2012-01-05 23:49:40Z rsregan $'
-      Temp_dist2_nc = INDEX( Version_temp_dist2, ' $' ) + 1
-      IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(MODNAME, PROCNAME, 
-     +         Version_temp_dist2(:Temp_dist2_nc))/=0 ) STOP
-      ENDIF
+     +'$Id: temp_dist2.f 4554 2012-06-06 16:42:32Z rsregan $'
+      Temp_dist2_nc = INDEX( Version_temp_dist2, 'Z' )
+      i = INDEX( Version_temp_dist2, '.f' ) + 1
+      IF ( declmodule(Version_temp_dist2(6:i), PROCNAME,
+     +     Version_temp_dist2(i+2:Temp_dist2_nc))/=0 ) STOP
 
       IF ( Ntemp<2 .AND. Model/=99 ) THEN
         PRINT *, 'ERROR, temp_dist2 requires at least 2 temperature',
@@ -307,8 +305,8 @@
         Basin_lapse_min = 0.0
       ENDIF
 
-! CALCULATE:  DISTANCE FROM EACH MRU TO EACH NTEMP GAGE
-!          :  ELEVATION FACTOR FOR EACH MRU TO EACH NTEMP GAGE
+! CALCULATE:  DISTANCE FROM EACH MRU TO EACH TEMPERATURE GAGE
+!          :  ELEVATION FACTOR FOR EACH MRU TO EACH TEMPERATURE GAGE
       ALLOCATE (Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp))
       ALLOCATE (N_tsta(Nhru))
       ALLOCATE (Nuse_tsta(Max_tsta,Nhru), nuse_tsta_dist(Max_tsta,Nhru))
@@ -374,7 +372,6 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area,
      +    Basin_area_inv, DNEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
@@ -382,6 +379,7 @@
      +    Tavgc, Basin_tsta, Ntemp
       USE PRMS_OBS, ONLY: Nowtime, Nowyear, Nowmonth, Nowday, Tmax, Tmin
       IMPLICIT NONE
+! Functions
       EXTERNAL :: temp_set
       INTRINSIC FLOAT
 ! Local Variables
@@ -399,7 +397,7 @@
       Basin_tmin = 0.0D0
       Basin_temp = 0.0D0
 
-! Calculate basin-average lapse rate using all NTEMP stations
+! Calculate basin-average lapse rate using all temperature stations
 
       lapsemaxmax = Lapsemax_max(mon)
       lapsemaxmin = Lapsemax_min(mon)
@@ -489,10 +487,11 @@
           tmn = tmn/sumdist - Tmin_mo_adj(j, mon)
           tmx = tmx/sumdist - Tmax_mo_adj(j, mon)
         ELSE
-          IF ( Print_debug>-1 ) PRINT *, 'Warning, HRU:', j, Nowtime,
-     +             ' no climate stations used to set temperature'
           tmn = (mn+mx)*0.5
           tmx = tmn
+          PRINT *, 'Warning, HRU:', j, Nowtime,
+     +             ' no valid data available to set temperatures,'
+          PRINT *, ' set values using monmax and monmin', tmx, tmn
         ENDIF
         IF ( tmx<=tmn ) tmx = tmn + 0.01
 
@@ -506,7 +505,7 @@
 
       Solrad_tmax = Tmax(Basin_tsta)
       Solrad_tmin = Tmin(Basin_tsta)
-      IF ( Solrad_tmax<-89.0 .OR. Solrad_tmax>150.0 ) THEN
+      IF ( Solrad_tmax<-99.0 .OR. Solrad_tmax>150.0 ) THEN
         PRINT *, 'Bad temperature data to set solrad_tmax:',
      +           Solrad_tmax, ' using last valid value'
         PRINT *, 'Value set to', solrad_tmax_good, ' Date:',
@@ -515,7 +514,7 @@
       ELSE
         Solrad_tmax_good = Solrad_tmax
       ENDIF
-      IF ( Solrad_tmin<-89.0 .OR. Solrad_tmin>150.0 ) THEN
+      IF ( Solrad_tmin<-99.0 .OR. Solrad_tmin>150.0 ) THEN
         PRINT *, 'Bad temperature data to set solrad_tmin:',
      +           Solrad_tmin, ' using last valid value'
         PRINT *, 'Value set to', solrad_tmin_good, ' Date:',

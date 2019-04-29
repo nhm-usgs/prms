@@ -12,8 +12,8 @@
 ##########################################################
 ARC		= LINUX
 
-#OPTLEVEL	= -g
-OPTLEVEL	= -O -Bstatic
+OPTLEVEL	= -g
+#OPTLEVEL	= -O3 -Bstatic
 LDFLAGS		=$(OPTLEVEL)
 
 ##########################################################

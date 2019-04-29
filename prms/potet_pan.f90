@@ -20,12 +20,8 @@
       INTEGER :: i, k, j
       REAL :: epancoef_mo
       REAL, SAVE, ALLOCATABLE :: last_pan_evap(:)
-          
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='potet_pan')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Potential Evapotranspiration')
-      
+      CHARACTER(LEN=9), PARAMETER :: MODNAME = 'potet_pan'
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
       potet_pan = 1
 
@@ -47,11 +43,10 @@
         last_pan_evap = Pan_evap
 
       ELSEIF ( Process(:4)=='decl'  ) THEN
-        Version_potet_pan = '$Id: potet_pan.f90 3797 2011-10-25 16:43:33Z rsregan $'
-        Potet_pan_nc = INDEX( Version_potet_pan, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, Version_potet_pan(:Potet_pan_nc))/=0 ) STOP
-        ENDIF
+        Version_potet_pan = '$Id: potet_pan.f90 4231 2012-02-29 21:08:30Z rsregan $'
+        Potet_pan_nc = INDEX( Version_potet_pan, 'Z' )
+        i = INDEX( Version_potet_pan, '.f90' ) + 3
+        IF ( declmodule(Version_potet_pan(6:i), PROCNAME, Version_potet_pan(i+2:Potet_pan_nc))/=0 ) STOP
 
         ALLOCATE ( Epan_coef(12) )
         IF ( declparam(MODNAME, 'epan_coef', 'nmonths', 'real', &

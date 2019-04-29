@@ -12,9 +12,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: oprint.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: oprint.c 6387 2012-02-10 20:44:24Z markstro $
  *
-   $Revision: 3058 $
+   $Revision: 6387 $
         $Log: oprint.c,v $
         Revision 1.4  1996/02/19 20:00:29  markstro
         Now lints pretty clean

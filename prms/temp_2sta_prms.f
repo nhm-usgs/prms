@@ -12,8 +12,8 @@
 !     hru_tsta, hru_elev, hru_area, basin_tsta
 !***********************************************************************
       INTEGER FUNCTION temp_2sta_prms()
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru,
-     +    Version_temp_2sta_prms, Temp_2sta_prms_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru, Version_temp_2sta_prms,
+     +    Temp_2sta_prms_nc
       USE PRMS_BASIN, ONLY: Hru_elev, Basin_area_inv, Hru_area, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Hru_tsta, Ntemp,
      +    Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, Basin_tmin,
@@ -43,17 +43,17 @@
 
       IF ( Process(:3)=='run' ) THEN
         thi = Tmax(Hi_index)
-        IF ( thi<-50.0 .OR. thi>150.0 ) PRINT 9001, 'tmax', thi,
+        IF ( thi<-99.0 .OR. thi>150.0 ) PRINT 9001, 'tmax', thi,
      +       Hi_index, Nowtime
         tlo = Tmax(Lo_index)
-        IF ( tlo<-50.0 .OR. tlo>150.0 ) PRINT 9001, 'tmax', tlo,
+        IF ( tlo<-99.0 .OR. tlo>150.0 ) PRINT 9001, 'tmax', tlo,
      +       Lo_index, Nowtime
         tmxsta = thi - tlo
         thi = Tmin(Hi_index)
-        IF ( thi<-50.0 .OR. thi>150.0 ) PRINT 9001, 'tmin', thi,
+        IF ( thi<-99.0 .OR. thi>150.0 ) PRINT 9001, 'tmin', thi,
      +       Hi_index, Nowtime
         tlo = Tmin(Lo_index)
-        IF ( tlo<-50.0 .OR. tlo>150.0 ) PRINT 9001, 'tmin', tlo,
+        IF ( tlo<-99.0 .OR. tlo>150.0 ) PRINT 9001, 'tmin', tlo,
      +       Lo_index, Nowtime
         tmnsta = thi - tlo
 
@@ -95,13 +95,12 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_temp_2sta_prms =
-     +'$Id: temp_2sta_prms.f 3677 2011-10-05 23:51:21Z rsregan $'
+     +'$Id: temp_2sta_prms.f 4486 2012-05-08 15:41:47Z rsregan $'
         Temp_2sta_prms_nc = INDEX( Version_temp_2sta_prms, ' $' ) + 1
-        IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(MODNAME, PROCNAME, 
+
+        IF ( declmodule(MODNAME, PROCNAME, 
      +          Version_temp_2sta_prms(:Temp_2sta_prms_nc))
      +         /=0)STOP
-        ENDIF
 
         IF ( declparam(MODNAME, 'lo_index', 'one', 'integer',
      +       '1', 'bounded', 'ntemp',

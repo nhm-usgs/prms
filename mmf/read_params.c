@@ -14,9 +14,9 @@
  * read_params.c: reads the params data base from a file
  * File name is passed in as an argument
  *
- * $Id: read_params.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: read_params.c 6789 2012-04-20 16:51:47Z rsregan $
  *
-   $Revision: 6064 $
+   $Revision: 6789 $
         $Log: read_params.c,v $
         Revision 1.30  1998/10/20 15:53:02  markstro
         Fixed "blank" format.
@@ -435,7 +435,8 @@ char *read_dims (char *param_file_name) {
 				return (NULL);
 			}
 		} else {
-			(void)fprintf (stderr,"\nMMS Warning -- from read_dims:\ndimension '%s' is set in parameter file:\n%s\nbut has never been declared.\n\n", key, param_file_name);
+			(void)fprintf (stderr,"\nWARNING: dimension '%s' is not required; set in parameter file:\n         %s\n", key, param_file_name);
+//			(void)fprintf (stderr,"\nMMS Warning -- from read_dims:\ndimension '%s' is set in parameter file:\n%s\nbut has never been declared.\n\n", key, param_file_name);
 			fgets (line, MAXDATALNLEN, param_file);
 			fgets (line, MAXDATALNLEN, param_file);
 		}
@@ -563,7 +564,7 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 * get key, column width and format
 */
   if (fgets (line, MAXDATALNLEN, *param_file) == NULL) {
-	  (void)sprintf (buf, "ERROR: Early end of Parameter File: %s", param_file_name);
+	  (void)sprintf (buf, "\nERROR: Early end of Parameter File: %s", param_file_name);
     return (buf);
   }
 
@@ -636,12 +637,12 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 
 		if (isdigit(*line)) {
 			if ((*param_ptr)->ndimen != atol(line)) {
-				sprintf (buf, "ERROR: number of dimensions for parameter %s doesn't match parameter declaration.\nParameter File: %s\n", key, param_file_name);
+				sprintf (buf, "\nERROR: number of dimensions for parameter %s doesn't match parameter declaration.\nParameter File: %s\n", key, param_file_name);
 				return buf;
 			}
 
 			if((*param_ptr)->ndimen == 0) {
-				(void)sprintf (buf, "ERROR: number of dimensions is 0 for %s in Parameter File %s", key, param_file_name);
+				(void)sprintf (buf, "\nERROR: number of dimensions is 0 for %s in Parameter File %s", key, param_file_name);
 				return (buf);
 			}
 /*
@@ -650,13 +651,13 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 */
 			for (i = 0; i < (*param_ptr)->ndimen; i++) {
 				if(fgets(dimen, MAXDATALNLEN, *param_file) == NULL) {
-					(void)sprintf (buf, "ERROR: number of dimensions is wrong for %s in Parameter File %s", key, param_file_name);
+					(void)sprintf (buf, "\nERROR: number of dimensions is wrong for %s in Parameter File %s", key, param_file_name);
 					return (buf);
 				}
 
 				dimen[strlen(dimen) - 1] = '\0';
 				if (strcmp(dimen, (*param_ptr)->dimen[i]->name)) {
-					(void)sprintf (buf, "ERROR: dimension specification is wrong for %s in Parameter File %s", key, param_file_name);
+					(void)sprintf (buf, "\nERROR: dimension specification is wrong for %s in Parameter File %s", key, param_file_name);
 					return (buf);
 				}
 			} /* i */
@@ -670,12 +671,12 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 			}
 
 			if((param_size = atol(line)) == 0) {
-				(void)sprintf (buf, "ERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
+				(void)sprintf (buf, "\nERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
 				return (buf);
 			}
 
 			if(param_size != (*param_ptr)->size) {
-				(void)sprintf (buf, "ERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
+				(void)sprintf (buf, "\nERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
 				return (buf);
 			}
 
@@ -685,7 +686,7 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 			dimen[strlen(line)-1] = '\0';
 
 			if (strcmp(dimen, (*param_ptr)->dimen[0]->name)) {
-				(void)sprintf (buf, "ERROR: incorrect dimension specified for parameter %s in Parameter File %s",
+				(void)sprintf (buf, "\nERROR: incorrect dimension specified for parameter %s in Parameter File %s",
 				  key, param_file_name);
 				return (buf);
 			}
@@ -697,22 +698,25 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 */
 
 		if(fgets(line, MAXDATALNLEN, *param_file) == NULL) {
-			(void)sprintf (buf, "ERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
+			(void)sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
 			return (buf);
 		}
 
 		if((type = atol(line)) == 0) {
-			sprintf (buf, "ERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
+			sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
 			return (buf);
 		}
 
 		if(type != (*param_ptr)->type) {
-			sprintf (buf, "ERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
+			sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
 			return (buf);
 		}
   
 	} else {
-		(void)printf ("WARNING: parameter %s has values in Parameter File (%s), but these values are not currently used by PRMS.\n\n", key, param_file_name);
+//		(void)printf ("WARNING: parameter %s is included in the Parameter File (%s) and is not required.\n", key, param_file_name);
+//		(void)printf ("         This parameter is read and ignored.\n\n");
+		(void)printf ("\nWARNING: parameter %s is ignored as it is not required.\n", key);
+		(void)printf ("         Read from Parameter File: %s\n", param_file_name);
 	}
 
 	return (NULL);
@@ -836,7 +840,7 @@ static char *READ_param_values (PARAM *param, FILE *param_file, char line[]) {
 								if (comp_ptr != endp && *endp == '\n') {
 									((double *)(param->value))[i++] = d;
 								} else {
-									sprintf (buf, "ERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a double precision float or there could be white spaces after the values on the line.", param->name, (i+1));
+									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a double precision float or there could be white spaces after the values on the line.", param->name, (i+1));
 									return (buf);
 								}
 								break;
@@ -846,7 +850,7 @@ static char *READ_param_values (PARAM *param, FILE *param_file, char line[]) {
 								if (comp_ptr != endp && *endp == '\n') {
 									((float *)(param->value))[i++] = (float)d;
 								} else {
-									sprintf (buf, "ERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a float or there could be white spaces after the values on the line.", param->name, (i+1));
+									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a float or there could be white spaces after the values on the line.", param->name, (i+1));
 									return (buf);
 								}
 								break;
@@ -856,7 +860,7 @@ static char *READ_param_values (PARAM *param, FILE *param_file, char line[]) {
 								if (comp_ptr != endp && *endp == '\n') {
 									((int *)(param->value))[i++] = (int)l;
 								} else {
-									sprintf (buf, "ERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be an integer or there could be white spaces after the values on the line.", param->name, (i+1));
+									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be an integer or there could be white spaces after the values on the line.", param->name, (i+1));
 									return (buf);
 								}
 								break;
@@ -873,10 +877,10 @@ static char *READ_param_values (PARAM *param, FILE *param_file, char line[]) {
 	}
 
 	if (i < param->size) {
-		sprintf (buf, "ERROR: too few values read for paramter %s in Parameter File", param->name);
+		sprintf (buf, "\nERROR: too few values read for paramter %s in Parameter File", param->name);
 		return (buf);
 	} else if (i > param->size) {
-		sprintf (buf, "ERROR: too many values read for paramter %s in Parameter File", param->name);
+		sprintf (buf, "\nERROR: too many values read for paramter %s in Parameter File", param->name);
 		return (buf);
 	}
 	return (NULL);
