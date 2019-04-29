@@ -5,16 +5,16 @@
       USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
 ! Module Variables
-      INTEGER, SAVE :: Begin_results, Begyr
+      INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nhru_var_type(:)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nhru_var_dble(:, :)
-      CHARACTER(LEN=40), SAVE :: Output_fmt, Output_fmt2
+      CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
       CHARACTER(LEN=12), SAVE :: MODNAME
-      INTEGER, SAVE :: Daily_flag, Double_vars
+      INTEGER, SAVE :: Daily_flag, Double_vars, Yeardays, Monthly_flag
       DOUBLE PRECISION, SAVE :: Monthdays
-      INTEGER, SAVE, ALLOCATABLE :: Monthlyunit(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nhru_var_monthly(:, :)
+      INTEGER, SAVE, ALLOCATABLE :: Monthlyunit(:), Yearlyunit(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nhru_var_monthly(:, :), Nhru_var_yearly(:, :)
 ! Declared Parameters
       INTEGER, SAVE :: Prms_warmup
 ! Control Parameters
@@ -47,29 +47,30 @@
 !***********************************************************************
       SUBROUTINE nhru_summarydecl()
       USE PRMS_NHRU_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, NhruOutON_OFF
+      USE PRMS_MODULE, ONLY: Model, Inputerror_flag
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR
-      INTEGER, EXTERNAL :: declparam, control_string_array, control_integer, control_string
+      INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
       EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i
       CHARACTER(LEN=80), SAVE :: Version_nhru_summary
 !***********************************************************************
-      Version_nhru_summary = 'nhru_summary.f90 2015-11-13 18:59:32Z'
-      CALL print_module(Version_nhru_summary, 'Output Summary              ', 90)
+      Version_nhru_summary = 'nhru_summary.f90 2017-01-23 11:25:00Z'
+      CALL print_module(Version_nhru_summary, 'Nhru Output Summary         ', 90)
       MODNAME = 'nhru_summary'
 
       IF ( control_integer(NhruOutVars, 'nhruOutVars')/=0 ) NhruOutVars = 0
-      ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly
+      ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
       IF ( control_integer(NhruOut_freq, 'nhruOut_freq')/=0 ) NhruOut_freq = 0
 
       IF ( NhruOutVars==0 ) THEN
         IF ( Model/=99 ) THEN
-          PRINT *, 'WARNING, nhru_summary requested with nhruOutVars equal 0'
-          PRINT *, 'no nhru_summary output is produced'
-          NhruOutON_OFF = 0
+          PRINT *, 'ERROR, nhru_summary requested with nhruOutVars equal 0'
+!          PRINT *, 'no nhru_summary output is produced'
+!          NhruOutON_OFF = 0
+          Inputerror_flag = 1
           RETURN
         ENDIF
       ELSE
@@ -98,7 +99,7 @@
       USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag , MAXFILE_LENGTH, Start_year, End_year
       IMPLICIT NONE
       INTRINSIC ABS
-      INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
+      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL read_error, PRMS_open_output_file
 ! Local Variables
       INTEGER :: ios, ierr, size, dim, jj, j
@@ -113,6 +114,7 @@
         PRINT *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
         Inputerror_flag = 1
       ENDIF
+      Lastyear = Begyr
 
       WRITE ( Output_fmt, 9001 ) Nhru
 
@@ -146,7 +148,15 @@
         ALLOCATE ( Dailyunit(NhruOutVars) )
       ENDIF
 
-      IF ( NhruOut_freq>1 ) THEN
+      Monthly_flag = 0
+      IF ( NhruOut_freq==2 .OR. NhruOut_freq==3 .OR. NhruOut_freq==4 ) Monthly_flag = 1
+
+      IF ( NhruOut_freq>4 ) THEN
+        Yeardays = 0
+        ALLOCATE ( Nhru_var_yearly(Nhru, NhruOutVars), Yearlyunit(NhruOutVars) )
+        Nhru_var_yearly = 0.0D0
+        WRITE ( Output_fmt3, 9003 ) Nhru
+      ELSEIF ( Monthly_flag==1 ) THEN
         Monthdays = 0.0D0
         ALLOCATE ( Nhru_var_monthly(Nhru, NhruOutVars), Monthlyunit(NhruOutVars) )
         Nhru_var_monthly = 0.0D0
@@ -163,13 +173,22 @@
           IF ( ios/=0 ) STOP 'in nhru_summary'
           WRITE ( Dailyunit(jj), Output_fmt2 ) (j, j=1,Nhru)
         ENDIF
-        IF ( NhruOut_freq>1 ) THEN
+        IF ( NhruOut_freq==5 ) THEN
+          fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_meanyearly.csv'
+          CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
+          IF ( ios/=0 ) STOP 'in nhru_summary, mean yearly'
+          WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nhru)
+        ELSEIF ( NhruOut_freq==6 ) THEN
+          fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_yearly.csv'
+          CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
+          IF ( ios/=0 ) STOP 'in nhru_summary, yearly'
+          WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nhru)
+        ELSEIF ( Monthly_flag==1 ) THEN
           IF ( NhruOut_freq==4 ) THEN
             fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))// &
      &                 '_meanmonthly.csv'
           ELSE
-            fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))// &
-     &                 '_monthly.csv'
+            fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_monthly.csv'
           ENDIF
           !print *, fileName
           CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
@@ -180,6 +199,7 @@
 
  9001 FORMAT ('(I4, 2(''-'',I2.2),',I6,'('',''ES10.3))')
  9002 FORMAT ('("Date "',I6,'('',''I6))')
+ 9003 FORMAT ('(I4,', I6,'('',''ES10.3))')
 
       END SUBROUTINE nhru_summaryinit
 
@@ -197,7 +217,7 @@
       INTEGER, EXTERNAL :: getvar
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: j, i, jj, write_month
+      INTEGER :: j, i, jj, write_month, write_year, last_day
 !***********************************************************************
       IF ( Begin_results==0 ) THEN
         IF ( Nowyear==Begyr .AND. Nowmonth==Start_month .AND. Nowday==Start_day ) THEN
@@ -219,8 +239,29 @@
         ENDIF
       ENDDO
 
-      write_month = 0 
-      IF ( NhruOut_freq>1 ) THEN
+      write_month = 0
+      write_year = 0
+      IF ( NhruOut_freq>4 ) THEN
+        last_day = 0
+        IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = 1
+        IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
+          IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==1 ) THEN
+            DO jj = 1, NhruOutVars
+              IF ( NhruOut_freq==5 ) THEN
+                DO j = 1, Active_hrus
+                  i = Hru_route_order(j)
+                  Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj)/Yeardays
+                ENDDO
+              ENDIF
+              WRITE ( Yearlyunit(jj), Output_fmt3) Lastyear, (Nhru_var_yearly(j,jj), j=1,Nhru)
+            ENDDO
+            Nhru_var_yearly = 0.0D0
+            Yeardays = 0
+            Lastyear = Nowyear
+          ENDIF
+         ENDIF
+         Yeardays = Yeardays + 1
+      ELSEIF ( Monthly_flag==1 ) THEN
         ! check for last day of month and simulation
         IF ( Nowday==Modays(Nowmonth) ) THEN
           write_month = 1
@@ -243,7 +284,17 @@
         ENDDO
       ENDIF
 
-      IF ( NhruOut_freq>1 ) THEN
+      IF ( NhruOut_freq>4 ) THEN
+        DO jj = 1, NhruOutVars
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) + DBLE( Nhru_var_daily(i, jj) )
+          ENDDO
+        ENDDO
+        RETURN
+      ENDIF
+
+      IF ( Monthly_flag==1 ) THEN
         DO jj = 1, NhruOutVars
           DO j = 1, Active_hrus
             i = Hru_route_order(j)

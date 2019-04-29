@@ -14,8 +14,7 @@
       IMPLICIT NONE
 !   Local Variables
       CHARACTER(LEN=8), SAVE :: MODNAME
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subincstor(:), Laststor(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Sub_inq(:), Sub_cfs(:), Sub_cms(:)
@@ -26,6 +25,8 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_swrad(:), Subinc_snowcov(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_tmaxc(:), Subinc_tminc(:), Subinc_tavgc(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_deltastor(:), Subinc_wb(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_rain(:), Subinc_snow(:), Subinc_stor(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_recharge(:), Subinc_szstor_frac(:), Subinc_capstor_frac(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Subbasin_down(:), Hru_subbasin(:)
       END MODULE PRMS_SUBBASIN
@@ -69,7 +70,7 @@
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = 'subbasin.f90 2016-07-11 12:16:00Z'
+      Version_subbasin = 'subbasin.f90 2016-10-17 17:18:00Z'
       CALL print_module(Version_subbasin, 'Output Summary              ', 90)
       MODNAME = 'subbasin'
 
@@ -123,6 +124,16 @@
      &     'Area-weighted average precipitation from associated HRUs to each subbasin', &
      &     'inches', Subinc_precip)/=0 ) CALL read_error(3, 'subinc_precip')
 
+      ALLOCATE ( Subinc_rain(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_rain', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average rain on associated HRUs to each subbasin', &
+     &     'inches', Subinc_rain)/=0 ) CALL read_error(3, 'subinc_rain')
+
+      ALLOCATE ( Subinc_snow(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_snow', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average snow on associated HRUs to each subbasin', &
+     &     'inches', Subinc_snow)/=0 ) CALL read_error(3, 'subinc_snow')
+
       ALLOCATE ( Subinc_actet(Nsub) )
       IF ( declvar(MODNAME, 'subinc_actet', 'nsub', Nsub, 'double', &
      &     'Area-weighted average actual ET from associated HRUs to each subbasin', &
@@ -159,12 +170,12 @@
       ALLOCATE ( Subinc_wb(Nsub) )
       IF ( declvar(MODNAME, 'subinc_wb', 'nsub', Nsub, 'double', &
      &     'Water balance for each subbasin', &
-     &     'cfs', Subinc_wb)/=0 ) CALL read_error(3, 'subinc_wb')
+     &     'inches', Subinc_wb)/=0 ) CALL read_error(3, 'subinc_wb')
 
       ALLOCATE ( Subinc_deltastor(Nsub) )
       IF ( declvar(MODNAME, 'subinc_deltastor', 'nsub', Nsub, 'double', &
      &     'Change in storage for each subbasin', &
-     &     'cfs', Subinc_deltastor)/=0 ) CALL read_error(3, 'subinc_deltastor')
+     &     'inches', Subinc_deltastor)/=0 ) CALL read_error(3, 'subinc_deltastor')
 
       ALLOCATE ( Subinc_snowmelt(Nsub) )
       IF ( declvar(MODNAME, 'subinc_snowmelt', 'nsub', Nsub, 'double', &
@@ -176,6 +187,26 @@
      &     'Area-weighted average snowpack water equivalent from'// &
      &     ' associated HRUs of each subbasin', &
      &     'inches', Subinc_pkweqv)/=0 ) CALL read_error(3, 'subinc_pkweqv')
+
+      ALLOCATE ( Subinc_recharge(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_recharge', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average recharge from associated HRUs of each subbasin', &
+     &     'inches', Subinc_recharge)/=0 ) CALL read_error(3, 'subinc_recharge')
+
+      ALLOCATE ( Subinc_szstor_frac(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_szstor_frac', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average fraction of soil-zone water content storage for associated HRUs of each subbasin', &
+     &     'decimal fraction', Subinc_szstor_frac)/=0 ) CALL read_error(3, 'subinc_szstor_frac')
+
+      ALLOCATE ( Subinc_capstor_frac(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_capstor_frac', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average fraction of capillary reservoir water content storage for associated HRUs of each subbasin', &
+     &     'decimal fraction', Subinc_capstor_frac)/=0 ) CALL read_error(3, 'subinc_capstor_frac')
+
+      ALLOCATE ( Subinc_stor(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_stor', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average total water content in storage reservoirs associated HRUs of each subbasin', &
+     &     'inches', subinc_stor)/=0 ) CALL read_error(3, 'subinc_stor')
 
       ALLOCATE ( Qsub(Nsub), Tree(Nsub, Nsub), Sub_inq(Nsub) )
       IF ( declvar(MODNAME, 'sub_inq', 'nsub', Nsub, 'double', &
@@ -207,7 +238,7 @@
      &     'none')/=0 ) CALL read_error(1, 'hru_subbasin')
 
 ! Allocate arrays for variables
-      ALLOCATE ( Sub_area(Nsub), Subincstor(Nsub), Laststor(Nsub) )
+      ALLOCATE ( Sub_area(Nsub), Laststor(Nsub) )
 
       END FUNCTION subdecl
 
@@ -259,6 +290,8 @@
       ENDIF
       Subinc_sroff = 0.0D0
       Subinc_precip = 0.0D0
+      Subinc_rain = 0.0D0
+      Subinc_snow = 0.0D0
       Subinc_snowmelt = 0.0D0
       Subinc_pkweqv = 0.0D0
       Subinc_actet = 0.0D0
@@ -270,6 +303,9 @@
       Subinc_potet = 0.0D0
       Subinc_wb = 0.0D0
       Subinc_deltastor = 0.0D0
+      Subinc_recharge = 0.0D0
+      Subinc_szstor_frac = 0.0D0
+      Subinc_capstor_frac = 0.0D0
       Sub_interflow = 0.0D0
       Sub_sroff = 0.0D0
 
@@ -314,7 +350,7 @@
       ENDIF
 
 ! added some code to allow for restart, but not climate states and fluxes and subinc_deltastor
-      Subincstor = 0.0D0
+      Subinc_stor = 0.0D0
       Sub_area = 0.0D0
       gwstor = 0.0D0
       gwq = 0.0D0
@@ -357,7 +393,7 @@
           Subinc_interflow(k) = Subinc_interflow(k) + ssq
           Subinc_sroff(k) = Subinc_sroff(k) + srq
           IF ( Model/=0 ) Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
-          Subincstor(k) = Subincstor(k) + soilstor + gwstor + snowstor + landstor
+          Subinc_stor(k) = Subinc_stor(k) + soilstor + gwstor + snowstor + landstor
           Sub_area(k) = Sub_area(k) + harea
         ENDIF
       ENDDO
@@ -367,7 +403,7 @@
           PRINT *, 'ERROR, subbasin:', i, ' does not include any HRUs'
           Inputerror_flag = 1
         ELSE
-          Subincstor(i) = Subincstor(i)/Sub_area(i)
+          Subinc_stor(i) = Subinc_stor(i)/Sub_area(i)
         ENDIF
         Sub_inq(i) = Qsub(i)*Cfs_conv
         Subinc_interflow(i) = Subinc_interflow(i)*Cfs_conv
@@ -413,12 +449,12 @@
      &    Hru_type, CFS2CMS_CONV, Hru_frac_perv, Lake_hru_id
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
-      USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc
+      USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
      &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Lakein_sz
+      USE PRMS_SOILZONE, ONLY: Lakein_sz, Soil_moist_frac, Cpr_stor_frac, Recharge
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_LAKE_ROUTE, ONLY: Lake_vol, Lake_outcfs
       IMPLICIT NONE
@@ -443,6 +479,8 @@
         Subinc_interflow(j) = 0.0D0
         Subinc_sroff(j) = 0.0D0
         Subinc_precip(j) = 0.0D0
+        Subinc_rain(j) = 0.0D0
+        Subinc_snow(j) = 0.0D0
         Subinc_snowmelt(j) = 0.0D0
         Subinc_pkweqv(j) = 0.0D0
         Subinc_actet(j) = 0.0D0
@@ -453,11 +491,14 @@
         Subinc_tavgc(j) = 0.0D0
         Subinc_potet(j) = 0.0D0
         Subinc_wb(j) = 0.0D0
+        Subinc_recharge(j) = 0.0D0
+        Subinc_szstor_frac(j) = 0.0D0
+        Subinc_capstor_frac(j) = 0.0D0
       ENDDO
       IF ( Model/=0 ) Subinc_gwflow = 0.0D0
 
-      Laststor = Subincstor
-      Subincstor = 0.0D0
+      Laststor = Subinc_stor
+      Subinc_stor = 0.0D0
 
       DO jj = 1, Active_hrus
         j = Hru_route_order(jj)
@@ -493,6 +534,8 @@
           Subinc_interflow(k) = Subinc_interflow(k) + ssq
           Subinc_sroff(k) = Subinc_sroff(k) + srq
           Subinc_precip(k) = Subinc_precip(k) + DBLE(Hru_ppt(j))*harea
+          Subinc_rain(k) = Subinc_rain(k) + DBLE(Hru_rain(j))*harea
+          Subinc_snow(k) = Subinc_snow(k) + DBLE(Hru_snow(j))*harea
           Subinc_actet(k) = Subinc_actet(k) + DBLE(Hru_actet(j))*harea
           Subinc_snowmelt(k) = Subinc_snowmelt(k) + DBLE(Snowmelt(j))*harea
           Subinc_pkweqv(k) = Subinc_pkweqv(k) + Pkwater_equiv(j)*harea
@@ -502,12 +545,15 @@
           Subinc_tminc(k) = Subinc_tminc(k) + DBLE(Tminc(j))*harea
           Subinc_tmaxc(k) = Subinc_tmaxc(k) + DBLE(Tmaxc(j))*harea
           Subinc_tavgc(k) = Subinc_tavgc(k) + DBLE(Tavgc(j))*harea
-          Subincstor(k) = Subincstor(k) + soilstor + snowstor + landstor
+          Subinc_recharge(k) = Subinc_recharge(k) + Recharge(j)*harea
+          Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_frac(j)*harea
+          Subinc_capstor_frac(k) = Cpr_stor_frac(k) + Recharge(j)*harea
+          Subinc_stor(k) = Subinc_stor(k) + soilstor + snowstor + landstor
           IF ( Model/=0 ) THEN
             gwq = DBLE(Gwres_flow(j))*harea
             Qsub(k) = Qsub(k) + gwq
             Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
-            Subincstor(k) = Subincstor(k) + Gwres_stor(j)*harea
+            Subinc_stor(k) = Subinc_stor(k) + Gwres_stor(j)*harea
           ENDIF
         ENDIF
       ENDDO
@@ -522,6 +568,8 @@
         Subinc_interflow(j) = Subinc_interflow(j)*Cfs_conv
         Subinc_sroff(j) = Subinc_sroff(j)*Cfs_conv
         Subinc_precip(j) = Subinc_precip(j)/subarea
+        Subinc_rain(j) = Subinc_rain(j)/subarea
+        Subinc_snow(j) = Subinc_snow(j)/subarea
         Subinc_actet(j) = Subinc_actet(j)/subarea
         Subinc_snowmelt(j) = Subinc_snowmelt(j)/subarea
         Subinc_pkweqv(j) = Subinc_pkweqv(j)/subarea
@@ -531,8 +579,11 @@
         Subinc_tminc(j) = Subinc_tminc(j)/subarea
         Subinc_tmaxc(j) = Subinc_tmaxc(j)/subarea
         Subinc_tavgc(j) = Subinc_tavgc(j)/subarea
-        Subincstor(j) = Subincstor(j)/subarea
-        Subinc_deltastor(j) = Laststor(j) - Subincstor(j)
+        Subinc_stor(j) = Subinc_stor(j)/subarea
+        Subinc_recharge(j) = Subinc_recharge(j)/subarea
+        Subinc_szstor_frac(j) = Subinc_szstor_frac(j)/subarea
+        Subinc_capstor_frac(j) = Subinc_capstor_frac(j)/subarea
+        Subinc_deltastor(j) = Laststor(j) - Subinc_stor(j)
         IF ( Model/=0 ) THEN
           dmy1 = Subinc_gwflow(j)/subarea
           Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv

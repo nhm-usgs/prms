@@ -185,6 +185,10 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("stream_temp_flag", 1, lval);
 
+		lval = (long *)umalloc(sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array("stream_temp_shade_flag", 1, lval);
+
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("segment_transferON_OFF", 1, lval);
@@ -312,6 +316,7 @@ void setup_cont (void) {
 		decl_control_string ("transp_on_dynamic", "dyntranspon");
 		decl_control_string ("csv_output_file", "prms_summary.csv");
         decl_control_string ("nhruOutBaseFileName", "nhruout_path");
+		decl_control_string ("nsubOutBaseFileName", "nsubout_path");
 /*
 **	run start and end times
 */
@@ -382,7 +387,21 @@ void setup_cont (void) {
 		decl_control_int_array("nhruOut_freq", 1, lval);
 		lval[0] = 1;
 		decl_control_int_array("prms_warmup", 1, lval);
-		
+
+
+		/*
+		**	nsub_summary
+		*/
+		lval = (long *)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("nsubOutON_OFF", 1, lval);
+		lval = (long *)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("nsubOutVars", 1, lval);
+		lval = (long *)umalloc(sizeof(long));
+		lval[0] = 1;
+		decl_control_int_array("nsubOut_freq", 1, lval);
+
 /*
 **	graphics display
 */

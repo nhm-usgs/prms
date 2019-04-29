@@ -65,7 +65,7 @@
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = 'soltab.f90 2016-15-10 13:37:00Z'
+      Version_soltab = 'soltab.f90 2016-09-09 12:53:00Z'
       CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
       MODNAME = 'soltab'
 
@@ -170,6 +170,7 @@
       Soltab_sunhrs = 0.0D0
       Soltab_potsw = 0.0D0
       Soltab_horad_potsw = 0.0D0
+      Hru_cossl = 0.0D0
       DO nn = 1, Active_hrus
         n = Hru_route_order(nn)
         CALL compute_soltab(obliquity, Solar_declination, 0.0, 0.0, Hru_lat(n), &

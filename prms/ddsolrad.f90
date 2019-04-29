@@ -25,7 +25,7 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, &
-     &    Basin_potsw, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
+     &    Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
      &    Solsta_flag, Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
@@ -50,7 +50,7 @@
       IF ( Process(:3)=='run' ) THEN
 !rsr using julian day as the soltab arrays are filled by julian day
         Basin_horad = Soltab_basinpotsw(Jday)
-        Basin_potsw = 0.0D0
+        Basin_swrad = 0.0D0
         Basin_orad = 0.0D0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
@@ -101,13 +101,13 @@
                 ENDIF
               ELSE
                 Swrad(j) = Solrad(k)*Rad_conv
-                Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
+                Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
                 CYCLE
               ENDIF
             ENDIF
           ENDIF
           Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
-          Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
+          Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
         IF ( Observed_flag==1 ) THEN
@@ -115,10 +115,11 @@
         ELSE
           Orad = SNGL( Basin_orad )
         ENDIF
-        Basin_potsw = Basin_potsw*Basin_area_inv
+        Basin_swrad = Basin_swrad*Basin_area_inv
+        Basin_potsw = Basin_swrad
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ddsolrad = 'ddsolrad.f90 2015-09-14 17:50:22Z'
+        Version_ddsolrad = 'ddsolrad.f90 2016-11-03 17:48:00Z'
         CALL print_module(Version_ddsolrad, 'Solar Radiation Distribution', 90)
         MODNAME = 'ddsolrad'
 

@@ -243,7 +243,7 @@
 !     &            'this may produce unstable results'
 !            ierr = 1
 !          ENDIF
-          Ts(i) = 0.0
+!          Ts(i) = 0.0 ! not sure why this was set to zero, causes divide by 0 if K_coef < 1, BUG FIX 10/18/2016 RSR
           Ts_i(i) = -1
 
         ELSEIF ( k<2.0 ) THEN

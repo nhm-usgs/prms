@@ -118,7 +118,7 @@
 ! Net long wave rediation (Irmak eqn. 10) MJ / m2/ day
 ! 4.903E-09 = Stefan-Boltzmann constant
           Lwrad_net(i) = 4.903E-09 * (((Tmaxc(i) + 273.16)**4 + (Tminc(i) + 273.16)**4)/2.0 ) &
-      &                  * (0.34 - 0.14*SQRT(Vp_actual(i)) * ((1.35*sw) / stab) - 0.35)
+      &                  * (0.34 - 0.14*(Vp_actual(i)**0.5)) * (((1.35*sw) / stab) - 0.35)
 
 ! Net radiation (Irmak eqn. 8) MJ / m2 / day
 ! 1 Langley = 0.04184 MJ/m2

@@ -5,7 +5,7 @@
       MODULE PRMS_BASINSUM
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: BALUNT
+      INTEGER, SAVE :: BALUNT, Totdays
       CHARACTER(LEN=9), SAVE :: MODNAME
       INTEGER, SAVE :: Header_prt, Endjday
       CHARACTER(LEN=32) :: Buffer32
@@ -21,8 +21,8 @@
       CHARACTER(LEN=152), PARAMETER :: EQULS = ' ========================================================'// &
      &  '==============================================================================================='
       LOGICAL, SAVE :: Dprt, Mprt, Yprt, Tprt
+      DOUBLE PRECISION, SAVE :: Basin_swrad_yr, Basin_swrad_tot, Basin_swrad_mo
 !   Declared Variables
-      INTEGER, SAVE :: Totdays
       DOUBLE PRECISION, SAVE :: Obs_runoff_mo, Obs_runoff_yr, Obs_runoff_tot
       DOUBLE PRECISION, SAVE :: Basin_cfs_mo, Basin_cfs_yr, Basin_cfs_tot
       DOUBLE PRECISION, SAVE :: Basin_net_ppt_yr, Basin_net_ppt_tot, Watbal_sum
@@ -94,7 +94,7 @@
 !***********************************************************************
       sumbdecl = 0
 
-      Version_basin_sum = 'basin_sum.f90 2016-06-16 10:35:00Z'
+      Version_basin_sum = 'basin_sum.f90 2016-12-09 12:34:00Z'
       CALL print_module(Version_basin_sum, 'Summary                     ', 90)
       MODNAME = 'basin_sum'
 
@@ -197,9 +197,6 @@
       IF ( declvar(MODNAME, 'basin_intcp_evap_tot', 'one', 1, 'double', &
      &     'Total simulation basin area-weighted average canopy evaporation', &
      &     'inches', Basin_intcp_evap_tot)/=0 ) CALL read_error(3, 'basin_intcp_evap_tot')
-      IF ( declvar(MODNAME, 'totdays', 'one', 1, 'integer', &
-     &     'Total simulation number of days', &
-     &     'none', Totdays)/=0 ) CALL read_error(3, 'totdays')
 
 ! declare parameters
       IF ( Nobs>0 .OR. Model==99 ) THEN
@@ -349,6 +346,7 @@
         Basin_cfs_mo = 0.0D0
         Basin_ppt_mo = 0.0D0
         Basin_net_ppt_mo = 0.0D0
+        Basin_swrad_mo = 0.0D0
         Basin_max_temp_mo = 0.0D0
         Basin_min_temp_mo = 0.0D0
         Basin_intcp_evap_mo = 0.0D0
@@ -367,6 +365,7 @@
         Basin_cfs_yr = 0.0D0
         Basin_ppt_yr = 0.0D0
         Basin_net_ppt_yr = 0.0D0
+        Basin_swrad_yr = 0.0D0
         Basin_max_temp_yr = 0.0D0
         Basin_min_temp_yr = 0.0D0
         Basin_intcp_evap_yr = 0.0D0
@@ -384,6 +383,7 @@
         Basin_cfs_tot = 0.0D0
         Basin_ppt_tot = 0.0D0
         Basin_net_ppt_tot = 0.0D0
+        Basin_swrad_tot = 0.0D0
         Basin_max_temp_tot = 0.0D0
         Basin_min_temp_tot = 0.0D0
         Basin_intcp_evap_tot = 0.0D0
@@ -580,6 +580,7 @@
         Basin_cfs_mo = 0.0D0
         Basin_ppt_mo = 0.0D0
         Basin_net_ppt_mo = 0.0D0
+        Basin_swrad_mo = 0.0D0
         Basin_max_temp_mo = 0.0D0
         Basin_min_temp_mo = 0.0D0
         Basin_intcp_evap_mo = 0.0D0
@@ -598,6 +599,7 @@
       Basin_cfs_mo = Basin_cfs_mo + Basin_cfs
       Basin_ppt_mo = Basin_ppt_mo + Basin_ppt
       Basin_net_ppt_mo = Basin_net_ppt_mo + Basin_net_ppt
+      Basin_swrad_mo = Basin_swrad_mo + Basin_potsw
       Basin_max_temp_mo = Basin_max_temp_mo + Basin_tmax
       Basin_min_temp_mo = Basin_min_temp_mo + Basin_tmin
       Basin_intcp_evap_mo = Basin_intcp_evap_mo + Basin_intcp_evap
@@ -611,6 +613,7 @@
 
       IF ( Nowday==Modays(Nowmonth) ) THEN
         monthdays = Modays(Nowmonth)
+        Basin_swrad_mo = Basin_swrad_mo/monthdays
         Basin_max_temp_mo = Basin_max_temp_mo/monthdays
         Basin_min_temp_mo = Basin_min_temp_mo/monthdays
         Obs_runoff_mo = Obs_runoff_mo/monthdays
@@ -634,7 +637,7 @@
 
           ELSEIF ( Print_type==2 ) THEN
             IF ( Dprt ) CALL write_outfile(DASHS(:144))
-            WRITE ( Buffer160, 9006 ) Nowyear, Nowmonth, Basin_max_temp_mo, &
+            WRITE ( Buffer160, 9006 ) Nowyear, Nowmonth, Basin_swrad_mo, Basin_max_temp_mo, &
      &              Basin_min_temp_mo, Basin_ppt_mo, Basin_net_ppt_mo, &
      &              Basin_intcp_evap_mo, Basin_potet_mo, Basin_actet_mo, &
      &              Basin_soil_moist, Basin_pweqv, Basin_snowmelt_mo, &
@@ -656,6 +659,7 @@
         Basin_cfs_yr = Basin_cfs_yr + Basin_cfs
         Basin_ppt_yr = Basin_ppt_yr + Basin_ppt
         Basin_net_ppt_yr = Basin_net_ppt_yr + Basin_net_ppt
+        Basin_swrad_yr = Basin_swrad_yr + Basin_potsw
         Basin_max_temp_yr = Basin_max_temp_yr + Basin_tmax
         Basin_min_temp_yr = Basin_min_temp_yr + Basin_tmin
         Basin_intcp_evap_yr = Basin_intcp_evap_yr + Basin_intcp_evap
@@ -691,12 +695,13 @@
             IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:62))
 
           ELSEIF ( Print_type==2 ) THEN
+            Basin_swrad_yr = Basin_swrad_yr/Yrdays
             Basin_max_temp_yr = Basin_max_temp_yr/Yrdays
             Basin_min_temp_yr = Basin_min_temp_yr/Yrdays
             Obs_runoff_yr = Obs_runoff_yr/Yrdays
             Basin_cfs_yr = Basin_cfs_yr/Yrdays
             IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS)
-            WRITE ( Buffer160, 9007 ) Nowyear, Basin_max_temp_yr, &
+            WRITE ( Buffer160, 9007 ) Nowyear, Basin_swrad_yr, Basin_max_temp_yr, &
      &              Basin_min_temp_yr, Basin_ppt_yr, Basin_net_ppt_yr, &
      &              Basin_intcp_stor, Basin_intcp_evap_yr, Basin_potet_yr, Basin_actet_yr, &
      &              Basin_soil_moist, Basin_pweqv, Basin_snowmelt_yr, &
@@ -711,6 +716,7 @@
           Basin_cfs_yr = 0.0D0
           Basin_ppt_yr = 0.0D0
           Basin_net_ppt_yr = 0.0D0
+          Basin_swrad_yr = 0.0D0
           Basin_max_temp_yr = 0.0D0
           Basin_min_temp_yr = 0.0D0
           Basin_intcp_evap_yr = 0.0D0
@@ -743,6 +749,7 @@
         Basin_cfs_tot = Basin_cfs_tot + Basin_cfs
         Basin_ppt_tot = Basin_ppt_tot + Basin_ppt
         Basin_net_ppt_tot = Basin_net_ppt_tot + Basin_net_ppt
+        Basin_swrad_tot = Basin_swrad_tot + Basin_potsw
         Basin_max_temp_tot = Basin_max_temp_tot + Basin_tmax
         Basin_min_temp_tot = Basin_min_temp_tot + Basin_tmin
         Basin_intcp_evap_tot = Basin_intcp_evap_tot + Basin_intcp_evap
@@ -790,8 +797,8 @@
  9001 FORMAT (I6, 2I3, F5.0, 2F5.1, 2F7.2, 2F6.2, 2F7.2, F6.2, F6.3, F7.3, 2F6.3, 3F7.2, F7.4, 2F9.2, F7.2)
  9004 FORMAT (A, 13X, 2F7.2, F12.1, 2F7.2, 2F6.2, F7.2, 2F6.2, 4F7.2, 2F9.2, F7.2)
  9005 FORMAT (A, 3X, 6F9.3)
- 9006 FORMAT (I6, I3, 8X, 2F5.1, 2F7.2, F12.1, 2F7.2, 2F6.2, F7.2, 2F6.2, 4F7.2, 2F9.2)
- 9007 FORMAT (I6, 11X, 2F5.1, 2F7.2, 2F6.2, 2F7.2, 2F6.2, F7.2, 2F6.2, 4F7.2, 2F9.2, F7.2)
+ 9006 FORMAT (I6, I3, 3X, 3F5.1, 2F7.2, F12.1, 2F7.2, 2F6.2, F7.2, 2F6.2, 4F7.2, 2F9.2)
+ 9007 FORMAT (I6, 6X, 3F5.1, 2F7.2, 2F6.2, 2F7.2, 2F6.2, F7.2, 2F6.2, 4F7.2, 2F9.2, F7.2)
 
       END FUNCTION sumbrun
 
@@ -820,7 +827,7 @@
         ELSE
           CALL write_outfile('   Year Month Day   Measured   Simulated')
         ENDIF
-        CALL write_outfile('                       (cfs)       (cfs)')
+        CALL write_outfile('                      (cfs)      (cfs)')
         CALL write_outfile(DASHS(:40))
 
 !  This writes the water balance table header.
@@ -833,7 +840,7 @@
 !  This writes the detailed table header.
       ELSEIF ( Print_type==2 ) THEN
         CALL write_outfile(' Year mo day srad  tmx  tmn    ppt  n-ppt  ints  intl  potet'// &
-     &    '  actet  smav pweqv   melt gwsto sssto gwflow ssflow  sroff tot-fl     sim      meas lkevap')
+     &    '  actet  smav pweqv   melt gwsto sssto gwflow ssflow  sroff tot-fl     sim     meas  lkevap')
         CALL write_outfile('             (ly) (F/C)(F/C)  (in)   (in)  (in)  (in)   (in)'// &
      &    '   (in)  (in)  (in)   (in)  (in)  (in)   (in)   (in)   (in)   (in)    (cfs)    (cfs)   (in)')
         CALL write_outfile(DASHS(:151))

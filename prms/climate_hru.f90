@@ -33,7 +33,7 @@
      &    Tavgc, Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
      &    Precip_units, Tmax_allrain_f, Adjmix_rain, &
      &    Basin_ppt, Basin_potet, Potet, Basin_snow, Basin_rain, &
-     &    Basin_horad, Orad, Swrad, Basin_potsw, Basin_obs_ppt, &
+     &    Basin_horad, Orad, Swrad, Basin_potsw, Basin_swrad, Basin_obs_ppt, &
      &    Transp_on, Basin_transp_on, Tmax_allsnow_f
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_basinpotsw, Hru_cossl, Soltab_potsw
@@ -108,7 +108,7 @@
             ENDIF
           ENDIF
           IF ( Cbh_check_flag==1 ) CALL read_cbh_date(yr, mo, dy, 'Swrad', ios, ierr)
-          Basin_potsw = 0.0D0
+          Basin_swrad = 0.0D0
         ENDIF
 
         IF ( Climate_transp_flag==1 ) THEN
@@ -167,7 +167,7 @@
 
           IF ( Climate_swrad_flag==1 ) THEN
             IF ( Cbh_check_flag==1 ) CALL check_cbh_value('Swrad', Swrad(i), 0.0, 1000.0, missing)
-            Basin_potsw = Basin_potsw + DBLE( Swrad(i)*harea )
+            Basin_swrad = Basin_swrad + DBLE( Swrad(i)*harea )
           ENDIF
 
           IF ( Climate_transp_flag==1 ) THEN
@@ -235,13 +235,14 @@
         IF ( Climate_swrad_flag==1 ) THEN
           Basin_horad = Soltab_basinpotsw(Jday)
           IF ( Orad_flag==0 ) Orad = SNGL( (DBLE(Swrad(1))*Hru_cossl(1)*Basin_horad)/Soltab_potsw(Jday,1) ) ! ??bad assumption using HRU 1
-          Basin_potsw = Basin_potsw*Basin_area_inv
+          Basin_swrad = Basin_swrad*Basin_area_inv
+          Basin_potsw = Basin_swrad
         ENDIF
         IF ( Humidity_cbh_flag==1 ) Basin_humidity = Basin_humidity*Basin_area_inv
         IF ( Windspeed_cbh_flag==1 ) Basin_windspeed = Basin_windspeed*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_hru = 'climate_hru.f90 2016-03-02 17:03:19Z'
+        Version_climate_hru = 'climate_hru.f90 2016-11-03 18:08:00Z'
         MODNAME = 'climate_hru'
 
         IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = 1

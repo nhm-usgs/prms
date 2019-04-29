@@ -69,6 +69,7 @@
           heat_flux = 0.0 ! Irmak and others (2012) says equal to zero for daily time step ! G
 
 ! Dew point temperature (Lawrence(2005) eqn. 8), degrees C
+! Humidity_hru is input as percent so divided by 100 to be in units of decimal fraction
           A1 = 17.625
           B1 = 243.04
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
@@ -111,21 +112,25 @@
 ! 4.903E-09 = Stefan-Boltzmann constant
 
            Lwrad_net(i) = 4.903E-09 * (((Tmaxc(i) + 273.16)**4 + (Tminc(i) + 273.16)**4)/2.0 ) &
-      &                  * (0.34 - 0.14*SQRT(Vp_actual(i)) * ((1.35*sw) / stab) - 0.35)
+      &                  * (0.34 - 0.14*(Vp_actual(i)**0.5)) * (((1.35*sw) / stab) - 0.35)
 
 ! Net radiation (Irmak eqn. 8) MJ / m2 / day
 ! 1 Langley = 0.04184 MJ/m2
-          net_rad = Swrad(i)*0.04184 - Lwrad_net(i) - heat_flux
+          net_rad = Swrad(i)*0.04184 - Lwrad_net(i)
 
-          a = Vp_slope(i) * net_rad / elh / 1000000.0
+          a = Vp_slope(i) * (net_rad - heat_flux) / elh * 1000.0
           b = psycnst * Pm_n_coef(i,Nowmonth) * Windspeed_hru(i) * vp_deficit / (Tavgc(i) + 273.0)
           c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Windspeed_hru(i)))
 
-!  PM equation with corp_coef in mm/day
+!  PM equation with crop_coef in mm/day
 !          Potet(i) = (a + b)/c
-          Potet(i) = Crop_coef(i,Nowmonth) * (a + b)/c
+          Potet(i) = Crop_coef(i, Nowmonth) * (a + b)/c
           Potet(i) = Potet(i) / 25.4
 
+! may be able to use intrinsic ISNAN
+!          if (potet(i) .ne. potet(i)) then
+!             print *, "potet NaN", potet(i)
+!          end if
 
           IF ( Potet(i)<0.0 ) Potet(i) = 0.0
           Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
@@ -134,7 +139,7 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_pm.f90 2016-07-20 15:31:00Z'
+        Version_potet = 'potet_pm.f90 2017-01-23 11:27:00Z'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_pm'
 
@@ -157,7 +162,7 @@
         IF ( declparam(MODNAME, 'crop_coef', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '2.0', &
      &       'Crop coefficient for each HRU', &
-     &       'Crop coefficient for each HRU', &
+     &       'Monthly (January to December) crop coefficient for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'crop_coef')
 
 !******Get parameters

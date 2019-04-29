@@ -82,7 +82,7 @@
 !***********************************************************************
       gwflowdecl = 0
 
-      Version_gwflow = 'gwflow.f90 2016-06-01 10:10:00Z'
+      Version_gwflow = 'gwflow.f90 2016-12-09 12:40:00Z'
       CALL print_module(Version_gwflow, 'Groundwater                 ', 90)
       MODNAME = 'gwflow'
 
@@ -472,9 +472,16 @@
           Gwin_dprst(i) = Dprst_seep_hru(i)*gwarea
           gwin = gwin + Gwin_dprst(i)
         ENDIF
+        gwstor = gwstor + gwin
+        Basin_gwin = Basin_gwin + gwin
         IF ( Gwminarea_flag==1 ) THEN
           ! check to be sure gwres_stor >= gwstor_minarea before computing outflows
           IF ( gwstor<Gwstor_minarea(i) ) THEN
+            IF ( gwstor<0.0D0 ) THEN
+              IF ( Print_debug>-1 ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, &
+     &                                       ' is < 0.0 with gwstor_min active', gwstor
+!              STOP
+            ENDIF
             gwstor_last = gwstor
             gwstor = Gwstor_minarea(i)
             !rsr, keep track of change in storage for WB
@@ -487,8 +494,6 @@
             Gwstor_minarea_wb(i) = 0.0D0
           ENDIF
         ENDIF
-        gwstor = gwstor + gwin
-        Basin_gwin = Basin_gwin + gwin
 
 ! Compute groundwater discharge
         gwflow = gwstor*DBLE( Gwflow_coef(i) )

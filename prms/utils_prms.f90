@@ -1,4 +1,4 @@
-      ! utils_prms.f90 2016-05-10 15:48:00Z
+      ! utils_prms.f90 2016-12-09 12:48:00Z
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -65,10 +65,10 @@
               Day_file = 0
               RETURN
             ENDIF
-            IF ( Month_file>=Month ) i = 1
+            IF ( Month_file>=Month .OR. Year_file/=Year ) i = 1
           ENDDO
         ENDIF
-        IF ( Month_file==Month ) THEN
+        IF ( Year_file==Year .AND. Month_file==Month ) THEN
           IF ( Day_file<Day ) THEN
             i = 0
             DO WHILE ( i==0 )

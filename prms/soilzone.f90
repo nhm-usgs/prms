@@ -125,7 +125,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2016-07-18 16:34:00Z'
+      Version_soilzone = 'soilzone.f90 2016-12-09 12:45:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -172,27 +172,27 @@
      &     'Total soil-zone water storage (soil_moist + ssres_stor)', &
      &     'inches', Soil_moist_tot)/=0 ) CALL read_error(3, 'soil_moist_tot')
 
-      IF ( declvar(MODNAME, 'basin_cpr_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_cpr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of capillary reservoir storage of the maximum storage', &
      &     'decimal fraction', Basin_cpr_stor_frac)/=0 ) CALL read_error(3, 'basin_cpr_stor_frac')
 
-      IF ( declvar(MODNAME, 'basin_gvr_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_gvr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of gravity reservoir storage of the maximum storage', &
      &     'decimal fraction', Basin_gvr_stor_frac)/=0 ) CALL read_error(3, 'basin_gvr_stor_frac')
 
-      IF ( declvar(MODNAME, 'basin_pfr_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_pfr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of preferential-flow reservoir storage of the maximum storage', &
      &     'decimal fraction', Basin_pfr_stor_frac)/=0 ) CALL read_error(3, 'basin_pfr_stor_frac')
 
-      IF ( declvar(MODNAME, 'basin_soil_lower_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_soil_lower_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of soil lower zone storage of the maximum storage', &
      &     'decimal fraction', Basin_soil_lower_stor_frac)/=0 ) CALL read_error(3, 'basin_soil_lower_stor_frac')
 
-      IF ( declvar(MODNAME, 'basin_soil_rechr_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_soil_rechr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of soil recharge zone storage of the maximum storage', &
      &     'decimal fraction', Basin_soil_rechr_stor_frac)/=0 ) CALL read_error(3, 'basin_soil_rechr_stor_frac')
 
-      IF ( declvar(MODNAME, 'basin_sz_stor_frac', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'basin_sz_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of soil zone storage of the maximum storage', &
      &     'decimal fraction', Basin_sz_stor_frac)/=0 ) CALL read_error(3, 'basin_sz_stor_frac')
 
@@ -610,7 +610,7 @@
 ! Functions
       EXTERNAL :: init_basin_vars, checkdim_param_limits
       INTEGER, EXTERNAL :: getparam
-      INTRINSIC MIN
+      INTRINSIC MIN, DBLE
 ! Local Variables
       INTEGER :: i, ii, ihru, icnt, ierr, ierr1
       REAL :: hruarea, hruperv
@@ -782,25 +782,25 @@
         Soil_moist_frac(i) = Soil_moist_tot(i)/Soil_zone_max(i)
         Cpr_stor_frac(i) = Soil_moist(i)/Soil_moist_max(i)
         IF ( Pref_flow_thrsh(i)>0.0 ) Gvr_stor_frac(i) = Slow_stor(i)/Pref_flow_thrsh(i)
-        Basin_cpr_stor_frac = Basin_cpr_stor_frac + Cpr_stor_frac(i)*hruperv
-        Basin_gvr_stor_frac = Basin_gvr_stor_frac + Gvr_stor_frac(i)*hruarea
+        Basin_cpr_stor_frac = Basin_cpr_stor_frac + DBLE( Cpr_stor_frac(i)*hruperv )
+        Basin_gvr_stor_frac = Basin_gvr_stor_frac + DBLE( Gvr_stor_frac(i)*hruarea )
         Soil_lower(i) = Soil_moist(i) - Soil_rechr(i)
         Soil_lower_stor_max(i) = Soil_moist_max(i) - Soil_rechr_max(i)
         IF ( Soil_lower_stor_max(i)>0.0 ) Soil_lower_ratio(i) = Soil_lower(i)/Soil_lower_stor_max(i)
         Soil_rechr_ratio(i) = Soil_rechr(i)/Soil_rechr_max(i)
-        Basin_sz_stor_frac = Basin_sz_stor_frac + Soil_moist_frac(i)*hruarea
-        Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac + Soil_lower_ratio(i)*hruperv
-        Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac + Soil_rechr_ratio(i)*hruperv
-        Basin_soil_moist = Basin_soil_moist + Soil_moist(i)*Hru_perv(i)
-        Basin_soil_moist_tot = Basin_soil_moist_tot + Soil_moist_tot(i)*hruarea
+        Basin_sz_stor_frac = Basin_sz_stor_frac + DBLE( Soil_moist_frac(i)*hruarea )
+        Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac + DBLE( Soil_lower_ratio(i)*hruperv )
+        Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac + DBLE( Soil_rechr_ratio(i)*hruperv )
+        Basin_soil_moist = Basin_soil_moist + DBLE( Soil_moist(i)*Hru_perv(i) )
+        Basin_soil_moist_tot = Basin_soil_moist_tot + DBLE( Soil_moist_tot(i)*hruarea )
         ! rsr, 6/12/2014 potential problem for GSFLOW if sum of slow_stor /= gravity_stor_res
-        Basin_slstor = Basin_slstor + Slow_stor(i)*hruarea
-        Basin_ssstor = Basin_ssstor + Ssres_stor(i)*hruarea
-        Basin_soil_rechr = Basin_soil_rechr + Soil_rechr(i)*hruperv
+        Basin_slstor = Basin_slstor + DBLE( Slow_stor(i)*hruarea )
+        Basin_ssstor = Basin_ssstor + DBLE( Ssres_stor(i)*hruarea )
+        Basin_soil_rechr = Basin_soil_rechr + DBLE( Soil_rechr(i)*hruperv )
         IF ( Pref_flow_flag(i)==1 ) THEN
-          Basin_pref_stor = Basin_pref_stor + Pref_flow_stor(i)*hruarea
+          Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*hruarea )
           Pfr_stor_frac(i) = Pref_flow_stor(i)/Pref_flow_max(i)
-          Basin_pfr_stor_frac = Basin_pfr_stor_frac + Pfr_stor_frac(i)*hruarea
+          Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( Pfr_stor_frac(i)*hruarea )
         ENDIF
       ENDDO
       Basin_soil_rechr = Basin_soil_rechr*Basin_area_inv
@@ -1208,7 +1208,7 @@
      &                                Pref_flow_in(i), Pref_flow_stor(i), prefflow)
           Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*harea )
           Pfr_stor_frac(i) = Pref_flow_stor(i)/Pref_flow_max(i)
-          Basin_pfr_stor_frac = Basin_pfr_stor_frac + Pref_flow_stor(i)*harea
+          Basin_pfr_stor_frac = Basin_pfr_stor_frac + Pfr_stor_frac(i)*harea
         ELSEIF ( Hru_type(i)==1 ) THEN
           dunnianflw_gvr = topfr  !?? is this right
         ENDIF

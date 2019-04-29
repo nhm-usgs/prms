@@ -1,11 +1,26 @@
 # prms makefile
 
-include ../makelist
+MMFDIR  = ../mmf
+BINDIR  = ./
+RM      = rm -f
+CC      = gcc
+FC      = gfortran
+#OPTLEVEL = -g
+OPTLEVEL = -O -Bstatic
+LDFLAGS =$(OPTLEVEL)
+FLIBS   = -lgfortran -lgcc -lm
+FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
 
-TARGET 	= ./prms
-LIBS	= ../mmf/libmmf.a
+TARGET 	= $(BINDIR)/prms
+LIBS	= $(MMFDIR)/libmmf.a
 
-LIBOBJS = \
+# Archive properties
+SHA_PRMS:="$(shell git rev-parse HEAD)"
+ORIGIN_PRMS:="$(shell git config --get remote.origin.url)"
+TAG_PRMS:="$(shell git tag)"
+COMMITDATE_PRMS:="$(shell git log -1 --format=%cd)"
+
+OBJS = \
 	call_modules.o \
 	basin.o \
 	climateflow.o \
@@ -54,17 +69,22 @@ LIBOBJS = \
 ####################################################
 # Rules for targets
 ####################################################
-$(TARGET): $(LIBOBJS) $(LIBS)
+$(TARGET): $(OBJS) $(LIBS)
 	$(RM) $(TARGET)
-	$(CC) $(LDFLAGS) -o $(TARGET) $(LIBOBJS) $(LIBS) $(FLIBS)
+	$(CC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(FLIBS)
 
 #
 # Define all object files which make up the library
 #
+print:
+	cd $(MMFDIR);make SHA_PRMS=$(SHA_PRMS) ORIGIN_PRMS=$(ORIGIN_PRMS) TAG_PRMS=$(TAG_PRMS) COMMITDATE_PRMS=$(COMMITDATE_PRMS) FFLAGS="$(FFLAGS)" LDFLAGS="$(LDFLAGS)" print; cd -
 
+$(LIBS):
+	cd $(MMFDIR);make SHA_PRMS=$(SHA_PRMS) ORIGIN_PRMS=$(ORIGIN_PRMS) TAG_PRMS=$(TAG_PRMS) COMMITDATE_PRMS=$(COMMITDATE_PRMS) FFLAGS="$(FFLAGS)" LDFLAGS="$(LDFLAGS)"; cd -
 
 clean:
-	$(RM) $(PRMSLIBTRUNK) $(TARGET)
+	cd $(MMFDIR);make clean; cd -
+	$(RM) $(TARGET)
 	$(RM) *.o *.mod *~
 
 call_modules.o: call_modules.f90

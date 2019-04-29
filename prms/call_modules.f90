@@ -8,7 +8,7 @@
       CHARACTER(LEN=80), PARAMETER :: &
      &  EQULS = '================================================================================'
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.2 08/15/2016'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.3 01/24/2017'
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
@@ -34,7 +34,7 @@
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
-      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file
+      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file, Param_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Strmflow_module, Transp_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Model_mode, Precip_module, Solrad_module
@@ -80,16 +80,15 @@
      &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2016-08-15 13:54:00Z'
+        PRMS_versn = 'call_modules.f90 2017-01-24 13:23:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
-        IF ( Print_debug>-1 ) PRINT 10, PRMS_VERSION, PRMS_versn(23:47)
-        WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION, PRMS_versn(23:47)
+        IF ( Print_debug>-1 ) PRINT 10, PRMS_VERSION
+        WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION
   10  FORMAT (///, 25X, 'U.S. Geological Survey', /, 15X, &
-     &        'Precipitation-Runoff Modeling System (PRMS)', /, &
-     &        14X, A, ' Tag: ', A, /)
-  15  FORMAT (/, 'The following modules are available:', //, 5X, 'Process',  19X, 'Modules', /, 74('-'), /, &
+     &        'Precipitation-Runoff Modeling System (PRMS)', /, 24X, A)
+  15  FORMAT (/, 18X, 'The following modules are available', //, 5X, 'Process',  19X, 'Modules', /, 74('-'), /, &
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs', /, &
@@ -111,14 +110,13 @@
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, water_balance', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 74('-'))
-  16  FORMAT (//, 'Active modules listed in the order in which they are called:', //, 8X, 'Process', 23X, &
+  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 23X, &
      &        'Module', 12X, 'Version Date')
         IF ( Print_debug>-1 )  THEN
           PRINT 15
           PRINT 9002
-        ELSE
-          WRITE ( PRMS_output_unit, 15 )
         ENDIF
+        WRITE ( PRMS_output_unit, 15 )
         PRINT 16
         WRITE ( PRMS_output_unit, 16 )
         PRINT '(A)', EQULS(:68)
@@ -137,9 +135,16 @@
 
         Grid_flag = 0
         IF ( Nhru==Nhrucell ) Grid_flag = 1
+
         nc = numchars(Model_control_file)
         IF ( Print_debug>-1 ) PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
         IF ( Print_debug>-1 ) WRITE ( PRMS_output_unit, 9004 ) 'Using Control File: ', Model_control_file(:nc)
+
+        nc = numchars(Param_file)
+        IF ( Print_debug>-1 ) THEN
+          PRINT 9004, 'Using Parameter File: ', Param_file(:nc)
+          WRITE ( PRMS_output_unit, 9004 ) 'Using Parameter File: ', Param_file(:nc)
+        ENDIF
 
         IF ( Init_vars_from_file==1 ) THEN
           nc = numchars(Var_init_file)
@@ -148,7 +153,7 @@
         IF ( Save_vars_to_file==1 ) THEN
           nc = numchars(Var_save_file)
           IF ( Print_debug>-1 ) PRINT 9004, 'Using var_save_file: ', Var_save_file(:nc)
-         ENDIF
+        ENDIF
 
         IF ( Print_debug>-1 ) THEN
           nc = numchars(Model_output_file)
@@ -352,11 +357,13 @@
      &                         Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
           Elapsed_time = Execution_time_end - Execution_time_start
           Elapsed_time_minutes = INT(Elapsed_time/60.0)
-          PRINT '(A,I4,A,F6.2,A)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                             Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
+          PRINT '(/, A,I4,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
+     &                                  Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
+          WRITE ( PRMS_output_unit,'(/, A,I4,A,F6.2,A,/)'), 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
+     &                                                      Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
         ELSEIF ( Process_flag==1 ) THEN
-          PRINT '(A)', EQULS(:68)
-          WRITE ( PRMS_output_unit, '(A)' ) EQULS(:68)
+          PRINT '(A, /)', EQULS(:68)
+          WRITE ( PRMS_output_unit, '(A, /)' ) EQULS(:68)
         ELSEIF ( Process_flag==2 ) THEN
           IF ( Inputerror_flag==1 ) THEN
             PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
@@ -382,8 +389,8 @@
 
  9001 FORMAT (/, 26X, 25('='), /, 26X, 'Normal completion of PRMS', /, 26X, 25('='), /)
  9002 FORMAT (//, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='))
- 9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
- 9004 FORMAT (/, 2A, /)
+ 9003 FORMAT (/, 'Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2))
+ 9004 FORMAT (/, 2A)
 
       END FUNCTION call_modules
 
@@ -467,6 +474,7 @@
       CALL PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
       IF ( iret/=0 ) STOP
       IF ( control_file_name(Model_control_file)/=0 ) CALL read_error(5, 'control_file_name')
+      IF ( control_string(Param_file, 'param_file')/=0 ) CALL read_error(5, 'param_file')
 
       ! Check for restart files
       IF ( Init_vars_from_file==1 ) THEN

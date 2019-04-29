@@ -33,7 +33,7 @@
 !   Declared Parameters and Variables - Solar Radiation
       INTEGER, SAVE :: Basin_solsta
       INTEGER, SAVE, ALLOCATABLE :: Hru_solsta(:), Hru_pansta(:)
-      DOUBLE PRECISION, SAVE :: Basin_potsw, Basin_orad, Basin_horad
+      DOUBLE PRECISION, SAVE :: Basin_potsw, Basin_swrad, Basin_orad, Basin_horad
       REAL, SAVE :: Rad_conv, Orad
       REAL, SAVE, ALLOCATABLE :: Swrad(:), Orad_hru(:)
       REAL, SAVE, ALLOCATABLE :: Ppt_rad_adj(:, :), Radmax(:, :), Radj_sppt(:), Radj_wppt(:)
@@ -128,7 +128,7 @@
 !***********************************************************************
       climateflow_decl = 0
 
-      Version_climateflow = 'climateflow.f90 2016-07-22 17:22:00Z'
+      Version_climateflow = 'climateflow.f90 2017-01-23 12:35:00Z'
       CALL print_module(Version_climateflow, 'Common States and Fluxes    ', 90)
       MODNAME = 'climateflow'
 
@@ -250,6 +250,10 @@
       IF ( declvar(Solrad_module, 'basin_horad', 'one', 1, 'double', &
      &     'Potential shortwave radiation for the basin centroid', &
      &     'Langleys', Basin_horad)/=0 ) CALL read_error(3, 'basin_horad')
+
+      IF ( declvar(Solrad_module, 'basin_swrad', 'one', 1, 'double', &
+     &     'Basin area-weighted average shortwave radiation', &
+     &     'Langleys', Basin_swrad)/=0 ) CALL read_error(3, 'basin_swrad')
 
       IF ( declvar(Solrad_module, 'basin_potsw', 'one', 1, 'double', &
      &     'Basin area-weighted average shortwave radiation', &
@@ -893,6 +897,7 @@
       Orad = 0.0
       Basin_horad = 0.0D0
       Basin_potsw = 0.0D0
+      Basin_swrad = 0.0D0
       Transp_on = 0
       Basin_transp_on = 0
       Basin_potet = 0.0D0

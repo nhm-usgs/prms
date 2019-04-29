@@ -24,10 +24,9 @@
       INTEGER FUNCTION ccsolrad()
       USE PRMS_CCSOLRAD
       USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, &
-     &    Basin_area_inv, NEARZERO
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Basin_orad, Orad_hru, &
-     &    Rad_conv, Hru_solsta, Basin_horad, Basin_potsw, Basin_solsta, Orad, Hru_ppt, &
+     &    Rad_conv, Hru_solsta, Basin_horad, Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, &
      &    Tmax_hru, Tmin_hru, Solsta_flag, Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
@@ -47,7 +46,7 @@
       IF ( Process(:3)=='run' ) THEN
 !rsr using julian day as the soltab arrays are filled by julian day
         Basin_horad = Soltab_basinpotsw(Jday)
-        Basin_potsw = 0.0D0
+        Basin_swrad = 0.0D0
         Basin_orad = 0.0D0
         Basin_radadj = 0.0D0
         Basin_cloud_cover = 0.0D0
@@ -92,13 +91,13 @@
                 ENDIF
               ELSE
                 Swrad(j) = Solrad(k)*Rad_conv
-                Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
+                Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
                 CYCLE
               ENDIF
             ENDIF
           ENDIF
           Swrad(j) = SNGL( Soltab_potsw(Jday, j)*DBLE(Cloud_radadj(j))/Hru_cossl(j) )
-          Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
+          Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
         Basin_radadj = Basin_radadj*Basin_area_inv
@@ -107,11 +106,12 @@
         ELSE
           Orad = SNGL( Basin_orad )
         ENDIF
-        Basin_potsw = Basin_potsw*Basin_area_inv
+        Basin_swrad = Basin_swrad*Basin_area_inv
+        Basin_potsw = Basin_swrad
         Basin_cloud_cover = Basin_cloud_cover*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ccsolrad = 'ccsolrad.f90 2016-05-10 18:52:00Z'
+        Version_ccsolrad = 'ccsolrad.f90 2016-11-03 17:50:00Z'
         CALL print_module(Version_ccsolrad, 'Solar Radiation Distribution', 90)
         MODNAME = 'ccsolrad'
 

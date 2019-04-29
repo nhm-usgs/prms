@@ -307,7 +307,7 @@ cur_fd->time = {year = 1956, month = 2, day = 19, hour = 0, min = 0, sec = 0,
 \*--------------------------------------------------------------------*/
 char *DATA_read_init (void) {
 
-   static char err[80];
+   static char err[256];
 
    int      i;
    static int      num_data_files = 0;
@@ -384,7 +384,7 @@ char *DATA_read_init (void) {
 \*--------------------------------------------------------------------*/
 char *READ_data_info (void) {
 
-   static char err[80];
+   static char err[256];
 
    int      i, num_data_files;
    char   **fname, *err_ptr;

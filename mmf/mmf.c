@@ -13,12 +13,29 @@
 #define MAIN
 #define MMF_C
 
+#define STRINGIZER(arg)     #arg
+#define STR_VALUE(arg)      STRINGIZER(arg)
+#define SHA_MMF_STRING STR_VALUE(SHA_MMF)
+#define SHA_PRMS_STRING STR_VALUE(SHA_PRMS)
+#define ORIGIN_MMF_STRING STR_VALUE(ORIGIN_MMF)
+#define ORIGIN_PRMS_STRING STR_VALUE(ORIGIN_PRMS)
+#define TAG_MMF_STRING STR_VALUE(TAG_MMF)
+#define TAG_PRMS_STRING STR_VALUE(TAG_PRMS)
+#define COMMITDATE_MMF_STRING STR_VALUE(COMMITDATE_MMF)
+#define COMMITDATE_PRMS_STRING STR_VALUE(COMMITDATE_PRMS)
+#define COMPILER_STRING STR_VALUE(COMPILER)
+#define SVER_STRING STR_VALUE(SVER)
+#define BUILDER_STRING STR_VALUE(BUILDER)
+#define BUILDDATE_STRING STR_VALUE(BUILDDATE)
+#define CFLAGS_STRING STR_VALUE(CFLAGS)
+#define FFLAGS_STRING STR_VALUE(FFLAGS)
+#define LDFLAGS_STRING STR_VALUE(LDFLAGS)
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <string.h>
 #include "mms.h"
-
 
 /**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 extern int call_modules(char *);
@@ -50,6 +67,28 @@ int main (int argc, char *argv[]) {
    char   **fname;
    char pathname[MAXPATHLEN];
 
+/*
+** Get the archive info
+*/
+    if (argc >= 2 && !strcmp(argv[1], "-info")) {
+        printf ("SHA_MMF = %s\n", SHA_MMF_STRING);
+        printf ("SHA_PRMS = %s\n", SHA_PRMS_STRING);
+        printf ("ORIGIN_MMF = %s\n", ORIGIN_MMF_STRING);
+        printf ("ORIGIN_PRMS = %s\n", ORIGIN_PRMS_STRING);
+        printf ("TAG_MMF = %s\n", TAG_MMF_STRING);
+        printf ("TAG_PRMS = %s\n", TAG_PRMS_STRING);
+        printf ("COMMITDATE_MMF = %s\n", COMMITDATE_MMF_STRING);
+        printf ("COMMITDATE_PRMS = %s\n", COMMITDATE_PRMS_STRING);
+        printf ("Compiler Version = %s\n", COMPILER_STRING);
+        printf ("OS Version = %s\n", SVER_STRING);
+        printf ("BUILDER = %s\n", BUILDER_STRING);
+        printf ("BUILDDATE = %s\n", BUILDDATE_STRING);
+        printf ("CFLAGS = %s\n", CFLAGS_STRING);
+        printf ("FFLAGS = %s\n", FFLAGS_STRING);
+        printf ("LDFLAGS = %s\n", LDFLAGS_STRING);
+
+        exit(0);
+    }
 
     /*
 	**  Maximum buffer size for reading lines from files.

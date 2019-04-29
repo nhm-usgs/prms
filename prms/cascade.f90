@@ -286,7 +286,7 @@
 !***********************************************************************
       SUBROUTINE init_cascade(Iret)
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Print_debug, Ncascade, Ncascdgw, Inputerror_flag, Cascadegw_flag
+      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Print_debug, Ncascade, Ncascdgw, Cascadegw_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_area
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -384,13 +384,6 @@
           IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'Cascade ignored as lake HRU cannot cascade to an HRU', &
      &                                                  i, kup, jdn, frac, istrm
         ELSE
-          ! if cascade is negative, used to call this farfield, now error
-          IF ( jdn<0 ) THEN
-            PRINT *, 'ERROR, hru_down_id < 0, far field option no longer supported'
-            Inputerror_flag = 1
-            CYCLE
-          ENDIF
-
           IF ( jdn>0 .AND. istrm<1 ) THEN
             IF ( Hru_type(jdn)==0 ) THEN
               IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) &
@@ -714,7 +707,7 @@
 !***********************************************************************
       SUBROUTINE initgw_cascade(Iret)
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Ngw, Nsegment, Print_debug, Ncascdgw, Inputerror_flag, Gwr_swale_flag
+      USE PRMS_MODULE, ONLY: Ngw, Nsegment, Print_debug, Ncascdgw, Gwr_swale_flag
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Gwr_type, Hru_area
       IMPLICIT NONE
       EXTERNAL order_gwrs
@@ -777,13 +770,6 @@
      &                  i, kup, jdn, frac, istrm
           ENDIF
         ELSE
-          ! if cascade is negative, used to call this farfield, now error
-          IF ( jdn<0 ) THEN
-            PRINT *, 'ERROR, gwr_down_id < 0, far field option no longer supported'
-            Inputerror_flag = 1
-            CYCLE
-          ENDIF
-
           IF ( jdn>0 .AND. istrm<1 ) THEN
             IF ( Gwr_type(jdn)==0 ) THEN
               IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'Cascade ignored as down GWR is inactive', &
@@ -1123,7 +1109,7 @@
  9008 FORMAT ('WARNING, GWR', I7, ' does not cascade or receive flow', /, &
      &        9X, 'and gwr_swale_flag > 0 and type = 1,', /, 9X, &
      &        'type changed to 3 (swale)', /)
- 9009 FORMAT ('WARNING, GWR', I7, ' receives flow but does not cascade', &
+ 9009 FORMAT ('WARNING, GWR', I7, ' receives flow but does not cascade', /, &
      &        9X, 'and gwr_swale_flag > 0 and type = 1,', /, 9X, &
      &        'type changed to 3 (swale)', /)
  9010 FORMAT ('ERROR, GWR', I7, ' does not cascade or receive flow and gwr_swale_flag = 0')
