@@ -8,7 +8,7 @@
  * COMMENT  : reads the values associated with a key from an input file,
  *            and stores it in the data base
  *
- * $Id: readvar.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

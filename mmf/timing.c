@@ -7,7 +7,7 @@
  *            The routines with a _ suffix are called from Fortran
  *            The routines without the suffix are called from C
  *
- * $Id: timing.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

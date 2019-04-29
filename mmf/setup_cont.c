@@ -5,7 +5,7 @@
  * FUNCTION : setup_cont
  * COMMENT  :
  *
- * $Id: setup_cont.c 6968 2014-10-31 21:38:59Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -57,6 +57,7 @@ void setup_cont (void) {
         decl_control_string ("transp_module", "transp_tindex");
         decl_control_string ("gsflow_output_file", "gsflow.out");
         decl_control_string ("gsflow_csv_file", "gsflow.csv");
+		decl_control_string ("creator_email", "unknown");
 
 /*
         cval = (char *)umalloc (sizeof (long));
@@ -87,6 +88,10 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;
 		decl_control_int_array ("subbasin_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("gwr_swale_flag", 1, lval);
 
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -136,6 +141,10 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("dyn_transp_flag", 1, lval);
 
+		lval = (long *)umalloc(sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array("dyn_transp_on_flag", 1, lval);
+
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dyn_fallfrost_flag", 1, lval);
@@ -155,6 +164,10 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dyn_radtrncf_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array("dyn_snareathresh_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -296,6 +309,7 @@ void setup_cont (void) {
 		decl_control_string ("radtrncf_dynamic", "dynradtrncf");
 		decl_control_string ("sro2dprst_perv_dynamic", "dynsro2dprst_perv");
 		decl_control_string ("sro2dprst_imperv_dynamic", "dynsro2dprst_imperv");
+		decl_control_string ("transp_on_dynamic", "dyntranspon");
 		decl_control_string ("csv_output_file", "prms_summary.csv");
         decl_control_string ("nhruOutBaseFileName", "nhruout_path");
 /*
@@ -363,6 +377,11 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
         decl_control_int_array ("nhruOutVars", 1, lval);
+		lval = (long *)umalloc(sizeof (long));
+		lval[0] = 1;
+		decl_control_int_array("nhruOut_freq", 1, lval);
+		lval[0] = 1;
+		decl_control_int_array("prms_warmup", 1, lval);
 		
 /*
 **	graphics display

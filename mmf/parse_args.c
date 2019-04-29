@@ -5,7 +5,7 @@
  * FUNCTION : parse_args
  * COMMENT  : parses the command line arguments
  *
- * $Id: parse_args.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -49,6 +49,7 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
       for (i = 1; i < argc ; i++) {
 		 if (!strcmp(argv[i], "-debug")) {
 			 Mdebuglevel = atoi(argv[i+1]);
+			 i++;
 
 		 } else if (!strncmp(argv[i],"-C",2)) {
             MAltContFile = (char *)((argv[i]));
@@ -75,6 +76,10 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
             i++;
             *(set_value + *set_count) = strdup ((char *)((argv[i])));
             (*set_count)++;
+
+		} else if (!strncmp(argv[i],"-MAXDATALNLEN",13)){
+            max_data_ln_len = atoi(argv[i+1]);
+			i++;
 
 		 } else { // Assume argument with no flag is control file name
 			MAltContFile = (char *)((argv[i]));

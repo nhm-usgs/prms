@@ -31,7 +31,7 @@
       INTEGER FUNCTION temp_1sta_laps()
       USE PRMS_TEMP_1STA_LAPS
       USE PRMS_MODULE, ONLY: Process, Nhru, Ntemp, Save_vars_to_file, &
-     &    Inputerror_flag, Temp_flag, Init_vars_from_file, Model, Start_month
+     &    Inputerror_flag, Temp_flag, Init_vars_from_file, Model, Start_month, Print_debug
       USE PRMS_BASIN, ONLY: Hru_elev, Hru_area, &
      &    Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
@@ -59,8 +59,10 @@
             IF ( Tmax(i)<-99.0 .OR. Tmax(i)>150.0 ) THEN
               Tmax_cnt(i) = Tmax_cnt(i) + 1
               IF ( Tmax_cnt(i)<Max_missing ) THEN
-                PRINT 9001, 'tmax', Tmax(i), i, Tmax_prev(i)
-                CALL print_date(0)
+                IF ( Print_debug>-1 ) THEN
+                  PRINT 9001, 'tmax', Tmax(i), i, Tmax_prev(i)
+                  CALL print_date(0)
+                ENDIF
                 Tmax(i) = Tmax_prev(i)
                 kk = 1
               ELSE
@@ -75,8 +77,10 @@
             IF ( Tmin(i)<-99.0 .OR. Tmin(i)>150.0 ) THEN
               Tmin_cnt(i) = Tmin_cnt(i) + 1
               IF ( Tmin_cnt(i)<Max_missing ) THEN
-                PRINT 9001, 'tmin', Tmin(i), i, Tmin_prev(i)
-                CALL print_date(0)
+                IF ( Print_debug>-1 ) THEN
+                  PRINT 9001, 'tmin', Tmin(i), i, Tmin_prev(i)
+                  CALL print_date(0)
+                ENDIF
                 Tmin(i) = Tmin_prev(i)
                 kkk = 1
               ELSE
@@ -127,29 +131,32 @@
         Solrad_tmax = Tmax(Basin_tsta)
         Solrad_tmin = Tmin(Basin_tsta)
         IF ( Solrad_tmax<-99.0 .OR. Solrad_tmax>150.0 ) THEN
-          PRINT *, 'Bad temperature data to set solrad_tmax:', Solrad_tmax, ' using last valid value:', Solrad_tmax_good
-          CALL print_date(0)
+          IF ( Print_debug>-1 ) THEN
+            PRINT *, 'Bad temperature data to set solrad_tmax:', Solrad_tmax, ' using last valid value:', Solrad_tmax_good
+            CALL print_date(0)
+          ENDIF
           Solrad_tmax = Solrad_tmax_good
         ELSE
           Solrad_tmax_good = Solrad_tmax
         ENDIF
         IF ( Solrad_tmin<-99.0 .OR. Solrad_tmin>150.0 ) THEN
-          PRINT *, 'Bad temperature data to set solrad_tmin:', Solrad_tmin, ' using last valid value:', Solrad_tmin_good
-          CALL print_date(0)
+          IF ( Print_debug>-1 ) THEN
+            PRINT *, 'Bad temperature data to set solrad_tmin:', Solrad_tmin, ' using last valid value:', Solrad_tmin_good
+            CALL print_date(0)
+          ENDIF
           Solrad_tmin = Solrad_tmin_good
         ELSE
           Solrad_tmin_good = Solrad_tmin
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_temp = '$Id: temp_1sta_laps_2d.f90 7208 2015-03-02 23:13:16Z rsregan $'
+        Version_temp = 'temp_1sta_laps.f90 2016-05-12 16:15:00Z'
         IF ( Temp_flag==1 ) THEN
           MODNAME = 'temp_1sta'
-          Version_temp = Version_temp(:14)//Version_temp(20:80)
         ELSE
           MODNAME = 'temp_laps'
-          Version_temp = Version_temp(:9)//Version_temp(15:80)
         ENDIF
+        Version_temp = MODNAME//'.f90 '//Version_temp(20:80)
         CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
 
         ALLOCATE ( Elfac(Nhru), Nuse_tsta(Ntemp) )
@@ -178,7 +185,7 @@
         IF ( Temp_flag==2 .OR. Model==99 ) THEN
           ALLOCATE ( Hru_tlaps(Nhru) )
           IF ( declparam(MODNAME, 'hru_tlaps', 'nhru', 'integer', &
-     &         '1', 'bounded', 'ntemp', &
+     &         '0', 'bounded', 'ntemp', &
      &         'Index of lapse temperature station for HRU', &
      &         'Index of the lapse temperature station used for lapse rate calculations', &
      &         'none')/=0 ) CALL read_error(1, 'hru_tlaps')
@@ -204,7 +211,6 @@
           IF ( getparam(MODNAME, 'hru_tlaps', Nhru, 'integer', Hru_tlaps)/=0 ) CALL read_error(2, 'hru_tlaps') 
         ENDIF
         IF ( getparam(MODNAME, 'max_missing', 1, 'integer', Max_missing)/=0 ) CALL read_error(2, 'max_missing')
-        IF ( Max_missing==0 ) Max_missing = 3
         Max_missing = Max_missing + 1
 
         Nuse_tsta = 0

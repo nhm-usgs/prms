@@ -5,7 +5,7 @@
  * FUNCTION :
  * COMMENT  :
  *
- *  $Id: structs.h 6195 2014-02-07 21:49:14Z rsregan $
+ *  $Id$
  *
 -*/
 
@@ -112,19 +112,22 @@ typedef struct {
 typedef struct file_data_t {
 	FILE    *fp;
 	char    *name;
-	char    line[MAXDATALNLEN];
+//	char    line[MAXDATALNLEN];
+	char    *line;
 	char    *start_of_data;
 	float   delta_t;
-	char    info[MAXDATALNLEN];
+//	char    info[MAXDATALNLEN];
+	char    *info;
 	DATETIME    time;
 } FILE_DATA;
 
 typedef struct STAT_LIST_TYPE {
-  char key[MAXDATALNLEN];
-  char *element;
-  long type;
-  char *value;
-  struct STAT_LIST_TYPE *next;
+//  char key[MAXDATALNLEN];
+	char *key;
+	char *element;
+    long type;
+    char *value;
+    struct STAT_LIST_TYPE *next;
 } STAT_LIST_TYPE;   /* linked list element of stat vars */
 
 typedef struct module_data_t {

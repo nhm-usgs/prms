@@ -5,7 +5,7 @@
  * FUNCTION : print_params
  * COMMENT  : prints the param data base to a file
  *
- * $Id: print_params.c 7207 2015-02-17 16:14:03Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -137,9 +137,9 @@ int print_params (void) {
 		   (void)fprintf (param_file, "Min       : %ld\n", *(long *)(param->min));
 		   (void)fprintf (param_file, "Default   : %ld\n", *(long *)(param->def));
 		   */
-			(void)fprintf(param_file, "Max       : %ld\n", *(int *)(param->max));
-			(void)fprintf(param_file, "Min       : %ld\n", *(int *)(param->min));
-			(void)fprintf(param_file, "Default   : %ld\n", *(int *)(param->def));
+			(void)fprintf(param_file, "Max       : %d\n", *(int *)(param->max));
+			(void)fprintf(param_file, "Min       : %d\n", *(int *)(param->min));
+			(void)fprintf(param_file, "Default   : %d\n", *(int *)(param->def));
 			break;
 
 		case M_FLOAT:
@@ -153,6 +153,13 @@ int print_params (void) {
 			(void)fprintf(param_file, "Min       : %lf\n", *(double *)(param->min));
 			(void)fprintf(param_file, "Default   : %lf\n", *(double *)(param->def));
 			break;
+
+        // 2016-01-13 PAN: added case for writing out min/max/default values for string parameters
+        case M_STRING:
+			(void)fprintf(param_file, "Max       : %s\n", *(char **)(param->max));
+			(void)fprintf(param_file, "Min       : %s\n", *(char **)(param->min));
+			(void)fprintf(param_file, "Default   : %s\n", *(char **)(param->def));
+            break;
 		}
 
 		if (param->bound_status == M_BOUNDED) {

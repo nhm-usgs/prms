@@ -71,7 +71,7 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp = '$Id: transp_tindex.f90 7115 2015-01-06 00:09:15Z rsregan $'
+        Version_transp = 'transp_tindex.f90 2015-01-06 00:09:15Z'
         CALL print_module(Version_transp, 'Transpiration Distribution  ', 90)
         MODNAME = 'transp_tindex'
 

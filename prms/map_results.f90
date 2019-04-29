@@ -13,6 +13,7 @@
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:), Map_var_type(:)
       DOUBLE PRECISION, SAVE :: Conv_fac
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_tot(:), Basin_var_yr(:), Basin_var_mon(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gvr_map_frac_dble(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_week(:), Map_var_id(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_mon(:, :), Map_var_week(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_yr(:, :), Map_var_tot(:, :)
@@ -71,7 +72,7 @@
 !***********************************************************************
       map_resultsdecl = 0
 
-      Version_map_results = '$Id: map_results.f90 7232 2015-03-09 22:49:39Z rsregan $'
+      Version_map_results = 'map_results.f90 2016-05-12 15:48:00Z'
       CALL print_module(Version_map_results, 'Output Summary              ', 90)
       MODNAME = 'map_results'
 
@@ -109,6 +110,7 @@
           ENDIF
         ENDIF
         ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell), Map_var_id(Ngwcell) )
+        ALLOCATE ( Gvr_map_frac_dble(Nhrucell) )
       ENDIF
 
 ! Declared Parameters
@@ -144,14 +146,16 @@
      &       'Corresponding grid cell id associated with each GVR', &
      &       'Index of the grid cell associated with each gravity reservoir', &
      &       'none')/=0 ) CALL read_error(1, 'gvr_cell_id')
-        IF ( Nhru/=Nhrucell .OR. Model==99 ) THEN
+        IF ( Nhrucell/=Ngwcell .OR. Model==99 ) THEN
           IF ( declparam(MODNAME, 'gvr_cell_pct', 'nhrucell', 'real', &
      &         '0.0', '0.0', '1.0', &
      &         'Proportion of the grid cell associated with each GVR', &
      &         'Proportion of the grid cell area associated with each gravity reservoir', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'gvr_cell_pct')
+        ENDIF
+        IF ( Nhru/=Nhrucell .OR. Model==99 ) THEN
           IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
-     &         '1', 'bounded', 'nhru', &
+     &         '0', 'bounded', 'nhru', &
      &         'Corresponding HRU id of each GVR', &
      &         'Index of the HRU associated with each gravity reservoir', &
      &         'none')/=0 ) CALL read_error(1, 'gvr_hru_id')
@@ -166,12 +170,12 @@
       INTEGER FUNCTION map_resultsinit()
       USE PRMS_MAP_RESULTS
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Nhrucell, Ngwcell, Inputerror_flag, MapOutON_OFF, &
-     &                       Start_year, Start_month, Start_day, End_year
-      USE PRMS_BASIN, ONLY: NEARZERO
+     &                       Start_year, Start_month, Start_day, End_year, Parameter_check_flag
+      USE PRMS_BASIN, ONLY: NEARZERO, CLOSEZERO
       IMPLICIT NONE
-      INTRINSIC ABS
+      INTRINSIC ABS, DBLE
       INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
-      EXTERNAL read_error, PRMS_open_output_file
+      EXTERNAL read_error, PRMS_open_output_file, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, jj, is, ios, ierr, size, dim
       REAL, ALLOCATABLE, DIMENSION(:) :: map_frac
@@ -234,14 +238,12 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) STOP
 
       Dailyresults = 0
       Weekresults = 0
       Monresults = 0
       Yrresults = 0
       Totresults = 0
-      ierr = 0
 
       IF ( Mapvars_freq==7 ) THEN
         Dailyresults = 1
@@ -279,7 +281,7 @@
         ENDDO
       ENDIF
 
-      IF ( Mapvars_freq==2 .OR. Mapvars_freq==5 ) THEN
+      IF ( Mapvars_freq==2 .OR. Mapvars_freq==4 .OR. Mapvars_freq==5 ) THEN
         Yrresults = 1
         ALLOCATE ( Map_var_yr(Nhru, NmapOutVars) )
         ALLOCATE ( Basin_var_yr(NmapOutVars) )
@@ -304,59 +306,63 @@
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) Inputerror_flag = 1
 
       IF ( Mapflg==0 ) THEN
         IF ( getparam(MODNAME, 'gvr_cell_id', Nhrucell, 'integer', Gvr_map_id)/=0 ) CALL read_error(2, 'gvr_cell_id')
-        IF ( getparam(MODNAME, 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
         IF ( Nhru/=Nhrucell ) THEN
+          IF ( getparam(MODNAME, 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
+        ELSE
+          DO i = 1, Nhrucell
+            Gvr_hru_id(i) = i
+          ENDDO
+        ENDIF
+        IF ( Nhrucell/=Ngwcell ) THEN
           IF ( getparam(MODNAME, 'gvr_cell_pct', Nhrucell, 'real', Gvr_map_frac)/=0 ) CALL read_error(2, 'gvr_cell_pct')
         ELSE
           Gvr_map_frac = 1.0
         ENDIF
 
-        ALLOCATE ( map_frac(Ngwcell) )
-        map_frac = 0.0
-        DO i = 1, Nhrucell
-          ierr = 0
-          IF ( Gvr_map_id(i)>Ngwcell ) THEN
-            PRINT *, 'ERROR, gvr_cell_id value:', Gvr_map_id(i), ' > ngwcell value:', Ngwcell
-            PRINT *, '       for nhrucell:', i
-            ierr = 1
-          ENDIF
-          IF ( Gvr_hru_id(i)>Nhru ) THEN
-            PRINT *, 'ERROR, gvr_hru_id value:', Gvr_hru_id(i), ' > nhru value:', Nhru
-            PRINT *, '       for nhrucell:', i
-            ierr = 1
-          ENDIF
-          IF ( ierr==1 ) THEN
-            Inputerror_flag = 1
-            CYCLE
-          ENDIF
-          IF ( Gvr_map_id(i)>0 .AND. Gvr_hru_id(i)>0 .AND. Gvr_map_frac(i)>NEARZERO ) THEN
-            is = Gvr_map_id(i)
-            map_frac(is) = map_frac(is) + Gvr_map_frac(i)
-          ELSEIF ( Print_debug>-1 ) THEN
-            PRINT *, 'WARNING, map intersection:', i, ' ignored as specification is incomplete'
-            PRINT *, '         HRU:', Gvr_hru_id(i), ' Map unit:', Gvr_map_id(i), 'Fraction:', Gvr_map_frac(i)
-          ENDIF
-        ENDDO
-
-        DO i = 1, Ngwcell
-          IF ( map_frac(i)<0.0 ) PRINT *, 'ERROR, map_frac<0, map unit:', i
-          IF ( map_frac(i)<NEARZERO ) CYCLE
-          IF ( ABS(map_frac(i)-1.0)>1.0001 ) THEN
-            IF ( Print_debug>-1 ) THEN
-              IF ( map_frac(i)>1.0 ) THEN
-                PRINT *, 'WARNING, excess accounting for area of mapped spatial unit:'
-              ELSE
-                PRINT *, 'WARNING, incomplete accounting for area of mapped spatial unit'
-              ENDIF
-              PRINT *, '           Map id:', i, ' Fraction:', map_frac(i)
+        IF ( Parameter_check_flag>0 ) THEN
+          ALLOCATE ( map_frac(Ngwcell) )
+          map_frac = 0.0
+          DO i = 1, Nhrucell
+            ierr = 0
+            CALL checkdim_param_limits(i, 'gvr_cell_id', 'nhrucell', Gvr_map_id(i), 1, Ngwcell, ierr)
+            CALL checkdim_param_limits(i, 'gvr_hru_id', 'nhrucell', Gvr_hru_id(i), 1, Nhru, ierr)
+            IF ( ierr==1 ) Inputerror_flag = 1
+            IF ( Gvr_map_id(i)>0 .AND. Gvr_hru_id(i)>0 .AND. Gvr_map_frac(i)>0.0 ) THEN
+              is = Gvr_map_id(i)
+              map_frac(is) = map_frac(is) + Gvr_map_frac(i)
+            ELSEIF ( Print_debug>-1 ) THEN
+              PRINT *, 'WARNING, map intersection:', i, ' ignored as specification is incomplete'
+              PRINT *, '         HRU:', Gvr_hru_id(i), ' Map unit:', Gvr_map_id(i), 'Fraction:', Gvr_map_frac(i)
             ENDIF
-          ENDIF
+          ENDDO
+
+          DO i = 1, Ngwcell
+            IF ( map_frac(i)<0.0 ) THEN
+              PRINT *, 'ERROR, map_frac<0, map id:', i, ' Fraction:', map_frac(i)
+              Inputerror_flag = 1
+            ELSEIF ( map_frac(i)<CLOSEZERO ) THEN
+              CYCLE
+            ELSEIF ( ABS(map_frac(i)-1.0)>NEARZERO ) THEN
+              IF ( Print_debug>-1 ) THEN
+                IF ( map_frac(i)>1.0 ) THEN
+                  PRINT *, 'WARNING, excess accounting for area of mapped spatial unit:'
+                ELSE
+                  PRINT *, 'WARNING, incomplete accounting for area of mapped spatial unit'
+                ENDIF
+                PRINT *, '           Map id:', i, ' Fraction:', map_frac(i)
+              ENDIF
+            ENDIF
+          ENDDO
+          DEALLOCATE ( map_frac )
+        ENDIF
+
+        DO i = 1, Nhrucell
+          Gvr_map_frac_dble(i) = DBLE( Gvr_map_frac(i) )
         ENDDO
-        DEALLOCATE ( map_frac )
       ENDIF
 
  9001 FORMAT ( '(',I8,'E10.3)' )
@@ -370,15 +376,16 @@
       INTEGER FUNCTION map_resultsrun()
       USE PRMS_MAP_RESULTS
       USE PRMS_MODULE, ONLY: Nhru, Nhrucell, Start_month, Start_day, End_year, End_month, End_day
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, DNEARZERO
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
+      INTRINSIC DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL read_error, write_results
 ! Local Variables
       INTEGER :: j, i, k, jj, last_day
-      DOUBLE PRECISION factor
+      DOUBLE PRECISION :: factor, map_var_double
 !***********************************************************************
       map_resultsrun = 0
 
@@ -408,13 +415,13 @@
         IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
           IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==1 ) THEN
             Lastyear = Nowyear
-            factor = Conv_fac/Yrdays
+            factor = Conv_fac/DBLE(Yrdays)
             Basin_var_yr = 0.0D0
             DO jj = 1, NmapOutVars
               DO j = 1, Active_hrus
                 i = Hru_route_order(j)
                 Map_var_yr(i, jj) = Map_var_yr(i, jj)*factor
-                Basin_var_yr(jj) = Basin_var_yr(jj) + Map_var_yr(i, jj)*Hru_area(i)
+                Basin_var_yr(jj) = Basin_var_yr(jj) + Map_var_yr(i, jj)*Hru_area_dble(i)
               ENDDO
               Basin_var_yr(jj) = Basin_var_yr(jj)*Basin_area_inv
 
@@ -425,9 +432,9 @@
               ELSE
                 Map_var_id = 0.0D0
                 DO k = 1, Nhrucell
-                  IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
+                  IF ( Gvr_map_frac(k)<NEARZERO ) CYCLE
                   Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-     &                                        Map_var_yr(Gvr_hru_id(k), jj)*Gvr_map_frac(k)
+     &                                        Map_var_yr(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
                 ENDDO
                 CALL write_results(Yrunit(jj), Map_var_id)
               ENDIF
@@ -461,14 +468,15 @@
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           IF ( Map_var_type(jj)==2 ) THEN
+            map_var_double = DBLE( Map_var(i, jj) )
             IF ( Dailyresults==1 ) THEN
-              Map_var_daily(i, jj) = Map_var(i, jj)
+              Map_var_daily(i, jj) = map_var_double
             ELSEIF ( Weekresults==1 ) THEN
-              Map_var_week(i, jj) = Map_var_week(i, jj) + Map_var(i, jj)
+              Map_var_week(i, jj) = Map_var_week(i, jj) + map_var_double
             ELSE
-              IF ( Totresults==1 ) Map_var_tot(i, jj) = Map_var_tot(i, jj) + Map_var(i, jj)
-              IF ( Yrresults==1 ) Map_var_yr(i, jj) = Map_var_yr(i, jj) + Map_var(i, jj)
-              IF ( Monresults==1 ) Map_var_mon(i, jj) = Map_var_mon(i, jj) + Map_var(i, jj)
+              IF ( Totresults==1 ) Map_var_tot(i, jj) = Map_var_tot(i, jj) + map_var_double
+              IF ( Yrresults==1 ) Map_var_yr(i, jj) = Map_var_yr(i, jj) + map_var_double
+              IF ( Monresults==1 ) Map_var_mon(i, jj) = Map_var_mon(i, jj) + map_var_double
             ENDIF
           ELSEIF ( Map_var_type(jj)==3 ) THEN
             IF ( Dailyresults==1 ) THEN
@@ -489,7 +497,7 @@
         DO jj = 1, NmapOutVars
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
-            Basin_var_daily(jj) = Basin_var_daily(jj) + Map_var_daily(i, jj)*Hru_area(i)
+            Basin_var_daily(jj) = Basin_var_daily(jj) + Map_var_daily(i, jj)*Hru_area_dble(i)
           ENDDO
           Basin_var_daily(jj) = Basin_var_daily(jj)*Basin_area_inv
 
@@ -499,9 +507,9 @@
           ELSE
             Map_var_id = 0.0D0
             DO k = 1, Nhrucell
-              IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
+              IF ( Gvr_map_frac(k)<NEARZERO ) CYCLE
               Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-     &                                    Map_var_daily(Gvr_hru_id(k), jj)*Gvr_map_frac(k)
+     &                                    Map_var_daily(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
             ENDDO
             CALL write_results(Dailyunit(jj), Map_var_id)
           ENDIF
@@ -519,7 +527,7 @@
             DO j = 1, Active_hrus
               i = Hru_route_order(j)
               Map_var_week(i, jj) = Map_var_week(i, jj)*factor
-              Basin_var_week(jj) = Basin_var_week(jj) + Map_var_week(i, jj)*Hru_area(i)
+              Basin_var_week(jj) = Basin_var_week(jj) + Map_var_week(i, jj)*Hru_area_dble(i)
             ENDDO
             Basin_var_week(jj) = Basin_var_week(jj)*Basin_area_inv
 
@@ -529,9 +537,9 @@
             ELSE
               Map_var_id = 0.0D0
               DO k = 1, Nhrucell
-                IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
+                IF ( Gvr_map_frac(k)<NEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-     &                                      Map_var_week(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
+     &                                      Map_var_week(Gvr_hru_id(k),jj)*Gvr_map_frac_dble(k)
               ENDDO
               CALL write_results(Weekunit(jj), Map_var_id)
             ENDIF
@@ -546,13 +554,13 @@
         Mondays = Mondays + 1
 ! check for last day of current month
         IF ( Nowday==Modays(Nowmonth) .OR. last_day==1 ) THEN
-          factor = Conv_fac/Mondays
+          factor = Conv_fac/DBLE(Mondays)
           Basin_var_mon = 0.0D0
           DO jj = 1, NmapOutVars
             DO j = 1, Active_hrus
               i = Hru_route_order(j)
               Map_var_mon(i, jj) = Map_var_mon(i, jj)*factor
-              Basin_var_mon(jj) = Basin_var_mon(jj) + Map_var_mon(i, jj)*Hru_area(i)
+              Basin_var_mon(jj) = Basin_var_mon(jj) + Map_var_mon(i, jj)*Hru_area_dble(i)
             ENDDO
             Basin_var_mon(jj) = Basin_var_mon(jj)*Basin_area_inv
 
@@ -563,9 +571,9 @@
             ELSE
               Map_var_id = 0.0D0
               DO k = 1, Nhrucell
-                IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
+                IF ( Gvr_map_frac(k)<NEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-     &                                      Map_var_mon(Gvr_hru_id(k), jj)*Gvr_map_frac(k)
+     &                                      Map_var_mon(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
               ENDDO
               CALL write_results(Monunit(jj), Map_var_id)
             ENDIF
@@ -580,13 +588,13 @@
         Totdays = Totdays + 1
 ! check for last day of simulation
         IF ( last_day==1 ) THEN
-          factor = Conv_fac/Totdays
+          factor = Conv_fac/DBLE(Totdays)
           Basin_var_tot = 0.0D0
           DO jj = 1, NmapOutVars
             DO j = 1, Active_hrus
               i = Hru_route_order(j)
               Map_var_tot(i, jj) = Map_var_tot(i, jj)*factor
-              Basin_var_tot(jj) = Basin_var_tot(jj) + Map_var_tot(i, jj)*Hru_area(i)
+              Basin_var_tot(jj) = Basin_var_tot(jj) + Map_var_tot(i, jj)*Hru_area_dble(i)
             ENDDO
             Basin_var_tot(jj) = Basin_var_tot(jj)*Basin_area_inv
 
@@ -598,9 +606,9 @@
             ELSE
               Map_var_id = 0.0D0
               DO k = 1, Nhrucell
-                IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
+                IF ( Gvr_map_frac(k)<NEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-     &                                      Map_var_tot(Gvr_hru_id(k), jj)*Gvr_map_frac(k)
+     &                                      Map_var_tot(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
               ENDDO
               CALL write_results(Totunit(jj), Map_var_id)
             ENDIF

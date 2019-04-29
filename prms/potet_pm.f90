@@ -1,38 +1,40 @@
 !***********************************************************************
 ! Computes the potential evapotranspiration using the Penman-Monteith
 ! formulation according to Murray (1967), shown equation 13 in Irmak and others (2012)
+! Irmak, Suat, Kabenge, Isa, Skaggs, K.E., and Mutiibwa, Denis, 2012
+!   Trend and magnitude of changes in climate variables and reference
+!   evapotranspiration over 116-yr period in the Platte River Basin,
+!   central Nebraska-USA: Journal of Hydrology, V. 420-421, p. 228-244
 !***********************************************************************
       MODULE PRMS_POTET_PM
         IMPLICIT NONE
         ! Local Variables
         CHARACTER(LEN=8), SAVE :: MODNAME
-        REAL, SAVE, ALLOCATABLE :: Tavgc_ante(:)
-        ! Declared Variables
-        REAL, SAVE, ALLOCATABLE :: Tempc_dewpt(:), Vp_actual(:), Vp_sat(:)
-        REAL, SAVE, ALLOCATABLE :: Lwrad_net(:), Vp_slope(:) !, Net_radiation(:)
+        !REAL, SAVE, ALLOCATABLE :: Tavgc_ante(:)
         ! Declared Parameters
-        REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :) !, Hru_albedo_coef(:)
+        REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
       END MODULE PRMS_POTET_PM
 
 !***********************************************************************
       INTEGER FUNCTION potet_pm()
       USE PRMS_POTET_PM
       USE PRMS_MODULE, ONLY: Process, Nhru, Save_vars_to_file, Init_vars_from_file
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_feet, NEARZERO
-      USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tmaxc, Tminc, Swrad
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
+      USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
+     &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru, Windspeed_hru
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       IMPLICIT NONE
 ! Functions
-      INTRINSIC LOG, SQRT, SNGL
-      INTEGER, EXTERNAL :: declvar, declparam, getparam
-      REAL, EXTERNAL :: vapor_pressure
+      INTRINSIC SQRT, DBLE, LOG, SNGL
+      INTEGER, EXTERNAL :: declparam, getparam
+      REAL, EXTERNAL :: sat_vapor_press
       EXTERNAL read_error, print_module, potet_pm_restart
 ! Local Variables
       INTEGER :: i, j
-      REAL :: elh, temp, tavg, vp_deficit, heat_flux, a, b, c, psycnst, p_atm
-      DOUBLE PRECISION :: lwrad
+      REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
+      REAL :: A1, B1, t1, num, den, stab, sw
       CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_pm = 0
@@ -41,99 +43,108 @@
         Basin_potet = 0.0D0
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
-          tavg = Tavgc(i)
 
-          ! dry bulb temperature, relative humidity
-          temp = (LOG(Humidity_hru(i)/100.0) + ((17.26939*tavg) / (237.3+tavg))) / 17.26939
-          Tempc_dewpt(i) = (237.3*temp) / (1.0 - temp)
+!...ATMOSPHERIC PRESSURE FOR ALTITUDE, KPA:
+          !prsr = 101.3 - 0.003215*Hru_elev_feet(i)
+          prsr = 101.3 * (((293.0-0.0065*Hru_elev_meters(i))/293.0)**5.26)
 
-          ! Actual vapor pressure
-          Vp_actual(i) = vapor_pressure(Tempc_dewpt(i)) ! ea
+!...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
+          ! elh = 597.3 - 0.5653*Tavgc(i) ! same as potet_jh
+!...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
+          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184 
+          ! elh = 2501.0 - 2.361*Tavgc(i)
+          ! elh = 2500.8 - 2.36*Tavgc(i) + 0.0016*Tavgc(i)**2 - 0.00006*Tavgc(i)**3
 
-          ! saturation vapor pressure deficit
-          Vp_sat(i) = (vapor_pressure(Tmaxc(i)) + vapor_pressure(Tminc(i))) * 0.5 ! es
+!...PSCHOMETRIC CONSTANT AT AVG TEMPERATURE FOR ALTITUDE, KPA:
+          ! psycnst = 1.6286*prsr/(elh*4.184) ! 4.184 converts CAL to JOULES
+          ! psychrometric constant, kilopascals per degrees C
+          ! atmospheric pressure for altitude, kPa
+          ! Cp = 1.005 approximate specific heat capacity of air at 20 degrees C, increases with temp
+          ! MW = 0.622 = molecular weight of water
+          ! 1.615755627 = Cp / MW
+          psycnst = 1.615755627*prsr/elh
 
-          ! slope of the saturation vaport pressure v. air temperature
-          Vp_slope(i) = 4098.0*vapor_pressure(tavg) / (tavg+237.3)**2 ! delta
+!   heat flux density to the ground,  MJ / m2 / day
+!          heat_flux = -4.2 * (Tavgc_ante(i)-Tavgc(i)) ! could use solrad_tmax or running avg instead of Tavgc_ante
+          heat_flux = 0.0 ! Irmak and others (2012) says equal to zero for daily time step ! G
+
+! Dew point temperature (Lawrence(2005) eqn. 8), degrees C
+          A1 = 17.625
+          B1 = 243.04
+          t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
+          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1)
+          den = A1 - LOG(Humidity_hru(i)/100.0) - t1
+          Tempc_dewpt(i) = num / den
+
+! Actual vapor pressure (Irmak eqn. 12), KPA
+! divide by 10 to convert millibar to kpa
+          Vp_actual(i) = sat_vapor_press(Tempc_dewpt(i)) / 10.0 ! ea
+
+!...SATURATION VAPOR PRESSURE AT AVG TEMP, KILOPASCALS (KPA):
+! divide by 10 to convert millibar to kpa
+          Vp_sat(i) = sat_vapor_press(Tavgc(i)) / 10.0
 
           ! saturation vapor pressure deficit
           vp_deficit = Vp_sat(i) - Vp_actual(i)
-          
-          ! net long-wave
-          lwrad = 4.903D-09*(tavg+273.16D0)*(0.34D0-0.14D0*SQRT(Vp_actual(i)))&
-      &           *(1.35D0*(Swrad(i)/Soltab_potsw(i,Jday))-0.35D0) ! what is solf Rs/Rso (? Rs = Swrad - Rso = potsw_soltab??)
-          Lwrad_net(i) = SNGL(lwrad) ! net radiation = Rns - Rnl; Rns = (1-albedo)*swrad
-          !Net_radiation(i) = Hru_albedo_coef(i)*Swrad(i) - Lwrad_net(i)
-          
-          ! heat flux density to the ground
-          heat_flux = -4.2*(Tavgc_ante(i)-tavg) ! G
 
-          ! atmospheric pressure for altitude, kPa
-          p_atm = 101.3 - 0.003215*Hru_elev_feet(i)
+!...SLOPE OF SATURATION VAPOR PRESSURE CURVE AT AVG TEMP, KPA/DEG(CELSIUS), Irmak 2012, eqn 18
+          Vp_slope(i) = 4098.0*Vp_sat(i)/((Tavgc(i)+237.3)**2) ! delta
 
-          ! Latent heat of vaporization, calories/gram
-          elh = 597.3 - 0.5653*tavg
+! The long wave equation uses the soltab values in the denominator. There
+! are cases when soltab is zero for certain HRUs (depending on slope/aspect)
+! for certain months. If this value is zero, reset it to a small value so
+! there is no divide by zero.
+          IF (Soltab_potsw(Jday,i) <= 10.0) THEN
+            stab = 10.0
+          ELSE
+            stab = Soltab_potsw(Jday,i)
+          ENDIF
 
-          ! psychrometric constant, kilopascals per degrees C
-          psycnst = 1006.0*p_atm/(0.622*elh)
+          IF (Swrad(i) <= 10.0) THEN
+            sw = 10.5
+          ELSE
+            sw = Swrad(i)
+          ENDIF
 
-          a = 0.408*Vp_slope(i)*(Lwrad_net(i)/23.88-heat_flux)
-!          a = 0.408*Vp_slope(i)*(Net_radiation(i)/23.88-heat_flux)
-          b = psycnst*(Pm_n_coef(i,Nowmonth)/(tavg+273.16))*Windspeed_hru(i)*vp_deficit
-          c = Vp_slope(i) + psycnst*(1.0+Pm_d_coef(i,Nowmonth)*Windspeed_hru(i))
-          Potet(i) = (a + b)/c
-          IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
-          Tavgc_ante(i) = Tavgc(i)
+!
+! Net long wave rediation (Irmak eqn. 10) MJ / m2/ day
+! 4.903E-09 = Stefan-Boltzmann constant
+
+           Lwrad_net(i) = 4.903E-09 * (((Tmaxc(i) + 273.16)**4 + (Tminc(i) + 273.16)**4)/2.0 ) &
+      &                  * (0.34 - 0.14*SQRT(Vp_actual(i)) * ((1.35*sw) / stab) - 0.35)
+
+! Net radiation (Irmak eqn. 8) MJ / m2 / day
+! 1 Langley = 0.04184 MJ/m2
+          net_rad = Swrad(i)*0.04184 - Lwrad_net(i) - heat_flux
+
+          a = Vp_slope(i) * net_rad / elh / 1000000.0
+          b = psycnst * Pm_n_coef(i,Nowmonth) * Windspeed_hru(i) * vp_deficit / (Tavgc(i) + 273.0)
+          c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Windspeed_hru(i)))
+
+!  PM equation with corp_coef in mm/day
+!          Potet(i) = (a + b)/c
+          Potet(i) = Crop_coef(i,Nowmonth) * (a + b)/c
+          Potet(i) = Potet(i) / 25.4
+
+
+          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
+!          Tavgc_ante(i) = Tavgc(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_pm.f90 7125 2015-01-13 16:54:29Z rsregan $'
+        Version_potet = 'potet_pm.f90 2016-07-20 15:31:00Z'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_pm'
-
-        ! Declare Variables
-        ALLOCATE ( Tempc_dewpt(Nhru) )
-        IF ( declvar(MODNAME, 'tempc_dewpt', 'nhru', Nhru, 'real', &
-     &     'Air temperature at dew point for each HRU', &
-     &     'degrees Celsius', Tempc_dewpt)/=0 ) CALL read_error(3, 'tempc_dewpt')
-
-        ALLOCATE ( Vp_actual(Nhru) )
-        IF ( declvar(MODNAME, 'vp_actual', 'nhru', Nhru, 'real', &
-     &     'Actual vapor pressure for each HRU', &
-     &     'kilopascals', Vp_actual)/=0 ) CALL read_error(3, 'vp_actual')
-
-        ALLOCATE ( Vp_sat(Nhru) )
-        IF ( declvar(MODNAME, 'vp_sat', 'nhru', Nhru, 'real', &
-     &     'Saturation vapor pressure for each HRU', &
-     &     'kilopascals', Vp_sat)/=0 ) CALL read_error(3, 'vp_sat')
-
-        ALLOCATE ( Vp_slope(Nhru) )
-        IF ( declvar(MODNAME, 'vp_slope', 'nhru', Nhru, 'real', &
-     &     'Slope of saturation vapor pressure versus air temperature curve for each HRU', &
-     &     'kilopascals/degrees Celsius', Vp_slope)/=0 ) CALL read_error(3, 'Vp_slope')
-
-        ALLOCATE ( Lwrad_net(Nhru) )
-        IF ( declvar(MODNAME, 'lwrad_net', 'nhru', Nhru, 'real', &
-     &     'Net long-wave radiation for each HRU', &
-     &     'megajoules/m**2/day', Lwrad_net)/=0 ) CALL read_error(3, 'lwrad_net')
-
-      !   ALLOCATE ( Net_radiation(Nhru) )
-      !   IF ( declvar(MODNAME, 'net_radiation', 'nhru', Nhru, 'real', &
-      !&     'Net radiation for each HRU', &
-      !&     'megajoules/m**2/day', Net_radiation)/=0 ) CALL read_error(3, 'net_radiation')
-
-        ! Allocate local arrays
-        ALLOCATE ( Tavgc_ante(Nhru) )
 
         ! Declare Parameters
         ALLOCATE ( Pm_n_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'pm_n_coef', 'nhru,nmonths', 'real', &
-     &         '900.0', '850.0', '950.0', &
-     &         'Penman-Monteith coefficient', &
-     &         'Monthly (January to December) Penman-Monteith potential ET N temperauture coefficient for each HRU', &
-     &         'degrees Celsius per day')/=0 ) CALL read_error(1, 'pm_n_coef')
+     &       '900.0', '850.0', '950.0', &
+     &       'Penman-Monteith coefficient', &
+     &       'Monthly (January to December) Penman-Monteith potential ET N temperauture coefficient for each HRU', &
+     &       'degrees Celsius per day')/=0 ) CALL read_error(1, 'pm_n_coef')
 
         ALLOCATE ( Pm_d_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'pm_d_coef', 'nhru,nmonths', 'real', &
@@ -142,62 +153,33 @@
      &       'Monthly (January to December) Penman-Monteith potential ET D wind-speed coefficient for each HRU', &
      &       'seconds/meters')/=0 ) CALL read_error(1, 'pm_d_coef')
 
-!        ALLOCATE ( Hru_albedo_coef(Nhru) )
-!        IF ( declparam(MODNAME, 'hru_albedo_coef', 'nhru', 'real', &
-!     &       '0.77', '0.0', '1.0', &
-!     &       'Canopy albedo coefficient for each HRU', &
-!     &       'Canopy albedo coefficient for each HRU', &
-!     &       'decimal fraction')/=0 ) CALL read_error(1, 'hru_albedo_coef')
+        ALLOCATE ( Crop_coef(Nhru,12) )
+        IF ( declparam(MODNAME, 'crop_coef', 'nhru,nmonths', 'real', &
+     &       '1.0', '0.0', '2.0', &
+     &       'Crop coefficient for each HRU', &
+     &       'Crop coefficient for each HRU', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'crop_coef')
 
 !******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
         IF ( Init_vars_from_file==1 ) THEN
           CALL potet_pm_restart(1)
         ELSE
-          Tempc_dewpt = 0.0
-          Vp_actual = 0.0
           Vp_sat = 0.0
-          Vp_slope = 0.0
-          Lwrad_net = 0.0
-          Tavgc_ante = Tavgc
+!          Tavgc_ante = Tavgc
         ENDIF
         IF ( getparam(MODNAME, 'pm_n_coef', Nhru*12, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
         IF ( getparam(MODNAME, 'pm_d_coef', Nhru*12, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
-        !IF ( getparam(MODNAME, 'hru_albedo_coef', Nhru, 'real', Hru_albedo_coef)/=0 ) CALL read_error(2, 'hru_albedo_coef')
+        IF ( getparam(MODNAME, 'crop_coef', Nhru*12, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
+
+        !ALLOCATE ( Tavgc_ante(Nhru) )
+        !Tavgc_ante = Tavgc
 
       ELSEIF ( Process(:5)=='clean' ) THEN
         IF ( Save_vars_to_file==1 ) CALL potet_pm_restart(0)
       ENDIF
 
       END FUNCTION potet_pm
-
-!***********************************************************************
-! Compute vapor pressure over water in kiloPascals
-! 1 kPa = 10 millibars
-!***********************************************************************
-      REAL FUNCTION vapor_pressure(Tempc)
-      IMPLICIT NONE
-! Arguments
-      REAL, INTENT(IN) :: Tempc
-!***********************************************************************
-! 6th order Polynominal method (Flatau et. all., 1992) valid: -50 to 50C
-      vapor_pressure = (6.11176750 + 0.443986062*Tempc &
-                       + 0.0143053301*Tempc**2 &
-                       + 0.265027242E-03*Tempc**3 &
-                       + 0.302246994E-05*Tempc**4 &
-                       + 0.203886313E-07*Tempc**5 &
-                       + 0.638780966E-10*Tempc**6)*0.1
-! Mastin documentation for potet_dpm in millibars
-!      vapor_pressure = 23.38*exp(18.1-5303.3/(Tempc+273.0))
-! Mastin documentation for param_leaf-loss.aml in millibars
-!      vapor_pressure = 6.1078*EXP(17.269*Tempc/(237.30D0+Tempc))
-! Buck Research Manual (1996) in millibars
-!      vapor_pressure = 6.1121D0*EXP((18.678D0-Tempc/234.5D0)*Tempc/(257.14+Tempc))
-! WMO 2008, CIMO Guide in millibars
-!      vapor_pressure = 6.112*EXP(17.62*Tempc/(243.12+Tempc))
-! Irmak and others (2012) in kilopascals (kPa)
-!      vapor_pressure = 0.6108*EXP(17.27*Tempc/(237.3+Tempc))
-      END FUNCTION vapor_pressure
 
 !***********************************************************************
 !     Write to or read from restart file
@@ -214,20 +196,10 @@
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Tempc_dewpt
-        WRITE ( Restart_outunit ) Vp_actual
-        WRITE ( Restart_outunit ) Vp_sat
-        WRITE ( Restart_outunit ) Vp_slope
-        WRITE ( Restart_outunit ) Lwrad_net
-        WRITE ( Restart_outunit ) Tavgc_ante
+!        WRITE ( Restart_outunit ) Tavgc_ante
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Tempc_dewpt
-        READ ( Restart_inunit ) Vp_actual
-        READ ( Restart_inunit ) Vp_sat
-        READ ( Restart_inunit ) Vp_slope
-        READ ( Restart_inunit ) Lwrad_net
-        READ ( Restart_inunit ) Tavgc_ante
+!        READ ( Restart_inunit ) Tavgc_ante
       ENDIF
       END SUBROUTINE potet_pm_restart

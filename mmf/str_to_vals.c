@@ -15,7 +15,7 @@
  * If the total number of entries is less than required, the sequence
  * is repeated.
  *
- * $Id: str_to_vals.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -42,10 +42,15 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
   long i, isource;
   long ndecoded, repeat;
   char *scopy, *token, *valstr, *asterisk, *end_point;
-  char tcopy[MAXDATALNLEN];
+  static char *tcopy = NULL;
   double dvalue, *dval;
   float fvalue, *fval;
   int lvalue, *lval;
+  char *svalue, **sval;     // 2016-01-13 PAN: added string pointers
+
+  if (tcopy == NULL) {
+	  tcopy = (char *) umalloc(max_data_ln_len * sizeof(char));
+  }
 
   /*
    * set up pointer for data type
@@ -54,6 +59,8 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
   dval = NULL;
   fval = NULL;
   lval = NULL;
+  sval = NULL;  // 2016-01-13 PAN: added sval init
+
   switch (type) {
   case M_DOUBLE:
     dval = (double *) store_addr;
@@ -63,6 +70,11 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
     break;
   case M_LONG:
     lval = (int *) store_addr;
+    break;
+
+  // 2016-01-13 PAN: added case for string values
+  case M_STRING:
+    sval = (char **) store_addr;
     break;
   }
 
@@ -121,6 +133,11 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
     case M_LONG:
       lvalue = (int)strtol(valstr, &end_point, 10);
       break;
+
+    // 2016-01-13 PAN: added case for string values
+    case M_STRING:
+      svalue = valstr;
+      break;
     }
 
     if (errno == EDOM) {
@@ -161,6 +178,14 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
       for (i = 0; i < repeat; i++) {
 	lval[ndecoded] = lvalue;
 	ndecoded++;
+      }
+      break;
+
+    // 2016-01-13 PAN: added case for string values
+    case M_STRING:
+      for (i = 0; i < repeat; i++) {
+        *(sval + i) = strdup(svalue);
+        ndecoded++;
       }
       break;
     }
@@ -205,6 +230,18 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
 	  isource = 0;
       }
       break;
+   
+    // 2016-01-13 PAN: added case for string values
+    case M_STRING:
+      for (i = ndecoded; i < size; i++) {
+        *(sval + i) = strdup(*(sval + isource));
+        isource++;
+
+        if (isource == ndecoded)
+          isource = 0;
+      }
+      break;
+
     }
 
   }

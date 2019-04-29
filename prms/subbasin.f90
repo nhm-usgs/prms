@@ -69,7 +69,7 @@
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = '$Id: subbasin.f90 7125 2015-01-13 16:54:29Z rsregan $'
+      Version_subbasin = 'subbasin.f90 2016-07-11 12:16:00Z'
       CALL print_module(Version_subbasin, 'Output Summary              ', 90)
       MODNAME = 'subbasin'
 
@@ -85,11 +85,17 @@
      &     ' associated HRUs and from upstream subbasins', &
      &     'cfs', Sub_interflow)/=0 ) CALL read_error(3, 'sub_interflow')
 
-      ALLOCATE ( Sub_gwflow(Nsub) )
-      IF ( declvar(MODNAME, 'sub_gwflow', 'nsub', Nsub, 'double', &
-     &     'Area-weighted average groundwater discharge from'// &
-     &     ' associated GWRs to each subbasin and from upstream subbasins', &
-     &     'cfs', Sub_gwflow)/=0 ) CALL read_error(3, 'sub_gwflow')
+      IF ( Model/=0 ) THEN
+        ALLOCATE ( Sub_gwflow(Nsub) )
+        IF ( declvar(MODNAME, 'sub_gwflow', 'nsub', Nsub, 'double', &
+     &       'Area-weighted average groundwater discharge from'// &
+     &       ' associated GWRs to each subbasin and from upstream subbasins', &
+     &       'cfs', Sub_gwflow)/=0 ) CALL read_error(3, 'sub_gwflow')
+        ALLOCATE ( Subinc_gwflow(Nsub) )
+        IF ( declvar(MODNAME, 'subinc_gwflow', 'nsub', Nsub, 'double', &
+     &       'Area-weighted average groundwater discharge from associated  GWRs to each subbasin', &
+     &       'cfs', Subinc_gwflow)/=0 ) CALL read_error(3, 'subinc_gwflow')
+      ENDIF
 
       ALLOCATE ( Sub_sroff(Nsub) )
       IF ( declvar(MODNAME, 'sub_sroff', 'nsub', Nsub, 'double', &
@@ -106,11 +112,6 @@
       IF ( declvar(MODNAME, 'subinc_interflow', 'nsub', Nsub, 'double', &
      &     'Area-weighted average interflow from associated HRUs to each subbasin', &
      &     'cfs', Subinc_interflow)/=0 ) CALL read_error(3, 'subinc_interflow')
-
-      ALLOCATE ( Subinc_gwflow(Nsub) )
-      IF ( declvar(MODNAME, 'subinc_gwflow', 'nsub', Nsub, 'double', &
-     &     'Area-weighted average groundwater discharge from associated  GWRs to each subbasin', &
-     &     'cfs', Subinc_gwflow)/=0 ) CALL read_error(3, 'subinc_gwflow')
 
       ALLOCATE ( Subinc_sroff(Nsub) )
       IF ( declvar(MODNAME, 'subinc_sroff', 'nsub', Nsub, 'double', &
@@ -216,19 +217,24 @@
 !***********************************************************************
       INTEGER FUNCTION subinit()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, Print_debug, Inputerror_flag
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, DNEARZERO
-      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
+      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, Print_debug, Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
+     &    Hru_type, Hru_frac_perv, DNEARZERO, Lake_hru_id, Cfs2cms_conv
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow
+      USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
+      USE PRMS_SOILZONE, ONLY: Lakein_sz
+      USE PRMS_GWFLOW, ONLY: Gwres_flow
+      USE PRMS_LAKE_ROUTE, ONLY: Lake_vol, Lake_outcfs
       IMPLICIT NONE
+! Functions
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error, PRMS_open_module_file
 ! Local Variables
       INTEGER :: i, j, k, kk, TREEUNIT
-      REAL :: harea
-      DOUBLE PRECISION :: gwstor, soilstor, snowstor, landstor
+      DOUBLE PRECISION :: harea, gwstor, soilstor, snowstor, landstor, srq, ssq, gwq
 !***********************************************************************
       subinit = 0
 
@@ -247,7 +253,10 @@
       Sub_cms = 0.0D0
       Sub_inq = 0.0D0
       Subinc_interflow = 0.0D0
-      Subinc_gwflow = 0.0D0
+      IF ( Model/=0 ) THEN
+        Subinc_gwflow = 0.0D0
+        Sub_gwflow = 0.0D0
+      ENDIF
       Subinc_sroff = 0.0D0
       Subinc_precip = 0.0D0
       Subinc_snowmelt = 0.0D0
@@ -261,6 +270,8 @@
       Subinc_potet = 0.0D0
       Subinc_wb = 0.0D0
       Subinc_deltastor = 0.0D0
+      Sub_interflow = 0.0D0
+      Sub_sroff = 0.0D0
 
       IF ( Print_debug==14 ) THEN
         CALL PRMS_open_module_file(TREEUNIT, 'tree_structure')
@@ -302,30 +313,55 @@
         CLOSE ( TREEUNIT )
       ENDIF
 
+! added some code to allow for restart, but not climate states and fluxes and subinc_deltastor
       Subincstor = 0.0D0
       Sub_area = 0.0D0
       gwstor = 0.0D0
+      gwq = 0.0D0
+      Qsub = 0.0D0
       DO i = 1, Active_hrus
         j = Hru_route_order(i)
         ! k indicates which HRU is in which subbasin
         k = Hru_subbasin(j)
         IF ( k>0 ) THEN
-          harea = Hru_area(j)
+          harea = Hru_area_dble(j)
+          IF ( Model/=0 ) THEN
+            gwstor = Gwres_stor(j)*harea
+            gwq = DBLE(Gwres_flow(j))*harea
+          ENDIF
           IF ( Hru_type(j)/=2 ) THEN
-            IF ( Model/=0 ) gwstor = Gwres_stor(j)*harea
-            soilstor = (Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
+            srq = DBLE(Sroff(j))*harea
+            ssq = DBLE(Ssres_flow(j))*harea
+            soilstor = DBLE(Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
             snowstor = Pkwater_equiv(j)*harea
-            landstor = (Hru_intcpstor(j)+Hru_impervstor(j))*harea
+            landstor = DBLE(Hru_intcpstor(j)+Hru_impervstor(j))*harea
+            IF ( Dprst_flag==1 ) landstor = landstor + Dprst_stor_hru(j)*harea
           ELSE
-            gwstor = 0.0D0
             soilstor = 0.0D0
             snowstor = 0.0D0
             landstor = 0.0D0
+            ! wrong if multiple HRUs for any lake
+            IF ( Lake_route_flag==1 ) THEN
+              landstor = Lake_vol(Lake_hru_id(j))*12.0D0
+              srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
+              ssq = 0.0D0
+            ELSEIF ( Cascade_flag==1 ) THEN
+              srq = Hortonian_lakes(j)*harea
+              ssq = Lakein_sz(j)*harea
+            ELSE
+              srq = 0.0D0
+              ssq = 0.0D0
+            ENDIF
           ENDIF
+          Qsub(k) = Qsub(k) + srq + ssq + gwq
+          Subinc_interflow(k) = Subinc_interflow(k) + ssq
+          Subinc_sroff(k) = Subinc_sroff(k) + srq
+          IF ( Model/=0 ) Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
           Subincstor(k) = Subincstor(k) + soilstor + gwstor + snowstor + landstor
           Sub_area(k) = Sub_area(k) + harea
         ENDIF
       ENDDO
+
       DO i = 1, Nsub
         IF ( Sub_area(i)<DNEARZERO ) THEN
           PRINT *, 'ERROR, subbasin:', i, ' does not include any HRUs'
@@ -333,6 +369,29 @@
         ELSE
           Subincstor(i) = Subincstor(i)/Sub_area(i)
         ENDIF
+        Sub_inq(i) = Qsub(i)*Cfs_conv
+        Subinc_interflow(i) = Subinc_interflow(i)*Cfs_conv
+        IF ( Model/=0 ) Subinc_gwflow(i) = Subinc_gwflow(i)*Cfs_conv
+        Subinc_sroff(i) = Subinc_sroff(i)*Cfs_conv
+        ! water balance off if lake or muskingum routing
+      ENDDO
+
+! allow for possible restart
+      !get cummulative subbasin flows
+      DO j = 1, Nsub
+        IF ( Model/=0 ) Sub_gwflow(j) = Subinc_gwflow(j)
+        Sub_sroff(j) = Subinc_sroff(j)
+        Sub_interflow(j) = Subinc_interflow(j)
+        Sub_cfs(j) = Sub_inq(j)
+        DO k = 1, Nsub
+          IF ( Tree(j,k)/=0 ) THEN
+            IF ( Model/=0 ) Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
+            Sub_sroff(j) = Sub_sroff(j) + Subinc_sroff(k)
+            Sub_interflow(j) = Sub_interflow(j) + Subinc_interflow(k)
+            Sub_cfs(j) = Sub_cfs(j) + Sub_inq(k)
+          ENDIF
+        ENDDO
+        Sub_cms(j) = Sub_cfs(j)*CFS2CMS_CONV
       ENDDO
 
  9001 FORMAT ('Initial Tree Structure for Internal Subbasins', /, &
@@ -349,24 +408,26 @@
 !***********************************************************************
       INTEGER FUNCTION subrun()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Model, Nsub, Cascade_flag
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, &
-     &    Hru_type, CFS2CMS_CONV, Hru_frac_perv
-      USE PRMS_SET_TIME, ONLY: Cfs_conv
+      USE PRMS_MODULE, ONLY: Model, Nsub, Cascade_flag, Dprst_flag, Lake_route_flag
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
+     &    Hru_type, CFS2CMS_CONV, Hru_frac_perv, Lake_hru_id
+      USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
      &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
       USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
       USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
+      USE PRMS_LAKE_ROUTE, ONLY: Lake_vol, Lake_outcfs
       IMPLICIT NONE
+! Functions
+      INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: j, jj, k
-      REAL :: harea
-      DOUBLE PRECISION :: srq, ssq, gwq, dmy, dmy1, subarea
-      DOUBLE PRECISION :: soilstor, gwstor, snowstor, landstor, dmy2
+      DOUBLE PRECISION :: harea, srq, ssq, gwq, dmy, dmy1, subarea
+      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2
 !     DOUBLE PRECISION :: conv
 !***********************************************************************
       subrun = 0
@@ -377,11 +438,9 @@
       !rsr, not getting groundwater storage and flow for GSFLOW mode
 
       DO j = 1, Nsub
-        Sub_cfs(j) = 0.0D0
         Qsub(j) = 0.0D0
         Sub_inq(j) = 0.0D0
         Subinc_interflow(j) = 0.0D0
-        Subinc_gwflow(j) = 0.0D0
         Subinc_sroff(j) = 0.0D0
         Subinc_precip(j) = 0.0D0
         Subinc_snowmelt(j) = 0.0D0
@@ -395,6 +454,7 @@
         Subinc_potet(j) = 0.0D0
         Subinc_wb(j) = 0.0D0
       ENDDO
+      IF ( Model/=0 ) Subinc_gwflow = 0.0D0
 
       Laststor = Subincstor
       Subincstor = 0.0D0
@@ -403,57 +463,63 @@
         j = Hru_route_order(jj)
         ! k indicates which HRU is in which subbasin
         k = Hru_subbasin(j)
-        IF ( k/=0 ) THEN
-          harea = Hru_area(j)
-          srq = 0.0D0
-          ssq = 0.0D0
-          gwq = 0.0D0
-          gwstor = 0.0D0
-          soilstor = 0.0D0
-          snowstor = 0.0D0
-          landstor = 0.0D0
+        IF ( k>0 ) THEN
+          harea = Hru_area_dble(j)
           IF ( Hru_type(j)/=2 ) THEN
-            srq = Sroff(j)*harea
-            ssq = Ssres_flow(j)*harea
-            IF ( Model/=0 ) THEN
-              gwq = Gwres_flow(j)*harea
-              gwstor = Gwres_stor(j)*harea
-            ENDIF
-            soilstor = (Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
+            srq = DBLE(Sroff(j))*harea
+            ssq = DBLE(Ssres_flow(j))*harea
+            soilstor = DBLE(Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
             snowstor = Pkwater_equiv(j)*harea
-            landstor = (Hru_intcpstor(j)+Hru_impervstor(j))*harea
-          !rsr???, this is probably wrong
-          ELSEIF ( Cascade_flag==1 ) THEN
-            srq = Hortonian_lakes(j)*harea
-            ssq = Lakein_sz(j)*harea
+            landstor = DBLE(Hru_intcpstor(j)+Hru_impervstor(j))*harea
+            IF ( Dprst_flag==1 ) landstor = landstor + Dprst_stor_hru(j)*harea
+          ELSE
+            soilstor = 0.0D0
+            snowstor = 0.0D0
+            landstor = 0.0D0
+            ! wrong if multiple HRUs for any lake
+            IF ( Lake_route_flag==1 ) THEN
+              landstor = Lake_vol(Lake_hru_id(j))*12.0D0
+              srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
+              ssq = 0.0D0
+            ELSEIF ( Cascade_flag==1 ) THEN
+              srq = Hortonian_lakes(j)*harea
+              ssq = Lakein_sz(j)*harea
+            ELSE
+              srq = 0.0D0
+              ssq = 0.0D0
+            ENDIF
           ENDIF
-          Qsub(k) = Qsub(k) + srq + ssq + gwq
+          Qsub(k) = Qsub(k) + srq + ssq
           Subinc_interflow(k) = Subinc_interflow(k) + ssq
-          Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
           Subinc_sroff(k) = Subinc_sroff(k) + srq
-          Subinc_precip(k) = Subinc_precip(k) + Hru_ppt(j)*harea
-          Subinc_actet(k) = Subinc_actet(k) + Hru_actet(j)*harea
-          Subinc_snowmelt(k) = Subinc_snowmelt(k) + Snowmelt(j)*harea
+          Subinc_precip(k) = Subinc_precip(k) + DBLE(Hru_ppt(j))*harea
+          Subinc_actet(k) = Subinc_actet(k) + DBLE(Hru_actet(j))*harea
+          Subinc_snowmelt(k) = Subinc_snowmelt(k) + DBLE(Snowmelt(j))*harea
           Subinc_pkweqv(k) = Subinc_pkweqv(k) + Pkwater_equiv(j)*harea
-          Subinc_snowcov(k) = Subinc_snowcov(k) + Snowcov_area(j)*harea
-          Subinc_potet(k) = Subinc_potet(k) + Potet(j)*harea
-          Subinc_swrad(k) = Subinc_swrad(k) + Swrad(j)*harea
-          Subinc_tminc(k) = Subinc_tminc(k) + Tminc(j)*harea
-          Subinc_tmaxc(k) = Subinc_tmaxc(k) + Tmaxc(j)*harea
-          Subinc_tavgc(k) = Subinc_tavgc(k) + Tavgc(j)*harea
-          Subincstor(k) = Subincstor(k) + soilstor + gwstor + snowstor + landstor
+          Subinc_snowcov(k) = Subinc_snowcov(k) + DBLE(Snowcov_area(j))*harea
+          Subinc_potet(k) = Subinc_potet(k) + DBLE(Potet(j))*harea
+          Subinc_swrad(k) = Subinc_swrad(k) + DBLE(Swrad(j))*harea
+          Subinc_tminc(k) = Subinc_tminc(k) + DBLE(Tminc(j))*harea
+          Subinc_tmaxc(k) = Subinc_tmaxc(k) + DBLE(Tmaxc(j))*harea
+          Subinc_tavgc(k) = Subinc_tavgc(k) + DBLE(Tavgc(j))*harea
+          Subincstor(k) = Subincstor(k) + soilstor + snowstor + landstor
+          IF ( Model/=0 ) THEN
+            gwq = DBLE(Gwres_flow(j))*harea
+            Qsub(k) = Qsub(k) + gwq
+            Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
+            Subincstor(k) = Subincstor(k) + Gwres_stor(j)*harea
+          ENDIF
         ENDIF
       ENDDO
 
       !convert first as subbasins don't have to be in order
+      dmy1 = 0.0D0
       DO j = 1, Nsub
         subarea = Sub_area(j)
         Sub_inq(j) = Qsub(j)*Cfs_conv
         dmy = Subinc_interflow(j)/subarea
-        dmy1 = Subinc_gwflow(j)/subarea
         dmy2 = Subinc_sroff(j)/subarea
         Subinc_interflow(j) = Subinc_interflow(j)*Cfs_conv
-        Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
         Subinc_sroff(j) = Subinc_sroff(j)*Cfs_conv
         Subinc_precip(j) = Subinc_precip(j)/subarea
         Subinc_actet(j) = Subinc_actet(j)/subarea
@@ -467,18 +533,23 @@
         Subinc_tavgc(j) = Subinc_tavgc(j)/subarea
         Subincstor(j) = Subincstor(j)/subarea
         Subinc_deltastor(j) = Laststor(j) - Subincstor(j)
+        IF ( Model/=0 ) THEN
+          dmy1 = Subinc_gwflow(j)/subarea
+          Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
+        ENDIF
+        ! water balance off if lake or muskingum routing
         Subinc_wb(j) = Subinc_precip(j) - Subinc_actet(j) - &
      &                 dmy - dmy1 - dmy2 + Subinc_deltastor(j)
       ENDDO
 
       !get cummulative subbasin flows
+      IF ( Model/=0 ) Sub_gwflow = Subinc_gwflow
       DO j = 1, Nsub
-        Sub_gwflow(j) = Subinc_gwflow(j)
         Sub_sroff(j) = Subinc_sroff(j)
         Sub_interflow(j) = Subinc_interflow(j)
         DO k = 1, Nsub
           IF ( Tree(j,k)/=0 ) THEN
-            Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
+            IF ( Model/=0 ) Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
             Sub_sroff(j) = Sub_sroff(j) + Subinc_sroff(k)
             Sub_interflow(j) = Sub_interflow(j) + Subinc_interflow(k)
           ENDIF

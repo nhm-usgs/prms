@@ -36,7 +36,7 @@
 
 !***Declare Procedure***
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_write_climate_hru = '$Id: write_climate_hru.f90 7050 2014-12-02 19:06:41Z rsregan $'
+        Version_write_climate_hru = 'write_climate_hru.f90 2014-12-02 19:06:41Z'
         CALL print_module(Version_write_climate_hru, 'Preprocessing               ', 90)
 !        MODNAME = 'write_climate_hru'
 

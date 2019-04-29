@@ -5,7 +5,7 @@
  * FUNCTION :
  * COMMENT  :
  *
- *  $Id: defs.h 6441 2014-05-21 23:35:01Z rsregan $
+ *  $Id$
  *
 -*/
 

@@ -6,7 +6,7 @@
  * COMMENT  : reads the control data base from a file
  *            File name is obtained from the environment variable "mms_control_file"
  *
- * $Id: read_control.c 6441 2014-05-21 23:35:01Z rsregan $
+ * $Id$
  *
 -*/
 

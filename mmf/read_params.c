@@ -6,7 +6,7 @@
  * COMMENT  : reads the params data base from a file
  *            File name is passed in as an argument
  *
- * $Id: read_params.c 6662 2014-08-06 15:13:01Z markstro $
+ * $Id$
  *
 -*/
 
@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include "mms.h"
 
-static char *READ_param_head (PARAM **, FILE **, char *, char[], int);
-static char *READ_param_values (long, long, char *, char *, FILE *, char[]);
-static char *rp (char *, int, int);
+static char *READ_param_head (PARAM **, int);
+static char *READ_param_values (long, long, char *, char *, char[], char *, char *, int);
+static char *rp (int, int);
 static int checkForValidDimensions (PARAM *);
 static int isDimensionIncompatable (char *, char *);
 static void oneToAnySizedArray(PARAM *, char *);
@@ -30,220 +30,161 @@ static int getParamFileParamSize (PARAM *);
 static char *getMapParamName(char *);
 static void subbasinTo1DArray (PARAM *, PARAM *, char *);
 
-static char* dimNames[] = {"nhru", "nsegment",
-	"nrain", "ntemp", "nobs", "ngw",
-	"nssr"
-};
+static char *open_parameter_file();
+static void close_parameter_file ();
+static char *get_next_line ();
+static char *error_string (char *);
+static char *warning_string (char *);
+static void bad_param_value_l (long, int, char *, long, long);
+static void bad_param_value (double, int, char *, double, double);
 
-static char* mapParamNames[] = {"hru_subbasin", "segment_subbasin",
-	"rain_subbasin", "temp_subbasin", "obs_subbasin", "gw_subbasin",
-	"ssr_subbasin"
+static char* dimNames[] = {"nhru", "nsegment", "nrain", "ntemp", "nobs", "ngw", "nssr"};
+
+//static char* mapParamNames[] = {"hru_subbasin", "segment_subbasin",
+//	"rain_subbasin", "temp_subbasin", "obs_subbasin", "gw_subbasin",
+//	"ssr_subbasin"
+static char* mapParamNames[] = { "bad", "bad1",	"bad2", "bad3", "bad4", "bad5",	"bad6"
 };
 
 int nComments;
 char **Comments;
+static int lineNumber;
+static FILE *param_file;
+static char *line = NULL;
+static char *key = NULL;
+static char file_name[256];
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : read_params
- | COMMENT		:
+ | COMMENT		: This is called from within a loop for each parameter file
  | PARAMETERS   :
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 char *read_params (char *param_file_name, int index, int mapping_flag) {
-  	static char *foo = NULL;
-  	char old[256], *cptr;
+  	char *cptr;
 
-	if (foo) {
-		strncpy (old, foo, 256);
-		free (foo);
-		foo = strdup (param_file_name);
-	} else {
-		strncpy (old, param_file_name, 256);
-		foo = strdup (param_file_name);
+// Get the static variables ready.
+	strncpy (file_name, param_file_name, 256);
+	if (key == NULL) {
+		key = (char *) umalloc(max_data_ln_len * sizeof(char));
 	}
 
-	cptr = rp (param_file_name, index, mapping_flag);
-
-	if (cptr) {
-		rp (old, index, 0);
-
-		free (foo);
-		foo = strdup (old);
-	}
-
+	cptr = rp (index, mapping_flag);
 	return (cptr);
 }
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : read_dims
- | COMMENT	:
+ | COMMENT	: This is called once from MMF for the first parameter file
  | PARAMETERS   :
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 char *read_dims (char *param_file_name) {
-  FILE *param_file;
-  DIMEN *dim;
-  int dim_size, i, j;
-
-  char line[MAXDATALNLEN], key[MAXDATALNLEN];
-  static char buf[256];
-  char *endptr;
-  char *nch;
-  int		done;
-
-
+	DIMEN *dim;
+	int dim_size, i, j; 
+	static char buf[256], *bp, *line_p;
+	char *endptr;
+	char *nch;
+	int done;
+  
 /*
 * get param name, open file
 */
-	if ((param_file = fopen (param_file_name, "r")) == NULL) {
-		if (param_file_name) {
-			(void)sprintf (buf, "ERROR: cannot open Parameter File: %s", param_file_name);
-		} else {
-			(void)sprintf (buf, "ERROR: cannot open Parameter File");
-		}
-		return (buf);
+	strncpy (file_name, param_file_name, 256);
+    param_file = NULL;
+    bp = open_parameter_file (param_file_name);
+	if (bp != NULL) {
+		return bp;
 	}
-
 /*
 * read in run info string
 */
-	if (!fgets (line, MAXDATALNLEN, param_file)) {
-		if (param_file != NULL) {
-		   fclose (param_file);
-		   param_file = NULL;
-		}
-
-		(void)sprintf (buf, "ERROR: problems reading info line in Parameter File");
-		return (buf);
+	if (!(line_p = get_next_line ())) {
+		close_parameter_file();
+		return error_string ("problems reading info");
 	}
-
-	if (Mparaminfo) {
-		free (Mparaminfo);
-	}
-	Mparaminfo = strdup (line);
+	Mparaminfo = strdup (line_p);
 
 /*
 **	See if version number is set
 */
-	if (!fgets (line, MAXDATALNLEN, param_file)) {
-		if (param_file != NULL) {
-		   fclose (param_file);
-		   param_file = NULL;
-		}
-
-		(void)sprintf (buf, "ERROR: problems reading version number in Parameter File");
-		return (buf);
+	if (!(line_p = get_next_line ())) {
+		close_parameter_file();
+		return error_string ("problems reading version number");
 	}
 
-	if (!fgets (line, MAXDATALNLEN, param_file)) {
-		if (param_file != NULL) {
-		   fclose (param_file);
-		   param_file = NULL;
-		}
-		(void)sprintf (buf, "ERROR: problems reading dimension label in Parameter File");
-		return (buf);
+	if (!(line_p = get_next_line ())) {
+		close_parameter_file();
+		return error_string ("problems reading dimension label");
 	}
 
 /*
  *  Read in comments -- everything between version line and
  *  "** Dimensions **" line is a comment
  */
-
 	Comments = (char **)malloc (1000 * sizeof (char *));
 	nComments = 0;
 
 	while (strncmp (line, "** Dimensions **", 16)) {
-		if (!fgets (line, MAXDATALNLEN, param_file)) {
-		   if (param_file != NULL) {
-		      fclose (param_file);
-		      param_file = NULL;
-		   }
-			(void)sprintf (buf, "ERROR: problems skipping comments in Parameter File");
-			return (buf);
+		if (!(line_p = get_next_line ())) {
+			close_parameter_file();
+			return error_string ("problems skipping comments");
 		}
 
 		if (strncmp (line, "** Dimensions **", 16)) {
-			printf ("Comment line = %s\n", line);
+//			printf ("Comment line = %s\n", line);
 			Comments[nComments++] = strdup (line);
 		}
 	}
-	//}
 
 /*
 **	Check dimension label
 */
 	if (strncmp (line, "** Dimensions **", 16)) {
-		if (param_file != NULL) {
-		   fclose (param_file);
-		   param_file = NULL;
-		}
-		(void)sprintf (buf, "ERROR: ** Dimensions ** label not found in Parameter File %s.",
-		param_file_name);
-		return (buf);
+		close_parameter_file();
+		return error_string ("** Dimensions ** label not found");
 	}
   
-	if (!fgets (line, MAXDATALNLEN, param_file)) {
-		if (param_file != NULL) {
-		   fclose (param_file);
-		   param_file = NULL;
-		}
-		(void)sprintf (buf, "ERROR: unexpected end of Parameter File");
-		return (buf);
+	if (!(line_p = get_next_line ())) {
+		close_parameter_file();
+		return error_string ("unexpected end of file");
 	}
 
 /*
 * read in dimensions
 */
 	while (strncmp (line, "** Parameters **", 16)) {
-
 		if (strncmp (line, "####", 4)) {
-		   if (param_file != NULL) {
-		      fclose (param_file);
-		      param_file = NULL;
-		   }
-			(void)sprintf (buf, "ERROR: expecting '####' found %s in Parameter File %s", line, param_file_name);
-			return (buf);
+			close_parameter_file();
+			return error_string ("expecting '####'");
 		}
 
 /*
 **	Read dimension name from parameter file.
 */
-		if (fgets (key, MAXDATALNLEN, param_file) == NULL) {
-		   if (param_file != NULL) {
-		      fclose (param_file);
-		      param_file = NULL;
-	       }
-			(void)sprintf (buf, "ERROR: trying to read dimension name %s in Parameter File %s.", key, param_file_name);
-			return (buf);
+		if (!(line_p = get_next_line ())) {
+			close_parameter_file();
+			return error_string ("trying to read dimension name");
 		}
 
-		key[strlen(key)-1] = '\0';
-
-		dim = dim_addr (key);
+		line[strlen(line)-1] = '\0';
+		dim = dim_addr (line);
 		if (dim) {
 /*
 **	Read dimension size from parameter file.
 */
-			if (fgets (line, MAXDATALNLEN, param_file) == NULL) {
-		       if (param_file != NULL) {
-		          fclose (param_file);
-		          param_file = NULL;
-	           }
-				(void)sprintf (buf, "ERROR: can't read dimension size for %s in Parameter File %s.", key, param_file_name);
-				return (buf);
+			if (!(line_p = get_next_line ())) {
+				close_parameter_file();
+				return error_string ("can't read dimension size");
 			}
 
 			errno = 0;
 			dim_size = strtol(line, &endptr, 10);
 			if (errno != 0) {
-		       if (param_file != NULL) {
-		          fclose (param_file);
-		          param_file = NULL;
-		       }
-				(void)sprintf (buf, "ERROR: size problem with %s in Parameter File %s", key, param_file_name);
-				return (buf);
+				close_parameter_file();
+				return error_string ("size problem");
 			}
 
 /*
@@ -257,7 +198,7 @@ char *read_dims (char *param_file_name) {
 /*
 * check if there are index names below
 */
-			if (fgets (line, MAXDATALNLEN, param_file)) {
+			if ((line_p = get_next_line ())) {
 				if (strncmp (line, "** Parameters **", 16)) {
 					if (dim->names) {
 				//        free (dim->names);
@@ -290,7 +231,7 @@ char *read_dims (char *param_file_name) {
 									*nch = '\0';
 								}
 								dim->notes[i] = strdup (&(line[1]));
-								fgets (line, MAXDATALNLEN, param_file);
+								line_p = get_next_line ();
 								i++;
 
 							} else {
@@ -299,7 +240,7 @@ char *read_dims (char *param_file_name) {
 									*nch = '\0';
 								}
 								dim->names[i] = strdup (line);
-								fgets (line, MAXDATALNLEN, param_file);
+								line_p = get_next_line ();
 								i++;
 							}
 
@@ -314,25 +255,22 @@ char *read_dims (char *param_file_name) {
 					}
 				}
 			} else {
-		       if (param_file != NULL) {
-		          fclose (param_file);  // EOL was returned -- done reading dimensions from this file;
-		          param_file = NULL;
-		       }
-				return (NULL);
+				close_parameter_file();
+				return NULL;
 			}
 		} else {
-			(void)fprintf (stderr,"\nWARNING: dimension '%s' is not required; set in parameter file:\n         %s\n", key, param_file_name);
-			fgets (line, MAXDATALNLEN, param_file);
-			fgets (line, MAXDATALNLEN, param_file);
+			key = (char *)strtok(line_p, " ");
+			key[strlen(key)] = '\0';
+			sprintf(buf, "dimension '%s' is not required", key);
+			fprintf (stderr,"\n%s\n", warning_string (buf));
+			line_p = get_next_line ();
+			line_p = get_next_line ();
 		}
 	}
 
-	if (param_file != NULL) {
-	   fclose (param_file);
-	   param_file = NULL;
-	}
-	return (NULL);
-}
+	close_parameter_file();
+	return NULL;
+} // read_dims
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : rp
@@ -341,63 +279,44 @@ char *read_dims (char *param_file_name) {
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-static char *rp (char *param_file_name, int index, int map_flag) {
-
-  FILE *param_file;
-  PARAM *param;
-
-  char line[MAXDATALNLEN];
-  static char buf[256], *buf_ptr;
-  char *pf_value, *mapParamName;
-  int i, j, k;
-  PARAM *mapping_param;
-//  int *mapping;
-
+static char *rp (int index, int map_flag) {
+	PARAM *param;
+	static char buf[256], *buf_ptr;
+	char *line_p;
+	char *pf_value, *mapParamName;
+	int i, j, k;
+	PARAM *mapping_param;
 
 /*
 * get param name, open file
 */
-	if ((param_file = fopen (param_file_name, "r")) == NULL) {
-		if (param_file_name)
-			(void)sprintf (buf, "ERROR: cannot open Parameter File: %s", param_file_name);
-		else
-			(void)sprintf (buf, "ERROR: cannot open Parameter File");
-
-		return (buf);
+    buf_ptr = open_parameter_file ();
+	if (buf_ptr != NULL) {
+		return (buf_ptr);
 	}
 
-	fgets (line, MAXDATALNLEN, param_file);
+	get_next_line ();
 	if (index == 0) {  // if index equals zero, than this parameter file has dimension stuff and we need to skip over it.
 		while (strncmp (line, "** Parameters **", 16)) {
-			if (!fgets (line, MAXDATALNLEN, param_file)) {  // return if hits eol
-		       if (param_file != NULL) {
-		          fclose (param_file);
-		          param_file = NULL;
-		       }
-			   return (NULL);
+			if (!(line_p = get_next_line ())) {
+				close_parameter_file();
 			}
 		}
-		fgets (line, MAXDATALNLEN, param_file);
+		get_next_line ();
 	}
 
 /*
 **	Read in parameters.
 */
 	while (!feof (param_file)) {
-		buf_ptr = READ_param_head (&param, &param_file, param_file_name, line, map_flag);
+		buf_ptr = READ_param_head (&param, map_flag);
 		if (buf_ptr) {
 			if (buf_ptr == (char *)-1) {
-		      if (param_file != NULL) {
-		         fclose (param_file);
-		         param_file = NULL;
-		      }
-			  return (NULL);
+				close_parameter_file();
+			  return NULL;
 			} else {
-		       if (param_file != NULL) {
-		          fclose (param_file);
-		          param_file = NULL;
-		       }
-			   return (buf_ptr);
+				close_parameter_file();
+			   return buf_ptr;
 			}
 		}
 
@@ -411,7 +330,7 @@ static char *rp (char *param_file_name, int index, int map_flag) {
 			// values into a temporary array that is used to remap the
 			// values into the correct size and shape for param->value.
 			if (param->pf_size == param->size) {
-				buf_ptr = READ_param_values (param->size, param->type, param->name, param->value, param_file, line);
+				buf_ptr = READ_param_values (param->size, param->type, param->name, param->value, line, param->min_string, param->max_string, param->bound_status);
 
 			} else {
 
@@ -429,7 +348,7 @@ static char *rp (char *param_file_name, int index, int map_flag) {
 					pf_value = NULL;
 				}
 
-				buf_ptr = READ_param_values (param->pf_size, param->type, param->name, pf_value, param_file, line);
+				buf_ptr = READ_param_values (param->pf_size, param->type, param->name, pf_value, line, param->min_string, param->max_string, param->bound_status);
 
 				// The values read from the parameter file need to be resized to fit into the size
 				// of the module array for this parameter.
@@ -673,22 +592,12 @@ static char *rp (char *param_file_name, int index, int map_flag) {
 								}
 							}
 						}
-
-
-
-
-
-
-
                     }  // end of 1D to 2D conversion code
 				}
 			}
 
 			if (buf_ptr) {
-		        if (param_file != NULL) {
-		           fclose (param_file);
-		           param_file = NULL;
-		        }
+				close_parameter_file();
 				return (buf_ptr);
 			}
 
@@ -698,13 +607,9 @@ static char *rp (char *param_file_name, int index, int map_flag) {
 		}
 	}
 
-    if (param_file != NULL) {
-	   fclose (param_file);
-	   param_file = NULL;
-    }
-
+	close_parameter_file();
 	return (NULL);
-}
+} // rp
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : READ_param_head
@@ -715,70 +620,65 @@ static char *rp (char *param_file_name, int index, int map_flag) {
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_file_name, char line[], int map_flag) {
-  char key[MAXDATALNLEN];
-  char dimen[MAXDATALNLEN];
-  static char buf[256];
-  char *temp, *npos, *tempfmt;
-  int tempwidth, i, param_size, type;
-
-  int badFlag;
+static char *READ_param_head (PARAM **param_ptr, int map_flag) {
+	char dimen[MAXDATALNLEN];
+	static char buf[256];
+	char *temp, *npos, *tempfmt;
+	int tempwidth, i, param_size, type;
+	static long silent_flag;
+	int badFlag;
+	char *line_p;
   
 /*
 * space fwd to #### header
 */
-  while (strncmp (line, "####", 4))
-    if (!fgets (line, MAXDATALNLEN, *param_file)) {
-		if (*param_file != NULL) {
-		   fclose (*param_file);
-		   *param_file = NULL;
+	while (strncmp (line, "####", 4)) {
+		if (!(line_p = get_next_line ())) {
+			close_parameter_file();
+			return (char *)-1;
 		}
-      return ((char *)-1);
-    }
+	}
   
 /*
 * get key, column width and format
 */
-  if (fgets (line, MAXDATALNLEN, *param_file) == NULL) {
-	  (void)sprintf (buf, "\nERROR: Early end of Parameter File: %s", param_file_name);
-    return (buf);
-  }
+	if (!(line_p = get_next_line ())) {
+		return error_string("Early end of file");
+	}
 
 /*
 **	get the key
 */
-  temp = (char *)strtok(line," ");
+	temp = (char *)strtok(line," ");
+	npos = strchr(temp,'\n');
+	if (npos) *npos = '\0';
 
-
-  npos = strchr(temp,'\n');
-  if (npos) *npos = '\0';
-
-  (void)strcpy(key,temp);
-  key[strlen(temp)] = '\0';
+	strcpy(key,temp);
+	key[strlen(temp)] = '\0';
 	
 /*
 **	get the column width
 */
-  temp = (char *)strtok(NULL," ");
-  if (temp) {
-    tempwidth = atoi(temp);
-  } else {
-    tempwidth = 0;
-  }
+	temp = (char *)strtok(NULL," ");
+	if (temp) {
+		tempwidth = atoi(temp);
+	} else {
+		tempwidth = 0;
+	}
 
 /*
 **	get the format
 */
-  tempfmt = (char *)strtok(NULL," ");
+	tempfmt = (char *)strtok(NULL," ");
 
 /*
 ** markstro -- this check is added so that if there is just a space
 **             after the width the parameter will not have a blank
 **             format.
 */
-  if (tempfmt && (strlen (tempfmt) < 2)) {
-     tempfmt = NULL;
-  }
+	if (tempfmt && (strlen (tempfmt) < 2)) {
+		tempfmt = NULL;
+	}
 
 /*
 **  param is allocated by calls from the modules to declparam.
@@ -829,59 +729,29 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 /*
 * get number of dimensions
 */
-		if(fgets(line, MAXDATALNLEN, *param_file) == NULL) {
-			(void)sprintf (buf,"ERROR: reading param number of dimensions for %s in Parameter File %s", key, param_file_name);
-			return buf;
+		if (!(line_p = get_next_line ())) {
+			return error_string("number of dimensions");
 		}
 
 		if (isdigit(*line)) {
-			//if ((*param_ptr)->ndimen != atol(line)) {
-			//	sprintf (buf, "\nERROR: number of dimensions for parameter %s doesn't match parameter declaration.\nParameter File: %s\n", key, param_file_name);
-			//	return buf;
-			//}
-
 			(*param_ptr)->pf_ndimen = atol(line);
 
-			//if((*param_ptr)->ndimen == 0) {
-			//	(void)sprintf (buf, "\nERROR: number of dimensions is 0 for %s in Parameter File %s", key, param_file_name);
-			//	return (buf);
-			//}
-
 			if((*param_ptr)->pf_ndimen == 0) {
-				(void)sprintf (buf, "\nERROR: number of dimensions is 0 for %s in Parameter File %s", key, param_file_name);
-				return (buf);
+				return error_string("number of dimensions is 0");
 			}
 /*
 * get number of dimensions if file format supports 2D arrays. Otherwise
 * get dimension name.
 */
-/*			for (i = 0; i < (*param_ptr)->ndimen; i++) {
-				if(fgets(dimen, MAXDATALNLEN, *param_file) == NULL) {
-					(void)sprintf (buf, "\nERROR: number of dimensions is wrong for %s in Parameter File %s", key, param_file_name);
-					return (buf);
-				}
-
-				dimen[strlen(dimen) - 1] = '\0';
-				if (strcmp(dimen, (*param_ptr)->dimen[i]->name)) {
-					(void)sprintf (buf, "\nERROR: dimension specification is wrong for %s in Parameter File %s", key, param_file_name);
-					return (buf);
-				}
-			}*/ /* i */
-
 			(*param_ptr)->pf_dimNames = (char **)malloc ((*param_ptr)->pf_ndimen * sizeof (char *));
 
 			for (i = 0; i < (*param_ptr)->pf_ndimen; i++) {
-				if(fgets(dimen, MAXDATALNLEN, *param_file) == NULL) {
-					(void)sprintf (buf, "\nERROR: number of dimensions is wrong for %s in Parameter File %s", key, param_file_name);
-					return (buf);
+				if (!(line_p = get_next_line ())) {
+					return error_string("number of dimensions is wrong");
 				}
-
+                strncpy (dimen, line, MAXDATALNLEN);
 				dimen[strlen(dimen) - 1] = '\0';
 				(*param_ptr)->pf_dimNames[i] = strdup(dimen);
-				//if (strcmp(dimen, (*param_ptr)->dimen[i]->name)) {
-				//	(void)sprintf (buf, "\nERROR: dimension specification is wrong for %s in Parameter File %s", key, param_file_name);
-				//	return (buf);
-				//}
 			}
 
 			if (map_flag) { // Need to set some values in the param structure for mapping parameter
@@ -893,8 +763,7 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 			badFlag = checkForValidDimensions (*param_ptr);  // 0 = good;  1 = bad
 
 			if (badFlag) {
-				(void)sprintf (buf, "ERROR: dimensions for %s in Parameter File %s are incompatable with declaration in module", key, param_file_name);
-				return (buf);
+				return error_string("dimensions are incompatable with declaration in module");
 			}
 
 			(*param_ptr)->pf_size = getParamFileParamSize(*param_ptr);
@@ -906,21 +775,16 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 /*
 * get param size
 */
-			fgets(line, MAXDATALNLEN, *param_file);
-			if(line == NULL) {
-				(void)sprintf (buf, "ERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
-				return (buf);
+			if (!(line_p = get_next_line ())) {
+				return error_string("incorrect parameter size");
 			}
 
 			if((param_size = atol(line)) == 0) {
-				(void)sprintf (buf, "\nERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
-				return (buf);
+				return error_string("incorrect parameter size");
 			}
 
-			//if(param_size != (*param_ptr)->size) {
-			if(param_size != (*param_ptr)->pf_size) {
-				(void)sprintf (buf, "\nERROR: incorrect parameter size for %s in Parameter File %s", key, param_file_name);
-				return (buf);
+			if (param_size != (*param_ptr)->pf_size) {
+				return error_string("incorrect parameter size");
 			}
 
 		} else {  //  number of dimensions not a digit
@@ -929,41 +793,39 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
 			dimen[strlen(line)-1] = '\0';
 
 			if (strcmp(dimen, (*param_ptr)->dimen[0]->name)) {
-				(void)sprintf (buf, "\nERROR: incorrect dimension specified for parameter %s in Parameter File %s",
-				  key, param_file_name);
-				return (buf);
+				return error_string("incorrect dimension specified");
 			}
+
 			(*param_ptr)->size = getdim(dimen);
 			param_size = (*param_ptr)->size;
 		}
 /*
 * get type
 */
-		fgets(line, MAXDATALNLEN, *param_file);
-		if(line == NULL) {
-			(void)sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
-			return (buf);
+		if (!(line_p = get_next_line ())) {
+			return error_string("incorrect data type");
 		}
 
-		if((type = atol(line)) == 0) {
-			sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
-			return (buf);
+		if ((type = atol(line)) == 0) {
+			return error_string("incorrect data type");
 		}
 
-		if(type != (*param_ptr)->type) {
-			sprintf (buf, "\nERROR: incorrect data type specified for parameter %s in Parameter File %s", key, param_file_name);
-			return (buf);
+		if (type != (*param_ptr)->type) {
+			return error_string("incorrect data type");
 		}
   
 	} else {
 		if (!map_flag) {
-			(void)printf ("\nWARNING: parameter %s is ignored as it is not required.\n", key);
-			(void)printf ("         Read from Parameter File: %s\n", param_file_name);
+			silent_flag = *control_lvar("print_debug");
+			if (silent_flag > -2) {
+				sprintf (buf,"parameter '%s' is not required", key);
+				fprintf (stderr,"\n%s\n", warning_string (buf));
+			}
 		}
 	}
 
 	return (NULL);
-}
+} // READ_param_head
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : READ_param_values
@@ -972,24 +834,50 @@ static char *READ_param_head (PARAM **param_ptr, FILE **param_file, char *param_
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-static char *READ_param_values (long size, long type, char *name, char *value,
-								FILE *param_file, char line[]) {
+static char *READ_param_values (long size, long type, char *name,
+				char *value, char *line, char *min_string, char *max_string,
+				int bound_status) {
 	int i, j;
-//	char *nch;
-//	int l1, l2
     int  done;
 	int	desc_count = 0;
 	int repeat_count;
 	char delims[] = ",";
 	char *result = NULL;
 	char *comp_ptr = NULL;
-	static char crap[MAXDATALNLEN], crap2[MAXDATALNLEN];
-	static char buf[256];
+	static char *crap = NULL;
+	static char *crap2 = NULL;
 	float foo;
-	double d;
+	double d, min_d, max_d;
 	char *endp;
-	long l;
+	long l, min_l, max_l;
+	char *line_p;
+	
+	if (crap == NULL) {
+		crap = (char *) umalloc(max_data_ln_len * sizeof(char));
+	}
 
+	if (crap2 == NULL) {
+		crap2 = (char *) umalloc(max_data_ln_len * sizeof(char));
+	}
+
+/*
+** Decode the min and max string based on data type
+*/
+	switch (type) {
+		case M_STRING:
+			break;
+
+		case M_DOUBLE:
+		case M_FLOAT:
+			min_d = strtod(min_string, &endp);
+			max_d = strtod(max_string, &endp);
+			break;
+
+		case M_LONG:
+			min_l = strtol(min_string, &endp, 0);
+			max_l = strtol(max_string, &endp, 0);
+			break;
+	} // switch
 
 /*
 **  Space for the values and value_desc are allocated in declparam
@@ -997,118 +885,81 @@ static char *READ_param_values (long size, long type, char *name, char *value,
 	done = FALSE;
 	i = 0;
 	while (!done) {
-		fgets (line, MAXDATALNLEN, param_file);
-		if (!line) {
+		if (!(line_p = get_next_line ())) {
 			done = TRUE;
 
 		} else if (!strncmp (line, "####", 4)) {
 			done = TRUE;
 
-		//} else if (!param) {
-		//	;
-
-		//} else if (line[0] == '@') {
-		//	i--;
-
-		//	nch = (char *)strchr (line, '\n');
-		//	if (nch) *nch = '\0';
-
-		//	if (desc_count) {
-		//		if (param->value_desc[i]) {
-		//			l1 = strlen (param->value_desc[i]);
-		//			l2 = strlen (line);
-		//			param->value_desc[i] = (char *)realloc
-		//			    (param->value_desc[i],
-		//			    (l1 + l2 + 2) * sizeof (char));
-		//			strcat (param->value_desc[i], "\n");
-		//			strcat (param->value_desc[i], &(line[1]));
-		//		} else {
-		//			param->value_desc[i] = strdup (&(line[1]));
-		//		}
-		//	} else {
-
-		//		param->value_desc[i] = strdup (&(line[1]));
-		//	}
-		//	i++;
-
 		} else {
 			desc_count = 0;
 			result = NULL;
-			//printf ("READ_param_values: line is %s\n", line);
-			strncpy (crap, line, MAXDATALNLEN);
-			//printf ("crap is %s\n", crap);
+			strncpy (crap, line, max_data_ln_len);
 
 			result = strtok (crap, delims);
 			while (result != NULL && !done) {
-				//printf ("   READ_param_values: result is |%s|\n", result);
-
-				strncpy (crap2, result, MAXDATALNLEN);
-				//printf ("crap2 is %s\n", crap2);
+				strncpy (crap2, result, max_data_ln_len);
 				comp_ptr = strchr (crap2, '*');
-				//printf ("comp_ptr is %s\n", comp_ptr);
 				if (comp_ptr == NULL){
 					repeat_count = 1;
 					comp_ptr = crap2;
-					//printf ("comp_ptr is %s\n", comp_ptr);
 				} else {
 					*comp_ptr = '\0';
 					repeat_count = atol(crap2);
 					comp_ptr++;
-					//printf ("comp_ptr is %s\n", comp_ptr);
 					foo = (float) atof(comp_ptr);
 				}
 
 				for (j = 0; j < repeat_count && !done; j++) {
 					if (i < size) {
 						switch (type) {
-
 							case M_STRING:
                                 comp_ptr[strlen(comp_ptr)-1] = '\0';
-                                //*((char **)param->value + i) = strdup (comp_ptr);
 								*((char **)value + i) = strdup (comp_ptr);
                                 i++;
-
-								//if (comp_ptr != endp && *endp == '\n') {
-
-								//} else {
-								//	sprintf (buf, "There is a parameter format error. Parameter name: %s Index = %d\n   The data type should be a character string or there could be white spaces after the values on the line.", param->name, (i+1));
-									//printf ("%s", buf);
-								//	return (buf);
-								//}
-
-								//((double *)(param->value))[i++] = atof(comp_ptr);
 								break;
 
 							case M_DOUBLE:
 								d = strtod(comp_ptr, &endp);
+
+								if (d < min_d || d > max_d) {
+									bad_param_value (d, i, name, min_d, max_d);
+								}
+
 								if (comp_ptr != endp && *endp == '\n') {
-									//((double *)(param->value))[i++] = d;
 									((double *)value)[i++] = d;
 								} else {
-									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a double precision float or there could be white spaces after the values on the line.", name, (i+1));
-									return (buf);
+									return error_string("parameter format error");
 								}
 								break;
 
 							case M_FLOAT:
 								d = strtod(comp_ptr, &endp);
+
+								if (d < min_d || d > max_d) {
+									bad_param_value (d, i, name, min_d, max_d);
+								}
+
 								if (comp_ptr != endp && *endp == '\n') {
-									//((float *)(param->value))[i++] = (float)d;
 									((float *)value)[i++] = (float)d;
 								} else {
-									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be a float or there could be white spaces after the values on the line.", name, (i+1));
-									return (buf);
+									return error_string("parameter format error");
 								}
 								break;
 
 							case M_LONG:
 								l = strtol(comp_ptr, &endp, 0);
+
+// Does not check parameter ranges if bounded
+								if ((l < min_l || l > max_l) &&
+										bound_status == M_UNBOUNDED) {
+									bad_param_value_l (l, i, name, min_l, max_l);
+								}
+
 								if (comp_ptr != endp && *endp == '\n') {
-									//((int *)(param->value))[i++] = (int)l;
 									((int *)value)[i++] = (int)l;
 								} else {
-									sprintf (buf, "\nERROR: parameter format error. Parameter name: %s Index = %d\n   The data type should be an integer or there could be white spaces after the values on the line.", name, (i+1));
-									return (buf);
+									return error_string("parameter format error");
 								}
 								break;
 						} // switch
@@ -1124,17 +975,20 @@ static char *READ_param_values (long size, long type, char *name, char *value,
 	}
 
 	if (i < size) {
-		sprintf (buf, "\nERROR: too few values read for paramter %s in Parameter File", name);
-		return (buf);
+		return error_string("too few values read for paramter");
 	} else if (i > size && !done) {
-		sprintf (buf, "\nERROR: too many values read for paramter %s in Parameter File", name);
-		return (buf);
+		return error_string("too many values read for paramter");
 	}
-	return (NULL);
-}
+	return NULL;
+} // READ_param_values
 
-// returns
-// 0 = good;  1 = bad
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : checkForValidDimensions
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 0 = good;  1 = bad
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static int checkForValidDimensions (PARAM *param_ptr) {
 	int i, badFlag;
 
@@ -1169,10 +1023,15 @@ static int checkForValidDimensions (PARAM *param_ptr) {
 
 	//param_ptr->ndimen
 	return 0;
-}
+} // checkForValidDimensions
 
-// returns
-// 0 = good;  1 = bad
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : isDimensionIncompatable
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 0 = good;  1 = bad
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static int isDimensionIncompatable (char *pfDimName, char *modDimName) {
 //	char *dimNames[] ={"one",
 //		"ncascade",
@@ -1254,11 +1113,16 @@ static int isDimensionIncompatable (char *pfDimName, char *modDimName) {
 			return 0;
 		}
 	}
-	
-
 	return 1;
-}
+} // isDimensionIncompatable
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getParamFileParamSize
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static int getParamFileParamSize (PARAM *param) {
 	int i, size;
 
@@ -1269,6 +1133,13 @@ static int getParamFileParamSize (PARAM *param) {
 	return size;
 }
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : oneToAnySizedArray
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static void oneToAnySizedArray(PARAM *param, char *pf_value) {
 	int i;
 
@@ -1291,6 +1162,13 @@ static void oneToAnySizedArray(PARAM *param, char *pf_value) {
 	}
 }
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getMapParamName
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static char *getMapParamName(char *name) {
 	char *mapParamName;
 	int i;
@@ -1305,6 +1183,13 @@ static char *getMapParamName(char *name) {
     return mapParamName;
 }
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : subbasinTo1DArray
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
 static void subbasinTo1DArray (PARAM *param, PARAM *mapping_param, char *pf_value) {
 	int i, map;
 
@@ -1329,9 +1214,116 @@ static void subbasinTo1DArray (PARAM *param, PARAM *mapping_param, char *pf_valu
 	} else if (param->type == M_STRING) {
 		for (i = 0; i < param->size; i++) {
 			map = ((int *)(mapping_param->value))[i];
-//			*((char **)param->value + i) = strdup (*pf_value + map - 1);
 			*((char **)param->value + i) = strdup (pf_value + map - 1);
 		}
 	}
 }
 
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : open_parameter_file
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : error message otherwise NULL
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static char *open_parameter_file () {
+    param_file = NULL;
+	if ((param_file = fopen (file_name, "r")) == NULL) {
+		return error_string("cannot open parameter file");
+	}
+	lineNumber = 0;
+    return NULL;
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : close_parameter_file
+ | COMMENT		: local
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static void close_parameter_file () {
+	if (param_file != NULL) {
+		fclose (param_file);
+		param_file = NULL;
+		lineNumber = -1;
+	}
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : get_next_line
+ | COMMENT		: Use this only to read line from parameter file
+ | PARAMETERS   :
+ | RETURN VALUE : Pointer to "line" string if read was successful
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static char *get_next_line () {
+	char *line_p;
+
+	if (line == NULL) {
+		line = (char *) umalloc(max_data_ln_len * sizeof(char));
+	}
+
+	if ((line_p = fgets (line, MAXDATALNLEN, param_file))) {
+		lineNumber++;
+	}
+	return line_p;
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : error_string
+ | COMMENT		: Generates an error message
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static char *error_string (char *message) {
+	static char buf[256];
+	sprintf (buf, "ERROR: %s; file is %s; line number %d", message, file_name, lineNumber);
+	return buf;
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : warning_string
+ | COMMENT		: Generates a warning message.
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static char *warning_string (char *message) {
+	static char buf[256];
+	sprintf (buf, "WARNING: %s; file is %s; line number %d", message, file_name, lineNumber);
+	return buf;
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : bad_param_value_l
+ | COMMENT		: Generates the warning message when a long value is out of range.
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static void bad_param_value_l (long l, int i, char *name, long min_l, long max_l) {
+	static char buf[256];
+
+	if (*control_lvar("parameter_check_flag") > 0) {
+		sprintf (buf, "%s[%d] = %d is out of range (%d to %d)", name, i, (int)l, (int)min_l, (int)max_l);
+		fprintf (stderr, "%s\n", warning_string(buf));
+	}
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : bad_param_value
+ | COMMENT		: Generates the warning message when a double or float value is out of range.
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+static void bad_param_value (double d, int i, char *name, double min_d, double max_d) {
+	static char buf[256];
+
+	if (*control_lvar("parameter_check_flag") > 0) {
+		sprintf (buf, "%s[%d] = %f is out of range (%f to %f)", name, i, d, min_d, max_d);
+		fprintf (stderr, "%s\n", warning_string(buf));
+	}
+}

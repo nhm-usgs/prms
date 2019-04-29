@@ -69,7 +69,7 @@
 !***********************************************************************
       pptdist2decl = 0
 
-      Version_precip = '$Id: precip_dist2_2d.f90 7115 2015-01-06 00:09:15Z rsregan $'
+      Version_precip = 'precip_dist2.f90 2016-05-12 15:48:00Z'
       CALL print_module(Version_precip, 'Precipitation Distribution  ', 90)
       MODNAME = 'precip_dist2'
 
@@ -88,7 +88,7 @@
      &     'feet')/=0 ) CALL read_error(1, 'dist_max')
 
       IF ( declparam(MODNAME, 'max_psta', 'one', 'integer', &
-     &     '2', 'bounded', 'nrain', &
+     &     '0', 'bounded', 'nrain', &
      &     'Maximum number of precipitation stations to distribute to an HRU', &
      &     'Maximum number of precipitation measurement stations to distribute to an HRU', &
      &     'none')/=0 ) CALL read_error(1, 'max_psta')
@@ -128,7 +128,7 @@
 
       ALLOCATE ( Psta_mon(Nrain, 12) )
       IF ( declparam(MODNAME, 'psta_mon', 'nrain,nmonths', 'real', &
-     &     '1.0', '0.00001', '50.0', &
+     &     '1.0', '0.0000001', '50.0', &
      &     'Monthly precipitation for each of the nrain precipitation measurement stations', &
      &     'Monthly (January to December) factor to precipitation'// &
      &     ' at each measured station to adjust precipitation distributed to each HRU to'// &
@@ -170,16 +170,16 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2init()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_MODULE, ONLY: Nhru, Nrain, Inputerror_flag, Parameter_check_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO, SMALLPARAM
+      USE PRMS_MODULE, ONLY: Nhru, Nrain
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
-      INTRINSIC SQRT, ABS
+      INTRINSIC DSQRT, DABS, DBLE
 ! Local Variables
-      INTEGER :: i, k, j, n, kk, kkbig, jj
-      DOUBLE PRECISION :: distx, disty, distance, big_dist, dist
+      INTEGER :: i, k, n, kk, kkbig, jj
+      DOUBLE PRECISION :: distx, disty, distance, big_dist, dist, dist_max_dble
       DOUBLE PRECISION, ALLOCATABLE :: nuse_psta_dist(:, :)
 !***********************************************************************
       pptdist2init = 0
@@ -193,7 +193,7 @@
 
       IF ( getparam(MODNAME, 'max_psta', 1, 'real', Max_psta) &
      &     /=0 ) CALL read_error(2, 'max_psta')
-      IF ( Max_psta>Nrain ) Max_psta = Nrain
+      IF ( Max_psta==0 ) Max_psta = Nrain
 
 !      IF ( get param(MODNAME, 'maxmon_prec', 12, 'real', Maxmon_prec) &
 !           /=0 ) CALL read_error(2, 'maxmon_prec')
@@ -227,17 +227,18 @@
       ALLOCATE ( Nuse_psta(Max_psta,Nhru), nuse_psta_dist(Max_psta,Nhru) )
       Nuse_psta = 0
       nuse_psta_dist = 0.0D0
+      dist_max_dble = DBLE ( Dist_max )
 
       DO jj = 1, Active_hrus
         i = Hru_route_order(jj)
         DO k = 1, Nrain
-          distx = (Hru_xlong(i)-Psta_xlong(k))**2
-          disty = (Hru_ylat(i)-Psta_ylat(k))**2
-          distance = SQRT(distx+disty)
-          IF ( ABS(distance)<DNEARZERO ) distance = 1.0D0
+          distx = DBLE( (Hru_xlong(i)-Psta_xlong(k))**2 )
+          disty = DBLE( (Hru_ylat(i)-Psta_ylat(k))**2 )
+          distance = DSQRT(distx+disty)
+          IF ( DABS(distance)<DNEARZERO ) distance = 1.0D0
           dist = 1.0D0/(distance/5280.0D0)
           Dist2(i, k) = dist*dist
-          IF ( distance<Dist_max ) THEN
+          IF ( distance<dist_max_dble ) THEN
             n = N_psta(i)
             IF ( n<Max_psta ) THEN
               n = n + 1
@@ -259,20 +260,6 @@
               ENDIF
             ENDIF
           ENDIF
-
-          DO j = 1, 12
-            IF ( Psta_mon(k,j)<SMALLPARAM ) THEN
-              PRINT *, 'psta_mon needs to be at least:', SMALLPARAM
-              IF ( Parameter_check_flag>0 ) THEN
-                PRINT *, 'ERROR, HRU:', k, 'month:', j, ', psta_mon:', Psta_mon(k, j)
-                Inputerror_flag = 1
-              ELSE
-                PRINT *, 'WARNING, HRU:', k, 'month:', j, ', psta_mon:', &
-     &                   Psta_mon(k, j), ') set to', SMALLPARAM
-                Psta_mon(k, j) = SMALLPARAM
-              ENDIF
-            ENDIF
-          ENDDO
         ENDDO
       ENDDO
       DEALLOCATE ( nuse_psta_dist )
@@ -295,12 +282,12 @@
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ABS
+      INTRINSIC ABS, DBLE, SNGL
       EXTERNAL :: print_date
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
-      REAL :: tdiff, pcor, prec, ppt, sumdist, sump
-      DOUBLE PRECISION :: sum_obs
+      REAL :: tdiff, pcor, ppt
+      DOUBLE PRECISION :: sum_obs, prec, sumdist, sump, ppt_dble
 !***********************************************************************
       pptdist2run = 0
 
@@ -342,8 +329,9 @@
 ! Determine if any precipitation on HRU=i, if not start next HRU
 
         ppt = 0.0
-        sumdist = 0.0
-        sump = 0.0
+        sumdist = 0.0D0
+        sump = 0.0D0
+        ppt_dble = 0.0D0
         allmissing = 0
         DO kk = 1, N_psta(i)
           k = Nuse_psta(kk, i)
@@ -363,9 +351,9 @@
               pcor = Snow_mon(i, Nowmonth)/Psta_mon(k, Nowmonth)
             ENDIF
             sumdist = sumdist + Dist2(i, k)
-            prec = Precip(k)*pcor
+            prec = DBLE( Precip(k)*pcor )
             sump = sump + prec
-            ppt = ppt + prec*Dist2(i, k)
+            ppt_dble = ppt_dble + prec*Dist2(i, k)
 !          ELSE
 !            PRINT *, 'bad precipitation value, HRU:', k, Precip(k)
 !            CALL print_date(1)
@@ -377,14 +365,15 @@
           STOP
         ENDIF
 
+        ppt = SNGL( ppt_dble )
         ! Ignore small amounts of preicipitation on an HRU
         IF ( ppt<NEARZERO ) CYCLE
 
-        IF ( sumdist>0.0 ) ppt = ppt/sumdist
+        IF ( sumdist>0.0D0 ) ppt = SNGL( ppt_dble/sumdist )
 
         IF ( Precip_units==1 ) ppt = ppt/25.4
         Hru_ppt(i) = ppt
-        sum_obs = sum_obs + ppt*Hru_area(i)
+        sum_obs = sum_obs + DBLE( ppt*Hru_area(i) )
 
         IF ( iform==2 ) THEN
           Hru_rain(i) = ppt
@@ -414,9 +403,9 @@
           ENDIF
         ENDIF
 
-        Basin_ppt = Basin_ppt + ppt*Hru_area(i)
-        Basin_rain = Basin_rain + Hru_rain(i)*Hru_area(i)
-        Basin_snow = Basin_snow + Hru_snow(i)*Hru_area(i)
+        Basin_ppt = Basin_ppt + DBLE( ppt*Hru_area(i) )
+        Basin_rain = Basin_rain + DBLE( Hru_rain(i)*Hru_area(i) )
+        Basin_snow = Basin_snow + DBLE( Hru_snow(i)*Hru_area(i) )
 
       ENDDO
       Basin_ppt = Basin_ppt*Basin_area_inv

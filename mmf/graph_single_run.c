@@ -5,7 +5,7 @@
  * FUNCTION : graph_single_run
  * COMMENT  : graph routines for mms run
  *
- * $Id: graph_single_run.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

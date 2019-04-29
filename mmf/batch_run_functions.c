@@ -5,7 +5,7 @@
  * FUNCTION : batch_run_functions
  * COMMENT  :
  *
- * $Id: batch_run_functions.c 6977 2014-11-12 20:53:01Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -383,7 +383,7 @@ char *single_run_post_run () {
 // markstro test
 //                           fprintf (ani_var_files[i], "\t%10ld",
 //                                    *((long *) var->value + j));
-                           fprintf (ani_var_files[i], "\t%10ld",
+                           fprintf (ani_var_files[i], "\t%10d",
                                     *((int *) var->value + j));
                            break;
                      }

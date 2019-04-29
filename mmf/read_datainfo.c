@@ -6,7 +6,7 @@
  * COMMENT  : reads the data file and updates the
  *            datainfo string and the data variable names and sizes
  *
- * $Id: read_datainfo.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -28,13 +28,22 @@ char *read_datainfo (FILE_DATA *fd) {
 
    static char   err_buf[512];
    long   count, nline = 0;
-   char   line[MAXDATALNLEN], linecopy[MAXDATALNLEN];
+   static char   *line = NULL;
+   static char *linecopy = NULL;
    PUBVAR   *var;
    char   *key, *countstr, *endptr;
 
    Mnreads = 0;
 
-   if (!(fgets (fd->info, MAXDATALNLEN, fd->fp))) {
+   if (line == NULL) {
+	   line = (char *) umalloc(max_data_ln_len * sizeof(char));
+   }
+
+   if (linecopy == NULL) {
+	   linecopy = (char *) umalloc(max_data_ln_len * sizeof(char));
+   }
+
+   if (!(fgets (fd->info, max_data_ln_len, fd->fp))) {
       (void)sprintf (err_buf, "Can't read data file info string\n%s", fd->name);
       return (err_buf);
    }
@@ -48,7 +57,7 @@ char *read_datainfo (FILE_DATA *fd) {
 */
    (void)strcpy (line, "");
    while (strncmp (line, "####", 4)) {
-      if ((fgets (line, MAXDATALNLEN, fd->fp)) == NULL) {
+      if ((fgets (line, max_data_ln_len, fd->fp)) == NULL) {
          (void)sprintf (err_buf,"#### delimiter not found in data file\n%s", fd->name);
          return (err_buf);
       }
@@ -167,7 +176,7 @@ char *read_datainfo (FILE_DATA *fd) {
 /*
 **   Read first line of data
 */
-   if (!(fgets (fd->line, MAXDATALNLEN, fd->fp))) {
+   if (!(fgets (fd->line, max_data_ln_len, fd->fp))) {
       (void)sprintf (err_buf,
          "read_datainfo: Data for first timestep not found in file %s\n",
          fd->name);

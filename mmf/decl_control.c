@@ -5,7 +5,7 @@
  * FUNCTION : decl_control
  * COMMENT  : initializes a module variable entry in the memory database
  *
- * $Id: decl_control.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

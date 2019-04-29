@@ -78,7 +78,7 @@
 !***********************************************************************
       t2dist2decl = 0
 
-      Version_temp = '$Id: temp_dist2.f90 7237 2015-03-10 23:50:00Z rsregan $'
+      Version_temp = 'temp_dist2.f90 2016-05-12 20:03:40Z'
       CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
       MODNAME = 'temp_dist2'
 
@@ -105,7 +105,7 @@
      &     'feet')/=0 ) CALL read_error(1, 'dist_max')
 
       IF ( declparam(MODNAME, 'max_tsta', 'one', 'integer', &
-     &     '2', 'bounded', 'ntemp', &
+     &     '0', 'bounded', 'ntemp', &
      &     'Maximum number of temperature stations to use for'// &
      &     ' distributing temperature to any HRU', &
      &     'Maximum number of air-temperature measurement stations to use for'// &
@@ -210,7 +210,7 @@
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
-      INTRINSIC SQRT, ABS
+      INTRINSIC DSQRT, ABS, DABS, DBLE
 ! Local Variables
       INTEGER :: i, j, k, n, kk, kkbig
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist2
@@ -221,6 +221,7 @@
       IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max)/=0 ) CALL read_error(2, 'dist_max')
 
       IF ( getparam(MODNAME, 'max_tsta', 1, 'real', Max_tsta)/=0 ) CALL read_error(2, 'max_tsta')
+      IF ( Max_tsta==0 ) Max_tsta = Ntemp
 
       IF ( getparam(MODNAME, 'monmin', 12, 'real', Monmin)/=0 ) CALL read_error(2, 'monmin')
 
@@ -262,17 +263,17 @@
       ALLOCATE ( Nuse_tsta(Max_tsta,Nhru), nuse_tsta_dist(Max_tsta,Nhru) )
       N_tsta = 0
       Nuse_tsta = 0
-      nuse_tsta_dist = 0.0
+      nuse_tsta_dist = 0.0D0
       DO i = 1, Nhru
         DO k = 1, Ntemp
           Elfac(i, k) = (Hru_elev(i)-Tsta_elev(k))/1000.0
-          distx = (Hru_xlong(i)-Tsta_xlong(k))**2
-          disty = (Hru_ylat(i)-Tsta_ylat(k))**2
-          distance = SQRT(distx+disty)
-          IF ( ABS(distance)<DNEARZERO ) distance = 1.0D0
+          distx = DBLE( (Hru_xlong(i)-Tsta_xlong(k))**2 )
+          disty = DBLE( (Hru_ylat(i)-Tsta_ylat(k))**2 )
+          distance = DSQRT(distx+disty)
+          IF ( DABS(distance)<DNEARZERO ) distance = 1.0D0
           dist2 = 1.0D0/(distance/5280.0D0)
           Dist(i, k) = dist2*dist2
-          IF ( distance<Dist_max ) THEN
+          IF ( distance<DBLE(Dist_max) ) THEN
             n = N_tsta(i)
             IF ( n<Max_tsta ) THEN
               n = n + 1
@@ -304,6 +305,7 @@
           IF ( ABS(Delv(j,k))<NEARZERO ) Delv(j, k) = 1.0
         ENDDO
       ENDDO
+      ! DEALLOCATE ( Tsta_xlong, Tsta_ylat, Hru_xlong, Hru_ylat )
 
       END FUNCTION t2dist2init
 
@@ -327,11 +329,11 @@
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: temp_set, print_date
-      INTRINSIC FLOAT
+      INTRINSIC FLOAT, DBLE, SNGL
 ! Local Variables
       INTEGER :: j, k, ntotx, ntotn, jj, kk, allmissing
-      REAL :: tmx, tmn, tcrx, tcrn, diffn, diffx, mx, mn
-      DOUBLE PRECISION :: sumtx, sumtn
+      REAL :: tcrx, tcrn, diffn, diffx, mx, mn, tmx_sngl, tmn_sngl
+      DOUBLE PRECISION :: sumtx, sumtn, tmx, tmn
       REAL :: lapsemaxmax, lapsemaxmin, lapseminmax, lapseminmin
       DOUBLE PRECISION :: sumdist
 !***********************************************************************
@@ -382,9 +384,9 @@
           IF ( diffx<lapsemaxmin ) diffx = lapsemaxmin
           IF ( diffn>lapseminmax ) diffn = lapseminmax
           IF ( diffn<lapseminmin ) diffn = lapseminmin
-          sumtx = sumtx + diffx
+          sumtx = sumtx + DBLE( diffx )
           ntotx = ntotx + 1
-          sumtn = sumtn + diffn
+          sumtn = sumtn + DBLE( diffn )
           ntotn = ntotn + 1
         ENDDO
       ENDDO
@@ -395,12 +397,12 @@
       ENDIF
 
       IF ( ntotx>0 ) THEN
-        Basin_lapse_max = sumtx/FLOAT(ntotx)
+        Basin_lapse_max = SNGL(sumtx)/FLOAT(ntotx)
       ELSE
         Basin_lapse_max = (lapsemaxmax+lapsemaxmin)*0.5
       ENDIF
       IF ( ntotn>0 ) THEN
-        Basin_lapse_min = sumtn/FLOAT(ntotn)
+        Basin_lapse_min = SNGL(sumtn)/FLOAT(ntotn)
       ELSE
         Basin_lapse_min = (lapseminmax+lapseminmin)*0.5
       ENDIF
@@ -410,8 +412,8 @@
       DO jj = 1, Active_hrus
         j = Hru_route_order(jj)
 
-        tmx = 0.0
-        tmn = 0.0
+        tmx = 0.0D0
+        tmn = 0.0D0
         sumdist = 0.0D0
 
         DO kk = 1, N_tsta(j)
@@ -426,23 +428,25 @@
           sumdist = sumdist + Dist(j, k)
           tcrx = Basin_lapse_max*Elfac(j, k)
           tcrn = Basin_lapse_min*Elfac(j, k)
-          tmx = tmx + (Tmax(k)+tcrx)*Dist(j, k)
-          tmn = tmn + (Tmin(k)+tcrn)*Dist(j, k)
+          tmx = tmx + DBLE( (Tmax(k)+tcrx) )*Dist(j, k)
+          tmn = tmn + DBLE( (Tmin(k)+tcrn) )*Dist(j, k)
         ENDDO
 
         IF ( sumdist>DNEARZERO ) THEN
-          tmn = tmn/sumdist - Tmin_aspect_adjust(j, Nowmonth)
-          tmx = tmx/sumdist - Tmax_aspect_adjust(j, Nowmonth)
+          tmn = tmn/sumdist - DBLE( Tmin_aspect_adjust(j, Nowmonth) )
+          tmx = tmx/sumdist - DBLE( Tmax_aspect_adjust(j, Nowmonth) )
         ELSE
-          tmn = (mn+mx)*0.5
+          tmn = DBLE( (mn+mx)*0.5 )
           tmx = tmn
           PRINT *, 'WARNING, HRU:', j, '; no valid data available to set temperatures,'
           PRINT *, ' set values using monmax and monmin', tmx, tmn
           CALL print_date(1)
         ENDIF
-        IF ( tmx<=tmn ) tmx = tmn + 0.01
+        IF ( tmx<=tmn ) tmx = tmn + 0.01D0
 
-        CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
+        tmx_sngl = SNGL( tmx )
+        tmn_sngl = SNGL( tmn )
+        CALL temp_set(j, tmx_sngl, tmn_sngl, Tmaxf(j), Tminf(j), Tavgf(j), &
      &                Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
       ENDDO
 

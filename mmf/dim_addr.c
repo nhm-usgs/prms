@@ -7,7 +7,7 @@
  *            returns NULL if name not found
  * COMMENT  :
  *
- * $Id: dim_addr.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

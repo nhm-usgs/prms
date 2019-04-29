@@ -1,4 +1,4 @@
-!***********************************************************************
+﻿!***********************************************************************
 ! Compute potential solar radiation and sunlight hours for each HRU for
 ! each day of year; modification of soltab_prms
 !
@@ -22,6 +22,7 @@
       CHARACTER(LEN=6), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE :: Solar_declination(366), Soltab_basinpotsw(366)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_cossl(:), Soltab_sunhrs(:, :)
+!   Declared Variables
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Soltab_potsw(:, :), Soltab_horad_potsw(:, :)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Hru_aspect(:), Hru_slope(:)
@@ -57,19 +58,28 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declparam
+      INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_soltab
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = '$Id: soltab.f90 7050 2014-12-02 19:06:41Z rsregan $'
+      Version_soltab = 'soltab.f90 2016-15-10 13:37:00Z'
       CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
       MODNAME = 'soltab'
 
-      ALLOCATE ( Soltab_potsw(366, Nhru), Soltab_sunhrs(366, Nhru) )
-      ALLOCATE ( Hru_cossl(Nhru), Soltab_horad_potsw(366, Nhru) )
+      ALLOCATE ( Soltab_potsw(366, Nhru) )
+      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', 366*Nhru, 'double', &
+     &     'Potential solar radiation for each Julian Day, for each HRU', &
+     &     'Langleys', Soltab_potsw)/=0 ) CALL read_error(3, 'soltab_potsw')
+
+      ALLOCATE ( Soltab_horad_potsw(366, Nhru) )
+      IF ( declvar(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', 366*Nhru, 'double', &
+     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', &
+     &     'Langleys', Soltab_horad_potsw)/=0 ) CALL read_error(3, 'soltab_horad_potsw')
+
+      ALLOCATE ( Hru_cossl(Nhru), Soltab_sunhrs(366, Nhru) )
 
 !   Declared Parameters
       ALLOCATE ( Hru_slope(Nhru) )
@@ -95,25 +105,28 @@
 !***********************************************************************
       INTEGER FUNCTION sthinit()
       USE PRMS_SOLTAB
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Inputerror_flag, Parameter_check_flag
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
       IMPLICIT NONE
 ! Functions
       INTRINSIC SIN, COS, DBLE
 !     INTRINSIC ASIN
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL compute_soltab, read_error, PRMS_open_module_file, check_param_limits
+      EXTERNAL compute_soltab, read_error, PRMS_open_module_file
 ! Local Variables
       CHARACTER(LEN=12) :: output_path
-      INTEGER :: jd, j, n, file_unit, ierr, nn, ierr2
+      INTEGER :: jd, j, n, file_unit, nn
       REAL :: lat
       DOUBLE PRECISION :: basin_cossl
       DOUBLE PRECISION :: basin_sunhrs(366), obliquity(366)
       DOUBLE PRECISION :: y, y2, y3, jddbl
       DOUBLE PRECISION, PARAMETER :: ECCENTRICY = 0.01671D0
       DOUBLE PRECISION, PARAMETER :: DAYSYR = 365.242D0
+      ! 0.016723401  daily change -1.115E-09, eccen = 0.016723401 + (julhour-julhour(1966,1,0,18))+dmin/60)/24*-1.115E-09
+      ! julday(1966,1,0.75 UT) = 2439126.25
+      ! eccen = 0.01675104-0.00004180*T-0.000000126*T^2  T is julian centuries (days time from epoch, is GMT from Jan 0.0
       DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYSYR
-      DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS
+      DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS ! about 0.00143356672
 ! DEGDAY = 360 degrees/days in year
 !***********************************************************************
       sthinit = 0
@@ -123,6 +136,20 @@
 
       DO jd = 1, 366
         jddbl = DBLE(jd)
+
+        ! cosine of the solar zenith angle: http://www.cesm.ucar.edu/models/cesm1.0/cesm/cesmBbrowser/html_code/csm_share/shr_orb_mod.F90.html
+        !    jday   ! Julian cal day (1.xx to 365.xx)
+        !    lat    ! Centered latitude (radians)
+        !    lon    ! Centered longitude (radians)
+        !    declin ! Solar declination (radians)
+        ! shr_orb_cosz = sin(lat)*sin(declin) - &
+   !&              cos(lat)*cos(declin)*cos(jday*2.0_SHR_KIND_R8*pi + lon)
+
+        ! Eccentricity from equation E-2 (Dingman, S. L., 1994, Physical Hydrology. Englewood Cliffs, NJ: Prentice Hall, 575 p.)
+        ! eccentricity = (r_0/r)^2 = 1.00011+0.034221 cos⁡Γ+0.00128 sin⁡Γ+0.000719 cos⁡2Γ+0.000077 sin⁡2Γ
+        ! Γ = (2π(J-1))/365 = DEGDAYRAD*(jddbl-1.0D0) = day angle
+        ! dayangle = DEGDAYRAD*(jddbl-1.0D0)
+        ! eccentricity = 1.00011D0 + 0.034221D0*COS(dayangle) + 0.00128D0*SIN(dayangle) + 0.000719D0*COS(2.0D0*dayangle) + 0.000077D0*SIN(2.0D0*dayangle)
 !rsr .0172 = 2PI/365 = RADIAN_YEAR = DEGDAYRAD
 !rsr01/2006 commented out equations from Llowd W. Swift paper 2/1976
 !       obliquity(jd) = 1.0D0 - (0.0167D0*COS((jd-3)*0.0172D0))
@@ -145,25 +172,6 @@
       Soltab_horad_potsw = 0.0D0
       DO nn = 1, Active_hrus
         n = Hru_route_order(nn)
-        ierr = 0
-        IF ( Hru_aspect(n)<0.0 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT *, 'ERROR, hru_aspect<0.0 for HRU:', n, ', hru_aspect:', Hru_aspect(n), ', hru_slope:', Hru_slope(n)
-            ierr = 1
-          ELSE
-            PRINT *, 'WARNING, hru_aspect<0.0', Hru_aspect(n), ' HRU:', n, ', hru_slope', Hru_slope(n)
-            PRINT *, 'hru_aspect and hru_slope set to 0.0'
-            Hru_aspect(n) = 0.0
-            Hru_slope(n) = 0.0
-          ENDIF
-        ENDIF
-        ierr2 = 0
-        CALL check_param_limits(n, 'hru_slope', Hru_slope(n), 0.0, 89.99, ierr2)
-        IF ( ierr==1 .OR. ierr2==1 ) THEN
-          Inputerror_flag = 1
-          CYCLE
-        ENDIF
-
         CALL compute_soltab(obliquity, Solar_declination, 0.0, 0.0, Hru_lat(n), &
      &                      Hru_cossl(n), Soltab_horad_potsw(1, n), &
      &                      Soltab_sunhrs(1, n), Hru_type(n), n)
@@ -212,7 +220,7 @@
 !     data jday/356,10,23,38,51,66,80,94,109,123,138,152,173/
       ENDIF
 
-      !DEALLOCATE ( Hru_slope, Hru_aspect )
+      DEALLOCATE ( Hru_slope, Hru_aspect )
 
       END FUNCTION sthinit
 
@@ -380,7 +388,7 @@
 !  Solar_declination is the declination of the sun on a day
 !  T is the angle hour from the local meridian (local solar noon) to the 
 !  sunrise (negative) or sunset (positive).  The Earth rotates at the angular
-!  speed of 15�/hour (2 pi / 24 hour in radians) and, therefore, T/15� (T*24/pi
+!  speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore, T/15 degress (T*24/pi
 !  in radians) gives the time of sunrise as the number of hours before the local
 !  noon, or the time of sunset as the number of hours after the local noon.
 !  Here the term local noon indicates the local time when the sun is exactly to

@@ -5,7 +5,7 @@
  * FUNCTION : get_elem_add
  * COMMENT  : This file contains utility routines for multiple index arrays.
  *
- * $Id: get_elem_add.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

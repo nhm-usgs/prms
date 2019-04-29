@@ -11,7 +11,7 @@
       USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
-      INTRINSIC NINT
+      INTRINSIC NINT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam, get_season
       EXTERNAL read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
@@ -29,7 +29,7 @@
       DOUBLE PRECISION, SAVE :: basin_fall_frost, basin_spring_frost
       INTEGER, SAVE :: oldSeason, fallFrostCount, springFrostCount, fall1, spring1
       INTEGER, SAVE :: switchToSpringToday, switchToFallToday, Iunit
-      REAL, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
       INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
       CHARACTER(LEN=10), SAVE :: MODNAME
@@ -64,7 +64,7 @@
             j = Hru_route_order(jj)
             currentFallFrost(j) = 0
             IF ( currentSpringFrost(j)==0 ) currentSpringFrost(j) = spring1
-            springFrostSum(j) = springFrostSum(j) + currentSpringFrost(j)
+            springFrostSum(j) = springFrostSum(j) + DBLE( currentSpringFrost(j) )
           ENDDO
 
 ! If this is the first timestep of spring, unset the
@@ -77,7 +77,7 @@
             j = Hru_route_order(jj)
             currentSpringFrost(j) = 0
             IF ( currentFallFrost(j)==0 ) currentFallFrost(j) = fall1
-            fallFrostSum(j) = fallFrostSum(j) + currentFallFrost(j)
+            fallFrostSum(j) = fallFrostSum(j) + DBLE( currentFallFrost(j) )
           ENDDO
         ENDIF
 
@@ -97,7 +97,7 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date_2d.f90 7050 2014-12-02 19:06:41Z rsregan $'
+        Version_frost_date = 'frost_date.f90 2016-03-04 17:57:51Z'
         CALL print_module(Version_frost_date, 'Preprocessing               ', 90)
         MODNAME = 'frost_date'
 
@@ -118,8 +118,8 @@
         spring_frost = 0
         currentFallFrost = 0
         currentSpringFrost = 0
-        fallFrostSum = 0
-        springFrostSum = 0
+        fallFrostSum = 0.0D0
+        springFrostSum = 0.0D0
         fallFrostCount = 0
         springFrostCount = 0
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')
@@ -138,9 +138,9 @@
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
           IF ( fallFrostCount==0 ) fallFrostCount = 1
-          fall_frost(j) = NINT( fallFrostSum(j)/fallFrostCount )
+          fall_frost(j) = NINT( fallFrostSum(j)/DBLE( fallFrostCount ) )
           IF ( fallFrostCount==0 ) fallFrostCount = 1
-          spring_frost(j) = NINT( springFrostSum(j)/springFrostCount )
+          spring_frost(j) = NINT( springFrostSum(j)/DBLE( springFrostCount ) )
           fall_frost(j) = fall_frost(j) + 10
           IF ( fall_frost(j)>365 ) fall_frost(j) = 365
           spring_frost(j) = spring_frost(j) + 10

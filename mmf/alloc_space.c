@@ -5,7 +5,7 @@
  * FUNCTION : alloc_space
  * COMMENT  : allocates space for variables
  *
- * $Id: alloc_space.c 7206 2015-02-17 16:13:09Z rsregan $
+ * $Id$
  *
 -*/
 

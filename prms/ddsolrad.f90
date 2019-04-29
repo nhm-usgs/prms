@@ -16,27 +16,25 @@
         CHARACTER(LEN=8), SAVE :: MODNAME
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
-        REAL, SAVE, ALLOCATABLE :: Radmax(:, :), Radj_sppt(:), Radj_wppt(:)
         REAL, SAVE, ALLOCATABLE :: Dday_slope(:, :), Dday_intcp(:, :), Tmax_index(:, :)
-        REAL, SAVE, ALLOCATABLE :: Ppt_rad_adj(:, :)
       END MODULE PRMS_DDSOLRAD
 
       INTEGER FUNCTION ddsolrad()
       USE PRMS_DDSOLRAD
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, &
-     &    Basin_potsw, Basin_solsta, Orad, Hru_ppt, Tmax_allrain
-      USE PRMS_CHECK_NHRU_PARAMS, ONLY: Solsta_flag
+     &    Basin_potsw, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
+     &    Solsta_flag, Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INT, FLOAT
+      INTRINSIC INT, FLOAT, DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: read_error, print_module, print_date, check_param_limits
+      EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi
@@ -90,8 +88,8 @@
 
           radadj = radadj*pptadj
           IF ( radadj<0.2 ) radadj = 0.2
-          Orad_hru(j) = radadj*Soltab_horad_potsw(Jday,j)
-          Basin_orad = Basin_orad + Orad_hru(j)*Hru_area(j)
+          Orad_hru(j) = radadj*SNGL( Soltab_horad_potsw(Jday,j) )
+          Basin_orad = Basin_orad + DBLE( Orad_hru(j)*Hru_area(j) )
 
           IF ( Solsta_flag==1 ) THEN
             k = Hru_solsta(j)
@@ -103,24 +101,24 @@
                 ENDIF
               ELSE
                 Swrad(j) = Solrad(k)*Rad_conv
-                Basin_potsw = Basin_potsw + Swrad(j)*Hru_area(j)
+                Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
                 CYCLE
               ENDIF
             ENDIF
           ENDIF
-          Swrad(j) = Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*Orad_hru(j)/Hru_cossl(j)
-          Basin_potsw = Basin_potsw + Swrad(j)*Hru_area(j)
+          Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+          Basin_potsw = Basin_potsw + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
         IF ( Observed_flag==1 ) THEN
           Orad = Solrad(Basin_solsta)*Rad_conv
         ELSE
-          Orad = Basin_orad
+          Orad = SNGL( Basin_orad )
         ENDIF
         Basin_potsw = Basin_potsw*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ddsolrad = '$Id: ddsolrad_2d.f90 7233 2015-03-09 23:18:41Z rsregan $'
+        Version_ddsolrad = 'ddsolrad.f90 2015-09-14 17:50:22Z'
         CALL print_module(Version_ddsolrad, 'Solar Radiation Distribution', 90)
         MODNAME = 'ddsolrad'
 
@@ -156,34 +154,6 @@
      &       'Monthly (January to December) index temperature used'// &
      &       ' to determine precipitation adjustments to solar radiation for each HRU', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_index')
-        ALLOCATE ( Ppt_rad_adj(Nhru,12) )
-        IF ( declparam(MODNAME, 'ppt_rad_adj', 'nhru,nmonths', 'real', &
-     &       '0.02', '0.0', '0.5', &
-     &       'Radiation reduced if HRU precipitation above this value', &
-     &       'Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is'// &
-     &       ' multiplied by the radj_sppt or radj_wppt adjustment factor', &
-     &       'inches')/=0 ) CALL read_error(1, 'ppt_rad_adj')
-        ALLOCATE ( Radmax(Nhru,12) )
-        IF ( declparam(MODNAME, 'radmax', 'nhru,nmonths', 'real', &
-     &       '0.8', '0.1', '1.0', &
-     &       'Maximum fraction of potential solar radiation', &
-     &       'Monthly (January to December) maximum fraction of the potential solar radiation'// &
-     &       ' that may reach the ground due to haze, dust, smog, and so forth, for each HRU', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'radmax')
-        ALLOCATE ( Radj_sppt(Nhru) )
-        IF ( declparam(MODNAME, 'radj_sppt', 'nhru', 'real', &
-     &       '0.44', '0.0', '1.0', &
-     &       'Adjustment to solar radiation on precipitation day - summer', &
-     &       'Adjustment factor for computed solar radiation for summer day with greater than'// &
-     &       ' ppt_rad_adj inches of precipitation for each HRU', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'radj_sppt')
-        ALLOCATE ( Radj_wppt(Nhru) )
-        IF ( declparam(MODNAME, 'radj_wppt', 'nhru', 'real', &
-     &       '0.5', '0.0', '1.0', &
-     &       'Adjustment to solar radiation on precipitation day - winter', &
-     &       'Adjustment factor for computed solar radiation for winter day with greater than'// &
-     &       ' ppt_rad_adj inches of precipitation for each HRU', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'radj_wppt')
 
       ELSEIF ( Process(:4)=='init' ) THEN
 ! Get parameters
@@ -192,15 +162,6 @@
         IF ( getparam(MODNAME, 'radadj_slope', Nhru*12, 'real', Radadj_slope)/=0 ) CALL read_error(2, 'radadj_slope')
         IF ( getparam(MODNAME, 'radadj_intcp', Nhru*12, 'real', Radadj_intcp)/=0 ) CALL read_error(2, 'radadj_intcp')
         IF ( getparam(MODNAME, 'tmax_index', Nhru*12, 'real', Tmax_index)/=0 ) CALL read_error(2, 'tmax_index')
-        IF ( getparam(MODNAME, 'ppt_rad_adj', Nhru*12, 'real', Ppt_rad_adj)/=0 ) CALL read_error(2, 'ppt_rad_adj')
-        IF ( getparam(MODNAME, 'radmax', Nhru*12, 'real', Radmax)/=0 ) CALL read_error(2, 'radmax')
-        IF ( getparam(MODNAME, 'radj_sppt', Nhru, 'real', Radj_sppt)/=0 ) CALL read_error(2, 'radj_sppt')
-        IF ( getparam(MODNAME, 'radj_wppt', Nhru, 'real', Radj_wppt)/=0 ) CALL read_error(2, 'radj_wppt')
-        DO jj = 1, Active_hrus
-          j = Hru_route_order(jj)
-          CALL check_param_limits(j, 'radj_sppt', Radj_sppt(j), 0.0, 1.0, Inputerror_flag)
-          CALL check_param_limits(j, 'radj_wppt', Radj_wppt(j), 0.0, 1.0, Inputerror_flag)
-        ENDDO
         Observed_flag = 0
         IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = 1
 

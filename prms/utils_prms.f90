@@ -1,4 +1,4 @@
-      ! $Id: utils_prms.f90 7218 2015-03-05 21:46:16Z rsregan $
+      ! utils_prms.f90 2016-05-10 15:48:00Z
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -400,8 +400,11 @@
       END SUBROUTINE module_error
 
 !***********************************************************************
-! Compute saturation vapor pressure over water
+! Compute saturation vapor pressure over water in millibars
 ! 6th order Polynominal method (Flatau et. all., 1992) valid: -50 to 50C
+! 1 kPa = 10 millibars
+! Flatau, P.j., Walko, R.L., Cotton, W.R., 1992, Polynomial Fits to
+!   saturation vapor pressure: Jornal of Applied Meteorology, v. 31, p. 1507-1513
 !***********************************************************************
       REAL FUNCTION sat_vapor_press_poly(Tempc)
       IMPLICIT NONE
@@ -422,18 +425,20 @@
 !      sat_vapor_press_poly = 6.1121D0*EXP((18.678D0-Tempc/234.5D0)*Tempc/(257.14+Tempc))
 ! WMO 2008, CIMO Guide
 !      sat_vapor_press_poly = 6.112*EXP(17.62*Tempc/(243.12+Tempc))
+! Irmak and others (2012), equation 12
+!      sat_vapor_press_poly = 0.6108*EXP(17.27*Tempc/(237.3+Tempc))
       END FUNCTION sat_vapor_press_poly
 
 !***********************************************************************
 ! Compute saturation vapor pressure over water
-! Irmak and others (2012)
+! Irmak and others (2012), equation 12
 !***********************************************************************
       REAL FUNCTION sat_vapor_press(Tempc)
       IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Tempc
 !***********************************************************************
-      sat_vapor_press = 6.1078*EXP( (17.26939*Tempc)/(237.30+Tempc) )
+      sat_vapor_press = 6.1078*EXP( (17.26939*Tempc)/(237.3+Tempc) )
       END FUNCTION sat_vapor_press
 
 !***********************************************************************
@@ -810,7 +815,7 @@
 ! print module version information to user's screen
 !***********************************************************************
       SUBROUTINE print_module(Versn, Description, Ftntype)
-      USE PRMS_MODULE, ONLY: PRMS_output_unit, Model, Logunt
+      USE PRMS_MODULE, ONLY: PRMS_output_unit, Model !, Logunt
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Description, Versn
@@ -818,7 +823,9 @@
       ! Functions
       INTRINSIC INDEX
       ! Local Variables
-      INTEGER nc, n
+      INTEGER nc, n, nb
+      CHARACTER(LEN=72) :: buffer
+      CHARACTER(LEN=32), PARAMETER :: blanks = '                                '
 !***********************************************************************
       nc = INDEX( Versn, 'Z' )
       IF ( Ftntype==90 ) THEN
@@ -826,9 +833,11 @@
       ELSE
         n = INDEX( Versn, '.f' ) + 1
       ENDIF
-      PRINT '(A)', Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc-10)
-      WRITE ( Logunt, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
-      IF ( Model/=2 ) WRITE ( PRMS_output_unit, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
+      nb = 25 - n
+      WRITE (buffer, '(A)' ) Description//'     '//Versn(:n)//blanks(:nb)//Versn(n+2:nc-10)
+      PRINT '(A)', buffer
+      !WRITE ( Logunt, '(A)' ) buffer
+      IF ( Model/=2 ) WRITE ( PRMS_output_unit, '(A)' ) buffer
       END SUBROUTINE print_module
 
 !***********************************************************************
@@ -892,7 +901,8 @@
       INTEGER, INTENT(INOUT) :: Iret
 !***********************************************************************
       IF ( Param_value<0.0 .OR. Param_value>1.0 ) THEN
-        PRINT *, 'ERROR, ', Param, ' < 0.0 or > 1.0 for HRU:', Ihru, ' value specified:', Param_value
+        PRINT *, 'ERROR, ', Param, ' < 0.0 or > 1.0 for HRU:', Ihru, '; value:', Param_value
+        PRINT *, ' '
         Iret = 1
       ENDIF
       END SUBROUTINE check_param_value
@@ -908,8 +918,10 @@
       INTEGER, INTENT(INOUT) :: Iret
 !***********************************************************************
       IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
-        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
-        PRINT *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
+        PRINT *, 'ERROR, bad value, parameter: ', Param
+        PRINT *, '       value:  ', Param_value, '; array index:', Indx
+        PRINT *, '       minimum:', Lower_val, '  ; maximum:', Upper_val
+        PRINT *, ' '
         Iret = 1
       ENDIF
       END SUBROUTINE check_param_limits
@@ -924,8 +936,10 @@
       INTEGER, INTENT(INOUT) :: Iret
 !***********************************************************************
       IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
-        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
-        PRINT *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
+        PRINT *, 'ERROR, out-of-bounds value for parameter: ', Param
+        PRINT *, '       value:  ', Param_value, '; array index:', Indx
+        PRINT *, '       minimum:', Lower_val, '; maximum:', Upper_val
+        PRINT *, ' '
         Iret = 1
       ENDIF
       END SUBROUTINE checkint_param_limits
@@ -940,8 +954,10 @@
       INTEGER, INTENT(INOUT) :: Iret
 !***********************************************************************
       IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
-        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
-        PRINT *, '       lower bound:', Lower_val, ' ', Dimen, '=', Upper_val
+        PRINT *, 'ERROR, out-of-bounds value for bounded parameter: ', Param
+        PRINT *, '       value:  ', Param_value, '; array index:', Indx
+        PRINT *, '       minimum:', Lower_val, '; maximum is dimension ', Dimen, ' =', Upper_val
+        PRINT *, ' '
         Iret = 1
       ENDIF
       END SUBROUTINE checkdim_param_limits
@@ -957,7 +973,45 @@
       INTEGER, INTENT(INOUT) :: Iret
 !***********************************************************************
       IF ( Param_value<0.0 ) THEN
-        PRINT *, 'ERROR, value < 0.0, parameter: ', Param, ' Value:', Param_value, ' HRU:', Indx
+        PRINT *, 'ERROR, value < 0.0 for parameter: ', Param
+        PRINT *, '       value:', Param_value, '; HRU:', Indx
+        PRINT *, ' '
         Iret = 1
       ENDIF
       END SUBROUTINE check_param_zero
+
+!***********************************************************************
+! checks values of basin wide parameters
+! and compute some basin variables
+!***********************************************************************
+      SUBROUTINE check_nhru_params()
+      USE PRMS_MODULE, ONLY: Temp_flag, Ntemp, Nevap, Print_debug, Inputerror_flag
+      USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Cov_type
+      USE PRMS_CLIMATEVARS, ONLY: Hru_tsta, Hru_pansta, Use_pandata
+      IMPLICIT NONE
+! Functions
+      EXTERNAL :: checkdim_param_limits
+! Local variables
+      INTEGER :: i, j, check_tsta
+!***********************************************************************
+      check_tsta = 0
+      IF ( Temp_flag==1 .OR. Temp_flag==2 ) check_tsta = 1
+
+      ! Sanity checks for parameters
+      DO j = 1, Active_hrus
+        i = Hru_route_order(j)
+
+        IF ( check_tsta==1 ) CALL checkdim_param_limits(i, 'hru_tsta', 'ntemp', Hru_tsta(i), 1, Ntemp, Inputerror_flag)
+
+        IF ( Use_pandata==1 ) CALL checkdim_param_limits(i, 'hru_pansta', 'nevap', Hru_pansta(i), 1, Nevap, Inputerror_flag)
+
+        IF ( Hru_type(i)==2 ) THEN
+          IF ( Cov_type(i)/=0 ) THEN
+            IF ( Print_debug>-1 ) PRINT *,  'WARNING, cov_type must be 0 for lakes, reset from:', Cov_type(i), ' to 0 for HRU:', i
+            Cov_type(i) = 0
+          ENDIF
+          CYCLE
+        ENDIF
+      ENDDO
+
+      END SUBROUTINE check_nhru_params

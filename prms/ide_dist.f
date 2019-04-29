@@ -14,7 +14,7 @@
       CHARACTER(LEN=8), SAVE :: MODNAME
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
-      REAL, SAVE :: Dalr
+      DOUBLE PRECISION, SAVE :: Dalr
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
       REAL, SAVE :: Temp_wght_elev(12), Prcp_wght_elev(12)
       REAL, SAVE, ALLOCATABLE :: Precip_ide(:)
@@ -76,7 +76,7 @@
       idedecl = 0
 
       Version_ide_dist =
-     +'$Id: ide_dist_2d.f 7239 2015-03-11 16:41:21Z rsregan $'
+     +'ide_dist.f 2016-07-22 17:22:00Z'
       CALL print_module(Version_ide_dist,
      +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'ide_dist'
@@ -100,7 +100,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.6', '0.6',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -109,7 +109,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.6', '0.6',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -176,7 +176,7 @@
      +     'Elevation of the solrad station used for DD curves',
      +     'Elevation of the solar radiation station used for'//
      +     ' degree-day curves to distribute temperature',
-     +     'elev_units')/=0 ) CALL read_error(1, 'solrad_elev')
+     +     'meters')/=0 ) CALL read_error(1, 'solrad_elev')
 
       ALLOCATE ( Psta_nuse(Nrain), Rain_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
@@ -211,7 +211,7 @@
      +     'none')/=0 ) CALL read_error(1, 'dist_exp')
 
       IF ( declparam(MODNAME, 'ndist_psta', 'one', 'integer',
-     +     '3', 'bounded', 'nrain',
+     +     '0', 'bounded', 'nrain',
      +     'Number of stations for inverse distance calcs:'//
      +     ' precipitation',
      +     'Number of precipitation measurement stations for inverse'//
@@ -219,7 +219,7 @@
      +     'none')/=0 ) CALL read_error(1, 'ndist_psta')
 
       IF ( declparam(MODNAME, 'ndist_tsta', 'one', 'integer',
-     +     '3', 'bounded', 'ntemp',
+     +     '0', 'bounded', 'ntemp',
      +     'Number of stations for inverse distance calcs: temperature',
      +     'Number of temperature measurement stations for inverse'//
      +     ' distance calculations',
@@ -227,7 +227,7 @@
 
       ALLOCATE ( Tmax_allrain_sta(Nrain,12) )
       IF ( declparam(MODNAME, 'tmax_allrain_sta', 'nrain,nmonths',
-     +     'real', '38.0', '-8.0', '45.0',
+     +     'real', '38.0', '-8.0', '75.0',
      +     'Precipitation is rain if HRU max temperature >= this value',
      +     'Monthly (January to December) maximum air temperature'//
      +     ' when precipitation is assumed to be rain; if'//
@@ -261,6 +261,8 @@
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Active_hrus, Hru_route_order
       IMPLICIT NONE
+! Functions
+      INTRINSIC DBLE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
 ! Local Variables
@@ -318,9 +320,17 @@
 
       IF ( getparam(MODNAME, 'ndist_psta', 1, 'integer',
      +     Ndist_psta)/=0 ) CALL read_error(2, 'ndist_psta')
+      IF ( Ndist_psta==0 ) THEN
+        PRINT *, 'ERROR, need to specify ndist_psta > 0'
+        ierr = 1
+      ENDIF
 
       IF ( getparam(MODNAME, 'ndist_tsta', 1, 'integer',
      +     Ndist_tsta)/=0 ) CALL read_error(2, 'ndist_tsta')
+      IF ( Ndist_tsta==0 ) THEN
+        PRINT *, 'ERROR, need to specify ndist_tsta > 0'
+        ierr = 1
+      ENDIF
 
       IF ( getparam(MODNAME, 'tmax_allrain_sta', Nrain*12, 'real',
      +     Tmax_allrain_sta)/=0 ) CALL read_error(2, 'tmax_allrain_sta')
@@ -331,7 +341,7 @@
 ! dry adiabatic lapse rate (DALR) when extrapolating
 !       (DALR = 5.4oF/1000 meters)
 !      Dalr = 0.0177
-      Dalr = 5.4/1000.0
+      Dalr = 5.4D0/1000.0D0
 !
 ! Compute basin centroid
 !
@@ -339,8 +349,10 @@
       Basin_centroid_y = 0.0D0
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
-        Basin_centroid_x = Basin_centroid_x + (Hru_area(i)*Hru_x(i))
-        Basin_centroid_y = Basin_centroid_y + (Hru_area(i)*Hru_y(i))
+        Basin_centroid_x = Basin_centroid_x + 
+     +                     DBLE( (Hru_area(i)*Hru_x(i)) )
+        Basin_centroid_y = Basin_centroid_y + 
+     +                     DBLE( (Hru_area(i)*Hru_y(i)) )
       ENDDO
       Basin_centroid_x = Basin_centroid_x*Basin_area_inv
       Basin_centroid_y = Basin_centroid_y*Basin_area_inv
@@ -356,7 +368,7 @@
       ENDDO
       IF ( Temp_nsta<2 ) THEN
         PRINT *, 'ERROR, need to select at least 2 temperature stations'
-        PRINT *, '       using temp_nuse for ide_dist'
+        PRINT *, '       using tsta_nuse for ide_dist'
         ierr = 1
       ENDIF
 
@@ -370,7 +382,7 @@
       ENDDO
       IF ( Rain_nsta<2 ) THEN
         PRINT*,'ERROR, need to select at least 2 precipitation stations'
-        PRINT *, '       using temp_nuse for ide_dist'
+        PRINT *, '       using psta_nuse for ide_dist'
         ierr = 1
       ENDIF
       IF ( ierr==1 ) THEN
@@ -431,6 +443,7 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
+      INTRINSIC SNGL
       EXTERNAL temp_set, compute_inv, compute_elv
       REAL, EXTERNAL :: c_to_f
 ! Arguments
@@ -525,8 +538,8 @@
       itype = 1
       dat_elev = 0.0
       dat_dist = 0.0
-      centroid_x = Basin_centroid_x
-      centroid_y = Basin_centroid_y
+      centroid_x = SNGL( Basin_centroid_x )
+      centroid_y = SNGL( Basin_centroid_y )
       IF ( Temp_wght_dist.GT.0.0 )
      +     CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x,
      +          centroid_x, Tsta_y, centroid_y, Tmax,
@@ -550,8 +563,8 @@
 !
       DO n = 1, Nrain
         itype = 1
-        dat_elev = 0.0D0
-        dat_dist = 0.0D0
+        dat_elev = 0.0
+        dat_dist = 0.0
         x = Psta_x(n)
         y = Psta_y(n)
         z = Psta_elev_meters(n)
@@ -564,8 +577,8 @@
         Tmax_rain_sta(n) = (Temp_wght_dist*dat_dist)
      +                     + (Temp_wght_elev*dat_elev)
         itype = -1
-        dat_elev = 0.0D0
-        dat_dist = 0.0D0
+        dat_elev = 0.0
+        dat_dist = 0.0
         IF ( Temp_wght_dist.GT.0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +            Tsta_y, y, Tmin, dat_dist, Ndist_tsta, Dist_exp)
@@ -591,7 +604,7 @@
      +    Adjust_snow, Adjust_rain, Tmax_allsnow_sta, Tmax_allrain_sta
       USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
-     +    Hru_route_order, NEARZERO, MM2INCH, Hru_elev_meters
+     +    Hru_route_order, MM2INCH, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
@@ -600,7 +613,6 @@
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ABS
       EXTERNAL precip_form, compute_inv, compute_elv, print_date
 ! Arguments
       REAL, INTENT(IN) :: Prcp_wght_dist, Prcp_wght_elev
@@ -677,16 +689,16 @@
         IF ( Prcp_wght_dist>0.0 )
      +       CALL compute_inv(Nrain, Rain_nsta, Rain_nuse, Psta_x, x,
      +            Psta_y, y, Precip_ide, dat_dist, Ndist_psta, Dist_exp)
-        IF ( dat_dist<NEARZERO ) dat_dist = 0.0
+!        IF ( dat_dist<0.0 ) dat_dist = 0.0
 
         IF ( Prcp_wght_elev>0.0 )
      +       CALL compute_elv(Nrain, Rain_nsta, Rain_nuse,
      +            Psta_elev_meters, z, Precip_ide, dat_elev, itype)
-        IF ( dat_elev<NEARZERO ) dat_elev = 0.0
+!        IF ( dat_elev<0.0 ) dat_elev = 0.0
 
         ppt = (Prcp_wght_dist*dat_dist) + (Prcp_wght_elev*dat_elev)
 
-        IF ( ppt>NEARZERO ) THEN
+        IF ( ppt>0.0 ) THEN
           IF ( Precip_units==1 ) ppt = ppt*MM2INCH
           CALL precip_form(ppt, Hru_ppt(n), Hru_rain(n), Hru_snow(n),
      +         Tmaxf(n), Tminf(n), Pptmix(n), Newsnow(n), Prmx(n),
@@ -713,7 +725,7 @@
       SUBROUTINE compute_inv(Imax, Nsta, Nuse, Sta_x, X, Sta_y, Y, Dat,
      +                       Dat_dist, Ndist, Dist_exp)
       IMPLICIT NONE
-      INTRINSIC SQRT, FLOAT
+      INTRINSIC SQRT, DBLE, SNGL
       EXTERNAL SORT2I, print_date
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, Ndist, Nsta
@@ -724,7 +736,7 @@
 ! Local Variables
       INTEGER :: idist, jj, k, i, j, allmissing
       INTEGER, DIMENSION(Imax) :: ndist_sta, rb
-      DOUBLE PRECISION :: sumdat, dist_mean
+      DOUBLE PRECISION :: sumdat, dist_mean, datdist
       DOUBLE PRECISION, DIMENSION(Imax) :: dist, wght_dist, ra
 !***********************************************************************
 !----------------
@@ -735,7 +747,7 @@
         i = Nuse(j)
         dist(i) = -9999.0D0
         IF ( Dat(i)>-95.0 ) THEN
-          dist(i) = SQRT(((Sta_x(i)-X)**2+(Sta_y(i)-Y)**2))
+          dist(i) = DBLE( SQRT(((Sta_x(i)-X)**2+(Sta_y(i)-Y)**2)) )
           IF ( dist(i)<1.1D0 ) dist(i) = 1.1D0
           allmissing = 1
         ENDIF
@@ -765,7 +777,7 @@
         j = rb(k)
         sumdat = sumdat + dist(j)
       ENDDO
-      dist_mean = sumdat/FLOAT(idist)
+      dist_mean = sumdat/DBLE(idist)
       DO k = 1, idist
         j = rb(k)
         ndist_sta(k) = j
@@ -780,11 +792,12 @@
         wght_dist(j) = wght_dist(j)/sumdat
       ENDDO
 !
-      Dat_dist = 0.0D0
+      datdist = 0.0D0
       DO j = 1, idist
         k = ndist_sta(j)
-        Dat_dist = Dat_dist + (wght_dist(j)*Dat(k))
+        datdist = datdist + (wght_dist(j)*DBLE(Dat(k)))
       ENDDO
+      Dat_dist = SNGL( datdist )
 !
       END SUBROUTINE compute_inv
 
@@ -797,7 +810,7 @@
      +                       Dat_elev, Itype)
       USE PRMS_IDE, ONLY: Dalr
       IMPLICIT NONE
-      INTRINSIC FLOAT, ABS
+      INTRINSIC ABS, SNGL, DBLE, DABS
       EXTERNAL SORT2, SORT2I
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, Itype, Nsta
@@ -809,7 +822,7 @@
       INTEGER nn, j1, j2, num, n, i, j
       INTEGER, DIMENSION(Imax) :: rb
       DOUBLE PRECISION, DIMENSION(Imax) :: dat0, elev, xmnelv, xmndat
-      DOUBLE PRECISION :: slope, b
+      DOUBLE PRECISION :: slope, b, z_dble
       DOUBLE PRECISION, DIMENSION(Imax) :: dat
       DOUBLE PRECISION :: sumdat, sumelv, sdev, ave, xmax, xmin
 !***********************************************************************
@@ -831,8 +844,8 @@
         i = Nuse(j)
         IF ( Datin(i)>-95.0 ) THEN
           n = n + 1
-          elev(n) = Sta_z(i)
-          dat(n) = Datin(i)
+          elev(n) = DBLE( Sta_z(i) )
+          dat(n) = DBLE( Datin(i) )
         ENDIF
       ENDDO
       num = n
@@ -842,7 +855,7 @@
 !
 ! If there are 3 or less stations, return the mean value
       IF ( num<4 ) THEN
-        Dat_elev = ave
+        Dat_elev = SNGL( ave )
         RETURN
       ENDIF
 !
@@ -883,11 +896,11 @@
         ENDIF
       ENDDO
       num = n
-      ave = ave/FLOAT(num)
+      ave = ave/DBLE(num)
 !
 ! If there are 3 or less stations now, return the mean value
       IF ( num<4 ) THEN
-        Dat_elev = ave
+        Dat_elev = SNGL( ave )
         RETURN
       ENDIF
 !
@@ -907,23 +920,24 @@
           sumdat = sumdat + dat(j)
         ENDDO
         nn = nn + 1
-        xmnelv(nn) = sumelv/FLOAT(n)
-        xmndat(nn) = sumdat/FLOAT(n)
+        xmnelv(nn) = sumelv/DBLE(n)
+        xmndat(nn) = sumdat/DBLE(n)
         ave = ave + xmndat(nn)
       ENDDO
       num = nn
-      ave = ave/FLOAT(nn)
+      ave = ave/DBLE(nn)
 !
 ! If elevation to be estimated at is not within bounds of stations then
 ! you will be extrapolating, so use the slope from end to end:
 !
-      IF ( Z<xmnelv(1) .OR. Z>xmnelv(num) ) THEN
+      z_dble = DBLE( Z )
+      IF ( z_dble<xmnelv(1) .OR. z_dble>xmnelv(num) ) THEN
 !
 ! Find lowest and highest 3-station mean
 ! and get climate estimate based on general elevation trend
 !
         DO i = 1, num
-          elev(i) = ABS(xmnelv(i)-Z)
+          elev(i) = DABS(xmnelv(i)-z_dble)
           rb(i) = i
         ENDDO
         CALL SORT2I(Imax, num, elev, rb)
@@ -932,12 +946,12 @@
         slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1))
         b = xmndat(j1) - (slope*xmnelv(j1))
         IF ( ABS(Itype)==1 ) THEN
-          IF ( ABS(slope)>Dalr ) THEN
-            IF ( slope<0.0D0 ) slope = Dalr*(-1.0)
+          IF ( DABS(slope)>Dalr ) THEN
+            IF ( slope<0.0D0 ) slope = Dalr*(-1.0D0)
             IF ( slope>0.0D0 ) slope = Dalr
           ENDIF
         ENDIF
-        Dat_elev = (slope*Z) + b
+        Dat_elev = (slope*z_dble) + b
 !
       ELSE
 !
@@ -945,7 +959,7 @@
 ! and get climate estimate based on general elevation trend
 !
         DO i = 1, num
-          elev(i) = ABS(xmnelv(i)-Z)
+          elev(i) = DABS(xmnelv(i)-z_dble)
           rb(i) = i
         ENDDO
         CALL SORT2I(Imax, num, elev, rb)
@@ -953,7 +967,7 @@
         j2 = rb(2)
         slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1))
         b = xmndat(j1) - (slope*xmnelv(j1))
-        Dat_elev = (slope*Z) + b
+        Dat_elev = (slope*z_dble) + b
 !
       ENDIF
 !

@@ -5,7 +5,7 @@
       MODULE PRMS_POTET_HAMON
         IMPLICIT NONE
         ! Local Variables
-        REAL, PARAMETER :: ONE_12TH = 1.0/12.0
+        DOUBLE PRECISION, PARAMETER :: ONE_12TH = 1.0D0/12.0D0
         CHARACTER(LEN=11), SAVE :: MODNAME
         ! Declared Parameter
         REAL, SAVE, ALLOCATABLE :: Hamon_coef(:, :)
@@ -14,13 +14,13 @@
       INTEGER FUNCTION potet_hamon()
       USE PRMS_POTET_HAMON
       USE PRMS_MODULE, ONLY: Process, Nhru
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
+      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       IMPLICIT NONE
 ! Functions
-      INTRINSIC EXP
+      INTRINSIC EXP, DBLE, SNGL
       INTEGER, EXTERNAL :: getparam, declparam
       EXTERNAL read_error, print_module
 ! Local Variables
@@ -36,20 +36,20 @@
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
 ! Convert daylength from hours to 12 hour multiple (equal day and night period)
-          dyl = Soltab_sunhrs(Jday, i)*ONE_12TH
+          dyl = SNGL( Soltab_sunhrs(Jday, i)*ONE_12TH )
           vpsat = 6.108*EXP(17.26939*Tavgc(i)/(Tavgc(i)+237.3)) ! in Hamon 1963, eqn. used 273.3??
           vdsat = 216.7*vpsat/(Tavgc(i)+273.3)
           Potet(i) = Hamon_coef(i, Nowmonth)*dyl*dyl*vdsat !??? why day length squared??? Hamon 1963 did not square dyl, it was squared in 1961 original
           ! pet = 0.1651*dyl*vdsat*HC  (default HC would be 1.2 for units mm/day
           ! hamon_coef includes conversion to inches and 0.1651. hamon_coef = x*0.1651/25.4 = x*0.0065 so potet = inches/day
           ! Potet(i) = hamoncoef*0.1651/25.4*dyl*vdsat  1963 version
-          IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
+          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_hamon_2d.f90 7074 2014-12-08 23:11:31Z rsregan $'
+        Version_potet = 'potet_hamon.f90 2015-12-04 23:29:08Z'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_hamon'
 

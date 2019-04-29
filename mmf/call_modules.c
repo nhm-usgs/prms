@@ -5,7 +5,7 @@
  * FUNCTION : call_modules
  * COMMENT  : used to call a Fortran version
  *
- * $Id: call_modules.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

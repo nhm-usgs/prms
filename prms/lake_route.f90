@@ -121,7 +121,7 @@
 !***********************************************************************
       lakertedecl = 0
 
-      Version_lake_route = '$Id: lake_route.f90 7232 2015-03-09 22:49:39Z rsregan $'
+      Version_lake_route = 'lake_route.f90 2015-03-09 22:49:39Z'
       CALL print_module(Version_lake_route, 'Lake Routing                ', 90)
       MODNAME = 'lake_route'
 
@@ -490,10 +490,10 @@
 !***********************************************************************
       INTEGER FUNCTION lakerteinit()
       USE PRMS_LAKE_ROUTE
-      USE PRMS_MODULE, ONLY: Nsegment, Inputerror_flag, Parameter_check_flag, Nlake, Nratetbl, &
+      USE PRMS_MODULE, ONLY: Nsegment, Inputerror_flag, Nlake, Nratetbl, &
      &    Cascade_flag, Nobs, Init_vars_from_file
       USE PRMS_BASIN, ONLY: NEARZERO, Active_hrus, Hru_route_order, Gwr_type, Basin_area_inv, &
-     &    CFS2CMS_CONV, Lake_hru, Lake_hru_id, Hru_segment, SMALLPARAM
+     &    CFS2CMS_CONV, Lake_hru, Lake_hru_id, Hru_segment
       USE PRMS_FLOWVARS, ONLY: Basin_lake_stor
       USE PRMS_ROUTING, ONLY: Segment_type
       IMPLICIT NONE
@@ -650,23 +650,8 @@
               PRINT *, 'ERROR, lake_type = 1, but, nsos<1, lake:', j, ' nsos:', kk, ' mxnsos:', Mxnsos
               ierr = 1
             ENDIF
-          ELSEIF ( Lake_type(j)==2 ) THEN
-            IF ( Lake_coef(j)<SMALLPARAM ) THEN
-              PRINT *, 'lake_coef must be at least:', SMALLPARAM
-              IF ( Parameter_check_flag>0 ) THEN
-                PRINT *, 'ERROR, for lake:', j, Lake_coef(j)
-                ierr = 1
-              ELSE
-                PRINT *, 'WARNING, for lake:', j, Lake_coef(j), ' set to', SMALLPARAM
-                Lake_coef(j) = SMALLPARAM
-              ENDIF
-            ENDIF
           ENDIF
         ELSEIF ( Weir_gate_flag==1 ) THEN
-          IF ( Lake_vol(j)<0.0 ) THEN
-            PRINT *, 'ERROR, lake_vol_init < 0.0 for lake:', j, Lake_vol(j)
-            ierr = 1
-          ENDIF
           IF ( Lake_hru(j)==0 ) THEN
             PRINT *, 'ERROR, lake_type = 4 or 5 and lake_hru for lake:', j, ' specified as 0'
             ierr = 1

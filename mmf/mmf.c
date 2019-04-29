@@ -5,7 +5,7 @@
  * FUNCTION : xmms
  * COMMENT  : main driver for xmms
  *
- * $Id: mmf.c 6441 2014-05-21 23:35:01Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -49,6 +49,16 @@ int main (int argc, char *argv[]) {
    static int      num_param_files = 0;
    char   **fname;
    char pathname[MAXPATHLEN];
+
+
+    /*
+	**  Maximum buffer size for reading lines from files.
+	**  This used to be set as a C precompiler directive.
+	**  That is still the default, but now users are give.
+	**  the option to set this on the command line, otherwise
+	**  size still comes from the defs.h file.
+	*/
+    max_data_ln_len = MAXDATALNLEN;
 
 	/*
 	**  List of modules that are used by the model. This is
@@ -138,7 +148,8 @@ int main (int argc, char *argv[]) {
     
     err = read_dims (*control_svar("param_file"));
     if (err) {
-		(void)fprintf (stderr,"\nERROR: reading dimensions from Parameter File\n");
+//		(void)fprintf (stderr,"\nERROR: reading dimensions from Parameter File\n");
+		fprintf (stderr,"\n%s\n", err);
         exit (1);
 	}
 
@@ -171,7 +182,7 @@ int main (int argc, char *argv[]) {
 	    
 		err = read_params (fname[i], i, 1);
 		if (err) {
-			(void)fprintf (stderr,"\nWARNING: %s\n", err);
+			(void)fprintf (stderr,"\n%s\n", err);
 		}
 	}
 
@@ -191,7 +202,7 @@ int main (int argc, char *argv[]) {
 	    
 		err = read_params (fname[i], i, 0);
 		if (err) {
-			(void)fprintf (stderr,"\nWARNING: %s\n", err);
+			(void)fprintf (stderr,"\n%s\n", err);
 		}
 	}
     

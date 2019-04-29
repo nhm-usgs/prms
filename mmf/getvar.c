@@ -8,7 +8,7 @@
  * COMMENT  : gets the value associated with a module and name, and copies
  *            it into the variable provided by the calling routine.
  *
- * $Id: getvar.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

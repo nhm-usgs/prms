@@ -6,7 +6,7 @@
  * COMMENT  : reads the vars data base from a file.
  *            File name is passed in as an argument
  *
- * $Id: read_vars.c 6441 2014-05-21 23:35:01Z rsregan $
+ * $Id$
  *
 -*/
 

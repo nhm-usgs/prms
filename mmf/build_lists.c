@@ -5,7 +5,7 @@
  * FUNCTION : build_lists
  * COMMENT  :
  *
- * $Id: build_lists.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

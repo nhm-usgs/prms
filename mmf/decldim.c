@@ -8,7 +8,7 @@
  *            declfix_() to be called from Fortran
  * COMMENT  : initializes an entry in the dimension database
  *
- * $Id: decldim.c 6566 2014-07-11 15:50:51Z markstro $
+ * $Id$
  *
 -*/
 

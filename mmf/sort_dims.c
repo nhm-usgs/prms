@@ -6,7 +6,7 @@
  * COMMENT  : sorts the dimen array so that the key for each
  *            structure is in increasing alphabetical order
  *
- * $Id: sort_dims.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

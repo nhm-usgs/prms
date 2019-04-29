@@ -6,23 +6,24 @@
         ! Local Variables
         INTEGER, PARAMETER :: NVARS = 51
         CHARACTER(LEN=12), SAVE :: MODNAME
-        INTEGER, SAVE :: Iunit
+        INTEGER, SAVE :: Iunit, Npoigages
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
-        REAL, SAVE, ALLOCATABLE :: Segmentout(:), Gageout(:)
-        CHARACTER(LEN=48), ALLOCATABLE :: Streamflow_pairs(:)
-        CHARACTER(LEN=8), ALLOCATABLE :: Cfs_strings(:)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segmentout(:) !, Gageout(:)
+        CHARACTER(LEN=40), ALLOCATABLE :: Streamflow_pairs(:)
+        CHARACTER(LEN=4), ALLOCATABLE :: Cfs_strings(:)
         CHARACTER(LEN=24) :: Fmt
         CHARACTER(LEN=40), SAVE :: Fmt2
         ! Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_total_storage, Basin_surface_storage
         ! Declared Parameters
-        INTEGER, SAVE, ALLOCATABLE :: Parent_poigages(:), Poi_gage_segment(:)
+        INTEGER, SAVE, ALLOCATABLE :: Poi_gage_segment(:)
+!        INTEGER, SAVE, ALLOCATABLE :: Parent_poigages(:)
         CHARACTER(LEN=16), SAVE, ALLOCATABLE :: Poi_gage_id(:)
       END MODULE PRMS_PRMS_SUMMARY
 
       SUBROUTINE prms_summary()
       USE PRMS_PRMS_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, Process, Npoigages, Nsegment, Csv_output_file, Inputerror_flag, Nobs
+      USE PRMS_MODULE, ONLY: Model, Process, Nsegment, Csv_output_file, Inputerror_flag, Nobs, MAXDIM
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_potsw, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
      &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
@@ -40,23 +41,23 @@
      &    Basin_gwstor_minarea_wb, Basin_dnflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC CHAR
-      INTEGER, EXTERNAL :: declparam, declvar, getparam, getdim !, control_integer
+      INTRINSIC CHAR, INDEX, MAX
+      INTEGER, EXTERNAL :: declparam, declvar, getparam, getdim, decldim !, control_integer
       EXTERNAL :: read_error, PRMS_open_output_file, print_module, statvar_to_csv
       INTEGER, EXTERNAL :: getparamstring, control_string
 ! Local Variables
-      INTEGER :: i, ios, ierr, foo !, statsON_OFF
-      REAL :: gageflow
+      INTEGER :: i, ios, ierr, foo, idim !, statsON_OFF
+      DOUBLE PRECISION :: gageflow
       CHARACTER(LEN=10) :: chardate
       CHARACTER(LEN=80), SAVE :: Version_prms_summary
 !***********************************************************************
       IF ( Process(:3)=='run' ) THEN
         DO i = 1, Npoigages
           Segmentout(i) = Seg_outflow(Poi_gage_segment(i))
-          Gageout(i) = Streamflow_cfs(Parent_poigages(i))
+!          Gageout(i) = Streamflow_cfs(Parent_poigages(i))
         ENDDO
 
-        gageflow = 0.0
+        gageflow = 0.0D0
         IF ( Nobs>0 ) gageflow = Streamflow_cfs(1)
         Basin_total_storage = Basin_soil_moist + Basin_intcp_stor + Basin_gwstor + Basin_ssstor + Basin_pweqv + &
      &                        Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
@@ -77,11 +78,16 @@
      &          Basin_stflow_in, Basin_stflow_out, Basin_gwflow, Basin_dnflow, &
      &          Basin_gwstor_minarea_wb, &
      &          Basin_cfs, Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, gageflow, &
-     &          (Segmentout(i), Gageout(i), i = 1, Npoigages)
+     &          (Segmentout(i), i = 1, Npoigages)
+!     &          (Segmentout(i), Gageout(i), i = 1, Npoigages)
+
+      ELSEIF ( Process(:7)=='setdims' ) then
+        IF ( decldim('npoigages', 0, MAXDIM, 'Number of points-of-interest streamflow gages')/=0 ) &
+     &       CALL read_error(7, 'npoigages')
 
 ! Declare procedure
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_summary = '$Id: prms_summary.f90 7232 2015-03-09 22:49:39Z rsregan $'
+        Version_prms_summary = 'prms_summary.f90 2016-02-26 21:21:11Z'
         CALL print_module(Version_prms_summary, 'Output Summary              ', 90)
         MODNAME = 'prms_summary'
 
@@ -96,8 +102,8 @@
         IF ( Npoigages==-1 ) CALL read_error(6, 'npoigages')
         IF ( Npoigages>0 ) THEN
           IF ( Npoigages/=Nobs .AND. Model/=99 ) THEN
-            PRINT *, 'WARNING, possible Parameter File and Data File mismatch - nobs does not equal npoigages'
-            PRINT *, '         nobs=', Nobs, ' npoigages=', Npoigages
+            PRINT '(/,A)', 'WARNING, possible Parameter File and Data File mismatch'
+            PRINT '(A,I6,A,I6)', 'nobs does not equal npoigages, nobs=', Nobs, ' npoigages=', Npoigages
             !IF ( Npoigages>Nobs ) STOP 'ERROR, npoigages>nobs'
           ENDIF
         ENDIF
@@ -111,44 +117,39 @@
      &       'inches', Basin_surface_storage)/=0 ) CALL read_error(3, 'basin_surface_storage')
 
         IF ( Npoigages>0 ) THEN
-          ALLOCATE ( Parent_poigages(Npoigages) )
-          IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &
-     &         '1', 'bounded', 'nobs', &
-     &         'Index of streamflow measurement station in parent model', &
-     &         'Index of measured streamflow station corresponding to each point of interest', &
-     &         'none')/=0 ) CALL read_error(1, 'parent_poigages')
+!          ALLOCATE ( Parent_poigages(Npoigages) )
+!          IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &
+!     &         '1', '1', '1000000', &
+!     &         'Lumen index in parent model','Lumen index in parent model',&
+!     &         'none')/=0 ) CALL read_error(1, 'parent_poigages')
           ALLOCATE ( Poi_gage_segment(Npoigages) )
           IF ( declparam(MODNAME, 'poi_gage_segment', 'npoigages', 'integer', &
      &         '0', 'bounded', 'nsegment', &
-     &         'Index of stream segment in child model', &
-     &         'Index of stream segment corresponding to each point of interest', &
+     &         'Segment index for gage POI', &
+     &         'Segment index for gage POI', &
      &         'none')/=0 ) CALL read_error(1, 'poi_gage_segment')
           ALLOCATE ( Poi_gage_id(Npoigages) )
           IF ( declparam(MODNAME, 'poi_gage_id', 'npoigages', 'string', &
-     &         '0', '0', '9999999', &
-     &         'Identification number of streamflow measurement station', &
-     &         'Identification number of streamflow measurement station corresponding to each point of interest', &
+     &         '0', '0', '99999999', &
+     &         'POI Gage ID', 'USGS stream gage for this POI', &
      &         'none')/=0 ) CALL read_error(1, 'poi_gage_id')
         ENDIF
 
 ! Initialize Procedure
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Npoigages>0 ) THEN
-          ALLOCATE ( Streamflow_pairs(Npoigages), Cfs_strings(Npoigages) )
-          ALLOCATE ( Segmentout(Npoigages), Gageout(Npoigages), Gageid_len(Npoigages) )
-        ELSE
-          ALLOCATE ( Streamflow_pairs(1), Cfs_strings(1) )
-          ALLOCATE ( Segmentout(1), Gageout(1), Gageid_len(1) )
-          Streamflow_pairs = ' '
-        ENDIF
-        Cfs_strings = ',cfs,cfs'
+        idim = MAX(1, Npoigages)
+        ALLOCATE ( Streamflow_pairs(idim), Cfs_strings(idim), Segmentout(idim), Gageid_len(idim) )
+!        ALLOCATE ( Gageout(idim) )
+        Streamflow_pairs = ' '
+!        Cfs_strings = ',cfs,cfs'
+        Cfs_strings = ',cfs'
 
         Basin_total_storage = 0.0D0
         Basin_surface_storage = 0.0D0
 
         IF ( Npoigages>0 ) THEN
-          IF ( getparam(MODNAME, 'parent_poigages', Npoigages, 'integer', Parent_poigages)/=0 ) &
-     &         CALL read_error(2, 'parent_poigages')
+!          IF ( getparam(MODNAME, 'parent_poigages', Npoigages, 'integer', Parent_poigages)/=0 ) &
+!     &         CALL read_error(2, 'parent_poigages')
           IF ( getparam(MODNAME, 'poi_gage_segment', Npoigages, 'integer', Poi_gage_segment)/=0 ) &
      &         CALL read_error(2, 'poi_gage_segment')
           DO i = 1, Npoigages
@@ -166,11 +167,11 @@
 
           DO i = 1, Npoigages
             ierr = 0
-            IF ( Parent_poigages(i)<1 .OR. Parent_poigages(i)>Nobs ) THEN
-              ierr = 1
-              PRINT *, 'ERROR, invalid parent_poigage for POI:', i, '; parent gage:', &
-     &                 Parent_poigages(i), '; nobs:', Nobs
-            ENDIF
+!            IF ( Parent_poigages(i)<1 .OR. Parent_poigages(i)>Nobs ) THEN
+!              ierr = 1
+!              PRINT *, 'ERROR, invalid parent_poigage for POI:', i, '; parent gage:', &
+!     &                 Parent_poigages(i), '; nobs:', Nobs
+!            ENDIF
             IF ( Poi_gage_segment(i)<1 .OR. Poi_gage_segment(i)>Nsegment ) THEN
               ierr = 1
               PRINT *, 'ERROR, invalid poi_gage_segment for POI:', i, '; child segment:', &
@@ -182,22 +183,22 @@
             ENDIF
             Gageid_len(i) = INDEX( Poi_gage_id(i), ' ' ) - 1
             IF ( Gageid_len(i)<0 ) Gageid_len(i) = INDEX( Poi_gage_id(i), CHAR(0) ) - 1
-            !PRINT *, 'gageid_len ', Gageid_len(i), ' :', Poi_gage_id(i), ':'
+!            PRINT *, 'gageid_len ', Gageid_len(i), ' :', Poi_gage_id(i), ':'
             IF ( Gageid_len(i)<1 ) Gageid_len(i) = 0
             IF ( Gageid_len(i)>0 ) THEN
-              IF ( Gageid_len(i)>23 ) Gageid_len(i) = 23
-              WRITE (Streamflow_pairs(i), '(A,I4.4,2A)' ) ',seg_outflow_', Poi_gage_segment(i), ',runoff_', &
+              IF ( Gageid_len(i)>15 ) Gageid_len(i) = 15
+              WRITE (Streamflow_pairs(i), '(A,I4.4,2A)' ) ',seg_outflow_', Poi_gage_segment(i), '_gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
             ELSE
-              Gageid_len(i) = 4
-              WRITE (Streamflow_pairs(i), '(2(A,I4.4))' ) ',seg_outflow_', Poi_gage_segment(i), ',runoff_', &
-     &                                                    Parent_poigages(i)
+              Gageid_len(i) = -6
+              WRITE (Streamflow_pairs(i), '(2(A,I4.4))' ) ',seg_outflow_', Poi_gage_segment(i)
             ENDIF
           ENDDO
           !print *, 'pairs', streamflow_pairs
         ENDIF
 
-        WRITE ( Fmt, '(A,I4,A)' ) '( ', 2*Npoigages+14, 'A )'
+!        WRITE ( Fmt, '(A,I4,A)' ) '( ', 2*Npoigages+14, 'A )'
+        WRITE ( Fmt, '(A,I4,A)' ) '( ', Npoigages+14, 'A )'
         WRITE ( Iunit, Fmt ) 'Date,', &
      &          'basin_potet,basin_actet,basin_dprst_evap,basin_imperv_evap,basin_intcp_evap,basin_lakeevap,', &
      &          'basin_perv_et,basin_snowevap,basin_potsw,basin_ppt,basin_pk_precip,', &
@@ -211,8 +212,8 @@
      &          'basin_gwsink,basin_prefflow,basin_slowflow,basin_hortonian,basin_dunnian,', &
      &          'basin_stflow_in,basin_stflow_out,basin_gwflow,basin_dnflow,', &
      &          'basin_gwstor_minarea_wb,', &
-     &          'basin_cfs,basin_gwflow_cfs,basin_sroff_cfs,basin_ssflow_cfs,streamflow_cfs1', &
-     &          (Streamflow_pairs(i)(:Gageid_len(i)+25), i = 1, Npoigages)
+     &          'basin_cfs,basin_gwflow_cfs,basin_sroff_cfs,basin_ssflow_cfs,runoff_cfs', &
+     &          (Streamflow_pairs(i)(:Gageid_len(i)+23), i = 1, Npoigages)
 
         WRITE ( Iunit, Fmt ) 'year-month-day,', &
      &          'inches/day,inches/day,inches/day,inches/day,inches/day,inches/day,', &
@@ -226,13 +227,12 @@
      &          'inches/day,inches/day,', &
      &          'inches/day,inches/day,inches/day,inches/day,inches/day,', &
      &          'inches/day,inches/day,inches/day,inches/day,', &
-     &          'fraction,', &
+     &          'inches,', &
      &          'cfs,cfs,cfs,cfs,cfs', &
      &          (Cfs_strings(i), i = 1, Npoigages)
 
-        WRITE ( Fmt2, '(A,I4,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
-         !print *, 'Fmt: ', Fmt
-         !print *, 'Fmt2: ', Fmt2
+        WRITE ( Fmt2, '(A,I4,A)' )  '( A,', Npoigages+NVARS, '(",",SPES10.3) )'
+!        WRITE ( Fmt2, '(A,I4,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
 
       ELSEIF ( Process(:5)=='clean' ) THEN
         !IF ( control_integer(statsON_OFF, 'statsON_OFF')/=0 ) statsON_OFF = 1
@@ -246,6 +246,7 @@
 !     statvar_to_csv - write a CSV file based on the statvar file
 !***********************************************************************
       SUBROUTINE statvar_to_csv()
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
       INTEGER, EXTERNAL :: control_string, numchars
       EXTERNAL PRMS_open_input_file, PRMS_open_output_file
@@ -254,7 +255,7 @@
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)
       REAL, ALLOCATABLE :: values(:)
       CHARACTER(LEN=32), ALLOCATABLE :: varname(:)
-      CHARACTER(LEN=128), SAVE :: statvar_file, statvar_file_csv
+      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: statvar_file, statvar_file_csv
       CHARACTER(LEN=10) :: chardate
       CHARACTER(LEN=13) :: fmt
       CHARACTER(LEN=17) :: fmt3

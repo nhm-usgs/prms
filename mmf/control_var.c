@@ -10,7 +10,7 @@
  *            returns pointers to various control array entries
  * COMMENT  :
  *
- * $Id: control_var.c 7217 2015-03-05 21:45:51Z rsregan $
+ * $Id$
  *
 -*/
 

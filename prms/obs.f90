@@ -5,13 +5,13 @@
       IMPLICIT NONE
 !   Local Variables
       CHARACTER(LEN=3), SAVE :: MODNAME
-      INTEGER, SAVE :: Nsnow, Nsfelev, Nlakeelev, Nwind, Nhumid, Rain_flag
+      INTEGER, SAVE :: Nsnow, Nlakeelev, Nwind, Nhumid, Rain_flag
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
       REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
       REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:)
       REAL, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
-      REAL, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
       ! Lake Module Variables
       REAL, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
 !   Declared Parameters
@@ -58,8 +58,6 @@
       obssetdims = 0
 
       IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
-      IF ( decldim('nsfelev', 0, MAXDIM, &
-     &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nsfelev')
       IF ( decldim('nlakeelev', 0, MAXDIM, &
      &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nlakeelev')
       IF ( decldim('nwind', 0, MAXDIM, 'Number of wind-speed measurement stations')/=0 ) CALL read_error(7, 'nwind')
@@ -84,7 +82,7 @@
 !***********************************************************************
       obsdecl = 0
 
-      Version_obs = '$Id: obs.f90 7115 2015-01-06 00:09:15Z rsregan $'
+      Version_obs = 'obs.f90 2016-04-15 18:38:49Z'
       CALL print_module(Version_obs, 'Time Series Data            ', 90)
       MODNAME = 'obs'
 
@@ -95,11 +93,11 @@
      &       'Streamflow at each measurement station', &
      &       'runoff_units', Runoff)/=0 ) CALL read_error(8, 'runoff')
         ALLOCATE ( Streamflow_cfs(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'real', &
+        IF ( declvar(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
      &       'Streamflow at each measurement station', &
      &       'cfs', Streamflow_cfs)/=0 ) CALL read_error(8, 'streamflow_cfs')
         ALLOCATE ( Streamflow_cms(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'real', &
+        IF ( declvar(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
      &       'Streamflow at each measurement station', &
      &       'cms', Streamflow_cms)/=0 ) CALL read_error(8, 'streamflow_cms')
         IF ( declparam(MODNAME, 'runoff_units', 'one', 'integer', &
@@ -139,8 +137,6 @@
       IF ( Nhumid==-1 ) CALL read_error(6, 'nhumid')
       Nwind = getdim('nwind')
       IF ( Nwind==-1 ) CALL read_error(6, 'nwind')
-      Nsfelev = getdim('nsfelev')
-      IF ( Nsfelev==-1 ) CALL read_error(6, 'nsfelev')
       Nlakeelev = getdim('nlakeelev')
       IF ( Nlakeelev==-1 ) CALL read_error(6, 'nlakeelev')
 
@@ -148,7 +144,6 @@
         IF ( Nsnow==0 ) Nsnow = 1
         IF ( Nhumid==0 ) Nhumid = 1
         IF ( Nwind==0 ) Nwind = 1
-        IF ( Nsfelev==0 ) Nsfelev = 1
         IF ( Nlakeelev==0 ) Nlakeelev = 1
       ENDIF
 
@@ -170,7 +165,7 @@
         ALLOCATE ( Humidity(Nhumid) )
         IF ( declvar(MODNAME, 'humidity', 'nhumid', Nhumid, 'real', &
      &       'Relative humidity at each measurement station', &
-     &       'decimal fraction', Humidity)/=0 ) CALL read_error(8, 'humidity')
+     &       'percentage', Humidity)/=0 ) CALL read_error(8, 'humidity')
       ENDIF
 
       IF ( Nwind>0 ) THEN
@@ -203,18 +198,12 @@
 
 ! Lake Variables
       IF ( Nratetbl>0 ) THEN
-        IF ( Nratetbl<-1 ) STOP 'ERROR, dimension nratetbl not specified > 0'
         ALLOCATE ( Gate_ht(Nratetbl) )
         IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'real', &
      &       'Height of the gate opening at each dam with a gate', &
      &       'inches', Gate_ht)/=0 ) CALL read_error(8, 'gate_ht')
       ENDIF
 
-      IF ( Nsfelev>0 .AND. Nlakeelev==0 ) THEN
-        PRINT *, 'ERROR, dimension nsfelev has been changed to nlakeelev'
-        PRINT *, '       All references to nsfelev must be changed to nlakeelev in your Parameter File'
-        STOP
-      ENDIF
       IF ( Nlakeelev>0 ) THEN
         ALLOCATE ( Lake_elev(Nlakeelev) )
         IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'real', &
@@ -249,8 +238,8 @@
       IF ( Init_vars_from_file==0 ) THEN
         IF ( Nobs>0 ) THEN
           Runoff = 0.0
-          Streamflow_cfs = 0.0
-          Streamflow_cms = 0.0
+          Streamflow_cfs = 0.0D0
+          Streamflow_cms = 0.0D0
         ENDIF
         IF ( Nrain>0 ) Precip = 0.0
         Rain_day = 0
@@ -275,105 +264,48 @@
       INTEGER FUNCTION obsrun()
       USE PRMS_OBS
       USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, IGNOREPPT
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
       USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ISNAN
+      INTRINSIC DBLE
       INTEGER, EXTERNAL :: readvar
-      EXTERNAL :: read_error, print_date
+      EXTERNAL :: read_error
 ! Local Variables
-      INTEGER :: i, runoff_missing, tmax_missing
-      INTEGER :: tmin_missing, precip_missing, pan_missing, solrad_missing, missing
+      INTEGER :: i
 ! **********************************************************************
       obsrun = 0
 
-      missing = 0
       IF ( Nobs>0 ) THEN
         IF ( readvar(MODNAME, 'runoff')/=0 ) CALL read_error(9, 'runoff')
-        runoff_missing = 0
         IF ( Runoff_units==1 ) THEN
           DO i = 1, Nobs
-            IF ( ISNAN(Runoff(i)) ) THEN
-              runoff_missing = runoff_missing + 1
-              CYCLE
-            ENDIF
-            Streamflow_cms(i) = Runoff(i)
-            Streamflow_cfs(i) = Runoff(i)/CFS2CMS_CONV
+            Streamflow_cms(i) = DBLE( Runoff(i) )
+            Streamflow_cfs(i) = Streamflow_cms(i)/CFS2CMS_CONV
           ENDDO
         ELSE
           DO i = 1, Nobs
-            IF ( ISNAN(Runoff(i)) ) THEN
-              runoff_missing = runoff_missing + 1
-              CYCLE
-            ENDIF
-            Streamflow_cms(i) = Runoff(i)*CFS2CMS_CONV
-            Streamflow_cfs(i) = Runoff(i)
+            Streamflow_cfs(i) = DBLE( Runoff(i) )
+            Streamflow_cms(i) = Streamflow_cfs(i)*CFS2CMS_CONV
           ENDDO
-        ENDIF
-        IF ( runoff_missing>0 ) THEN
-          PRINT *, 'ERROR,', runoff_missing,' runoff NaN value(s) found'
-          missing = 1
         ENDIF
       ENDIF
 
       IF ( Nrain>0 ) THEN
         IF ( readvar(MODNAME, 'precip')/=0 ) CALL read_error(9, 'precip')
-        precip_missing = 0
-        DO i = 1, Nrain
-          IF ( ISNAN(Precip(i)) ) THEN
-            precip_missing = precip_missing + 1
-            CYCLE
-          ENDIF
-          IF ( Precip(i)<IGNOREPPT .AND. Precip(i)>0.0 ) Precip(i) = 0.0
-        ENDDO
-        IF ( precip_missing>0 ) THEN
-          PRINT *, 'ERROR,', precip_missing,' precip NaN value(s) found'
-          missing = 1
-        ENDIF
       ENDIF
 
       IF ( Ntemp>0 ) THEN
         IF ( readvar(MODNAME, 'tmax')/=0 ) CALL read_error(9, 'tmax')
         IF ( readvar(MODNAME, 'tmin')/=0 ) CALL read_error(9, 'tmin')
-        tmax_missing = 0
-        tmin_missing = 0
-        DO i = 1, Ntemp
-          IF ( ISNAN(Tmax(i)) ) tmax_missing = tmax_missing + 1
-          IF ( ISNAN(Tmin(i)) ) tmin_missing = tmin_missing + 1
-        ENDDO
-        IF ( tmax_missing>0 ) THEN
-          PRINT *, 'ERROR,', tmax_missing, ' tmax NaN value(s) found'
-          missing = 1
-        ENDIF
-        IF ( tmin_missing>0 ) THEN
-          PRINT *, 'ERROR,', tmin_missing, ' tmin NaN value(s) found'
-          missing = 1
-        ENDIF
       ENDIF
 
       IF ( Nsol>0 ) THEN
         IF ( readvar(MODNAME, 'solrad')/=0 ) CALL read_error(9, 'solrad')
-        solrad_missing = 0
-        DO i = 1, Nsol
-          IF ( ISNAN(Solrad(i)) ) solrad_missing = solrad_missing + 1
-        ENDDO
-        IF ( solrad_missing>0 ) THEN
-          PRINT *, 'ERROR,', solrad_missing,' solrad NaN value(s) found'
-          missing = 1
-        ENDIF
       ENDIF
 
       IF ( Nevap>0 ) THEN
         IF ( readvar(MODNAME, 'pan_evap')/=0 ) CALL read_error(9, 'pan_evap')
-        pan_missing = 0
-        DO i = 1, Nevap
-          IF ( ISNAN(Tmax(i)) ) pan_missing = pan_missing + 1
-        ENDDO
-        IF ( pan_missing>0 ) THEN
-          PRINT *, 'ERROR,', pan_missing, ' pan_evap NaN value(s) found'
-          missing = 1
-        ENDIF
       ENDIF
 
       IF ( Nsnow>0 ) THEN
@@ -400,11 +332,6 @@
 
       IF ( Nwind>0 ) THEN
         IF ( readvar(MODNAME, 'wind_speed')/=0 ) CALL read_error(9, 'wind_speed')
-      ENDIF
-
-      IF ( missing==1 ) THEN
-        CALL print_date(0)
-        STOP
       ENDIF
 
       END FUNCTION obsrun

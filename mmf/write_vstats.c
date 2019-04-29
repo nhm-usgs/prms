@@ -6,7 +6,7 @@
  * COMMENT  : saves values of stat variables into a temporary file.
  *            The temporary file was open in user_input
  *
- * $Id: write_vstats.c 6977 2014-11-12 20:53:01Z rsregan $
+ * $Id$
  *
 -*/
 
@@ -66,7 +66,7 @@ void write_vstats (FILE *statvar_file) {
     case M_LONG:
 	// markstro test
     //  (void)fprintf(statvar_file,"%ld ", *(long *)stat_list->value);
-	(void)fprintf(statvar_file,"%ld ", *(int *)stat_list->value);
+	(void)fprintf(statvar_file,"%d ", *(int *)stat_list->value);
       break;
 
     }

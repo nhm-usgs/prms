@@ -114,7 +114,7 @@
 !     xyzdecl - set up parameters for temperature computations
 !   Declared Parameters
 !     hru_x, hru_y, max_lapse, min_lapse, ppt_lapse, tsta_elev
-!     tmax_aspect_adjust, tmin_aspect_adjust, tsta_x, tsta_y, psta_elev, psta_x, psta_y
+!     tmax_adj, tmin_adj, tsta_x, tsta_y, psta_elev, psta_x, psta_y
 !     tsta_nuse, psta_nuse, psta_freq_nuse, adjust_snow, adjust_rain
 !     tsta_month_max, tsta_month_min, psta_month_ppt, rain_code
 !     x_add, x_div, y_add, y_div, z_add, z_div, solrad_elev
@@ -135,7 +135,7 @@
       xyzdecl = 0
 
       Version_xyz_dist =
-     +'$Id: xyz_dist_2d.f 7125 2015-01-13 16:54:29Z rsregan $'
+     +'xyz_dist.f 2016-07-22 17:22:00Z'
       CALL print_module(Version_xyz_dist,
      +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'xyz_dist'
@@ -263,7 +263,7 @@
      +     'Elevation of the solrad station used for DD curves',
      +     'Elevation of the solar radiation station used for'//
      +     ' degree-day curves to distribute temperature',
-     +     'elev_units')/=0 ) CALL read_error(1, 'solrad_elev')
+     +     'meters')/=0 ) CALL read_error(1, 'solrad_elev')
 
       ALLOCATE ( Psta_nuse(Nrain), Rain_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
@@ -435,7 +435,7 @@
       !+     'temp_units')/=0 ) CALL read_error(1, 'tmax_allsnow_sta')
 
       IF ( declparam(MODNAME, 'tmax_allrain_dist', 'nmonths', 'real',
-     +     '38.0', '-8.0', '45.0',
+     +     '38.0', '-8.0', '75.0',
      +     'Precipitation is rain if station mean max temperature >='//
      +     ' this value',
      +     'Monthly (January to December) maximum air temperature'//
@@ -468,10 +468,11 @@
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
+      INTRINSIC DBLE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL mean_by_month, read_error
 ! Local Variables
-      INTEGER :: i, m, ii, div_err, ierr
+      INTEGER :: i, m, ii, ierr
 !***********************************************************************
       xyzinit = 0
 
@@ -584,37 +585,7 @@
      +   Tmax_allrain_dist)/=0 ) CALL read_error(2, 'tmax_allrain_dist')
 
       IF ( getparam(MODNAME, 'tmax_allsnow_dist', 1, 'real',
-     +   Tmax_allsnow_dist)/=0 ) CALL read_error(2, 'Tmax_allsnow_dist')
-
-      div_err = 0
-      IF ( Z_div==0.0 ) THEN
-        PRINT *, 'ERROR, z_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( X_div==0.0 ) THEN
-        PRINT *, 'ERROR, x_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( Y_div==0.0 ) THEN
-        PRINT *, 'ERROR, y_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( Ppt_div==0.0 ) THEN
-        PRINT *, 'ERROR, ppt_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( Tmin_div==0.0 ) THEN
-        PRINT *, 'ERROR, tmin_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( Tmax_div==0.0 ) THEN
-        PRINT *, 'ERROR, tmax_div cannot be 0.0'
-        div_err = 1
-      ENDIF
-      IF ( div_err==1 ) THEN
-        Inputerror_flag = 1
-        RETURN
-      ENDIF
+     +   Tmax_allsnow_dist)/=0 ) CALL read_error(2, 'tmax_allsnow_dist')
 !
 ! Compute basin centroid
 !
@@ -622,8 +593,8 @@
       Basin_centroid_y = 0.0D0
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
-        Basin_centroid_x = Basin_centroid_x + (Hru_area(i)*MRUx(i))
-        Basin_centroid_y = Basin_centroid_y + (Hru_area(i)*MRUy(i))
+        Basin_centroid_x = Basin_centroid_x + DBLE(Hru_area(i)*MRUx(i))
+        Basin_centroid_y = Basin_centroid_y + DBLE(Hru_area(i)*MRUy(i))
       ENDDO
       Basin_centroid_x = Basin_centroid_x*Basin_area_inv
       Basin_centroid_y = Basin_centroid_y*Basin_area_inv
@@ -651,8 +622,8 @@
 ! transform Z, X and Y
 !
 ! transform values only once
-      Basin_centroid_x = (Basin_centroid_x+X_add)/X_div
-      Basin_centroid_y = (Basin_centroid_y+Y_add)/Y_div
+      Basin_centroid_x = (Basin_centroid_x+DBLE(X_add))/DBLE(X_div)
+      Basin_centroid_y = (Basin_centroid_y+DBLE(Y_add))/DBLE(Y_div)
       Solradelev = (Solradelev+Z_add)/Z_div
 
       DO ii = 1, Active_hrus
@@ -676,7 +647,7 @@
       ENDDO
       IF ( Temp_nsta<2 ) THEN
         PRINT *, 'ERROR, need to select at least 2 temperature stations'
-        PRINT *, '       using temp_nuse for xyz_dist'
+        PRINT *, '       using tsta_nuse for xyz_dist'
         ierr = 1
       ENDIF
 
@@ -694,7 +665,7 @@
       ENDDO
       IF ( Rain_nsta<2 ) THEN
         PRINT*,'ERROR, need to select at least 2 precipitation stations'
-        PRINT *, '       using temp_nuse for xyz_dist'
+        PRINT *, '       using psta_nuse for xyz_dist'
         ierr = 1
       ENDIF
       IF ( ierr==1 ) THEN
@@ -763,7 +734,7 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC FLOAT, ABS, SNGL
+      INTRINSIC ABS, SNGL, DBLE
       EXTERNAL temp_set
       REAL, EXTERNAL :: c_to_f
 ! Arguments
@@ -774,9 +745,9 @@
       DOUBLE PRECISION, INTENT(IN) :: Temp_meanx, Temp_meany, Temp_meanz
 ! Local Variables
       INTEGER :: i, j, ntmin, ntmax, ii
-      REAL :: tmax_hru_sngl, tmin_hru_sngl
-      DOUBLE PRECISION :: tmax_hru, tmin_hru, ztmax, ztmin
-      DOUBLE PRECISION :: intmax, intmin, xmax, xmin, intercept, x1
+      REAL :: tmax_hru, tmin_hru, x1
+      DOUBLE PRECISION :: ztmax, ztmin
+      DOUBLE PRECISION :: intmax, intmin, xmax, xmin, intercept
       DOUBLE PRECISION :: sumtmin, sumtmax, xtmin, xtmax, ytmin
       DOUBLE PRECISION :: ytmax, stmax, stmin
       DOUBLE PRECISION :: zrain, xrain, yrain
@@ -793,12 +764,12 @@
       ytmax = 0.0D0
       ztmin = 0.0D0
       ztmax = 0.0D0
-      maxlapse1 = Max_lapse(1)
-      maxlapse2 = Max_lapse(2)
-      maxlapse3 = Max_lapse(3)
-      minlapse1 = Min_lapse(1)
-      minlapse2 = Min_lapse(2)
-      minlapse3 = Min_lapse(3)
+      maxlapse1 = DBLE( Max_lapse(1) )
+      maxlapse2 = DBLE( Max_lapse(2) )
+      maxlapse3 = DBLE( Max_lapse(3) )
+      minlapse1 = DBLE( Min_lapse(1) )
+      minlapse2 = DBLE( Min_lapse(2) )
+      minlapse3 = DBLE( Min_lapse(3) )
 
 ! Do not Transform the coordinates of the temperature stations
 ! until after summing
@@ -809,33 +780,33 @@
         IF ( Tmax(i)>-99.0 ) THEN
           ntmax = ntmax + 1
 !         sumtmax = sumtmax + ((Tmax(i)+Tmax_add)/Tmax_div)
-          sumtmax = sumtmax + Tmax(i)
-          xtmax = xtmax + Temp_STAx(i)
-          ytmax = ytmax + Temp_STAy(i)
-          ztmax = ztmax + Temp_STAelev(i)
+          sumtmax = sumtmax + DBLE( Tmax(i) )
+          xtmax = xtmax + DBLE( Temp_STAx(i) )
+          ytmax = ytmax + DBLE( Temp_STAy(i) )
+          ztmax = ztmax + DBLE( Temp_STAelev(i) )
         ENDIF
 
         IF ( Tmin(i)>-99.0 ) THEN
           ntmin = ntmin + 1
-!         sumtmin = sumtmin + ((Tmin(i)+Tmin_add)/Tmin_div)
-          sumtmin = sumtmin + Tmin(i)
-          xtmin = xtmin + Temp_STAx(i)
-          ytmin = ytmin + Temp_STAy(i)
-          ztmin = ztmin + Temp_STAelev(i)
+!         sumtmin = sumtmin + ((Tmin(i)+DBLE(Tmin_add))/DBLE(Tmin_div))
+          sumtmin = sumtmin + DBLE( Tmin(i) )
+          xtmin = xtmin + DBLE( Temp_STAx(i) )
+          ytmin = ytmin + DBLE( Temp_STAy(i) )
+          ztmin = ztmin + DBLE( Temp_STAelev(i) )
         ENDIF
       ENDDO
 !
 ! calculate means
 !
       IF ( ntmin>0 ) THEN
-        stmin = sumtmin/FLOAT(ntmin)
-        xtmin = xtmin/FLOAT(ntmin)
-        ytmin = ytmin/FLOAT(ntmin)
-        ztmin = ztmin/FLOAT(ntmin)
-        stmin = (stmin+Tmin_add)/Tmin_div
-        xtmin = (xtmin+X_add)/X_div
-        ytmin = (ytmin+Y_add)/Y_div
-        ztmin = (ztmin+Z_add)/Z_div
+        stmin = sumtmin/DBLE(ntmin)
+        xtmin = xtmin/DBLE(ntmin)
+        ytmin = ytmin/DBLE(ntmin)
+        ztmin = ztmin/DBLE(ntmin)
+        stmin = (stmin+DBLE(Tmin_add))/DBLE(Tmin_div)
+        xtmin = (xtmin+DBLE(X_add))/DBLE(X_div)
+        ytmin = (ytmin+DBLE(Y_add))/DBLE(Y_div)
+        ztmin = (ztmin+DBLE(Z_add))/DBLE(Z_div)
       ELSE
 ! these are already transformed
         stmin = Meantmin
@@ -845,14 +816,14 @@
       ENDIF
 
       IF ( ntmax>0 ) THEN
-        stmax = sumtmax/FLOAT(ntmax)
-        xtmax = xtmax/FLOAT(ntmax)
-        ytmax = ytmax/FLOAT(ntmax)
-        ztmax = ztmax/FLOAT(ntmax)
-        stmax = (stmax+Tmax_add)/Tmax_div
-        xtmax = (xtmax+X_add)/X_div
-        ytmax = (ytmax+Y_add)/Y_div
-        ztmax = (ztmax+Z_add)/Z_div
+        stmax = sumtmax/DBLE(ntmax)
+        xtmax = xtmax/DBLE(ntmax)
+        ytmax = ytmax/DBLE(ntmax)
+        ztmax = ztmax/DBLE(ntmax)
+        stmax = (stmax+DBLE(Tmax_add))/DBLE(Tmax_div)
+        xtmax = (xtmax+DBLE(X_add))/DBLE(X_div)
+        ytmax = (ytmax+DBLE(Y_add))/DBLE(Y_div)
+        ztmax = (ztmax+DBLE(Z_add))/DBLE(Z_div)
       ELSE
 ! these are already transformed
         stmax = Meantmax
@@ -901,25 +872,27 @@
 !
       Solrad_tmax = ((maxlapse1*Basin_centroid_x)+
      +              (maxlapse2*Basin_centroid_y)+
-     +              (maxlapse3*Solradelev+intmax))*Tmax_div - Tmax_add
+     +              (maxlapse3*Solradelev+intmax))*DBLE(Tmax_div)
+     +              - DBLE(Tmax_add)
       Solrad_tmin = ((minlapse1*Basin_centroid_x)+
      +              (minlapse2*Basin_centroid_y)+
-     +              (minlapse3*Solradelev+intmin))*Tmin_div - Tmin_add
+     +              (minlapse3*Solradelev+intmin))*DBLE(Tmin_div)
+     +              - DBLE(Tmin_add)
 
 !
 !  Compute temperatures at distribution stations.
 !
       DO i = 1, Nrain
-        zrain = Pstaelev(i)
-        xrain = Pstax(i)
-        yrain = Pstay(i)
-        Tmax_rain_sta(i) = (maxlapse1*xrain) +
+        zrain = DBLE( Pstaelev(i) )
+        xrain = DBLE( Pstax(i) )
+        yrain = DBLE( Pstay(i) )
+        Tmax_rain_sta(i) = SNGL( (maxlapse1*xrain) +
      +                     (maxlapse2*yrain) +
-     +                     (maxlapse3*zrain) + intmax
+     +                     (maxlapse3*zrain) + intmax )
 
-        Tmin_rain_sta(i) = (minlapse1*xrain) +
+        Tmin_rain_sta(i) = SNGL( (minlapse1*xrain) +
      +                     (minlapse2*yrain) +
-     +                     (minlapse3*zrain) + intmin
+     +                     (minlapse3*zrain) + intmin )
 
         Tmax_rain_sta(i) = (Tmax_rain_sta(i)*Tmax_div) - Tmax_add
         Tmin_rain_sta(i) = (Tmin_rain_sta(i)*Tmin_div) - Tmin_add
@@ -938,13 +911,13 @@
 !  At this point, all temperatures are in the units
 !  of the temperatures in the data file.
 !
-        tmax_hru = (maxlapse1*MRUx(i)) +
-     +             (maxlapse2*MRUy(i)) +
-     +             (maxlapse3*MRUelev(i)) + intmax
+        tmax_hru = (Max_lapse(1)*MRUx(i)) +
+     +             (Max_lapse(2)*MRUy(i)) +
+     +             (Max_lapse(3)*MRUelev(i)) + SNGL( intmax )
 
-        tmin_hru = (minlapse1*MRUx(i)) +
-     +             (minlapse2*MRUy(i)) +
-     +             (minlapse3*MRUelev(i)) + intmin
+        tmin_hru = (Min_lapse(1)*MRUx(i)) +
+     +             (Min_lapse(2)*MRUy(i)) +
+     +             (Min_lapse(3)*MRUelev(i)) + SNGL( intmin )
 !
 !  Transform back
 !
@@ -967,9 +940,7 @@
 !
 !  Now sort out units.
 !
-        tmax_hru_sngl = SNGL(tmax_hru)
-        tmin_hru_sngl = SNGL(tmin_hru)
-        CALL temp_set(i, tmax_hru_sngl, tmin_hru_sngl,Tmaxf(i),Tminf(i),
+        CALL temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i),
      +       Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), Hru_area(i))
       ENDDO
 
@@ -997,7 +968,7 @@
       USE PRMS_OBS, ONLY: Precip, Rain_day
       IMPLICIT NONE
 ! Functions
-      INTRINSIC FLOAT, ABS, SNGL
+      INTRINSIC ABS, SNGL, DBLE
       EXTERNAL precip_form
 ! Arguments
 !   Declared Parameters
@@ -1009,14 +980,14 @@
 ! Local Variables
       INTEGER :: i, j, err_chk, nppt, nsta_used, ii
 !dbg  INTEGER :: iy, id, im
-      REAL :: ppt_sngl
+      REAL :: ppt
       DOUBLE PRECISION :: intppt, intercept, sppt
       DOUBLE PRECISION :: sum_obs, sumppt, xppt, yppt, zppt
-      DOUBLE PRECISION :: pptlapse1, pptlapse2, pptlapse3, ppt
+      DOUBLE PRECISION :: pptlapse1, pptlapse2, pptlapse3
 !***********************************************************************
-      pptlapse1 = Ppt_lapse(1)
-      pptlapse2 = Ppt_lapse(2)
-      pptlapse3 = Ppt_lapse(3)
+      pptlapse1 = DBLE( Ppt_lapse(1) )
+      pptlapse2 = DBLE( Ppt_lapse(2) )
+      pptlapse3 = DBLE( Ppt_lapse(3) )
 !
 ! Code to check the rain_code parameter to determine if it is
 ! raining in the basin.
@@ -1107,25 +1078,25 @@
         i = Rain_nuse(j)
         IF ( Precip_xyz(i)>=0.0 ) THEN
           nppt = nppt + 1
-!         sumppt = sumppt + ((Precip_xyz(i)+Ppt_add)/Ppt_div)
-          sumppt = sumppt + Precip_xyz(i)
-          xppt = xppt + Rain_STAx(i)
-          yppt = yppt + Rain_STAy(i)
-          zppt = zppt + Psta_elev(i)
+!         sumppt = sumppt + DBLE( (Precip_xyz(i)+Ppt_add)/Ppt_div) )
+          sumppt = sumppt + DBLE( Precip_xyz(i) )
+          xppt = xppt + DBLE( Rain_STAx(i) )
+          yppt = yppt + DBLE( Rain_STAy(i) )
+          zppt = zppt + DBLE( Psta_elev(i) )
         ENDIF
       ENDDO
 !
 ! calculate means
 !
       IF ( nppt>0 ) THEN
-        sppt = sumppt/FLOAT(nppt)
-        xppt = xppt/FLOAT(nppt)
-        yppt = yppt/FLOAT(nppt)
-        zppt = zppt/FLOAT(nppt)
-        sppt = (sppt+Ppt_add)/Ppt_div
-        xppt = (xppt+X_add)/X_div
-        yppt = (yppt+Y_add)/Y_div
-        zppt = (zppt+Z_add)/Z_div
+        sppt = sumppt/DBLE(nppt)
+        xppt = xppt/DBLE(nppt)
+        yppt = yppt/DBLE(nppt)
+        zppt = zppt/DBLE(nppt)
+        sppt = (sppt+DBLE(Ppt_add))/DBLE(Ppt_div)
+        xppt = (xppt+DBLE(X_add))/DBLE(X_div)
+        yppt = (yppt+DBLE(Y_add))/DBLE(Y_div)
+        zppt = (zppt+DBLE(Z_add))/DBLE(Z_div)
       ELSE
 ! these are already transformed
         sppt = Meanppt
@@ -1170,16 +1141,15 @@
         Prmx(i) = 0.0
 
         IF ( Is_rain_day/=0 ) THEN
-          ppt = (pptlapse1*MRUx(i)) + (pptlapse2*MRUy(i)) +
-     +          (pptlapse3*MRUelev(i)) + intppt
+          ppt = (Ppt_lapse(1)*MRUx(i)) + (Ppt_lapse(2)*MRUy(i)) +
+     +          (Ppt_lapse(3)*MRUelev(i)) + SNGL( intppt )
 
           ppt = ppt*Ppt_div - Ppt_add
 
 !******Ignore small amounts of precipitation on HRU
-          IF ( ppt>DNEARZERO ) THEN
+          IF ( ppt>NEARZERO ) THEN
             IF ( Precip_units==1 ) ppt = ppt*MM2INCH
-            ppt_sngl = SNGL(ppt)
-            CALL precip_form(ppt_sngl, Hru_ppt(i), Hru_rain(i),
+            CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i),
      +           Hru_snow(i), Tmaxf(i), Tminf(i), Pptmix(i),
      +           Newsnow(i), Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0,
      +           1.0, Adjmix_rain(i,Nowmonth), Hru_area(i), sum_obs,
@@ -1209,7 +1179,7 @@
       USE PRMS_MODULE, ONLY: Ntemp, Nrain
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev
       IMPLICIT NONE
-      INTRINSIC FLOAT
+      INTRINSIC DBLE
 ! Arguments
       REAL, INTENT(IN) :: PptMTH(Nrain), TminMTH(Ntemp), TmaxMTH(Ntemp)
       DOUBLE PRECISION, INTENT(OUT) :: Meanppt, Meantmax, Meantmin
@@ -1219,8 +1189,8 @@
       INTEGER :: i, j
       DOUBLE PRECISION :: rain_n, temp_n
 !***********************************************************************
-      rain_n = 1.0D0/FLOAT(Rain_nsta)
-      temp_n = 1.0D0/FLOAT(Temp_nsta)
+      rain_n = 1.0D0/DBLE(Rain_nsta)
+      temp_n = 1.0D0/DBLE(Temp_nsta)
 
       Meanppt = 0.0D0
       Meantmax = 0.0D0
@@ -1237,10 +1207,10 @@
 
 !       PptMTH(i) = (PptMTH(i)+Ppt_add)/Ppt_div
 
-        Meanppt = Meanppt + PptMTH(i)
-        Rain_meanx = Rain_meanx + Rain_STAx(i)
-        Rain_meany = Rain_meany + Rain_STAy(i)
-        Rain_meanz = Rain_meanz + Psta_elev(i)
+        Meanppt = Meanppt + DBLE( PptMTH(i) )
+        Rain_meanx = Rain_meanx + DBLE( Rain_STAx(i) )
+        Rain_meany = Rain_meany + DBLE( Rain_STAy(i) )
+        Rain_meanz = Rain_meanz + DBLE( Psta_elev(i) )
       ENDDO
 
       DO j = 1, Temp_nsta
@@ -1249,11 +1219,11 @@
 !       TminMTH(i) = (TminMTH(i)+Tmin_add)/Tmin_div
 !       TmaxMTH(i) = (TmaxMTH(i)+Tmax_add)/Tmax_div
 
-        Meantmin = Meantmin + TminMTH(i)
-        Meantmax = Meantmax + TmaxMTH(i)
-        Temp_meanx = Temp_meanx + Temp_STAx(i)
-        Temp_meany = Temp_meany + Temp_STAy(i)
-        Temp_meanz = Temp_meanz + Temp_STAelev(i)
+        Meantmin = Meantmin + DBLE( TminMTH(i) )
+        Meantmax = Meantmax + DBLE( TmaxMTH(i) )
+        Temp_meanx = Temp_meanx + DBLE( Temp_STAx(i) )
+        Temp_meany = Temp_meany + DBLE( Temp_STAy(i) )
+        Temp_meanz = Temp_meanz + DBLE( Temp_STAelev(i) )
       ENDDO
 
       Meanppt = Meanppt*rain_n
@@ -1268,17 +1238,17 @@
       Temp_meany = Temp_meany*temp_n
       Temp_meanz = Temp_meanz*temp_n
 
-      Meanppt = (Meanppt+Ppt_add)/Ppt_div
-      Meantmin = (Meantmin+Tmin_add)/Tmin_div
-      Meantmax = (Meantmax+Tmax_add)/Tmax_div
+      Meanppt = (Meanppt+DBLE(Ppt_add))/DBLE(Ppt_div)
+      Meantmin = (Meantmin+DBLE(Tmin_add))/DBLE(Tmin_div)
+      Meantmax = (Meantmax+DBLE(Tmax_add))/DBLE(Tmax_div)
 
-      Rain_meanx = (Rain_meanx+X_add)/X_div
-      Rain_meany = (Rain_meany+Y_add)/Y_div
-      Rain_meanz = (Rain_meanz+Z_add)/Z_div
+      Rain_meanx = (Rain_meanx+DBLE(X_add))/DBLE(X_div)
+      Rain_meany = (Rain_meany+DBLE(Y_add))/DBLE(Y_div)
+      Rain_meanz = (Rain_meanz+DBLE(Z_add))/DBLE(Z_div)
 
-      Temp_meanx = (Temp_meanx+X_add)/X_div
-      Temp_meany = (Temp_meany+Y_add)/Y_div
-      Temp_meanz = (Temp_meanz+Z_add)/Z_div
+      Temp_meanx = (Temp_meanx+X_add)/DBLE(X_div)
+      Temp_meany = (Temp_meany+Y_add)/DBLE(Y_div)
+      Temp_meanz = (Temp_meanz+Z_add)/DBLE(Z_div)
 
       END SUBROUTINE mean_by_month
 

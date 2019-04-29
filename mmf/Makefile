@@ -1,21 +1,10 @@
 #
 # Makefile for mmf
-# markstro
-# Tue Jul 26 08:43:10 MST 2005
-#
-# $Id: Makefile 6566 2014-07-11 15:50:51Z markstro $
 #
 
-MOWSDIR  = ../
-MLIBDIR  = ./
-CC       = gcc
-RM       = rm -f
-AR       = ar ruv
-RANLIB   = ranlib
+include ../makelist
 
-#CFLAGS   = -g -Wall -Werror-implicit-function-declaration
-#CFLAGS   = -O3 -Wall -Werror-implicit-function-declaration
-CFLAGS   = -O -Wall -Werror-implicit-function-declaration
+MMFLIB	= ./libmmf.a
 
 SRCS = 	mmf.c parse_args.c alloc_space.c build_lists.c \
 	setup_cont.c decl_control.c control_addr.c \
@@ -33,29 +22,24 @@ SRCS = 	mmf.c parse_args.c alloc_space.c build_lists.c \
 	control_array.c call_setdims.c call_modules.c
 
 
-MMSOBJS = ${SRCS:.c=.o}
+MMFOBJS = ${SRCS:.c=.o}
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
 #
-# Private makefile defines
-#
-MMSLIB = $(MLIBDIR)/libmmf.a
-
-#
 # Standard Targets for Users
 #
+all: $(MMFLIB)
 
-$(MMSLIB): $(MMSOBJS)
+$(MMFLIB): $(MMFOBJS)
 # Create lib directory, if necessary
-	@if [ ! -d $(MLIBDIR) ]   ; then        \
-   	   mkdir $(MLIBDIR) ;                   \
-	   echo  Created directory $(MLIBDIR) ; \
-	fi
-
-	$(AR) $(MMSLIB) $(MMSOBJS)
-	$(RANLIB) $(MMSLIB)
+#	@if [ ! -d $(LIBDIR) ]   ; then        \
+#   	   mkdir $(LIBDIR) ;                   \
+#	   echo  Created directory $(LIBDIR) ; \
+#	fi
+	$(AR) $(MMFLIB) $(MMFOBJS)
+	$(RANLIB) $(MMFLIB)
 
 clean:
-	${RM} $(MMSLIB) ${MMSOBJS} *~
+	$(RM) $(MMFLIB) $(MMFOBJS) *~

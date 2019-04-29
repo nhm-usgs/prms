@@ -15,17 +15,17 @@
       INTEGER FUNCTION potet_hs()
       USE PRMS_POTET_HS
       USE PRMS_MODULE, ONLY: Process, Nhru
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad
       USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SQRT
+      INTRINSIC SQRT, DBLE, ABS
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      REAL :: temp_diff, coef_kt, swrad_inch_day
+      REAL :: temp_diff, swrad_inch_day !, coef_kt
       CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_hs = 0
@@ -38,21 +38,27 @@
 !          swrad_mm_day = Swrad(i)/23.89/2.45
 !          swrad_mm_day = Swrad(i)*0.04184/2.45
           swrad_inch_day = Swrad(i)*0.000673 ! Langleys->in/day
-          coef_kt = 0.00185*(temp_diff**2) - 0.0433*temp_diff + 0.4023
-          Potet(i) = Hs_krs(i, Nowmonth)*coef_kt*swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
-          IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
+! http://www.zohrabsamani.com/research_material/files/Hargreaves-samani.pdf
+!          coef_kt = 0.00185*(temp_diff**2) - 0.0433*temp_diff + 0.4023
+!          Potet(i) = Hs_krs(i, Nowmonth)*coef_kt*swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
+
+! Danger markstro
+!          Potet(i) = Hs_krs(i, Nowmonth)*swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
+          Potet(i) = Hs_krs(i, Nowmonth)*swrad_inch_day*SQRT(ABS(temp_diff))*(Tavgc(i)+17.8)
+! End Danger
+          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_hs.f90 7050 2014-12-02 19:06:41Z rsregan $'
+        Version_potet = 'potet_hs.f90 2016-07-20 15:30:00Z'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_hs'
 
         ALLOCATE ( Hs_krs(Nhru,12) )
         IF ( declparam(MODNAME, 'hs_krs', 'nhru,nmonths', 'real', &
-     &       '0.0135', '0.005', '0.06', &
+     &       '0.0135', '0.01', '0.24', &
      &       'Potential ET adjustment factor - Hargreaves-Samani', &
      &       'Monthly (January to December) adjustment factor used in Hargreaves-Samani potential ET computations for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'hs_krs')

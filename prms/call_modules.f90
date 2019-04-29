@@ -3,16 +3,16 @@
 !***********************************************************************
       MODULE PRMS_MODULE
       IMPLICIT NONE
-      INTEGER, PARAMETER :: MAXFILE_LENGTH = 132, MAXCONTROL_LENGTH = 20
+      INTEGER, PARAMETER :: MAXFILE_LENGTH = 256, MAXCONTROL_LENGTH = 20
       INTEGER, PARAMETER :: MAXDIM = 500
       CHARACTER(LEN=80), PARAMETER :: &
      &  EQULS = '================================================================================'
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.1 04/11/2015'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.2 08/15/2016'
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
-      INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Npoigages, Nhrucell, Nlake, Ngwcell
+      INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell
       INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval
       INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
@@ -20,34 +20,25 @@
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
       INTEGER, SAVE :: Lake_route_flag, Nratetbl, Strmflow_flag, Stream_order_flag
       INTEGER, SAVE :: Temp_flag, Precip_flag, Climate_hru_flag, Climate_swrad_flag
-      INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Cloud_flag
+      INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
       INTEGER, SAVE :: Grid_flag, Logunt, First_timestep
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
-!      INTEGER, SAVE :: PRMS_strmflow_unit
-!      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Streamflow_out_file
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gvr_hru_pct_adjusted(:)
-!   Declared Variables used by GSFLOW only, in so that soilzone can be one version
-      INTEGER, SAVE :: Kkiter
-      DOUBLE PRECISION, SAVE :: Basin_szreject
-      REAL, SAVE, ALLOCATABLE :: Gw2sm_grav(:), Gw_rejected(:), Gw2sm_grav_save(:)
-!   Declared Parameters used by GSFLOW only, in so that soilzone can be one version
-      INTEGER, SAVE, ALLOCATABLE :: Gvr_cell_id(:)
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
 ! Control parameters
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
-      INTEGER, SAVE :: NhruOutON_OFF
-!      INTEGER, SAVE :: SegmentOutON_OFF
+      INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
-      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Strmflow_module, Transp_module, Soilzone_module
+      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Strmflow_module, Transp_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Model_mode, Precip_module, Solrad_module
+      CHARACTER(LEN=8), SAVE :: Soilzone_module
       END MODULE PRMS_MODULE
 
 !***********************************************************************
@@ -69,12 +60,10 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow
       INTEGER, EXTERNAL :: srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
-      INTEGER, EXTERNAL :: strmflow_in_out, muskingum, strmflow_lake, lake_route
-      INTEGER, EXTERNAL :: declvar, declparam, getparam, numchars
-      EXTERNAL :: module_error, read_error, print_module, PRMS_open_output_file
+      INTEGER, EXTERNAL :: strmflow_in_out, muskingum, strmflow_lake, lake_route, numchars
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, check_nhru_params, water_balance
       EXTERNAL :: prms_summary, nhru_summary, module_doc
-      INTEGER, EXTERNAL :: cloud_cover
 ! Local Variables
       INTEGER :: i, iret, nc
 !***********************************************************************
@@ -91,15 +80,15 @@
      &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
         Process_flag = 1
 
-        PRMS_versn = '$Id: call_modules.f90 7241 2015-03-11 19:25:47Z rsregan $'
+        PRMS_versn = 'call_modules.f90 2016-08-15 13:54:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
-        PRINT 10, PRMS_VERSION, PRMS_versn(23:47)
-        WRITE ( Logunt, 10 ) PRMS_VERSION, PRMS_versn(23:47)
+        IF ( Print_debug>-1 ) PRINT 10, PRMS_VERSION, PRMS_versn(23:47)
+        WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION, PRMS_versn(23:47)
   10  FORMAT (///, 25X, 'U.S. Geological Survey', /, 15X, &
      &        'Precipitation-Runoff Modeling System (PRMS)', /, &
-     &        9X, A, ' Tag: ', A, /)
+     &        14X, A, ' Tag: ', A, /)
   15  FORMAT (/, 'The following modules are available:', //, 5X, 'Process',  19X, 'Modules', /, 74('-'), /, &
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
@@ -122,39 +111,19 @@
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, water_balance', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 74('-'))
-  16  FORMAT (//, 'Active modules listed in the order in which they are called:', //, 8X, 'Process', 16X, &
-     &        'Module (source code version)')
-        PRINT 15
-        WRITE ( Logunt, 15 )
-        PRINT 9002
-        PRINT 16
-        PRINT '(A)', EQULS(:74)
-        CALL print_module(PRMS_versn, 'PRMS Computation Order      ', 90)
-
-        IF ( Model==0 .OR. Model==99 ) THEN
-          IF ( declvar(MODNAME, 'KKITER', 'one', 1, 'integer', &
-     &         'Current iteration in GSFLOW simulation', 'none', KKITER)/=0 ) CALL read_error(3, 'KKITER')
-          ALLOCATE ( Gw2sm_grav(Nhrucell) )
-          IF ( declvar(MODNAME, 'gw2sm_grav', 'nhrucell', Nhrucell, 'real', &
-     &         'Groundwater discharge to gravity-flow reservoirs', &
-     &         'inches', Gw2sm_grav)/=0 ) CALL read_error(3, 'gw2sm_grav')
-          ALLOCATE ( Gvr_cell_id(Nhrucell) )
-          IF ( declparam(MODNAME, 'gvr_cell_id', 'nhrucell', 'integer', &
-     &         '0', 'bounded', 'ngwcell', &
-     &         'Corresponding grid cell id associated with each GVR', &
-     &         'Index of the grid cell associated with each gravity reservoir', &
-     &         'none')/=0 ) CALL read_error(1, 'gvr_cell_id')
-          ALLOCATE ( Gw_rejected(Nhru) )
-          IF ( declvar(MODNAME, 'gw_rejected', 'nhru', Nhru, 'real', &
-     &         'HRU average recharge rejected by UZF', 'inches', &
-     &         Gw_rejected)/=0 ) CALL read_error(3, 'gw_rejected')
-          IF ( declvar(MODNAME, 'basin_szreject', 'one', 1, 'double', &
-     &         'Basin average recharge from SZ and rejected by UZF', &
-     &         'inches', Basin_szreject)/=0) CALL read_error(3, 'basin_szreject')
-          ALLOCATE ( Gvr_hru_pct_adjusted(Nhrucell), Gw2sm_grav_save(Nhrucell) )
+  16  FORMAT (//, 'Active modules listed in the order in which they are called:', //, 8X, 'Process', 23X, &
+     &        'Module', 12X, 'Version Date')
+        IF ( Print_debug>-1 )  THEN
+          PRINT 15
+          PRINT 9002
+        ELSE
+          WRITE ( PRMS_output_unit, 15 )
         ENDIF
-
-        Kkiter = 1 ! set for PRMS-only mode
+        PRINT 16
+        WRITE ( PRMS_output_unit, 16 )
+        PRINT '(A)', EQULS(:68)
+        WRITE ( PRMS_output_unit, '(A)' ) EQULS(:68)
+        CALL print_module(PRMS_versn, 'Computation Order           ', 90)
 
         IF ( Init_vars_from_file==0 ) THEN
           Timestep = 0
@@ -169,13 +138,24 @@
         Grid_flag = 0
         IF ( Nhru==Nhrucell ) Grid_flag = 1
         nc = numchars(Model_control_file)
-        PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
-        WRITE ( Logunt, 9004 ) 'Using Control File: ', Model_control_file(:nc)
-          WRITE ( PRMS_output_unit, 9004 ) 'Using Control File: ', Model_control_file(:nc)
+        IF ( Print_debug>-1 ) PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
+        IF ( Print_debug>-1 ) WRITE ( PRMS_output_unit, 9004 ) 'Using Control File: ', Model_control_file(:nc)
 
-        nc = numchars(Model_output_file)
-        PRINT 9004, 'Writing PRMS Water Budget File: ', Model_output_file(:nc)
-        WRITE ( Logunt, 9004 ) 'Writing PRMS Water Budget File: ', Model_output_file(:nc)
+        IF ( Init_vars_from_file==1 ) THEN
+          nc = numchars(Var_init_file)
+          IF ( Print_debug>-1 ) PRINT 9004, 'Using var_init_file: ', Var_init_file(:nc)
+        ENDIF
+        IF ( Save_vars_to_file==1 ) THEN
+          nc = numchars(Var_save_file)
+          IF ( Print_debug>-1 ) PRINT 9004, 'Using var_save_file: ', Var_save_file(:nc)
+         ENDIF
+
+        IF ( Print_debug>-1 ) THEN
+          nc = numchars(Model_output_file)
+          PRINT 9004, 'Writing PRMS Water Budget File: ', Model_output_file(:nc)
+          PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day
+        ENDIF
+   4    FORMAT (/, 2(A, I5, 2('/',I2.2)), /)
 
       ELSEIF ( Process(:7)=='setdims' ) THEN
         Process_flag = 4
@@ -184,7 +164,8 @@
         Process_flag = 3
         IF ( Init_vars_from_file==1 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==1 ) THEN
-          CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
+          nc = numchars(Var_save_file)
+          CALL PRMS_open_output_file(Restart_outunit, Var_save_file(:nc), 'var_save_file', 1, iret)
           IF ( iret/=0 ) STOP
           CALL call_modules_restart(0)
         ENDIF
@@ -192,6 +173,7 @@
 
       IF ( Model==99 ) THEN
         IF ( Process_flag==4 .OR. Process_flag<2 ) THEN
+          Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
           call_modules = 0
           RETURN
@@ -212,8 +194,6 @@
 
         call_modules = climateflow()
         IF ( call_modules/=0 ) CALL module_error('climateflow', Arg, call_modules)
-
-        CALL check_nhru_params()
 
         call_modules = soltab()
         IF ( call_modules/=0 ) CALL module_error('soltab', Arg, call_modules)
@@ -262,11 +242,6 @@
         IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
         IF ( Process_flag==0 ) RETURN
         IF ( Process_flag==3 ) STOP
-      ENDIF
-
-      IF ( Cloud_flag==1 ) THEN
-        call_modules = cloud_cover()
-        IF ( call_modules/=0 ) CALL module_error('cloud_cover', Arg, call_modules)
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
@@ -367,36 +342,45 @@
         IF ( call_modules/=0 ) CALL module_error('subbasin', Arg, call_modules)
       ENDIF
 
-      IF ( Process_flag==3 ) THEN
-        CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
-        PRINT 9001
-        PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
-        PRINT 9003, 'end', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
-        Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
-     &                       Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
-        Elapsed_time = Execution_time_end - Execution_time_start
-        Elapsed_time_minutes = INT(Elapsed_time/60.0)
-        PRINT '(A,I4,A,F6.2,A)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                           Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
-      ELSEIF ( Process_flag==1 ) THEN
-        PRINT '(A)', EQULS(:74)
-      ELSEIF ( Process_flag==2 ) THEN
-        IF ( Inputerror_flag==1 ) THEN
-          PRINT '(//,A,/,A)', '**FIX input errors in your Parameter File to continue**', &
-     &          'NOTE: some errors may be due to use of defalut values'
-          PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
-     &          'If input errors are related to paramters used for automated', &
-     &          'calibration processes, with CAUTION, set control parameter', &
-     &          'parameter_check_flag to 0. After calibration set the', &
-     &          'parameter_check_flag to 1 to verify that those calibration', &
-     &          'parameters have valid and compatible values.'
-          STOP
+      IF ( Print_debug>-1 ) THEN
+        IF ( Process_flag==3 ) THEN
+          CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
+          PRINT 9001
+          PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
+          PRINT 9003, 'end', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
+          Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
+     &                         Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
+          Elapsed_time = Execution_time_end - Execution_time_start
+          Elapsed_time_minutes = INT(Elapsed_time/60.0)
+          PRINT '(A,I4,A,F6.2,A)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
+     &                             Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
+        ELSEIF ( Process_flag==1 ) THEN
+          PRINT '(A)', EQULS(:68)
+          WRITE ( PRMS_output_unit, '(A)' ) EQULS(:68)
+        ELSEIF ( Process_flag==2 ) THEN
+          IF ( Inputerror_flag==1 ) THEN
+            PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
+     &            '  Set control parameter parameter_check_flag to 0 after', &
+     &            '  all parameter values are valid.'
+            PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
+     &            'If input errors are related to paramters used for automated', &
+     &            'calibration processes, with CAUTION, set control parameter', &
+     &            'parameter_check_flag to 0. After calibration set the', &
+     &            'parameter_check_flag to 1 to verify that those calibration', &
+     &            'parameters have valid and compatible values.'
+            STOP
+          ENDIF
         ENDIF
-        PRINT *, ' '
+      ELSEIF ( Process_flag==1 ) THEN
+        PRINT '(A)', EQULS(:68)
+        WRITE ( PRMS_output_unit, '(A)' ) EQULS(:68)
+      ENDIF
+      IF ( Process_flag==2 ) THEN
+        IF ( Parameter_check_flag>0 ) CALL check_nhru_params()
         IF ( Parameter_check_flag==2 ) STOP
       ENDIF
 
- 9001 FORMAT (/, 38('='), /, 'INFORMATION: Normal completion of PRMS', /, 38('='), /)
+ 9001 FORMAT (/, 26X, 25('='), /, 26X, 'Normal completion of PRMS', /, 26X, 25('='), /)
  9002 FORMAT (//, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='))
  9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
  9004 FORMAT (/, 2A, /)
@@ -412,7 +396,7 @@
 ! Functions
       INTEGER, EXTERNAL :: decldim, declfix, call_modules, control_integer_array, control_file_name
       INTEGER, EXTERNAL :: control_string, control_integer
-      EXTERNAL read_error, PRMS_open_output_file, PRMS_open_input_file, PRMS_open_module_file
+      EXTERNAL read_error, PRMS_open_output_file, PRMS_open_input_file !, PRMS_open_module_file
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
@@ -422,14 +406,14 @@
 
       Inputerror_flag = 0
 
-      CALL PRMS_open_module_file(Logunt, 'PRMS-IV.log')
-
       ! debug print flag:
       ! -1=quiet - reduced screen output
       ! 0=none; 1=water balances; 2=basin;
       ! 4=basin_sum; 5=soltab; 7=soil zone;
       ! 9=snowcomp; 13=cascade; 14=subbasin tree
       IF ( control_integer(Print_debug, 'print_debug')/=0 ) Print_debug = 0
+
+      IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='    ' .OR. Model_mode(:5)=='DAILY' ) THEN
@@ -628,10 +612,8 @@
       IF ( Et_flag==7 ) Climate_potet_flag = 1
       Humidity_cbh_flag = 0
       Windspeed_cbh_flag = 0
-      IF ( Et_flag==11 ) THEN
-        Humidity_cbh_flag = 1
-        Windspeed_cbh_flag = 1
-      ENDIF
+      IF ( Et_flag==11 .OR. Et_flag==5 ) Humidity_cbh_flag = 1
+      IF ( Et_flag==11 ) Windspeed_cbh_flag = 1
 
       Srunoff_module = ' '
       IF ( control_string(Srunoff_module, 'srunoff_module')/=0 ) CALL read_error(5, 'srunoff_module')
@@ -701,16 +683,12 @@
 ! nsegment dimension
       IF ( decldim('nsegment', 0, MAXDIM, 'Number of stream-channel segments')/=0 ) CALL read_error(7, 'nsegment')
 
-      IF ( decldim('npoigages', 0, MAXDIM, 'Number of points-of-interest streamflow gages')/=0 ) &
-     &     CALL read_error(7, 'npoigages')
-
 ! subbasin dimensions
       IF ( control_integer(Subbasin_flag, 'subbasin_flag')/=0 ) Subbasin_flag = 1
       IF ( decldim('nsub', 0, MAXDIM, 'Number of internal subbasins')/=0 ) CALL read_error(7, 'nsub')
 
       IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = 0
       IF ( control_integer(CsvON_OFF, 'csvON_OFF')/=0 ) CsvON_OFF = 0
-      IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
 
 ! map results dimensions
       IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = 0
@@ -723,14 +701,14 @@
      &     'Number of spatial units in the target map for mapped results')/=0 ) CALL read_error(7, 'ngwcell')
 !      IF ( control_integer(SegmentOutON_OFF, 'segmentOutON_OFF')/=0 ) SegmentOutON_OFF = 0
 
-      Cloud_flag = 0
-      IF ( Solrad_flag==2 ) Cloud_flag = 1
+      IF ( control_integer(Gwr_swale_flag, 'gwr_swale_flag')/=0 ) Gwr_swale_flag = 0
 
 ! nhru_summary
       IF ( control_integer(NhruOutON_OFF, 'nhruOutON_OFF')/=0 ) NhruOutON_OFF = 0
 
 ! cascade
       IF ( control_integer(Cascade_flag, 'cascade_flag')/=0 ) Cascade_flag = 1
+      ! if cascadegw_flag = 2, use same cascades as HRUs
       IF ( control_integer(Cascadegw_flag, 'cascadegw_flag')/=0 ) Cascadegw_flag = 1
 
 ! spatial units
@@ -752,7 +730,6 @@
       IF ( decldim('ndepl', 1, MAXDIM, 'Number of snow-depletion curves')/=0 ) CALL read_error(7, 'ndelp')
       IF ( decldim('ndeplval', 11, MAXDIM, 'Number of values in all snow-depletion curves (set to ndepl*11)')/=0 ) &
      &     CALL read_error(7, 'ndelplval')
-      Ndeplval = 11
 
 ! fixed dimensions
       IF ( declfix('ndays', 366, 366, 'Maximum number of days in a year ')/=0 ) CALL read_error(7, 'ndays')
@@ -775,6 +752,7 @@
       INTEGER FUNCTION check_dims()
       USE PRMS_MODULE
       IMPLICIT NONE
+! Functions
       INTEGER, EXTERNAL :: getdim
 !***********************************************************************
 
@@ -814,12 +792,19 @@
       IF ( Ncascade==-1 ) CALL read_error(7, 'ncascade')
       Ncascdgw = getdim('ncascdgw')
       IF ( Ncascdgw==-1 ) CALL read_error(7, 'ncascdgw')
-      IF ( Ncascade==0 ) Cascade_flag = 0
-      IF ( Ncascdgw==0 ) Cascadegw_flag = 0
-      IF ( Cascade_flag/=1 .AND. Cascadegw_flag/=1 .AND. Model/=99 ) THEN
-        Call_cascade = 0
-      ELSE
+      IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
+      IF ( Model==99 ) THEN
         Call_cascade = 1
+        Cascade_flag = 1
+        Cascadegw_flag = 1
+      ELSE
+        IF ( Ncascade==0 ) Cascade_flag = 0
+        IF ( Ncascdgw==0 .OR. Model==0 ) Cascadegw_flag = 0
+        IF ( Cascade_flag==1 .OR. Cascadegw_flag>0 ) THEN
+          Call_cascade = 1
+        ELSE
+          Call_cascade = 0
+        ENDIF
       ENDIF
 
       Nlake = getdim('nlake')
@@ -828,9 +813,21 @@
       Ndepl = getdim('ndepl')
       IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')
 
+      Ndeplval = getdim('ndeplval')
+      IF ( Ndeplval==-1 ) CALL read_error(7, 'ndeplval')
+
+      IF ( Ndepl==0 ) THEN
+        PRINT *, 'ERROR, ndepl must be > 0: ndepl=', Ndepl
+        Inputerror_flag = 1
+      ENDIF
+      IF ( Ndeplval/=Ndepl*11 ) THEN
+        PRINT *, 'ERROR, ndeplval must be = ndepl*11: ndeplval:', Ndeplval, ', ndepl=', Ndepl
+        Inputerror_flag = 1
+      ENDIF
+
       Nsub = getdim('nsub')
       IF ( Nsub==-1 ) CALL read_error(7, 'nsub')
-      ! default = 1, as new flag, turn off if no subbasins
+      ! default = 1, turn off if no subbasins
       IF ( Subbasin_flag==1 .AND. Nsub==0 ) Subbasin_flag = 0
 
       Nsegment = getdim('nsegment')
@@ -853,13 +850,15 @@
         IF ( Nobs==0 ) Nobs = 1
         IF ( Ncascade==0 ) Ncascade = 1
         IF ( Ncascdgw==0 ) Ncascdgw = 1
-        IF ( Ndepl==0 ) Ndepl = 1
         IF ( Nsub==0 ) Nsub = 1
         IF ( Nevap==0 ) Nevap = 1
         IF ( Nhrucell==0 ) Nhrucell = 1
         IF ( Ngwcell==0 ) Ngwcell = 1
         IF ( Nsegment==0 ) Nsegment = 1
         IF ( Nratetbl==0 ) Nratetbl = 4
+        Subbasin_flag = 1
+        Cascade_flag = 1
+        Cascadegw_flag = 1
       ENDIF
 
       IF ( Nsegment<1 ) THEN
@@ -898,7 +897,7 @@
       INTEGER, EXTERNAL :: temp_1sta_laps, temp_dist2
       INTEGER, EXTERNAL :: precip_1sta_laps, climate_hru
       INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist
-      INTEGER, EXTERNAL :: ddsolrad, ccsolrad, cloud_cover
+      INTEGER, EXTERNAL :: ddsolrad, ccsolrad
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
@@ -921,7 +920,6 @@
       test = precip_1sta_laps()
       test = precip_dist2()
       test = ddsolrad()
-      test = cloud_cover()
       test = ccsolrad()
       test = transp_tindex()
       test = frost_date()

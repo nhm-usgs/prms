@@ -5,7 +5,7 @@
  * FUNCTION :
  * COMMENT  :
  *
- *  $Id: globals.h 6195 2014-02-07 21:49:14Z rsregan $
+ *  $Id$
  *
 -*/
 
@@ -18,6 +18,7 @@
  * for MAIN only
  */
 
+int max_data_ln_len;                /* now possible to set this on command line */
 char *MAltContFile = NULL;          /* Alt. name of control file */
 long Mdebuglevel = 0;               /* the current debug level */
 char *model_name = NULL;
@@ -68,6 +69,7 @@ int max_controls;
  * for all functions except main
  */
 
+extern int max_data_ln_len;
 extern char *MAltContFile;
 extern long Mdebuglevel;
 extern char *model_name;

@@ -91,16 +91,16 @@
         Cfs2inches = Basin_area_inv*12.0D0*Timestep_seconds/FT2_PER_ACRE
 
         ! Check to see if in a daily or subdaily time step
-        IF ( Timestep_hours>24.0001D0 ) THEN
+        IF ( Timestep_hours>24.0 ) THEN
           PRINT *, 'ERROR, timestep > daily, fix Data File, timestep:', Timestep_hours
           STOP
-        ELSEIF ( Timestep_hours<23.999D0 ) THEN
+        ELSEIF ( Timestep_hours<24.0 ) THEN
           PRINT *, 'ERROR, timestep < daily for daily model, fix Data File', Timestep_hours
           STOP
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_time = '$Id: prms_time.f90 7208 2015-03-02 23:13:16Z rsregan $'
+        Version_prms_time = 'prms_time.f90 2015-03-31 16:00:42Z'
         CALL print_module(Version_prms_time, 'PRMS Set Time Variables     ', 90)
 !        MODNAME = 'prms_time'
         Timestep_seconds = 86400.0D0

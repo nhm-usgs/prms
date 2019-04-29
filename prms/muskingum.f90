@@ -2,14 +2,14 @@
 ! Routes water between segments in the system using Muskingum routing
 !
 !   The Muskingum equation is described in 'Hydrology for Engineers', 3rd ed.
-!   by Linsley, R.K, Kohler, M.A., and Paulhus, J.L.H., 1982 p. 275 and in 
+!   by Linsley, R.K, Kohler, M.A., and Paulhus, J.L.H., 1982 p. 275 and in
 !   'Water in Environmental Planning' by Dunne, T., and Leopold, L.B. 1978
 !   p. 357.
 !
 !   Note that the Muskingum equation assumes a linear relation of storage
 !   to the inflow/outflow relation and therefore the relation is the same
 !   throughout the range of the hydrograph.  The route_time parameter in
-!   the fixroute module is replaced by two new parameters, K_coef and 
+!   the fixroute module is replaced by two new parameters, K_coef and
 !   x_coef, which are described below:
 !
 !   The Muskingum method is based on the equation: S = K[xI + (1 - x)O]
@@ -73,7 +73,7 @@
 !       network), a value of X can be computed (for each segment in the stream
 !       network) which will result in both conservation of mass and non-negative
 !       flows. Another benefit is that only one input parameter (K) needs to be
-!       input to the module. 
+!       input to the module.
 !
 !   3. If the travel time of a segment is less than or equal to the routing
 !      time step (one hour), then the outflow of the segment is set to the
@@ -128,7 +128,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Model, Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -138,18 +138,9 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = '$Id: muskingum.f90 7050 2014-12-02 19:06:41Z rsregan $'
+      Version_muskingum = 'muskingum.f90 2016-07-25 12:06:00Z'
       CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
       MODNAME = 'muskingum'
-
-      IF ( Nsegment<1 ) THEN
-        IF ( Model==99 ) THEN
-          Nsegment = 1
-        ELSE
-          PRINT *, 'ERROR, muskingum module requires nsegment > 0, specified as:', Nsegment
-          STOP
-        ENDIF
-      ENDIF
 
       ALLOCATE ( C1(Nsegment), C2(Nsegment), C0(Nsegment), Ts(Nsegment) )
       ALLOCATE ( Currinsum(Nsegment), Ts_i(Nsegment) )
@@ -176,7 +167,7 @@
 
       ALLOCATE ( X_coef(Nsegment) )
       IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
-     &     '0.2', '0.0', '1.0', &
+     &     '0.2', '0.0', '0.5', &
      &     'Routing weighting factor', &
      &     'The amount of attenuation of the flow wave, called the'// &
      &     ' Muskingum routing weighting factor; enter 0.0 for'// &
@@ -189,7 +180,7 @@
      &       '0.0', '0.0', '1.0E7', &
      &       'Initial flow in each stream segment', &
      &       'Initial flow in each stream segment', &
-     &       'cfs')/=0 ) CALL read_error(1, 'x_coef')
+     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
       ENDIF
 
       END FUNCTION muskingum_decl
@@ -205,11 +196,10 @@
       USE PRMS_FLOWVARS, ONLY: Seg_inflow, Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       IMPLICIT NONE
-      INTRINSIC ABS, NINT
       EXTERNAL :: read_error
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
-      INTEGER :: i, ierr, ierr_flag
+      INTEGER :: i, ierr
       REAL :: k, x, d, x_max
 !***********************************************************************
       muskingum_init = 0
@@ -223,6 +213,7 @@
         DO i = 1, Nsegment
           Seg_outflow(i) = Segment_flow_init(i)
         ENDDO
+        DEALLOCATE ( Segment_flow_init )
         Segment_delta_flow = 0.0D0
         Outflow_ts = 0.0D0
       ENDIF
@@ -231,13 +222,6 @@
 !     on the values of K_coef and a routing period of 1 hour. See the notes
 !     at the top of this file.
 
-!  if c2 is <= 0.0 then  short travel time though reach (less daily
-!  flows), thus outflow is mainly = inflow w/ small influence of previous
-!  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
-
-!  if c0 is <= 0.0 then long travel time through reach (greater than daily
-!  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
-!  c2 as is, reduce c1 by c0 and set c0=0
 !
       C0 = 0.0
       C1 = 0.0
@@ -248,126 +232,109 @@
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
-        ierr_flag = 0
         k = K_coef(i)
         x = X_coef(i)
 
 ! check the values of k and x to make sure that Muskingum routing is stable
 
-        IF ( k<0.01 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT *, 'ERROR, K_coef value < 0.01 for segment:', i, k
-            ierr_flag = 1
-          ELSE
-            PRINT *, 'WARNING in muskingum: segment ', i, ' has K_coef < 0.01,', k, ', set to 0.01'
-            !PRINT *, 'Outflow for this segment is set to the inflow and there will be no lag or attenuation'
-            ierr = 1
-          ENDIF
-          k = 0.01
-
-        ELSEIF ( k>24.0 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT *, 'ERROR, K_coef value > 24.0 for segment:', i, k
-            ierr_flag = 1
-          ELSE
-            PRINT *, 'WARNING in muskingum: segment ', i, ' has K_coef > 24.0,', k, ', set to 24.0'
-            !PRINT *, 'Outflow for this segment is set to the maximum lag and attenuation'
-            ierr = 1
-          ENDIF
-          Ts(i) = 24.0
-          k = 24.0
+        IF ( k<1.0 ) THEN
+!          IF ( Parameter_check_flag>0 ) THEN
+!            PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', i, ' has K_coef < 1.0,', k, &
+!     &            'this may produce unstable results'
+!            ierr = 1
+!          ENDIF
+          Ts(i) = 0.0
+          Ts_i(i) = -1
 
         ELSEIF ( k<2.0 ) THEN
-          IF ( k<1.0 ) THEN
-            IF ( Parameter_check_flag>0 ) THEN
-              PRINT *, 'WARNING in muskingum: segment ', i, ' has K_coef < 1.0,', k, ' this may produce unstable results'
-              ierr = 1
-            ENDIF
-          ENDIF
           Ts(i) = 1.0
+          Ts_i(i) = 1
 
         ELSEIF ( k<3.0 ) THEN
           Ts(i) = 2.0
+          Ts_i(i) = 2
 
         ELSEIF ( k<4.0 ) THEN
           Ts(i) = 3.0
+          Ts_i(i) = 3
 
         ELSEIF ( k<6.0 ) THEN
           Ts(i) = 4.0
+          Ts_i(i) = 4
 
         ELSEIF ( k<8.0 ) THEN
           Ts(i) = 6.0
+          Ts_i(i) = 6
 
         ELSEIF ( k<12.0 ) THEN
           Ts(i) = 8.0
+          Ts_i(i) = 8
 
         ELSEIF ( k<24.0 ) THEN
           Ts(i) = 12.0
+          Ts_i(i) = 12
 
         ELSE
           Ts(i) = 24.0
+          Ts_i(i) = 24
 
         ENDIF
-        Ts_i(i) = NINT( Ts(i) )
-
-        IF ( x>1.0 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT *, 'ERROR, x_coef value > 1.0 for segment:', i, x
-            ierr_flag = 1
-          ELSE
-            PRINT *, 'WARNING in muskingum: segment ', i, ' x_coef value > 1.0', x, ', set to 1.0'
-            x = 1.0
-            ierr = 1
-          ENDIF
-        ENDIF
-        IF ( ierr_flag==1 ) Inputerror_flag = 1
 
 !  x must be <= t/(2K) the C coefficents will be negative. Check for this for all segments
 !  with Ts >= minimum Ts (1 hour).
         IF ( Ts(i)>0.1 ) THEN
           x_max = Ts(i) / (2.0 * k)
           IF ( x>x_max ) THEN
-            IF ( Parameter_check_flag>0 ) THEN
-              PRINT *, 'ERROR, x_coef value is TOO LARGE for stable routing for segment:', i, x
-              PRINT *, 'a maximum value of:', x_max, ' is suggested'
-              Inputerror_flag = 1
-              CYCLE
-            ELSE
-              PRINT *, 'WARNING in muskingum, segment:', i, ', x_coef value is TOO LARGE for stable routing'
-              PRINT *, 'x_coef is set to the suggested maximum value:', x_max
-              x = x_max
-              ierr = 1
-            ENDIF
+            PRINT *, 'ERROR, x_coef value is too large for stable routing for segment:', i, ' x_coef:', x
+            PRINT *, '       a maximum value of:', x_max, ' is suggested'
+            Inputerror_flag = 1
+            CYCLE
           ENDIF
         ENDIF
 
         d = k - (k * x) + (0.5 * Ts(i))
-        IF ( ABS(d)<NEARZERO ) THEN
-          PRINT *, 'WARNING in muskingum, computed value d <', NEARZERO, ', set to 0.0001'
-          d = 0.0001
+        IF ( d==0.0 ) THEN
+          PRINT *, 'ERROR, segment ', i, ' computed value d = 0.0, change values of K_coef and x_coef'
+          Inputerror_flag = 1
         ENDIF
         C0(i) = (-(k * x) + (0.5 * Ts(i))) / d
         C1(i) = ((k * x) + (0.5 * Ts(i))) / d 
         C2(i) = (k - (k * x) - (0.5 * Ts(i))) / d
 
+        ! the following code was in the original musroute, but, not in Linsley and others
+        ! rsr, 3/1/2016 - having < 0 coefficient can cause negative flows as found by Jacob in GCPO headwater
+!  if c2 is <= 0.0 then  short travel time though reach (less daily
+!  flows), thus outflow is mainly = inflow w/ small influence of previous
+!  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
+
+!  if c0 is <= 0.0 then long travel time through reach (greater than daily
+!  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
+!  c2 as is, reduce c1 by c0 and set c0=0
 ! SHORT travel time
         IF ( C2(i)<0.0 ) THEN
-          PRINT *, 'c2 < 0, set to 0, c1 set to c1 + c2'
-          PRINT *, 'old c2:', C2(i), 'old c1:', C1(i), 'new c1:', C1(i) + C2(i)
+          IF ( Parameter_check_flag>0 ) THEN
+            PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
+            PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+          ENDIF
           C1(i) = C1(i) + C2(i)
           C2(i) = 0.0
         ENDIF
 
 ! LONG travel time
         IF ( C0(i)<0.0 ) THEN
-          PRINT *, 'c0 < 0, set to 0, c0 set to c1 + c0'
-          PRINT *, 'old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
+          IF ( Parameter_check_flag>0 ) THEN
+            PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
+            PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+          ENDIF
           C1(i) = C1(i) + C0(i)
           C0(i) = 0.0
         ENDIF
 
       ENDDO
-      IF ( ierr==1 ) PRINT *, '***RECOMMEND THAT YOU FIX Muskingum parameters in your Parameter File***'
+      IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
+      DEALLOCATE ( K_coef, X_coef)
 
       Basin_segment_storage = Basin_segment_storage*Basin_area_inv/Cfs_conv
 
@@ -397,7 +364,7 @@
       muskingum_run = 0
 
 !     SET yesterdays inflows and outflows into temp (past arrays)
-!     values may be 0.0 as intial, > 0.0 for runtime and dynamic 
+!     values may be 0.0 as intial, > 0.0 for runtime and dynamic
 !     initial condtions. Then set outlfow and inflow for this time
 !     step to 0.0
 !
@@ -408,7 +375,7 @@
 !     This is todays "seg_inflow" before additional water is routed to
 !     a new (if any is routed)
 !
-!     For each HRU if the lateral flow for this HRU goes to the 
+!     For each HRU if the lateral flow for this HRU goes to the
 !     segment being evaluated (segment i) then sum flows
 !
 !     Do these calculations once for the current day, before the hourly
@@ -447,15 +414,15 @@
           IF ( imod==0 ) THEN
             Inflow_ts(iorder) = (Inflow_ts(iorder) / Ts(iorder))
 ! Compute routed streamflow
-            !IF ( Ts_i(i)>0 ) THEN
+            IF ( Ts_i(iorder)>0 ) THEN
 ! Muskingum routing equation
               Outflow_ts(iorder) = Inflow_ts(iorder)*C0(iorder) + Pastin(iorder)*C1(iorder) + Outflow_ts(iorder)*C2(iorder)
-            !ELSE
+            ELSE
 ! If travel time (K_coef paremter) is less than or equal to
 ! time step (one hour), then the outflow is equal to the inflow
 ! Outflow_ts is the value from last hour
-              !Outflow_ts(iorder) = Inflow_ts(iorder)
-            !ENDIF
+              Outflow_ts(iorder) = Inflow_ts(iorder)
+            ENDIF
 
             ! pastin is equal to the Inflow_ts on the previous routed timestep
             Pastin(iorder) = Inflow_ts(iorder)
@@ -490,6 +457,7 @@
         Seg_inflow(i) = Seg_inflow(i) * ONE_24TH
         Seg_upstream_inflow(i) = Currinsum(i) * ONE_24TH
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
+! includes closed basins (tosegment=0)
         IF ( Tosegment(i)==0 ) Flow_out = Flow_out + Seg_outflow(i)
         Segment_delta_flow(i) = Segment_delta_flow(i) + Seg_inflow(i) - Seg_outflow(i)
         Basin_segment_storage = Basin_segment_storage + Segment_delta_flow(i)

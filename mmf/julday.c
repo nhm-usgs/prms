@@ -6,7 +6,7 @@
  * COMMENT  : computes julian day, puts it into the jd slot in the
  *            datetime structure
  *
- * $Id: julday.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

@@ -37,7 +37,7 @@
 !***********************************************************************
       strmlkdecl = 0
 
-      Version_strmflow_lake = '$Id: strmflow_lake.f90 7182 2015-01-29 20:36:25Z rsregan $'
+      Version_strmflow_lake = 'strmflow_lake.f90 2015-01-29 20:36:25Z'
       CALL print_module(Version_strmflow_lake, 'Streamflow Routing          ', 90)
 !      MODNAME = 'strmflow_lake'
 

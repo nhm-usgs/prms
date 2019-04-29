@@ -6,7 +6,7 @@
  * COMMENT  : returns a pointer to a PUBVAR struct which contains the given key
  *            returns NULL if key not found
  *
- * $Id: var_addr.c 6195 2014-02-07 21:49:14Z rsregan $
+ * $Id$
  *
 -*/
 

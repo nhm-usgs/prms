@@ -5,7 +5,7 @@
  * FUNCTION : print_vars
  * COMMENT  : prints the var data base to a file
  *
- * $Id: print_vars.c 6441 2014-05-21 23:35:01Z rsregan $
+ * $Id$
  *
 -*/
 
