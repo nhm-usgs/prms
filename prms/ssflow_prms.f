@@ -13,6 +13,11 @@
       REAL, SAVE, ALLOCATABLE :: Ssr2gw_rate(:), Ssrmax_coef(:)
       REAL, SAVE, ALLOCATABLE :: Ssrcoef_lin(:), Ssrcoef_sq(:)
       REAL, SAVE, ALLOCATABLE :: Ssstor_init(:), Ssr2gw_exp(:)
+!   Local Variables
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ssflow_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Soil Zone')
       END MODULE PRMS_SSFLOW    
 
 !***********************************************************************
@@ -57,23 +62,24 @@
      +'$Id: ssflow_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
       Ssflow_prms_nc = INDEX( Version_ssflow_prms, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_ssflow_prms(:Ssflow_prms_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME,
+     +        Version_ssflow_prms(:Ssflow_prms_nc))/=0 ) STOP
       ENDIF
 
 ! Declare Variables
-      IF ( declvar('ssflow', 'basin_ssin', 'one', 1, 'double',
+      IF ( declvar(MODNAME, 'basin_ssin', 'one', 1, 'double',
      +     'Basin weighted average for inflow to subsurface reservoirs',
      +     'inches',
      +     Basin_ssin).NE.0 ) RETURN
 
-       IF ( declvar('ssflow', 'basin_ssr2gw', 'one', 1, 'double',
+       IF ( declvar(MODNAME, 'basin_ssr2gw', 'one', 1, 'double',
      +     'Basin average drainage from soil added to groundwater',
      +     'inches',
      +     Basin_ssr2gw).NE.0 ) RETURN
 
 ! Declare Parameters
       ALLOCATE (Ssstor_init(Nssr))
-      IF ( declparam('ssflow', 'ssstor_init', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssstor_init', 'nssr', 'real',
      +     '0.0', '0.0', '20.0',
      +     'Initial storage in each subsurface reservoir',
      +     'Initial storage in each subsurface reservoir;'//
@@ -81,7 +87,7 @@
      +     'inches').NE.0 ) RETURN
 
       ALLOCATE (Ssrcoef_lin(Nssr))
-      IF ( declparam('ssflow', 'ssrcoef_lin', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssrcoef_lin', 'nssr', 'real',
      +     '0.1', '0.0', '1.0',
      +     'Linear subsurface routing coefficient',
      +     'Coefficient to route subsurface storage to streamflow'//
@@ -91,7 +97,7 @@
      +     '1/day').NE.0 ) RETURN
 
       ALLOCATE (Ssrcoef_sq(Nssr))
-      IF ( declparam('ssflow', 'ssrcoef_sq', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssrcoef_sq', 'nssr', 'real',
      +     '0.1', '0.0', '1.0',
      +     'Non-linear subsurface routing coefficient',
      +     'Coefficient to route subsurface storage to streamflow'//
@@ -101,7 +107,7 @@
      +     'none').NE.0 ) RETURN
 
       ALLOCATE (Ssr2gw_rate(Nssr))
-      IF ( declparam('ssflow', 'ssr2gw_rate', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssr2gw_rate', 'nssr', 'real',
      +     '0.1', '0.0', '1.0',
      +     'Coefficient to route water from subsurface to groundwater',
      +     'Coefficient in equation used to route water from the'//
@@ -111,7 +117,7 @@
      +     '1/day').NE.0 ) RETURN
 
       ALLOCATE (Ssrmax_coef(Nssr))
-      IF ( declparam('ssflow', 'ssrmax_coef', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssrmax_coef', 'nssr', 'real',
      +     '1.0', '1.0', '20.0',
      +     'Coefficient to route water from subsurface to groundwater',
      +     'Coefficient in equation used to route water from the'//
@@ -122,7 +128,7 @@
      +     'inches').NE.0 ) RETURN
 
       ALLOCATE (Ssr2gw_exp(Nssr))
-      IF ( declparam('ssflow', 'ssr2gw_exp', 'nssr', 'real',
+      IF ( declparam(MODNAME, 'ssr2gw_exp', 'nssr', 'real',
      +     '1.0', '0.0', '3.0',
      +     'Coefficient to route water from subsurface to groundwater',
      +     'Coefficient in equation used to route water from the'//
@@ -152,19 +158,19 @@
 !***********************************************************************
       ssinit = 1
 
-      IF ( getparam('ssflow', 'ssrcoef_lin', Nssr, 'real', Ssrcoef_lin)
+      IF ( getparam(MODNAME, 'ssrcoef_lin', Nssr, 'real', Ssrcoef_lin)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('ssflow', 'ssrcoef_sq', Nssr, 'real', Ssrcoef_sq)
+      IF ( getparam(MODNAME, 'ssrcoef_sq', Nssr, 'real', Ssrcoef_sq)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('ssflow', 'ssr2gw_rate', Nssr, 'real', Ssr2gw_rate)
+      IF ( getparam(MODNAME, 'ssr2gw_rate', Nssr, 'real', Ssr2gw_rate)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('ssflow', 'ssr2gw_exp', Nssr, 'real', Ssr2gw_exp)
+      IF ( getparam(MODNAME, 'ssr2gw_exp', Nssr, 'real', Ssr2gw_exp)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('ssflow', 'ssrmax_coef', Nssr, 'real', Ssrmax_coef)
+      IF ( getparam(MODNAME, 'ssrmax_coef', Nssr, 'real', Ssrmax_coef)
      +     .NE.0 ) RETURN
 
 ! do only once so restart uses saved values
@@ -173,7 +179,7 @@
         Basin_ssin = 0.0D0
         Basin_ssr2gw = 0.0D0
 ! initialize arrays (dimensioned Nssr)
-        IF ( getparam('ssflow', 'ssstor_init', Nssr, 'real',
+        IF ( getparam(MODNAME, 'ssstor_init', Nssr, 'real',
      +       Ssstor_init).NE.0 ) STOP
         Ssres_stor = Ssstor_init
         DEALLOCATE ( Ssstor_init )

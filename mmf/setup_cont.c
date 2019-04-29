@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: setup_cont.c 6072 2011-10-28 19:58:04Z rsregan $
+ * $Id: setup_cont.c 6341 2012-01-27 23:39:55Z rsregan $
  *
-   $Revision: 6072 $
+   $Revision: 6341 $
         $Log: setup_cont.c,v $
         Revision 1.31  1999/08/24 16:34:16  markstro
         Version 1.1.1
@@ -150,7 +150,7 @@ extern void decl_control_string_array (char *valstr, char *key, long size);
 void setup_cont (void) {
         long *lval;
         float *fval;
-        char *cval;
+//        char *cval;
 //      char **cp;
 //      int i;
 
@@ -225,6 +225,10 @@ void setup_cont (void) {
 		decl_control_int_array ("dprst_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("seg2hru_flag", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("glacier_flag", 1, lval);
 

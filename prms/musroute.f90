@@ -45,7 +45,7 @@
       MODULE PRMS_MUSROUTE
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: Replace_flag, Table_flag, Nbankval
+      INTEGER, SAVE :: Replace_flag, Table_flag
       INTEGER, SAVE, ALLOCATABLE :: Nratetable(:), Order(:)
       DOUBLE PRECISION, SAVE :: Flow_out
       REAL, SAVE, ALLOCATABLE :: Czero(:), Cone(:), Ctwo(:)
@@ -60,6 +60,12 @@
       INTEGER, SAVE, ALLOCATABLE :: Tosegment(:), Hru_segment(:)
       INTEGER, SAVE, ALLOCATABLE :: Obsin_segment(:), Segment_type(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='musroute')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Streamflow Routing')
+      
       END MODULE PRMS_MUSROUTE
 
 !***********************************************************************
@@ -101,21 +107,21 @@
 !***********************************************************************
       musroute_decl = 1
 
-      Version_musroute = '$Id: musroute.f90 3781 2011-10-19 17:26:16Z rsregan $'
+      Version_musroute = '$Id: musroute.f90 4078 2012-01-05 23:47:36Z rsregan $'
       Musroute_nc = INDEX( Version_musroute, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_musroute(:Musroute_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME, Version_musroute(:Musroute_nc))/=0 ) STOP
       ENDIF
 
       ALLOCATE ( Obsin_segment(Nsegment) )
-      IF ( declparam('musroute', 'obsin_segment', 'nsegment', 'integer', &
+      IF ( declparam(MODNAME, 'obsin_segment', 'nsegment', 'integer', &
            '0', 'bounded', 'nobs', &
            'Index of measured streamflow station that replaces inflow to a segment', &
            'Index of measured streamflow station that replaces inflow to a segment', &
            'none')/=0 ) CALL read_error(1, 'obsin_segment')
 
       ALLOCATE ( Segment_type(Nsegment) )
-      IF ( declparam('musroute', 'segment_type', 'nsegment','integer', &
+      IF ( declparam(MODNAME, 'segment_type', 'nsegment','integer', &
            '0', '0', '3', &
            'Segment type', &
            'Segment type (0=link; 1=reservoir; 2=diversion; 3=replace inflow)', &
@@ -125,7 +131,7 @@
 !     the declare function
 
       ALLOCATE ( Tosegment(Nsegment) )
-      IF ( declparam('musroute', 'tosegment', 'nsegment', 'integer', &
+      IF ( declparam(MODNAME, 'tosegment', 'nsegment', 'integer', &
            '0', 'bounded', 'nsegment', &
            'The index of the downstream segment', &
            'Index of downstream segment to which the segment'// &
@@ -134,21 +140,21 @@
            'none')/=0 ) CALL read_error(1, 'tosegment')
 
       ALLOCATE ( Hru_segment(Nhru) )
-      IF ( declparam('musroute', 'hru_segment', 'nhru', 'integer', &
+      IF ( declparam(MODNAME, 'hru_segment', 'nhru', 'integer', &
            '0', 'bounded', 'nsegment', &
            'Segment index for HRU lateral inflows', &
            'Segment index to which an HRU contributes lateral flows'// &
            ' (surface runoff, interflow, and groundwater discharge)', &
            'none')/=0 ) CALL read_error(1, 'hru_segment')
 
-!      IF ( decl param('musroute', 'final_segment', 'one', 'integer', &
+!      IF ( decl param(MODNAME, 'final_segment', 'one', 'integer', &
 !           '0', 'bounded', 'nsegment', &
 !           'Index of the final segment in the system', &
 !           'Every routing network will have a final segment. Enter this final segment index', &
 !           'none')/=0 ) CALL read_error(1, 'final_segment')
 
       ALLOCATE ( K_coef(Nsegment) )
-      IF ( declparam('musroute', 'K_coef', 'nsegment', 'real', &
+      IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
            '0.0',  '0.0', '240.0', &
            'Muskingum storage coefficient', &
            'Travel time of flood wave from one segment to the next'// &
@@ -158,7 +164,7 @@
            'hours')/=0 ) CALL read_error(1, 'K_coef')
 
       ALLOCATE ( X_coef(Nsegment) )
-      IF ( declparam('musroute', 'x_coef', 'nsegment', 'real', &
+      IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
            '0.2', '0.0', '0.5', &
            'Routing weighting factor', &
            'The amount of attenuation of the flow wave, called the'// &
@@ -170,37 +176,37 @@
 !     yet been declared by other modules.
 
       ALLOCATE ( Seginc_swrad(Nsegment) )
-      IF ( declvar('musroute', 'seginc_swrad', 'nsegment', Nsegment, 'real', &
+      IF ( declvar(MODNAME, 'seginc_swrad', 'nsegment', Nsegment, 'real', &
            'Area-weighted average solar radiation for each segment'// &
            ' from HRUs contributing flow to the segment', &
            'Langleys', Seginc_swrad)/=0 ) CALL read_error(3, 'seginc_swrad')
 
       ALLOCATE ( Seginc_ssflow(Nsegment) )
-      IF ( declvar('musroute', 'seginc_ssflow', 'nsegment', Nsegment, 'real', &
+      IF ( declvar(MODNAME, 'seginc_ssflow', 'nsegment', Nsegment, 'real', &
            'Area-weighted average interflow for each segment from'// &
            ' HRUs contributing flow to the segment', &
            'cfs', Seginc_ssflow)/=0 ) CALL read_error(3, 'seginc_ssflow')
 
       ALLOCATE ( Seginc_gwflow(Nsegment) )
-      IF ( declvar('musroute', 'seginc_gwflow', 'nsegment', Nsegment, 'real', &
+      IF ( declvar(MODNAME, 'seginc_gwflow', 'nsegment', Nsegment, 'real', &
            'Area-weighted average groundwater discharge for each'// &
            ' segment from HRUs contributing flow to the segment', &
            'cfs', Seginc_gwflow)/=0 ) CALL read_error(3, 'seginc_gwflow')
 
       ALLOCATE ( Seginc_sroff(Nsegment) )
-      IF ( declvar('musroute', 'seginc_sroff', 'nsegment', Nsegment, 'real', &
+      IF ( declvar(MODNAME, 'seginc_sroff', 'nsegment', Nsegment, 'real', &
            'Area-weighted average surface runoff for each'// &
            ' segment from HRUs contributing flow to the segment', &
            'cfs', Seginc_sroff)/=0 ) CALL read_error(3, 'seginc_sroff')
 
       ALLOCATE ( Segment_cfs(Nsegment) )
-      IF ( declvar('musroute', 'segment_cfs', 'nsegment', Nsegment, 'real', &
-           'Streamflow leaving a segment', &
+      IF ( declvar(MODNAME, 'segment_cfs', 'nsegment', Nsegment, 'real', &
+           'Total inflow to a segment (sroff, ssres_flow, gwres_flow, upstream streamflow (tosgement_cfs)', &
            'cfs', Segment_cfs)/=0 ) CALL read_error(3, 'segment_cfs')
 
       ALLOCATE ( Tosegment_cfs(Nsegment) )
-      IF ( declvar('musroute', 'tosegment_cfs', 'nsegment', Nsegment, 'real', &
-           'Streamflow entering a segment', &
+      IF ( declvar(MODNAME, 'tosegment_cfs', 'nsegment', Nsegment, 'real', &
+           'Routed streamflow leaving a segment to a downstream segment or basin outlet', &
            'cfs', Tosegment_cfs)/=0 ) CALL read_error(3, 'tosegment_cfs')
 
 !     If we make it through all the declares then set the function
@@ -241,25 +247,25 @@
 !     initialize function including but not limited to those declared
 !     in the declare module
 
-      IF ( getparam('musroute', 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
-      IF ( getparam('musroute', 'hru_segment', Nhru, 'integer', Hru_segment)/=0 ) CALL read_error(2, 'hru_segment')
-      IF ( getparam('musroute', 'segment_type', Nsegment, 'integer', Segment_type)/=0 ) CALL read_error(2, 'segment_type')
+      IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
+      IF ( getparam(MODNAME, 'hru_segment', Nhru, 'integer', Hru_segment)/=0 ) CALL read_error(2, 'hru_segment')
+      IF ( getparam(MODNAME, 'segment_type', Nsegment, 'integer', Segment_type)/=0 ) CALL read_error(2, 'segment_type')
 
       Replace_flag = 0
       DO i = 1, Nsegment
         IF ( Segment_type(i)==3 ) Replace_flag = 1
       ENDDO
       IF ( Replace_flag==1 ) THEN
-        IF ( getparam('musroute', 'obsin_segment', Nsegment, 'integer', Obsin_segment)/=0 ) CALL read_error(2, 'obsin_segment')
+        IF ( getparam(MODNAME, 'obsin_segment', Nsegment, 'integer', Obsin_segment)/=0 ) CALL read_error(2, 'obsin_segment')
       ELSE
         Obsin_segment = 0
       ENDIF
 
-!      IF ( get param('musroute', 'final_segment', 1, 'integer', Final_segment)/=0 ) CALL read_error(1, 'final_segment')
+!      IF ( get param(MODNAME, 'final_segment', 1, 'integer', Final_segment)/=0 ) CALL read_error(1, 'final_segment')
 !      IF ( Final_segment==0 ) Final_segment = Nsegment
 
-      IF ( getparam('musroute', 'K_coef',  Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
-      IF ( getparam('musroute', 'x_coef',  Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
+      IF ( getparam(MODNAME, 'K_coef',  Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
+      IF ( getparam(MODNAME, 'x_coef',  Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
 
       Segment_hruarea = 0.0D0
       DO i = 1, Nsegment

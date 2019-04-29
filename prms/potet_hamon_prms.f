@@ -26,6 +26,11 @@
       INTEGER, SAVE :: Nradpl
       INTEGER :: i, ir, j
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='potet_hamon_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Potential Evapotranspiration')
 !***********************************************************************
       potet_hamon_prms = 1
 
@@ -50,7 +55,8 @@
      +'$Id: potet_hamon_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
         Potet_hamon_prms_nc = INDEX( Version_potet_hamon_prms, ' $' ) +1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_potet_hamon_prms(:Potet_hamon_prms_nc)
+          IF ( declmodule(MODNAME, PROCNAME, 
+     +               Version_potet_hamon_prms(:Potet_hamon_prms_nc)
      +                    )/=0 ) STOP
         ENDIF
 
@@ -58,14 +64,14 @@
         IF ( Nradpl==-1 ) CALL read_error(6, 'nradpl')
 
         ALLOCATE ( Hru_radpl(Nhru) )
-        IF ( declparam('potet', 'hru_radpl', 'nhru', 'integer',
+        IF ( declparam(MODNAME, 'hru_radpl', 'nhru', 'integer',
      +       '1', 'bounded', 'nradpl',
      +       'Index of radiation plane for HRU',
      +       'Index of radiation plane used to compute solar'//
      +       ' radiation for an HRU',
      +       'none')/=0 ) CALL read_error(1, 'hru_radpl')
         ALLOCATE ( Hamon_coef(12) )
-        IF ( declparam('potet', 'hamon_coef', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real',
      +       '0.0055', '0.004', '0.008',
      +       'Monthly air temp coefficient - Hamon',
      +       'Monthly (January to December) air temperature'//
@@ -73,9 +79,9 @@
      +       '????')/=0 ) CALL read_error(1, 'hamon_coef')
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('potet', 'hamon_coef', 12, 'real', Hamon_coef)
+        IF ( getparam(MODNAME, 'hamon_coef', 12, 'real', Hamon_coef)
      +       /=0 ) CALL read_error(2, 'hamon_coef')
-        IF ( getparam('potet', 'hru_radpl', Nhru, 'integer', Hru_radpl)
+        IF ( getparam(MODNAME, 'hru_radpl', Nhru, 'integer', Hru_radpl)
      +       /=0 ) CALL read_error(2, 'hru_radpl') 
       ENDIF
 

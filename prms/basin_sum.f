@@ -59,6 +59,12 @@
       DOUBLE PRECISION :: Basin_sfres_stor, Basin_2ndstflow
 !   Declared Parameters
       INTEGER, SAVE :: Print_type, Print_freq, Outlet_sta
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='basin_sum')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Summary')
+      
       END MODULE PRMS_BASINSUM
 
 !***********************************************************************
@@ -102,10 +108,11 @@
       sumbdecl = 1
 
       Version_basin_sum =
-     +'$Id: basin_sum.f 3792 2011-10-25 16:33:01Z rsregan $'
+     +'$Id: basin_sum.f 4077 2012-01-05 23:46:06Z rsregan $'
       IF ( Print_debug>-1 ) THEN
         Basin_sum_nc = INDEX( Version_basin_sum, ' $' ) + 1
-        IF ( declmodule(Version_basin_sum(:Basin_sum_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME,
+     +   Version_basin_sum(:Basin_sum_nc))/=0 ) STOP
       ENDIF
 
       IF ( declpri('sumb_last_basin_stor', 1, 'real', Last_basin_stor)
@@ -184,7 +191,7 @@
 
 ! declare parameters
       IF ( Nobs>0 .OR. Model==99 ) THEN
-        IF ( declparam('sumb', 'outlet_sta', 'one', 'integer',
+        IF ( declparam(MODNAME, 'outlet_sta', 'one', 'integer',
      +       '1', 'bounded', 'nobs',
      +       'Index of measurement station to use for basin outlet',
      +       'Index of measured streamflow station corresponding to'//
@@ -192,7 +199,7 @@
      +       'none').NE.0 ) CALL read_error(1, 'outlet_sta')
       ENDIF
 
-      IF ( declparam('sumb', 'print_type', 'one', 'integer',
+      IF ( declparam(MODNAME, 'print_type', 'one', 'integer',
      +     '1', '0', '2',
      +     'Type of output written to output file',
      +     'Flag to select the type of results written to the output'//
@@ -200,116 +207,116 @@
      +     ' 1=water balance table; 2=detailed output)',
      +     'none').NE.0 ) CALL read_error(1, 'print_type')
 
-      IF ( declparam('sumb', 'print_freq', 'one', 'integer',
+      IF ( declparam(MODNAME, 'print_freq', 'one', 'integer',
      +     '1', '0', '15',
      +     'Frequency for the output frequency',
      +     'Flag to select the output frequency; for combinations,'//
      +     ' add index numbers, e.g., daily plus yearly = 10;'//
      +     ' yearly plus total = 3 (0=none; 1=run totals; 2=yearly;'//
-     +     ' 4=monthly; 8=daily; or additive combinations) ',
+     +     ' 4=monthly; 8=daily; or additive combinations)',
      +     'none').NE.0 ) CALL read_error(1, 'print_freq')
 
-      IF ( declvar('sumb', 'basin_intcp_evap_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_intcp_evap_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average interception evaporation',
      +     'inches',
      +     Basin_intcp_evap_mo).NE.0 )
      +     CALL read_error(3, 'basin_intcp_evap_mo')
 
-      IF ( declvar('sumb', 'basin_storage', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_storage', 'one', 1, 'real',
      +     'Basin area-weighted average storage in all water'//
      +     ' storage reservoirs',
      +     'inches',
      +     Basin_storage).NE.0 ) CALL read_error(3, 'basin_storage')
 
 !******************basin_storage volume:
-      IF ( declvar('sumb', 'basin_storvol', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_storvol', 'one', 1, 'real',
      +     'Basin area-weighted average storage volume in all'//
      +     ' water storage reservoirs',
      +     'acre-inches',
      +     Basin_storvol).NE.0 ) CALL read_error(3, 'basin_storvol')
 
       ! kept for downward compatibility, set equal to basin_actet
-      IF ( declvar('sumb', 'basin_et', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_et', 'one', 1, 'real',
      +     'Basin area-weighted average actual ET',
      +     'inches',
      +     Basin_et)/=0 ) CALL read_error(3, 'basin_et')
 
-      IF ( declvar('sumb', 'obsq_inches', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'obsq_inches', 'one', 1, 'real',
      +     'Measured streamflow at specified outlet station',
      +     'inches',
      +     Obsq_inches).NE.0 ) CALL read_error(3, 'obsq_inches')
 
-      IF ( declvar('sumb', 'basin_ppt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_ppt_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average precipitation',
      +     'inches',
      +     Basin_ppt_mo).NE.0 ) CALL read_error(3, 'basin_ppt_mo')
 
-      IF ( declvar('sumb', 'basin_net_ppt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_net_ppt_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average net precipitation',
      +     'inches',
      +     Basin_net_ppt_mo).NE.0 )
      +     CALL read_error(3, 'basin_net_ppt_mo')
 
-      IF ( declvar('sumb', 'basin_max_temp_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_max_temp_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average maximum air temperature',
      +     'degrees',
      +     Basin_max_temp_mo).NE.0 )
      +     CALL read_error(3, 'basin_max_temp_mo')
 
-      IF ( declvar('sumb', 'basin_min_temp_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_min_temp_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average minimum air temperature',
      +     'degrees',
      +     Basin_min_temp_mo).NE.0 )
      +     CALL read_error(3, 'basin_min_temp_mo')
 
-      IF ( declvar('sumb', 'basin_potet_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_potet_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average potential ET',
      +     'inches',
      +     Basin_potet_mo).NE.0 ) CALL read_error(3, 'basin_potet_mo')
 
-      IF ( declvar('sumb', 'basin_actet_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_actet_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average actual ET',
      +     'inches',
      +     Basin_actet_mo).NE.0 ) CALL read_error(3, 'basin_actet_mo')
 
-      IF ( declvar('sumb', 'basin_et_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_et_mo', 'one', 1, 'real',
      +     'Total monthly basin_et',
      +     'inches',
      +     Basin_et_mo).NE.0 ) RETURN
 
-      IF ( declvar('sumb', 'basin_snowmelt_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_snowmelt_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average snowmelt',
      +     'inches',
      +     Basin_snowmelt_mo).NE.0 )
      +     CALL read_error(3, 'basin_snowmelt_mo')
 
-      IF ( declvar('sumb', 'basin_gwflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_gwflow_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average groundwater discharge',
      +     'inches',
      +     Basin_gwflow_mo).NE.0 ) CALL read_error(3, 'basin_gwflow_mo')
 
-      IF ( declvar('sumb', 'basin_ssflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_ssflow_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average interflow',
      +     'inches',
      +     Basin_ssflow_mo).NE.0 ) CALL read_error(3, 'basin_ssflow_mo')
 
-      IF ( declvar('sumb', 'basin_sroff_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_sroff_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average surface runoff',
      +     'inches',
      +     Basin_sroff_mo).NE.0 ) CALL read_error(3, 'basin_sroff_mo')
 
-      IF ( declvar('sumb', 'basin_stflow_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'basin_stflow_mo', 'one', 1, 'real',
      +     'Monthly area-weighted average simulated streamflow',
      +     'inches',
      +     Basin_stflow_mo).NE.0 ) CALL read_error(3, 'basin_stflow_mo')
 
-      IF ( declvar('sumb', 'obsq_inches_mo', 'one', 1, 'real',
+      IF ( declvar(MODNAME, 'obsq_inches_mo', 'one', 1, 'real',
      +     'Measured streamflow at specified outlet station',
      +     'inches',
      +     Obsq_inches_mo).NE.0 ) CALL read_error(3, 'obsq_inches_mo')
 
       ALLOCATE (Hru_et_yr(Nhru))
-      IF ( declvar('sumb', 'hru_et_yr', 'nhru', Nhru, 'real',
+      IF ( declvar(MODNAME, 'hru_et_yr', 'nhru', Nhru, 'real',
      +     'Yearly area-weighted average actual ET for each HRU',
      +     'inches',
      +     Hru_et_yr).NE.0 ) CALL read_error(3, 'hru_et_yr')
@@ -323,7 +330,7 @@
 !***********************************************************************
       INTEGER FUNCTION sumbinit()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Lake_flg, Dprst_flag, Print_debug
+      USE PRMS_MODULE, ONLY: Strmflow_flag, Dprst_flag, Print_debug
       USE PRMS_BASIN, ONLY: Timestep, Endtime
       USE PRMS_FLOWVARS, ONLY: Basin_imperv_stor, Basin_soil_moist,
      +    Basin_ssstor
@@ -341,7 +348,7 @@
       sumbinit = 1
 
       IF ( Nobs>0 ) THEN
-        IF ( getparam('sumb', 'outlet_sta', 1, 'integer', Outlet_sta)
+        IF ( getparam(MODNAME, 'outlet_sta', 1, 'integer', Outlet_sta)
      +       .NE.0 ) CALL read_error(2, 'outlet_sta')
         IF ( Outlet_sta<1 .OR. Outlet_sta>Nobs ) THEN
           PRINT *, 'Warning, invalid value specified for outlet_sta:',
@@ -350,14 +357,14 @@
         ENDIF
       ENDIF
 
-      IF ( getparam('sumb', 'print_type', 1, 'integer', Print_type)
+      IF ( getparam(MODNAME, 'print_type', 1, 'integer', Print_type)
      +     .NE.0 ) CALL read_error(2, 'print_type')
 
-      IF ( getparam('sumb', 'print_freq', 1, 'integer', Print_freq)
+      IF ( getparam(MODNAME, 'print_freq', 1, 'integer', Print_freq)
      +     .NE.0 ) CALL read_error(2, 'print_freq')
 
-      IF ( Lake_flg==1 ) THEN
-        IF ( getvar('strmflow', 'basin_sfres_stor', 1, 'double',
+      IF ( Strmflow_flag==2 ) THEN
+        IF ( getvar(MODNAME, 'basin_sfres_stor', 1, 'double',
      +       Basin_sfres_stor).NE.0 )
      +       CALL read_error(4, 'basin_sfres_stor')
       ELSE
@@ -367,15 +374,15 @@
 !***********************************************************************
 !    Next two variables for depression storage
       IF ( Dprst_flag>0 ) THEN
-        IF ( getvar('sroff', 'basin_dprst_volcl', 1, 'double', 
+        IF ( getvar(MODNAME, 'basin_dprst_volcl', 1, 'double', 
      +       Basin_dprst_volcl).NE.0 )
      +       CALL read_error(4, 'basin_dprst_volcl')
 
-        IF ( getvar('sroff', 'basin_dprst_volop', 1, 'double',
+        IF ( getvar(MODNAME, 'basin_dprst_volop', 1, 'double',
      +       Basin_dprst_volop).NE.0 )
      +       CALL read_error(4, 'basin_dprst_volop')
 
-        IF ( getvar('sroff', 'basin_dprst_evap', 1, 'double', 
+        IF ( getvar(MODNAME, 'basin_dprst_evap', 1, 'double', 
      +       Basin_dprst_evap).NE.0 )
      +       CALL read_error(4, 'basin_dprst_evap')
       ELSE
@@ -534,8 +541,8 @@
 !***********************************************************************
       INTEGER FUNCTION sumbrun()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Lake_flg, Dprst_flag, Cascade_flag, Nhru,
-     +    Print_debug
+      USE PRMS_MODULE, ONLY: Strmflow_flag, Dprst_flag, Cascade_flag,
+     +    Print_debug, Nhru
       USE PRMS_BASIN, ONLY: Cfs2inches, Basin_area_inv,
      +    Active_hrus, Hru_route_order, Basin_cfs, Basin_stflow
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_lakeevap,
@@ -577,25 +584,25 @@
 
       IF ( Dprst_flag>0 ) THEN
 !***** Two variable added for depression storage
-        IF ( getvar('sroff', 'basin_dprst_volop', 1, 'double',
+        IF ( getvar(MODNAME, 'basin_dprst_volop', 1, 'double',
      +       Basin_dprst_volop).NE.0 )
      +       CALL read_error(4, 'basin_dprst_volop')
 
-        IF ( getvar('sroff', 'basin_dprst_volcl', 1, 'double',
+        IF ( getvar(MODNAME, 'basin_dprst_volcl', 1, 'double',
      +       Basin_dprst_volcl).NE.0 )
      +       CALL read_error(4, 'basin_dprst_volcl')
 
-        IF ( getvar('sroff', 'basin_dprst_evap', 1, 'double',
+        IF ( getvar(MODNAME, 'basin_dprst_evap', 1, 'double',
      +       Basin_dprst_evap).NE.0 )
      +       CALL read_error(4, 'basin_dprst_evap')
       ENDIF
 
-      IF ( Lake_flg==1 ) THEN
-        IF ( getvar('strmflow', 'basin_sfres_stor', 1, 'double',
+      IF ( Strmflow_flag==2 ) THEN
+        IF ( getvar(MODNAME, 'basin_sfres_stor', 1, 'double',
      +       Basin_sfres_stor).NE.0 )
      +       CALL read_error(4, 'basin_sfres_stor')
         IF ( Nratetbl>0 ) THEN
-          IF ( getvar('strmflow', 'basin_2ndstflow', 1, 'double',
+          IF ( getvar(MODNAME, 'basin_2ndstflow', 1, 'double',
      +         Basin_2ndstflow).NE.0 )
      +         CALL read_error(4, 'basin_2ndstflow')
         ENDIF
@@ -955,5 +962,4 @@
  9002 FORMAT (17X, 5(' (inches)'))
 
       END SUBROUTINE header_print
-
 

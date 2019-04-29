@@ -19,6 +19,12 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='potet_hamon')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Potential Evapotranspiration')
+      
 !***********************************************************************
       potet_hamon = 1
 
@@ -42,18 +48,18 @@
         Version_potet_hamon = '$Id: potet_hamon.f90 3796 2011-10-25 16:42:38Z rsregan $'
         Potet_hamon_nc = INDEX( Version_potet_hamon, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_potet_hamon(:Potet_hamon_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_potet_hamon(:Potet_hamon_nc))/=0 ) STOP
         ENDIF
 
         ALLOCATE ( Hamon_coef(12) )
-        IF ( declparam('potet', 'hamon_coef', 'nmonths', 'real', &
+        IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real', &
              '0.0055', '0.004', '0.008', &
              'Monthly air temp coefficient - Hamon', &
              'Monthly (January to December) air temperature coefficient used in Hamon potential ET computations', &
              '????')/=0 ) CALL read_error(1, 'hamon_coef')
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('potet', 'hamon_coef', 12, 'real', Hamon_coef)/=0 ) CALL read_error(2, 'hamon_coef')
+        IF ( getparam(MODNAME, 'hamon_coef', 12, 'real', Hamon_coef)/=0 ) CALL read_error(2, 'hamon_coef')
       ENDIF
 
       potet_hamon = 0

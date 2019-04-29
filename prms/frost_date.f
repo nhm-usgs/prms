@@ -34,6 +34,12 @@
       INTEGER, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:)
       INTEGER, SAVE, ALLOCATABLE :: currentSpringFrost(:)
+            
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='frost_date')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Transpiration Period')
+      
       INTEGER :: season, j, jj
 !***********************************************************************
       frost_date = 1
@@ -133,13 +139,14 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_frost_date =
-     +'$Id: frost_date.f 3673 2011-10-05 00:40:23Z rsregan $'
+     +'$Id: frost_date.f 4026 2011-12-07 20:06:57Z rsregan $'
         Frost_date_nc = INDEX( Version_frost_date, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_frost_date(:Frost_date_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME,
+     +        Version_frost_date(:Frost_date_nc))/=0 ) STOP
         ENDIF
     
-        IF ( declparam('frost', 'frost_temp', 'one', 'real',
+        IF ( declparam(MODNAME, 'frost_temp', 'one', 'real',
      +       '28.0', '-10.0', '32.0',
      +       'Temperature of killing frost',
      +       'Temperature of killing frost',
@@ -151,7 +158,7 @@
         ALLOCATE ( currentFallFrost(Nhru), currentSpringFrost(Nhru) )
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('frost', 'frost_temp', 1, 'real', Frost_temp)
+        IF ( getparam(MODNAME, 'frost_temp', 1, 'real', Frost_temp)
      +       /=0 ) CALL read_error(2, 'frost_temp')
         IF ( Timestep==0 ) THEN
           fall_frost = 0
@@ -177,16 +184,16 @@
         ENDDO
         basin_fall_frost(1) = basin_fall_frost(1)*Basin_area_inv
         basin_spring_frost(1) = basin_spring_frost(1)*Basin_area_inv
-      ENDIF
 
-      CALL write_integer_array('fall_frost', 'nhru', Nhru, fall_frost)
-      CALL write_integer_array('spring_frost', 'nhru', Nhru, fall_frost)
-      CALL write_integer_array('basin_fall_frost', 'one', 1,
-     +                         basin_fall_frost)
-      CALL write_integer_array('basin_spring_frost', 'one', 1,
-     +                         basin_spring_frost)
+        CALL write_integer_array('fall_frost', 'nhru', Nhru, fall_frost)
+        CALL write_integer_array('spring_frost', 'nhru', Nhru,
+     +                           spring_frost)
+        CALL write_integer_array('basin_fall_frost', 'one', 1,
+     +                           basin_fall_frost)
+        CALL write_integer_array('basin_spring_frost', 'one', 1,
+     +                           basin_spring_frost)
+      ENDIF
 
       frost_date = 0
       END FUNCTION frost_date
-
 

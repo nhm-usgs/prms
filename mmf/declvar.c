@@ -151,6 +151,7 @@ long declvar (char *module, char *name, char *dimen, long maxsize, char *type,
   long i, size;
 
   PUBVAR **vars, *var;
+//  MODULE_DATA *mod_data;
 
   /*
    * realloc if too large
@@ -182,11 +183,10 @@ long declvar (char *module, char *name, char *dimen, long maxsize, char *type,
               return(1); }
   }
 
-  	// DANGER - markstro - this overrides the module name that is passed in
-	// from the module and replaces it with the name of the last module that
-	// called declmodule
-	module = current_module->name;
-	ADD_to_list (current_module->vars, vkey);
+// Not sure why this stuff is needed, so I commented it out.
+
+	//mod_data = getmodule(module);
+	//ADD_to_list (mod_data->vars, vkey);
 
   /*
    * convert fortran types to C equivalents

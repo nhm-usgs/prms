@@ -40,6 +40,12 @@
       DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682,
      +          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73,
      +          .734, .738, .742, .746, .75/
+     
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ddsolrad')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Radiation')
+      
 !***********************************************************************
       ddsolrad = 1
 
@@ -124,32 +130,33 @@
      +'$Id: ddsolrad.f 3788 2011-10-20 20:29:06Z rsregan $'
         Ddsolrad_nc = INDEX( Version_ddsolrad, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_ddsolrad(:Ddsolrad_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME,
+     +         Version_ddsolrad(:Ddsolrad_nc))/=0 ) STOP
         ENDIF
 
 ! Declare Parameters
         ALLOCATE ( Dday_slope(12) )
-        IF ( declparam('solrad', 'dday_slope', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'dday_slope', 'nmonths', 'real',
      +       '0.4', '0.2', '0.7',
      +       'Slope in temperature degree-day relationship',
      +       'Monthly (January to December) slope in'//
      +       ' degree-day equation',
      +       'dday/temp_units')/=0 ) CALL read_error(1, 'dday_slope')
         ALLOCATE ( Dday_intcp(12) )
-        IF ( declparam('solrad', 'dday_intcp', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'dday_intcp', 'nmonths', 'real',
      +       '-10.0', '-60.0', '4.0',
      +       'Intercept in temperature degree-day relationship',
      +       'Monthly (January to December) intercept in'//
      +       ' degree-day equation',
      +       'dday')/=0 ) CALL read_error(1, 'dday_intcp')
-        IF ( declparam('solrad', 'radadj_slope', 'one', 'real',
+        IF ( declparam(MODNAME, 'radadj_slope', 'one', 'real',
      +       '0.0', '0.0', '1.0',
      +       'Slope in air temperature range adjustment to solar'//
      +       ' radiation equation',
      +       'Slope in air temperature range adjustment to solar'//
      +       ' radiation equation',
      +       'dday/temp_units')/=0 ) CALL read_error(1, 'radadj_slope')
-        IF ( declparam('solrad', 'radadj_intcp', 'one', 'real',
+        IF ( declparam(MODNAME, 'radadj_intcp', 'one', 'real',
      +       '1.0', '0.0', '1.0',
      +       'Intercept in air temperature range adjustment to solar'//
      +       ' radiation equation',
@@ -157,7 +164,7 @@
      +       ' radiation equation',
      +       'dday')/=0 ) CALL read_error(1, 'radadj_intcp')
         ALLOCATE ( Tmax_index(12))
-        IF ( declparam('solrad', 'tmax_index', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'tmax_index', 'nmonths', 'real',
      +       '50.0', '-10.0', '110.0',
      +       'Monthly index temperature',
      +       'Monthly (January to December) index temperature used'//
@@ -166,15 +173,15 @@
      +       'temp_units')/=0 ) CALL read_error(1, 'tmax_index')
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('solrad', 'dday_slope', 12, 'real', Dday_slope)
+        IF ( getparam(MODNAME, 'dday_slope', 12, 'real', Dday_slope)
      +       /=0 ) CALL read_error(2, 'dday_slope')
-        IF ( getparam('solrad', 'dday_intcp', 12, 'real', Dday_intcp)
+        IF ( getparam(MODNAME, 'dday_intcp', 12, 'real', Dday_intcp)
      +       /=0 ) CALL read_error(2, 'dday_intcp')
-        IF ( getparam('solrad', 'radadj_slope', 1, 'real', Radadj_slope)
+        IF ( getparam(MODNAME, 'radadj_slope', 1, 'real', Radadj_slope)
      +       /=0 ) CALL read_error(2, 'radadj_slope')
-        IF ( getparam('solrad', 'radadj_intcp', 1, 'real', Radadj_intcp)
+        IF ( getparam(MODNAME, 'radadj_intcp', 1, 'real', Radadj_intcp)
      +       /=0 ) CALL read_error(2, 'radadj_intcp')
-        IF ( getparam('solrad', 'tmax_index', 12, 'real', Tmax_index)
+        IF ( getparam(MODNAME, 'tmax_index', 12, 'real', Tmax_index)
      +       /=0 ) CALL read_error(2, 'tmax_index')
 
         observed_flag = 0

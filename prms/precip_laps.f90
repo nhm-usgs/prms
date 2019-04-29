@@ -15,7 +15,7 @@
           Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
           Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
-          Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
+          Basin_obs_ppt, Tmaxf, Tminf, Tmax_allrain_f, &
           Adjmix_rain, Precip_units, Nrain, Psta_elev
       USE PRMS_OBS, ONLY: Precip, Nowtime, Nowmonth
       IMPLICIT NONE
@@ -35,6 +35,12 @@
       REAL elh_diff, elp_diff, pmo_diff, pmo_rate, adj_p
       REAL allrain_f_mo, adjmix_mo, ppt
       DOUBLE PRECISION :: sum_obs
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='precip_laps')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Precipitation Distribution')
+      
 !***********************************************************************
       precip_laps = 1
 
@@ -78,15 +84,15 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip_laps = '$Id: precip_laps.f90 3815 2011-10-25 18:33:55Z rsregan $'
+        Version_precip_laps = '$Id: precip_laps.f90 4077 2012-01-05 23:46:06Z rsregan $'
         Precip_laps_nc = INDEX( Version_precip_laps, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_precip_laps(:Precip_laps_nc))/=0 )STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_precip_laps(:Precip_laps_nc))/=0 )STOP
         ENDIF
 
 ! Declare parameters
         ALLOCATE ( Hru_psta(Nhru) )
-        IF ( declparam('precip', 'hru_psta', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'hru_psta', 'nhru', 'integer', &
              '1', 'bounded', 'nrain', &
              'Index of base precipitation station for HRU', &
              'Index of the base precipitation station used for lapse'// &
@@ -94,29 +100,29 @@
              'none')/=0 ) CALL read_error(1, 'hru_psta')
 
         ALLOCATE (Padj_rn(Nrain, 12))
-        IF ( declparam('precip', 'padj_rn', 'nrain,nmonths', 'real', &
+        IF ( declparam(MODNAME, 'padj_rn', 'nrain,nmonths', 'real', &
              '1.0', '-2.0', '10.0', &
              'Rain adjustment factor, by month for each precip station', &
              'Monthly (January to December) factor to adjust'// &
              ' precipitation lapse rate computed between station hru_psta'// &
-             ' and station hru_plaps. Positive factors are mutiplied'// &
+             ' and station hru_plaps; positive factors are mutiplied'// &
              ' times the lapse rate and negative factors are made'// &
              ' positive and substituted for the computed lapse rate', &
              'precip_units')/=0 ) CALL read_error(1, 'padj_rn')
 
         ALLOCATE ( Padj_sn(Nrain, 12) )
-        IF ( declparam('precip', 'padj_sn', 'nrain,nmonths', 'real', &
+        IF ( declparam(MODNAME, 'padj_sn', 'nrain,nmonths', 'real', &
              '1.0', '-2.0', '10.0', &
              'Snow adjustment factor, by month for each precip station', &
              'Monthly (January to December) factor to adjust'// &
              ' precipitation lapse rate computed between station hru_psta'// &
-             ' and station hru_plaps. Positive factors are mutiplied'// &
+             ' and station hru_plaps; positive factors are mutiplied'// &
              ' times the lapse rate and negative factors are made'// &
              ' positive and substituted for the computed lapse rate', &
              'precip_units')/=0 ) CALL read_error(1, 'padj_sn')
 
         ALLOCATE ( Pmn_mo(Nrain, 12) )
-        IF ( declparam('precip', 'pmn_mo', 'nrain,nmonths', 'real', &
+        IF ( declparam(MODNAME, 'pmn_mo', 'nrain,nmonths', 'real', &
              '1.0', '0.00001', '100.0', &
              'Mean monthly precipitation for each lapse precipitation station', &
              'Mean monthly (January to December) precipitation for'// &
@@ -124,7 +130,7 @@
              'precip_units')/=0 ) CALL read_error(1, 'pmn_mo')
 
         ALLOCATE ( Hru_plaps(Nhru) )
-        IF ( declparam('precip', 'hru_plaps', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'hru_plaps', 'nhru', 'integer', &
              '1', 'bounded', 'nrain', &
              'Index of precipitation station to lapse against hru_psta', &
              'Index of the lapse precipitation station used for lapse'// &
@@ -133,11 +139,11 @@
 
 ! Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('precip', 'hru_psta', Nhru, 'integer', Hru_psta)/=0 ) CALL read_error(2, 'hru_psta')
-        IF ( getparam('precip', 'padj_rn', Nrain*12, 'real', Padj_rn)/=0 ) CALL read_error(2, 'padj_rn')
-        IF ( getparam('precip', 'padj_sn', Nrain*12, 'real', Padj_sn)/=0 ) CALL read_error(2, 'padj_sn')
-        IF ( getparam('precip', 'hru_plaps', Nhru, 'integer', Hru_plaps)/=0 ) CALL read_error(2, 'hru_plaps')
-        IF ( getparam('precip', 'pmn_mo', Nrain*12, 'real', Pmn_mo)/=0 ) CALL read_error(2, 'pmn_mo')
+        IF ( getparam(MODNAME, 'hru_psta', Nhru, 'integer', Hru_psta)/=0 ) CALL read_error(2, 'hru_psta')
+        IF ( getparam(MODNAME, 'padj_rn', Nrain*12, 'real', Padj_rn)/=0 ) CALL read_error(2, 'padj_rn')
+        IF ( getparam(MODNAME, 'padj_sn', Nrain*12, 'real', Padj_sn)/=0 ) CALL read_error(2, 'padj_sn')
+        IF ( getparam(MODNAME, 'hru_plaps', Nhru, 'integer', Hru_plaps)/=0 ) CALL read_error(2, 'hru_plaps')
+        IF ( getparam(MODNAME, 'pmn_mo', Nrain*12, 'real', Pmn_mo)/=0 ) CALL read_error(2, 'pmn_mo')
 
         ALLOCATE ( istack(Nrain) )
         ALLOCATE ( snow_adj_lapse(Nhru, 12), rain_adj_lapse(Nhru, 12))
@@ -193,3 +199,4 @@
 
       precip_laps = 0
       END FUNCTION precip_laps
+

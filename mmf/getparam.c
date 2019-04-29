@@ -7,9 +7,9 @@
  *
  * Returns 0 if successful, 1 otherwise.
  *
- * $Id: getparam.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: getparam.c 6154 2011-12-13 19:17:49Z markstro $
  *
-   $Revision: 6064 $
+   $Revision: 6154 $
         $Log: getparam.c,v $
         Revision 1.10  1997/03/26 17:04:14  markstro
         Added function getdataname
@@ -94,48 +94,34 @@ long updateparam (char *name) {
 long getparam_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, double *pval,
 	       ftnlen mnamelen, ftnlen pnamelen, ftnlen ptypelen) {
 
-  char *module, *name, *type;
-  int maxsize;
-  long retval;
+	char *module, *name, *type;
+	int maxsize;
+	long retval;
 
-  /*
-   * copy maxsize to local long int
-   */
+// copy maxsize to local long int
+	maxsize = *pmaxsize;
 
-  maxsize = *pmaxsize;
+// copy args to new strings, and terminate
+	module = (char *) umalloc(mnamelen + 1);
+	strncpy(module, mname, mnamelen);
+	module[mnamelen] = '\0';
 
-  /*
-   * copy args to new strings, and terminate
-   */
+	name = (char *) umalloc(pnamelen + 1);
+	strncpy(name, pname, pnamelen);
+	name[pnamelen] = '\0';
 
-  module = (char *) umalloc(mnamelen + 1);
-  strncpy(module, mname, mnamelen);
-  module[mnamelen] = '\0';
+	type = (char *) umalloc(ptypelen + 1);
+	strncpy(type, ptype, ptypelen);
+	type[ptypelen] = '\0';
 
-  name = (char *) umalloc(pnamelen + 1);
-  strncpy(name, pname, pnamelen);
-  name[pnamelen] = '\0';
-
-  type = (char *) umalloc(ptypelen + 1);
-  strncpy(type, ptype, ptypelen);
-  type[ptypelen] = '\0';
-
-  /*
-   * call C version of getparam()
-   */
-
-  retval = getparam(module, name, maxsize, type, pval);
-
-  /*
-   * ufree up arrays
-   */
+// call C version of getparam()
+	retval = getparam(module, name, maxsize, type, pval);
 
 //ufree(module);
 //ufree(name);
 //ufree(type);
 
-  return(retval);
-
+	return(retval);
 }
 
 /*--------------------------------------------------------------------*\
@@ -146,91 +132,48 @@ long getparam_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, double 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 long getparam (char *module, char *name, int maxsize, char *type, double *pval) {
-  int var_type;
-  PARAM *param;
-  char *pkey;
+	int var_type;
+	PARAM *param;
+	char *pkey;
 
+	pkey = strdup (name);
 
-  /*
-   * compute the key
-   */
-/*
-  pkey = (char *) umalloc (strlen(module) + strlen(name) + 2);
-  (void)strcpy(pkey, module);
-  strcat(strcat(pkey, "."), name);
-*/
-  pkey = strdup (name);
+// convert fortran types to C types
+	var_type = M_LONG;
+	if (!strcmp(type, "real") || !strcmp(type, "float")) {
+		var_type = M_FLOAT;
+	} else if (!strcmp(type, "double precision") || !strcmp(type, "double")) {
+		var_type = M_DOUBLE;
+	} else if (!strcmp (type, "string")) {
+		var_type = M_STRING;
+	}
 
-  /*
-   * convert fortran types to C types
-   */
-  var_type = M_LONG;
-  if (!strcmp(type, "real") || !strcmp(type, "float")) {
-    var_type = M_FLOAT;
-  } else if (!strcmp(type, "double precision") || !strcmp(type, "double")) {
-    var_type = M_DOUBLE;
-  } else if (!strcmp (type, "string")) {
-    var_type = M_STRING;
-  }
+// check that type is possible
+	if((var_type != M_LONG) && (var_type != M_FLOAT) && (var_type != M_DOUBLE) && (var_type != M_STRING)) {
+		(void)fprintf(stderr, "ERROR: data type for parameter %s in module %s has inconsistent uses.\n\n", pkey, module);
+		return(1);
+	}
 
-  /*
-   * check that type is possible
-   */
+// get pointer to parameter with key
+	param = param_addr(pkey);
 
-  if((var_type != M_LONG) && (var_type != M_FLOAT) && (var_type != M_DOUBLE) && (var_type != M_STRING)) {
-    (void)fprintf(stderr,
-	    "ERROR - getparam - type %s is illegal.\n", type);
-    (void)fprintf(stderr, "Key is '%s'.\n", pkey);
-    (void)fprintf(stderr, "Type is '%s'.\n", type);
-    return(1);
-  }
+	if (param == NULL) {
+		(void)fprintf(stderr, "ERROR: getting parameter %s in module %s, but parameter is not found.\n\n", pkey, module);
+		return(1);
+	}
 
-  /*
-   * get pointer to parameter with key
-   */
+//  Check to see if the parameter values were set in the parameter file
+	if (param->read_in == 0) {
+		(void)fprintf(stderr,"WARNING: parameter %s is used by module %s but values are not set in the parameter file.  Module default values are being used.\n\n", pkey, module);
+	}
 
-  param = param_addr(pkey);
+// check that there is enough space allocated in the calling routine
+	if (param->size > maxsize) {
+		(void)fprintf(stderr, "ERROR: parameter %s declared array size is not big enough in module %s.\n\n", pkey, module);
+		return(1);
+	}
 
-  if (param == NULL) {
-    (void)fprintf(stderr,
-	    "ERROR - getparam - parameter not found.\n");
-    (void)fprintf(stderr, "Key:   '%s'\n", pkey);
-    return(1);
-  }
-
-  /*
-  **  Check to see if the parameter values were set in the parameter file
-  */
-  if (param->read_in == 0) {
-    (void)fprintf(stderr,
-	    "getparam - parameter %s is used but values are not set in the parameter file.  Module default values are being used.\n", pkey);
-  }
-
-  /*
-   * check that there is enough space allocated in the calling routine
-   * to accommodate the data
-   */
-
-  if (param->size > maxsize) {
-    (void)fprintf(stderr,
-	    "ERROR - getparam - insufficient space for data transfer.\n");
-    (void)fprintf(stderr, "Key:   '%s'\n", pkey);
-    (void)fprintf(stderr, "Actual size in data base: %ld\n", param->size);
-    (void)fprintf(stderr, "Available space in calling routine: %d\n", maxsize);
-    return(1);
-  }
-/*
-  if (strcmp(Mtypes[param->type], type)) {
-    (void)fprintf(stderr,
-	    "ERROR - getparam - incorrect data type requested.\n");
-    (void)fprintf(stderr, "Key:   '%s'\n", pkey);
-    (void)fprintf(stderr, "Requested type: %s\n", type);
-    (void)fprintf(stderr, "Actual declared type: %s\n", Mtypes[param->type]);
-    return(1);
-  }
-*/
-
-  return paramcopy (param, pval, maxsize);
+	return paramcopy (param, pval, maxsize);
 }
 
 /*--------------------------------------------------------------------*\
@@ -336,9 +279,9 @@ static long paramcopy (PARAM *param, double *pval, int maxsize) {
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 long getdatainfo_ (char *dinfo, ftnlen len) {
-  long retval;
-  retval = getdatainfo (dinfo, len);
-  return(retval);
+	long retval;
+	retval = getdatainfo (dinfo, len);
+	return(retval);
 }
 
 /*--------------------------------------------------------------------*\
@@ -349,8 +292,8 @@ long getdatainfo_ (char *dinfo, ftnlen len) {
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 long getdatainfo (char *dinfo, ftnlen len) {
-  strncpy (dinfo, Mdatainfo, len);
-  return(0);
+	strncpy (dinfo, Mdatainfo, len);
+	return(0);
 }
 
 /*--------------------------------------------------------------------*\
@@ -370,7 +313,7 @@ long getoutname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
 
 	ret = getoutname (dinfo, foo);
 
-    if (strlen (dinfo) >= len) {
+    if (strlen (dinfo) >= (size_t)len) {
 		printf ("getoutname:  path name is too long for your buffer!\n");
         ret = 1;
 	}
@@ -385,7 +328,7 @@ long getoutname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 long getoutname (char *dinfo, char *ext) {
-	sprintf(dinfo, "%s\%s", *control_svar("model_output_file"), ext);
+	sprintf(dinfo, "%s\\%s", *control_svar("model_output_file"), ext);
 	return(0);
 }
 

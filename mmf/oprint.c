@@ -96,225 +96,225 @@ void opstr (char *string) {
 }
 
 
-/*--------------------------------------------------------------------*\
- | FUNCTION     : opint4_
- | COMMENT		: opint4_ : print integer from Fortran
- |                 The fortran call is:
- |                   call opint4(string, array, n)
- | PARAMETERS   : 'string' is a string,
- |                'array' is the INTEGER*4 of long array or scalar to
- |                    be printed
- |                'n' is the number of values in the array, 1 if a scalar.
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void opint4_ (char *str, ftnint *array, ftnint *n, ftnlen stringlen) {
-
-  char *string;
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  /*
-   * copy string to new string
-   */
-
-  string = (char *) umalloc(stringlen + 1);
-  strncpy(string, str, stringlen);
-  string[stringlen] = '\0';
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < *n; i++)
-    (void)fprintf(Moutfile, " %d",array[i]);
-/*
-    (void)fprintf(Moutfile, " %ld",array[i]);
-*/
-
-  (void)fprintf(Moutfile, "\n");
-
-}
-
-/*--------------------------------------------------------------------*\
- | FUNCTION     : oplong
- | COMMENT		: print long from C
- |                  The C call is
- |                      oplong(string, array, n)
- | PARAMETERS   : 'string' is a string
- |                'array' is the INTEGER*4 of long array or scalar
- |                  to be printed
- |                'n' is the number of values in the array, 1 if a scalar.
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void oplong (char *string, long *array, long n) {
-
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < n; i++)
-    (void)fprintf(Moutfile, " %ld", array[i]);
-
-  (void)fprintf(Moutfile, "\n");
-
-}
-
-
-/*--------------------------------------------------------------------*\
- | FUNCTION     : opreal_
- | COMMENT		: print real array from Fortran
- |                 The fortran call is:
- |                   call opreal(string, array, n)
- | PARAMETERS   : 'string' is a string
- |                'array' is the REAL or float array or scalar to be printed
- |                'n' is the number of values in the array, 1 if a scalar.
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void opreal_ (char *str, float *array, ftnint *n, ftnlen stringlen) {
-
-  char *string;
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  /*
-   * copy string to new string
-   */
-
-  string = (char *) umalloc(stringlen + 1);
-  strncpy(string, str, stringlen);
-  string[stringlen] = '\0';
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < *n; i++)
-    (void)fprintf(Moutfile, " %10g", array[i]);
-
-  (void)fprintf(Moutfile, "\n");
-
-}
-
-/*--------------------------------------------------------------------*\
- | FUNCTION     : opfloat
- | COMMENT		: print float array from C
- |                The C call is:
- |                   opfloat(string, array, n)
- | PARAMETERS   : 'string' is a string
- |                'array' is the REAL or float array or scalar to be printed
- |                'n' is the number of values in the array, 1 if a scalar
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void opfloat (char *string, float *array, long n) {
-
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < n; i++)
-    (void)fprintf(Moutfile, " %10g", array[i]);
-
-  (void)fprintf(Moutfile, "\n");
-}
-
-/*--------------------------------------------------------------------*\
- | FUNCTION     : opdble_
- | COMMENT		: print double precision array from Fortran
- |                 The fortran call is:
- |                    call opdble(string, array, n)
- | PARAMETERS   : 'string' is a string
- |                'array' is the double precision array or scalar to be printed
- |                'n' is the number of values in the array, 1 if a scalar
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void opdble_ (char *str, double *array, ftnint *n, ftnlen stringlen) {
-
-  char *string;
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  /*
-   * copy string to new string
-   */
-
-  string = (char *) umalloc(stringlen + 1);
-  strncpy(string, str, stringlen);
-  string[stringlen] = '\0';
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < *n; i++)
-    (void)fprintf(Moutfile, " %10lg", array[i]);
-
-  (void)fprintf(Moutfile, "\n");
-
-}
-
-/*--------------------------------------------------------------------*\
- | FUNCTION     : opdble
- | COMMENT		: print double array from C
- |                  The C call is:
- |                    opdble(string, array, n)
- | PARAMETERS   : 'string' is a string
- |                'array' is the double precision array or scalar to be printed
- |                'n' is the number of values in the array, 1 if a scalar
- | RETURN VALUE : void
- | RESTRICTIONS :
-\*--------------------------------------------------------------------*/
-void opdble (char *string, double *array, long n) {
-
-  int i;
-
-  /*
-   * return if file pointer is NULL
-   */
-
-  if (Moutfile == NULL)
-    return;
-
-  (void)fprintf(Moutfile, "%s ",string);
-
-  for (i=0; i < n; i++)
-    (void)fprintf(Moutfile, " %10lg", array[i]);
-
-  (void)fprintf(Moutfile, "\n");
-
-}
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : opint4_
+// | COMMENT		: opint4_ : print integer from Fortran
+// |                 The fortran call is:
+// |                   call opint4(string, array, n)
+// | PARAMETERS   : 'string' is a string,
+// |                'array' is the INTEGER*4 of long array or scalar to
+// |                    be printed
+// |                'n' is the number of values in the array, 1 if a scalar.
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void opint4_ (char *str, ftnint *array, ftnint *n, ftnlen stringlen) {
+//
+//  char *string;
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  /*
+//   * copy string to new string
+//   */
+//
+//  string = (char *) umalloc(stringlen + 1);
+//  strncpy(string, str, stringlen);
+//  string[stringlen] = '\0';
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < *n; i++)
+//    (void)fprintf(Moutfile, " %d",array[i]);
+///*
+//    (void)fprintf(Moutfile, " %ld",array[i]);
+//*/
+//
+//  (void)fprintf(Moutfile, "\n");
+//
+//}
+//
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : oplong
+// | COMMENT		: print long from C
+// |                  The C call is
+// |                      oplong(string, array, n)
+// | PARAMETERS   : 'string' is a string
+// |                'array' is the INTEGER*4 of long array or scalar
+// |                  to be printed
+// |                'n' is the number of values in the array, 1 if a scalar.
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void oplong (char *string, long *array, long n) {
+//
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < n; i++)
+//    (void)fprintf(Moutfile, " %ld", array[i]);
+//
+//  (void)fprintf(Moutfile, "\n");
+//
+//}
+//
+//
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : opreal_
+// | COMMENT		: print real array from Fortran
+// |                 The fortran call is:
+// |                   call opreal(string, array, n)
+// | PARAMETERS   : 'string' is a string
+// |                'array' is the REAL or float array or scalar to be printed
+// |                'n' is the number of values in the array, 1 if a scalar.
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void opreal_ (char *str, float *array, ftnint *n, ftnlen stringlen) {
+//
+//  char *string;
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  /*
+//   * copy string to new string
+//   */
+//
+//  string = (char *) umalloc(stringlen + 1);
+//  strncpy(string, str, stringlen);
+//  string[stringlen] = '\0';
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < *n; i++)
+//    (void)fprintf(Moutfile, " %10g", array[i]);
+//
+//  (void)fprintf(Moutfile, "\n");
+//
+//}
+//
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : opfloat
+// | COMMENT		: print float array from C
+// |                The C call is:
+// |                   opfloat(string, array, n)
+// | PARAMETERS   : 'string' is a string
+// |                'array' is the REAL or float array or scalar to be printed
+// |                'n' is the number of values in the array, 1 if a scalar
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void opfloat (char *string, float *array, long n) {
+//
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < n; i++)
+//    (void)fprintf(Moutfile, " %10g", array[i]);
+//
+//  (void)fprintf(Moutfile, "\n");
+//}
+//
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : opdble_
+// | COMMENT		: print double precision array from Fortran
+// |                 The fortran call is:
+// |                    call opdble(string, array, n)
+// | PARAMETERS   : 'string' is a string
+// |                'array' is the double precision array or scalar to be printed
+// |                'n' is the number of values in the array, 1 if a scalar
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void opdble_ (char *str, double *array, ftnint *n, ftnlen stringlen) {
+//
+//  char *string;
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  /*
+//   * copy string to new string
+//   */
+//
+//  string = (char *) umalloc(stringlen + 1);
+//  strncpy(string, str, stringlen);
+//  string[stringlen] = '\0';
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < *n; i++)
+//    (void)fprintf(Moutfile, " %10lg", array[i]);
+//
+//  (void)fprintf(Moutfile, "\n");
+//
+//}
+//
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : opdble
+// | COMMENT		: print double array from C
+// |                  The C call is:
+// |                    opdble(string, array, n)
+// | PARAMETERS   : 'string' is a string
+// |                'array' is the double precision array or scalar to be printed
+// |                'n' is the number of values in the array, 1 if a scalar
+// | RETURN VALUE : void
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//void opdble (char *string, double *array, long n) {
+//
+//  int i;
+//
+//  /*
+//   * return if file pointer is NULL
+//   */
+//
+//  if (Moutfile == NULL)
+//    return;
+//
+//  (void)fprintf(Moutfile, "%s ",string);
+//
+//  for (i=0; i < n; i++)
+//    (void)fprintf(Moutfile, " %10lg", array[i]);
+//
+//  (void)fprintf(Moutfile, "\n");
+//
+//}
+//
+///**7****************** LOCAL FUNCTION DEFINITIONS *********************/
+//
+///**8************************** TEST DRIVER ****************************/
+//

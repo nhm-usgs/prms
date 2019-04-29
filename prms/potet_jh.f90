@@ -17,6 +17,12 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, jhcoef_mon
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='potet_jh')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Potential Evapotranspiration')
+      
 !***********************************************************************
       potet_jh = 1
 
@@ -38,29 +44,29 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_jh = '$Id: potet_jh.f90 3673 2011-10-05 00:40:23Z rsregan $'
+        Version_potet_jh = '$Id: potet_jh.f90 4077 2012-01-05 23:46:06Z rsregan $'
         Potet_jh_nc = INDEX( Version_potet_jh, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_potet_jh(:Potet_jh_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_potet_jh(:Potet_jh_nc))/=0 ) STOP
         ENDIF
 
         ALLOCATE ( Jh_coef(12) )
-        IF ( declparam('potet', 'jh_coef', 'nmonths', 'real', &
+        IF ( declparam(MODNAME, 'jh_coef', 'nmonths', 'real', &
              '0.014', '0.005', '0.060', &
              'Monthly air temp coefficient - Jensen-Haise', &
              'Monthly (January to December) air temperature coefficient used in Jensen-Haise potential ET computations', &
              'per degrees F')/=0 ) CALL read_error(1, 'jh_coef')
         ALLOCATE ( Jh_coef_hru(Nhru) )
-        IF ( declparam('potet', 'jh_coef_hru', 'nhru', 'real', &
+        IF ( declparam(MODNAME, 'jh_coef_hru', 'nhru', 'real', &
              '13.0', '5.0', '20.0', &
              'HRU air temp coefficient - Jensen-Haise', &
-             'Air temperature coefficient used in Jensen-Haise potential ET computations for each HRU.', &
+             'Air temperature coefficient used in Jensen-Haise potential ET computations for each HRU', &
              'degrees F')/=0 ) CALL read_error(1, 'jh_coef_hru')
 
 !******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('potet', 'jh_coef', 12, 'real', Jh_coef)/=0 ) CALL read_error(2, 'jh_coef')
-        IF ( getparam('potet', 'jh_coef_hru', Nhru, 'real', Jh_coef_hru)/=0 ) CALL read_error(2, 'jh_coef_hru')
+        IF ( getparam(MODNAME, 'jh_coef', 12, 'real', Jh_coef)/=0 ) CALL read_error(2, 'jh_coef')
+        IF ( getparam(MODNAME, 'jh_coef_hru', Nhru, 'real', Jh_coef_hru)/=0 ) CALL read_error(2, 'jh_coef_hru')
       ENDIF
 
       potet_jh = 0

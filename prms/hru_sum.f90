@@ -5,7 +5,7 @@
       MODULE PRMS_HRUSUM
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: Gwflg, Hrutot_flg
+      INTEGER, SAVE :: Hrutot_flg
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_ppt_mo(:), Hru_net_ppt_mo(:)
       REAL, SAVE, ALLOCATABLE :: Hru_potet_mo(:), Hru_actet_mo(:)
@@ -20,6 +20,12 @@
       REAL, SAVE, ALLOCATABLE :: Stor_last(:)
 !   Declared Parameters
       INTEGER, SAVE :: Pmo, Moyrsum
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='hru_sum')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Summary')
+      
       END MODULE PRMS_HRUSUM
 
 !***********************************************************************
@@ -59,10 +65,10 @@
 !***********************************************************************
       hsumbdecl = 1
 
-      Version_hru_sum = '$Id: hru_sum.f90 3790 2011-10-25 16:27:24Z rsregan $'
+      Version_hru_sum = '$Id: hru_sum.f90 4045 2011-12-12 19:35:25Z rsregan $'
       Hru_sum_nc = INDEX( Version_hru_sum, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_hru_sum(:Hru_sum_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME, Version_hru_sum(:Hru_sum_nc))/=0 ) STOP
       ENDIF
 
       ALLOCATE ( Hru_ppt_yr(Nhru), Hru_net_ppt_yr(Nhru) )
@@ -89,12 +95,12 @@
       IF ( declpri('hsumb_stor_last', Nhru, 'real', Stor_last)/=0 ) RETURN
 
 ! Declare Parameters
-      IF ( declparam('hru_sum', 'pmo', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'pmo', 'one', 'integer', &
            '0', '0', '12', &
            'Month to print HRU summary', 'Month to print HRU summary', &
            'none')/=0 ) CALL read_error(1, 'pmo')
 
-      IF ( declparam('hru_sum', 'moyrsum', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'moyrsum', 'one', 'integer', &
            '0', '0', '1', &
            'Switch for HRU monthly and yearly summary', &
            'Switch for HRU monthly and yearly summary (0=off, 1=on)', &
@@ -102,37 +108,37 @@
 
 ! Declare Variables
       ALLOCATE ( Hru_ppt_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_ppt_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_ppt_mo', 'nhru', Nhru, 'real', &
            'Monthly precipitation distributed to each HRU', &
            'inches', Hru_ppt_mo)/=0 ) CALL read_error(3, 'hru_ppt_mo')
 
       ALLOCATE ( Hru_net_ppt_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_net_ppt_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_net_ppt_mo', 'nhru', Nhru, 'real', &
            'Monthly net precipitation on each HRU', &
            'inches', Hru_net_ppt_mo)/=0 ) CALL read_error(3, 'hru_net_ppt_mo')
 
       ALLOCATE ( Hru_potet_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_potet_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_potet_mo', 'nhru', Nhru, 'real', &
            'Monthly potential ET for each HRU', &
            'inches', Hru_potet_mo)/=0 ) CALL read_error(3, 'hru_potet_mo')
 
       ALLOCATE ( Hru_actet_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_actet_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_actet_mo', 'nhru', Nhru, 'real', &
            'Monthly actual ET from each HRU', &
            'inches', Hru_actet_mo)/=0 ) CALL read_error(3, 'hru_actet_mo')
 
       ALLOCATE ( Hru_snowmelt_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_snowmelt_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_snowmelt_mo', 'nhru', Nhru, 'real', &
            'Monthly snowmelt from each HRU', &
            'inches', Hru_snowmelt_mo)/=0 ) CALL read_error(3, 'hru_snowmelt_mo')
 
       ALLOCATE ( Hru_sroff_mo(Nhru) )
-      IF ( declvar('hru_sum', 'hru_sroff_mo', 'nhru', Nhru, 'real', &
+      IF ( declvar(MODNAME, 'hru_sroff_mo', 'nhru', Nhru, 'real', &
            'Monthly surface runoff from each HRU', &
            'inches', Hru_sroff_mo)/=0 ) CALL read_error(3, 'hru_sroff_mo')
 
       ALLOCATE ( Hru_outflow_tot(Nhru) )
-      IF ( declvar('hru_sum', 'hru_outflow_tot', 'nhru', Nhru, 'double', &
+      IF ( declvar(MODNAME, 'hru_outflow_tot', 'nhru', Nhru, 'double', &
            'Total flow to stream network from each HRU', &
            'cfs', Hru_outflow_tot)/=0 ) CALL read_error(3, 'hru_outflow_tot')
 
@@ -145,7 +151,7 @@
 !***********************************************************************
       INTEGER FUNCTION hsumbinit()
       USE PRMS_HRUSUM
-      USE PRMS_MODULE, ONLY: Nhru, Nssr, Ngw, Cascadegw_flag
+      USE PRMS_MODULE, ONLY: Nhru, Nssr, Ngw
       USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -154,8 +160,8 @@
 !***********************************************************************
       hsumbinit = 1
 
-      IF ( getparam('hru_sum', 'pmo', 1, 'integer', Pmo)/=0 ) CALL read_error(2, 'pmo')
-      IF ( getparam('hru_sum', 'moyrsum', 1, 'integer', Moyrsum)/=0 ) CALL read_error(2, 'moyrsum')
+      IF ( getparam(MODNAME, 'pmo', 1, 'integer', Pmo)/=0 ) CALL read_error(2, 'pmo')
+      IF ( getparam(MODNAME, 'moyrsum', 1, 'integer', Moyrsum)/=0 ) CALL read_error(2, 'moyrsum')
 
       IF ( Timestep==0 ) THEN
         DO i = 1, Nhru
@@ -182,8 +188,6 @@
 
       Hrutot_flg = 0
       IF ( Nhru==Nssr .AND. Nhru==Ngw ) Hrutot_flg = 1
-      Gwflg = 0
-      IF ( Cascadegw_flag==1 .AND. Nhru==Ngw ) Gwflg = 1
 
       hsumbinit = 0
       END FUNCTION hsumbinit
@@ -193,7 +197,7 @@
 !***********************************************************************
       INTEGER FUNCTION hsumbrun()
       USE PRMS_HRUSUM
-      USE PRMS_MODULE, ONLY: Nhru, Nssr, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nhru, Nssr, Cascade_flag, Cascadegw_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, &
           Hru_frac_perv, Hru_area, Hru_gwres, Hru_ssres
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Hru_ppt, Potet, Swrad
@@ -226,8 +230,8 @@
             Hru_outflow_tot(i) = Hru_area(i)*Cfs_conv*(Sroff(i)+Gwres_flow(j)+Ssres_flow(k))
             IF ( Cascade_flag==1 ) Hru_outflow_tot(i) = Hru_outflow_tot(i) + &
                  Hru_area(i)*Cfs_conv*(Hru_hortonian_cascadeflow(i)+Hru_sz_cascadeflow(i))
-            IF ( Gwflg==1 ) Hru_outflow_tot(i) = Hru_outflow_tot(i) + &
-                 Hru_area(i)*Cfs_conv*Hru_gw_cascadeflow(j)
+            IF ( Cascadegw_flag==1 ) Hru_outflow_tot(i) = Hru_outflow_tot(i) + &
+                 Hru_area(i)*Cfs_conv*Hru_gw_cascadeflow(i)
           ENDDO
           hsumbrun = 0
           RETURN

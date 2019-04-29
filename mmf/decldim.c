@@ -239,10 +239,10 @@ long declfix_ (char *dname, ftnint *dval, ftnint *dmax, char *ddescr, ftnlen nam
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long declmodule (char *id) {
+long declmodule (char *mod_name, char * modType, char *id) {
 	char *foo, *cp;
 
-	printf ("declmodule: %s\n", id);
+	printf ("%s:%s (%s)\n", modType, mod_name, id);
 
 	foo = strdup (id);
 	foo = foo + 5;
@@ -252,7 +252,7 @@ long declmodule (char *id) {
 	}
 	
 	current_module = (MODULE_DATA *) umalloc (sizeof(MODULE_DATA));
-	current_module->name = strdup (foo);
+	current_module->name = strdup (mod_name);
 	current_module->version = strdup (id);
 	current_module->params = ALLOC_list ("params", 0, 100);
 	current_module->vars = ALLOC_list ("vars", 0, 100);
@@ -261,15 +261,39 @@ long declmodule (char *id) {
 
 	return 0;
 }
+///*--------------------------------------------------------------------*\
+// | FUNCTION     : getmodule
+// | COMMENT		:
+// | PARAMETERS   :
+// | RETURN VALUE : 
+// | RESTRICTIONS :
+//\*--------------------------------------------------------------------*/
+//MODULE_DATA * getmodule (char *key) { 
+//	MODULE_DATA *module;
+//	long i;
+//
+//	for (i = 0; i < module_db->count; i++) {
+//		module = (MODULE_DATA *)(module_db->itm[i]);
+//	   printf ("comparing %s to %s\n", key, module->name);
+//		if (!strcmp(module->name, key))
+//		return module;
+//	}
+//
+//	/* if no match found, return null */
+//	return NULL;
+//}
+
 /*--------------------------------------------------------------------*\
- | FUNCTION     : set_source_id_
+ | FUNCTION     : declmodule_
  | COMMENT		: called from Fortran to set the version id for the module.
  | PARAMETERS   :
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long declmodule_ (char *id, ftnlen idlen) {
+long declmodule_ (char *mn, char *mt, char *id, ftnlen mnlen , ftnlen mtlen , ftnlen idlen) {
 	char *id_foo;
+	char *mt_foo;
+	char *mn_foo;
 
 /*
 * copy args to new strings, and terminate correctly
@@ -277,7 +301,16 @@ long declmodule_ (char *id, ftnlen idlen) {
 	id_foo = (char *) umalloc(idlen + 1);
 	strncpy(id_foo, id, idlen);
 	id_foo[idlen] = '\0';
-	declmodule (id_foo);
+
+	mt_foo = (char *) umalloc(mtlen + 1);
+	strncpy(mt_foo, mt, mtlen);
+	mt_foo[mtlen] = '\0';
+
+	mn_foo = (char *) umalloc(mnlen + 1);
+	strncpy(mn_foo, mn, mnlen);
+	mn_foo[mnlen] = '\0';
+
+	declmodule (mn_foo, mt_foo, id_foo);
 	return 0;
 }
 

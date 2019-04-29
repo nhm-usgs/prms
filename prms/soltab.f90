@@ -26,6 +26,12 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Soltab_potsw(:, :), Soltab_horad_potsw(:, :)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Hru_aspect(:), Hru_lat(:), Hru_slope(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='soltab')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Table')
+      
       END MODULE PRMS_SOLTAB
 
 !***********************************************************************
@@ -54,6 +60,7 @@
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
       USE PRMS_SOLTAB, ONLY: Hru_slope, Hru_aspect, Hru_lat
+      USE PRMS_SOLTAB, ONLY: MODNAME, PROCNAME
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Version_soltab, Soltab_nc
       IMPLICIT NONE
 ! Functions
@@ -66,25 +73,25 @@
       Version_soltab = '$Id: soltab.f90 3901 2011-11-07 21:47:50Z rsregan $'
       Soltab_nc = INDEX( Version_soltab, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_soltab(:Soltab_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME, Version_soltab(:Soltab_nc))/=0 ) STOP
       ENDIF
 
 !   Declared Parameters
       ALLOCATE ( Hru_slope(Nhru) )
-      IF ( declparam('soltab', 'hru_slope', 'nhru', 'real', &
+      IF ( declparam(MODNAME, 'hru_slope', 'nhru', 'real', &
            '0.0', '0.0', '10.0', &
            'HRU slope', &
            'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
            'decimal fraction')/=0 ) CALL read_error(1, 'hru_slope')
 
       ALLOCATE ( Hru_aspect(Nhru) )
-      IF ( declparam('soltab', 'hru_aspect', 'nhru', 'real', &
+      IF ( declparam(MODNAME, 'hru_aspect', 'nhru', 'real', &
            '0.0', '0.0', '360.0', &
            'HRU aspect', 'Aspect of each HRU', &
            'degrees')/=0 ) CALL read_error(1, 'hru_aspect')
 
       ALLOCATE ( Hru_lat(Nhru) )
-      IF ( declparam('soltab', 'hru_lat', 'nhru', 'real', &
+      IF ( declparam(MODNAME, 'hru_lat', 'nhru', 'real', &
            '40.0', '-90.0', '90.0', &
            'HRU latitude', 'Latitude of each HRU', &
            'degrees')/=0 ) CALL read_error(1, 'hru_lat')
@@ -126,9 +133,9 @@
 
       ALLOCATE ( basin_sunhrs(366), e(366), dm(366) )
 
-      IF ( getparam('soltab', 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
-      IF ( getparam('soltab', 'hru_aspect', Nhru, 'real', Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
-      IF ( getparam('soltab', 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
+      IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
+      IF ( getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
+      IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
 
       DO jd = 1, 366
         jddbl = DBLE(jd)

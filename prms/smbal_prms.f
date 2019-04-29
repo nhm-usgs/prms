@@ -28,6 +28,12 @@
       INTEGER, SAVE, ALLOCATABLE :: Soil_type(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_init(:)
       REAL, SAVE, ALLOCATABLE :: Soil_rechr_init(:), Soil2gw_max(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='smbal_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Soil Zone')
+      
       END MODULE PRMS_SMBAL
 
 !***********************************************************************
@@ -72,32 +78,33 @@
      +'$Id: smbal_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
       Smbal_prms_nc = INDEX( Version_smbal_prms, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_smbal_prms(:Smbal_prms_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME,
+     +         Version_smbal_prms(:Smbal_prms_nc))/=0 ) STOP
       ENDIF
 
 ! Declare Variables
       ALLOCATE (Soil_rechr(Nhru))
-      IF ( declvar('smbal', 'soil_rechr', 'nhru', Nhru, 'real',
+      IF ( declvar(MODNAME, 'soil_rechr', 'nhru', Nhru, 'real',
      +     'Current moisture content of soil recharge zone, ie, the'//
      +     ' portion of the soil profile from which evaporation can'//
      +     ' take place',
      +     'inches',
      +     Soil_rechr).NE.0 ) RETURN
 
-      IF ( declvar('smbal', 'basin_soil_rechr', 'one', 1, 'double',
+      IF ( declvar(MODNAME, 'basin_soil_rechr', 'one', 1, 'double',
      +     'Basin area-weighted average for soil_rechr',
      +     'inches',
      +     Basin_soil_rechr).NE.0 ) RETURN
 
       ALLOCATE (Perv_actet(Nhru))
-      IF ( declvar('smbal', 'perv_actet', 'nhru', Nhru, 'real',
+      IF ( declvar(MODNAME, 'perv_actet', 'nhru', Nhru, 'real',
      +     'Actual evapotranspiration from pervious areas of HRU',
      +     'inches',
      +     Perv_actet).NE.0 ) RETURN
 
 ! Declare Parameters
       ALLOCATE (Soil_rechr_init(Nhru))
-      IF ( declparam('smbal', 'soil_rechr_init', 'nhru', 'real',
+      IF ( declparam(MODNAME, 'soil_rechr_init', 'nhru', 'real',
      +     '1.0', '0.0', '10.0',
      +     'Initial value of water for soil recharge zone',
      +     'Initial value for soil recharge zone (upper part of'//
@@ -105,14 +112,14 @@
      +     'inches').NE.0 ) RETURN
 
       ALLOCATE (Soil_moist_init(Nhru))
-      IF ( declparam('smbal', 'soil_moist_init', 'nhru', 'real',
+      IF ( declparam(MODNAME, 'soil_moist_init', 'nhru', 'real',
      +     '3.0', '0.0', '20.0',
      +     'Initial values of water for soil zone',
      +     'Initial value of available water in soil profile',
      +     'inches').NE.0 ) RETURN
 
       ALLOCATE (Soil2gw_max(Nhru))
-      IF ( declparam('smbal', 'soil2gw_max', 'nhru', 'real',
+      IF ( declparam(MODNAME, 'soil2gw_max', 'nhru', 'real',
      +     '0.0', '0.0', '5.0',
      +     'Maximum value for soil water excess to groundwater',
      +     'The maximum amount of the soil water excess for an HRU'//
@@ -121,7 +128,7 @@
      +     ' inches').NE.0 ) RETURN
 
       ALLOCATE (Soil_type(Nhru))
-      IF ( declparam('smbal', 'soil_type', 'nhru', 'integer',
+      IF ( declparam(MODNAME, 'soil_type', 'nhru', 'integer',
      +     '2', '1', '3',
      +     'HRU soil type', 'HRU soil type (1=sand; 2=loam; 3=clay)',
      +     'none').NE.0 ) RETURN
@@ -151,10 +158,10 @@
 !***********************************************************************
       sminit = 1
 
-      IF ( getparam('smbal', 'soil2gw_max', Nhru, 'real', Soil2gw_max)
+      IF ( getparam(MODNAME, 'soil2gw_max', Nhru, 'real', Soil2gw_max)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('smbal', 'soil_type', Nhru, 'integer', Soil_type)
+      IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type)
      +     .NE.0 ) RETURN
 
       IF ( Timestep==0 ) THEN
@@ -163,9 +170,9 @@
           Perv_actet(i) = 0.0
           Soil2gw(i) = 0
 ! do only once so restart uses saved values
-          IF ( getparam('smbal', 'soil_moist_init', Nhru, 'real',
+          IF ( getparam(MODNAME, 'soil_moist_init', Nhru, 'real',
      +         Soil_moist_init).NE.0 ) STOP
-          IF ( getparam('smbal', 'soil_rechr_init', Nhru, 'real',
+          IF ( getparam(MODNAME, 'soil_rechr_init', Nhru, 'real',
      +         Soil_rechr_init).NE.0 ) STOP
           Soil_rechr(i) = Soil_rechr_init(i)
           Soil_moist(i) = Soil_moist_init(i)

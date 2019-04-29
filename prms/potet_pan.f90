@@ -20,6 +20,12 @@
       INTEGER :: i, k, j
       REAL :: epancoef_mo
       REAL, SAVE, ALLOCATABLE :: last_pan_evap(:)
+          
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='potet_pan')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Potential Evapotranspiration')
+      
 !***********************************************************************
       potet_pan = 1
 
@@ -44,17 +50,17 @@
         Version_potet_pan = '$Id: potet_pan.f90 3797 2011-10-25 16:43:33Z rsregan $'
         Potet_pan_nc = INDEX( Version_potet_pan, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_potet_pan(:Potet_pan_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_potet_pan(:Potet_pan_nc))/=0 ) STOP
         ENDIF
 
         ALLOCATE ( Epan_coef(12) )
-        IF ( declparam('potet', 'epan_coef', 'nmonths', 'real', &
+        IF ( declparam(MODNAME, 'epan_coef', 'nmonths', 'real', &
              '1.0', '0.2', '3.0', &
              'Evaporation pan coefficient', &
              'Monthly (January to December) evaporation pan coefficient', &
              'none')/=0 ) CALL read_error(1, 'epan_coef')
         ALLOCATE ( Hru_pansta(Nhru) )
-        IF ( declparam('potet', 'hru_pansta', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'hru_pansta', 'nhru', 'integer', &
              '0', 'bounded', 'nevap', &
              'Index of pan evaporation station for each HRU', &
              'Index of pan evaporation station used to compute HRU potential ET', &
@@ -65,8 +71,8 @@
           PRINT *, 'ERROR, potet_pan module selected, but nevap=0'
           STOP
         ENDIF
-        IF ( getparam('potet', 'epan_coef', 12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
-        IF ( getparam('potet', 'hru_pansta', Nhru, 'integer', Hru_pansta)/=0 ) CALL read_error(2, 'hru_pansta')
+        IF ( getparam(MODNAME, 'epan_coef', 12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
+        IF ( getparam(MODNAME, 'hru_pansta', Nhru, 'integer', Hru_pansta)/=0 ) CALL read_error(2, 'hru_pansta')
         DO i = 1, Nhru
           IF ( Hru_pansta(i)<1 .OR. Hru_pansta(i)>Nevap ) THEN
             PRINT *, 'Warning, hru_pansta=0 or hru_pansta>nevap, set to 1 for HRU:', i

@@ -16,6 +16,10 @@
       INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
 ! Local Variables
       INTEGER :: i, j
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='transp_frost')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Transpiration Period')
 !***********************************************************************
       transp_frost = 1
 
@@ -37,28 +41,28 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp_frost = '$Id: transp_frost.f90 3673 2011-10-05 00:40:23Z rsregan $'
+        Version_transp_frost = '$Id: transp_frost.f90 4077 2012-01-05 23:46:06Z rsregan $'
         Transp_frost_nc = INDEX( Version_transp_frost, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_transp_frost(:Transp_frost_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_transp_frost(:Transp_frost_nc))/=0 ) STOP
         ENDIF
 
         ALLOCATE ( Spring_frost(Nhru) )
-        IF ( declparam('potet', 'spring_frost', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'spring_frost', 'nhru', 'integer', &
              '111', '1', '366', &
-             'The solar date (number of days after winter solsitce) of the last killing frost of the spring', &
-             'The solar date (number of days after winter solsitce) of the last killing frost of the spring', &
+             'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
+             'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
              'Solar date')/=0 ) CALL read_error(1, 'spring_frost')
         ALLOCATE ( Fall_frost(Nhru) )
-        IF ( declparam('potet', 'fall_frost', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'fall_frost', 'nhru', 'integer', &
              '264', '1', '366', &
-             'The solar date (number of days after winter solsitce) of the first killing frost of the fall', &
-             'The solar date (number of days after winter solsitce) of the first killing frost of the fall', &
+             'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
+             'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
              'Solar date')/=0 ) CALL read_error(1, 'fall_frost')
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('potet', 'spring_frost', Nhru, 'integer', Spring_frost)/=0 ) CALL read_error(2, 'spring_frost')
-        IF ( getparam('potet', 'fall_frost', Nhru, 'integer', Fall_frost)/=0 ) CALL read_error(2, 'fall_frost')
+        IF ( getparam(MODNAME, 'spring_frost', Nhru, 'integer', Spring_frost)/=0 ) CALL read_error(2, 'spring_frost')
+        IF ( getparam(MODNAME, 'fall_frost', Nhru, 'integer', Fall_frost)/=0 ) CALL read_error(2, 'fall_frost')
 
         DO i = 1, Nhru
           IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN

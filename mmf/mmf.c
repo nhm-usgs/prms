@@ -69,7 +69,7 @@ int main (int argc, char *argv[]) {
 	*/
 	module_db = ALLOC_list ("Module Data Base", 0, 100);
 
-   declmodule("$Id: mmf.c 5803 2010-12-08 22:38:20Z markstro $");
+   //declmodule("PRMS system library", "$Id: mmf.c 5803 2010-12-08 22:38:20Z markstro $");
 
   /*
   **	parse the command-line arguments
@@ -217,7 +217,7 @@ int main (int argc, char *argv[]) {
 
 //      exit(BATCH_run ());
       BATCH_run ();
-
+      ;
     }
 
     exit (0);

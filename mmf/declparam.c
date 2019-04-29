@@ -359,11 +359,12 @@ long declparam (char *module, char *name, char *dimen, char *type, char *value,
 	if (!(var_type = VAR_type (type)))
 		return (0);
 
-	// DANGER - markstro - this overrides the module name that is passed in
-	// from the module and replaces it with the name of the last module that
-	// called declmodule
-	module = current_module->name;
-	ADD_to_list (current_module->params, pkey);
+//Not sure why this stuff is needed. Don't seem to be using it
+	//// DANGER - markstro - this overrides the module name that is passed in
+	//// from the module and replaces it with the name of the last module that
+	//// called declmodule
+	//module = current_module->name;
+	//ADD_to_list (current_module->params, pkey);
 
 	if (CHECK_param_in_db (pkey, module, dimen, var_type, value,
 									minimum, maximum, descr, help, units)) {

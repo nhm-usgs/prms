@@ -20,6 +20,12 @@
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
       REAL, SAVE :: Crad_coef, Crad_exp
       REAL, SAVE, ALLOCATABLE :: Ccov_slope(:), Ccov_intcp(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ccsolrad_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Radiation')
+      
       END MODULE PRMS_CCSOLRAD_RADPL
 
 !***********************************************************************
@@ -65,7 +71,8 @@
      +'$Id: ccsolrad_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
       Ccsolrad_prms_nc = INDEX( Version_ccsolrad_prms, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_ccsolrad_prms(:Ccsolrad_prms_nc))/=0 )
+        IF ( declmodule(MODNAME, PROCNAME,
+     +                   Version_ccsolrad_prms(:Ccsolrad_prms_nc))/=0 )
      +       STOP
       ENDIF
 
@@ -76,14 +83,14 @@
 
 ! Declare Variables
       ALLOCATE (Daily_potsw(Nradpl))
-      IF ( declvar('solrad', 'daily_potsw', 'nradpl', Nradpl, 'real',
+      IF ( declvar(MODNAME, 'daily_potsw', 'nradpl', Nradpl, 'real',
      +     'Potential shortwave radiation for each radiation'//
      +     ' plane for each day',
      +     'langleys',
      +     Daily_potsw).NE.0 ) RETURN
 
       ALLOCATE (Radpl_potsw(Nradpl))
-      IF ( declvar('solrad', 'radpl_potsw', 'nradpl', Nradpl, 'real',
+      IF ( declvar(MODNAME, 'radpl_potsw', 'nradpl', Nradpl, 'real',
      +     'Potential shortwave radiation for each radiation'//
      +     ' plane for each day',
      +     'langleys',
@@ -91,7 +98,7 @@
 
 ! Declare Parameters
       ALLOCATE (Ccov_slope(12))
-      IF ( declparam('solrad', 'ccov_slope', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'ccov_slope', 'nmonths', 'real',
      +     '-0.13', '-0.5', '-0.01',
      +     'Slope in temperature cloud cover relationship',
      +     'Monthly (January to December) coefficient in'//
@@ -99,27 +106,27 @@
      +     'none').NE.0 ) RETURN
 
       ALLOCATE ( Ccov_intcp(12) )
-      IF ( declparam('solrad', 'ccov_intcp', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'ccov_intcp', 'nmonths', 'real',
      +     '1.83', '0.0', '5.0',
      +     'Intercept in temperature cloud cover relationship',
      +     'Monthly (January to December) intercept in'//
      +     ' cloud-cover relationship',
      +     'none').NE.0 ) RETURN
 
-      IF ( declparam('solrad', 'crad_coef', 'one', 'real',
+      IF ( declparam(MODNAME, 'crad_coef', 'one', 'real',
      +     '0.4', '0.1', '0.7',
      +     'Coefficient in cloud cover-solar radiation relationship',
      +     'Coefficient(B) in Thompson(1976) equation',
      +     'none').NE.0 ) RETURN
 
-      IF ( declparam('solrad', 'crad_exp', 'one', 'real',
+      IF ( declparam(MODNAME, 'crad_exp', 'one', 'real',
      +     '0.61', '0.2', '0.8',
      +     'Exponent in cloud cover-solar radiation relationship',
      +     'Exponent(P) in Thompson(1976) equation',
      +     'none').NE.0 ) RETURN
 
       ALLOCATE (Hru_radpl(Nhru))
-      IF ( declparam('solrad', 'hru_radpl', 'nhru', 'integer',
+      IF ( declparam(MODNAME, 'hru_radpl', 'nhru', 'integer',
      +     '1', 'bounded', 'nradpl',
      +     'Index of radiation plane for HRU',
      +     'Index of radiation plane used to compute solar'//
@@ -141,19 +148,19 @@
 !***********************************************************************
       ccsolinit = 1
 
-      IF ( getparam('solrad', 'ccov_slope', 12, 'real', Ccov_slope)
+      IF ( getparam(MODNAME, 'ccov_slope', 12, 'real', Ccov_slope)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'ccov_intcp', 12, 'real', Ccov_intcp)
+      IF ( getparam(MODNAME, 'ccov_intcp', 12, 'real', Ccov_intcp)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'hru_radpl', Nhru, 'integer', Hru_radpl)
+      IF ( getparam(MODNAME, 'hru_radpl', Nhru, 'integer', Hru_radpl)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'crad_coef', 1, 'real', Crad_coef)
+      IF ( getparam(MODNAME, 'crad_coef', 1, 'real', Crad_coef)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'crad_exp', 1, 'real', Crad_exp)
+      IF ( getparam(MODNAME, 'crad_exp', 1, 'real', Crad_exp)
      +     .NE.0 ) RETURN
 
       IF ( Timestep==0 ) THEN

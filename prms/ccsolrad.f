@@ -33,6 +33,12 @@
       INTEGER, SAVE :: observed_flag
       INTEGER :: j, jj, k
       REAL :: pptadj, ccov, radadj
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ccsolrad')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Radiation')
+      
 !***********************************************************************
       ccsolrad = 1
 
@@ -106,32 +112,33 @@
      +'$Id: ccsolrad.f 3794 2011-10-25 16:35:49Z rsregan $'
         Ccsolrad_nc = INDEX( Version_ccsolrad, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_ccsolrad(:Ccsolrad_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME,
+     +                    Version_ccsolrad(:Ccsolrad_nc))/=0 ) STOP
         ENDIF
 
 ! Declare Parameters
         ALLOCATE ( Ccov_slope(12) )
-        IF ( declparam('solrad', 'ccov_slope', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'ccov_slope', 'nmonths', 'real',
      +       '-0.13', '-0.5', '-0.01',
      +       'Slope in temperature cloud cover relationship',
      +       'Monthly (January to December) coefficient in'//
      +       ' cloud-cover relationship',
      +       'none')/=0 ) CALL read_error(1, 'ccov_slope')
         ALLOCATE ( Ccov_intcp(12) )
-        IF ( declparam('solrad', 'ccov_intcp', 'nmonths', 'real',
+        IF ( declparam(MODNAME, 'ccov_intcp', 'nmonths', 'real',
      +       '1.83', '0.0', '5.0',
      +       'Intercept in temperature cloud cover relationship',
      +       'Monthly (January to December) intercept in'//
      +       ' cloud-cover relationship',
      +       'none')/=0 ) CALL read_error(1, 'ccov_intcp')
-        IF ( declparam('solrad', 'crad_coef', 'one', 'real',
+        IF ( declparam(MODNAME, 'crad_coef', 'one', 'real',
      +       '0.4', '0.1', '0.7',
      +       'Coefficient in cloud cover-solar radiation relationship',
      +       'Coefficient(B) in Thompson(1976) equation,' //
      +       ' Solar radiation = B + (1.0-B)*(1.0-cloudcover)**P' //
      +       ' Varies by region, contour map of values in reference',
      +       'none')/=0 ) CALL read_error(1, 'crad_coef')
-        IF ( declparam('solrad', 'crad_exp', 'one', 'real',
+        IF ( declparam(MODNAME, 'crad_exp', 'one', 'real',
      +       '0.61', '0.2', '0.8',
      +       'Exponent in cloud cover-solar radiation relationship',
      +       'Exponent(P) in Thompson(1976) equation:' //
@@ -140,13 +147,13 @@
 
       ELSEIF ( Process(:4)=='init' ) THEN
 ! Get parameters
-        IF ( getparam('solrad', 'ccov_slope', 12, 'real', Ccov_slope)
+        IF ( getparam(MODNAME, 'ccov_slope', 12, 'real', Ccov_slope)
      +       /=0 ) CALL read_error(2, 'ccov_slope')
-        IF ( getparam('solrad', 'ccov_intcp', 12, 'real', Ccov_intcp)
+        IF ( getparam(MODNAME, 'ccov_intcp', 12, 'real', Ccov_intcp)
      +       /=0 ) CALL read_error(2, 'ccov_intcp')
-        IF ( getparam('solrad', 'crad_coef', 1, 'real', Crad_coef)
+        IF ( getparam(MODNAME, 'crad_coef', 1, 'real', Crad_coef)
      +       /=0 ) CALL read_error(2, 'crad_coef')
-        IF ( getparam('solrad', 'crad_exp', 1, 'real', Crad_exp)
+        IF ( getparam(MODNAME, 'crad_exp', 1, 'real', Crad_exp)
      +       /=0 ) CALL read_error(2, 'crad_exp')
 
         observed_flag = 0

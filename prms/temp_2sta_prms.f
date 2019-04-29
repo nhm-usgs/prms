@@ -34,6 +34,10 @@
       REAL :: tmx, tmn, tcrx, tcrn, tmxsta, tmnsta, thi, tlo
       REAL, SAVE :: solrad_tmax_good, solrad_tmin_good
       REAL, SAVE, ALLOCATABLE :: elfac(:)
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='temp_2sta_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Temperature Distribution')
 !***********************************************************************
       temp_2sta_prms = 1
 
@@ -94,17 +98,18 @@
      +'$Id: temp_2sta_prms.f 3677 2011-10-05 23:51:21Z rsregan $'
         Temp_2sta_prms_nc = INDEX( Version_temp_2sta_prms, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_temp_2sta_prms(:Temp_2sta_prms_nc))
+          IF ( declmodule(MODNAME, PROCNAME, 
+     +          Version_temp_2sta_prms(:Temp_2sta_prms_nc))
      +         /=0)STOP
         ENDIF
 
-        IF ( declparam('temp', 'lo_index', 'one', 'integer',
+        IF ( declparam(MODNAME, 'lo_index', 'one', 'integer',
      +       '1', 'bounded', 'ntemp',
      +       'Low elevation temperature station index',
      +       'Index of lower temperature station for daily lapse'//
      +       ' rate computations',
      +       'none')/=0 ) CALL read_error(1, 'lo_index')
-        IF ( declparam('temp', 'hi_index', 'one', 'integer',
+        IF ( declparam(MODNAME, 'hi_index', 'one', 'integer',
      +       '1', 'bounded', 'ntemp',
      +       'High elevation temperature station index',
      +       'Index of upper temperature station for daily lapse'//
@@ -112,9 +117,9 @@
      +       'none')/=0 ) CALL read_error(1, 'hi_index')
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam('temp', 'lo_index', 1, 'integer', Lo_index)
+        IF ( getparam(MODNAME, 'lo_index', 1, 'integer', Lo_index)
      +       /=0 ) CALL read_error(2, 'lo_index')
-        IF ( getparam('temp', 'hi_index', 1, 'integer', Hi_index)
+        IF ( getparam(MODNAME, 'hi_index', 1, 'integer', Hi_index)
      +       /=0 ) CALL read_error(2, 'hi_index')
 
         ALLOCATE ( elfac(Nhru) )

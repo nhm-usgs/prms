@@ -92,7 +92,7 @@ int BATCH_run (void) {
    }
 
    if (call_modules("initialize")) {
-      closeUserFiles();
+      //closeUserFiles();
       fprintf (stderr, "single_run:  Problem with initializing modules.");
       return(1);
    }
@@ -121,7 +121,7 @@ int BATCH_run (void) {
          errno = 0;
 
          if(call_modules("run")) {
-            closeUserFiles ();
+            //closeUserFiles ();
             fprintf (stderr, "Problem while running modules.");
             return(1);
          }

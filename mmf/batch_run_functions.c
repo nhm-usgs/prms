@@ -712,7 +712,7 @@ char *single_run_post_cleanup () {
 * close files and tidy up
 */
   DATA_close ();
-  closeUserFiles();
+  //closeUserFiles();
 
   if (stats_flag)
     fclose(statvar_file);

@@ -34,8 +34,14 @@
       INTEGER, SAVE, ALLOCATABLE :: Gvr_map_id(:), Gvr_hru_id(:)
       REAL, SAVE, ALLOCATABLE :: Gvr_map_frac(:)
 ! Control Parameters
-      INTEGER, SAVE :: NmapOutVars
+      INTEGER, SAVE :: NmapOutVars, mapOutON_OFF
       CHARACTER(LEN=36), SAVE, ALLOCATABLE :: MapOutVar_names(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='map_results')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Summary')
+      
       END MODULE PRMS_MAP_RESULTS
 
 !     ******************************************************************
@@ -79,10 +85,10 @@
 !***********************************************************************
       map_resultsdecl = 1
 
-      Version_map_results = '$Id: map_results.f90 3878 2011-10-28 20:00:09Z rsregan $'
+      Version_map_results = '$Id: map_results.f90 4005 2011-11-29 23:19:23Z rsregan $'
       Map_results_nc = INDEX( Version_map_results, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_map_results(:Map_results_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME, Version_map_results(:Map_results_nc))/=0 ) STOP
       ENDIF
 
       IF ( control_integer(NmapOutVars, 'nmapOutVars')/=0 ) CALL read_error(5, 'nmapOutVars')
@@ -95,32 +101,33 @@
         IF ( control_string_array(MapOutVar_names(i), 'mapOutVar_names', i)/=0 ) CALL read_error(5, 'mapOutVar_names')
       ENDDO
 
+      IF ( control_integer(mapOutON_OFF, 'mapOutON_OFF')/=0 ) CALL read_error(5, 'mapOutON_OFF')
       Ngwcell = getdim('ngwcell')
       IF ( Ngwcell==-1 ) CALL read_error(6, 'ngwcell')
       Mapflg = 1
-      IF ( Nhru/=Ngwcell .AND. Ngwcell/=0 ) Mapflg = 0
+      IF ( (Nhru/=Ngwcell .AND. Ngwcell/=0) .OR. mapOutON_OFF==2 ) Mapflg = 0
 
 ! Declared Parameters
-      IF ( declparam('map_results', 'mapvars_freq', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'mapvars_freq', 'one', 'integer', &
            '0', '0', '5', &
            'Mapped results frequency', &
            'Flag to specify the output frequency (0=none; 1=monthly; 2=yearly; 3=total; 4=monthly and yearly;'// &
            ' 5=monthly, yearly, and total; 6=weekly)', &
            'none')/=0 ) CALL read_error(1, 'mapvars_freq')
 
-      IF ( declparam('map_results', 'mapvars_units', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'mapvars_units', 'one', 'integer', &
            '0', '0', '3', &
            'Units of mapped results', &
            'Flag to specify the output units of mapped results (0=inches/day; 1=feet/day; 2=cm/day; 3=meters/day)', &
            'none')/=0 ) CALL read_error(1, 'mapvars_units')
 
-      IF ( declparam('map_results', 'prms_warmup', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'prms_warmup', 'one', 'integer', &
            '1', '0', '12', &
            'Number of years to simulate before writing mapped results', &
            'Number of years to simulate before writing mapped results', &
            'years')/=0 ) CALL read_error(1, 'prms_warmup')
 
-      IF ( declparam('map_results', 'ncol', 'one', 'integer', &
+      IF ( declparam(MODNAME, 'ncol', 'one', 'integer', &
            '1', '1', '50000', &
            'Number of columns for each row of the mapped results', &
            'Number of columns for each row of the mapped results', &
@@ -131,21 +138,21 @@
         IF ( Nhrucell==-1 ) CALL read_error(6, 'nhrucell')
 
         ALLOCATE (Gvr_map_id(Nhrucell))
-        IF ( declparam('map_results', 'gvr_cell_id', 'nhrucell', 'integer', &
+        IF ( declparam(MODNAME, 'gvr_cell_id', 'nhrucell', 'integer', &
              '1', 'bounded', 'ngwcell', &
              'Corresponding grid cell id associated with each GVR', &
              'Index of the grid cell associated with each gravity reservoir', &
              'none')/=0 ) CALL read_error(1, 'gvr_cell_id')
 
         ALLOCATE (Gvr_map_frac(Nhrucell))
-        IF ( declparam('map_results', 'gvr_cell_pct', 'nhrucell', 'real', &
+        IF ( declparam(MODNAME, 'gvr_cell_pct', 'nhrucell', 'real', &
              '0.0', '0.0', '1.0', &
              'Proportion of the grid cell associated with each GVR', &
              'Proportion of the grid cell area associated with each gravity reservoir', &
              'decimal fraction')/=0 ) CALL read_error(1, 'gvr_cell_pct')
 
         ALLOCATE (Gvr_hru_id(Nhrucell))
-        IF ( declparam('map_results', 'gvr_hru_id', 'nhrucell', 'integer', &
+        IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
              '1', 'bounded', 'nhru', &
              'Corresponding HRU id of each GVR', &
              'Index of the HRU associated with each gravity reservoir', &
@@ -173,22 +180,22 @@
 !***********************************************************************
       map_resultsinit = 1
 
-      IF ( getparam('map_results', 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) &
+      IF ( getparam(MODNAME, 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) &
            CALL read_error(1, 'mapvars_freq')
       IF ( Mapvars_freq==0 ) THEN
         map_resultsinit = 0
         RETURN
       ENDIF
 
-      IF ( getparam('map_results', 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
+      IF ( getparam(MODNAME, 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
       WRITE (Mapfmt, 9001) Ncol
 
       IF ( Mapflg==0 ) THEN
         Nrow = Ngwcell/Ncol
         ALLOCATE ( Map_var_id(Ngwcell) )
-        IF ( getparam('map_results', 'gvr_cell_id', Nhrucell, 'integer', Gvr_map_id)/=0 ) CALL read_error(2, 'gvr_cell_id')
-        IF ( getparam('map_results', 'gvr_cell_pct', Nhrucell, 'real', Gvr_map_frac)/=0 ) CALL read_error(2, 'gvr_cell_pct')
-        IF ( getparam('map_results', 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
+        IF ( getparam(MODNAME, 'gvr_cell_id', Nhrucell, 'integer', Gvr_map_id)/=0 ) CALL read_error(2, 'gvr_cell_id')
+        IF ( getparam(MODNAME, 'gvr_cell_pct', Nhrucell, 'real', Gvr_map_frac)/=0 ) CALL read_error(2, 'gvr_cell_pct')
+        IF ( getparam(MODNAME, 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
 
         ALLOCATE ( temp_frac(Nhrucell), map_frac(Ngwcell) )
         map_frac = 0.0D0
@@ -223,9 +230,7 @@
       Map_var_type = 2
       DO jj = 1, NmapOutVars
         Nc_vars(jj) = INDEX( MapOutVar_names(jj), CHAR(0) ) - 1
-        IF ( getvartype(MapOutVar_names(jj)(:Nc_vars(jj)), Map_var_type(jj) )/=0 ) STOP 'ERROR, in map_results'
-        IF ( Map_var_type(jj)==-1 ) &
-             PRINT *, 'WARNING: ignoring invalid MapOutVar_name:', MapOutVar_names(jj)(:Nc_vars(jj))
+        Map_var_type(jj)= getvartype(MapOutVar_names(jj)(:Nc_vars(jj)), Map_var_type(jj) )
       ENDDO
 
       Weekresults = 0
@@ -283,7 +288,7 @@
         ENDDO
       ENDIF
 
-      IF ( getparam('map_results', 'mapvars_units', 1, 'integer', &
+      IF ( getparam(MODNAME, 'mapvars_units', 1, 'integer', &
            Mapvars_units)/=0 ) CALL read_error(2, 'Mapvars_units')
       IF ( Mapvars_units==0 ) THEN
         Conv_fac = 1.0D0
@@ -295,7 +300,7 @@
         Conv_fac = 0.0254D0
       ENDIF
 
-      IF ( getparam('map_results', 'prms_warmup', 1, 'integer', &
+      IF ( getparam(MODNAME, 'prms_warmup', 1, 'integer', &
            Prms_warmup)/=0 ) CALL read_error(2, 'prms_warmup')
 
       IF ( Prms_warmup>0 ) THEN
@@ -428,10 +433,10 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NmapOutVars
         IF ( Map_var_type(jj)==2 ) THEN
-          IF ( getvar('map_results',MapOutVar_names(jj)(:Nc_vars(jj)), &
+          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
                       Nhru, 'real', Map_var(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Map_var_type(jj)==3 ) THEN
-          IF ( getvar('map_results',MapOutVar_names(jj)(:Nc_vars(jj)), &
+          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
                       Nhru, 'double', Map_var_dble(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ENDIF
       ENDDO
@@ -586,7 +591,7 @@
         ENDIF
       ENDIF
 
- 9002 FORMAT ( A, I5, 2('/',I2.2), A, E12.3 )
+ 9002 FORMAT ( I5, 2('/',I2.2), A, E12.3 )
  9003 FORMAT ( '######################', / )
  9004 FORMAT ( A, 2(I5, 2('/',I2.2)), A, E12.4 )
 

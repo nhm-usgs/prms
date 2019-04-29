@@ -7,9 +7,9 @@
  * control_dvar - returns double *
  * control_svar - returns char ** - string
 
- * $Id: control_var.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: control_var.c 6138 2011-11-29 22:46:23Z markstro $
  *
-   $Revision: 6064 $
+   $Revision: 6138 $
         $Log: control_var.c,v $
         Revision 1.6  1996/02/19 19:59:36  markstro
         Now lints pretty clean
@@ -129,18 +129,18 @@ long control_string_ (char *retval, char *tag, ftnlen len, ftnlen tlen) {
  | RETURN VALUE : 
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long control_string_array_ (char *retval, char *tag, ftnlen index, ftnlen len, ftnlen tlen) {
+long control_string_array_ (char *retval, char *tag, int *index, ftnlen len, ftnlen tlen) {
 	char *foo;
     char **strings;
+    int i;
 
 	foo = (char *) umalloc(tlen + 1);
 	strncpy(foo, tag, tlen);
 	foo[tlen] = '\0';
 
     strings = (char **) control_var(foo);
-
-    index = index - 1;
-    sprintf(retval,"%s", strings[index]);
+    i = *index - 1;
+	strncpy (retval, *(strings+i), len);
 	return 0;
 }
 

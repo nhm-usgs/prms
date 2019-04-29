@@ -15,7 +15,7 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
           Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
-          Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
+          Basin_obs_ppt, Tmaxf, Tminf, Tmax_allrain_f, &
           Adjmix_rain, Precip_units, Nrain
       USE PRMS_OBS, ONLY: Precip, Nowtime, Nowmonth
       IMPLICIT NONE
@@ -31,6 +31,12 @@
       REAL :: adjmix_mo, allrain_f_mo, ppt
       DOUBLE PRECISION :: sum_obs
       INTEGER, SAVE, ALLOCATABLE :: istack(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='precip_1sta')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Precipitation Distribution')
+      
 !***********************************************************************
       precip_1sta = 1
 
@@ -55,7 +61,7 @@
           ppt = Precip(ip)
           IF ( ppt<0.0 ) THEN
             IF ( istack(ip)==0 ) THEN
-              PRINT 9002, ppt, ip, Nowtime
+              PRINT 9002 , MODNAME, ppt, ip, Nowtime
               istack(ip) = 1
             ENDIF
           ! ignore very small amounts of precipitation
@@ -73,28 +79,28 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip_1sta = '$Id: precip_1sta.f90 3815 2011-10-25 18:33:55Z rsregan $'
+        Version_precip_1sta = '$Id: precip_1sta.f90 3933 2011-11-16 00:32:26Z rsregan $'
         Precip_1sta_nc = INDEX( Version_precip_1sta, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_precip_1sta(:Precip_1sta_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_precip_1sta(:Precip_1sta_nc))/=0 ) STOP
         ENDIF
 
 ! Declare parameters
         ALLOCATE ( Hru_psta(Nhru) )
-        IF ( declparam('precip', 'hru_psta', 'nhru', 'integer', &
+        IF ( declparam(MODNAME, 'hru_psta', 'nhru', 'integer', &
              '1', 'bounded', 'nrain', &
              'Index of base precipitation station for HRU', &
              'Index of the base precipitation station used for lapse rate calculations for each HRU', &
              'none')/=0 ) CALL read_error(1, 'hru_psta')
         ALLOCATE ( Rain_adj(Nhru, 12) )
-        IF ( declparam('precip', 'rain_adj', 'nhru,nmonths', 'real', &
+        IF ( declparam(MODNAME, 'rain_adj', 'nhru,nmonths', 'real', &
              '1.0', '0.2', '5.0', &
              'Monthly rain adjustment factor for each HRU', &
              'Monthly (January to December) adjustment factor to measured precipitation on each HRU to account for'// &
              ' differences in elevation, etc.', &
              'decimal fraction')/=0 ) CALL read_error(1, 'rain_adj')
         ALLOCATE ( Snow_adj(Nhru, 12) )
-        IF ( declparam('precip', 'snow_adj', 'nhru,nmonths', 'real', &
+        IF ( declparam(MODNAME, 'snow_adj', 'nhru,nmonths', 'real', &
              '1.0', '0.2', '5.0', &
              'Monthly snow adjustment factor for each HRU', &
              'Monthly (January to December) adjustment factor to measured precipitation on each HRU to account for'// &
@@ -104,21 +110,21 @@
 ! Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
         ALLOCATE ( istack(Nrain) )
-        IF ( getparam('precip', 'hru_psta', Nhru, 'integer', Hru_psta)/=0 ) CALL read_error(2, 'hru_psta')
-        IF ( getparam('precip', 'rain_adj', Nhru*12, 'real', Rain_adj)/=0 ) CALL read_error(2, 'rain_adj')
-        IF ( getparam('precip', 'snow_adj', Nhru*12, 'real', Snow_adj)/=0 ) CALL read_error(2, 'snow_adj')
+        IF ( getparam(MODNAME, 'hru_psta', Nhru, 'integer', Hru_psta)/=0 ) CALL read_error(2, 'hru_psta')
+        IF ( getparam(MODNAME, 'rain_adj', Nhru*12, 'real', Rain_adj)/=0 ) CALL read_error(2, 'rain_adj')
+        IF ( getparam(MODNAME, 'snow_adj', Nhru*12, 'real', Snow_adj)/=0 ) CALL read_error(2, 'snow_adj')
         DO ii = 1, Active_hrus
           i = Hru_route_order(ii)
           IF ( Hru_psta(i)<1 .OR. Hru_psta(i)>Nrain ) THEN
-            PRINT *, 'Warning, hru_psta=0 or hru_psta>nrain for HRU:', i, '; value set to 1'
+            PRINT *, 'WARNING: from module ', MODNAME, ' hru_psta=0 or hru_psta>nrain for HRU:', i, '; value set to 1'
             Hru_psta(i) = 1
           ENDIF
         ENDDO
       ENDIF
 
- 9002 FORMAT ('Warning, bad precipitation value:', F10.3, &
+ 9002 FORMAT ('WARNING: bad precipitation value used by module ', A11, '.  ',   F10.3, &
               '; precip station:', I3, '; Time:', I5, 2('/', I2.2), I3, &
-              2(':', I2.2), '; value set to 0.0')
+              2(':', I2.2), '; value set to 0.0', /)
 
       precip_1sta = 0
       END FUNCTION precip_1sta

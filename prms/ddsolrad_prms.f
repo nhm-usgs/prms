@@ -20,6 +20,12 @@
       REAL, SAVE :: Radadj_slope, Radadj_intcp
       REAL, SAVE, ALLOCATABLE :: Dday_slope(:), Dday_intcp(:)
       REAL, SAVE, ALLOCATABLE :: Tmax_index(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ddsolrad_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Radiation')
+      
       END MODULE PRMS_DDSOLRAD_RADPL
 
 !***********************************************************************
@@ -65,7 +71,8 @@
      +'$Id: ddsolrad_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
       Ddsolrad_prms_nc = INDEX( Version_ddsolrad_prms, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_ddsolrad_prms(:Ddsolrad_prms_nc))/=0 )
+        IF ( declmodule(MODNAME, PROCNAME,
+     +                  Version_ddsolrad_prms(:Ddsolrad_prms_nc))/=0 )
      +       STOP
       ENDIF
 
@@ -76,7 +83,7 @@
 
 ! Declare Parameters
       ALLOCATE (Dday_slope(12))
-      IF ( declparam('solrad', 'dday_slope', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'dday_slope', 'nmonths', 'real',
      +     '0.4', '0.2', '0.7',
      +     'Slope in temperature degree-day relationship',
      +     'Monthly (January to December) slope in'//
@@ -84,14 +91,14 @@
      +     'dday/degree').NE.0 ) RETURN
 
       ALLOCATE (Dday_intcp(12))
-      IF ( declparam('solrad', 'dday_intcp', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'dday_intcp', 'nmonths', 'real',
      +     '-10.0', '-60.0', '4.0',
      +     'Intercept in temperature degree-day relationship',
      +     'Monthly (January to December) intercept in'//
      +     ' degree-day equation',
      +     'dday').NE.0 ) RETURN
 
-      IF ( declparam('solrad', 'radadj_slope', 'one', 'real',
+      IF ( declparam(MODNAME, 'radadj_slope', 'one', 'real',
      +     '0.0', '0.0', '1.0',
      +     'Slope in air temperature range adjustment to solar'//
      +     ' radiation equation',
@@ -99,7 +106,7 @@
      +     ' radiation equation',
      +     'dday/degree F').NE.0 ) RETURN
 
-      IF ( declparam('solrad', 'radadj_intcp', 'one', 'real',
+      IF ( declparam(MODNAME, 'radadj_intcp', 'one', 'real',
      +     '1.0', '0.0', '1.0',
      +     'Intercept in air temperature range adjustment to solar'//
      +     ' radiation equation',
@@ -108,7 +115,7 @@
      +     'dday').NE.0 ) RETURN
 
       ALLOCATE (Hru_radpl(Nhru))
-      IF ( declparam('solrad', 'hru_radpl', 'nhru', 'integer',
+      IF ( declparam(MODNAME, 'hru_radpl', 'nhru', 'integer',
      +     '1', 'bounded', 'nradpl',
      +     'Index of radiation plane for HRU',
      +     'Index of radiation plane used to compute solar'//
@@ -116,7 +123,7 @@
      +     'none').NE.0 ) RETURN
 
       ALLOCATE (Tmax_index(12))
-      IF ( declparam('solrad', 'tmax_index', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'tmax_index', 'nmonths', 'real',
      +     '50.0', '-10.0', '110.0',
      +     'Monthly index temperature',
      +     'Monthly (January to December) index temperature used'//
@@ -138,22 +145,22 @@
 !***********************************************************************
       ddsolinit = 1
 
-      IF ( getparam('solrad', 'dday_slope', 12, 'real', Dday_slope)
+      IF ( getparam(MODNAME, 'dday_slope', 12, 'real', Dday_slope)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'dday_intcp', 12, 'real', Dday_intcp)
+      IF ( getparam(MODNAME, 'dday_intcp', 12, 'real', Dday_intcp)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'radadj_slope', 1, 'real', Radadj_slope)
+      IF ( getparam(MODNAME, 'radadj_slope', 1, 'real', Radadj_slope)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'radadj_intcp', 1, 'real', Radadj_intcp)
+      IF ( getparam(MODNAME, 'radadj_intcp', 1, 'real', Radadj_intcp)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'hru_radpl', Nhru, 'integer', Hru_radpl)
+      IF ( getparam(MODNAME, 'hru_radpl', Nhru, 'integer', Hru_radpl)
      +     .NE.0 ) RETURN
 
-      IF ( getparam('solrad', 'tmax_index', 12, 'real', Tmax_index)
+      IF ( getparam(MODNAME, 'tmax_index', 12, 'real', Tmax_index)
      +     .NE.0 ) RETURN
 
       ddsolinit = 0

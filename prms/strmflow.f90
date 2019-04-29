@@ -15,6 +15,10 @@
       INTEGER, EXTERNAL :: declmodule
 ! Local Variables
       DOUBLE PRECISION :: area_fac
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='strmflow')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Streamflow Routing')
 !***********************************************************************
       strmflow = 1
 
@@ -32,7 +36,7 @@
         Version_strmflow = '$Id: strmflow.f90 3805 2011-10-25 17:13:04Z rsregan $'
         Strmflow_nc = INDEX( Version_strmflow, ' $' ) + 1
         IF ( Print_debug>-1 ) THEN
-          IF ( declmodule(Version_strmflow(:Strmflow_nc))/=0 ) STOP
+          IF ( declmodule(MODNAME, PROCNAME, Version_strmflow(:Strmflow_nc))/=0 ) STOP
         ENDIF
       ENDIF
 

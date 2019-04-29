@@ -39,6 +39,11 @@
       REAL, SAVE, ALLOCATABLE :: Weir_coef(:), Weir_len(:)
       REAL, SAVE, ALLOCATABLE :: Elev_outflow(:), Elevsurf_init(:)
       REAL, SAVE, ALLOCATABLE :: Sfres_out2_a(:), Sfres_out2_b(:)
+! Local Variables
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='strmflow_lake')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Streamflow Routing')
       END MODULE PRMS_STRMFLOW_LAKE
 
 !***********************************************************************
@@ -85,10 +90,11 @@
       strmlkdecl = 1
 
       Version_strmflow_lake =
-     +'$Id: strmflow_lake.f 3673 2011-10-05 00:40:23Z rsregan $'
+     +'$Id: strmflow_lake.f 4006 2011-11-30 00:17:49Z rsregan $'
       Strmflow_lake_nc = INDEX( Version_strmflow_lake, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_strmflow_lake(:Strmflow_lake_nc))/=0 )
+        IF ( declmodule(MODNAME, PROCNAME,
+     +       Version_strmflow_lake(:Strmflow_lake_nc))/=0 )
      +       STOP
       ENDIF
 
@@ -127,7 +133,7 @@
 
 ! Declared Variables
       ALLOCATE (Q_segment(Nsegment))
-      IF ( declvar('strmlake', 'q_segment', 'nsegment', Nsegment,
+      IF ( declvar(MODNAME, 'q_segment', 'nsegment', Nsegment,
      +     'real',
      +     'Outflow from stream segment',
      +     'cfs',
@@ -137,46 +143,46 @@
       IF ( Mxnsos.EQ.-1 ) CALL read_error(1, 'mxnsos')
 
       ALLOCATE (Sfres_sto(Nsfres))
-      IF ( declvar('strmlake', 'sfres_sto', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_sto', 'nsfres', Nsfres, 'real',
      +     'Storage in each lake HRU using Puls or linear storage'//
      +     ' routing',
      +     'cfs-days',
      +     Sfres_sto).NE.0 ) CALL read_error(3, 'sfres_sto')
 
       ALLOCATE (Sfres_vol(Nsfres))
-      IF ( declvar('strmlake', 'sfres_vol', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_vol', 'nsfres', Nsfres, 'real',
      +     'Storage for lake HRUs using broad-crested weir or gate'//
      +     ' opening routing',
      +     'acre-feet',
      +     Sfres_vol).NE.0 ) CALL read_error(3, 'sfres_vol')
 
       ALLOCATE (Sfres_outq(Nsfres))
-      IF ( declvar('strmlake', 'sfres_outq', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_outq', 'nsfres', Nsfres, 'real',
      +     'Streamflow leaving each lake HRU',
      +     'cfs',
      +     Sfres_outq).NE.0 ) CALL read_error(3, 'sfres_outq')
 
       ALLOCATE (Sfres_outcms(Nsfres))
-      IF ( declvar('strmlake', 'sfres_outcms', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_outcms', 'nsfres', Nsfres, 'real',
      +     'Streamflow leaving each lake HRU',
      +     'cms',
      +     Sfres_outcms).NE.0 ) CALL read_error(3, 'sfres_outcms')
 
       ALLOCATE (Din1(Nsfres))
-      IF ( declvar('strmlake', 'din1', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'din1', 'nsfres', Nsfres, 'real',
      +     'Storage reservoir inflow from the previous time step',
      +     'cfs',
      +     Din1).NE.0 ) CALL read_error(3, 'din1')
 
       ALLOCATE (Elevsurf(Nsfres))
-      IF ( declvar('strmlake', 'elevsurf', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'elevsurf', 'nsfres', Nsfres, 'real',
      +     'Elevation for lake HRUs using broad-crested weir or gate'//
      +     ' opening routing',
      +     'feet',
      +     Elevsurf)/=0 ) CALL read_error(3, 'elevsurf')
 
       ALLOCATE (Elevsurf_init(Nsfres))
-      IF ( declparam('strmlake', 'elevsurf_init', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'elevsurf_init', 'nsfres', 'real',
      +     '100.0', '0.0', '10000.0',
      +     'Initial lake surface elevation',
      +     'Initial lake surface elevation for lake HRUs using'//
@@ -184,18 +190,18 @@
      +     'feet')/=0 ) CALL read_error(1, 'elevsurf_init')
 
       ALLOCATE (Sfres_invol(Nsfres))
-      IF ( declvar('strmlake', 'sfres_invol', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_invol', 'nsfres', Nsfres, 'real',
      +     'Volume of inflow to each lake HRU using ',
      +     'acre-feet',
      +     Sfres_invol).NE.0 ) CALL read_error(3, 'sfres_invol')
 
       ALLOCATE (Sfres_outvol(Nsfres))
-      IF ( declvar('strmlake', 'sfres_outvol', 'nsfres', Nsfres, 'real',
+      IF ( declvar(MODNAME, 'sfres_outvol', 'nsfres', Nsfres, 'real',
      +     'Volume of lake outflow',
      +     'acre-inches',
      +     Sfres_outvol).NE.0 ) CALL read_error(3, 'sfres_outvol')
 
-      IF ( declvar('strmlake', 'basin_sfres_stor', 'one', 1, 'double',
+      IF ( declvar(MODNAME, 'basin_sfres_stor', 'one', 1, 'double',
      +     'Basin reservoir storage',
      +     'inches',
      +     Basin_sfres_stor).NE.0 )
@@ -203,7 +209,7 @@
 
 ! Declared Parameters
       ALLOCATE (Sfres_type(Nsfres))
-      IF ( declparam('strmlake', 'sfres_type', 'nsfres', 'integer',
+      IF ( declparam(MODNAME, 'sfres_type', 'nsfres', 'integer',
      +     '1', '1', '6',
      +     'Type of surface reservoir',
      +     'Type of surface reservoir (1=Puls routing;'//
@@ -212,7 +218,7 @@
      +     'none').NE.0 ) CALL read_error(1, 'sfres_type')
 
       ALLOCATE (Sfres_init(Nsfres))
-      IF ( declparam('strmlake', 'sfres_init', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'sfres_init', 'nsfres', 'real',
      +     '0.0', '0.0', '2.0E6',
      +     'Initial storage in each lake HRU',
      +     'Initial storage in each lake HRU using Puls or linear'//
@@ -220,14 +226,14 @@
      +     'cfs-days').NE.0 ) CALL read_error(1, 'sfres_init')
 
       ALLOCATE (Sfres_qro(Nsfres))
-      IF ( declparam('strmlake', 'sfres_qro', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'sfres_qro', 'nsfres', 'real',
      +     '0.1', '0.0', '1.0E7',
      +     'Initial daily mean outflow from each lake HRU',
      +     'Initial daily mean outflow from each lake HRU',
      +     'cfs').NE.0 ) CALL read_error(1, 'sfres_qro')
 
       ALLOCATE (Sfres_din1(Nsfres))
-      IF ( declparam('strmlake', 'sfres_din1', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'sfres_din1', 'nsfres', 'real',
      +     '0.1', '0.0', '1.0E7',
      +     'Initial inflow to each lake HRU',
      +     'Initial inflow to each lake HRU HRU using Puls or linear'//
@@ -235,7 +241,7 @@
      +     'cfs').NE.0 ) CALL read_error(1, 'sfres_din1')
 
       ALLOCATE (Sfres_coef(Nsfres))
-      IF ( declparam('strmlake', 'sfres_coef', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'sfres_coef', 'nsfres', 'real',
      +     '0.1', '0.0001', '1.0',
      +     'Linear reservoir routing coefficient',
      +     'Coefficient in equation to route reservoir storage to'//
@@ -246,7 +252,7 @@
         ALLOCATE (Wvd(Mxnsos, Nsfres), S24(Mxnsos, Nsfres))
         ALLOCATE (C24(Mxnsos, Nsfres))
         ALLOCATE (O2(Mxnsos, Nsfres))
-        IF ( declparam('strmlake', 'o2', 'mxnsos,nsfres', 'real',
+        IF ( declparam(MODNAME, 'o2', 'mxnsos,nsfres', 'real',
      +      '0.0', '0.0', '100000.0',
      +      'Outflow values in outflow/storage tables for Puls routing',
      +      'Outflow values in outflow/storage tables for each HRUs'//
@@ -254,7 +260,7 @@
      +       'cfs').NE.0 ) CALL read_error(1, 'o2')
 
         ALLOCATE (S2(Mxnsos, Nsfres))
-        IF ( declparam('strmlake', 's2', 'mxnsos,nsfres', 'real',
+        IF ( declparam(MODNAME, 's2', 'mxnsos,nsfres', 'real',
      +      '0.0', '0.0', '100000.0',
      +      'Storage values in outflow/storage tables for Puls routing',
      +      'Storage values in outflow/storage table for each HRUs'//
@@ -262,7 +268,7 @@
      +      'cfs-days').NE.0 ) CALL read_error(1, 's2')
 
         ALLOCATE (Nsos(Nsfres))
-        IF ( declparam('strmlake', 'nsos', 'nsfres', 'integer',
+        IF ( declparam(MODNAME, 'nsos', 'nsfres', 'integer',
      +     '0', '0', '10',
      +     'Number of storage/outflow values in table for Puls routing',
      +     'Number of storage/outflow values in table for each lake'//
@@ -271,14 +277,14 @@
       ENDIF
 
       ALLOCATE (Weir_coef(Nsfres))
-      IF ( declparam('strmlake', 'weir_coef', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'weir_coef', 'nsfres', 'real',
      +    '2.7', '2.0', '3.0',
      +    'Broad-crested weir coefficent',
      +    'Coefficient for lake HRUs using broad-crested weir equation',
      +    'none').NE.0 ) CALL read_error(1, 'weir_coef')
 
       ALLOCATE (Weir_len(Nsfres))
-      IF ( declparam('strmlake', 'weir_len', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'weir_len', 'nsfres', 'real',
      +    '5.0', '1.0', '1000.0',
      +    'Broad-crested weir length',
      +    'Weir length for lake HRUs using broad-crested weir equation',
@@ -292,13 +298,13 @@
         ENDIF
 
         ALLOCATE (Sfres_outq2(Nsfres))
-        IF ( declvar('strmlake', 'sfres_outq2', 'nsfres', Nsfres,'real',
+        IF ( declvar(MODNAME, 'sfres_outq2', 'nsfres', Nsfres,'real',
      +       'Streamflow leaving second outflow point for lake HRUs'//
      +       ' using gate opening routing',
      +       'cfs',
      +       Sfres_outq2).NE.0 ) CALL read_error(3, 'sfres_outq2')
 
-        IF ( declvar('strmlake', 'basin_2ndstflow', 'one', 1, 'double',
+        IF ( declvar(MODNAME, 'basin_2ndstflow', 'one', 1, 'double',
      +       'Streamflow from second output point for lake HRUs using'//
      +       ' gate opening routing',
      +       'inches',
@@ -306,7 +312,7 @@
      +       CALL read_error(3, 'basin_2ndstflow')
 
         ALLOCATE (Elev_outflow(Nsfres))
-        IF ( declparam('strmlake', 'elev_outflow', 'nsfres', 'real',
+        IF ( declparam(MODNAME, 'elev_outflow', 'nsfres', 'real',
      +       '100.0', '0.0', '10000.0',
      +       'Elevation of the main outflow point',
      +       'Elevation of the main outflow point in each lake HRU'//
@@ -314,7 +320,7 @@
      +       'feet').NE.0 ) CALL read_error(1, 'elev_outflow')
 
         ALLOCATE (Sfres_out2(Nsfres))
-        IF ( declparam('strmlake', 'sfres_out2', 'nsfres', 'integer',
+        IF ( declparam(MODNAME, 'sfres_out2', 'nsfres', 'integer',
      +       '0', '0', '1',
      +       'Switch to specify a second outflow point from a lake HRU',
      +       'Switch to specify a second outflow point from any lake'//
@@ -322,7 +328,7 @@
      +       'none').NE.0 ) CALL read_error(1, 'sfres_out2')
 
         ALLOCATE (Sfres_out2_a(Nsfres))
-        IF ( declparam('strmlake', 'sfres_out2_a', 'nsfres', 'real',
+        IF ( declparam(MODNAME, 'sfres_out2_a', 'nsfres', 'real',
      +       '1.0', '0.0', '10000.0',
      +       'Outflow coefficient A for lake HRUs with second outlet',
      +       'Coefficient A in outflow equation for any lake HRU'//
@@ -330,14 +336,14 @@
      +       'cfs/ft').NE.0 ) CALL read_error(1, 'sfres_out2_a')
 
         ALLOCATE (Sfres_out2_b(Nsfres))
-        IF ( declparam('strmlake', 'sfres_out2_b', 'nsfres', 'real',
+        IF ( declparam(MODNAME, 'sfres_out2_b', 'nsfres', 'real',
      +       '100.0', '0.0', '10000.0',
      +       'Outflow coefficient A for lake HRUs with second outlet',
      +       'Coefficient B in outflow equation for any lake HRU'//
      +       ' using gate opening routing',
      +       'cfs').NE.0 ) CALL read_error(1, 'sfres_out2_b')
 
-        IF ( declparam('strmlake', 'ratetbl_sfres','nratetbl','integer',
+        IF ( declparam(MODNAME, 'ratetbl_sfres','nratetbl','integer',
      +       '1', 'bounded', 'nsfres',
      +       'Index of lake associated with each rating table',
      +       'Index of lake associated with each rating table for'//
@@ -345,7 +351,7 @@
      +       'none').NE.0 ) CALL read_error(1, 'ratetbl_sfres')
 
         ALLOCATE (Rate_table(Nstage,Ngate))
-        IF ( declparam('strmlake', 'rate_table', 'nstage,ngate', 'real',
+        IF ( declparam(MODNAME, 'rate_table', 'nstage,ngate', 'real',
      +       '5.0', '1.0', '1000.0',
      +       'Rating table with stage (rows) and gate opening (cols)',
      +       'Rating table with stage (rows) and gate opening (cols)'//
@@ -354,14 +360,14 @@
      +       'cfs').NE.0 ) CALL read_error(1, 'rate_table')
 
         ALLOCATE (Tbl_stage(Nstage))
-        IF ( declparam('strmlake', 'tbl_stage', 'nstage', 'real',
+        IF ( declparam(MODNAME, 'tbl_stage', 'nstage', 'real',
      +       '1.0', '0.0', '10000.0',
      +       'Stage values for each row for rating table 1',
      +       'Stage values for each row for rating table 1',
      +       'feet').NE.0 ) CALL read_error(1, 'tbl_stage')
 
         ALLOCATE (Tbl_gate(Ngate))
-        IF ( declparam('strmlake', 'tbl_gate', 'ngate', 'real',
+        IF ( declparam(MODNAME, 'tbl_gate', 'ngate', 'real',
      +       '5.0', '1.0', '1000.0',
      +       'Gate openings for each column for rating table 1',
      +       'Gate openings for each column for rating table 1'//
@@ -374,7 +380,7 @@
             STOP
           ENDIF
           ALLOCATE (Rate_table2(Nstage2,Ngate2))
-          IF ( declparam('strmlake', 'rate_table2', 'nstage2,ngate2',
+          IF ( declparam(MODNAME, 'rate_table2', 'nstage2,ngate2',
      +         'real', '5.0', '1.0', '1000.0',
      +       'Rating table 2 with stage (rows) and gate opening (cols)',
      +       'Rating table with stage (rows) and gate opening (cols)'//
@@ -383,14 +389,14 @@
      +         'cfs').NE.0 ) CALL read_error(1, 'rate_table2')
 
           ALLOCATE (Tbl_stage2(Nstage2))
-          IF ( declparam('strmlake', 'tbl_stage2', 'nstage2', 'real',
+          IF ( declparam(MODNAME, 'tbl_stage2', 'nstage2', 'real',
      +         '1.0', '0.0', '10000.0',
      +         'Stage values for each row for rating table 2',
      +         'Stage values for each row for rating table 2',
      +         'ft').NE.0 ) CALL read_error(1, 'tbl_stage2')
 
           ALLOCATE (Tbl_gate2(Ngate2))
-          IF ( declparam('strmlake', 'tbl_gate2', 'ngate2', 'real',
+          IF ( declparam(MODNAME, 'tbl_gate2', 'ngate2', 'real',
      +         '5.0', '1.0', '1000.0',
      +         'Gate openings for each column for rating table 2',
      +         'Gate openings for each column for rating table 2'//
@@ -404,7 +410,7 @@
             STOP
           ENDIF
           ALLOCATE (Rate_table3(Nstage3,Ngate3))
-          IF ( declparam('strmlake', 'rate_table3', 'nstage3,ngate3',
+          IF ( declparam(MODNAME, 'rate_table3', 'nstage3,ngate3',
      +         'real', '5.0', '1.0', '1000.0',
      +       'Rating table 3 with stage (rows) and gate opening (cols)',
      +       'Rating table with stage (rows) and gate opening (cols)'//
@@ -413,14 +419,14 @@
      +         'cfs').NE.0 ) CALL read_error(1, 'rate_table3')
 
           ALLOCATE (Tbl_stage3(Nstage3))
-          IF ( declparam('strmlake', 'tbl_stage3', 'nstage3', 'real',
+          IF ( declparam(MODNAME, 'tbl_stage3', 'nstage3', 'real',
      +         '1.0', '0.0', '10000.0',
      +         'Stage values for each row for each rating table 3',
      +         'Stage values for each row for each rating table 3',
      +         'ft').NE.0 ) CALL read_error(1, 'tbl_stage3')
 
           ALLOCATE (Tbl_gate3(Ngate3))
-          IF ( declparam('strmlake', 'tbl_gate3', 'ngate3', 'real',
+          IF ( declparam(MODNAME, 'tbl_gate3', 'ngate3', 'real',
      +         '5.0', '1.0', '1000.0',
      +         'Gate openings for each column for each rating table 3',
      +         'Gate openings for each column for rating table 3'//
@@ -434,7 +440,7 @@
             STOP
           ENDIF
           ALLOCATE (Rate_table4(Nstage4,Ngate4))
-          IF ( declparam('strmlake', 'rate_table4', 'nstage4,ngate4',
+          IF ( declparam(MODNAME, 'rate_table4', 'nstage4,ngate4',
      +         'real', '5.0', '1.0', '1000.0',
      +         'Rating table 4 with stage (rows) and discharge (cols)',
      +       'Rating table with stage (rows) and gate opening (cols)'//
@@ -443,14 +449,14 @@
      +         'cfs').NE.0 ) CALL read_error(1, 'rate_table4')
 
           ALLOCATE (Tbl_stage4(Nstage4))
-          IF ( declparam('strmlake', 'tbl_stage4', 'nstage4', 'real',
+          IF ( declparam(MODNAME, 'tbl_stage4', 'nstage4', 'real',
      +         '1.0', '0.0', '10000.0',
      +         'Stage values for each row for each rating table 4',
      +         'Stage values for each row for each rating table 4',
      +         'ft').NE.0 ) CALL read_error(1, 'tbl_stage4')
 
           ALLOCATE (Tbl_gate4(Ngate4))
-          IF ( declparam('strmlake', 'tbl_gate4', 'ngate4', 'real',
+          IF ( declparam(MODNAME, 'tbl_gate4', 'ngate4', 'real',
      +         '5.0', '1.0', '1000.0',
      +         'Gate openings for each column for each rating table 4',
      +         'Gate openings for each column for rating table 4'//
@@ -460,7 +466,7 @@
       ENDIF
 
       ALLOCATE (Sfres_vol_init(Nsfres))
-      IF ( declparam('strmlake', 'sfres_vol_init', 'nsfres', 'real',
+      IF ( declparam(MODNAME, 'sfres_vol_init', 'nsfres', 'real',
      +     '100.0', '0.0', '10000.0',
      +     'Initial lake volume',
      +     'Initial lake volume for lake HRUs using broad-crested'//
@@ -469,7 +475,7 @@
 
 ! Declared Parameters
       ALLOCATE ( Obsout_lake(Nsfres) )
-      IF ( declparam('strmlake', 'obsout_lake', 'nsfres',
+      IF ( declparam(MODNAME, 'obsout_lake', 'nsfres',
      +     'integer',
      +     '0', 'bounded', 'nobs',
      +     'Index of measured streamflow station that'//
@@ -505,52 +511,52 @@
       IF ( Nratetbl>0 ) THEN
         Sfres_outq2 = 0.0
 
-        IF ( getparam('strmlake', 'sfres_out2', Nsfres, 'integer',
+        IF ( getparam(MODNAME, 'sfres_out2', Nsfres, 'integer',
      +       Sfres_out2).NE.0  ) CALL read_error(2, 'sfres_out2')
-        IF ( getparam('strmlake', 'sfres_out2_a', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_out2_a', Nsfres, 'real',
      +       Sfres_out2_a).NE.0 ) CALL read_error(2, 'sfres_out2_a')
-        IF ( getparam('strmlake', 'sfres_out2_b', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_out2_b', Nsfres, 'real',
      +       Sfres_out2_b).NE.0 ) CALL read_error(2, 'sfres_out2_b')
-        IF ( getparam('strmlake', 'elev_outflow', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'elev_outflow', Nsfres, 'real',
      +       Elev_outflow).NE.0 ) CALL read_error(2, 'elev_outflow')
 
-        IF ( getparam('strmlake', 'rate_table', Nstage*Ngate, 'real',
+        IF ( getparam(MODNAME, 'rate_table', Nstage*Ngate, 'real',
      +       Rate_table).NE.0 ) CALL read_error(2, 'rate_table')
-        IF ( getparam('strmlake', 'tbl_stage', Nstage, 'real',
+        IF ( getparam(MODNAME, 'tbl_stage', Nstage, 'real',
      +       Tbl_stage).NE.0 ) CALL read_error(2, 'tbl_stage')
-        IF ( getparam('strmlake', 'tbl_gate', Ngate, 'real',
+        IF ( getparam(MODNAME, 'tbl_gate', Ngate, 'real',
      +       Tbl_gate).NE.0 ) CALL read_error(2, 'tbl_gate')
-        IF ( getparam('strmlake', 'ratetbl_sfres', Nratetbl, 'integer',
+        IF ( getparam(MODNAME, 'ratetbl_sfres', Nratetbl, 'integer',
      +       Ratetbl_sfres).NE.0 ) CALL read_error(2, 'ratetbl_sfres')
 
         IF ( Nratetbl>1 ) THEN
-          IF ( getparam('strmlake', 'rate_table2',Nstage2*Ngate2,'real',
+          IF ( getparam(MODNAME, 'rate_table2',Nstage2*Ngate2,'real',
      +         Rate_table2).NE.0 ) CALL read_error(2, 'rate_table2')
-          IF ( getparam('strmlake', 'tbl_stage2', Nstage2, 'real',
+          IF ( getparam(MODNAME, 'tbl_stage2', Nstage2, 'real',
      +         Tbl_stage2).NE.0 ) CALL read_error(2, 'tbl_stage2')
-          IF ( getparam('strmlake', 'tbl_gate2', Ngate2, 'real',
+          IF ( getparam(MODNAME, 'tbl_gate2', Ngate2, 'real',
      +         Tbl_gate2).NE.0 ) CALL read_error(2, 'tbl_gate2')
         ENDIF
         IF ( Nratetbl>2 ) THEN
-          IF ( getparam('strmlake', 'rate_table3',Nstage3*Ngate3,'real',
+          IF ( getparam(MODNAME, 'rate_table3',Nstage3*Ngate3,'real',
      +         Rate_table3).NE.0 ) CALL read_error(2, 'rate_table3')
-          IF ( getparam('strmlake', 'tbl_stage3', Nstage3, 'real',
+          IF ( getparam(MODNAME, 'tbl_stage3', Nstage3, 'real',
      +         Tbl_stage3).NE.0 ) CALL read_error(2, 'tbl_stage3')
-          IF ( getparam('strmlake', 'tbl_gate3', Ngate3, 'real',
+          IF ( getparam(MODNAME, 'tbl_gate3', Ngate3, 'real',
      +         Tbl_gate3).NE.0 ) CALL read_error(2, 'tbl_gate3')
         ENDIF
         IF ( Nratetbl>3 ) THEN
-          IF ( getparam('strmlake', 'rate_table4',Nstage4*Ngate4,'real',
+          IF ( getparam(MODNAME, 'rate_table4',Nstage4*Ngate4,'real',
      +         Rate_table4).NE.0 ) CALL read_error(2, 'rate_table4')
-          IF ( getparam('strmlake', 'tbl_stage4', Nstage4, 'real',
+          IF ( getparam(MODNAME, 'tbl_stage4', Nstage4, 'real',
      +         Tbl_stage4).NE.0 ) CALL read_error(2, 'tbl_stage4')
-          IF ( getparam('strmlake', 'tbl_gate4', Ngate4, 'real',
+          IF ( getparam(MODNAME, 'tbl_gate4', Ngate4, 'real',
      +         Tbl_gate4).NE.0 ) CALL read_error(2, 'tbl_gate4')
         ENDIF
 
       ENDIF
 
-      IF ( getparam('strmlake', 'sfres_type', Nsfres, 'integer',
+      IF ( getparam(MODNAME, 'sfres_type', Nsfres, 'integer',
      +     Sfres_type).NE.0 ) CALL read_error(2, 'sfres_type')
 
       puls_lin_flag = 0
@@ -570,41 +576,41 @@
         ENDIF
       ENDDO
       IF ( puls_lin_flag==1 ) THEN
-        IF ( getparam('strmlake', 'sfres_init', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_init', Nsfres, 'real',
      +       Sfres_init).NE.0 ) CALL read_error(2, 'sfres_init')
-        IF ( getparam('strmlake', 'sfres_din1', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_din1', Nsfres, 'real',
      +       Sfres_din1).NE.0 ) CALL read_error(2, 'sfres_din1')
         IF ( Mxnsos>0 ) THEN
-          IF ( getparam('strmlake', 'o2', Mxnsos*Nsfres, 'real', O2)
+          IF ( getparam(MODNAME, 'o2', Mxnsos*Nsfres, 'real', O2)
      +         .NE.0 ) CALL read_error(2, 'o2')
-          IF ( getparam('strmlake', 's2', Mxnsos*Nsfres, 'real', S2)
+          IF ( getparam(MODNAME, 's2', Mxnsos*Nsfres, 'real', S2)
      +         .NE.0 ) CALL read_error(2, 's2')
-          IF ( getparam('strmlake', 'nsos', Nsfres, 'integer', Nsos)
+          IF ( getparam(MODNAME, 'nsos', Nsfres, 'integer', Nsos)
      +         .NE.0 ) CALL read_error(2, 'nsos')
         ENDIF
       ENDIF
       IF ( linear_flag==1 ) THEN
-        IF ( getparam('strmlake', 'sfres_coef', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_coef', Nsfres, 'real',
      +       Sfres_coef).NE.0 ) CALL read_error(2, 'sfres_coef')
       ENDIF
       IF ( obs_flag==1 ) THEN
-        IF ( getparam('strmlake', 'obsout_lake', Nsfres, 'integer',
+        IF ( getparam(MODNAME, 'obsout_lake', Nsfres, 'integer',
      +       Obsout_lake).NE.0 ) CALL read_error(2, 'obsout_lake')
       ENDIF
       IF ( weir_rate_flag==1 ) THEN
-        IF ( getparam('strmlake', 'elevsurf_init', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'elevsurf_init', Nsfres, 'real',
      +       Elevsurf_init).NE.0 ) CALL read_error(2, 'elevsurf_init')
-        IF ( getparam('strmlake', 'sfres_vol_init', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'sfres_vol_init', Nsfres, 'real',
      +       Sfres_vol_init).NE.0 ) CALL read_error(2, 'sfres_vol_init')
       ENDIF
       IF ( weir_flag==1 ) THEN
-        IF ( getparam('strmlake', 'weir_coef', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'weir_coef', Nsfres, 'real',
      +       Weir_coef).NE.0 ) STOP
-        IF ( getparam('strmlake', 'weir_len', Nsfres, 'real',
+        IF ( getparam(MODNAME, 'weir_len', Nsfres, 'real',
      +       Weir_len).NE.0 ) STOP
       ENDIF
 
-      IF ( getparam('strmlake', 'sfres_qro', Nsfres, 'real',
+      IF ( getparam(MODNAME, 'sfres_qro', Nsfres, 'real',
      +     Sfres_qro).NE.0 ) CALL read_error(2, 'sfres_qro')
 
       Basin_sfres_stor = 0.0D0
@@ -698,7 +704,7 @@
       USE PRMS_MODULE, ONLY: Nhru, Nsegment, Nsfres
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Basin_cfs,
      +    Basin_cms, Basin_stflow, Basin_sroff_cfs, Basin_ssflow_cfs,
-     +    Basin_gwflow_cfs, CFS2CMS_CONV, NEARZERO, Sfres_hru
+     +    Basin_gwflow_cfs, CFS2CMS_CONV, NEARZERO, Sfres_hru, DNEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Hru_actet, Basin_sroff,
      +    Strm_seg_in, Hortonian_lakes
@@ -766,7 +772,7 @@
         ppt = Hru_ppt(ihru)
         !rsr, sanity check, snowcomp shouldn't have snowpack
         !     as precip should be added directly to lake
-        IF ( Pkwater_equiv(ihru)>NEARZERO ) THEN
+        IF ( Pkwater_equiv(ihru)>DNEARZERO ) THEN
           ppt = Snowmelt(ihru)
           IF ( ppt>0.0 ) PRINT *, 'snowpack on lake HRU:', ihru
         ENDIF

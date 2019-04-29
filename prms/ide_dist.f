@@ -1,12 +1,4 @@
 !***********************************************************************
-!
-!       Thu Dec 15 10:53:00 MST 2011
-! NOTE: This file contains source code which has not been documented and
-!       is considered to be a development version.  Users are advised that
-!       future versions of this code may change both in I/O
-!       specification and performance. DO NOT USE THIS MODULE UNLESS YOU
-!       UNDERSTAND THESE RISKS AND ACCEPT THEM.
-!       
 ! Determines the form of precipitation and distributes precipitation
 ! and temperatures to each HRU based on measurements at stations with
 ! closest elevation or shortest distance to the respective HRU
@@ -36,6 +28,12 @@
       INTEGER, SAVE :: Ndist_tsta, Ndist_psta
       REAL, SAVE :: Dist_exp
       REAL, SAVE, ALLOCATABLE :: Temp_wght_dist(:), Prcp_wght_dist(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='ide_dist')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Climate Distribuition')
+      
       END MODULE PRMS_IDE
 
 !***********************************************************************
@@ -76,39 +74,40 @@
       idedecl = 1
 
       Version_ide_dist =
-     +'$Id: ide_dist.f 3816 2011-10-25 18:43:07Z rsregan $'
+     +'$Id: ide_dist.f 4077 2012-01-05 23:46:06Z rsregan $'
       Ide_dist_nc = INDEX( Version_ide_dist, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_ide_dist(:Ide_dist_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME,
+     +          Version_ide_dist(:Ide_dist_nc))/=0 ) STOP
       ENDIF
 
       ALLOCATE (Tmax_rain_sta(Nrain))
-      IF ( declvar('ide_dist', 'tmax_rain_sta', 'nrain', Nrain, 'real',
+      IF ( declvar(MODNAME, 'tmax_rain_sta', 'nrain', Nrain, 'real',
      +     'Maximum temperature distributed to the precip stations',
      +     'degrees F',
      +     Tmax_rain_sta).NE.0 ) CALL read_error(3, 'tmax_rain_sta')
 
       ALLOCATE (Tmin_rain_sta(Nrain))
-      IF ( declvar('ide_dist', 'tmin_rain_sta', 'nrain', Nrain, 'real',
+      IF ( declvar(MODNAME, 'tmin_rain_sta', 'nrain', Nrain, 'real',
      +     'Minimum temperature distributed to the precip stations',
      +     'degrees F',
      +     Tmin_rain_sta).NE.0 ) CALL read_error(3, 'tmin_rain_sta')
 
 ! declare parameters
       ALLOCATE (Hru_x(Nhru))
-      IF ( declparam('ide_dist', 'hru_x', 'nhru', 'real',
+      IF ( declparam(MODNAME, 'hru_x', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each HRU (albers)', 'X for each HRU (albers)',
      +     'meters').NE.0 ) CALL read_error(1, 'hru_x')
 
       ALLOCATE (Hru_y(Nhru))
-      IF ( declparam('ide_dist', 'hru_y', 'nhru', 'real',
+      IF ( declparam(MODNAME, 'hru_y', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each HRU (albers)', 'Y for each HRU (albers)',
      +     'meters').NE.0 ) CALL read_error(1, 'hru_y')
 
       ALLOCATE (Tsta_x(Ntemp))
-      IF ( declparam('ide_dist', 'tsta_x', 'ntemp', 'real',
+      IF ( declparam(MODNAME, 'tsta_x', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each temperature station (albers)',
      +     'Longitude (X) for each temperature measurement station in'//
@@ -116,7 +115,7 @@
      +     'meters').NE.0 ) CALL read_error(1, 'tsta_x')
 
       ALLOCATE (Tsta_y(Ntemp))
-      IF ( declparam('ide_dist', 'tsta_y', 'ntemp', 'real',
+      IF ( declparam(MODNAME, 'tsta_y', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each temperature station (albers)',
      +     'Latitude (Y) for each temperature measurement station in'//
@@ -124,7 +123,7 @@
      +     'meters').NE.0 ) CALL read_error(1, 'tsta_y')
 
       ALLOCATE (Psta_x(Nrain))
-      IF ( declparam('ide_dist', 'psta_x', 'nrain', 'real',
+      IF ( declparam(MODNAME, 'psta_x', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each precip station (albers)',
      +     'Longitude (X) for each precipitation measurement station'//
@@ -132,7 +131,7 @@
      +     'meters').NE.0 ) CALL read_error(1, 'psta_x')
 
       ALLOCATE (Psta_y(Nrain))
-      IF ( declparam('ide_dist', 'psta_y', 'nrain', 'real',
+      IF ( declparam(MODNAME, 'psta_y', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each precip station (albers)',
      +     'Latitude (Y) for each precipitation measurement station'//
@@ -140,20 +139,24 @@
      +     'meters').NE.0 ) CALL read_error(1, 'psta_y')
 
       ALLOCATE (Tsta_nuse(Ntemp), Temp_nuse(Ntemp))
-      IF ( declparam('ide_dist', 'tsta_nuse', 'ntemp', 'integer',
+      IF ( declparam(MODNAME, 'tsta_nuse', 'ntemp', 'integer',
      +     '1', '0', '1',
      +     '0 = station not used; 1 = station used',
-     +     '0 = station not used; 1 = station used',
+     +     'The subset of temperature stations used in the'//
+     +     ' distribution regression (0=station not used;'//
+     +     ' 1=station used)'//
+     +     ' 0 = station not used; 1 = station used',
      +     'none').NE.0 ) CALL read_error(1, 'tsta_nuse')
 
-      IF ( declparam('ide_dist', 'solrad_elev', 'one', 'real',
+      IF ( declparam(MODNAME, 'solrad_elev', 'one', 'real',
      +     '1000.0', '0.0', '10000.0',
      +     'Elevation of the solrad station used for DD curves',
-     +     'Elevation of the solrad station used for degree-day curves',
+     +     'Elevation of the solar radiation station used for'//
+     +     ' degree-day curves',
      +     'meters').NE.0 ) CALL read_error(1, 'solrad_elev')
 
       ALLOCATE (Psta_nuse(Nrain), Rain_nuse(Nrain))
-      IF ( declparam('ide_dist', 'psta_nuse', 'nrain', 'integer',
+      IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
      +     'The subset of precip stations used in the distribution'//
      +     ' regression (0=station not used; 1=station used)',
@@ -163,40 +166,40 @@
 
 ! New parameters:
       ALLOCATE (Temp_wght_dist(12), Temp_wght_elev(12))
-      IF ( declparam('ide_dist', 'temp_wght_dist', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'temp_wght_dist', 'nmonths', 'real',
      +     '0.5', '0.0', '1.0',
      +     'Weighting function for inverse distance: temperature',
      +     'Monthly (January to December) temperature weighting'//
-     +     ' function for inverse distance computations',
+     +     ' function for inverse distance calculations',
      +     'none').NE.0 ) CALL read_error(1, 'temp_wght_dist')
 
       ALLOCATE (Prcp_wght_dist(12), Prcp_wght_elev(12))
-      IF ( declparam('ide_dist', 'prcp_wght_dist', 'nmonths', 'real',
+      IF ( declparam(MODNAME, 'prcp_wght_dist', 'nmonths', 'real',
      +     '0.5', '0.0', '1.0',
      +     'Weighting function for inverse distance: precipitation',
      +     'Monthly (January to December) precipitation weighting'//
-     +     ' function for inverse distance computations',
+     +     ' function for inverse distance calculations',
      +     'none').NE.0 ) CALL read_error(1, 'prcp_wght_dist')
 
-      IF ( declparam('ide_dist', 'dist_exp', 'one', 'real',
+      IF ( declparam(MODNAME, 'dist_exp', 'one', 'real',
      +     '2.0', '0.0', '10.0',
-     +     'exponent for inverse distance calculations',
-     +     'exponent for inverse distance calculations',
+     +     'Exponent for inverse distance calculations',
+     +     'Exponent for inverse distance calculations',
      +     'none').NE.0 ) CALL read_error(1, 'dist_exp')
 
-      IF ( declparam('ide_dist', 'ndist_psta', 'one', 'integer',
+      IF ( declparam(MODNAME, 'ndist_psta', 'one', 'integer',
      +     '3', '1', '100',
      +     'Number of stations for inverse distance calcs:'//
      +     ' precipitation',
      +     'Number of precipitation measurement stations for inverse'//
-     +     ' distance compuations',
+     +     ' distance calculations',
      +     'none').NE.0 ) CALL read_error(1, 'ndist_psta')
 
-      IF ( declparam('ide_dist', 'ndist_tsta', 'one', 'integer',
+      IF ( declparam(MODNAME, 'ndist_tsta', 'one', 'integer',
      +     '3', '1', '100',
      +     'Number of stations for inverse distance calcs: temperature',
      +     'Number of temperature measurement stations for inverse'//
-     +     ' distance compuations',
+     +     ' distance calculations',
      +     'none').NE.0 ) CALL read_error(1, 'ndist_tsta')
       idedecl = 0
       END FUNCTION idedecl
@@ -225,46 +228,46 @@
         Tmin_rain_sta = 0.0
       ENDIF
 
-      IF ( getparam('ide_dist', 'solrad_elev', 1, 'real', Solrad_elev)
+      IF ( getparam(MODNAME, 'solrad_elev', 1, 'real', Solrad_elev)
      +     .NE.0 ) CALL read_error(2, 'solrad_elev')
 
-      IF ( getparam('ide_dist', 'hru_x', Nhru, 'real', Hru_x)
+      IF ( getparam(MODNAME, 'hru_x', Nhru, 'real', Hru_x)
      +     .NE.0 ) CALL read_error(2, 'hru_x')
 
-      IF ( getparam('ide_dist', 'hru_y', Nhru, 'real', Hru_y)
+      IF ( getparam(MODNAME, 'hru_y', Nhru, 'real', Hru_y)
      +     .NE.0 ) CALL read_error(2, 'hru_y')
 
-      IF ( getparam('ide_dist', 'tsta_x', Ntemp, 'real', Tsta_x)
+      IF ( getparam(MODNAME, 'tsta_x', Ntemp, 'real', Tsta_x)
      +     .NE.0 ) CALL read_error(2, 'tsta_x')
 
-      IF ( getparam('ide_dist', 'tsta_y', Ntemp, 'real', Tsta_y)
+      IF ( getparam(MODNAME, 'tsta_y', Ntemp, 'real', Tsta_y)
      +     .NE.0 ) CALL read_error(2, 'tsta_y')
 
-      IF ( getparam('ide_dist', 'psta_x', Nrain, 'real', Psta_x)
+      IF ( getparam(MODNAME, 'psta_x', Nrain, 'real', Psta_x)
      +     .NE.0 ) CALL read_error(2, 'psta_x')
 
-      IF ( getparam('ide_dist', 'psta_y', Nrain, 'real', Psta_y)
+      IF ( getparam(MODNAME, 'psta_y', Nrain, 'real', Psta_y)
      +     .NE.0 ) CALL read_error(2, 'psta_y')
 
-      IF ( getparam('ide_dist', 'tsta_nuse', Ntemp, 'integer',
+      IF ( getparam(MODNAME, 'tsta_nuse', Ntemp, 'integer',
      +     Tsta_nuse).NE.0 ) CALL read_error(2, 'tsta_nuse')
 
-      IF ( getparam('ide_dist', 'psta_nuse', Nrain, 'integer',
+      IF ( getparam(MODNAME, 'psta_nuse', Nrain, 'integer',
      +     Psta_nuse).NE.0 ) CALL read_error(2, 'psta_nuse')
 
-      IF ( getparam('ide_dist', 'temp_wght_dist', 12, 'real',
+      IF ( getparam(MODNAME, 'temp_wght_dist', 12, 'real',
      +     Temp_wght_dist).NE.0 ) CALL read_error(2, 'temp_wght_dist')
 
-      IF ( getparam('ide_dist', 'prcp_wght_dist', 12, 'real',
+      IF ( getparam(MODNAME, 'prcp_wght_dist', 12, 'real',
      +     Prcp_wght_dist).NE.0 ) CALL read_error(2, 'prcp_wght_dist')
 
-      IF ( getparam('ide_dist', 'dist_exp', 1, 'real', Dist_exp)
+      IF ( getparam(MODNAME, 'dist_exp', 1, 'real', Dist_exp)
      +     .NE.0 ) CALL read_error(2, 'dist_exp')
 
-      IF ( getparam('ide_dist', 'ndist_psta', 1, 'integer',
+      IF ( getparam(MODNAME, 'ndist_psta', 1, 'integer',
      +     Ndist_psta).NE.0 ) CALL read_error(2, 'ndist_psta')
 
-      IF ( getparam('ide_dist', 'ndist_tsta', 1, 'integer',
+      IF ( getparam(MODNAME, 'ndist_tsta', 1, 'integer',
      +     Ndist_tsta).NE.0 ) CALL read_error(2, 'ndist_tsta')
 
 ! dry adiabatic lapse rate (DALR) when extrapolating

@@ -36,6 +36,11 @@
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Radpl_aspect(:), Radpl_lat(:)
       REAL, SAVE, ALLOCATABLE :: Radpl_slope(:)
+      
+      CHARACTER*(*) MODNAME
+      PARAMETER(MODNAME='soltab_prms')
+      CHARACTER*(*) PROCNAME
+      PARAMETER(PROCNAME='Solar Table')
       END MODULE PRMS_SOLTAB_RADPL
 
 !***********************************************************************
@@ -77,7 +82,8 @@
      +'$Id: soltab_prms.f 3673 2011-10-05 00:40:23Z rsregan $'
       Soltab_prms_nc = INDEX( Version_soltab_prms, ' $' ) + 1
       IF ( Print_debug>-1 ) THEN
-        IF ( declmodule(Version_soltab_prms(:Soltab_prms_nc))/=0 ) STOP
+        IF ( declmodule(MODNAME, PROCNAME,
+     +           Version_soltab_prms(:Soltab_prms_nc))/=0 ) STOP
       ENDIF
 
       Nradpl = getdim('nradpl')
@@ -85,7 +91,7 @@
 
 !   Declared Variables
       ALLOCATE (Radpl_soltab(366, Nradpl))
-      IF ( declvar('soltab', 'radpl_soltab', 'ndays,nradpl',
+      IF ( declvar(MODNAME, 'radpl_soltab', 'ndays,nradpl',
      +     366*Nradpl, 'real',
      +     'Potential daily shortwave radiation for each radiation'//
      +     ' plane',
@@ -93,7 +99,7 @@
      +     Radpl_soltab).NE.0 ) RETURN
 
       ALLOCATE (Sunhrs_soltab(366, Nradpl))
-      IF ( declvar('soltab', 'sunhrs_soltab', 'ndays,nradpl',
+      IF ( declvar(MODNAME, 'sunhrs_soltab', 'ndays,nradpl',
      +     366*Nradpl, 'real',
      +     'Hours between sunrise and sunset for each radiation'//
      +     ' plane',
@@ -101,14 +107,14 @@
      +     Sunhrs_soltab).NE.0 ) RETURN
 
       ALLOCATE (Radpl_cossl(Nradpl))
-      IF ( declvar('soltab', 'radpl_cossl', 'nradpl', Nradpl, 'real',
+      IF ( declvar(MODNAME, 'radpl_cossl', 'nradpl', Nradpl, 'real',
      +     'Cosine of each radiation plane slope',
      +     'none',
      +     Radpl_cossl).NE.0 ) RETURN
 
 !   Declared Parameters
       ALLOCATE (Radpl_slope(Nradpl))
-      IF ( declparam('soltab', 'radpl_slope', 'nradpl', 'real',
+      IF ( declparam(MODNAME, 'radpl_slope', 'nradpl', 'real',
      +     '0.0', '0.0', '10.0',
      +     'Radiation plane slope',
      +     'Slope of each radiation plane, specified as change in '//
@@ -116,13 +122,13 @@
      +     'decimal fraction').NE.0 ) RETURN
 
       ALLOCATE (Radpl_aspect(Nradpl))
-      IF ( declparam('soltab', 'radpl_aspect', 'nradpl', 'real',
+      IF ( declparam(MODNAME, 'radpl_aspect', 'nradpl', 'real',
      +     '0.0', '0.0', '360.0',
      +     'Radiation plane aspect', 'Aspect for each radiation plane',
      +     'degrees').NE.0 ) RETURN
 
       ALLOCATE (Radpl_lat(Nradpl))
-      IF ( declparam('soltab', 'radpl_lat', 'nradpl', 'real',
+      IF ( declparam(MODNAME, 'radpl_lat', 'nradpl', 'real',
      +     '40.0', '-90.0', '90.0',
      +     'Radiation plane latutude',
      +     'Latitude of each radiation plane',
@@ -158,13 +164,13 @@
 
       ALLOCATE (basin_sunhrs(366), e(366), dm(366))
 
-      IF ( getparam('soltab', 'radpl_slope', Nradpl, 'real',
+      IF ( getparam(MODNAME, 'radpl_slope', Nradpl, 'real',
      +     Radpl_slope).NE.0 ) RETURN
 
-      IF ( getparam('soltab', 'radpl_aspect', Nradpl, 'real',
+      IF ( getparam(MODNAME, 'radpl_aspect', Nradpl, 'real',
      +     Radpl_aspect).NE.0 ) RETURN
 
-      IF ( getparam('soltab', 'radpl_lat', Nradpl, 'real', Radpl_lat)
+      IF ( getparam(MODNAME, 'radpl_lat', Nradpl, 'real', Radpl_lat)
      +     .NE.0 ) RETURN
 
       DO jd = 1, 366
