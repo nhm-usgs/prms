@@ -1,9 +1,9 @@
 /**************************************************************************
  * print_vars.c: prints the var data base to a file
  *
- * $Id: print_vars.c 6757 2012-04-19 23:30:52Z rsregan $
+ * $Id: print_vars.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6757 $
+   $Revision: 5145 $
         $Log: print_vars.c,v $
         Revision 1.10  1999/10/22 17:14:37  markstro
         Added private variables

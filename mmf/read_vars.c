@@ -12,9 +12,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: read_vars.c 5644 2010-05-25 13:32:09Z markstro $
+ * $Id: read_vars.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 5644 $
+   $Revision: 5145 $
         $Log: read_vars.c,v $
         Revision 1.12  2000/02/18 18:27:06  markstro
         Made previous Julian time a global.  It is set to -1.0 before the run

@@ -7,9 +7,9 @@
  *
  * Returns 0 if successful, 1 otherwise.
  *
- * $Id: getparam.c 7361 2012-08-14 20:28:23Z markstro $
+ * $Id: getparam.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 7361 $
+   $Revision: 5145 $
         $Log: getparam.c,v $
         Revision 1.10  1997/03/26 17:04:14  markstro
         Added function getdataname
@@ -164,8 +164,8 @@ long getparam (char *module, char *name, int maxsize, char *type, double *pval) 
 
 //  Check to see if the parameter values were set in the Parameter File
 	if (param->read_in == 0) {
-		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", pkey, module);
-		(void)fprintf(stderr,"         Module default values are being used.\n");
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not\n", pkey, module);
+		(void)fprintf(stderr,"         set in the Parameter File. Module default values are being used.\n");
 	}
 
 // check that there is enough space allocated in the calling routine
@@ -506,8 +506,8 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
   **  Check to see if the parameter values were set in the Parameter File
   */
   if (param->read_in == 0) {
-		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", name, module);
-		(void)fprintf(stderr,"         Module default values are being used.\n");
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not\n", name, module);
+		(void)fprintf(stderr,"         set in the Parameter File. Module default values are being used.\n");
 //	  (void)fprintf(stderr,
 //	    "getparamstring - parameter %s is used but values are not set in the Parameter File.  Module default values are being used.\n", name);
   }

@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: read_control.c 6786 2012-04-20 16:25:53Z rsregan $
+ * $Id: read_control.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6786 $
+   $Revision: 5145 $
         $Log: read_control.c,v $
         Revision 1.21  1996/08/28 15:24:10  markstro
         Unknown

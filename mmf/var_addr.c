@@ -4,9 +4,9 @@
  * returns a pointer to a PUBVAR struct which contains the given key
  * returns NULL if key not found
  *
- * $Id: var_addr.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: var_addr.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 3058 $
+   $Revision: 5145 $
         $Log: var_addr.c,v $
         Revision 1.5  1999/10/22 17:14:38  markstro
         Added private variables

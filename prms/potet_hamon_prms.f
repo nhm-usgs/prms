@@ -7,33 +7,31 @@
 !   Declared Parameters: hamon_coef, hru_radpl
 !***********************************************************************
       INTEGER FUNCTION potet_hamon_prms()
-      USE PRMS_MODULE, ONLY: Process, Nhru,
-     +    Version_potet_hamon_prms, Potet_hamon_prms_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area,
      +    Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
-      USE PRMS_OBS, ONLY: Nowmonth, Jday
       USE PRMS_SOLTAB_RADPL, ONLY: Sunhrs_soltab
+      USE PRMS_OBS, ONLY: Nowmonth, Jday
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
+      INTEGER, EXTERNAL :: getparam, declmodule, declparam
       EXTERNAL read_error
 ! Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
       REAL, SAVE, ALLOCATABLE :: Hamon_coef(:)
-!   Local Variables
-      INTEGER :: i, ir, j
+! Local Variables
+      INTEGER :: i, ir, j, nc
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='potet_hamon_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Potential Evapotranspiration')
+      CHARACTER(LEN=16), SAVE :: MODNAME
+      CHARACTER(LEN=80), SAVE :: Version_potet_hamon_prms
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
-      potet_hamon_prms = 1
+      potet_hamon_prms = 0
 
       IF ( Process(:3)=='run' ) THEN
+!******Compute potential et for each HRU using Hamon formulation
         hamoncoef_mo = Hamon_coef(Nowmonth)
         Basin_potet = 0.0D0
         DO j = 1, Active_hrus
@@ -51,12 +49,11 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_potet_hamon_prms =
-     +'$Id: potet_hamon_prms.f 4467 2012-05-04 15:57:55Z rsregan $'
-        Potet_hamon_prms_nc = INDEX( Version_potet_hamon_prms, ' $' ) +1
-        
+     +'$Id: potet_hamon_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+        nc = INDEX( Version_potet_hamon_prms, ' $' ) +1
         IF ( declmodule(MODNAME, PROCNAME, 
-     +               Version_potet_hamon_prms(:Potet_hamon_prms_nc)
-     +                    )/=0 ) STOP
+     +               Version_potet_hamon_prms(:nc))/=0 ) STOP
+        MODNAME = 'potet_hamon_prms'
 
         ALLOCATE ( Hru_radpl(Nhru) )
         IF ( declparam(MODNAME, 'hru_radpl', 'nhru', 'integer',
@@ -80,5 +77,4 @@
      +       /=0 ) CALL read_error(2, 'hru_radpl') 
       ENDIF
 
-      potet_hamon_prms = 0
       END FUNCTION potet_hamon_prms

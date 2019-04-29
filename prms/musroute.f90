@@ -2,7 +2,6 @@
 ! Routes water between segments in the system using Muskingum routing
 !
 !                   created by Tom Ryan USBR (801) 524-5573
-!
 !                               April 24, 1992
 !   REVISED: 11/25/98 by Mark Mastin to include Muskingum routing in Tom
 !         Ryan's fixroute module. Changed name from fixroute to musroute.
@@ -22,7 +21,7 @@
 !     where S is storage, K is the storage coefficient, x is a coefficient
 !     between 0 and .5, I is inflow, and O is outflow.
 !
-!   Solving for the Outflow at day 2,O2; and knowing the inflow at day 1,
+!   Solving for the outflow at day 2,O2; and knowing the inflow at day 1,
 !   I1; the inflow at day 2,I2; and the outflow at day 1, O1; the storage
 !   equation can be written as follows:
 !
@@ -33,7 +32,6 @@
 !           ctwo  =  (K - Kx - 12) / (K - Kx + 12)
 !
 !     assuming a time step of one day and K is in units of hours
-!
 !
 !   In the musroute module, czero, cone, and ctwo are solved in
 !   the intialization function
@@ -51,16 +49,14 @@
       REAL, SAVE, ALLOCATABLE :: Czero(:), Cone(:), Ctwo(:)
       REAL, SAVE, ALLOCATABLE :: Pastinflow(:), Pastoutflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:)
-      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'musroute'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
+      CHARACTER(LEN=8), SAVE:: MODNAME
 !   Declared Variables
-      REAL, SAVE, ALLOCATABLE :: Segment_cfs(:), Tosegment_cfs(:)
       REAL, SAVE, ALLOCATABLE :: Seginc_ssflow(:), Seginc_sroff(:)
       REAL, SAVE, ALLOCATABLE :: Seginc_gwflow(:), Seginc_swrad(:)
+      REAL, SAVE, ALLOCATABLE :: Segment_cfs(:), Tosegment_cfs(:), Hru_outflow(:)
 !   Declared Parameters
-!      INTEGER, SAVE :: Final_segment
-      INTEGER, SAVE, ALLOCATABLE :: Tosegment(:), Hru_segment(:)
-      INTEGER, SAVE, ALLOCATABLE :: Obsin_segment(:), Segment_type(:)
+      INTEGER, SAVE, ALLOCATABLE :: Tosegment(:), Hru_segment(:), Obsin_segment(:)
+      INTEGER, SAVE, ALLOCATABLE :: Segment_type(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
       END MODULE PRMS_MUSROUTE
 
@@ -88,88 +84,28 @@
 !***********************************************************************
 !     musroute_decl - set up fixed routing parameters
 !   Declared Parameters
-!     tosegment, hru_segment, final_segment, segment_type, k_coef, x_coef
-!***********************************************************************
+!     tosegment, hru_segment, obsin_segment, segment_type, k_coef, x_coef
 !***********************************************************************
       INTEGER FUNCTION musroute_decl()
       USE PRMS_MUSROUTE
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Version_musroute, Musroute_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
+      INTEGER :: i, nc
+      CHARACTER(LEN=80), SAVE :: Version_musroute
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
 !***********************************************************************
-      musroute_decl = 1
+      musroute_decl = 0
 
-      Version_musroute = '$Id: musroute.f90 4881 2012-10-04 20:37:56Z rsregan $'
-      Musroute_nc = INDEX( Version_musroute, 'Z' )
+      Version_musroute = '$Id: musroute.f90 5173 2013-01-03 00:07:12Z rsregan $'
+      nc = INDEX( Version_musroute, 'Z' )
       i = INDEX ( Version_musroute, '.f90' ) + 3
-      IF ( declmodule(Version_musroute(6:i), PROCNAME, Version_musroute(i+2:Musroute_nc))/=0 ) STOP
-
-      ALLOCATE ( Obsin_segment(Nsegment) )
-      IF ( declparam(MODNAME, 'obsin_segment', 'nsegment', 'integer', &
-           '0', 'bounded', 'nobs', &
-           'Index of measured streamflow station that replaces inflow to a segment', &
-           'Index of measured streamflow station that replaces inflow to a segment', &
-           'none')/=0 ) CALL read_error(1, 'obsin_segment')
-
-      ALLOCATE ( Segment_type(Nsegment) )
-      IF ( declparam(MODNAME, 'segment_type', 'nsegment','integer', &
-           '0', '0', '3', &
-           'Segment type', &
-           'Segment type (0=link; 1=reservoir; 2=diversion; 3=replace inflow)', &
-           'none')/=0 ) CALL read_error(1, 'segment_type')
-
-!     Declare all parameters that are part of this module in 
-!     the declare function
-
-      ALLOCATE ( Tosegment(Nsegment) )
-      IF ( declparam(MODNAME, 'tosegment', 'nsegment', 'integer', &
-           '0', 'bounded', 'nsegment', &
-           'The index of the downstream segment', &
-           'Index of downstream segment to which the segment'// &
-           ' streamflow flows, for segments that do not flow to'// &
-           ' another segment enter 0', &
-           'none')/=0 ) CALL read_error(1, 'tosegment')
-
-      ALLOCATE ( Hru_segment(Nhru) )
-      IF ( declparam(MODNAME, 'hru_segment', 'nhru', 'integer', &
-           '0', 'bounded', 'nsegment', &
-           'Segment index for HRU lateral inflows', &
-           'Segment index to which an HRU contributes lateral flows'// &
-           ' (surface runoff, interflow, and groundwater discharge)', &
-           'none')/=0 ) CALL read_error(1, 'hru_segment')
-
-!      IF ( decl param(MODNAME, 'final_segment', 'one', 'integer', &
-!           '0', 'bounded', 'nsegment', &
-!           'Index of the final segment in the system', &
-!           'Every routing network will have a final segment. Enter this final segment index', &
-!           'none')/=0 ) CALL read_error(1, 'final_segment')
-
-      ALLOCATE ( K_coef(Nsegment) )
-      IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
-           '0.0',  '0.0', '240.0', &
-           'Muskingum storage coefficient', &
-           'Travel time of flood wave from one segment to the next'// &
-           ' downstream segment, called the Muskingum storage'// &
-           ' coefficient; enter 0.0 for reservoirs, diversions, and'// &
-           ' segment(s) flowing out of the basin', &
-           'hours')/=0 ) CALL read_error(1, 'K_coef')
-
-      ALLOCATE ( X_coef(Nsegment) )
-      IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
-           '0.2', '0.0', '0.5', &
-           'Routing weighting factor', &
-           'The amount of attenuation of the flow wave, called the'// &
-           ' Muskingum routing weighting factor; enter 0.0 for'// &
-           ' reservoirs, diversions, and segment(s) flowing out of the basin', &
-           'hours')/=0 ) CALL read_error(1, 'x_coef')
-
-!     Declare all variable to be used in the module, that have not 
-!     yet been declared by other modules.
+      IF ( declmodule(Version_musroute(6:i), PROCNAME, Version_musroute(i+2:nc))/=0 ) STOP
+      MODNAME = 'musroute'
 
       ALLOCATE ( Seginc_swrad(Nsegment) )
       IF ( declvar(MODNAME, 'seginc_swrad', 'nsegment', Nsegment, 'real', &
@@ -205,27 +141,73 @@
            'Routed streamflow leaving a segment to a downstream segment or basin outlet', &
            'cfs', Tosegment_cfs)/=0 ) CALL read_error(3, 'tosegment_cfs')
 
-!     If we make it through all the declares then set the function
-!     to 0 (non error)
+      ALLOCATE ( Hru_outflow(Nhru) )
+      IF ( declvar(MODNAME, 'hru_outflow', 'nhru', Nhru, 'real', &
+           'Total flow leaving each HRU', &
+           'cfs', Hru_outflow)/=0 ) CALL read_error(3, 'hru_outflow')
 
       ALLOCATE ( Cone(Nsegment), Ctwo(Nsegment), Czero(Nsegment) )
       ALLOCATE ( Pastinflow(Nsegment), Pastoutflow(Nsegment) )
       ALLOCATE ( Segment_hruarea(Nsegment), Order(Nsegment) )
+      ALLOCATE ( Obsin_segment(Nsegment), Tosegment(Nsegment), Hru_segment(Nhru) )
+      ALLOCATE ( Segment_type(Nsegment) )
+      IF ( declparam(MODNAME, 'obsin_segment', 'nsegment', 'integer', &
+           '0', 'bounded', 'nobs', &
+           'Index of measured streamflow station that replaces inflow to a segment', &
+           'Index of measured streamflow station that replaces inflow to a segment', &
+           'none')/=0 ) CALL read_error(1, 'obsin_segment')
 
-      musroute_decl = 0
+      IF ( declparam(MODNAME, 'segment_type', 'nsegment','integer', &
+           '0', '0', '3', &
+           'Segment type', &
+           'Segment type (0=link; 1=lake; 2=diversion; 3=replace inflow)', &
+           'none')/=0 ) CALL read_error(1, 'segment_type')
+
+      IF ( declparam(MODNAME, 'tosegment', 'nsegment', 'integer', &
+           '0', 'bounded', 'nsegment', &
+           'The index of the downstream segment', &
+           'Index of downstream segment to which the segment'// &
+           ' streamflow flows, for segments that do not flow to'// &
+           ' another segment enter 0', &
+           'none')/=0 ) CALL read_error(1, 'tosegment')
+
+      IF ( declparam(MODNAME, 'hru_segment', 'nhru', 'integer', &
+           '0', 'bounded', 'nsegment', &
+           'Segment index for HRU lateral inflows', &
+           'Segment index to which an HRU contributes lateral flows'// &
+           ' (surface runoff, interflow, and groundwater discharge)', &
+           'none')/=0 ) CALL read_error(1, 'hru_segment')
+
+      ALLOCATE ( K_coef(Nsegment) )
+      IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
+           '0.0',  '0.0', '240.0', &
+           'Muskingum storage coefficient', &
+           'Travel time of flood wave from one segment to the next'// &
+           ' downstream segment, called the Muskingum storage'// &
+           ' coefficient; enter 0.0 for reservoirs, diversions, and'// &
+           ' segment(s) flowing out of the basin', &
+           'hours')/=0 ) CALL read_error(1, 'K_coef')
+
+      ALLOCATE ( X_coef(Nsegment) )
+      IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
+           '0.2', '0.0', '0.5', &
+           'Routing weighting factor', &
+           'The amount of attenuation of the flow wave, called the'// &
+           ' Muskingum routing weighting factor; enter 0.0 for'// &
+           ' reservoirs, diversions, and segment(s) flowing out of the basin', &
+           'hours')/=0 ) CALL read_error(1, 'x_coef')
+
       END FUNCTION musroute_decl
 
 !***********************************************************************
-!
 !    musroute_init - Initialize musroute  module - get parameter values
 !                determine order of computing segments - set to zero if
 !                no errors are encountered
-!
 !***********************************************************************
       INTEGER FUNCTION musroute_init()
       USE PRMS_MUSROUTE
-      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Nsegmentp1
-!      USE PRMS_MODULE, ONLY: Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Nsegmentp1, Inputerror_flag
+      !USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_BASIN, ONLY: Hru_area, NEARZERO, Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -235,10 +217,7 @@
       INTEGER, ALLOCATABLE :: x_off(:)
       REAL :: kc, kx, ts
 !***********************************************************************
-      musroute_init = 1
-
-      ALLOCATE ( x_off(Nsegment) )
-      x_off = 0
+      musroute_init = 0
 
 !     Get all paramaters that will be used in this module in the
 !     initialize function including but not limited to those declared
@@ -246,6 +225,8 @@
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
       IF ( getparam(MODNAME, 'hru_segment', Nhru, 'integer', Hru_segment)/=0 ) CALL read_error(2, 'hru_segment')
+      IF ( getparam(MODNAME, 'K_coef',  Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
+      IF ( getparam(MODNAME, 'x_coef',  Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
       IF ( getparam(MODNAME, 'segment_type', Nsegment, 'integer', Segment_type)/=0 ) CALL read_error(2, 'segment_type')
 
       Replace_flag = 0
@@ -257,12 +238,6 @@
       ELSE
         Obsin_segment = 0
       ENDIF
-
-!      IF ( get param(MODNAME, 'final_segment', 1, 'integer', Final_segment)/=0 ) CALL read_error(1, 'final_segment')
-!      IF ( Final_segment==0 ) Final_segment = Nsegment
-
-      IF ( getparam(MODNAME, 'K_coef',  Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
-      IF ( getparam(MODNAME, 'x_coef',  Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
 
       Segment_hruarea = 0.0D0
       DO i = 1, Nsegment
@@ -277,12 +252,14 @@
       DO j = 1, Nsegment
         IF ( Tosegment(j)>Nsegment ) THEN
           badparameter = 1
-          PRINT *, 'ERROR, tosegment value > nsegment', j
+          PRINT *, 'ERROR, tosegment value (', Tosegment(j), ') > nsegment (', j, ')'
         ENDIF
         IF ( Tosegment(j)==0 ) Tosegment(j) = Nsegmentp1
       ENDDO
       IF ( badparameter==1 ) STOP
 
+      ALLOCATE ( x_off(Nsegment) )
+      x_off = 0
       Order = 0
       lval = 0
       DO WHILE ( lval < Nsegment )
@@ -312,12 +289,11 @@
           IF ( test==1 ) THEN
             lval = lval + 1
             Order(lval) = i
-!            print *, i, ' put in order'
             x_off(i) = 1
           ENDIF
         ENDDO
       ENDDO
-!      Order(Nsegment) = Final_segment !rsr, don't need, as found above
+
 !      IF ( Print_debug>-1 ) THEN
 !        PRINT *, 'Stream Network Routing Order:'
 !        WRITE (*, '(10I5)') Order
@@ -328,13 +304,13 @@
 
       IF ( Timestep==0 ) THEN
         Segment_cfs = 0.0
+        Tosegment_cfs = 0.0
         Seginc_gwflow = 0.0
         Seginc_ssflow = 0.0
         Seginc_sroff = 0.0
         Seginc_swrad = 0.0
-        Tosegment_cfs = 0.0
+        Hru_outflow = 0.0
       ENDIF
-
 !
 !     Compute the three constants in the Muskingum routing equation based
 !     on the values of K_coef, x_coef, and the routing period assumed to
@@ -351,9 +327,21 @@
       Czero = 0.0
       Cone = 0.0
       Ctwo = 0.0
-
       ts = 12.0
       DO i = 1, Nsegment
+! check the values of k and x to make sure that Muskingum routing is stable
+        IF ( K_coef(i)<0.0 ) THEN
+          PRINT *, 'ERROR, K_coef value < 0.0 for segment:', i, K_coef(i)
+          Inputerror_flag = 1
+          CYCLE
+        ENDIF
+
+        IF ( x_coef(i)>1.0 ) THEN
+          PRINT *, 'ERROR, x_coef value > 1.0 for segment:', i, x_coef(i)
+          Inputerror_flag = 1
+          CYCLE
+        ENDIF
+
         kc = K_coef(i)
         kx = kc*X_coef(i)
         kc = kc - kx
@@ -377,7 +365,6 @@
       ENDDO
       DEALLOCATE ( K_coef, X_coef )
 
-      musroute_init = 0
       END FUNCTION musroute_init
 
 !***********************************************************************
@@ -386,12 +373,12 @@
       INTEGER FUNCTION musroute_run()
       USE PRMS_MUSROUTE
       USE PRMS_MODULE, ONLY: Nsegment, Nsegmentp1
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_stflow_in, Basin_sroff_cfs, &
-          Hru_area, Basin_area_inv, Basin_cfs, Hru_route_order, &
-          Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, Active_hrus, DNEARZERO, &
-          Basin_stflow_out
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Hru_area, Basin_area_inv, &
+          Hru_route_order, Active_hrus, DNEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Swrad
-      USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Ssres_flow, Sroff, Basin_sroff
+      USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Ssres_flow, Sroff, Basin_sroff, &
+          Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, Basin_stflow_out, &
+          Basin_cfs, Basin_stflow_in, Basin_sroff_cfs
       USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday, Cfs_conv, Nowtime, Streamflow_cfs
       USE PRMS_GWFLOW, ONLY: Gwres_flow, Basin_gwflow
       IMPLICIT NONE
@@ -399,11 +386,9 @@
 ! Local Variables
       INTEGER :: i, j, jj, iorder, toseg
       REAL pastin, pastout, todayinflow
-      DOUBLE PRECISION :: area_fac, temp, tocfs
+      DOUBLE PRECISION :: area_fac, tocfs
 !***********************************************************************
-!     Get all variable declared and computed by other modules
-!     that will be used in this module
-
+      musroute_run = 0
 !     SET yesterdays inflows and outflows into temp (past arrays)
 !     values may be 0.0 as intial, > 0.0 for runtime and dynamic 
 !     initial condtions. Then set outlfow and inflow for this time
@@ -414,10 +399,6 @@
         Pastoutflow(i) = Tosegment_cfs(i)
         Tosegment_cfs(i) = 0.0
         Segment_cfs(i) = 0.0
-        Seginc_gwflow(i) = 0.0
-        Seginc_ssflow(i) = 0.0
-        Seginc_sroff(i) = 0.0
-        Seginc_swrad(i) = 0.0
       ENDDO
 
 !     Compute surface runoff, ssflow, and gwflow going to each segment
@@ -426,15 +407,18 @@
 !
 !     For each hru if the surface sunoff for this hru goes to the 
 !     segment being evaluated (segment i) then add it on
-!     (0.042014 converts runoff in inches times area in acres for one day
-!      to cfs, MCM)
+!
+      Seginc_gwflow = 0.0
+      Seginc_ssflow = 0.0
+      Seginc_sroff = 0.0
+      Seginc_swrad = 0.0
       DO i = 1, Nsegment
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
+          tocfs = Hru_area(j)*Cfs_conv
+          Hru_outflow(j) = (Sroff(j) + Ssres_flow(j) + Gwres_flow(j))*tocfs
           IF ( Hru_segment(j)==i ) THEN
-            tocfs = Hru_area(j)*Cfs_conv
-            temp = (Sroff(j)+Ssres_flow(j)+Gwres_flow(j))*tocfs
-            Segment_cfs(i) = Segment_cfs(i) + temp
+            Segment_cfs(i) = Segment_cfs(i) + Hru_outflow(j)
             Seginc_sroff(i) = Seginc_sroff(i) + Sroff(j)*tocfs
             Seginc_ssflow(i) = Seginc_ssflow(i) + Ssres_flow(j)*tocfs
             Seginc_gwflow(i) = Seginc_gwflow(i) + Gwres_flow(j)*tocfs
@@ -447,20 +431,22 @@
         IF ( Segment_hruarea(i)>DNEARZERO ) Seginc_swrad(i) = Seginc_swrad(i)/Segment_hruarea(i)
       ENDDO
       DO i = 1, Nsegment
-        IF ( Segment_hruarea(i)<DNEARZERO ) THEN
-          IF ( Tosegment(i)>0 .AND. Tosegment(i)<Nsegmentp1 ) THEN
-            Seginc_swrad(i) = Seginc_swrad(Tosegment(i))
-          ELSEIF ( i>1 ) THEN
-            Seginc_swrad(i) = Seginc_swrad(i-1)
+        iorder = Order(i)
+        IF ( Segment_hruarea(iorder)<DNEARZERO ) THEN
+          IF ( Tosegment(iorder)>0 .AND. Tosegment(iorder)<Nsegmentp1 ) THEN
+            Seginc_swrad(iorder) = Seginc_swrad(Tosegment(iorder))
+          ELSEIF ( iorder>1 ) THEN
+            Seginc_swrad(iorder) = Seginc_swrad(iorder-1)
+          ELSE
+            Seginc_swrad(iorder) = Seginc_swrad(iorder+1)
           ENDIF
         ENDIF
       ENDDO
 !
-!       Out2   =      In2*c0    +        In1*c1    +          Out1*c2
+!       Out2   =      In2*C0    +        In1*C1    +          Out1*C2
 !   tosegment_cfs = segment_cfs*czero +  pastinflow*cone +     pastoutflow*ctwo
+!       C0, C1, and C2: initialized in the "init" part of this module
 !
-!         c0, c1, and c2:
-!        initialized in the "_init" part of this module
 !
       Flow_out = 0.0D0
       DO i = 1, Nsegment
@@ -487,18 +473,14 @@
 
       ENDDO
 
-      Basin_stflow_in = Basin_sroff + Basin_gwflow + Basin_ssflow
-!      Basin_cfs = Segment_cfs(Final_segment)
-      Basin_cfs = Flow_out
       area_fac = Cfs_conv/Basin_area_inv
-      Basin_stflow_out = Basin_cfs/area_fac
+      Basin_stflow_in = Basin_sroff + Basin_gwflow + Basin_ssflow
+      Basin_cfs = Flow_out
+      Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
 
-      area_fac = Cfs_conv/Basin_area_inv
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
 
-      musroute_run = 0
       END FUNCTION musroute_run
-

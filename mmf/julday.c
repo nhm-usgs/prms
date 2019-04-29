@@ -6,7 +6,7 @@
  *
  * Mike Dixon CADSWES CU July 1990
  *
- * $Id: julday.c 3606 2007-11-13 17:53:23Z markstro $
+ * $Id: julday.c 5145 2012-12-19 17:39:07Z rsregan $
  *
  **********************************************************************/
 #define JULDAY_C

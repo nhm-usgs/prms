@@ -1,22 +1,19 @@
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
-      SUBROUTINE find_current_time(Iunit, Year, Month, Day)
+      SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret)
 ! Argument
       INTEGER, INTENT(IN) :: Iunit, Year, Month, Day
+      INTEGER, INTENT(OUT) :: Iret
 ! Local Variables
-      INTEGER :: i, yr, mo, dy, ios
+      INTEGER :: yr, mo, dy
 !***********************************************************************
-      i = 0
-      DO WHILE ( i==0 )
-        READ ( Iunit, *, IOSTAT=ios ) yr, mo, dy
-        IF ( ios/=0 ) THEN
-          yr = 0
-          mo = 0
-          dy = 0
-          RETURN
-        ENDIF
-        IF ( yr==Year .AND. mo==Month .AND. dy==Day ) i = 1
+      Iret = 0
+      DO
+        READ ( Iunit, *, IOSTAT=Iret ) yr, mo, dy
+        IF ( Iret==-1 ) PRINT *, 'ERROR, end-of-file found reading input file for date:', Year, Month, Day
+        IF ( Iret/=0 ) RETURN
+        IF ( yr==Year .AND. mo==Month .AND. dy==Day ) EXIT
       ENDDO
       BACKSPACE Iunit
       END SUBROUTINE find_current_time
@@ -88,26 +85,20 @@
 !***********************************************************************
 !     Read File to line before data starts in file
 !***********************************************************************
-      SUBROUTINE find_header_end(Iunit, Fname, Iret)
-      USE PRMS_MODULE, ONLY: Nhru
+      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret)
+      USE PRMS_MODULE, ONLY: Nhru, Orad_flag
+      IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(OUT) :: Iunit, Iret
-      CHARACTER(LEN=*), INTENT(IN) :: Fname
+      CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
 ! Functions
-      INTEGER, EXTERNAL :: get_ftnunit
+      EXTERNAL :: PRMS_open_input_file
 ! Local Variables
-      INTEGER :: i, ios, dim, orad_flag
+      INTEGER :: i, ios, dim
       CHARACTER(LEN=4) :: dum
 !***********************************************************************
-      orad_flag = Iret
-      Iret = 0
-      Iunit = get_ftnunit(720)
-! read to line before data starts in each file
-      OPEN ( Iunit, FILE=Fname, STATUS='OLD', IOSTAT=ios )
-      IF ( ios/=0 ) THEN
-        WRITE ( *, '(/,A,/,A,/)' ) 'ERROR opening file:', Fname, 'check to be sure the input file exists'
-        Iret = 1
-      ELSE
+      CALL PRMS_open_input_file(Iunit, Fname, Paramname, 0, Iret)
+      IF ( Iret==0 ) THEN
 ! read to line before data starts in each file
         i = 0
         DO WHILE ( i==0 )
@@ -119,15 +110,15 @@
           ELSEIF ( dum=='####' ) THEN
             BACKSPACE Iunit
             BACKSPACE Iunit
-            IF ( Orad_flag==2 ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
+            IF ( Orad_flag==1 ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
             READ ( Iunit, * ) dum, dim
             !print *, 'utils: ', dum, dim
             IF ( dim/=Nhru ) THEN
-              PRINT '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', Nhru, ' CBH dimension=', dim, ' File:', Fname
+              PRINT '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', Nhru, ' CBH dimension=', dim, ' File: '//Fname
               STOP 'ERROR: update Control File with correct CBH files'
             ENDIF
             READ ( Iunit, FMT='(A4)' ) dum
-            IF ( Orad_flag==2 ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
+            IF ( Orad_flag==1 ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
             i = 1
           ENDIF
         ENDDO
@@ -179,7 +170,7 @@
       opend = .TRUE.
       DO WHILE ( opend )
         good_unit = good_unit + 1
-        INQUIRE (UNIT=good_unit, OPENED=opend)
+        INQUIRE ( UNIT=good_unit, OPENED=opend )
       ENDDO
       get_ftnunit = good_unit
       END FUNCTION get_ftnunit
@@ -326,31 +317,45 @@
 !**********************************************************************
 !     Parameter or Variable delcare or read error
 !**********************************************************************
-      SUBROUTINE read_error(Type, Name)
+      SUBROUTINE read_error(Iflag, Name)
       IMPLICIT NONE
 ! Arguments
-      INTEGER, INTENT(IN) :: Type
+      INTEGER, INTENT(IN) :: Iflag
       CHARACTER(LEN=*), INTENT(IN) :: Name
 !**********************************************************************
       PRINT '(/,A,/)', 'Due to error condition simulation halted'
-      IF ( Type==1 ) THEN
+      IF ( Iflag==1 ) THEN
         PRINT *, 'Declare error for parameter: ', Name
-      ELSEIF ( Type==2 ) THEN
+      ELSEIF ( Iflag==2 ) THEN
         PRINT *, 'Get error for parameter: ', Name
-      ELSEIF ( Type==3 ) THEN
+      ELSEIF ( Iflag==3 ) THEN
         PRINT *, 'Declare error for variable: ', Name
-      ELSEIF ( Type==4 ) THEN
+      ELSEIF ( Iflag==4 ) THEN
         PRINT *, 'Get error for variable: ', Name
-      ELSEIF ( Type==5 ) THEN
+      ELSEIF ( Iflag==5 ) THEN
         PRINT *, 'Read error for control parameter: ', Name
-      ELSEIF ( Type==6 ) THEN
+      ELSEIF ( Iflag==6 ) THEN
         PRINT *, 'Read error for dimension parameter: ', Name
-      ELSEIF ( Type==7 ) THEN
+      ELSEIF ( Iflag==7 ) THEN
         PRINT *, 'Declare error for dimension parameter: ', Name
-      ELSEIF ( Type==8 ) THEN
+      ELSEIF ( Iflag==8 ) THEN
         PRINT *, 'Declare error for Data File variable: ', Name
-      ELSEIF ( Type==9 ) THEN
+      ELSEIF ( Iflag==9 ) THEN
         PRINT *, 'Read error for Data File variable: ', Name
+      ELSEIF ( Iflag==10 ) THEN
+        PRINT *, 'Open error of Control File ', Name
+      ELSEIF ( Iflag==11 ) THEN
+        PRINT *, 'Read error of Parameter File ', Name
+      ELSEIF ( Iflag==12 ) THEN
+        PRINT *, 'Read error of Control File ', Name
+      ELSEIF ( Iflag==13 ) THEN
+        PRINT *, 'Read error of Data File ', Name
+      ELSEIF ( Iflag==14 ) THEN
+        PRINT *, 'Control parameter not found: ', Name
+      ELSEIF ( Iflag==15 ) THEN
+        PRINT *, 'ERROR, control ', Name, ' expected and is not available in PRMS'
+      ELSEIF ( Iflag==16 ) THEN
+        PRINT *, 'ERROR, declared parameter ', Name
       ENDIF
       STOP
       END SUBROUTINE read_error
@@ -405,3 +410,137 @@
 !***********************************************************************
       sat_vapor_press = 6.1078*EXP(17.269*Tempc/(237.30+Tempc))
       END FUNCTION sat_vapor_press
+
+!***********************************************************************
+!     Open PRMS input File and assign unit number
+!***********************************************************************
+      SUBROUTINE PRMS_open_input_file(Iunit, Fname, Paramname, Ftype, Iret)
+      IMPLICIT NONE
+! Argument
+      INTEGER, INTENT(IN) :: Ftype
+      INTEGER, INTENT(OUT) :: Iunit, Iret
+      CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
+! Functions
+      INTEGER, EXTERNAL :: get_ftnunit, numchars
+! Local Variables
+      INTEGER :: ios, nchars
+!***********************************************************************
+      Iret = 0
+      Iunit = get_ftnunit(777)
+      nchars = numchars(Fname)
+      IF ( Ftype==0 ) THEN
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios )
+      ELSE
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios )
+      ENDIF
+      IF ( ios/=0 ) THEN
+        WRITE ( *, '(/,2A,/,A,/,2A,/)' ) 'ERROR opening input file: ', Fname(:nchars), &
+     &                             'check to be sure the input file exists', &
+     &                             'file specified by control parameter: ', Paramname
+        Iret = 1
+      ENDIF
+      END SUBROUTINE PRMS_open_input_file
+
+!***********************************************************************
+!     Open PRMS output file and assign unit number
+!***********************************************************************
+      SUBROUTINE PRMS_open_output_file(Iunit, Fname, Paramname, Ftype, Iret)
+      IMPLICIT NONE
+! Argument
+      INTEGER, INTENT(IN) :: Ftype ! 0=text; 1=BINARY
+      INTEGER, INTENT(OUT) :: Iunit, Iret
+      CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
+! Functions
+      INTEGER, EXTERNAL :: get_ftnunit, numchars
+! Local Variables
+      INTEGER :: ios, nchars
+!***********************************************************************
+      Iret = 0
+      Iunit = get_ftnunit(888)
+      nchars = numchars(Fname)
+
+      IF ( Ftype==0 ) THEN
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios )
+      ELSE
+        OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' )
+      ENDIF
+
+      IF ( ios/=0 ) THEN
+        WRITE ( *, '(/,A,/,A,/)' ) 'ERROR opening output file:', Fname(:nchars), &
+     &                             'check to be sure the pathname is valid and the file is not open'
+        WRITE ( *, '(2A,/)' ) 'file specified by control parameter: ', Paramname
+        Iret = 1
+      ENDIF
+
+      END SUBROUTINE PRMS_open_output_file
+
+!***********************************************************************
+!     Open PRMS module output file and assign unit number
+!***********************************************************************
+      SUBROUTINE PRMS_open_module_file(Iunit, Fname)
+      IMPLICIT NONE
+! Argument
+      INTEGER, INTENT(OUT) :: Iunit
+      CHARACTER(LEN=*), INTENT(IN) :: Fname
+! Functions
+      INTEGER, EXTERNAL :: get_ftnunit, numchars
+! Local Variables
+      INTEGER :: ios, nchars
+!***********************************************************************
+      Iunit = get_ftnunit(888)
+      nchars = numchars(Fname)
+      OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios )
+      IF ( ios/=0 ) THEN
+        WRITE ( *, '(/,A,/,A,/)' ) 'ERROR opening water balance output file:', Fname(:nchars), &
+     &                             'check to be sure the pathname is valid and the file is not open'
+        STOP
+      ENDIF
+      END SUBROUTINE PRMS_open_module_file
+
+!***********************************************************************
+!     Determine number of characters in a string
+!***********************************************************************
+      INTEGER FUNCTION numchars(String)
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
+      IMPLICIT NONE
+! Argument
+      CHARACTER(LEN=*), INTENT(IN) :: String
+! Functions
+      INTRINSIC INDEX, CHAR, LEN_TRIM
+!***********************************************************************
+      numchars = INDEX( String, CHAR(0) )
+      IF ( numchars==0 ) numchars = INDEX( String, ' ' )
+      numchars = numchars - 1
+      IF ( numchars==-1 ) numchars = LEN_TRIM( String )
+      IF ( numchars>MAXFILE_LENGTH ) THEN
+        PRINT *, 'PRMS code error, string longer than:', MAXFILE_LENGTH, ' referenced'
+        PRINT *, 'string length:', numchars, ' value: ', String
+        PRINT *, 'Contact PRMS program support'
+        STOP
+      ENDIF
+      END FUNCTION numchars
+
+!***********************************************************************
+! print_module
+! print module version information to user's screen
+!***********************************************************************
+      SUBROUTINE print_module(Description, Versn, Ftntype)
+      USE PRMS_MODULE, ONLY: PRMS_output_unit
+      IMPLICIT NONE
+      ! Arguments
+      CHARACTER(LEN=*), INTENT(IN) :: Description, Versn
+      INTEGER, INTENT(IN) :: Ftntype
+      ! Functions
+      INTRINSIC INDEX
+      ! Local Variables
+      INTEGER nc, n
+!***********************************************************************
+      nc = INDEX( Versn, 'Z' )
+      IF ( Ftntype==90 ) THEN
+        n = INDEX( Versn, '.f90' ) + 3
+      ELSE
+        n = INDEX( Versn, '.f' ) + 1
+      ENDIF
+      PRINT '(A)', Description//Versn(6:n)//', version: '//Versn(n+2:nc)
+      WRITE ( PRMS_output_unit, '(A)' ) Description//Versn(6:n)//', version: '//Versn(n+2:nc)
+      END SUBROUTINE print_module

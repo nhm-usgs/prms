@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: setup_cont.c 7488 2012-09-14 17:58:03Z rsregan $
+ * $Id: setup_cont.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 7488 $
+   $Revision: 5145 $
         $Log: setup_cont.c,v $
         Revision 1.31  1999/08/24 16:34:16  markstro
         Version 1.1.1
@@ -169,10 +169,6 @@ void setup_cont (void) {
         decl_control_string ("solrad_module", "ddsolrad");
         decl_control_string ("soltab_module", "soltab");
         decl_control_string ("soilzone_module", "soilzone");
-        decl_control_string ("stats_module", "null");
-        decl_control_string ("filename_divert", "null");
-        decl_control_string ("filename_return", "null");
-        decl_control_string ("filename_apply", "null");
 		decl_control_string ("strmflow_module", "strmflow");
         decl_control_string ("transp_module", "transp_tindex");
         decl_control_string ("gsflow_output_file", "gsflow.out");
@@ -198,14 +194,6 @@ void setup_cont (void) {
 		decl_control_int_array ("print_debug", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("nmapVars", 1, lval);
-
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("cfgi_flag", 1, lval);
-
-        lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;
 		decl_control_int_array ("cascade_flag", 1, lval);
 
@@ -224,6 +212,10 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dprst_flag", 1, lval);
+
+        lval = (long *)umalloc (sizeof (long));
+		lval[0] = 1;
+		decl_control_int_array ("parameter_check_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -301,13 +293,6 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("orad_flag", 1, lval);
 
-        lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("lake_flag", 1, lval);
-
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-        decl_control_int_array ("map_resultsON_OFF", 1, lval);
 /*
 **	file names
 */
@@ -388,8 +373,6 @@ void setup_cont (void) {
 /*
 **	animation output
 */
-//      decl_control_int_array ("naniOutVars", 1, &lval);
-//      cp = (char **)umalloc (sizeof (char *) * MAXSTATVARS);
 //      for (i = 0; i < MAXSTATVARS; i++) cp[i] = strdup ("inactive");
 //      decl_control ("aniOutVar_names", M_STRING, MAXSTATVARS, cp);
         lval = (long *)umalloc (sizeof (long));

@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: reset_dim.c 5702 2010-07-28 20:42:46Z rsregan $
+ * $Id: reset_dim.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 5702 $
+   $Revision: 5145 $
         $Log: reset_dim.c,v $
         Revision 1.15  1999/10/22 17:14:37  markstro
         Added private variables

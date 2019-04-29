@@ -4,7 +4,7 @@
  * returns a pointer to a PARAM struct which contains the given key
  * returns NULL if key not found
  *
-   $Revision: 3058 $
+   $Revision: 5145 $
         $Log: param_addr.c,v $
         Revision 1.4  1996/02/19 20:00:33  markstro
         Now lints pretty clean
@@ -15,7 +15,7 @@
  * Revision 1.2  1994/01/31  20:17:02  markstro
  * Make sure that all source files have CVS log.
  *
- * $Id: param_addr.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: param_addr.c 5145 2012-12-19 17:39:07Z rsregan $
  *
  **************************************************************************/
 #define PARAM_ADDR_C

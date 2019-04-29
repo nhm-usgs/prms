@@ -5,9 +5,9 @@
  * There are 2 functions: getdim() to be called from C
  *                        getdim_() to be called from Fortran
  *
- * $Id: getdim.c 5648 2010-05-28 18:48:15Z markstro $
+ * $Id: getdim.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 5648 $
+   $Revision: 5145 $
         $Log: getdim.c,v $
         Revision 1.5  1996/02/19 20:00:03  markstro
         Now lints pretty clean

@@ -12,7 +12,7 @@
  * REVIEW   :
  * PR NRS   :
  *
-   $Revision: 5088 $
+   $Revision: 5145 $
         $Log: getdimname.c,v $
         Revision 1.10  1999/08/24 16:34:04  markstro
         Version 1.1.1

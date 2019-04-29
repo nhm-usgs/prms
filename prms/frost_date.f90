@@ -5,16 +5,15 @@
 ! Declared Parameters: frost_temp
 !***********************************************************************
       INTEGER FUNCTION frost_date()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_frost_date, Frost_date_nc
-      USE PRMS_BASIN, ONLY: Timestep, Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
+      USE PRMS_MODULE, ONLY: Process, Nhru
+      USE PRMS_BASIN, ONLY: Timestep, Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
-      USE PRMS_SOLTAB, ONLY: Hemisphere
       USE PRMS_OBS, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX, INT
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam, get_ftnunit, get_season
-      EXTERNAL read_error, write_integer_param
+      INTEGER, EXTERNAL :: declmodule, declparam, getparam, get_season
+      EXTERNAL read_error, write_integer_param, PRMS_open_module_file
 ! Declared Parameters
       REAL, SAVE :: Frost_temp
 ! Local Variables
@@ -32,11 +31,12 @@
       INTEGER, SAVE :: switchToSpringToday, switchToFallToday, Iunit
       INTEGER, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
-      INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
-      CHARACTER(LEN=10), PARAMETER :: MODNAME = 'frost_date'
+      INTEGER :: season, j, jj, basin_fall(1), basin_spring(1), nc
+      CHARACTER(LEN=10), SAVE :: MODNAME
+      CHARACTER(LEN=80), SAVE :: Version_frost_date
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
 !***********************************************************************
-      frost_date = 1
+      frost_date = 0
 
       IF ( Process(:3)=='run' ) THEN
         season = get_season()
@@ -98,10 +98,11 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date.f90 4431 2012-04-23 18:59:02Z rsregan $'
-        Frost_date_nc = INDEX( Version_frost_date, 'Z' )
+        Version_frost_date = '$Id: frost_date.f90 5169 2012-12-28 23:51:03Z rsregan $'
+        nc = INDEX( Version_frost_date, 'Z' )
         j = INDEX( Version_frost_date, '.f90' ) + 3
-        IF ( declmodule(Version_frost_date(6:j), PROCNAME, Version_frost_date(j+2:Frost_date_nc))/=0 ) STOP
+        IF ( declmodule(Version_frost_date(6:j), PROCNAME, Version_frost_date(j+2:nc))/=0 ) STOP
+        MODNAME = 'frost_date'
 
         IF ( declparam(MODNAME, 'frost_temp', 'one', 'real', &
              '28.0', '-10.0', '32.0', &
@@ -125,8 +126,7 @@
         ENDIF
         fallFrostCount = 0
         springFrostCount = 0
-        Iunit = get_ftnunit(351)
-        OPEN (Iunit, FILE='frost_date.param')
+        CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
         IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
           spring1 = 0
@@ -157,14 +157,13 @@
         CALL write_integer_param(Iunit, 'basin_spring_frost', 'one', 1, basin_spring)
       ENDIF
 
-      frost_date = 0
       END FUNCTION frost_date
 
 !*************************************************************
 ! Figure out if the current solar day is in "spring" or "fall"
 !*************************************************************
       INTEGER FUNCTION get_season()
-      USE PRMS_SOLTAB, ONLY: Hemisphere
+      USE PRMS_BASIN, ONLY: Hemisphere
       USE PRMS_OBS, ONLY: Jsol
 !*************************************************************
       get_season = 2 ! default is fall frost

@@ -19,9 +19,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: readvar.c 6789 2012-04-20 16:51:47Z rsregan $
+ * $Id: readvar.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6789 $
+   $Revision: 5145 $
         $Log: readvar.c,v $
         Revision 1.8  1996/04/09 21:04:14  markstro
         (1) Work on control files

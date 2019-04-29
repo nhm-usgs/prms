@@ -14,33 +14,31 @@
 !   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB_RADPL
-      IMPLICIT NONE
+        IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: Nradpl, Hemisphere
-      DOUBLE PRECISION, PARAMETER :: CLOSEZERO=1.0D-15
-      DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
-      DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
-      DOUBLE PRECISION, PARAMETER :: DAYSYR=365.242D0
-      DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
-      DOUBLE PRECISION, PARAMETER :: ECCENTRICY=0.01671D0
-      DOUBLE PRECISION, PARAMETER :: DEGDAY=360.0D0/DAYSYR
-      DOUBLE PRECISION, PARAMETER :: DEGDAYRAD=DEGDAY*RADIANS
+        INTEGER, SAVE :: Nradpl, Hemisphere
+        DOUBLE PRECISION, PARAMETER :: CLOSEZERO=1.0D-15
+        DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
+        DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0
+        DOUBLE PRECISION, PARAMETER :: TWOPI=2.0D0*PI
+        DOUBLE PRECISION, PARAMETER :: DAYSYR=365.242D0
+        DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
+        DOUBLE PRECISION, PARAMETER :: ECCENTRICY=0.01671D0
+        DOUBLE PRECISION, PARAMETER :: DEGDAY=360.0D0/DAYSYR
+        DOUBLE PRECISION, PARAMETER :: DEGDAYRAD=DEGDAY*RADIANS
 ! TWOPI = 6.2831853071786
 ! RADIANS = 0.017453292519943
 ! PI_12 ~ 3.8197186342055
 ! DEGDAY = 360 degrees/days in year
 ! obliquity = 23.439 (obliquity of sun)
+        CHARACTER(LEN=11), SAVE :: MODNAME
+        CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Table'
 !   Declared Variables
-      REAL, SAVE, ALLOCATABLE :: Radpl_cossl(:)
-      REAL, SAVE, ALLOCATABLE :: Radpl_soltab(:, :), Sunhrs_soltab(:, :)
+        REAL, SAVE, ALLOCATABLE :: Radpl_cossl(:)
+        REAL, SAVE, ALLOCATABLE :: Radpl_soltab(:,:), Sunhrs_soltab(:,:)
 !   Declared Parameters
-      REAL, SAVE, ALLOCATABLE :: Radpl_aspect(:), Radpl_lat(:)
-      REAL, SAVE, ALLOCATABLE :: Radpl_slope(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='soltab_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Solar Table')
+        REAL, SAVE, ALLOCATABLE :: Radpl_aspect(:), Radpl_lat(:)
+        REAL, SAVE, ALLOCATABLE :: Radpl_slope(:)
       END MODULE PRMS_SOLTAB_RADPL
 
 !***********************************************************************
@@ -76,13 +74,12 @@
       ! Maximum values are no longer limits
       INTEGER, PARAMETER :: MAXDIM = 500
 !***********************************************************************
-      solrsetdims = 1
+      solrsetdims = 0
 
       IF ( decldim('nradpl', 1, MAXDIM,
      +     'Number of solar radiation planes (deprecated)')/=0 )
      +     CALL read_error(7, 'nradpl')
 
-      solrsetdims = 0
       END FUNCTION solrsetdims
 
 !***********************************************************************
@@ -92,20 +89,22 @@
 !***********************************************************************
       INTEGER FUNCTION solrdecl()
       USE PRMS_SOLTAB_RADPL
-      USE PRMS_MODULE, ONLY: Version_soltab_prms, Soltab_prms_nc
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, getdim, declvar
+! Local Variables
+      INTEGER :: nc
+      CHARACTER(LEN=80), SAVE :: Version_soltab_prms
 !***********************************************************************
       solrdecl = 1
 
       Version_soltab_prms =
-     +'$Id: soltab_prms.f 4481 2012-05-04 23:11:47Z rsregan $'
-      Soltab_prms_nc = INDEX( Version_soltab_prms, ' $' ) + 1
-
+     +'$Id: soltab_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_soltab_prms, ' $' ) + 1
       IF ( declmodule(MODNAME, PROCNAME,
-     +           Version_soltab_prms(:Soltab_prms_nc))/=0 ) STOP
+     +     Version_soltab_prms(:nc))/=0 ) STOP
+      MODNAME = 'soltab_prms'
 
       Nradpl = getdim('nradpl')
       IF ( Nradpl.EQ.-1 ) RETURN
@@ -229,7 +228,7 @@
         Hemisphere = 1 ! Southern
       ENDIF
 
-      IF ( Print_debug.EQ.5 ) THEN
+      IF ( Print_debug==5 ) THEN
         output_path = 'soltab_debug'
         file_unit = 91
         INQUIRE (FILE=output_path, EXIST=filflg)

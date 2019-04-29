@@ -14,9 +14,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: decldim.c 6868 2012-05-08 21:56:34Z markstro $
+ * $Id: decldim.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6868 $
+   $Revision: 5145 $
         $Log: decldim.c,v $
         Revision 1.13  1996/09/10 16:25:21  markstro
         Unknown

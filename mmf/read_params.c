@@ -14,9 +14,9 @@
  * read_params.c: reads the params data base from a file
  * File name is passed in as an argument
  *
- * $Id: read_params.c 6789 2012-04-20 16:51:47Z rsregan $
+ * $Id: read_params.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6789 $
+   $Revision: 5145 $
         $Log: read_params.c,v $
         Revision 1.30  1998/10/20 15:53:02  markstro
         Fixed "blank" format.

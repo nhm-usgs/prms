@@ -10,7 +10,7 @@
  * REF      :
  * REVIEW   :
  * PR NRS   :
-   $Revision: 6757 $
+   $Revision: 5228 $
         $Log: save_params.c,v $
         Revision 1.17  1998/03/04 17:20:20  markstro
         Added seperate runcontrol functions for each run type.
@@ -194,7 +194,8 @@ static void write_parameters (FILE *param_file, int writeAllParams) {
 	long i,j;
 	double	*dvalptr;
 	float	*fvalptr;
-	long	*lvalptr;
+//	long	*lvalptr;
+	int	*lvalptr;
 /*
 * Write out parameter values and description if any.
 */
@@ -267,13 +268,16 @@ static void write_parameters (FILE *param_file, int writeAllParams) {
 
 				case M_LONG:
 					if (writeAllParams) {
-						lvalptr = (long *) param->value;
+//						lvalptr = (long *) param->value;
+						lvalptr = (int *) param->value;
 					} else {
-						lvalptr = (long *) (param->references[0]);
+//						lvalptr = (long *) (param->references[0]);
+						lvalptr = (int *) (param->references[0]);
 					}
 
 					for (j = 0; j < param->size; j++) {
-						(void)fprintf(param_file, "%ld\n", *lvalptr);
+//						(void)fprintf(param_file, "%ld\n", *lvalptr);
+						(void)fprintf(param_file, "%d\n", *lvalptr);
 						lvalptr++;
 						if (param->value_desc[j]) {
 						  while ((ptr = strchr (param->value_desc[j], '\n'))) {

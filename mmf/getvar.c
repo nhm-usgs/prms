@@ -19,9 +19,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: getvar.c 7446 2012-08-30 21:41:41Z rsregan $
+ * $Id: getvar.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 7446 $
+   $Revision: 5145 $
         $Log: getvar.c,v $
         Revision 1.8  1996/04/09 21:04:06  markstro
         (1) Work on control files

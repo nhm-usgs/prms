@@ -10,21 +10,16 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_CCSOLRAD_RADPL
-      IMPLICIT NONE
-!   Local Variables
-      REAL, SAVE, ALLOCATABLE :: Plrad(:)
-!   Declared Variables
-      REAL, SAVE, ALLOCATABLE :: Radpl_potsw(:), Daily_potsw(:)
-!   Declared Parameters
-      INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
-      REAL, SAVE :: Crad_coef, Crad_exp
-      REAL, SAVE, ALLOCATABLE :: Ccov_slope(:), Ccov_intcp(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ccsolrad_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Solar Radiation')
-      
+        IMPLICIT NONE
+        ! Local Variables
+        CHARACTER(LEN=13), SAVE :: MODNAME
+        REAL, SAVE, ALLOCATABLE :: Plrad(:)
+        ! Declared Variables
+        REAL, SAVE, ALLOCATABLE :: Radpl_potsw(:)
+        ! Declared Parameters
+        INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
+        REAL, SAVE :: Crad_coef, Crad_exp
+        REAL, SAVE, ALLOCATABLE :: Ccov_slope(:), Ccov_intcp(:)
       END MODULE PRMS_CCSOLRAD_RADPL
 
 !***********************************************************************
@@ -57,33 +52,28 @@
 !***********************************************************************
       INTEGER FUNCTION ccsoldecl()
       USE PRMS_CCSOLRAD_RADPL
-      USE PRMS_MODULE, ONLY: Nhru, Version_ccsolrad_prms,
-     +    Ccsolrad_prms_nc
+      USE PRMS_MODULE, ONLY: Nhru
       USE PRMS_SOLTAB_RADPL, ONLY: Nradpl
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
+! Local Variables
+      INTEGER :: nc
+      CHARACTER(LEN=80), SAVE :: Version_ccsolrad_prms
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ccsoldecl = 1
 
       Version_ccsolrad_prms =
-     +'$Id: ccsolrad_prms.f 4467 2012-05-04 15:57:55Z rsregan $'
-      Ccsolrad_prms_nc = INDEX( Version_ccsolrad_prms, ' $' ) + 1
+     +'$Id: ccsolrad_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_ccsolrad_prms, ' $' ) + 1
       IF ( declmodule(MODNAME, PROCNAME,
-     +                   Version_ccsolrad_prms(:Ccsolrad_prms_nc))/=0 )
-     +       STOP
+     +                Version_ccsolrad_prms(:nc))/=0 ) STOP
 
       ALLOCATE (Plrad(Nradpl))
 
 ! Declare Variables
-      ALLOCATE (Daily_potsw(Nradpl))
-      IF ( declvar(MODNAME, 'daily_potsw', 'nradpl', Nradpl, 'real',
-     +     'Potential shortwave radiation for each radiation'//
-     +     ' plane for each day',
-     +     'langleys',
-     +     Daily_potsw).NE.0 ) RETURN
-
       ALLOCATE (Radpl_potsw(Nradpl))
       IF ( declvar(MODNAME, 'radpl_potsw', 'nradpl', Nradpl, 'real',
      +     'Potential shortwave radiation for each radiation'//
@@ -158,10 +148,7 @@
       IF ( getparam(MODNAME, 'crad_exp', 1, 'real', Crad_exp)
      +     .NE.0 ) RETURN
 
-      IF ( Timestep==0 ) THEN
-        Daily_potsw = 0.0
-        Radpl_potsw = 0.0
-      ENDIF
+      IF ( Timestep==0 ) Radpl_potsw = 0.0
 
       ccsolinit = 0
       END FUNCTION ccsolinit
@@ -172,11 +159,12 @@
 !***********************************************************************
       INTEGER FUNCTION ccsolrun()
       USE PRMS_CCSOLRAD_RADPL
+      USE PRMS_MODULE, ONLY: Nsol
       USE PRMS_OBS, ONLY: Solrad, Nowmonth, Jday
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order,
      +    Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin,
-     +    Basin_obs_ppt, Ppt_rad_adj, Basin_solsta, Nsol, Orad,
+     +    Basin_obs_ppt, Ppt_rad_adj, Basin_solsta, Orad,
      +    Basin_horad, Basin_potsw, Swrad, Radmax, Radj_sppt, Radj_wppt,
      +    Rad_conv, Hru_solsta
       USE PRMS_SOLTAB_RADPL, ONLY: Nradpl, Hemisphere, Radpl_soltab,
@@ -186,7 +174,7 @@
       INTEGER :: j, ir, jj, k
       REAL :: ccov, pptadj, radadj
 !***********************************************************************
-      ccsolrun = 1
+      ccsolrun = 0
 
 !rsr using julian day as the soltab arrays are filled by julian day
       Basin_horad = Radpl_soltab(Jday, 1)
@@ -229,7 +217,6 @@
       DO j = 1, Nradpl
         Radpl_potsw(j) = Radpl_soltab(Jday, j)
         Plrad(j) = Radpl_potsw(j)/Basin_horad*Orad/Radpl_cossl(j)
-        Daily_potsw(j) = Radpl_potsw(j)
       ENDDO
 
       Basin_potsw = 0.0D0
@@ -255,5 +242,4 @@
       ENDIF
       Basin_potsw = Basin_potsw*Basin_area_inv
 
-      ccsolrun = 0
       END FUNCTION ccsolrun

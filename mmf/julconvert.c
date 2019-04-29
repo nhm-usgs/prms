@@ -8,9 +8,9 @@
  * The Julian day starts at noon of the Gregorian day and extends
  * to noon the next Gregorian day.
  *
- * $Id: julconvert.c 3622 2007-11-15 22:19:26Z markstro $
+ * $Id: julconvert.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 3622 $
+   $Revision: 5145 $
 		$Log: julconvert.c,v $
 		Revision 1.6  2001/04/03 18:18:06  markstro
 		Unknown

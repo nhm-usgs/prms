@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: batch_run_functions.c 6387 2012-02-10 20:44:24Z markstro $
+ * $Id: batch_run_functions.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6387 $
+   $Revision: 5145 $
         $Log: single_run.c,v $
         Revision 1.47  2006/11/27 14:30:50  rsregan
 	changed GIS file to animation (ani) file

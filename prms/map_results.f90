@@ -5,23 +5,21 @@
       MODULE PRMS_MAP_RESULTS
       IMPLICIT NONE
 ! Module Variables
-      INTEGER, SAVE :: Ngwcell, Nhrucell, Mapflg, Numcells
-      INTEGER, SAVE :: Endyr, Endmo, Endday, Lastyear, Totdays
+      INTEGER, SAVE :: Ngwcell, Mapflg, Numcells
+      INTEGER, SAVE :: Lastyear, Totdays, Begin_results, Begyr, Nrow
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
-      INTEGER, SAVE :: Begin_results, Begyr, Begmo, Begday, Nrow
       INTEGER, SAVE :: Prevyr, Prevmo, Prevday, Weekresults, Weekdays
       INTEGER, SAVE, ALLOCATABLE :: Totunit(:), Yrunit(:), Monunit(:), Weekunit(:)
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:), Map_var_type(:)
       DOUBLE PRECISION, SAVE :: Conv_fac
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_tot(:), Basin_var_yr(:), Basin_var_mon(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_week(:), Map_var_id(:), Var_values(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_week(:), Map_var_id(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_mon(:, :), Map_var_week(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_yr(:, :), Map_var_tot(:, :)
       REAL, SAVE, ALLOCATABLE :: Map_var(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_dble(:, :)
       CHARACTER(LEN=15), SAVE :: Mapfmt
-      CHARACTER(LEN=11), PARAMETER :: MODNAME = 'map_results'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'
+      CHARACTER(LEN=11), SAVE :: MODNAME
 ! Declared Parameters
       INTEGER, SAVE :: Ncol, Prms_warmup, Mapvars_freq, Mapvars_units
       INTEGER, SAVE, ALLOCATABLE :: Gvr_map_id(:), Gvr_hru_id(:)
@@ -38,8 +36,7 @@
       USE PRMS_MODULE, ONLY: Process
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: map_resultsdecl, map_resultsinit
-      INTEGER, EXTERNAL :: map_resultsclean, map_resultsrun
+      INTEGER, EXTERNAL :: map_resultsdecl, map_resultsinit, map_resultsclean, map_resultsrun
 !***********************************************************************
       map_results = 0
 
@@ -60,24 +57,31 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsdecl()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Model, Nhru, Version_map_results, Map_results_nc, MapOutON_OFF
+      USE PRMS_MODULE, ONLY: Model, Nhru, MapOutON_OFF, Nhrucell
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX, CHAR
-      INTEGER, EXTERNAL :: declmodule, declparam, getdim, get_ftnunit
-      INTEGER, EXTERNAL :: control_string_array, control_integer
+      INTEGER, EXTERNAL :: declmodule, declparam, getdim, control_string_array, control_integer
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
-!***********************************************************************
-      map_resultsdecl = 1
+      INTEGER :: i, nc
+      CHARACTER(LEN=80), SAVE :: Version_map_results
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'!***********************************************************************
+      map_resultsdecl = 0
 
-      Version_map_results = '$Id: map_results.f90 4846 2012-09-18 17:56:06Z rsregan $'
-      Map_results_nc = INDEX( Version_map_results, 'Z' )
+      Version_map_results = '$Id: map_results.f90 5221 2013-01-14 21:55:28Z rsregan $'
+      nc = INDEX( Version_map_results, 'Z' )
       i = INDEX( Version_map_results, '.f90' ) + 3
-      IF ( declmodule(Version_map_results(6:i), PROCNAME, Version_map_results(i+2:Map_results_nc))/=0 ) STOP
+      IF ( declmodule(Version_map_results(6:i), PROCNAME, Version_map_results(i+2:nc))/=0 ) STOP
+      MODNAME = 'map_results'
 
       IF ( control_integer(NmapOutVars, 'nmapOutVars')/=0 ) CALL read_error(5, 'nmapOutVars')
+      IF ( NmapOutVars==0 ) THEN
+        PRINT *, 'Warning, map_results requested with nmapOutVars equal 0, no map_results output is produced'
+        MapOutON_OFF = 0
+        RETURN
+      ENDIF
+
       ALLOCATE ( MapOutVar_names(NmapOutVars), Map_var_type(NmapOutVars), Nc_vars(NmapOutVars) )
       ALLOCATE ( Map_var(Nhru, NmapOutVars), Map_var_dble(Nhru, NmapOutVars) )
 
@@ -91,60 +95,57 @@
       Mapflg = 1
       IF ( (Nhru/=Ngwcell .AND. Ngwcell/=0) .OR. mapOutON_OFF==2 ) Mapflg = 0
 
-! Declared Parameters
-      IF ( declparam(MODNAME, 'mapvars_freq', 'one', 'integer', &
-           '0', '0', '5', &
-           'Mapped results frequency', &
-           'Flag to specify the output frequency (0=none; 1=monthly; 2=yearly; 3=total; 4=monthly and yearly;'// &
-           ' 5=monthly, yearly, and total; 6=weekly)', &
-           'none')/=0 ) CALL read_error(1, 'mapvars_freq')
-
-      IF ( declparam(MODNAME, 'mapvars_units', 'one', 'integer', &
-           '0', '0', '3', &
-           'Flag to specify the output units of mapped results', &
-           'Flag to specify the output units of mapped results (0=units of the variable;'// &
-           ' 1=inches/day to feet/day; 2=inches/day to cm/day; 3=inches/day to meters/day)', &
-           'none')/=0 ) CALL read_error(1, 'mapvars_units')
-
-      IF ( declparam(MODNAME, 'prms_warmup', 'one', 'integer', &
-           '1', '0', '12', &
-           'Number of years to simulate before writing mapped results', &
-           'Number of years to simulate before writing mapped results', &
-           'years')/=0 ) CALL read_error(1, 'prms_warmup')
-
-      IF ( declparam(MODNAME, 'ncol', 'one', 'integer', &
-           '1', '1', '50000', &
-           'Number of columns for each row of the mapped results', &
-           'Number of columns for each row of the mapped results', &
-           'none')/=0 ) CALL read_error(1, 'ncol')
-
       IF ( Mapflg==0 .OR. Model==99 ) THEN
-        Nhrucell = getdim('nhrucell')
-        IF ( Nhrucell==-1 ) CALL read_error(6, 'nhrucell')
-
-        ALLOCATE ( Gvr_map_id(Nhrucell) )
-        IF ( declparam(MODNAME, 'gvr_cell_id', 'nhrucell', 'integer', &
-             '1', 'bounded', 'ngwcell', &
-             'Corresponding grid cell id associated with each GVR', &
-             'Index of the grid cell associated with each gravity reservoir', &
-             'none')/=0 ) CALL read_error(1, 'gvr_cell_id')
-
-        ALLOCATE ( Gvr_map_frac(Nhrucell) )
-        IF ( declparam(MODNAME, 'gvr_cell_pct', 'nhrucell', 'real', &
-             '0.0', '0.0', '1.0', &
-             'Proportion of the grid cell associated with each GVR', &
-             'Proportion of the grid cell area associated with each gravity reservoir', &
-             'decimal fraction')/=0 ) CALL read_error(1, 'gvr_cell_pct')
-
-        ALLOCATE ( Gvr_hru_id(Nhrucell) )
-        IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
-             '1', 'bounded', 'nhru', &
-             'Corresponding HRU id of each GVR', &
-             'Index of the HRU associated with each gravity reservoir', &
-             'none')/=0 ) CALL read_error(1, 'gvr_hru_id')
+        IF ( Nhrucell<1 ) STOP 'ERROR, in map_results, nhru_cell = 0 and must be > 0'
+        ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell) )
+        ALLOCATE ( Map_var_id(Ngwcell) )
       ENDIF
 
-      map_resultsdecl = 0
+! Declared Parameters
+      IF ( declparam(MODNAME, 'mapvars_freq', 'one', 'integer', &
+     &     '0', '0', '5', &
+     &     'Mapped results frequency', &
+     &     'Flag to specify the output frequency (0=none; 1=monthly; 2=yearly; 3=total; 4=monthly and yearly;'// &
+     &     ' 5=monthly, yearly, and total; 6=weekly)', &
+     &     'none')/=0 ) CALL read_error(1, 'mapvars_freq')
+
+      IF ( declparam(MODNAME, 'mapvars_units', 'one', 'integer', &
+     &     '0', '0', '3', &
+     &     'Flag to specify the output units of mapped results', &
+     &     'Flag to specify the output units of mapped results (0=units of the variable;'// &
+     &     ' 1=inches/day to feet/day; 2=inches/day to cm/day; 3=inches/day to meters/day)', &
+     &     'none')/=0 ) CALL read_error(1, 'mapvars_units')
+
+      IF ( declparam(MODNAME, 'prms_warmup', 'one', 'integer', &
+     &     '1', '0', '12', &
+     &     'Number of years to simulate before writing mapped results', &
+     &     'Number of years to simulate before writing mapped results', &
+     &     'years')/=0 ) CALL read_error(1, 'prms_warmup')
+
+      IF ( declparam(MODNAME, 'ncol', 'one', 'integer', &
+     &     '1', '1', '50000', &
+     &     'Number of columns for each row of the mapped results', &
+     &     'Number of columns for each row of the mapped results', &
+     &     'none')/=0 ) CALL read_error(1, 'ncol')
+
+      IF ( Mapflg==0 .OR. Model==99 ) THEN
+        IF ( declparam(MODNAME, 'gvr_cell_id', 'nhrucell', 'integer', &
+     &       '1', 'bounded', 'ngwcell', &
+     &       'Corresponding grid cell id associated with each GVR', &
+     &       'Index of the grid cell associated with each gravity reservoir', &
+     &       'none')/=0 ) CALL read_error(1, 'gvr_cell_id')
+        IF ( declparam(MODNAME, 'gvr_cell_pct', 'nhrucell', 'real', &
+     &       '0.0', '0.0', '1.0', &
+     &       'Proportion of the grid cell associated with each GVR', &
+     &       'Proportion of the grid cell area associated with each gravity reservoir', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'gvr_cell_pct')
+        IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
+     &       '1', 'bounded', 'nhru', &
+     &       'Corresponding HRU id of each GVR', &
+     &       'Index of the HRU associated with each gravity reservoir', &
+     &       'none')/=0 ) CALL read_error(1, 'gvr_hru_id')
+      ENDIF
+
       END FUNCTION map_resultsdecl
 
 !***********************************************************************
@@ -152,34 +153,118 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsinit()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
-      USE PRMS_BASIN, ONLY: Hru_area, Starttime, Endtime, NEARZERO
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Nhrucell, Inputerror_flag
+      USE PRMS_BASIN, ONLY: Hru_area, Start_year, Start_month, Start_day, &
+     &    End_year, End_month, End_day, NEARZERO, Timestep
       IMPLICIT NONE
       INTRINSIC ABS
-      INTEGER, EXTERNAL :: getparam, getvartype, get_ftnunit
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: getparam, getvartype
+      EXTERNAL read_error, PRMS_open_output_file
 ! Local Variables
-      INTEGER :: i, jj, is
+      INTEGER :: i, jj, is, ios, ierr
       REAL, ALLOCATABLE, DIMENSION(:) :: map_frac
 !***********************************************************************
-      map_resultsinit = 1
+      map_resultsinit = 0
 
-      IF ( getparam(MODNAME, 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) &
-           CALL read_error(1, 'mapvars_freq')
+      IF ( Timestep==0 ) THEN
+        IF ( getparam(MODNAME, 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) &
+             CALL read_error(1, 'mapvars_freq')
+        IF ( getparam(MODNAME, 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
+        IF ( getparam(MODNAME, 'prms_warmup', 1, 'integer', Prms_warmup)/=0 ) CALL read_error(2, 'prms_warmup')
+      ENDIF
+
       IF ( Mapvars_freq==0 ) THEN
         map_resultsinit = 0
         RETURN
       ENDIF
 
-      IF ( getparam(MODNAME, 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
       WRITE ( Mapfmt, 9001 ) Ncol
+
+      IF ( Prms_warmup>0 ) THEN
+        Begin_results = 0
+      ELSE
+        Begin_results = 1
+      ENDIF
+      Begyr = Start_year + Prms_warmup
+      IF ( Begyr>End_year ) THEN
+        PRINT *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
+        Inputerror_flag = 1
+      ENDIF
+      Lastyear = Begyr
+      Totdays = 0
+      Mondays = 0
+      Yrdays = 0
+      Weekdays = 0
+      Prevyr = Begyr
+      Prevmo = Start_month
+      Prevday = Start_day
+      Map_var_type = 2
+      DO jj = 1, NmapOutVars
+        Nc_vars(jj) = INDEX( MapOutVar_names(jj), CHAR(0) ) - 1
+        Map_var_type(jj)= getvartype(MapOutVar_names(jj)(:Nc_vars(jj)), Map_var_type(jj) )
+      ENDDO
+
+      Weekresults = 0
+      Monresults = 0
+      Yrresults = 0
+      Totresults = 0
+      ierr = 0
+      IF ( Mapvars_freq==6 ) THEN
+        Weekresults = 1
+        ALLOCATE ( Map_var_week(Nhru, NmapOutVars), Basin_var_week(NmapOutVars) )
+        Map_var_week = 0.0D0
+        Basin_var_week = 0.0D0
+        ALLOCATE ( Weekunit(NmapOutVars) )
+        DO jj = 1, NmapOutVars
+          CALL PRMS_open_output_file(Weekunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.weekly', 'xxx', 0, ios)
+          IF ( ios/=0 ) ierr = 1
+        ENDDO
+      ENDIF
+
+      IF ( Mapvars_freq==1 .OR. Mapvars_freq==4 .OR. Mapvars_freq==5 ) THEN
+        Monresults = 1
+        ALLOCATE ( Map_var_mon(Nhru, NmapOutVars), Basin_var_mon(NmapOutVars) )
+        Map_var_mon = 0.0D0
+        Basin_var_mon = 0.0D0
+        ALLOCATE ( Monunit(NmapOutVars) )
+        DO jj = 1, NmapOutVars
+          CALL PRMS_open_output_file(Monunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.monthly', 'xxx', 0, ios)
+          IF ( ios/=0 ) ierr = 1
+        ENDDO
+      ENDIF
+
+      IF ( Mapvars_freq==2 .OR. Mapvars_freq==5 ) THEN
+        Yrresults = 1
+        ALLOCATE ( Map_var_yr(Nhru, NmapOutVars) )
+        ALLOCATE ( Basin_var_yr(NmapOutVars) )
+        Map_var_yr = 0.0D0
+        Basin_var_yr = 0.0D0
+        ALLOCATE ( Yrunit(NmapOutVars) )
+        DO jj = 1, NmapOutVars
+          CALL PRMS_open_output_file(Yrunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.yearly', 'xxx', 0, ios)
+          IF ( ios/=0 ) ierr = 1
+        ENDDO
+      ENDIF
+
+      IF ( Mapvars_freq==3 .OR. Mapvars_freq==5 ) THEN
+        Totresults = 1
+        ALLOCATE ( Map_var_tot(Nhru, NmapOutVars) )
+        ALLOCATE ( Basin_var_tot(NmapOutVars) )
+        Map_var_tot = 0.0D0
+        Basin_var_tot = 0.0D0
+        ALLOCATE ( Totunit(NmapOutVars) )
+        DO jj = 1, NmapOutVars
+          CALL PRMS_open_output_file(Totunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.total', 'xxx', 0, ios)
+          IF ( ios/=0 ) ierr = 1
+        ENDDO
+      ENDIF
+      IF ( ierr==1 ) STOP
 
       IF ( Mapflg==0 ) THEN
         Nrow = Ngwcell/Ncol
         IF ( Ngwcell==0 ) STOP 'ERROR, dimension ngwcell must be specified > 0'
         IF ( Ngwcell/=Nrow*Ncol ) Nrow = Nrow + 1
         Numcells = Ngwcell
-        ALLOCATE ( Map_var_id(Ngwcell) )
         IF ( getparam(MODNAME, 'gvr_cell_id', Nhrucell, 'integer', Gvr_map_id)/=0 ) CALL read_error(2, 'gvr_cell_id')
         IF ( getparam(MODNAME, 'gvr_cell_pct', Nhrucell, 'real', Gvr_map_frac)/=0 ) CALL read_error(2, 'gvr_cell_pct')
         IF ( getparam(MODNAME, 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
@@ -217,69 +302,7 @@
         Numcells = Nhru
       ENDIF
 
-      Map_var_type = 2
-      DO jj = 1, NmapOutVars
-        Nc_vars(jj) = INDEX( MapOutVar_names(jj), CHAR(0) ) - 1
-        Map_var_type(jj)= getvartype(MapOutVar_names(jj)(:Nc_vars(jj)), Map_var_type(jj) )
-      ENDDO
-
-      Weekresults = 0
-      Monresults = 0
-      Yrresults = 0
-      Totresults = 0
-
-      IF ( Mapvars_freq==6 ) THEN
-        Weekresults = 1
-        ALLOCATE ( Map_var_week(Nhru, NmapOutVars), Basin_var_week(NmapOutVars) )
-        Map_var_week = 0.0D0
-        Basin_var_week = 0.0D0
-        ALLOCATE ( Weekunit(NmapOutVars) )
-        DO jj = 1, NmapOutVars
-          Weekunit(jj) = get_ftnunit(382+jj)
-          OPEN ( Weekunit(jj), FILE=MapOutVar_names(jj)(:Nc_vars(jj))//'.weekly' )
-        ENDDO
-      ENDIF
-
-      IF ( Mapvars_freq==1 .OR. Mapvars_freq==4 .OR. Mapvars_freq==5 ) THEN
-        Monresults = 1
-        ALLOCATE ( Map_var_mon(Nhru, NmapOutVars), Basin_var_mon(NmapOutVars) )
-        Map_var_mon = 0.0D0
-        Basin_var_mon = 0.0D0
-        ALLOCATE ( Monunit(NmapOutVars) )
-        DO jj = 1, NmapOutVars
-          Monunit(jj) = get_ftnunit(383+jj)
-          OPEN ( Monunit(jj), FILE=MapOutVar_names(jj)(:Nc_vars(jj))//'.monthly' )
-        ENDDO
-      ENDIF
-
-      IF ( Mapvars_freq==2 .OR. Mapvars_freq==5 ) THEN
-        Yrresults = 1
-        ALLOCATE ( Map_var_yr(Nhru, NmapOutVars) )
-        ALLOCATE ( Basin_var_yr(NmapOutVars) )
-        Map_var_yr = 0.0D0
-        Basin_var_yr = 0.0D0
-        ALLOCATE ( Yrunit(NmapOutVars) )
-        DO jj = 1, NmapOutVars
-          Yrunit(jj) = get_ftnunit(483+jj)
-          OPEN ( Yrunit(jj), FILE=MapOutVar_names(jj)(:Nc_vars(jj))//'.yearly' )
-        ENDDO
-      ENDIF
-
-      IF ( Mapvars_freq==3 .OR. Mapvars_freq==5 ) THEN
-        Totresults = 1
-        ALLOCATE ( Map_var_tot(Nhru, NmapOutVars) )
-        ALLOCATE ( Basin_var_tot(NmapOutVars) )
-        Map_var_tot = 0.0D0
-        Basin_var_tot = 0.0D0
-        ALLOCATE ( Totunit(NmapOutVars) )
-        DO jj = 1, NmapOutVars
-          Totunit(jj) = get_ftnunit(583+jj)
-          OPEN ( Totunit(jj), FILE=MapOutVar_names(jj)(:Nc_vars(jj))//'.total' )
-        ENDDO
-      ENDIF
-
-      IF ( getparam(MODNAME, 'mapvars_units', 1, 'integer', &
-           Mapvars_units)/=0 ) CALL read_error(2, 'Mapvars_units')
+      IF ( getparam(MODNAME, 'mapvars_units', 1, 'integer', Mapvars_units)/=0 ) CALL read_error(2, 'Mapvars_units')
       IF ( Mapvars_units==0 ) THEN
         Conv_fac = 1.0D0
       ELSEIF ( Mapvars_units==1 ) THEN
@@ -290,32 +313,8 @@
         Conv_fac = 0.0254D0
       ENDIF
 
-      IF ( getparam(MODNAME, 'prms_warmup', 1, 'integer', Prms_warmup)/=0 ) CALL read_error(2, 'prms_warmup')
-
-      IF ( Prms_warmup>0 ) THEN
-        Begin_results = 0
-      ELSE
-        Begin_results = 1
-      ENDIF
-      Begyr = Starttime(1) + Prms_warmup
-      Begmo = Starttime(2)
-      Begday = Starttime(3)
-      Endyr = Endtime(1)
-      IF ( Begyr>Endyr ) STOP 'ERROR, warmup period longer than simulation time period'
-      Endmo = Endtime(2)
-      Endday = Endtime(3)
-      Lastyear = Begyr
-      Totdays = 0
-      Mondays = 0
-      Yrdays = 0
-      Weekdays = 0
-      Prevyr = Begyr
-      Prevmo = Begmo
-      Prevday = Begday
-
  9001 FORMAT ( '(',I8,'E10.3)' )
 
-      map_resultsinit = 0
       END FUNCTION map_resultsinit
 
 !***********************************************************************
@@ -324,8 +323,9 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsrun()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Nhru
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, DNEARZERO
+      USE PRMS_MODULE, ONLY: Nhru, Nhrucell
+      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, DNEARZERO, &
+     &    Start_year, Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_OBS, ONLY: Nowtime, Modays
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
@@ -343,20 +343,18 @@
       month = Nowtime(2)
       day = Nowtime(3)
       IF ( Begin_results==0 ) THEN
-        IF ( year==Begyr .AND. month==Begmo .AND. day==Begday ) THEN
+        IF ( year==Begyr .AND. month==Start_month .AND. day==Start_day ) THEN
           Begin_results = 1
         ELSE
           RETURN
         ENDIF
       ENDIF
 
-      map_resultsrun = 1
-
 ! check for last day of simulation
       last_day = 0
-      IF ( year==Endyr ) THEN
-        IF ( month==Endmo ) THEN
-          IF ( day==Endday ) THEN
+      IF ( year==End_year ) THEN
+        IF ( month==End_month ) THEN
+          IF ( day==End_day ) THEN
             last_day = 1
             Prevyr = year
             Prevmo = month
@@ -368,7 +366,7 @@
       IF ( Yrresults==1 ) THEN
 ! check for first time step of the next year
         IF ( Lastyear/=year .OR. last_day==1 ) THEN
-          IF ( (month==Begmo .AND. day==Begday) .OR. last_day==1 ) THEN
+          IF ( (month==Start_month .AND. day==Start_day) .OR. last_day==1 ) THEN
             Lastyear = year
             factor = Conv_fac/Yrdays
             Basin_var_yr = 0.0D0
@@ -382,8 +380,7 @@
               Basin_var_yr(jj) = Basin_var_yr(jj)*Basin_area_inv
 
               IF ( Map_var_type(jj)/=2 .AND. Map_var_type(jj)/=3 ) CYCLE
-              WRITE ( Yrunit(jj), 9002 ) Prevyr, Prevmo, Prevday, &
-                      ' Basin yearly mean:', Basin_var_yr(jj)
+              WRITE ( Yrunit(jj), 9002 ) Prevyr, Prevmo, Prevday, ' Basin yearly mean:', Basin_var_yr(jj)
 
               IF ( Mapflg==1 ) THEN
                 CALL write_results(Yrunit(jj), Map_var_yr(1,jj))
@@ -392,7 +389,7 @@
                 DO k = 1, Nhrucell
                   IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
                   Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-                                              Map_var_yr(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
+     &                                        Map_var_yr(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
                 ENDDO
                 CALL write_results(Yrunit(jj), Map_var_id)
               ENDIF
@@ -413,10 +410,10 @@
       DO jj = 1, NmapOutVars
         IF ( Map_var_type(jj)==2 ) THEN
           IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
-                      Nhru, 'real', Map_var(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
+     &                Nhru, 'real', Map_var(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Map_var_type(jj)==3 ) THEN
           IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
-                      Nhru, 'double', Map_var_dble(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
+     &                Nhru, 'double', Map_var_dble(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ENDIF
       ENDDO
 
@@ -453,8 +450,7 @@
             Basin_var_week(jj) = Basin_var_week(jj)*Basin_area_inv
 
             IF ( Map_var_type(jj)/=2 .AND. Map_var_type(jj)/=3 ) CYCLE
-            WRITE ( Weekunit(jj), 9002 ) year, month, day, &
-                    ' Basin weekly mean:', Basin_var_week(jj)
+            WRITE ( Weekunit(jj), 9002 ) year, month, day, ' Basin weekly mean:', Basin_var_week(jj)
             IF ( Mapflg==1 ) THEN
               CALL write_results(Weekunit(jj), Map_var_week(1,jj))
             ELSE
@@ -462,7 +458,7 @@
               DO k = 1, Nhrucell
                 IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-                                            Map_var_week(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
+     &                                      Map_var_week(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
               ENDDO
               CALL write_results(Weekunit(jj), Map_var_id)
             ENDIF
@@ -489,8 +485,7 @@
             Basin_var_mon(jj) = Basin_var_mon(jj)*Basin_area_inv
 
             IF ( Map_var_type(jj)/=2 .AND. Map_var_type(jj)/=3 ) CYCLE
-            WRITE ( Monunit(jj), 9002 ) year, month, day, &
-                    ' Basin monthly mean:', Basin_var_mon(jj)
+            WRITE ( Monunit(jj), 9002 ) year, month, day, ' Basin monthly mean:', Basin_var_mon(jj)
             IF ( Mapflg==1 ) THEN
               CALL write_results(Monunit(jj), Map_var_mon(1,jj))
             ELSE
@@ -498,7 +493,7 @@
               DO k = 1, Nhrucell
                 IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-                                            Map_var_mon(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
+     &                                      Map_var_mon(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
               ENDDO
               CALL write_results(Monunit(jj), Map_var_id)
             ENDIF
@@ -525,8 +520,8 @@
             Basin_var_tot(jj) = Basin_var_tot(jj)*Basin_area_inv
 
             IF ( Map_var_type(jj)/=2 .AND. Map_var_type(jj)/=3 ) CYCLE
-            WRITE ( Totunit(jj), 9004 ) 'Time period: ', Begyr, Begmo, Begday, &
-                    year, month, day, ' Basin simulation mean:', Basin_var_tot(jj)
+            WRITE ( Totunit(jj), 9004 ) 'Time period: ', Begyr, Start_month, Start_day, &
+     &              year, month, day, ' Basin simulation mean:', Basin_var_tot(jj)
 
             IF ( Mapflg==1 ) THEN
               CALL write_results(Totunit(jj), Map_var_tot(1,jj))
@@ -535,7 +530,7 @@
               DO k = 1, Nhrucell
                 IF ( Gvr_map_frac(k)<DNEARZERO ) CYCLE
                 Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
-                                            Map_var_tot(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
+     &                                      Map_var_tot(Gvr_hru_id(k),jj)*Gvr_map_frac(k)
               ENDDO
               CALL write_results(Totunit(jj), Map_var_id)
             ENDIF
@@ -547,7 +542,6 @@
  9003 FORMAT ( '######################', / )
  9004 FORMAT ( A, 2(I5, 2('/',I2.2)), A, E12.4 )
 
-      map_resultsrun = 0
       END FUNCTION map_resultsrun
 
 !***********************************************************************
@@ -555,7 +549,7 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsclean()
       USE PRMS_MAP_RESULTS, ONLY: Totresults, Monresults, Yrresults, &
-          Totunit, Monunit, Yrunit, NmapOutVars, Weekresults, Weekunit
+     &    Totunit, Monunit, Yrunit, NmapOutVars, Weekresults, Weekunit
       IMPLICIT NONE
       INTEGER :: jj
 !***********************************************************************

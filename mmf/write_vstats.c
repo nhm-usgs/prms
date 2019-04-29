@@ -12,9 +12,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: write_vstats.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: write_vstats.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 3058 $
+   $Revision: 5145 $
         $Log: write_vstats.c,v $
         Revision 1.4  1996/02/19 20:01:24  markstro
         Now lints pretty clean

@@ -11,8 +11,8 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: batch_run.c 6387 2012-02-10 20:44:24Z markstro $
-   $Revision: 6387 $
+ * $Id: batch_run.c 5145 2012-12-19 17:39:07Z rsregan $
+   $Revision: 5145 $
         $Log: batch_run.c,v $
         Revision 1.10  2000/02/18 18:27:03  markstro
         Made previous Julian time a global.  It is set to -1.0 before the run

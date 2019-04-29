@@ -11,9 +11,8 @@
       MODULE PRMS_SRUNOFF_SMIDX
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, PARAMETER :: BALUNT = 197
-      CHARACTER(LEN=13), PARAMETER :: MODNAME = 'srunoff_smidx'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Surface Runoff'
+      INTEGER, SAVE :: BALUNT
+      CHARACTER(LEN=13), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_clos_max(:)
@@ -28,22 +27,19 @@
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Smidx_coef(:), Smidx_exp(:)
 !   Declared Parameters for Depression Storage
-      REAL, SAVE, ALLOCATABLE :: Op_flow_thres(:), Sro_to_dprst(:)
+      REAL, SAVE, ALLOCATABLE :: Sro_to_dprst(:)
       REAL, SAVE, ALLOCATABLE :: Va_clos_exp(:), Va_open_exp(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_flow_coef(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_frac_init(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_seep_rate_open(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_seep_rate_clos(:)
-      REAL, SAVE, ALLOCATABLE :: Dprst_depth_avg(:)
 !   Declared Variables for Depression Storage
       DOUBLE PRECISION, SAVE :: Basin_dprst_sroff
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_clos(:)
-      REAL, SAVE, ALLOCATABLE :: Dprst_evap_hru(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_open(:), Dprst_area_clos(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_sroff_hru(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_insroff_hru(:)
-      REAL, SAVE, ALLOCATABLE :: Dprst_seep_hru(:)
       END MODULE PRMS_SRUNOFF_SMIDX
 
 !***********************************************************************
@@ -76,8 +72,7 @@
 !***********************************************************************
       INTEGER FUNCTION srunoffsmidxdecl()
       USE PRMS_SRUNOFF_SMIDX
-      USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru,
-     +    Version_srunoff_smidx, Srunoff_smidx_nc
+      USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru
       USE PRMS_CASCADE, ONLY: Cascade_flag
       IMPLICIT NONE
 ! Functions
@@ -85,16 +80,19 @@
       INTEGER, EXTERNAL :: declmodule, declvar, declparam
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: n
+      INTEGER :: n, nc
+      CHARACTER(LEN=80), SAVE :: Version_srunoff_smidx
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Surface Runoff'
 !***********************************************************************
-      srunoffsmidxdecl = 1
+      srunoffsmidxdecl = 0
 
       Version_srunoff_smidx =
-     +'$Id: srunoff_smidx.f 4821 2012-09-14 17:51:21Z rsregan $'
-      Srunoff_smidx_nc = INDEX( Version_srunoff_smidx, 'Z' )
+     +'$Id: srunoff_smidx.f 5232 2013-01-15 18:55:17Z rsregan $'
+      nc = INDEX( Version_srunoff_smidx, 'Z' )
       n = INDEX( Version_srunoff_smidx, '.f' ) + 1
       IF ( declmodule(Version_srunoff_smidx(6:n), PROCNAME,
-     +     Version_srunoff_smidx(n+2:Srunoff_smidx_nc))/=0 ) STOP
+     +     Version_srunoff_smidx(n+2:nc))/=0 ) STOP
+      MODNAME = 'srunoff_smidx'
 
 ! srunoff variables
       ALLOCATE ( Imperv_evap(Nhru) )
@@ -127,19 +125,12 @@
      +     CALL read_error(3, 'hru_sroffi')
 
 ! Depression storage variables
-      IF ( Dprst_flag>0 .OR. Model==99 ) THEN
+      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
         IF ( declvar(MODNAME, 'basin_dprst_sroff', 'one', 1, 'double',
      +       'Basin area-weighted average surface runoff from'//
      +       ' open surface depression storage',
      +       'inches', Basin_dprst_sroff)/=0 )
      +       CALL read_error(3, 'basin_dprst_sroff')
-
-        ALLOCATE ( Dprst_seep_hru(Nhru) )
-        IF ( declvar(MODNAME, 'dprst_seep_hru', 'nhru', Nhru, 'real',
-     +       'Seepage from surface depression storage to associated'//
-     +       ' GWR for each HRU',
-     +       'inches',
-     +       Dprst_seep_hru)/=0 ) CALL read_error(3, 'dprst_seep_hru')
 
         ALLOCATE ( Dprst_vol_open(Nhru) )
         IF ( declvar(MODNAME, 'dprst_vol_open', 'nhru', Nhru,'double',
@@ -152,12 +143,6 @@
      +      'Storage volume in closed surface depressions for each HRU',
      +      'acre-inches',
      +      Dprst_vol_clos)/=0 ) CALL read_error(3, 'dprst_vol_clos')
-
-        ALLOCATE ( Dprst_evap_hru(Nhru) )
-        IF ( declvar(MODNAME, 'dprst_evap_hru', 'nhru', Nhru, 'real',
-     +       'Evaporation from surface depression storage for each HRU',
-     +       'inches', Dprst_evap_hru)/=0 )
-     +       CALL read_error(3, 'dprst_evap_hru')
 
         ALLOCATE ( Dprst_sroff_hru(Nhru) )
         IF ( declvar(MODNAME, 'dprst_sroff_hru', 'nhru', Nhru, 'real',
@@ -217,8 +202,19 @@
      +       CALL read_error(3, 'basin_sroff_upslope')
       ENDIF
 
+! Allocate arrays for local variables and variables from other modules
+      ALLOCATE ( Smidx_coef(Nhru), Smidx_exp(Nhru) )
+      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
+        ALLOCATE ( Dprst_flow_coef(Nhru), Sro_to_dprst(Nhru) )
+        ALLOCATE ( Dprst_seep_rate_open(Nhru) )
+        ALLOCATE ( Dprst_seep_rate_clos(Nhru) )
+        ALLOCATE ( Va_open_exp(Nhru), Va_clos_exp(Nhru) )
+        ALLOCATE ( Dprst_frac_clos_hru(Nhru) )
+        ALLOCATE ( Dprst_vol_thres_open(Nhru) )
+        ALLOCATE ( Dprst_vol_open_max(Nhru), Dprst_vol_clos_max(Nhru) )
+      ENDIF
+
 ! Declare parameters
-      ALLOCATE ( Smidx_coef(Nhru) )
       IF ( declparam(MODNAME, 'smidx_coef', 'nhru', 'real',
      +     '0.01', '0.0001', '1.0',
      +     'Coefficient in contributing area computations',
@@ -226,7 +222,6 @@
      +     ' each HRU',
      +     'decimal fraction')/=0 ) CALL read_error(1, 'smidx_coef')
 
-      ALLOCATE ( Smidx_exp(Nhru) )
       IF ( declparam(MODNAME, 'smidx_exp', 'nhru', 'real',
      +     '0.3', '0.2', '0.8',
      +     'Exponent in contributing area computations',
@@ -235,17 +230,7 @@
      +     '1.0/inch')/=0 ) CALL read_error(1, 'smidx_exp')
 
 ! Depression Storage parameters:
-      IF ( Dprst_flag>0 .OR. Model==99 ) THEN
-        ALLOCATE ( Dprst_depth_avg(Nhru) )
-        IF ( declparam(MODNAME, 'dprst_depth_avg', 'nhru', 'real',
-     +       '132.0', '0.0', '10000.0',
-     +       'Average depth of surface depressions at maximum storage'//
-     +       ' capacity',
-     +       'Average depth of surface depressions at maximum storage'//
-     +       ' capacity',
-     +       'inches')/=0 ) CALL read_error(1, 'dprst_depth_avg')
-
-        ALLOCATE ( Dprst_flow_coef(Nhru) )
+      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
         IF ( declparam(MODNAME, 'dprst_flow_coef', 'nhru', 'real',
      +       '0.05', '0.0001', '1.0',
      +       'Coefficient in linear flow routing equation for open'//
@@ -254,8 +239,6 @@
      +       ' surface depressions',
      +       'decimal fraction')/=0 )
      +       CALL read_error(1, 'dprst_flow_coef')
-
-        ALLOCATE ( Dprst_seep_rate_open(Nhru) )
         IF ( declparam(MODNAME, 'dprst_seep_rate_open', 'nhru',
      +       'real',
      +       '0.02', '0.0001', '1.0',
@@ -265,8 +248,6 @@
      +       ' open surface depressions',
      +       'decimal fraction')/=0 )
      +       CALL read_error(1, 'dprst_seep_rate_open')
-
-        ALLOCATE ( Dprst_seep_rate_clos(Nhru) )
         IF ( declparam(MODNAME, 'dprst_seep_rate_clos', 'nhru',
      +       'real',
      +       '0.02', '0.0001', '1.0',
@@ -276,19 +257,6 @@
      +       ' closed surface depressions',
      +       'decimal fraction')/=0 )
      +       CALL read_error(1, 'dprst_seep_rate_clos')
-
-        ALLOCATE ( Op_flow_thres(Nhru) )
-        IF ( declparam(MODNAME, 'op_flow_thres', 'nhru', 'real',
-     +       '1.0', '0.0', '1.0',
-     +       'Fraction of open depression storage above'//
-     +       ' which surface runoff occurs for each timestep',
-     +       'Fraction of open depression storage above'//
-     +       ' which surface runoff occurs; any water above'//
-     +       ' maximum open storage capacity spills as surface runoff',
-     +       'decimal fraction')/=0 )
-     +       CALL read_error(1, 'op_flow_thres')
-
-        ALLOCATE ( Sro_to_dprst(Nhru) )
         IF ( declparam(MODNAME, 'sro_to_dprst', 'nhru', 'real',
      +       '0.2', '0.0', '1.0',
      +       'Fraction of pervious and impervious surface runoff that'//
@@ -298,7 +266,6 @@
      +       ' flows to a stream network',
      +       'decimal fraction')/=0 )
      +       CALL read_error(1, 'sro_to_dprst')
-
         ALLOCATE ( Dprst_frac_init(Nhru) )
         IF ( declparam(MODNAME, 'dprst_frac_init', 'nhru', 'real',
      +       '0.5', '0.0', '1.0',
@@ -308,8 +275,6 @@
      +       ' contains water at the start of a simulation',
      +       'decimal fraction')/=0 )
      +       CALL read_error(1, 'dprst_frac_init')
-
-        ALLOCATE ( Va_open_exp(Nhru) )
         IF ( declparam(MODNAME, 'va_open_exp', 'nhru', 'real',
      +       '1.0', '0.0001', '10.0',
      +       'Coefficient in the exponential equation to compute'//
@@ -318,8 +283,6 @@
      +       ' maximum surface area to the fraction that open'//
      +       ' depressions are full to compute current surface area',
      +       'none')/=0 ) CALL read_error(1, 'va_open_exp')
-
-        ALLOCATE ( Va_clos_exp(Nhru) )
         IF ( declparam(MODNAME, 'va_clos_exp', 'nhru', 'real',
      +       '1.0', '0.0001', '10.0',
      +       'Coefficient in the exponential equation to compute'//
@@ -328,10 +291,8 @@
      +       ' maximum surface area to the fraction that closed'//
      +       ' depressions are full to compute current surface area',
      +       'none')/=0 ) CALL read_error(1, 'va_clos_exp')
-        ALLOCATE ( Dprst_frac_clos_hru(Nhru) )
       ENDIF
 
-      srunoffsmidxdecl = 0
       END FUNCTION srunoffsmidxdecl
 
 !***********************************************************************
@@ -339,25 +300,27 @@
 !***********************************************************************
       INTEGER FUNCTION srunoffsmidxinit()
       USE PRMS_SRUNOFF_SMIDX
-      USE PRMS_MODULE, ONLY: Dprst_flag, Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Dprst_flag, Nhru, Print_debug,
+     +    Inputerror_flag, Parameter_check_flag
       USE PRMS_CASCADE, ONLY: Cascade_flag
       USE PRMS_BASIN, ONLY: Dprst_area_max, DNEARZERO, Timestep,
      +    Dprst_area_clos_max, Dprst_area_open_max, Basin_area_inv,
-     +    Hru_area, Active_hrus, Hru_route_order, NEARZERO
+     +    Hru_area, Active_hrus, Hru_route_order, NEARZERO,
+     +    Op_flow_thres, Dprst_depth_avg
       USE PRMS_FLOWVARS, ONLY: Hru_hortonian_cascadeflow,
      +    Basin_dprst_volop, Basin_dprst_volcl
       IMPLICIT NONE
       INTRINSIC EXP, LOG
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL read_error
+      EXTERNAL read_error, PRMS_open_module_file
 ! Local Variables
-      INTEGER :: i, j
+      INTEGER :: i, j, ierr
       DOUBLE PRECISION :: frac_op_ar, frac_cl_ar, open_vol_r, clos_vol_r
 !***********************************************************************
-      srunoffsmidxinit = 1
+      srunoffsmidxinit = 0
 
       IF ( Print_debug==1 ) THEN
-        OPEN ( BALUNT, FILE='srunoff_smidx.wbal' )
+        CALL PRMS_open_module_file(BALUNT, 'srunoff_smidx.wbal')
         IF ( Cascade_flag==1 ) THEN
           WRITE ( BALUNT, 9002 )
         ELSE
@@ -369,9 +332,7 @@
         Imperv_evap = 0.0
         Upslope_hortonian = 0.0
         Hortonian_flow = 0.0
-        IF ( Dprst_flag>0 ) THEN
-          Dprst_seep_hru = 0.0
-          Dprst_evap_hru = 0.0
+        IF ( Dprst_flag==1 ) THEN
           Dprst_sroff_hru = 0.0
           Dprst_insroff_hru = 0.0
         ENDIF
@@ -393,7 +354,7 @@
      +     /=0 ) CALL read_error(2, 'smidx_exp')
 
 ! Depression Storage parameters and variables:
-      IF ( Dprst_flag>0 ) THEN
+      IF ( Dprst_flag==1 ) THEN
         IF ( getparam(MODNAME, 'dprst_flow_coef', Nhru, 'real',
      +       Dprst_flow_coef)/=0 )
      +       CALL read_error(2, 'dprst_flow_coef')
@@ -409,15 +370,9 @@
      +       Va_open_exp)/=0 ) CALL read_error(2, 'va_open_exp')
         IF ( getparam(MODNAME, 'va_clos_exp', Nhru, 'real',
      +       Va_clos_exp)/=0 ) CALL read_error(2, 'va_clos_exp')
-        IF ( getparam(MODNAME, 'op_flow_thres', Nhru, 'real',
-     +       Op_flow_thres)/=0 ) CALL read_error(2, 'op_flow_thres')
         IF ( getparam(MODNAME, 'sro_to_dprst', Nhru, 'real',
      +       Sro_to_dprst)/=0 ) CALL read_error(2, 'sro_to_dprst')
-        IF ( getparam(MODNAME, 'dprst_depth_avg', Nhru, 'real',
-     +       Dprst_depth_avg)/=0 ) CALL read_error(2, 'dprst_depth_avg')
 
-        ALLOCATE ( Dprst_vol_thres_open(Nhru) )
-        ALLOCATE ( Dprst_vol_open_max(Nhru), Dprst_vol_clos_max(Nhru) )
         Dprst_vol_clos_max = 0.0D0
         Dprst_vol_open_max = 0.0D0
         IF ( Timestep==0 ) THEN
@@ -432,30 +387,49 @@
           i = Hru_route_order(j)
 !******************************************************************
 ! Following lines added for Depression Storage:
-          IF ( Dprst_frac_init(i)>1.0 ) THEN
-            PRINT *, 'dprst_frac_init>1.0, set to 1.0 for HRU:', i
-            Dprst_frac_init(i) = 1.0
+          ierr = 0
+          IF ( Dprst_frac_init(i)>1.0 .OR. Dprst_frac_init(i)<0.0 )
+     +         THEN
+            IF ( Parameter_check_flag==1 ) THEN
+              PRINT *, 'ERROR, dprst_frac_init < 0.0 or > 1.0 for HRU:',
+     +                 i, Dprst_frac_init(i)
+              ierr = 1
+            ELSEIF ( Dprst_frac_init(i)>1.0 ) THEN
+              PRINT *, 'dprst_frac_init > 1.0, set to 1.0 for HRU:', i
+              Dprst_frac_init(i) = 1.0
+            ELSE
+              PRINT *, 'dprst_frac_init < 0.0, set to 0.0 for HRU:', i
+              Dprst_frac_init(i) = 0.0
+            ENDIF
           ENDIF
-          IF ( Dprst_frac_init(i)<NEARZERO ) Dprst_frac_init(i) = 0.0
-          IF ( Sro_to_dprst(i)>1.0 ) THEN
-            PRINT *, 'sro_to_dprst>1.0, set to 1.0 for HRU:', i
-            Sro_to_dprst(i) = 1.0
+          IF ( Sro_to_dprst(i)>1.0 .OR. Sro_to_dprst(i)<0.0 ) THEN
+            PRINT *, 'ERROR, sro_to_dprst < 0.0 or > 1.0 for HRU:', i,
+     +               Sro_to_dprst(i)
+            ierr = 1
           ENDIF
-          IF ( Dprst_flow_coef(i)>1.0 ) THEN
-            PRINT *, 'dprst_flow_coef>1.0, set to 1.0 for HRU:', i
-            Dprst_flow_coef(i) = 1.0
+          IF ( Dprst_flow_coef(i)<0.0 ) THEN
+            PRINT *, 'ERROR, dprst_flow_coef < 0.0 for HRU:', i,
+     +               Dprst_flow_coef(i)
+            ierr = 1
           ENDIF
-          IF ( Dprst_seep_rate_open(i)>1.0 ) THEN
-            PRINT *, 'dprst_seep_rate_open>1.0, set to 1.0 for HRU:', i
-            Dprst_seep_rate_open(i) = 1.0
+          IF ( Dprst_seep_rate_open(i)<0.0 ) THEN
+            PRINT *, 'ERROR, dprst_seep_rate_open < 0.0 for HRU:', i,
+     +               Dprst_seep_rate_open(i)
+            ierr = 1
           ENDIF
-          IF ( Dprst_seep_rate_clos(i)>1.0 ) THEN
-            PRINT *, 'dprst_seep_rate_clos>1.0, set to 1.0 for HRU:', i
-            Dprst_seep_rate_clos(i) = 1.0
+          IF ( Dprst_seep_rate_clos(i)<0.0 ) THEN
+            PRINT *, 'ERROR, dprst_seep_rate_clos < 0.0 for HRU:', i,
+     +               Dprst_seep_rate_clos(i)
+            ierr = 1
           ENDIF
-          IF ( Op_flow_thres(i)>1.0 ) THEN
-            PRINT *, 'op_flow_thres>1.0, set to 1.0 for HRU:', i
-            Op_flow_thres(i) = 1.0
+          IF ( Op_flow_thres(i)>1.0 .OR. Op_flow_thres(i)<0.0 ) THEN
+            PRINT *, 'ERROR, op_flow_thres < 0.0 or > 1.0 for HRU:', i,
+     +               Op_flow_thres(i)
+            ierr = 1
+          ENDIF
+          IF ( ierr==1 ) THEN
+            Inputerror_flag = 1
+            CYCLE
           ENDIF
 
           IF ( Dprst_area_max(i)>NEARZERO ) THEN
@@ -494,7 +468,7 @@
               open_vol_r = Dprst_vol_open(i)/Dprst_vol_open_max(i)
               IF ( open_vol_r<DNEARZERO ) THEN
                 frac_op_ar = 0.0D0
-              ELSEIF ( open_vol_r==1.0D0 ) THEN
+              ELSEIF ( open_vol_r>1.0D0 ) THEN
                 frac_op_ar = 1.0D0
               ELSE
                 frac_op_ar = EXP(Va_open_exp(i)*LOG(open_vol_r))
@@ -510,7 +484,7 @@
               clos_vol_r = Dprst_vol_clos(i)/Dprst_vol_clos_max(i)
               IF ( clos_vol_r<DNEARZERO ) THEN
                 frac_cl_ar = 0.0D0
-              ELSEIF ( clos_vol_r==1.0D0 ) THEN
+              ELSEIF ( clos_vol_r>1.0D0 ) THEN
                 frac_cl_ar = 1.0D0
               ELSE
                 frac_cl_ar = EXP(Va_clos_exp(i)*LOG(clos_vol_r))
@@ -539,7 +513,6 @@
      +        '   Srofflake Infiltrat Impervevap Impervstor    Farflow',
      +        ' Dprst_evap Dprst_seep Dprst_srof')
 
-      srunoffsmidxinit = 0
       END FUNCTION srunoffsmidxinit
 
 !***********************************************************************
@@ -552,7 +525,8 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO,
      +    Hru_perv, Hru_imperv, Hru_frac_imperv, Hru_frac_perv,
      +    NEARZERO, Dprst_area_max, Hru_area, Hru_type, Basin_area_inv,
-     +    Dprst_area_clos_max, Dprst_area_open_max, Dprst_frac_hru
+     +    Dprst_area_clos_max, Dprst_area_open_max, Dprst_frac_hru,
+     +    Dprst_frac_open, Dprst_frac_clos
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_FLOWVARS, ONLY: Soil_moist_max, Hru_impervevap,
      +    Sroff, Basin_sroff, Infil, Carea_max, Imperv_stor_max,
@@ -561,11 +535,12 @@
      +    Strm_seg_in, Strm_farfield, Hortonian_lakes, Snowinfil_max,
      +    Soil_moist, Basin_hortonian, Basin_sroff_farflow, Imperv_stor,
      +    Basin_dprst_volop, Basin_dprst_volcl, Basin_dprst_evap,
-     +    Basin_dprst_seep, Basin_dprst_wb, Hru_intcpevap
+     +    Basin_dprst_seep, Basin_dprst_wb, Hru_intcpevap,
+     +    Dprst_evap_hru, Dprst_seep_hru, Pkwater_equiv
       USE PRMS_CASCADE, ONLY: Ncascade_hru, Cascade_flag
       USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt
-      USE PRMS_SNOW, ONLY: Pkwater_equiv, Pptmix_nopack, Snow_evap,
+      USE PRMS_SNOW, ONLY: Pptmix_nopack, Snow_evap,
      +    Snowcov_area, Snowmelt
       IMPLICIT NONE
       INTRINSIC ABS
@@ -579,7 +554,7 @@
       DOUBLE PRECISION :: runoff, tmp1, dprst_hru_wb
       REAL :: perv_frac, imperv_frac, dprst_in
 !***********************************************************************
-      srunoffsmidxrun = 1
+      srunoffsmidxrun = 0
 
       ! soil_moist is used from the last time step
 
@@ -602,7 +577,7 @@
         Basin_sroff_farflow = 0.0D0
       ENDIF
 
-      IF ( Dprst_flag>0 ) THEN
+      IF ( Dprst_flag==1 ) THEN
         Basin_dprst_sroff = 0.0D0
         Basin_dprst_evap = 0.0D0
         Basin_dprst_seep = 0.0D0
@@ -642,16 +617,14 @@
 
 !         ******Compute the depression storage component
 !         only call if total depression surface area for each HRU is > 0.0
-          IF ( Dprst_flag>0 ) THEN
+          IF ( Dprst_flag==1 ) THEN
             ! last depression storage on whole HRU
-            IF ( Print_debug>-1 ) THEN
-              last_dprst_stor = 0.0D0
-              IF ( Dprst_vol_open(i)>DNEARZERO )
-     +              last_dprst_stor = Dprst_vol_open(i)/harea
-              IF ( Dprst_vol_clos(i)>DNEARZERO )
-     +             last_dprst_stor = last_dprst_stor +
-     +             Dprst_vol_clos(i)/harea
-            ENDIF
+            last_dprst_stor = 0.0D0
+            IF ( Dprst_vol_open(i)>DNEARZERO )
+     +            last_dprst_stor = Dprst_vol_open(i)/harea
+            IF ( Dprst_vol_clos(i)>DNEARZERO )
+     +           last_dprst_stor = last_dprst_stor +
+     +           Dprst_vol_clos(i)/harea
             dprst_in = 0.0
             IF ( Dprst_area_max(i)>NEARZERO ) THEN
               tmp1 = 0.0
@@ -693,7 +666,8 @@
      +             Sro_to_dprst(i), Snowcov_area(i), Dprst_evap_hru(i),
      +             Dprst_frac_clos_hru(i), Dprst_insroff_hru(i),
      +             Dprst_vol_thres_open(i), perv_frac, imperv_frac,
-     +             harea, avail_et, Potet(i), i)
+     +             harea, avail_et, Potet(i), i, Dprst_frac_open(i),
+     +             Dprst_frac_clos(i))
               Basin_dprst_volop = Basin_dprst_volop + Dprst_vol_open(i)
               Basin_dprst_volcl = Basin_dprst_volcl + Dprst_vol_clos(i)
               avail_et = avail_et - Dprst_evap_hru(i)
@@ -763,7 +737,7 @@
           Basin_sroffp = Basin_sroffp + Srp*hperv
           Basin_sroffi = Basin_sroffi + Sri*himperv
 
-          IF ( Dprst_flag>0 ) THEN
+          IF ( Dprst_flag==1 ) THEN
             new_dprst_stor = 0.0D0
             dprst_hru_wb = 0.0
             IF ( Dprst_area_max(i)>NEARZERO ) THEN
@@ -797,11 +771,11 @@
             ENDIF
             IF ( Cascade_flag==1 ) robal = robal + Upslope_hortonian(i)
      +                                     - hru_sroff_down - farflow
-            IF ( Dprst_flag>0 ) robal = robal + last_dprst_stor -
+            IF ( Dprst_flag==1 ) robal = robal + last_dprst_stor -
      +           new_dprst_stor - Dprst_seep_hru(i) - Dprst_evap_hru(i)
             basin_robal = basin_robal + robal
             IF ( ABS(robal)>1.0D-4 ) THEN
-              IF ( Dprst_flag>0 ) THEN
+              IF ( Dprst_flag==1 ) THEN
               WRITE( BALUNT, * ) 'dprst',last_dprst_stor,new_dprst_stor,
      +               Dprst_seep_hru(i), Dprst_evap_hru(i),
      +               Dprst_sroff_hru(i), Snowmelt(i), Net_rain(i),
@@ -843,7 +817,7 @@
           Hortonian_flow(i) = srunoff
         ELSE
 ! HRU is a lake
-!rsr, eventually add code for lake area less than hru_area
+!     eventually add code for lake area less than hru_area
 !     that includes soil_moist for fraction of hru_area that is dry bank
           ! Sanity check
           IF ( Infil(i)+Sroff(i)+Imperv_stor(i)+Imperv_evap(i)>0.0 )
@@ -874,7 +848,7 @@
         Basin_sroff_upslope = Basin_sroff_upslope*Basin_area_inv
       ENDIF
 
-      IF ( Dprst_flag>0 ) THEN
+      IF ( Dprst_flag==1 ) THEN
         Basin_dprst_volop = Basin_dprst_volop*Basin_area_inv
         Basin_dprst_volcl = Basin_dprst_volcl*Basin_area_inv
         Basin_dprst_evap = Basin_dprst_evap*Basin_area_inv
@@ -908,7 +882,6 @@
 
  9001 FORMAT (I5, 2('/', I2.2), 12F11.4)
 
-      srunoffsmidxrun = 0
       END FUNCTION srunoffsmidxrun
 
 !***********************************************************************
@@ -987,7 +960,6 @@
         CALL perv_imperv_comp_smidx(ptc, pptp, ppti, Hru_imperv,
      +       Smidx_coef, Smidx_exp, Soil_moist, Carea_max,
      +       Imperv_stor_max, Imperv_stor, Infil, Hru_type)
-
       ENDIF
 
 !******If precipitation on snowpack, all water available to the surface is
@@ -1247,7 +1219,8 @@
      +           Va_clos_exp, Sro_to_dprst, Snowcov_area,
      +           Dprst_evap_hru, Dprst_frac_clos_hru, Dprst_insroff_hru,
      +           Dprst_vol_thres_open, Hru_frac_perv, Hru_frac_imperv,
-     +           Hruarea, Avail_et, Potet, Ihru)
+     +           Hruarea, Avail_et, Potet, Ihru, Dprst_frac_open,
+     +           Dprst_frac_clos)
       USE PRMS_SRUNOFF_SMIDX, ONLY: Srp, Sri
       USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
@@ -1262,8 +1235,9 @@
       REAL, INTENT(IN) :: Hru_frac_perv, Hru_frac_imperv
       DOUBLE PRECISION, INTENT(IN) :: Dprst_vol_thres_open
       REAL, INTENT(IN) :: Dprst_frac_clos_hru
-      REAL, INTENT(IN) :: Dprst_area_open_max
-      REAL, INTENT(IN) :: Dprst_area_clos_max
+      REAL, INTENT(IN) :: Dprst_frac_open, Dprst_frac_clos
+      DOUBLE PRECISION, INTENT(IN) :: Dprst_area_open_max
+      DOUBLE PRECISION, INTENT(IN) :: Dprst_area_clos_max
       DOUBLE PRECISION, INTENT(IN) :: Dprst_vol_clos_max
       DOUBLE PRECISION, INTENT(IN) :: Dprst_vol_open_max
       DOUBLE PRECISION, INTENT(INOUT) :: Dprst_vol_open, Dprst_vol_clos
@@ -1272,11 +1246,10 @@
       REAL, INTENT(OUT) :: Dprst_evap_hru, Dprst_sroff_hru
       REAL, INTENT(OUT) :: Dprst_seep_hru, Dprst_insroff_hru
 ! Local Variables
-      REAL :: dprst_et, dprst_evap_open, dprst_evap_clos
-      REAL :: seep_open, seep_clos, tmp, dprst_evap_vol
-      REAL :: dprst_srp, dprst_sri
-      REAL :: dprst_srp_open, dprst_srp_clos
-      REAL :: dprst_sri_open, dprst_sri_clos
+      REAL :: dprst_et, dprst_evap_open, dprst_evap_clos, dprst_evap_vol
+      DOUBLE PRECISION :: dprst_srp, dprst_sri, seep_open, seep_clos,tmp
+      DOUBLE PRECISION :: dprst_srp_open, dprst_srp_clos
+      DOUBLE PRECISION :: dprst_sri_open, dprst_sri_clos
       DOUBLE PRECISION :: frac_op_ar, frac_cl_ar, open_vol_r, clos_vol_r
 !***********************************************************************
       ! add any pervious surface runoff fraction to depressions
@@ -1284,22 +1257,22 @@
       IF ( Srp>NEARZERO ) THEN
         ! dprst_srp = inches of surface runoff over HRU
         dprst_srp = Srp*Hru_frac_perv*Sro_to_dprst
-        IF ( Dprst_area_open_max>NEARZERO ) THEN
-          dprst_srp_open = dprst_srp*Dprst_area_open_max
+        IF ( Dprst_area_open_max>DNEARZERO ) THEN
+          dprst_srp_open = dprst_srp*Hruarea*Dprst_frac_open
           Dprst_vol_open = Dprst_vol_open + dprst_srp_open
         ELSE
-          dprst_srp_open = 0.0
+          dprst_srp_open = 0.0D0
         ENDIF
-        IF ( Dprst_area_clos_max>NEARZERO ) THEN
-          dprst_srp_clos = dprst_srp*Dprst_area_clos_max
+        IF ( Dprst_area_clos_max>DNEARZERO ) THEN
+          dprst_srp_clos = dprst_srp*Hruarea*Dprst_frac_clos
           Dprst_vol_clos = Dprst_vol_clos + dprst_srp_clos
         ELSE
-          dprst_srp_clos = 0.0
+          dprst_srp_clos = 0.0D0
         ENDIF
         Dprst_insroff_hru = (dprst_srp_open + dprst_srp_clos)/Hruarea
         Srp = Srp - Dprst_insroff_hru/Hru_frac_perv
-        IF ( Srp<0.0 ) THEN
-          PRINT *, 'dprst srp<0.0', Srp
+        IF ( ABS(Srp)<NEARZERO ) THEN
+          IF (Srp<-NEARZERO ) PRINT *, 'dprst srp<0.0', Srp
           ! may need to adjust volumes
           Srp = 0.0
         ENDIF
@@ -1309,23 +1282,23 @@
       IF ( Sri>NEARZERO ) THEN
         ! dprst_sri = inches of surface runoff over HRU
         dprst_sri = Sri*Hru_frac_imperv*Sro_to_dprst
-        IF ( Dprst_area_open_max>NEARZERO ) THEN
-          dprst_sri_open = dprst_sri*Dprst_area_open_max
+        IF ( Dprst_area_open_max>DNEARZERO ) THEN
+          dprst_sri_open = dprst_sri*Hruarea*Dprst_frac_open
           Dprst_vol_open = Dprst_vol_open + dprst_sri_open
         ELSE
-          dprst_sri_open = 0.0
+          dprst_sri_open = 0.0D0
         ENDIF
-        IF ( Dprst_area_clos_max>NEARZERO ) THEN
-          dprst_sri_clos = dprst_sri*Dprst_area_clos_max
+        IF ( Dprst_area_clos_max>DNEARZERO ) THEN
+          dprst_sri_clos = dprst_sri*Hruarea*Dprst_frac_clos
           Dprst_vol_clos = Dprst_vol_clos + dprst_sri_clos
         ELSE
-          dprst_sri_clos = 0.0
+          dprst_sri_clos = 0.0D0
         ENDIF
         tmp = (dprst_sri_open + dprst_sri_clos)/Hruarea
         Dprst_insroff_hru = Dprst_insroff_hru + tmp
         Sri = Sri - tmp/Hru_frac_imperv
-        IF ( Sri<0.0 ) THEN
-          PRINT *, 'dprst sri<0.0', Sri
+        IF ( ABS(Sri)<NEARZERO ) THEN
+          IF (Sri<-NEARZERO ) PRINT *, 'dprst sri<0.0', Sri
           ! may need to adjust volumes
           Sri = 0.0
         ENDIF

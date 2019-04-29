@@ -2,9 +2,9 @@
  * sort_dims.c: sorts the dimen array so that the key for each
  * structure is in increasing alphabetical order
  *
- * $Id: sort_dims.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id: sort_dims.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 3058 $
+   $Revision: 5145 $
         $Log: sort_dims.c,v $
         Revision 1.5  1996/04/29 16:23:25  markstro
         Unknown

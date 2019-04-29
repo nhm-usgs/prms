@@ -14,7 +14,7 @@
       REAL, SAVE, ALLOCATABLE :: Ssrcoef_lin(:), Ssrcoef_sq(:)
       REAL, SAVE, ALLOCATABLE :: Ssstor_init(:), Ssr2gw_exp(:)
 !   Local Variables
-      CHARACTER(LEN=11), PARAMETER :: MODNAME = 'ssflow_prms'
+      CHARACTER(LEN=11), SAVE :: MODNAME
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
       END MODULE PRMS_SSFLOW    
 
@@ -47,23 +47,24 @@
 !***********************************************************************
       INTEGER FUNCTION ssdecl()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nssr, Version_ssflow_prms,
-     +    Ssflow_prms_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nssr
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
-! Local Variable
-      INTEGER:: n
+! Local Variables
+      INTEGER:: n, nc
+      CHARACTER(LEN=80), SAVE :: Version_ssflow_prms
 !***********************************************************************
       ssdecl = 1
 
       Version_ssflow_prms =
-     +'$Id: ssflow_prms.f 4773 2012-08-22 23:32:17Z rsregan $'
-      Ssflow_prms_nc = INDEX( Version_ssflow_prms, 'Z' )
+     +'$Id: ssflow_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_ssflow_prms, 'Z' )
       n = INDEX( Version_ssflow_prms, '.f' ) + 1
       IF ( declmodule(Version_ssflow_prms(6:n), PROCNAME,
-     +     Version_ssflow_prms(n+2:Ssflow_prms_nc))/=0 ) STOP
+     +     Version_ssflow_prms(n+2:nc))/=0 ) STOP
+      MODNAME = 'ssflow_prms'
 
 ! Declare Variables
       IF ( declvar(MODNAME, 'basin_ssin', 'one', 1, 'double',
@@ -231,7 +232,7 @@
       INTEGER :: i, j, k
       REAL :: srarea
 !***********************************************************************
-      ssrun = 1
+      ssrun = 0
 
       Ssres_in = 0.0
       DO k = 1, Active_hrus
@@ -268,7 +269,6 @@
       Basin_ssin = Basin_ssin*Basin_area_inv
       Basin_ssr2gw = Basin_ssr2gw*Basin_area_inv
 
-      ssrun = 0
       END FUNCTION ssrun
 
 !***********************************************************************

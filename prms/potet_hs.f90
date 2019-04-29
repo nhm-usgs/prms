@@ -4,8 +4,9 @@
 ! Hargreaves, G.H. and Z.A. Samani, 1985. Reference crop
 ! evapotranspiration from temperature. Transaction of ASAE 1(2):96-99.
 !***********************************************************************
+
       INTEGER FUNCTION potet_hs()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_potet_hs, Potet_hs_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad, Potet_coef_hru_mo
       USE PRMS_OBS, ONLY: Nowmonth
@@ -15,12 +16,13 @@
       INTEGER, EXTERNAL :: declmodule, declparam, getparam
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i, j
+      INTEGER :: i, j, nc
       REAL :: temp_diff, coef_kt, swrad_inch_day, potet_tmp
-      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'potet_hs'
+      CHARACTER(LEN=8), SAVE :: MODNAME
+      CHARACTER(LEN=80), SAVE :: Version_potet_hs
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
-      potet_hs = 1
+      potet_hs = 0
 
       IF ( Process(:3)=='run' ) THEN
         Basin_potet = 0.0D0
@@ -39,12 +41,12 @@
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
-!******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_hs = '$Id: potet_hs.f90 4611 2012-06-29 22:15:13Z rsregan $'
-        Potet_hs_nc = INDEX( Version_potet_hs, 'Z' ) + 1
+        Version_potet_hs = '$Id: potet_hs.f90 5203 2013-01-09 01:25:02Z rsregan $'
+        nc = INDEX( Version_potet_hs, 'Z' ) + 1
         i = INDEX( Version_potet_hs, '.f90' ) + 3
-        IF ( declmodule(Version_potet_hs(6:i), PROCNAME, Version_potet_hs(i+2:Potet_hs_nc))/=0 ) STOP
+        IF ( declmodule(Version_potet_hs(6:i), PROCNAME, Version_potet_hs(i+2:nc))/=0 ) STOP
+        MODNAME = 'potet_hs'
 
       ELSEIF ( Process(:4)=='init' ) THEN
         DO i = 1, Nhru
@@ -52,8 +54,6 @@
             Potet_coef_hru_mo(i, j) = Potet_coef_hru_mo(i, j)*0.0135
           ENDDO
         ENDDO
-
       ENDIF
 
-      potet_hs = 0
       END FUNCTION potet_hs

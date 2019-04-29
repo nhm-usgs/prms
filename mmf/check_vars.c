@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: check_vars.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: check_vars.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6064 $
+   $Revision: 5145 $
         Revision 1.12  2006/11/27  rsregan
 	change gis to ani
 

@@ -12,10 +12,9 @@
 !     hru_tsta, hru_elev, hru_area, basin_tsta
 !***********************************************************************
       INTEGER FUNCTION temp_2sta_prms()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_temp_2sta_prms,
-     +    Temp_2sta_prms_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru, Ntemp
       USE PRMS_BASIN, ONLY: Hru_elev, Basin_area_inv, Hru_area, NEARZERO
-      USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Hru_tsta, Ntemp,
+      USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Hru_tsta,
      +    Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, Basin_tmin,
      +    Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Tmax_adj, Tmin_adj,
      +    Basin_tsta
@@ -29,17 +28,16 @@
 ! Declared Parameters
       INTEGER, SAVE :: Lo_index, Hi_index
 ! Local Variables
-      INTEGER :: j, k
+      INTEGER :: j, k, nc
       REAL :: eldif, elcor, tminsta
       REAL :: tmx, tmn, tcrx, tcrn, tmxsta, tmnsta, thi, tlo
       REAL, SAVE :: solrad_tmax_good, solrad_tmin_good
       REAL, SAVE, ALLOCATABLE :: elfac(:)
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='temp_2sta_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Temperature Distribution')
+      CHARACTER(LEN=14), SAVE :: MODNAME
+      CHARACTER(LEN=26), PARAMETER:: PROCNAME='Temperature Distribution'
+      CHARACTER(LEN=80), SAVE :: Version_temp_2sta_prms
 !***********************************************************************
-      temp_2sta_prms = 1
+      temp_2sta_prms = 0
 
       IF ( Process(:3)=='run' ) THEN
         thi = Tmax(Hi_index)
@@ -95,12 +93,11 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_temp_2sta_prms =
-     +'$Id: temp_2sta_prms.f 4486 2012-05-08 15:41:47Z rsregan $'
-        Temp_2sta_prms_nc = INDEX( Version_temp_2sta_prms, ' $' ) + 1
-
+     +'$Id: temp_2sta_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+        nc = INDEX( Version_temp_2sta_prms, ' $' ) + 1
         IF ( declmodule(MODNAME, PROCNAME, 
-     +          Version_temp_2sta_prms(:Temp_2sta_prms_nc))
-     +         /=0)STOP
+     +       Version_temp_2sta_prms(:nc))/=0)STOP
+        MODNAME = 'temp_2sta_prms'
 
         IF ( declparam(MODNAME, 'lo_index', 'one', 'integer',
      +       '1', 'bounded', 'ntemp',
@@ -141,5 +138,4 @@
      +        '; temperature station:', I3, ' Time:', I5, 2('/', I2.2),
      +        I3, 2(':', I2.2), I5)
 
-      temp_2sta_prms = 0
       END FUNCTION temp_2sta_prms

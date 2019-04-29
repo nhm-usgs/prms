@@ -2,8 +2,9 @@
 ! Computes the potential evapotranspiration using the Priestly-Taylor
 ! formulation (Jensen, 1990), modification of potet_dpm.f - Mastin
 !***********************************************************************
+
       INTEGER FUNCTION potet_pt()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_potet_pt, Potet_pt_nc
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_feet
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Potet_coef_hru_mo
       USE PRMS_OBS, ONLY: Nowmonth
@@ -14,12 +15,13 @@
       REAL, EXTERNAL :: sat_vapor_press
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i, j
+      INTEGER :: i, j, nc
       REAL :: hvap, satvapor, slpvp, prsr, psycnst, ratio, potet_tmp, eeq, temp
-      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'potet_pt'
+      CHARACTER(LEN=8), SAVE :: MODNAME
+      CHARACTER(LEN=80), SAVE :: Version_potet_pt
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
-      potet_pt = 1
+      potet_pt = 0
 
       IF ( Process(:3)=='run' ) THEN
 !***********************************************************************
@@ -62,16 +64,15 @@
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
-!******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_pt = '$Id: potet_pt.f90 4630 2012-07-16 15:11:21Z rsregan $'
-        Potet_pt_nc = INDEX( Version_potet_pt, 'Z' ) + 1
+        Version_potet_pt = '$Id: potet_pt.f90 5203 2013-01-09 01:25:02Z rsregan $'
+        nc = INDEX( Version_potet_pt, 'Z' ) + 1
         i = INDEX( Version_potet_pt, '.f90' ) + 3
-        IF ( declmodule(Version_potet_pt(6:i), PROCNAME, Version_potet_pt(i+2:Potet_pt_nc))/=0 ) STOP
+        IF ( declmodule(Version_potet_pt(6:i), PROCNAME, Version_potet_pt(i+2:nc))/=0 ) STOP
+        MODNAME = 'potet_pt'
 
 !      ELSEIF ( Process(:4)=='init' ) THEN
 
       ENDIF
 
-      potet_pt = 0
       END FUNCTION potet_pt

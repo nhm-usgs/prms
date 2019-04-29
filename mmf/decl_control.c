@@ -11,9 +11,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: decl_control.c 5788 2010-11-18 21:17:58Z markstro $
+ * $Id: decl_control.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 5788 $
+   $Revision: 5145 $
         $Log: decl_control.c,v $
         Revision 1.12  1996/04/09 21:04:05  markstro
         (1) Work on control files

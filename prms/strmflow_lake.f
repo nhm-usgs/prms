@@ -15,11 +15,9 @@
       DOUBLE PRECISION, SAVE :: Cfs2acft
       REAL, SAVE, ALLOCATABLE :: C24(:,:), S24(:,:),Wvd(:,:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Q_down(:)
-      CHARACTER(LEN=13), PARAMETER :: MODNAME = 'strmflow_lake'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
+      CHARACTER(LEN=13), SAVE :: MODNAME
 !   Declared Variables
-      DOUBLE PRECISION, SAVE :: Basin_lake_stor, Basin_2ndstflow
-      REAL, SAVE, ALLOCATABLE :: Din1(:), Elevlake(:)
+      REAL, SAVE, ALLOCATABLE :: Din1(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_outq(:), Lake_outq2(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_outcms(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_outvol(:)
@@ -88,7 +86,7 @@
       ! Maximum values are no longer limits
       INTEGER, PARAMETER :: MAXDIM = 500
 !***********************************************************************
-      strmlksetdims = 1
+      strmlksetdims = 0
 
       IF ( decldim('ngate', 0, MAXDIM,
      +     'Maximum number of reservoir gate-opening values'//
@@ -131,7 +129,6 @@
      +     ' the stream network using Puls routing')/=0 )
      +     CALL read_error(7, 'mxnsos')
 
-      strmlksetdims = 0
       END FUNCTION strmlksetdims
 
 !***********************************************************************
@@ -146,31 +143,33 @@
 !***********************************************************************
       INTEGER FUNCTION strmlkdecl()
       USE PRMS_STRMFLOW_LAKE
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Nlake,
-     +    Version_strmflow_lake, Strmflow_lake_nc
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Nlake, Nratetbl
       USE PRMS_CASCADE, ONLY: Cascade_flag
-      USE PRMS_OBS, ONLY: Nratetbl
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar, getdim
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: n
+      INTEGER :: n, nc
+      CHARACTER(LEN=80), SAVE :: Version_strmflow_lake
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
 !***********************************************************************
-      strmlkdecl = 1
+      strmlkdecl = 0
 
       Version_strmflow_lake =
-     +'$Id: strmflow_lake.f 4794 2012-08-30 19:10:49Z rsregan $'
-      Strmflow_lake_nc = INDEX( Version_strmflow_lake, 'Z' )
+     +'$Id: strmflow_lake.f 5173 2013-01-03 00:07:12Z rsregan $'
+      nc = INDEX( Version_strmflow_lake, 'Z' )
       n = INDEX( Version_strmflow_lake, '.f' ) + 1
       IF ( declmodule(Version_strmflow_lake(6:n), PROCNAME,
-     +     Version_strmflow_lake(n+2:Strmflow_lake_nc))/=0 ) STOP
+     +     Version_strmflow_lake(n+2:nc))/=0 ) STOP
+      MODNAME = 'strmflow_lake'
 
       Nhrup1 = Nhru + 1
 
       IF ( Nratetbl>4 ) THEN
-        PRINT *, 'Lake module allows maximum of 4 rating tables'
+        PRINT *, 'ERROR, strmflow_lake module allows maximum of 4',
+     +           ' rating tables'
         STOP
       ENDIF
 
@@ -298,26 +297,12 @@
      +     'acre-feet',
      +     Lake_vol)/=0 ) CALL read_error(3, 'lake_vol')
 
-      ALLOCATE ( Elevlake(Nlake) )
-      IF ( declvar(MODNAME, 'elevlake', 'nlake', Nlake, 'real',
-     +     'Elevation of each lake using broad-crested weir or gate'//
-     +     ' opening routing',
-     +     'feet',
-     +     Elevlake)/=0 ) CALL read_error(3, 'elevlake')
-
       ALLOCATE ( Lake_invol(Nlake) )
       IF ( declvar(MODNAME, 'lake_invol', 'nlake', Nlake, 'double',
      +     'Inflow to each lake using'//
      +     ' broad-crested weir or gate opening routing',
      +     'acre-feet',
      +     Lake_invol)/=0 ) CALL read_error(3, 'lake_invol')
-
-      IF ( declvar(MODNAME, 'basin_lake_stor', 'one', 1, 'double',
-     +     'Basin volume-weighted average storage for all lakes using'//
-     +     ' broad-crested weir or gate opening routing',
-     +     'inches',
-     +     Basin_lake_stor)/=0 )
-     +     CALL read_error(3, 'basin_lake_stor')
 
 ! Declared Variables for gate opening routing
       ALLOCATE ( Lake_outvol(Nlake) )
@@ -327,12 +312,6 @@
      +     Lake_outvol)/=0 ) CALL read_error(3, 'lake_outvol')
 
 ! Declared Variables for lakes with a second outlet and gate opening routing
-      IF ( declvar(MODNAME, 'basin_2ndstflow', 'one', 1, 'double',
-     +     'Basin volume-weighted average streamflow from each lake'//
-     +     ' with a second outlet',
-     +     'inches',
-     +     Basin_2ndstflow)/=0 ) CALL read_error(3, 'basin_2ndstflow')
-
       ALLOCATE ( Lake_outq2(Nlake) )
       IF ( declvar(MODNAME, 'lake_outq2', 'nlake', Nlake, 'double',
      +     'Streamflow from second outlet for each lake'//
@@ -413,7 +392,7 @@
 ! Declared Parameters for broad-crested weir or gate opening routing
       ALLOCATE ( Elevlake_init(Nlake) )
       IF ( declparam(MODNAME, 'elevlake_init', 'nlake', 'real',
-     +     '100.0', '0.0', '10000.0',
+     +     '100.0', '-10000.0', '10000.0',
      +     'Initial lake surface elevation',
      +     'Initial lake surface elevation for each lake using'//
      +     ' broad-crested weir or gate opening routing',
@@ -444,7 +423,7 @@
 
       ALLOCATE ( Elev_outflow(Nlake) )
       IF ( declparam(MODNAME, 'elev_outflow', 'nlake', 'real',
-     +     '100.0', '0.0', '10000.0',
+     +     '100.0', '-10000.0', '10000.0',
      +     'Elevation of the main outflow point',
      +     'Elevation of the main outflow point for each lake'//
      +     ' using broad-crested weir routing',
@@ -616,7 +595,6 @@
      +     ' specifies outflow from each lake (lake_type=6)',
      +     'none')/=0 ) CALL read_error(1, 'obsout_lake')
 
-      strmlkdecl = 0
       END FUNCTION strmlkdecl
 
 !***********************************************************************
@@ -625,27 +603,28 @@
 !***********************************************************************
       INTEGER FUNCTION strmlkinit()
       USE PRMS_STRMFLOW_LAKE
-      USE PRMS_MODULE, ONLY: Nlake
+      USE PRMS_MODULE, ONLY: Nlake, Nratetbl, Inputerror_flag,
+     +    Parameter_check_flag
       USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, NEARZERO,
      +    Timestep
       USE PRMS_CASCADE, ONLY: Nwtrbdy, Cascade_flag
-      USE PRMS_OBS, ONLY: Nobs, Nratetbl
+      USE PRMS_FLOWVARS, ONLY: Basin_lake_stor, Elevlake
+      USE PRMS_OBS, ONLY: Nobs
       IMPLICIT NONE
       EXTERNAL :: read_error
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: j, k, kk, weir_rate_flag, weir_flag, secondoutflow_flag
-      INTEGER :: gate_flag, puls_flag
-      INTEGER :: param_problem, obs_flag, linear_flag, puls_lin_flag
+      INTEGER :: gate_flag, puls_flag, ierr
+      INTEGER :: obs_flag, linear_flag, puls_lin_flag
       REAL :: tmp
 !***********************************************************************
-      strmlkinit = 1
+      strmlkinit = 0
 
       IF ( Nwtrbdy<1 ) STOP 'ERROR, nwtrbdy<1 in strmflow_lake'
       ALLOCATE ( Q_down(Nwtrbdy) )
 
       IF ( Timestep==1 ) THEN
-        Basin_2ndstflow = 0.0D0
         Q_segment = 0.0D0
         Q_down = 0.0D0
         Lake_outq2 = 0.0D0
@@ -802,8 +781,8 @@
       Basin_lake_stor = 0.0D0
       Din1 = 0.0
       Elevlake = 0.0
-      param_problem = 0
       DO j = 1, Nlake
+        ierr = 0
         IF ( Lake_type(j)==1 .OR. Lake_type(j)==2 ) THEN
 ! stoin, a local variable was removed, unused
 !         Stoin(j) = (Lake_init(j)*23.76)*Basin_area_inv
@@ -813,14 +792,59 @@
             kk = Nsos(j)
             IF ( kk>Mxnsos ) THEN
               PRINT *, 'ERROR, lake_type = 1, but, nsos>mxnsos, lake:',
-     +                 j, ' nsos:', kk, ' mxnsos:', Mxnsos
-              STOP
-            ENDIF
-            IF ( kk<1 ) THEN
+     +                 j, ', nsos:', kk, ', mxnsos:', Mxnsos
+              ierr = 1
+            ELSEIF ( kk<1 ) THEN
               PRINT *, 'ERROR, lake_type = 1, but, nsos<1, lake:',
      +                 j, ' nsos:', kk, ' mxnsos:', Mxnsos
-              STOP
+              ierr = 1
             ENDIF
+          ELSEIF ( Lake_type(j)==2 ) THEN
+            IF ( Lake_coef(j)<0.0001 ) THEN
+              PRINT *, 'lake_coef must be at least 0.0001'
+              IF ( Parameter_check_flag==1 ) THEN
+                PRINT *, 'ERROR, for lake:', j, Lake_coef(j)
+                ierr = 1
+              ELSE
+                PRINT *, 'WARNING, for lake:', j, Lake_coef(j),
+     +                   ' set to 0.0001'
+                Lake_coef(j) = 0.0001
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSEIF ( Lake_type(j)==6 ) THEN
+          IF ( Obsout_lake(j)==0 .OR. Obsout_lake(j)>Nobs ) THEN
+            PRINT *, 'ERROR, obsout_lake value = 0 or > nobs for lake:',
+     +               j, Obsout_lake(j)
+            ierr = 1
+          ENDIF
+        ELSEIF ( Lake_type(j)==4 .OR. Lake_type(j)==5 ) THEN
+          IF ( Lake_vol_init(j)<0.0 ) THEN
+            PRINT *, 'ERROR, lake_vol_init < 0.0 for lake:', j,
+     +               Lake_vol_init(j)
+            ierr = 1
+          ENDIF
+!          IF ( Lake_type(j)==4 ) THEN
+!            IF ( Elev_outflow(j)<0.0 ) THEN
+!              PRINT *, 'ERROR, elev_outflow < 0.0 for lake:', j,
+!     +               Elev_outflow(j)
+!              ierr = 1
+!            ENDIF
+!          ENDIF
+        ELSE
+          PRINT *, 'ERROR, invalid lake_type for lake:', j, Lake_type(j)
+          ierr = 1
+        ENDIF
+        IF ( ierr==1 ) THEN
+          Inputerror_flag = 1
+          CYCLE
+        ENDIF
+        IF ( Lake_type(j)==1 .OR. Lake_type(j)==2 ) THEN
+! stoin, a local variable was removed, unused
+!         Stoin(j) = (Lake_init(j)*23.76)*Basin_area_inv
+          Lake_sto(j) = Lake_init(j)
+          Din1(j) = Lake_din1(j)
+          IF ( Lake_type(j)==1 ) THEN
             DO k = 1, kk
               Wvd(k, j) = S2(k, j) + O2(k, j)*0.5
             ENDDO
@@ -830,46 +854,19 @@
               S24(k, j) = (O2(k, j)-O2(k-1, j))/tmp
               C24(k, j) = O2(k, j) - S24(k, j)*Wvd(k, j)
             ENDDO
-          ELSEIF ( Lake_type(j)==2 ) THEN
-            IF ( Lake_coef(j)<NEARZERO ) THEN
-              PRINT *, 'Warning, parameter lake_coef<=0 for lake:', j
-              PRINT *, '         set to 0.1'
-              Lake_coef(j) = 0.1
-            ENDIF
-          ENDIF
-        ELSEIF ( Lake_type(j)==6 ) THEN
-          IF ( Obsout_lake(j)==0 .OR. Obsout_lake(j)>Nobs ) THEN
-            PRINT *, 'ERROR, invalid measured outflow for lake=', j
-            param_problem = 1
           ENDIF
         ELSEIF ( Lake_type(j)==4 .OR. Lake_type(j)==5 ) THEN
           Elevlake(j) = Elevlake_init(j)
-          IF ( Lake_vol_init(j)<0.0 ) THEN
-            param_problem = 1
-            PRINT *, 'ERROR, parameter lake_vol_init<0 for lake:', j
-          ENDIF
           Lake_vol(j) = Lake_vol_init(j)
           Basin_lake_stor = Basin_lake_stor + Lake_vol(j)*12.0D0
-          IF ( Lake_type(j)==4 ) THEN
-            IF ( Elev_outflow(j)<0.0 ) THEN
-              param_problem = 1
-              PRINT *, 'ERROR, parameter elev_outflow<0 for lake:', j
-            ENDIF
-          ENDIF
-        ELSE
-          PRINT *, 'ERROR, invalid lake_type:', Lake_type(j),
-     +             ' for lake=', j
-          param_problem = 1
         ENDIF
       ENDDO
-      IF ( param_problem>0 ) STOP
       Basin_lake_stor = Basin_lake_stor*Basin_area_inv
 
       DEALLOCATE ( Lake_init, Elevlake_init, Lake_vol_init )
       DEALLOCATE ( Lake_din1, Lake_qro )
       IF ( Mxnsos>0 ) DEALLOCATE ( O2, S2 )
 
-      strmlkinit = 0
       END FUNCTION strmlkinit
 
 !***********************************************************************
@@ -878,22 +875,19 @@
 !***********************************************************************
       INTEGER FUNCTION strmlkrun()
       USE PRMS_STRMFLOW_LAKE
-      USE PRMS_MODULE, ONLY: Nsegment, Nlake, Print_debug
-!markstro
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Basin_cfs,
-     +    Basin_cms, Basin_stflow_in, Basin_sroff_cfs, Basin_ssflow_cfs,
-     +    Basin_gwflow_cfs, CFS2CMS_CONV, NEARZERO, Lake_hru, DNEARZERO,
-     +    Active_hrus, Hru_route_order, Lake_hru_id, Hru_type,
-     +    Lake_area,
-     +    Basin_stflow_out
-!end markstro
+      USE PRMS_MODULE, ONLY: Nsegment, Nlake, Print_debug, Nratetbl
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, CFS2CMS_CONV,
+     +    NEARZERO, Lake_hru, DNEARZERO, Active_hrus, Hru_route_order,
+     +    Lake_hru_id, Hru_type, Lake_area
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Hru_actet, Basin_sroff,
-     +    Strm_seg_in, Hortonian_lakes
+     +    Strm_seg_in, Hortonian_lakes, Basin_lake_stor, Elevlake,
+     +    Basin_2ndstflow, Basin_cms, Basin_gwflow_cfs,
+     +    Basin_ssflow_cfs, Basin_stflow_out, Basin_stflow_in,
+     +    Basin_cfs, Basin_sroff_cfs
       USE PRMS_CASCADE, ONLY: Wtrbdy_down, Wtrbdy_route_order, Nwtrbdy,
      +    Cascade_flag
-      USE PRMS_OBS, ONLY: Cfs_conv, Timestep_seconds, Runoff, Gate_ht,
-     +    Nratetbl
+      USE PRMS_OBS, ONLY: Cfs_conv, Timestep_seconds, Runoff, Gate_ht
       USE PRMS_SOILZONE, ONLY: Upslope_interflow, Upslope_dunnianflow
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Lake_seepage, Gw_seep_lakein
       IMPLICIT NONE
@@ -907,6 +901,8 @@
       DOUBLE PRECISION :: lake_out, lake_out1, s2o2, area_fac, diff_vol
       DOUBLE PRECISION :: lakein, scnd_cfs1, scnd_cfs2
 !***********************************************************************
+      strmlkrun = 0
+
       Cfs2acft = Timestep_seconds/43560.0D0
       area_fac = Cfs_conv/Basin_area_inv
 
@@ -1214,7 +1210,6 @@
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
 
-      strmlkrun = 0
       END FUNCTION strmlkrun
 
 !=====================================================================

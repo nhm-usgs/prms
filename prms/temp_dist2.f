@@ -13,24 +13,23 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      IMPLICIT NONE
+        IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
-      REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
-      CHARACTER(LEN=10), PARAMETER:: MODNAME ='temp_dist2'
-      CHARACTER(LEN=26), PARAMETER:: PROCNAME='Temperature Distribution'
+        CHARACTER(LEN=10), SAVE :: MODNAME
+        INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
+        REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
 !   Declared Variables
-      REAL, SAVE :: Basin_lapse_max, Basin_lapse_min
+        REAL, SAVE :: Basin_lapse_max, Basin_lapse_min
 !   Declared Parameters
-      INTEGER, SAVE :: Max_tsta
-      REAL, SAVE :: Dist_max, Solrad_tmax_good, Solrad_tmin_good
-      REAL, SAVE, ALLOCATABLE :: Tmax_mo_adj(:, :), Tmin_mo_adj(:, :)
-      REAL, SAVE, ALLOCATABLE :: Monmin(:), Monmax(:)
-      REAL, SAVE, ALLOCATABLE :: Lapsemin_min(:), Lapsemin_max(:)
-      REAL, SAVE, ALLOCATABLE :: Lapsemax_min(:), Lapsemax_max(:)
-      REAL, SAVE, ALLOCATABLE :: Tsta_xlong(:), Tsta_ylat(:)
-      REAL, SAVE, ALLOCATABLE :: Hru_xlong(:), Hru_ylat(:)
+        INTEGER, SAVE :: Max_tsta
+        REAL, SAVE :: Dist_max, Solrad_tmax_good, Solrad_tmin_good
+        REAL, SAVE, ALLOCATABLE :: Tmax_mo_adj(:, :), Tmin_mo_adj(:, :)
+        REAL, SAVE, ALLOCATABLE :: Monmin(:), Monmax(:)
+        REAL, SAVE, ALLOCATABLE :: Lapsemin_min(:), Lapsemin_max(:)
+        REAL, SAVE, ALLOCATABLE :: Lapsemax_min(:), Lapsemax_max(:)
+        REAL, SAVE, ALLOCATABLE :: Tsta_xlong(:), Tsta_ylat(:)
+        REAL, SAVE, ALLOCATABLE :: Hru_xlong(:), Hru_ylat(:)
       END MODULE PRMS_TEMP_DIST2
 
 !***********************************************************************
@@ -64,33 +63,33 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Model, Nhru, Temp_dist2_nc,
-     +    Version_temp_dist2
-      USE PRMS_CLIMATEVARS, ONLY: Ntemp
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
+      INTEGER :: i, nc
+      CHARACTER(LEN=80), SAVE :: Version_temp_dist2
+      CHARACTER(LEN=26), PARAMETER ::
+     +                   PROCNAME='Temperature Distribution'
 !***********************************************************************
-      t2dist2decl = 1
+      t2dist2decl = 0
 
       Version_temp_dist2 =
-     +'$Id: temp_dist2.f 4554 2012-06-06 16:42:32Z rsregan $'
-      Temp_dist2_nc = INDEX( Version_temp_dist2, 'Z' )
+     +'$Id: temp_dist2.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_temp_dist2, 'Z' )
       i = INDEX( Version_temp_dist2, '.f' ) + 1
       IF ( declmodule(Version_temp_dist2(6:i), PROCNAME,
-     +     Version_temp_dist2(i+2:Temp_dist2_nc))/=0 ) STOP
+     +     Version_temp_dist2(i+2:nc))/=0 ) STOP
+      MODNAME = 'temp_dist2'
 
       IF ( Ntemp<2 .AND. Model/=99 ) THEN
         PRINT *, 'ERROR, temp_dist2 requires at least 2 temperature',
      +           ' stations'
         STOP
       ENDIF
-
-! added by Mastin 5/8/98
 
       IF ( declvar(MODNAME, 'basin_lapse_max', 'one', 1, 'real',
      +     'Basin area-weighted average maximum air temperature lapse'//
@@ -103,6 +102,12 @@
      +     ' rate per 1000 feet',
      +     'degrees',
      +     Basin_lapse_min)/=0 ) CALL read_error(3, 'basin_lapse_min')
+
+      ALLOCATE ( Monmin(12), Monmax(12), Lapsemax_max(12) )
+      ALLOCATE ( Lapsemin_min(12), Lapsemin_max(12), Lapsemax_min(12) )
+      ALLOCATE ( Tmax_mo_adj(Nhru,12), Tmin_mo_adj(Nhru,12) )
+      ALLOCATE ( Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp))
+      ALLOCATE ( N_tsta(Nhru) )
 
       IF ( declparam(MODNAME, 'dist_max', 'one', 'real',
      +     '1.0E9', '0.0', '1.0E9',
@@ -119,11 +124,6 @@
      +     ' distributing temperature to any HRU',
      +     'none')/=0 ) CALL read_error(1, 'max_tsta')
 
-! added THE FOLLOWING NEW PARAMETERS by J Vaccaro 7.98,
-!       various parmaeters to interpolate
-!       and constrain lapse rates for temperature
-
-      ALLOCATE ( Monmin(12) )
       IF ( declparam(MODNAME, 'monmin', 'nmonths', 'real',
      +     '-60.0', '-60.0', '65.0',
      +     'Daily minimum temperature',
@@ -132,7 +132,6 @@
      +     ' on historical temperature for all measurement stations',
      +     'temp_units')/=0 ) CALL read_error(1, 'monmin')
 
-      ALLOCATE ( Monmax(12) )
       IF ( declparam(MODNAME, 'monmax', 'nmonths', 'real',
      +     '100.0', '0.0', '115.0',
      +     'Daily maximum temperature',
@@ -141,7 +140,6 @@
      +     ' on historical temperature for all measurement stations',
      +     'temp_units')/=0 ) CALL read_error(1, 'monmax')
 
-      ALLOCATE ( Lapsemin_min(12) )
       IF ( declparam(MODNAME, 'lapsemin_min', 'nmonths', 'real',
      +     '-4.0', '-7.0', '-3.0',
      +     'Monthly minimum lapse rate for minimum temperature',
@@ -151,7 +149,6 @@
      +     ' stations',
      +     'temp_units/feet')/=0 ) CALL read_error(1, 'lapsemin_min')
 
-      ALLOCATE ( Lapsemin_max(12) )
       IF ( declparam(MODNAME, 'lapsemin_max', 'nmonths', 'real',
      +     '3.0', '-2.0', '4.0',
      +     'Monthly maximum lapse rate for minimum temperature',
@@ -161,7 +158,6 @@
      +     ' stations',
      +     'temp_units/feet')/=0 ) CALL read_error(1, 'lapsemin_max')
 
-      ALLOCATE ( Lapsemax_min(12) )
       IF ( declparam(MODNAME, 'lapsemax_min', 'nmonths', 'real',
      +     '-6.5', '-7.0', '-3.0',
      +     'Monthly minimum lapse rate for maximum temperature',
@@ -171,7 +167,6 @@
      +     ' stations',
      +     'temp_units/feet')/=0 ) CALL read_error(1, 'lapsemax_min')
 
-      ALLOCATE ( Lapsemax_max(12) )
       IF ( declparam(MODNAME, 'lapsemax_max', 'nmonths', 'real',
      +     '2.0', '-3.0', '3.0',
      +     'Monthly maximum lapse rate for maximum temperature',
@@ -213,9 +208,6 @@
      +     ' State Plane Coordinate System',
      +     'feet')/=0 ) CALL read_error(1, 'hru_xlong')
 
-! END NEW PARAMETERS
-
-      ALLOCATE ( Tmax_mo_adj(Nhru,12) )
       IF ( declparam(MODNAME, 'tmax_mo_adj', 'nhru,nmonths', 'real',
      +     '0.0', '-10.0', '10.0',
      +     'HRU monthly maximum temperature adjustment',
@@ -224,7 +216,6 @@
      +     ' based on slope and aspect',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_mo_adj')
 
-      ALLOCATE ( Tmin_mo_adj(Nhru,12) )
       IF ( declparam(MODNAME, 'tmin_mo_adj', 'nhru,nmonths', 'real',
      +     '0.0', '-10.0', '10.0',
      +     'HRU monthly minimum temperature adjustment',
@@ -233,7 +224,6 @@
      +     ' based on slope and aspect',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmin_mo_adj')
 
-      t2dist2decl = 0
       END FUNCTION t2dist2decl
 
 !***********************************************************************
@@ -242,9 +232,9 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2init()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp
       USE PRMS_BASIN, ONLY: Timestep, Hru_elev, DNEARZERO, NEARZERO
-      USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Ntemp
+      USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -255,7 +245,7 @@
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist2
       DOUBLE PRECISION, ALLOCATABLE :: nuse_tsta_dist(:, :)
 !***********************************************************************
-      t2dist2init = 1
+      t2dist2init = 0
 
       IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max)
      +     /=0 ) CALL read_error(2, 'dist_max')
@@ -307,8 +297,6 @@
 
 ! CALCULATE:  DISTANCE FROM EACH MRU TO EACH TEMPERATURE GAGE
 !          :  ELEVATION FACTOR FOR EACH MRU TO EACH TEMPERATURE GAGE
-      ALLOCATE (Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp))
-      ALLOCATE (N_tsta(Nhru))
       ALLOCATE (Nuse_tsta(Max_tsta,Nhru), nuse_tsta_dist(Max_tsta,Nhru))
       N_tsta = 0
       Nuse_tsta = 0
@@ -358,7 +346,6 @@
       Solrad_tmax_good = 0.0
       Solrad_tmin_good = 0.0
 
-      t2dist2init = 0
       END FUNCTION t2dist2init
 
 !***********************************************************************
@@ -372,11 +359,12 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
+      USE PRMS_MODULE, ONLY: Ntemp
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area,
      +    Basin_area_inv, DNEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
-     +    Tavgc, Basin_tsta, Ntemp
+     +    Tavgc, Basin_tsta
       USE PRMS_OBS, ONLY: Nowtime, Nowyear, Nowmonth, Nowday, Tmax, Tmin
       IMPLICIT NONE
 ! Functions
@@ -389,6 +377,8 @@
       REAL :: lapsemaxmax, lapsemaxmin, lapseminmax, lapseminmin
       DOUBLE PRECISION :: sumdist
 !***********************************************************************
+      t2dist2run = 0
+
       mon = Nowtime(2)
       mn = Monmin(mon)
       mx = Monmax(mon)
@@ -458,7 +448,7 @@
         Basin_lapse_min = (lapseminmax+lapseminmin)*0.5
       ENDIF
 
-! NHRU loop (10) for this day or timestep
+! HRU loop for this day or timestep
 
       DO jj = 1, Active_hrus
         j = Hru_route_order(jj)
@@ -524,6 +514,4 @@
         Solrad_tmin_good = Solrad_tmin
       ENDIF
 
-      t2dist2run = 0
       END FUNCTION t2dist2run
-

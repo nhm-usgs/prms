@@ -10,9 +10,9 @@
  * control_darray - returns double *
  * control_sarray - returns char ** - string
 
- * $Id: control_array.c 6064 2011-10-27 20:56:21Z markstro $
+ * $Id: control_array.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6064 $
+   $Revision: 5145 $
         $Log: control_array.c,v $
         Revision 1.7  1996/02/19 19:59:35  markstro
         Now lints pretty clean

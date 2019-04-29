@@ -12,12 +12,11 @@
       IMPLICIT NONE
 !   Local Variables
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
+      CHARACTER(LEN=8), SAVE :: MODNAME
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       REAL, SAVE :: Dalr
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
       REAL, SAVE, ALLOCATABLE :: Temp_wght_elev(:), Prcp_wght_elev(:)
-      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'ide_dist'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Climate Distribuition'
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Parameters
@@ -58,132 +57,134 @@
 !***********************************************************************
       INTEGER FUNCTION idedecl()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Nhru, Version_ide_dist, Ide_dist_nc
-      USE PRMS_CLIMATEVARS, ONLY: Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: n
+      INTEGER :: n, nc
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Climate Distribuition'
+      CHARACTER(LEN=80), SAVE :: Version_ide_dist
 !***********************************************************************
-      idedecl = 1
+      idedecl = 0
 
       Version_ide_dist =
-     +'$Id: ide_dist.f 4347 2012-03-21 19:46:27Z rsregan $'
-      Ide_dist_nc = INDEX( Version_ide_dist, 'Z' )
+     +'$Id: ide_dist.f 5203 2013-01-09 01:25:02Z rsregan $'
+      nc = INDEX( Version_ide_dist, 'Z' )
       n = INDEX( Version_ide_dist, '.f' ) + 1
       IF ( declmodule(Version_ide_dist(6:n), PROCNAME,
-     +                Version_ide_dist(n+2:Ide_dist_nc))/=0 ) STOP
+     +                Version_ide_dist(n+2:nc))/=0 ) STOP
+      MODNAME = 'ide_dist'
 
-      ALLOCATE (Tmax_rain_sta(Nrain))
+      ALLOCATE ( Tmax_rain_sta(Nrain) )
       IF ( declvar(MODNAME, 'tmax_rain_sta', 'nrain', Nrain, 'real',
-     +  'Maximum temperature distributed to the precipitation stations',
+     +     'Maximum temperature distributed to the precipitation'//
+     +     ' measurement stations',
      +     'degrees F',
-     +     Tmax_rain_sta).NE.0 ) CALL read_error(3, 'tmax_rain_sta')
+     +     Tmax_rain_sta)/=0 ) CALL read_error(3, 'tmax_rain_sta')
 
-      ALLOCATE (Tmin_rain_sta(Nrain))
+      ALLOCATE ( Tmin_rain_sta(Nrain) )
       IF ( declvar(MODNAME, 'tmin_rain_sta', 'nrain', Nrain, 'real',
-     +  'Minimum temperature distributed to the precipitation stations',
+     +     'Minimum temperature distributed to the precipitation'//
+     +     ' measurement stations',
      +     'degrees F',
-     +     Tmin_rain_sta).NE.0 ) CALL read_error(3, 'tmin_rain_sta')
+     +     Tmin_rain_sta)/=0 ) CALL read_error(3, 'tmin_rain_sta')
 
+      ALLOCATE ( Hru_x(Nhru), Hru_y(Nhru), Tsta_x(Ntemp) )
+      ALLOCATE ( Tsta_y(Ntemp), Psta_x(Nrain), Psta_y(Nrain) )
+      ALLOCATE ( Temp_wght_dist(12), Temp_wght_elev(12) )
+      ALLOCATE ( Temp_nuse(Ntemp), Rain_nuse(Nrain) )
+      ALLOCATE ( Prcp_wght_dist(12), Prcp_wght_elev(12) )
 ! declare parameters
-      ALLOCATE (Hru_x(Nhru))
       IF ( declparam(MODNAME, 'hru_x', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'X for each HRU (albers)', 'X for each HRU (albers)',
-     +     'meters').NE.0 ) CALL read_error(1, 'hru_x')
+     +     'X for each HRU (albers)',
+     +     'Longitude (X) for each HRU in albers projection',
+     +     'meters')/=0 ) CALL read_error(1, 'hru_x')
 
-      ALLOCATE (Hru_y(Nhru))
       IF ( declparam(MODNAME, 'hru_y', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
-     +     'Y for each HRU (albers)', 'Y for each HRU (albers)',
-     +     'meters').NE.0 ) CALL read_error(1, 'hru_y')
+     +     'Y for each HRU (albers)',
+     +     'Latitude (Y) for each HRU in albers projection',
+     +     'meters')/=0 ) CALL read_error(1, 'hru_y')
 
-      ALLOCATE (Tsta_x(Ntemp))
       IF ( declparam(MODNAME, 'tsta_x', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each temperature station (albers)',
      +     'Longitude (X) for each temperature measurement station in'//
      +     ' albers projection',
-     +     'meters').NE.0 ) CALL read_error(1, 'tsta_x')
+     +     'meters')/=0 ) CALL read_error(1, 'tsta_x')
 
-      ALLOCATE (Tsta_y(Ntemp))
       IF ( declparam(MODNAME, 'tsta_y', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each temperature station (albers)',
      +     'Latitude (Y) for each temperature measurement station in'//
      +     ' albers projection',
-     +     'meters').NE.0 ) CALL read_error(1, 'tsta_y')
+     +     'meters')/=0 ) CALL read_error(1, 'tsta_y')
 
-      ALLOCATE (Psta_x(Nrain))
       IF ( declparam(MODNAME, 'psta_x', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each precipitation station (albers)',
      +     'Longitude (X) for each precipitation measurement station'//
      +     ' in albers projection',
-     +     'meters').NE.0 ) CALL read_error(1, 'psta_x')
+     +     'meters')/=0 ) CALL read_error(1, 'psta_x')
 
-      ALLOCATE (Psta_y(Nrain))
       IF ( declparam(MODNAME, 'psta_y', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each precipitation station (albers)',
      +     'Latitude (Y) for each precipitation measurement station'//
      +     ' in albers projection',
-     +     'meters').NE.0 ) CALL read_error(1, 'psta_y')
+     +     'meters')/=0 ) CALL read_error(1, 'psta_y')
 
-      ALLOCATE (Tsta_nuse(Ntemp), Temp_nuse(Ntemp))
+      ALLOCATE ( Tsta_nuse(Ntemp) )
       IF ( declparam(MODNAME, 'tsta_nuse', 'ntemp', 'integer',
      +     '1', '0', '1',
      +     '0 = station not used; 1 = station used',
-     +     'The subset of temperature stations used in the'//
-     +     ' distribution regression (0=station not used;'//
-     +     ' 1=station used)'//
-     +     ' 0 = station not used; 1 = station used',
-     +     'none').NE.0 ) CALL read_error(1, 'tsta_nuse')
+     +     'The subset of temperature measurement stations used in'//
+     +     ' the distribution regression (0=station not used;'//
+     +     ' 1=station used)',
+     +     'none')/=0 ) CALL read_error(1, 'tsta_nuse')
 
       IF ( declparam(MODNAME, 'solrad_elev', 'one', 'real',
      +     '1000.0', '0.0', '10000.0',
      +     'Elevation of the solrad station used for DD curves',
      +     'Elevation of the solar radiation station used for'//
      +     ' degree-day curves',
-     +     'meters').NE.0 ) CALL read_error(1, 'solrad_elev')
+     +     'meters')/=0 ) CALL read_error(1, 'solrad_elev')
 
-      ALLOCATE (Psta_nuse(Nrain), Rain_nuse(Nrain))
+      ALLOCATE ( Psta_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
      +     'The subset of precipitation stations used in the'//
      +     ' distribution regression (0=station not used;'//
      +     ' 1=station used)',
-     +     'The subset of precipitation stations used in the'//
-     +     ' distribution regression (0=station not used;'//
+     +     'The subset of precipitation measurement stations used in'//
+     +     ' the distribution regression (0=station not used;'//
      +     ' 1=station used)',
-     +     'none').NE.0 ) CALL read_error(1, 'psta_nuse')
+     +     'none')/=0 ) CALL read_error(1, 'psta_nuse')
 
 ! New parameters:
-      ALLOCATE (Temp_wght_dist(12), Temp_wght_elev(12))
       IF ( declparam(MODNAME, 'temp_wght_dist', 'nmonths', 'real',
      +     '0.5', '0.0', '1.0',
      +     'Weighting function for inverse distance: temperature',
      +     'Monthly (January to December) temperature weighting'//
      +     ' function for inverse distance calculations',
-     +     'none').NE.0 ) CALL read_error(1, 'temp_wght_dist')
+     +     'none')/=0 ) CALL read_error(1, 'temp_wght_dist')
 
-      ALLOCATE (Prcp_wght_dist(12), Prcp_wght_elev(12))
       IF ( declparam(MODNAME, 'prcp_wght_dist', 'nmonths', 'real',
      +     '0.5', '0.0', '1.0',
      +     'Weighting function for inverse distance: precipitation',
      +     'Monthly (January to December) precipitation weighting'//
      +     ' function for inverse distance calculations',
-     +     'none').NE.0 ) CALL read_error(1, 'prcp_wght_dist')
+     +     'none')/=0 ) CALL read_error(1, 'prcp_wght_dist')
 
       IF ( declparam(MODNAME, 'dist_exp', 'one', 'real',
      +     '2.0', '0.0', '10.0',
      +     'Exponent for inverse distance calculations',
      +     'Exponent for inverse distance calculations',
-     +     'none').NE.0 ) CALL read_error(1, 'dist_exp')
+     +     'none')/=0 ) CALL read_error(1, 'dist_exp')
 
       IF ( declparam(MODNAME, 'ndist_psta', 'one', 'integer',
      +     '3', '1', '100',
@@ -191,15 +192,15 @@
      +     ' precipitation',
      +     'Number of precipitation measurement stations for inverse'//
      +     ' distance calculations',
-     +     'none').NE.0 ) CALL read_error(1, 'ndist_psta')
+     +     'none')/=0 ) CALL read_error(1, 'ndist_psta')
 
       IF ( declparam(MODNAME, 'ndist_tsta', 'one', 'integer',
      +     '3', '1', '100',
      +     'Number of stations for inverse distance calcs: temperature',
      +     'Number of temperature measurement stations for inverse'//
      +     ' distance calculations',
-     +     'none').NE.0 ) CALL read_error(1, 'ndist_tsta')
-      idedecl = 0
+     +     'none')/=0 ) CALL read_error(1, 'ndist_tsta')
+
       END FUNCTION idedecl
 
 !***********************************************************************
@@ -207,18 +208,18 @@
 !***********************************************************************
       INTEGER FUNCTION ideinit()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Timestep,
      +    Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev_meters,
-     +    Psta_elev_meters, Ntemp, Nrain
+     +    Psta_elev_meters
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
 ! Local Variables
       INTEGER i, ii
 !***********************************************************************
-      ideinit = 1
+      ideinit = 0
 
 ! Initialize declared variables
       IF ( Timestep==0 ) THEN
@@ -227,46 +228,46 @@
       ENDIF
 
       IF ( getparam(MODNAME, 'solrad_elev', 1, 'real', Solrad_elev)
-     +     .NE.0 ) CALL read_error(2, 'solrad_elev')
+     +     /=0 ) CALL read_error(2, 'solrad_elev')
 
       IF ( getparam(MODNAME, 'hru_x', Nhru, 'real', Hru_x)
-     +     .NE.0 ) CALL read_error(2, 'hru_x')
+     +     /=0 ) CALL read_error(2, 'hru_x')
 
       IF ( getparam(MODNAME, 'hru_y', Nhru, 'real', Hru_y)
-     +     .NE.0 ) CALL read_error(2, 'hru_y')
+     +     /=0 ) CALL read_error(2, 'hru_y')
 
       IF ( getparam(MODNAME, 'tsta_x', Ntemp, 'real', Tsta_x)
-     +     .NE.0 ) CALL read_error(2, 'tsta_x')
+     +     /=0 ) CALL read_error(2, 'tsta_x')
 
       IF ( getparam(MODNAME, 'tsta_y', Ntemp, 'real', Tsta_y)
-     +     .NE.0 ) CALL read_error(2, 'tsta_y')
+     +     /=0 ) CALL read_error(2, 'tsta_y')
 
       IF ( getparam(MODNAME, 'psta_x', Nrain, 'real', Psta_x)
-     +     .NE.0 ) CALL read_error(2, 'psta_x')
+     +     /=0 ) CALL read_error(2, 'psta_x')
 
       IF ( getparam(MODNAME, 'psta_y', Nrain, 'real', Psta_y)
-     +     .NE.0 ) CALL read_error(2, 'psta_y')
+     +     /=0 ) CALL read_error(2, 'psta_y')
 
       IF ( getparam(MODNAME, 'tsta_nuse', Ntemp, 'integer',
-     +     Tsta_nuse).NE.0 ) CALL read_error(2, 'tsta_nuse')
+     +     Tsta_nuse)/=0 ) CALL read_error(2, 'tsta_nuse')
 
       IF ( getparam(MODNAME, 'psta_nuse', Nrain, 'integer',
-     +     Psta_nuse).NE.0 ) CALL read_error(2, 'psta_nuse')
+     +     Psta_nuse)/=0 ) CALL read_error(2, 'psta_nuse')
 
       IF ( getparam(MODNAME, 'temp_wght_dist', 12, 'real',
-     +     Temp_wght_dist).NE.0 ) CALL read_error(2, 'temp_wght_dist')
+     +     Temp_wght_dist)/=0 ) CALL read_error(2, 'temp_wght_dist')
 
       IF ( getparam(MODNAME, 'prcp_wght_dist', 12, 'real',
-     +     Prcp_wght_dist).NE.0 ) CALL read_error(2, 'prcp_wght_dist')
+     +     Prcp_wght_dist)/=0 ) CALL read_error(2, 'prcp_wght_dist')
 
       IF ( getparam(MODNAME, 'dist_exp', 1, 'real', Dist_exp)
-     +     .NE.0 ) CALL read_error(2, 'dist_exp')
+     +     /=0 ) CALL read_error(2, 'dist_exp')
 
       IF ( getparam(MODNAME, 'ndist_psta', 1, 'integer',
-     +     Ndist_psta).NE.0 ) CALL read_error(2, 'ndist_psta')
+     +     Ndist_psta)/=0 ) CALL read_error(2, 'ndist_psta')
 
       IF ( getparam(MODNAME, 'ndist_tsta', 1, 'integer',
-     +     Ndist_tsta).NE.0 ) CALL read_error(2, 'ndist_tsta')
+     +     Ndist_tsta)/=0 ) CALL read_error(2, 'ndist_tsta')
 
 ! dry adiabatic lapse rate (DALR) when extrapolating
 !       (DALR = 5.4oF/1000 meters)
@@ -292,7 +293,6 @@
           Temp_nuse(Temp_nsta) = i
         ENDIF
       ENDDO
-      DEALLOCATE ( Tsta_nuse )
 
       Rain_nsta = 0
       DO i = 1, Nrain
@@ -301,14 +301,13 @@
           Rain_nuse(Rain_nsta) = i
         ENDIF
       ENDDO
-      DEALLOCATE ( Psta_nuse )
+      DEALLOCATE ( Psta_nuse, Tsta_nuse )
 
       DO i = 1, 12
         Temp_wght_elev(i) = 1.0 - Temp_wght_dist(i)
         Prcp_wght_elev(i) = 1.0 - Prcp_wght_dist(i)
       ENDDO
 
-      ideinit = 0
       END FUNCTION ideinit
 
 !***********************************************************************
@@ -319,8 +318,8 @@
 !***********************************************************************
       INTEGER FUNCTION iderun()
       USE PRMS_IDE
-      USE PRMS_CLIMATEVARS, ONLY: Tmax_allrain, Adjust_rain,
-     +    Adjust_snow, Adjmix_rain
+      USE PRMS_CLIMATEVARS, ONLY: Adjmix_rain, Adjust_snow, Adjust_rain,
+     +    Tmax_allrain
       USE PRMS_OBS, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
@@ -328,7 +327,7 @@
 ! Local variables
       INTEGER foo
 !***********************************************************************
-      iderun = 1
+      iderun = 0
 
       foo = ide_temp_run(Temp_wght_dist(Nowmonth),
      +      Temp_wght_elev(Nowmonth))
@@ -338,7 +337,6 @@
      +      Adjust_snow(Nowmonth), Adjust_rain(Nowmonth),
      +      Adjmix_rain(Nowmonth))
 
-      iderun = 0
       END FUNCTION iderun
 
 !***********************************************************************
@@ -352,12 +350,13 @@
      +    Tsta_y, Temp_nuse, Tmax_rain_sta, Dist_exp, Solrad_elev,
      +    Tmin_rain_sta, Psta_x, Psta_y, Basin_centroid_x,
      +    Basin_centroid_y, Ndist_tsta
+      USE PRMS_MODULE, ONLY: Ntemp, Nrain
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_area,
      +    Basin_area_inv, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Temp_units, Tmax_adj, Tmin_adj, Tsta_elev_meters,
-     +    Psta_elev_meters, Ntemp, Nrain
+     +    Psta_elev_meters
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
@@ -521,12 +520,13 @@
       USE PRMS_IDE, ONLY: Hru_x, Hru_y, Psta_x, Psta_y,
      +    Rain_nuse, Rain_nsta, Tmax_rain_sta, Tmin_rain_sta,
      +    Ndist_psta, Dist_exp
+      USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Hru_elev_meters,
      +    Hru_route_order, Active_hrus, DNEARZERO, MM2INCH
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Prmx, Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_snow, Tmax_allsnow, Psta_elev_meters, Basin_obs_ppt,
-     +    Nrain, Precip_units
+     +    Precip_units
       USE PRMS_OBS, ONLY: Nowtime, Precip
       IMPLICIT NONE
 ! Functions
@@ -558,8 +558,8 @@
           ELSE
             err_chk = 1
           ENDIF
- 
-          IF ( err_chk.EQ.1 ) THEN
+
+          IF ( err_chk==1 ) THEN
             Precip(i) = (Precip(i)*Adjust_snow) + Precip(i)
           ELSE
             Precip(i) = (Precip(i)*Adjust_rain) + Precip(i)
@@ -575,7 +575,7 @@
      +           Nowtime
         STOP
       ENDIF
- 
+
       Basin_ppt = 0.0D0
       Basin_rain = 0.0D0
       Basin_snow = 0.0D0
@@ -629,14 +629,14 @@
       ENDDO
 !----------------
 !----------------
- 
+
       Basin_ppt = Basin_ppt*Basin_area_inv
       Basin_rain = Basin_rain*Basin_area_inv
       Basin_snow = Basin_snow*Basin_area_inv
       Basin_obs_ppt = sum_obs*Basin_area_inv
 
       END FUNCTION ide_rain_run
- 
+
 !***********************************************************************
 ! Calculates climate value based on inverse distance squared
 !***********************************************************************
@@ -718,7 +718,7 @@
       ENDDO
 !
       END SUBROUTINE compute_inv
- 
+
 !***********************************************************************
 ! Calculates climate value based on elevation trend in basin
 ! abs(Itype)=1 -- TEMPERATURE
@@ -1032,4 +1032,3 @@
       var = var/(N-1)
       Sdev = SQRT(var)
       END SUBROUTINE moments
-

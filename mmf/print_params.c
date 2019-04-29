@@ -1,9 +1,9 @@
 /**************************************************************************
  * print_params.c: prints the param data base to a file
  *
- * $Id: print_params.c 6757 2012-04-19 23:30:52Z rsregan $
+ * $Id: print_params.c 5228 2013-01-15 16:52:58Z markstro $
  *
-   $Revision: 6757 $
+   $Revision: 5228 $
         $Log: print_params.c,v $
         Revision 1.15  2001/11/27 16:00:10  markstro
         Unknown
@@ -171,9 +171,12 @@ int print_params (void) {
 
     switch(param->type) {
        case M_LONG:
-          (void)fprintf (param_file, "Max       : %ld\n", *(long *)(param->max));
-          (void)fprintf (param_file, "Min       : %ld\n", *(long *)(param->min));
-          (void)fprintf (param_file, "Default   : %ld\n", *(long *)(param->def));
+//          (void)fprintf (param_file, "Max       : %ld\n", *(long *)(param->max));
+//          (void)fprintf (param_file, "Min       : %ld\n", *(long *)(param->min));
+//          (void)fprintf (param_file, "Default   : %ld\n", *(long *)(param->def));
+          (void)fprintf (param_file, "Max       : %d\n", *(int *)(param->max));
+          (void)fprintf (param_file, "Min       : %d\n", *(int *)(param->min));
+          (void)fprintf (param_file, "Default   : %d\n", *(int *)(param->def));
           break;
 
        case M_FLOAT:

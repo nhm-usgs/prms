@@ -12,9 +12,9 @@
  * If the total number of entries is less than required, the sequence
  * is repeated.
  *
- * $Id: str_to_vals.c 5702 2010-07-28 20:42:46Z rsregan $
+ * $Id: str_to_vals.c 5222 2013-01-14 23:06:22Z markstro $
  *
-   $Revision: 5702 $
+   $Revision: 5222 $
         $Log: str_to_vals.c,v $
         Revision 1.7  1996/02/19 20:01:17  markstro
         Now lints pretty clean
@@ -62,7 +62,7 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
   char tcopy[MAXDATALNLEN];
   double dvalue, *dval;
   float fvalue, *fval;
-  long lvalue, *lval;
+  int lvalue, *lval;
 
   /*
    * set up pointer for data type
@@ -79,7 +79,7 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
     fval = (float *) store_addr;
     break;
   case M_LONG:
-    lval = (long *) store_addr;
+    lval = (int *) store_addr;
     break;
   }
 
@@ -136,7 +136,7 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
       fvalue = (float) strtod(valstr, &end_point);
       break;
     case M_LONG:
-      lvalue = strtol(valstr, &end_point, 10);
+      lvalue = (int)strtol(valstr, &end_point, 10);
       break;
     }
 

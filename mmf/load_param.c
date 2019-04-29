@@ -14,9 +14,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: load_param.c 6757 2012-04-19 23:30:52Z rsregan $
+ * $Id: load_param.c 5222 2013-01-14 23:06:22Z markstro $
  *
-   $Revision: 6757 $
+   $Revision: 5222 $
         $Log: load_param.c,v $
         Revision 1.5  1996/02/19 20:00:15  markstro
         Now lints pretty clean
@@ -58,7 +58,7 @@ long load_param (PARAM *param) {
 	long i;
 	double *dval, *dmin, *dmax, *ddef;
 	float *fval, *fmin, *fmax, *fdef;
-	long *lval, *lmin, *lmax, *ldef;
+	int *lval, *lmin, *lmax, *ldef;
 	char *sval, *sdef;
 
 	if (param->type == M_DOUBLE) {
@@ -72,10 +72,10 @@ long load_param (PARAM *param) {
 		param->min = (char *)umalloc (param->size * sizeof (float));
 		param->max = (char *)umalloc (param->size * sizeof (float));
 	} else if (param->type == M_LONG) {
-		param->value = (char *)umalloc (param->size * sizeof (long));
-		param->def = (char *)umalloc (param->size * sizeof (long));
-		param->min = (char *)umalloc (param->size * sizeof (long));
-		param->max = (char *)umalloc (param->size * sizeof (long));
+		param->value = (char *)umalloc (param->size * sizeof (int));
+		param->def = (char *)umalloc (param->size * sizeof (int));
+		param->min = (char *)umalloc (param->size * sizeof (int));
+		param->max = (char *)umalloc (param->size * sizeof (int));
 	} else if (param->type == M_STRING) {
 		param->value = (char *)umalloc (param->size * sizeof (char *));
 		param->def = (char *)umalloc (param->size * sizeof (char *));
@@ -87,7 +87,7 @@ long load_param (PARAM *param) {
 * decode minima
 */
 	if (param->bound_status == M_BOUNDED) {
-		lmin = (long *)(param->min);	
+		lmin = (int *)(param->min);	
 		for (i = 0; i < param->size; i++)
 			*lmin++ = 0;
 	} else {
@@ -104,7 +104,7 @@ long load_param (PARAM *param) {
 * decode maxima
 */
 	if (param->bound_status == M_BOUNDED) {
-		lmax = (long *)(param->max);	
+		lmax = (int *)(param->max);	
 		for (i = 0; i < param->size; i++)
 			*lmax++ = (long)(param->bound_dimen->value);
 	} else {
@@ -144,8 +144,8 @@ long load_param (PARAM *param) {
 			break;
 
 		case M_LONG:
-			lval = (long *)param->value;
-			ldef = (long *)param->def;
+			lval = (int *)param->value;
+			ldef = (int *)param->def;
 			for (i = 0; i < param->size; i++)
 				*lval++ = *ldef++;
 			break;
@@ -241,9 +241,9 @@ long load_param (PARAM *param) {
 
 	case M_LONG:
 
-		lval = (long *) param->value;
-		lmin = (long *) param->min;
-		lmax = (long *) param->max;
+		lval = (int *) param->value;
+		lmin = (int *) param->min;
+		lmax = (int *) param->max;
 
 		for (i = 0; i < param->size; i++) {
 
@@ -256,7 +256,7 @@ long load_param (PARAM *param) {
 				    param->min_string, param->max_string);
 //				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
 				(void)fprintf(stderr,
-				    "Assigned minimum = %ld, maximum = %ld\n", lmin[i], lmax[i]);
+				    "Assigned minimum = %d, maximum = %d\n", lmin[i], lmax[i]);
 				return(1);
 			}
 
@@ -268,7 +268,7 @@ long load_param (PARAM *param) {
 				    param->value_string, param->min_string, param->max_string);
 				(void)fprintf(stderr, "       Assigned values are:\n");
 				(void)fprintf(stderr,
-				    "       Value = %ld, Minimum = %ld, Maximum = %ld\n",
+				    "       Value = %d, Minimum = %d, Maximum = %d\n",
 				    lval[i], lmin[i], lmax[i]);
 				return(1);
 			}

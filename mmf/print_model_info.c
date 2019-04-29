@@ -1,5 +1,5 @@
 /*
- * $Id: print_model_info.c 6903 2012-05-15 17:41:28Z markstro $
+ * $Id: print_model_info.c 5145 2012-12-19 17:39:07Z rsregan $
  */
 #define PRINT_MODEL_INFO_C
 #include <string.h>

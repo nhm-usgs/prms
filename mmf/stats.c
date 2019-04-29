@@ -12,9 +12,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: stats.c 5739 2010-10-01 18:02:03Z rsregan $
+ * $Id: stats.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 5739 $
+   $Revision: 5145 $
         $Log: stats.c,v $
         Revision 1.13  1998/11/10 15:17:44  markstro
         unknown

@@ -20,7 +20,7 @@
       INTEGER, PARAMETER :: BALUNT = 195, DBGUNT = 895
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:)
       DOUBLE PRECISION, SAVE :: Last_soil_moist
-      CHARACTER(LEN=10), PARAMETER :: MODNAME = 'smbal_prms'
+      CHARACTER(LEN=10), SAVE :: MODNAME
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_soil_rechr
@@ -60,22 +60,24 @@
 !***********************************************************************
       INTEGER FUNCTION smdecl()
       USE PRMS_SMBAL
-      USE PRMS_MODULE, ONLY: Nhru, Version_smbal_prms, Smbal_prms_nc
+      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
-! Local Variable
-      INTEGER :: n
+! Local Variables
+      INTEGER :: n, nc
+      CHARACTER(LEN=80), SAVE :: Version_smbal_prms
 !***********************************************************************
       smdecl = 1
 
       Version_smbal_prms =
-     +'$Id: smbal_prms.f 4773 2012-08-22 23:32:17Z rsregan $'
-      Smbal_prms_nc = INDEX( Version_smbal_prms, 'Z' )
+     +'$Id: smbal_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_smbal_prms, 'Z' )
       n = INDEX( Version_smbal_prms, '.f' ) + 1
       IF ( declmodule(Version_smbal_prms(6:n), PROCNAME,
-     +     Version_smbal_prms(n+2:Smbal_prms_nc))/=0 ) STOP
+     +     Version_smbal_prms(n+2:nc))/=0 ) STOP
+      MODNAME = 'smbal_prms'
 
 ! Declare Variables
       IF ( declvar(MODNAME, 'basin_soil_rechr', 'one', 1, 'double',
@@ -259,7 +261,7 @@
       REAL :: perv_area, harea, soilin
 !     REAL :: tmp
 !***********************************************************************
-      smrun = 1
+      smrun = 0
 
       Last_soil_moist = Basin_soil_moist
       Basin_actet = 0.0D0
@@ -369,8 +371,6 @@
           WRITE (BALUNT, *) 'BSM rounding issue', bsmbal
         ENDIF
       ENDIF
-
-      smrun = 0
 
  9001 FORMAT (' smbal: ', 3I4, 7F8.4)
  9002 FORMAT (I5, 2('/', I2.2), 8F11.7)

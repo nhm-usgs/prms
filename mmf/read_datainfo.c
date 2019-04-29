@@ -13,9 +13,9 @@
  * REVIEW   :
  * PR NRS   :
  *
- * $Id: read_datainfo.c 6844 2012-05-04 16:55:46Z markstro $
+ * $Id: read_datainfo.c 5145 2012-12-19 17:39:07Z rsregan $
  *
-   $Revision: 6844 $
+   $Revision: 5145 $
         $Log: read_datainfo.c,v $
         Revision 1.15  2000/03/07 20:35:18  markstro
         Added comments to data file header

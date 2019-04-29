@@ -3,28 +3,23 @@
 ! Superceded by ddsolrad
 !
 ! Distributes solar radiation to each HRU and estimates missing solar
-! radiation data using a maximum temperature per degree-day relation;
-! modification of ddsolrad_prms
-!
+! radiation data using a maximum temperature per degree-day relation.
 !RSR: 03/31/2008
 !RSR: Warning, summer is based on equinox of Julian days 79 to 265 is
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_DDSOLRAD_RADPL
-      IMPLICIT NONE
-!   Local Variables
-      REAL, SAVE, ALLOCATABLE :: Plrad(:)
-!   Declared Parameters
-      INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
-      REAL, SAVE :: Radadj_slope, Radadj_intcp
-      REAL, SAVE, ALLOCATABLE :: Dday_slope(:), Dday_intcp(:)
-      REAL, SAVE, ALLOCATABLE :: Tmax_index(:)
-      
-      CHARACTER*(*) MODNAME
-      PARAMETER(MODNAME='ddsolrad_prms')
-      CHARACTER*(*) PROCNAME
-      PARAMETER(PROCNAME='Solar Radiation')
-      
+        IMPLICIT NONE
+        ! Local Variables
+        CHARACTER(LEN=13), SAVE :: MODNAME
+        REAL, SAVE, ALLOCATABLE :: Plrad(:)
+        ! Declared Variables
+        REAL, SAVE, ALLOCATABLE :: Radpl_potsw(:)
+        ! Declared Parameters
+        INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
+        REAL, SAVE :: Radadj_slope, Radadj_intcp
+        REAL, SAVE, ALLOCATABLE :: Dday_slope(:), Dday_intcp(:)
+        REAL, SAVE, ALLOCATABLE :: Tmax_index(:)
       END MODULE PRMS_DDSOLRAD_RADPL
 
 !***********************************************************************
@@ -57,25 +52,34 @@
 !***********************************************************************
       INTEGER FUNCTION ddsoldecl()
       USE PRMS_DDSOLRAD_RADPL
-      USE PRMS_MODULE, ONLY: Nhru, Version_ddsolrad_prms,
-     +    Ddsolrad_prms_nc
+      USE PRMS_MODULE, ONLY: Nhru
       USE PRMS_SOLTAB_RADPL, ONLY: Nradpl
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam
+      INTEGER, EXTERNAL :: declmodule, declparam, declvar
+! Local Variables
+      INTEGER :: nc
+      CHARACTER(LEN=80), SAVE :: Version_ddsolrad_prms
+      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ddsoldecl = 1
 
       Version_ddsolrad_prms =
-     +'$Id: ddsolrad_prms.f 4467 2012-05-04 15:57:55Z rsregan $'
-      Ddsolrad_prms_nc = INDEX( Version_ddsolrad_prms, ' $' ) + 1
-
+     +'$Id: ddsolrad_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_ddsolrad_prms, ' $' ) + 1
       IF ( declmodule(MODNAME, PROCNAME,
-     +                  Version_ddsolrad_prms(:Ddsolrad_prms_nc))/=0 )
-     +       STOP
+     +                Version_ddsolrad_prms(:nc))/=0 ) STOP
 
       ALLOCATE (Plrad(Nradpl))
+
+! Declare Variables
+      ALLOCATE (Radpl_potsw(Nradpl))
+      IF ( declvar(MODNAME, 'radpl_potsw', 'nradpl', Nradpl, 'real',
+     +     'Potential shortwave radiation for each radiation'//
+     +     ' plane for each day',
+     +     'langleys',
+     +     Radpl_potsw).NE.0 ) RETURN
 
 ! Declare Parameters
       ALLOCATE (Dday_slope(12))
@@ -136,6 +140,7 @@
       INTEGER FUNCTION ddsolinit()
       USE PRMS_DDSOLRAD_RADPL
       USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
 !***********************************************************************
@@ -159,6 +164,8 @@
       IF ( getparam(MODNAME, 'tmax_index', 12, 'real', Tmax_index)
      +     .NE.0 ) RETURN
 
+      IF ( Timestep==0 ) Radpl_potsw = 0.0
+
       ddsolinit = 0
       END FUNCTION ddsolinit
 
@@ -168,9 +175,10 @@
 !***********************************************************************
       INTEGER FUNCTION ddsolrun()
       USE PRMS_DDSOLRAD_RADPL
+      USE PRMS_MODULE, ONLY: Nsol
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order,
      +    Basin_area_inv
-      USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Nsol, Orad,
+      USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Orad,
      +    Basin_obs_ppt, Tmax_allrain, Ppt_rad_adj, Basin_solsta,
      +    Basin_horad, Basin_potsw, Radj_sppt, Radj_wppt, Swrad,
      +    Hru_solsta, Radmax, Rad_conv
@@ -188,7 +196,7 @@
      +          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73,
      +          .734, .738, .742, .746, .75/
 !***********************************************************************
-      ddsolrun = 1
+      ddsolrun = 0
 
 !rsr using julian day as the soltab arrays are filled by julian day
       Basin_horad = Radpl_soltab(Jday, 1)
@@ -241,7 +249,8 @@
       ENDIF
 
       DO j = 1, Nradpl
-        Plrad(j) = Radpl_soltab(Jday,j)/Basin_horad*Orad/Radpl_cossl(j)
+        Radpl_potsw(j) = Radpl_soltab(Jday, j)
+        Plrad(j) = Radpl_potsw(j)/Basin_horad*Orad/Radpl_cossl(j)
       ENDDO
 
       Basin_potsw = 0.0D0
@@ -267,5 +276,4 @@
       ENDIF
       Basin_potsw = Basin_potsw*Basin_area_inv
 
-      ddsolrun = 0
       END FUNCTION ddsolrun

@@ -6,7 +6,7 @@
       IMPLICIT NONE
 !   Local Variables
       INTEGER, SAVE :: Hrutot_flg
-      CHARACTER(LEN=7), PARAMETER :: MODNAME = 'hru_sum'
+      CHARACTER(LEN=12), SAVE:: MODNAME
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_ppt_mo(:), Hru_net_ppt_mo(:)
@@ -51,21 +51,23 @@
 !***********************************************************************
       INTEGER FUNCTION hsumbdecl()
       USE PRMS_HRUSUM
-      USE PRMS_MODULE, ONLY: Nhru, Version_hru_sum, Hru_sum_nc
+      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar, declpri
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
+      INTEGER :: i, nc
+      CHARACTER(LEN=80), SAVE :: Version_hru_sum
 !***********************************************************************
       hsumbdecl = 1
 
-      Version_hru_sum = '$Id: hru_sum_prms.f90 4748 2012-08-17 19:47:58Z rsregan $'
-      Hru_sum_nc = INDEX( Version_hru_sum, 'Z' )
+      Version_hru_sum = '$Id: hru_sum_prms.f90 5169 2012-12-28 23:51:03Z rsregan $'
+      nc = INDEX( Version_hru_sum, 'Z' )
       i = INDEX( Version_hru_sum, '.f90' ) + 3
-      IF ( declmodule(Version_hru_sum(6:i), PROCNAME, Version_hru_sum(i+2:Hru_sum_nc))/=0 ) STOP
+      IF ( declmodule(Version_hru_sum(6:i), PROCNAME, Version_hru_sum(i+2:nc))/=0 ) STOP
+      MODNAME = 'hru_sum_prms'
 
       ALLOCATE ( Hru_ppt_yr(Nhru), Hru_net_ppt_yr(Nhru) )
       IF ( declpri('hsumb_hru_ppt_yr', Nhru, 'real', Hru_ppt_yr)/=0 ) RETURN
@@ -92,46 +94,46 @@
 
 ! Declare Parameters
       IF ( declparam(MODNAME, 'pmo', 'one', 'integer', &
-           '0', '0', '12', &
-           'Month to print HRU summary', 'Month to print HRU summary', &
-           'none')/=0 ) CALL read_error(1, 'pmo')
+     &     '0', '0', '12', &
+     &     'Month to print HRU summary', 'Month to print HRU summary', &
+     &     'none')/=0 ) CALL read_error(1, 'pmo')
 
       IF ( declparam(MODNAME, 'moyrsum', 'one', 'integer', &
-           '0', '0', '1', &
-           'Switch for HRU monthly and yearly summary', &
-           'Switch for HRU monthly and yearly summary (0=off, 1=on)', &
-           'none')/=0 ) CALL read_error(1, 'moyrsum')
+     &     '0', '0', '1', &
+     &     'Switch for HRU monthly and yearly summary', &
+     &     'Switch for HRU monthly and yearly summary (0=off, 1=on)', &
+     &     'none')/=0 ) CALL read_error(1, 'moyrsum')
 
 ! Declare Variables
       ALLOCATE ( Hru_ppt_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_ppt_mo', 'nhru', Nhru, 'real', &
-           'Monthly precipitation distributed to each HRU', &
-           'inches', Hru_ppt_mo)/=0 ) CALL read_error(3, 'hru_ppt_mo')
+     &     'Monthly precipitation distributed to each HRU', &
+     &     'inches', Hru_ppt_mo)/=0 ) CALL read_error(3, 'hru_ppt_mo')
 
       ALLOCATE ( Hru_net_ppt_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_net_ppt_mo', 'nhru', Nhru, 'real', &
-           'Monthly net precipitation on each HRU', &
-           'inches', Hru_net_ppt_mo)/=0 ) CALL read_error(3, 'hru_net_ppt_mo')
+     &     'Monthly net precipitation on each HRU', &
+     &     'inches', Hru_net_ppt_mo)/=0 ) CALL read_error(3, 'hru_net_ppt_mo')
 
       ALLOCATE ( Hru_potet_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_potet_mo', 'nhru', Nhru, 'real', &
-           'Monthly potential ET for each HRU', &
-           'inches', Hru_potet_mo)/=0 ) CALL read_error(3, 'hru_potet_mo')
+     &     'Monthly potential ET for each HRU', &
+     &     'inches', Hru_potet_mo)/=0 ) CALL read_error(3, 'hru_potet_mo')
 
       ALLOCATE ( Hru_actet_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_actet_mo', 'nhru', Nhru, 'real', &
-           'Monthly actual ET from each HRU', &
-           'inches', Hru_actet_mo)/=0 ) CALL read_error(3, 'hru_actet_mo')
+     &     'Monthly actual ET from each HRU', &
+     &     'inches', Hru_actet_mo)/=0 ) CALL read_error(3, 'hru_actet_mo')
 
       ALLOCATE ( Hru_snowmelt_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_snowmelt_mo', 'nhru', Nhru, 'real', &
-           'Monthly snowmelt from each HRU', &
-           'inches', Hru_snowmelt_mo)/=0 ) CALL read_error(3, 'hru_snowmelt_mo')
+     &     'Monthly snowmelt from each HRU', &
+     &     'inches', Hru_snowmelt_mo)/=0 ) CALL read_error(3, 'hru_snowmelt_mo')
 
       ALLOCATE ( Hru_sroff_mo(Nhru) )
       IF ( declvar(MODNAME, 'hru_sroff_mo', 'nhru', Nhru, 'real', &
-           'Monthly surface runoff from each HRU', &
-           'inches', Hru_sroff_mo)/=0 ) CALL read_error(3, 'hru_sroff_mo')
+     &     'Monthly surface runoff from each HRU', &
+     &     'inches', Hru_sroff_mo)/=0 ) CALL read_error(3, 'hru_sroff_mo')
 
       hsumbdecl = 0
       END FUNCTION hsumbdecl
@@ -149,7 +151,7 @@
       EXTERNAL read_error
       INTEGER :: i
 !***********************************************************************
-      hsumbinit = 1
+      hsumbinit = 0
 
       IF ( getparam(MODNAME, 'pmo', 1, 'integer', Pmo)/=0 ) CALL read_error(2, 'pmo')
       IF ( getparam(MODNAME, 'moyrsum', 1, 'integer', Moyrsum)/=0 ) CALL read_error(2, 'moyrsum')
@@ -179,7 +181,6 @@
       Hrutot_flg = 0
       IF ( Nhru==Nssr .AND. Nhru==Ngw ) Hrutot_flg = 1
 
-      hsumbinit = 0
       END FUNCTION hsumbinit
 
 !***********************************************************************
@@ -190,11 +191,12 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Hru_ppt, Potet, Swrad
       USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Soil_to_ssr, Hru_impervstor, &
-          Hru_actet, Infil, Sroff, Soil_moist, Hru_intcpevap
+     &    Hru_actet, Infil, Sroff, Soil_moist, Hru_intcpevap, Pkwater_equiv
       USE PRMS_OBS, ONLY: Jday, Nowyear, Nowmonth, Nowday, Yrdays, Modays, Julwater
       USE PRMS_INTCP, ONLY: Hru_intcpstor, Net_ppt
-      USE PRMS_SNOW, ONLY: Tcal, Pk_den, Pk_temp, Pkwater_equiv, Snowmelt, Albedo
+      USE PRMS_SNOW, ONLY: Tcal, Pk_den, Pk_temp, Snowmelt, Albedo
       IMPLICIT NONE
+! Functions
       INTRINSIC FLOAT
       EXTERNAL opstr
 ! Local Variables
@@ -202,7 +204,7 @@
       INTEGER :: i, j, ii
       REAL :: hruprt(24), ri, rmo, ryr, stor, wbal
 !***********************************************************************
-      hsumbrun = 1
+      hsumbrun = 0
 
       IF ( Moyrsum==1 ) THEN
         IF ( Nowday==1 ) THEN
@@ -236,8 +238,8 @@
       IF ( Nowmonth==Pmo ) THEN
         hruprt(2) = FLOAT(Nowday)
         CALL opstr('   hru   day   swr   tmx   tmn  oppt  nppt   int '// &
-                   ' inls   pet   aet  smav pweqv   den  pact   alb  '// &
-                   'tcal  smlt   infl    sro   s2gw   s2ss  imst   wbal')
+     &             ' inls   pet   aet  smav pweqv   den  pact   alb  '// &
+     &             'tcal  smlt   infl    sro   s2gw   s2ss  imst   wbal')
         DO ii = 1, Active_hrus
           i = Hru_route_order(ii)
           IF ( Hru_type(i)==0 ) CYCLE
@@ -266,7 +268,7 @@
           stor = hruprt(13) + hruprt(12) + hruprt(8) + hruprt(23)
 !Hru_actet includes perv_actet, imperv_evap, intcp_evap, and snow_evap
           wbal = Hru_ppt(i) + Stor_last(i) - stor - Hru_actet(i) &
-                 - Sroff(i) - Soil_to_gw(i) - Soil_to_ssr(i)
+     &           - Sroff(i) - Soil_to_gw(i) - Soil_to_ssr(i)
           hruprt(24) = wbal
           Stor_last(i) = stor
           WRITE (buffer, '(F6.0,F5.0,1X,16F6.2,4F7.4,F6.2,F7.4)') (hruprt(j), j=1, 24)
@@ -276,7 +278,7 @@
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           Stor_last(i) = Pkwater_equiv(i) + Soil_moist(i)*Hru_frac_perv(i) &
-                         + Hru_intcpstor(i) + Hru_impervstor(i)
+     &                   + Hru_intcpstor(i) + Hru_impervstor(i)
         ENDDO
       ENDIF
 
@@ -311,10 +313,10 @@
             IF ( Hru_type(i)==0 ) CYCLE
             ri = FLOAT(i)
             WRITE ( buffer, 9001 ) ri, rmo, Hru_ppt_mo(i), &
-                    Hru_net_ppt_mo(i), Hru_potet_mo(i), &
-                    Hru_actet_mo(i), Pkwater_equiv(i), &
-                    Soil_to_ssr_mo(i), Soil_to_gw_mo(i), &
-                    Hru_snowmelt_mo(i), Hru_sroff_mo(i)
+     &              Hru_net_ppt_mo(i), Hru_potet_mo(i), &
+     &              Hru_actet_mo(i), Pkwater_equiv(i), &
+     &              Soil_to_ssr_mo(i), Soil_to_gw_mo(i), &
+     &              Hru_snowmelt_mo(i), Hru_sroff_mo(i)
             CALL opstr(buffer(:106))
           ENDDO
         ENDIF
@@ -329,10 +331,10 @@
             IF ( Hru_type(i)==0 ) CYCLE
             ri = FLOAT( i )
             WRITE ( buffer, 9001 ) ri, ryr, Hru_ppt_yr(i), &
-                    Hru_net_ppt_yr(i), Hru_potet_yr(i), &
-                    Hru_actet_yr(i), Pkwater_equiv(i), &
-                    Soil_to_ssr_yr(i), Soil_to_gw_yr(i), &
-                    Hru_snowmelt_yr(i), Hru_sroff_yr(i)
+     &              Hru_net_ppt_yr(i), Hru_potet_yr(i), &
+     &              Hru_actet_yr(i), Pkwater_equiv(i), &
+     &              Soil_to_ssr_yr(i), Soil_to_gw_yr(i), &
+     &              Hru_snowmelt_yr(i), Hru_sroff_yr(i)
             CALL opstr(buffer(:106))
           ENDDO
         ENDIF
@@ -340,6 +342,5 @@
 
  9001 FORMAT (F7.0, F5.0, 16X, 2F7.2, F16.2, F6.2, F13.2, 2F8.2, 2F7.2)
 
-      hsumbrun = 0
       END FUNCTION hsumbrun
 

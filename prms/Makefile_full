@@ -1,22 +1,24 @@
 # prms libraray makefile
-# $Id: Makefile 5213 2013-01-14 18:18:13Z markstro $
+# $Id: Makefile_full 5136 2012-12-18 18:42:13Z rsregan $
 
 include ../makelist
-PRMSBASE = ./libprmsiv.a
-PRMSLIB2 = ./libprmsiv2.a
-PRMSLIB3 = ./libprmsiv3.a
-MMFLIB = ../mmf/libmmf.a
-TARGET 	= ./prms
-LIBS	= $(PRMSBASE) $(PRMSLIB2) $(PRMSLIB3) $(MMFLIB)
+LIBDIR	= $(MOWSDIR)/lib
+PRMSLIB = $(LIBDIR)/libprmsiv.a
+PRMSLIB2 = $(LIBDIR)/libprmsiv2.a
+PRMSLIBWS = $(LIBDIR)/libprmsivws.a
+PRMSBASE = $(LIBDIR)/libprmsbase.a
+MMFLIB	 = $(LIBDIR)/libmmf.a
+TARGET 	= $(MOWSDIR)/bin/prmsIV
+LIBS	= $(PRMSLIB) $(PRMSBASE) $(MMFLIB) $(FLIBS)
 
 ####################################################
 # Rules for targets
 ####################################################
 all: $(TARGET)
 
-$(TARGET): call_modules.o $(LIBS)
+$(TARGET): $(MMFLIB) $(PRMSLIB) $(PRMSBASE) call_modules.o
 	$(RM) $(TARGET)
-	$(CC) $(LDFLAGS) -o $(TARGET) call_modules.o $(LIBS) $(FLIBS)
+	$(CC) $(LDFLAGS) -o $(TARGET) call_modules.o climateflow.o $(LIBOBJS4) $(LIBOBJS2) $(LIBS)
 
 $(MMFLIB):
 	$(CD) $(MMFDIR);make
@@ -25,100 +27,100 @@ $(MMFLIB):
 # Define all object files which make up the library
 #
 
+LIBSNOW = \
+        potet_jh_hru_mo.o \
+        snowcomp.o
+
 LIBOBJS = \
-	basin.o \
-	cascade.o \
+	basin.o
+
+LIBOBJS8 = \
+        cascade.o \
         soltab.o \
-        obs.o \
         potet_jh.o \
         potet_pt.o \
         potet_hs.o \
         potet_pan.o \
-        potet_hamon.o \
         ddsolrad.o \
         ccsolrad.o \
         ide_dist.o \
         xyz_dist.o \
-        climate_hru.o \
         precip_1sta.o \
         precip_laps.o \
         precip_dist2.o \
-        temp_1sta.o \
-        temp_laps.o \
-        temp_dist2.o \
+        climate_hru.o \
         transp_frost.o \
         transp_tindex.o \
         frost_date.o \
+        potet_hamon.o \
+        utils_prms.o
+
+LIBOBJS7 = \
+        climateflow.o
+
+LIBOBJS4 = \
+        obs.o
+
+LIBOBJS2 = \
         srunoff_carea.o \
         srunoff_smidx.o \
         soilzone.o \
         gwflow.o \
+        muskingum.o \
+        musroute.o
+
+LIBOBJS5 = \
         strmflow.o \
         strmflow_lake.o \
         subbasin.o \
         map_results.o \
-        muskingum.o \
         write_climate_hru.o \
-        prms_summary.o \
-        musroute.o \
         basin_sum.o \
-        utils_prms.o
+        prms_summary.o
 
 LIBOBJS1 = \
-        climateflow.o \
-        potet_jh_hru_mo.o
+        temp_1sta.o \
+        temp_laps.o \
+        ide_dist.o \
+        xyz_dist.o \
+        temp_dist2.o \
+        intcp.o
 
-LIBOBJS2 = \
+LIBOBJS3 = \
         soltab_prms.o \
         temp_2sta_prms.o \
         ddsolrad_prms.o \
         ccsolrad_prms.o \
         potet_hamon_prms.o \
-        intcp.o \
-        snowcomp.o \
         smbal_prms.o \
-        ssflow_prms.o \
-        hru_sum_prms.o
+        hru_sum_prms.o \
+        ssflow_prms.o
 
 all: lib
 
 install: lib
 
-lib: $(LIBS)
+lib: $(PRMSLIB) $(PRMSBASE)
 
-$(PRMSLIB2): call_modules.o $(LIBOBJS1)
+$(PRMSLIB): call_modules.o $(LIBOBJS) $(LIBOBJS7) $(LIBOBJS4) $(LIBOBJS1) $(LIBOBJS8) $(LIBSNOW) $(LIBOBJS2) $(LIBOBJS3) $(LIBOBJS5)
+	$(RM) $(PRMSLIB)
+	$(AR) $(PRMSLIB) $(LIBOBJS) $(LIBOBJS1) $(LIBSNOW) $(LIBOBJS3)
+	$(RANLIB) $(PRMSLIB)
+	$(RM) $(PRMSLIBWS)
+	$(AR) $(PRMSLIBWS) $(LIBOBJS) $(LIBOBJS2) $(LIBOBJS4) $(LIBOBJS1)
+	$(RANLIB) $(PRMSLIBWS)
 	$(RM) $(PRMSLIB2)
-	$(AR) $(PRMSLIB2) $(LIBOBJS1)
+	$(AR) $(PRMSLIB2) $(LIBOBJS4) $(LIBOBJS2)
 	$(RANLIB) $(PRMSLIB2)
 
-$(PRMSBASE): $(LIBOBJS)
+$(PRMSBASE): $(LIBOBJS8) $(LIBOBJS5)
 	$(RM) $(PRMSBASE)
-	$(AR) $(PRMSBASE) $(LIBOBJS)
+	$(AR) $(PRMSBASE) $(LIBOBJS8) $(LIBOBJS5)
 	$(RANLIB) $(PRMSBASE)
 
-$(PRMSLIB3): $(LIBOBJS2)
-	$(RM) $(PRMSLIB3)
-	$(AR) $(PRMSLIB3) $(LIBOBJS2)
-	$(RANLIB) $(PRMSLIB3)
-
 clean:
-	$(RM) $(PRMSBASE) $(PRMSLIB2) $(PRMSLIB3) $(PRMSBASE)
+	$(RM) $(PRMSLIB) $(PRMSBASE)
 	$(RM) *.o *.mod *~
-
-basin_sum.o: basin_sum.f90
-	gfortran -c $(FFLAGS) basin_sum.f90
-
-subbasin.o: subbasin.f90
-	gfortran -c $(FFLAGS) subbasin.f90
-
-ddsolrad.o: ddsolrad.f90
-	gfortran -c $(FFLAGS) ddsolrad.f90
-
-ccsolrad.o: ccsolrad.f90
-	gfortran -c $(FFLAGS) ccsolrad.f90
-
-snowcomp.o: snowcomp.f90
-	gfortran -c $(FFLAGS) snowcomp.f90
 
 gwflow.o: gwflow.f90
 	gfortran -c $(FFLAGS) gwflow.f90
@@ -198,20 +200,8 @@ climate_hru.o: climate_hru.f90  prms_module.mod prms_basin.mod prms_climatevars.
 climateflow.o: climateflow.f  prms_module.mod prms_basin.mod cascade.o
 	gfortran -c $(FFLAGS) climateflow.f
 
-cascade.o: cascade.f90 prms_module.mod prms_basin.mod
-	gfortran -c $(FFLAGS) cascade.f90
-
-basin.o: basin.f90 prms_module.mod
-	gfortran -c $(FFLAGS) basin.f90
-
-obs.o: obs.f90 prms_module.mod prms_climatevars.mod
-	gfortran -c $(FFLAGS) obs.f90
-
-srunoff_carea.o: srunoff_carea.f prms_intcp.mod prms_snow.mod
-	gfortran -c $(FFLAGS) srunoff_carea.f
-
-srunoff_smidx.o: srunoff_smidx.f prms_intcp.mod prms_snow.mod
-	gfortran -c $(FFLAGS) srunoff_smidx.f
+cascade.o: cascade.f prms_module.mod prms_basin.mod
+	gfortran -c $(FFLAGS) cascade.f
 
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o
@@ -220,5 +210,3 @@ prms_gwflow.mod: gwflow.o
 prms_obs.mod: obs.o
 prms_basin.mod: basin.o
 prms_soltab.mod: soltab.o
-prms_intcp.mod: intcp.o
-prms_snow.mod: snowcomp.o

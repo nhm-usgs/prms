@@ -2,8 +2,17 @@
 ! Determine whether transpiration is occurring. Transpiration is based
 ! on time between the last spring and the first fall killing frost.
 !***********************************************************************
+      MODULE PRMS_TRANSP_FROST
+        IMPLICIT NONE
+        ! Local Variables
+        CHARACTER(LEN=12), SAVE :: MODNAME
+        ! Declared Parameters
+        INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
+      END MODULE PRMS_TRANSP_FROST
+
       INTEGER FUNCTION transp_frost()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_transp_frost, Transp_frost_nc
+      USE PRMS_TRANSP_FROST
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_OBS, ONLY: Jsol
@@ -12,14 +21,12 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, getparam
       EXTERNAL read_error
-! Declared Parameters
-      INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
 ! Local Variables
-      INTEGER :: i, j
-      CHARACTER(LEN=12), PARAMETER :: MODNAME = 'transp_frost'
+      INTEGER :: i, j, nc
+      CHARACTER(LEN=80), SAVE :: Version_transp_frost
       CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
 !***********************************************************************
-      transp_frost = 1
+      transp_frost = 0
 
       IF ( Process(:3)=='run' ) THEN
 !******Set switch for active transpiration period
@@ -39,18 +46,18 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp_frost = '$Id: transp_frost.f90 4231 2012-02-29 21:08:30Z rsregan $'
-        Transp_frost_nc = INDEX( Version_transp_frost, 'Z' )
+        Version_transp_frost = '$Id: transp_frost.f90 5169 2012-12-28 23:51:03Z rsregan $'
+        nc = INDEX( Version_transp_frost, 'Z' )
         i = INDEX( Version_transp_frost, '.f90' ) + 3
-        IF ( declmodule(Version_transp_frost(6:i), PROCNAME, Version_transp_frost(i+2:Transp_frost_nc))/=0 ) STOP
+        IF ( declmodule(Version_transp_frost(6:i), PROCNAME, Version_transp_frost(i+2:nc))/=0 ) STOP
+        MODNAME = 'transp_frost'
 
-        ALLOCATE ( Spring_frost(Nhru) )
+        ALLOCATE ( Spring_frost(Nhru), Fall_frost(Nhru) )
         IF ( declparam(MODNAME, 'spring_frost', 'nhru', 'integer', &
              '111', '1', '366', &
              'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
              'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
              'Solar date')/=0 ) CALL read_error(1, 'spring_frost')
-        ALLOCATE ( Fall_frost(Nhru) )
         IF ( declparam(MODNAME, 'fall_frost', 'nhru', 'integer', &
              '264', '1', '366', &
              'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
@@ -69,6 +76,4 @@
         ENDDO
       ENDIF
 
-      transp_frost = 0
       END FUNCTION transp_frost
- 

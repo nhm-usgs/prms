@@ -10,7 +10,7 @@
  * REF      :
  * REVIEW   :
  * PR NRS   :
- * $Id: mmf.c 6789 2012-04-20 16:51:47Z rsregan $
+ * $Id: mmf.c 5145 2012-12-19 17:39:07Z rsregan $
  *
  -*/
 
@@ -69,7 +69,7 @@ int main (int argc, char *argv[]) {
 	*/
 	module_db = ALLOC_list ("Module Data Base", 0, 100);
 
-   //declmodule("PRMS system library", "$Id: mmf.c 6789 2012-04-20 16:51:47Z rsregan $");
+   //declmodule("PRMS system library", "$Id: mmf.c 5145 2012-12-19 17:39:07Z rsregan $");
 
   /*
   **	parse the command-line arguments
