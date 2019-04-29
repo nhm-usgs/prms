@@ -23,32 +23,33 @@
 
       INTEGER FUNCTION prms_summary()
       USE PRMS_PRMS_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, Process, Npoigages, Nsegment, Csv_output_file, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Model, Process, Npoigages, Nsegment, Csv_output_file, Inputerror_flag, &
+     &    Save_vars_to_file
       USE PRMS_BASIN, ONLY: Timestep
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_potsw, Basin_ppt
-      USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_imperv_stor, Basin_soil_to_gw, &
-     &    Basin_dprst_volop, Basin_dprst_volcl, Basin_dprst_evap, Basin_imperv_evap, Basin_lakeevap, &
-     &    Basin_perv_et, Basin_dprst_seep, Basin_actet, Basin_hortonian, Basin_dprst_wb, Basin_lake_stor, &
-     &    Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, Basin_cfs, Basin_stflow_in, Basin_stflow_out
+      USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
+     &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
+     &    Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, Basin_cfs, Basin_stflow_in, &
+     &    Basin_stflow_out, Seg_outflow
       USE PRMS_OBS, ONLY : Nowyear, Nowmonth, Nowday, Streamflow_cfs, Nobs
       USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor
       USE PRMS_SNOW, ONLY: Basin_pweqv, Basin_snowevap, Basin_snowmelt, Basin_snowcov, Basin_pk_precip
+      USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_dprst_evap, Basin_imperv_evap, Basin_dprst_seep, &
+     &    Basin_dprst_wb, Basin_dprst_volop, Basin_dprst_volcl, Basin_hortonian
       USE PRMS_SOILZONE, ONLY: Basin_capwaterin, Basin_pref_flow_in, Basin_prefflow, Basin_recharge, Basin_slowflow, &
      &    Basin_pref_stor, Basin_slstor, Basin_soil_rechr, Basin_sz2gw, Basin_dunnian, Basin_capillary_wb, Basin_gravity_wb, &
      &    Basin_soilzone_wb
       USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
-      USE PRMS_MUSKINGUM, ONLY: Seg_outflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX, CHAR
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar, getparam, getdim
-      EXTERNAL :: read_error, PRMS_open_output_file
+      INTRINSIC CHAR
+      INTEGER, EXTERNAL :: declparam, declvar, getparam, getdim
+      EXTERNAL :: read_error, PRMS_open_output_file, print_module, prms_summary_restart
       INTEGER, EXTERNAL :: getparamstring, control_string
 ! Local Variables
-      INTEGER :: i, n, ios, ierr, foo, nc
+      INTEGER :: i, ios, ierr, foo
       CHARACTER(LEN=24) :: fmt
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'PRMS Summary'
       CHARACTER(LEN=10) :: chardate
       CHARACTER(LEN=40), SAVE :: fmt2
       CHARACTER(LEN=80), SAVE :: Version_prms_summary
@@ -65,7 +66,7 @@
      &                        Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
         Basin_surface_storage = Basin_intcp_stor + Basin_pweqv + Basin_imperv_stor + Basin_lake_stor + &
      &                          Basin_dprst_volop + Basin_dprst_volcl
-        WRITE (chardate, '(I4.4,2("-",I2.2))') Nowyear, Nowmonth, Nowday
+        WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
         WRITE ( Iunit, fmt2 ) chardate, &
      &          Basin_potet, Basin_actet, Basin_dprst_evap, Basin_imperv_evap, Basin_intcp_evap, Basin_lakeevap, &
      &          Basin_perv_et, Basin_snowevap, Basin_potsw, Basin_ppt, Basin_pk_precip, &
@@ -84,10 +85,8 @@
 
 ! Declare procedure
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_summary = '$Id: prms_summary.f90 5223 2013-01-15 00:19:04Z rsregan $'
-        nc = INDEX( Version_prms_summary, 'Z' )
-        n = INDEX( Version_prms_summary, '.f90' ) + 3
-        IF ( declmodule(Version_prms_summary(6:n), PROCNAME, Version_prms_summary(n+2:nc))/=0 ) STOP
+        Version_prms_summary = '$Id: prms_summary.f90 5601 2013-04-23 18:41:49Z rsregan $'
+        CALL print_module(Version_prms_summary, 'PRMS Summary              ', 90)
         MODNAME = 'prms_summary'
 
 !       Open summary file
@@ -97,8 +96,9 @@
 
         Npoigages = getdim('npoigages')
         IF ( Npoigages==-1 ) CALL read_error(6, 'npoigages')
+        IF ( Model==99 .AND. Npoigages==0 ) Npoigages = 1
         IF ( Npoigages>0 ) THEN
-          IF ( Npoigages/=Nobs ) THEN
+          IF ( Npoigages/=Nobs .AND. Model/=99 ) THEN
             PRINT *, 'Warning, possible Parameter File and Data File mismatch - nobs does not equal npoigages'
             PRINT *, '       nobs=', Nobs, ' npoigages=', Npoigages
             IF ( Npoigages>Nobs ) STOP 'ERROR, npoigages>nobs'
@@ -112,6 +112,8 @@
         IF ( declvar(MODNAME, 'basin_surface_storage', 'one', 1, 'double', &
      &       'Basin area-weighted average storage in all water storage reservoirs', &
      &       'inches', Basin_surface_storage)/=0 ) CALL read_error(3, 'basin_surface_storage')
+
+        IF ( Timestep/=0 ) RETURN
 
         IF ( Npoigages>0 .OR. Model==99 ) THEN
             IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &
@@ -142,10 +144,14 @@
           Streamflow_pairs = ' '
         ENDIF
         Cfs_strings = ',cfs,cfs'
-        IF ( Timestep==0 ) THEN
-          Basin_total_storage = 0.0D0
-          Basin_surface_storage = 0.0D0
+
+        IF ( Timestep/=0 ) THEN
+          CALL prms_summary_restart(1)
+          RETURN
         ENDIF
+
+        Basin_total_storage = 0.0D0
+        Basin_surface_storage = 0.0D0
 
         IF ( Npoigages>0 ) THEN
           IF ( getparam(MODNAME, 'parent_poigages', Npoigages, 'integer', Parent_poigages)/=0 ) &
@@ -234,8 +240,54 @@
         WRITE ( fmt2, '(A,I4,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
          !print *, 'fmt: ', fmt
          !print *, 'fmt2: ', fmt2
+
       ELSEIF ( Process(:5)=='clean' ) THEN
-        CLOSE ( Iunit )
+        IF ( Save_vars_to_file==1 ) CALL prms_summary_restart(0)
       ENDIF
 
       END FUNCTION prms_summary
+
+!***********************************************************************
+!     prms_summary_restart - write or read prms_summary restart file
+!***********************************************************************
+      SUBROUTINE prms_summary_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Npoigages
+      USE PRMS_PRMS_SUMMARY, ONLY: MODNAME, Iunit, Gageid_len, Segmentout, Gageout, &
+     &    Streamflow_pairs, Cfs_strings, Parent_poigages, Poi_gage_segment, Poi_gage_id, &
+     &    Basin_total_storage, Basin_surface_storage
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=15) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Iunit, Basin_total_storage, Basin_surface_storage
+        WRITE ( Restart_outunit ) Gageid_len
+        WRITE ( Restart_outunit ) Segmentout
+        WRITE ( Restart_outunit ) Gageout
+        WRITE ( Restart_outunit ) Streamflow_pairs
+        WRITE ( Restart_outunit ) Cfs_strings
+        IF ( Npoigages>0 ) THEN
+          WRITE ( Restart_outunit ) Parent_poigages
+          WRITE ( Restart_outunit ) Poi_gage_segment
+          WRITE ( Restart_outunit ) Cfs_strings
+        ENDIF
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Iunit, Basin_total_storage, Basin_surface_storage
+        READ ( Restart_inunit ) Gageid_len
+        READ ( Restart_inunit ) Segmentout
+        READ ( Restart_inunit ) Gageout
+        READ ( Restart_inunit ) Streamflow_pairs
+        READ ( Restart_inunit ) Cfs_strings
+        IF ( Npoigages>0 ) THEN
+          READ ( Restart_inunit ) Parent_poigages
+          READ ( Restart_inunit ) Poi_gage_segment
+          READ ( Restart_inunit ) Cfs_strings
+        ENDIF
+      ENDIF
+      END SUBROUTINE prms_summary_restart

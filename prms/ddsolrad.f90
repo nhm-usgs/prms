@@ -5,8 +5,8 @@
 !     dday_slope, dday_intcp, radj_sppt, radj_wppt, basin_solsta
 !     radadj_slope, radadj_intcp, radmax, ppt_rad_adj, rad_conv
 !     tmax_index, tmax_allrain, hru_solsta
-!RSR: Warning, summer is based on equinox of Julian days 79 to 265 is
-!RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
+!RSR: Warning, summer is based on equinox: Northern Hemisphere is set to Julian days 79 to 265
+!RSR:          Southern Hemisphere to Julian day 265 to 79
 !***********************************************************************
       MODULE PRMS_DDSOLRAD
         IMPLICIT NONE
@@ -15,45 +15,37 @@
         CHARACTER(LEN=8), SAVE :: MODNAME
         ! Declared Parameters
         REAL, SAVE :: Radadj_slope, Radadj_intcp
-        REAL, SAVE, ALLOCATABLE :: Dday_slope(:), Dday_intcp(:), Tmax_index(:)
+        REAL, SAVE :: Dday_slope(12), Dday_intcp(12), Tmax_index(12)
       END MODULE PRMS_DDSOLRAD
 
       INTEGER FUNCTION ddsolrad()
       USE PRMS_DDSOLRAD
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
+      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Timestep
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Solrad_tmax, &
      &    Ppt_rad_adj, Rad_conv, Hru_solsta, Basin_horad, Radmax, &
      &    Basin_potsw, Basin_solsta, Radj_sppt, Radj_wppt, Orad, Basin_obs_ppt, Tmax_allrain
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl
-      USE PRMS_OBS, ONLY: Solrad, Nowtime, Jday, Nowmonth
+      USE PRMS_OBS, ONLY: Solrad, Nowtime, Jday, Nowmonth, Summer_flag
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INT, FLOAT, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
-      EXTERNAL read_error
+      INTRINSIC INT, FLOAT
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL read_error, print_module, ddsolrad_restart
 ! Local Variables
-      INTEGER :: i, j, jj, k, summer_flag, kp, kp1, nc
+      INTEGER :: i, j, jj, k, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi
 ! Save Variables
       CHARACTER(LEN=80), SAVE :: Version_ddsolrad
       REAL, SAVE, DIMENSION(26) :: solf
       DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
      &          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, .734, .738, .742, .746, .75/
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ddsolrad = 0
 
       IF ( Process(:3)=='run' ) THEN
 !rsr using julian day as the soltab arrays are filled by julian day
         Basin_horad = Soltab_basinpotsw(Jday)
-
-        summer_flag = 1 ! 1 = summer, 0 = winter
-        IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
-          IF ( Jday<79 .OR. Jday>265 ) summer_flag = 0 ! Equinox
-        ELSE ! Southern Hemisphere
-          IF ( Jday>79 .OR. Jday<265 ) summer_flag = 0 ! Equinox
-        ENDIF
 
         Orad = -999.0
         IF ( Observed_flag==1 ) Orad = Solrad(Basin_solsta)*Rad_conv
@@ -78,7 +70,7 @@
           ELSE
             pptadj = Radj_sppt
             IF ( Solrad_tmax>=Tmax_allrain(Nowmonth) ) THEN
-              IF ( summer_flag==0 ) pptadj = Radj_wppt ! Winter
+              IF ( Summer_flag==0 ) pptadj = Radj_wppt ! Winter
             ELSE
               pptadj = Radj_wppt
             ENDIF
@@ -121,14 +113,14 @@
         Basin_potsw = Basin_potsw*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ddsolrad = '$Id: ddsolrad.f90 5180 2013-01-04 23:02:50Z rsregan $'
-        nc = INDEX( Version_ddsolrad, 'Z' )
-        k = INDEX( Version_ddsolrad, '.f90' ) + 3
-        IF ( declmodule(Version_ddsolrad(6:k), PROCNAME, Version_ddsolrad(k+2:nc))/=0 ) STOP
+        Version_ddsolrad = '$Id: ddsolrad.f90 5592 2013-04-23 18:26:23Z rsregan $'
+        CALL print_module(Version_ddsolrad, 'Solar Radiation           ', 90)
         MODNAME = 'ddsolrad'
 
 ! Declare Parameters
-        ALLOCATE ( Dday_slope(12), Dday_intcp(12), Tmax_index(12) )
+
+        IF ( Timestep/=0 ) RETURN
+
         IF ( declparam(MODNAME, 'dday_slope', 'nmonths', 'real', &
      &       '0.4', '0.2', '0.7', &
      &       'Slope in temperature degree-day relationship', &
@@ -157,6 +149,11 @@
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_index')
 
       ELSEIF ( Process(:4)=='init' ) THEN
+        IF ( Timestep/=0 ) THEN
+          CALL ddsolrad_restart(1)
+          RETURN
+        ENDIF
+
         IF ( getparam(MODNAME, 'dday_slope', 12, 'real', Dday_slope)/=0 ) CALL read_error(2, 'dday_slope')
         IF ( getparam(MODNAME, 'dday_intcp', 12, 'real', Dday_intcp)/=0 ) CALL read_error(2, 'dday_intcp')
         IF ( getparam(MODNAME, 'radadj_slope', 1, 'real', Radadj_slope)/=0 ) CALL read_error(2, 'radadj_slope')
@@ -170,6 +167,38 @@
             IF ( Hru_solsta(j)>0 ) Observed_flag = 2
           ENDDO
         ENDIF
+
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL ddsolrad_restart(0)
       ENDIF
 
       END FUNCTION ddsolrad
+
+!***********************************************************************
+!     Write to or read from restart file
+!***********************************************************************
+      SUBROUTINE ddsolrad_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_DDSOLRAD
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=8) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Observed_flag, Radadj_slope, Radadj_intcp
+        WRITE ( Restart_outunit ) Dday_slope
+        WRITE ( Restart_outunit ) Dday_intcp
+        WRITE ( Restart_outunit ) Tmax_index
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Observed_flag, Radadj_slope, Radadj_intcp
+        READ ( Restart_inunit ) Dday_slope
+        READ ( Restart_inunit ) Dday_intcp
+        READ ( Restart_inunit ) Tmax_index
+      ENDIF
+      END SUBROUTINE ddsolrad_restart

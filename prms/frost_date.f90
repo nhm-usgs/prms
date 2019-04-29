@@ -6,14 +6,14 @@
 !***********************************************************************
       INTEGER FUNCTION frost_date()
       USE PRMS_MODULE, ONLY: Process, Nhru
-      USE PRMS_BASIN, ONLY: Timestep, Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
       USE PRMS_OBS, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX, INT
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam, get_season
-      EXTERNAL read_error, write_integer_param, PRMS_open_module_file
+      INTRINSIC INT
+      INTEGER, EXTERNAL :: declparam, getparam, get_season
+      EXTERNAL read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
       REAL, SAVE :: Frost_temp
 ! Local Variables
@@ -31,10 +31,9 @@
       INTEGER, SAVE :: switchToSpringToday, switchToFallToday, Iunit
       INTEGER, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
-      INTEGER :: season, j, jj, basin_fall(1), basin_spring(1), nc
+      INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
       CHARACTER(LEN=10), SAVE :: MODNAME
       CHARACTER(LEN=80), SAVE :: Version_frost_date
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
 !***********************************************************************
       frost_date = 0
 
@@ -98,16 +97,14 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date.f90 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_frost_date, 'Z' )
-        j = INDEX( Version_frost_date, '.f90' ) + 3
-        IF ( declmodule(Version_frost_date(6:j), PROCNAME, Version_frost_date(j+2:nc))/=0 ) STOP
+        Version_frost_date = '$Id: frost_date.f90 5528 2013-03-22 21:54:44Z rsregan $'
+        CALL print_module(Version_frost_date, 'Transpiration Period      ', 90)
         MODNAME = 'frost_date'
 
         IF ( declparam(MODNAME, 'frost_temp', 'one', 'real', &
-             '28.0', '-10.0', '32.0', &
-             'Temperature of killing frost', 'Temperature of killing frost', &
-             'degrees')/=0 ) CALL read_error(1, 'frost_temp')
+     &       '28.0', '-10.0', '32.0', &
+     &       'Temperature of killing frost', 'Temperature of killing frost', &
+     &       'degrees')/=0 ) CALL read_error(1, 'frost_temp')
 
 ! Allocate arrays for local variables
         ALLOCATE ( fall_frost(Nhru), spring_frost(Nhru) )
@@ -116,14 +113,12 @@
 
       ELSEIF ( Process(:4)=='init' ) THEN
         IF ( getparam(MODNAME, 'frost_temp', 1, 'real', Frost_temp)/=0 ) CALL read_error(2, 'frost_temp')
-        IF ( Timestep==0 ) THEN
-          fall_frost = 0
-          spring_frost = 0
-          currentFallFrost = 0
-          currentSpringFrost = 0
-          fallFrostSum = 0
-          springFrostSum = 0
-        ENDIF
+        fall_frost = 0
+        spring_frost = 0
+        currentFallFrost = 0
+        currentSpringFrost = 0
+        fallFrostSum = 0
+        springFrostSum = 0
         fallFrostCount = 0
         springFrostCount = 0
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')

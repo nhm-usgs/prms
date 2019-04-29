@@ -25,11 +25,11 @@
       INTEGER, SAVE :: Nlapse, Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Meantmax(:), Meantmin(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Temp_meanx(:),Temp_meany(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Rain_meanx(:),Rain_meany(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Temp_meanz(:),Rain_meanz(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Meanppt(:)
+      DOUBLE PRECISION, SAVE :: Meantmax(12), Meantmin(12)
+      DOUBLE PRECISION, SAVE :: Temp_meanx(12), Temp_meany(12)
+      DOUBLE PRECISION, SAVE :: Rain_meanx(12), Rain_meany(12)
+      DOUBLE PRECISION, SAVE :: Temp_meanz(12), Rain_meanz(12)
+      DOUBLE PRECISION, SAVE :: Meanppt(12)
       REAL, SAVE, ALLOCATABLE :: Precip_xyz(:)
       REAL, SAVE, ALLOCATABLE :: Temp_STAelev(:)
 ! transformed versions of these values
@@ -38,7 +38,6 @@
       REAL, SAVE :: Solradelev
 !   Declared Variables
       INTEGER, SAVE :: Is_rain_day
-      REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Parameters
       INTEGER, SAVE :: Conv_flag
       REAL, SAVE, ALLOCATABLE :: Max_lapse(:, :), Min_lapse(:, :)
@@ -63,10 +62,12 @@
 !     Main xyz_dist routine
 !***********************************************************************
       INTEGER FUNCTION xyz_dist()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: xyzdecl, xyzinit, xyzrun, xyzsetdims
+      EXTERNAL :: xyz_restart
 !***********************************************************************
       xyz_dist = 0
 
@@ -77,7 +78,13 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         xyz_dist = xyzdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        xyz_dist = xyzinit()
+        IF ( Timestep/=0 ) THEN
+          CALL xyz_restart(1)
+        ELSE
+          xyz_dist = xyzinit()
+        ENDIF
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL xyz_restart(0)
       ENDIF
 
       END FUNCTION xyz_dist
@@ -116,45 +123,27 @@
 !***********************************************************************
       INTEGER FUNCTION xyzdecl()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module
 ! Local Variables
-      INTEGER :: n, nc
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Climate Distribuition'
       CHARACTER(LEN=80), SAVE :: Version_xyz_dist
 !***********************************************************************
       xyzdecl = 0
 
       Version_xyz_dist =
-     +'$Id: xyz_dist.f 5173 2013-01-03 00:07:12Z rsregan $'
-      nc = INDEX( Version_xyz_dist, 'Z' )
-      n = INDEX( Version_xyz_dist, '.f' ) + 1
-      IF ( declmodule(Version_xyz_dist(6:n), PROCNAME,
-     +                Version_xyz_dist(n+2:nc))/=0 ) STOP
+     +'$Id: xyz_dist.f 5593 2013-04-23 18:28:48Z rsregan $'
+      CALL print_module(Version_xyz_dist,
+     +                  'Climate Distribution      ', 77)
       MODNAME = 'xyz_dist'
 
       IF ( declvar(MODNAME, 'is_rain_day', 'one', 1, 'integer',
      +     'Flag to indicate if it is raining anywhere in the basin',
      +     'none',
      +     Is_rain_day)/=0 ) CALL read_error(3, 'is_rain_day')
-
-      ALLOCATE ( Tmax_rain_sta(Nrain) )
-      IF ( declvar(MODNAME, 'tmax_rain_sta', 'nrain', Nrain, 'real',
-     +     'Maximum temperature distributed to the precipitation'//
-     +     ' measurement stations',
-     +     'degrees F',
-     +     Tmax_rain_sta)/=0 ) CALL read_error(3, 'tmax_rain_sta')
-
-      ALLOCATE ( Tmin_rain_sta(Nrain) )
-      IF ( declvar(MODNAME, 'tmin_rain_sta', 'nrain', Nrain, 'real',
-     +     'Minimum temperature distributed to the precipitation'//
-     +     ' measurement stations',
-     +     'degrees F',
-     +     Tmin_rain_sta)/=0 ) CALL read_error(3, 'tmin_rain_sta')
 
       ALLOCATE ( MRUelev(Nhru), MRUx(Nhru), MRUy(Nhru) )
       ALLOCATE ( Max_lapse(MAXLAPSE,12), Min_lapse(MAXLAPSE,12) )
@@ -164,9 +153,9 @@
       ALLOCATE ( Temp_nuse(Ntemp), Rain_nuse(Nrain), PptMTH(Nrain,12) )
       ALLOCATE ( Psta_freq_nuse(Nrain), Precip_xyz(Nrain) )
       ALLOCATE ( TmaxMTH(Ntemp,12), TminMTH(Ntemp,12) )
-      ALLOCATE ( Meantmax(12), Meantmin(12), Meanppt(12) )
-      ALLOCATE ( Temp_meanx(12), Temp_meany(12), Temp_meanz(12) )
-      ALLOCATE ( Rain_meanx(12), Rain_meany(12), Rain_meanz(12) )
+
+      IF ( Timestep/=0 ) RETURN
+
 ! declare parameters
       IF ( declparam(MODNAME, 'hru_x', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
@@ -396,7 +385,7 @@
       USE PRMS_XYZ_DIST
       USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Hru_elev,
-     +    Active_hrus, Hru_route_order, FEET2METERS, Timestep
+     +    Active_hrus, Hru_route_order, FEET2METERS
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -408,11 +397,7 @@
       xyzinit = 0
 
 ! Initialize declared variables
-      IF ( Timestep==0 ) THEN
-        Is_rain_day = 0
-        Tmax_rain_sta = 0.0
-        Tmin_rain_sta = 0.0
-      ENDIF
+      Is_rain_day = 0
 
       IF ( getparam (MODNAME, 'solrad_elev', 1, 'real', Solrad_elev)
      +     /=0 ) CALL read_error(2, 'solrad_elev')
@@ -656,8 +641,8 @@
 !***********************************************************************
       SUBROUTINE xyz_temp_run(Max_lapse, Min_lapse, Meantmax, Meantmin,
      +                        Temp_meanx, Temp_meany, Temp_meanz)
-      USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Tmax_rain_sta, Solradelev,
-     +    Tmin_rain_sta, Temp_nuse, Tmin_add, Tmin_div, Tmax_add,
+      USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Solradelev,
+     +    Temp_nuse, Tmin_add, Tmin_div, Tmax_add,
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
@@ -666,7 +651,8 @@
      +    DNEARZERO, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
-     +    Tavgc, Tmin_adj, Tmax_adj, Psta_elev
+     +    Tavgc, Tmin_adj, Tmax_adj, Psta_elev, Tmin_rain_sta,
+     +    Tmax_rain_sta
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
@@ -891,8 +877,8 @@
      +                        Adjmix_rain, Rain_code, Adjust_snow,
      +                        Adjust_rain)
       USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Rain_STAx, Rain_STAy,
-     +    Rain_nuse, Ppt_add, Ppt_div, Rain_nsta, Tmax_rain_sta,
-     +    Tmin_rain_sta, Is_rain_day, Psta_freq_nuse, X_div, Y_div,
+     +    Rain_nuse, Ppt_add, Ppt_div, Rain_nsta,
+     +    Is_rain_day, Psta_freq_nuse, X_div, Y_div,
      +    Z_div, X_add, Y_add, Z_add, Precip_xyz, MAXLAPSE, MRUelev
       USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
@@ -900,7 +886,7 @@
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain, Tmax_allsnow,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev, Basin_obs_ppt,
-     +    Precip_units
+     +    Precip_units, Tmin_rain_sta, Tmax_rain_sta, Tmax_allsnow_f
       USE PRMS_OBS, ONLY: Precip, Nowtime, Rain_day
       IMPLICIT NONE
 ! Functions
@@ -1080,7 +1066,7 @@
             CALL precip_form(ppt_sngl, Hru_ppt(i), Hru_rain(i),
      +           Hru_snow(i), Tmaxf(i), Tminf(i), Pptmix(i),
      +           Newsnow(i), Prmx(i), Tmax_allrain, 1.0, 1.0,
-     +           Adjmix_rain, Hru_area(i), sum_obs)
+     +           Adjmix_rain, Hru_area(i), sum_obs, Tmax_allsnow_f)
 
           ENDIF
         ENDIF
@@ -1179,3 +1165,93 @@
 
       END SUBROUTINE mean_by_month
 
+!***********************************************************************
+!     xyz_restart - write or read xyz restart file
+!***********************************************************************
+      SUBROUTINE xyz_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_XYZ_DIST
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=8) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Temp_nsta, Rain_nsta,
+     +          Basin_centroid_x, Basin_centroid_y, Solradelev,
+     +          Is_rain_day, Conv_flag, Solrad_elev, Tmax_add,
+     +          Tmax_div, Tmin_add, Tmin_div, Ppt_add, X_add, X_div,
+     +          Y_add, Y_div, Z_add, Z_div, Ppt_div
+        WRITE ( Restart_outunit ) Rain_nuse
+        WRITE ( Restart_outunit ) Temp_nuse
+        WRITE ( Restart_outunit ) Meantmax
+        WRITE ( Restart_outunit ) Meantmin
+        WRITE ( Restart_outunit ) Temp_meanx
+        WRITE ( Restart_outunit ) Temp_meany
+        WRITE ( Restart_outunit ) Rain_meanx
+        WRITE ( Restart_outunit ) Rain_meany
+        WRITE ( Restart_outunit ) Temp_meanz
+        WRITE ( Restart_outunit ) Rain_meanz
+        WRITE ( Restart_outunit ) Meanppt
+        WRITE ( Restart_outunit ) Precip_xyz
+        WRITE ( Restart_outunit ) Temp_STAelev
+        WRITE ( Restart_outunit ) MRUelev
+        WRITE ( Restart_outunit ) Pstaelev
+        WRITE ( Restart_outunit ) Pstax
+        WRITE ( Restart_outunit ) Pstay
+        WRITE ( Restart_outunit ) Max_lapse
+        WRITE ( Restart_outunit ) Min_lapse
+        WRITE ( Restart_outunit ) Ppt_lapse
+        WRITE ( Restart_outunit ) Psta_freq_nuse
+        WRITE ( Restart_outunit ) MRUx
+        WRITE ( Restart_outunit ) MRUy
+        WRITE ( Restart_outunit ) Temp_STAx
+        WRITE ( Restart_outunit ) Temp_STAy
+        WRITE ( Restart_outunit ) Rain_STAx
+        WRITE ( Restart_outunit ) Rain_STAy
+        WRITE ( Restart_outunit ) TmaxMTH
+        WRITE ( Restart_outunit ) TminMTH
+        WRITE ( Restart_outunit ) PptMTH
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Temp_nsta, Rain_nsta,
+     +          Basin_centroid_x, Basin_centroid_y, Solradelev,
+     +          Is_rain_day, Conv_flag, Solrad_elev, Tmax_add,
+     +          Tmax_div, Tmin_add, Tmin_div, Ppt_add, X_add, X_div,
+     +          Y_add, Y_div, Z_add, Z_div, Ppt_div
+        READ ( Restart_inunit ) Rain_nuse
+        READ ( Restart_inunit ) Temp_nuse
+        READ ( Restart_inunit ) Meantmax
+        READ ( Restart_inunit ) Meantmin
+        READ ( Restart_inunit ) Temp_meanx
+        READ ( Restart_inunit ) Temp_meany
+        READ ( Restart_inunit ) Rain_meanx
+        READ ( Restart_inunit ) Rain_meany
+        READ ( Restart_inunit ) Temp_meanz
+        READ ( Restart_inunit ) Rain_meanz
+        READ ( Restart_inunit ) Meanppt
+        READ ( Restart_inunit ) Precip_xyz
+        READ ( Restart_inunit ) Temp_STAelev
+        READ ( Restart_inunit ) MRUelev
+        READ ( Restart_inunit ) Pstaelev
+        READ ( Restart_inunit ) Pstax
+        READ ( Restart_inunit ) Pstay
+        READ ( Restart_inunit ) Max_lapse
+        READ ( Restart_inunit ) Min_lapse
+        READ ( Restart_inunit ) Ppt_lapse
+        READ ( Restart_inunit ) Psta_freq_nuse
+        READ ( Restart_inunit ) MRUx
+        READ ( Restart_inunit ) MRUy
+        READ ( Restart_inunit ) Temp_STAx
+        READ ( Restart_inunit ) Temp_STAy
+        READ ( Restart_inunit ) Rain_STAx
+        READ ( Restart_inunit ) Rain_STAy
+        READ ( Restart_inunit ) TmaxMTH
+        READ ( Restart_inunit ) TminMTH
+        READ ( Restart_inunit ) PptMTH
+      ENDIF
+      END SUBROUTINE xyz_restart

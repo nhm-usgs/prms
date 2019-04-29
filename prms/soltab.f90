@@ -31,17 +31,25 @@
 !     Main soltab routine
 !***********************************************************************
       INTEGER FUNCTION soltab()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: sthdecl, sthinit
+      EXTERNAL :: soltab_restart
 !***********************************************************************
       soltab = 0
 
       IF ( Process(:4)=='decl' ) THEN
         soltab = sthdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        soltab = sthinit()
+        IF ( Timestep/=0 ) THEN
+          CALL soltab_restart(1)
+        ELSE
+          soltab = sthinit()
+        ENDIF
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL soltab_restart(0)
       ENDIF
 
       END FUNCTION soltab
@@ -54,39 +62,38 @@
       INTEGER FUNCTION sthdecl()
       USE PRMS_SOLTAB
       USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam
+      EXTERNAL read_error, print_module
 ! Local Variables
-      INTEGER i, nc
       CHARACTER(LEN=80), SAVE :: Version_soltab
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Table'
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = '$Id: soltab.f90 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_soltab, 'Z' )
-      i = INDEX ( Version_soltab, '.f90' ) + 3
-      IF ( declmodule(Version_soltab(6:i), PROCNAME, Version_soltab(i+2:nc))/=0 ) STOP
+      Version_soltab = '$Id: soltab.f90 5600 2013-04-23 18:36:27Z rsregan $'
+      CALL print_module(Version_soltab, 'Potential Solar Radiation ', 90)
       MODNAME = 'soltab'
 
       ALLOCATE ( Soltab_potsw(366, Nhru), Soltab_sunhrs(366, Nhru))
       ALLOCATE ( Hru_cossl(Nhru), Soltab_basinpotsw(366) )
       ALLOCATE ( Soltab_horad_potsw(366, Nhru), Hru_slope(Nhru) )
 
+      IF ( Timestep/=0 ) RETURN
+
 !   Declared Parameters
       IF ( declparam(MODNAME, 'hru_slope', 'nhru', 'real', &
-           '0.0', '0.0', '10.0', &
-           'HRU slope', &
-           'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
-           'decimal fraction')/=0 ) CALL read_error(1, 'hru_slope')
+     &     '0.0', '0.0', '10.0', &
+     &     'HRU slope', &
+     &     'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'hru_slope')
       ALLOCATE ( Hru_aspect(Nhru) )
       IF ( declparam(MODNAME, 'hru_aspect', 'nhru', 'real', &
-           '0.0', '0.0', '360.0', &
-           'HRU aspect', 'Aspect of each HRU', &
-           'degrees')/=0 ) CALL read_error(1, 'hru_aspect')
+     &     '0.0', '0.0', '360.0', &
+     &     'HRU aspect', 'Aspect of each HRU', &
+     &     'degrees')/=0 ) CALL read_error(1, 'hru_aspect')
 
       END FUNCTION sthdecl
 
@@ -97,7 +104,7 @@
 !               for each HRU for each day of the year.
 !***********************************************************************
       INTEGER FUNCTION sthinit()
-      USE PRMS_SOLTAB, ONLY: Hru_slope, Hru_aspect, RADIANS, Hru_slope, Hru_aspect, MODNAME,  &
+      USE PRMS_SOLTAB, ONLY: Hru_slope, Hru_aspect, RADIANS, Hru_slope, MODNAME, &
      &    Soltab_potsw, Soltab_sunhrs, Hru_cossl, Soltab_basinpotsw, Soltab_horad_potsw
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Inputerror_flag, Parameter_check_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
@@ -143,8 +150,8 @@
         y3 = 3.0D0*y
 ! dm = solar declination
         dm(jd) = 0.006918D0 - 0.399912D0*COS(y) + 0.070257D0*SIN(y) &
-                 - 0.006758D0*COS(y2) + 0.000907D0*SIN(y2) &
-                 - 0.002697D0*COS(y3) + 0.00148D0*SIN(y3)
+     &           - 0.006758D0*COS(y2) + 0.000907D0*SIN(y2) &
+     &           - 0.002697D0*COS(y3) + 0.00148D0*SIN(y3)
       ENDDO
 
 !   Module Variables
@@ -179,16 +186,16 @@
         ENDIF
 
         CALL compute_soltab(e, dm, 0.0, 0.0, Hru_lat(n), &
-                            Hru_cossl(n), Soltab_horad_potsw(1, n), &
-                            Soltab_sunhrs(1, n), Hru_type(n), n)
+     &                      Hru_cossl(n), Soltab_horad_potsw(1, n), &
+     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
         CALL compute_soltab(e, dm, Hru_slope(n), Hru_aspect(n), &
-                            Hru_lat(n), Hru_cossl(n), Soltab_potsw(1, n), &
-                            Soltab_sunhrs(1, n), Hru_type(n), n)
+     &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(1, n), &
+     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
       ENDDO
 
       lat = SNGL( Basin_lat )
       CALL compute_soltab(e, dm, 0.0, 0.0, lat, basin_cossl, &
-                          Soltab_basinpotsw, basin_sunhrs, 0, 0)
+     &                    Soltab_basinpotsw, basin_sunhrs, 0, 0)
 
       IF ( Print_debug==5 ) THEN
         output_path = 'soltab_debug'
@@ -204,15 +211,15 @@
         ENDDO
 !       WRITE ( file_unit, * ) e, dm
         WRITE ( file_unit, * ) 2.0D0/(e(356)*e(356)), 2.0D0/(e(10)*e(10)), &
-                               2.0D0/(e(23)*e(23)), 2.0D0/(e(38)*e(38)), &
-                               2.0D0/(e(51)*e(51)), 2.0D0/(e(66)*e(66)), &
-                               2.0D0/(e(80)*e(80)), 2.0D0/(e(94)*e(94)), &
-                               2.0D0/(e(109)*e(109)), 2.0D0/(e(123)*e(123)), &
-                               2.0D0/(e(138)*e(138)), 2.0D0/(e(152)*e(152)), &
-                               2.0D0/(e(173)*e(173))
+     &                         2.0D0/(e(23)*e(23)), 2.0D0/(e(38)*e(38)), &
+     &                         2.0D0/(e(51)*e(51)), 2.0D0/(e(66)*e(66)), &
+     &                         2.0D0/(e(80)*e(80)), 2.0D0/(e(94)*e(94)), &
+     &                         2.0D0/(e(109)*e(109)), 2.0D0/(e(123)*e(123)), &
+     &                         2.0D0/(e(138)*e(138)), 2.0D0/(e(152)*e(152)), &
+     &                         2.0D0/(e(173)*e(173))
         WRITE ( file_unit, * ) dm(356), dm(10), dm(23), dm(38), dm(51), &
-                               dm(66), dm(80), dm(94), dm(109), dm(123), &
-                               dm(138), dm(152), dm(173)
+     &                         dm(66), dm(80), dm(94), dm(109), dm(123), &
+     &                         dm(138), dm(152), dm(173)
         CLOSE ( file_unit) 
 ! from original soltab
 !     data e/2.06699,2.06317,2.05582,2.04520,2.03243,2.01706,2.00080,
@@ -234,7 +241,7 @@
 !  for each HRU for each day of the year.
 !***********************************************************************
       SUBROUTINE compute_soltab(E, Dm, Slope, Aspect, Latitude, Cossl, &
-                                Soltab, Sunhrs, Hru_type, Id)
+     &                          Soltab, Sunhrs, Hru_type, Id)
       USE PRMS_SOLTAB, ONLY: PI, TWOPI, RADIANS, PI_12
       USE PRMS_BASIN, ONLY: DNEARZERO
       IMPLICIT NONE
@@ -360,8 +367,8 @@
         ENDIF
         IF ( solt<0.0D0 ) THEN
           PRINT *, 'Warning: solar table value for day:', jd, &
-                   ' computed as:', solt, ' set to', 0.0, &
-                   ' for HRU:', Id, ' hru_type:', Hru_type
+     &             ' computed as:', solt, ' set to', 0.0, &
+     &             ' for HRU:', Id, ' hru_type:', Hru_type
           PRINT *, 'slope, aspect, latitude, cossl', Slope, Aspect, Latitude, Cossl
           solt = 0.0D0
           PRINT *, Slope, Aspect, Latitude, Cossl, sunh
@@ -432,3 +439,35 @@
 
       END FUNCTION func3
 
+!***********************************************************************
+!     soltab_restart - write or read soltab restart file
+!***********************************************************************
+      SUBROUTINE soltab_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_SOLTAB
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=6) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Soltab_potsw
+        WRITE ( Restart_outunit ) Soltab_sunhrs
+        WRITE ( Restart_outunit ) Hru_cossl
+        WRITE ( Restart_outunit ) Soltab_basinpotsw
+        WRITE ( Restart_outunit ) Soltab_horad_potsw
+        WRITE ( Restart_outunit ) Hru_slope
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Soltab_potsw
+        READ ( Restart_inunit ) Soltab_sunhrs
+        READ ( Restart_inunit ) Hru_cossl
+        READ ( Restart_inunit ) Soltab_basinpotsw
+        READ ( Restart_inunit ) Soltab_horad_potsw
+        READ ( Restart_inunit ) Hru_slope
+      ENDIF
+      END SUBROUTINE soltab_restart

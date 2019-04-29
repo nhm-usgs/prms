@@ -25,10 +25,12 @@
 !     Main daily stream flow routine
 !***********************************************************************
       INTEGER FUNCTION subbasin()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: subdecl, subinit, subrun
+      EXTERNAL :: subbasin_restart
 !***********************************************************************
       subbasin = 0
 
@@ -37,7 +39,13 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         subbasin = subdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        subbasin = subinit()
+        IF ( Timestep/=0 ) THEN
+          CALL subbasin_restart(1)
+        ELSE
+          subbasin = subinit()
+        ENDIF
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL subbasin_restart(0)
       ENDIF
 
       END FUNCTION subbasin
@@ -50,26 +58,25 @@
 !***********************************************************************
       INTEGER FUNCTION subdecl()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Nsub, Nhru
+      USE PRMS_MODULE, ONLY: Nsub, Nhru, Model
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module
 ! Local Variables
-      INTEGER :: n, nc
       CHARACTER(LEN=80), SAVE :: Version_subbasin
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = '$Id: subbasin.f90 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_subbasin, 'Z' )
-      n = INDEX( Version_subbasin, '.f90' ) + 3
-      IF ( declmodule(Version_subbasin(6:n), PROCNAME, Version_subbasin(n+2:nc))/=0 ) STOP
+      Version_subbasin = '$Id: subbasin.f90 5595 2013-04-23 18:31:27Z rsregan $'
+      CALL print_module(Version_subbasin, 'Summary                   ', 90)
       MODNAME = 'subbasin'
 
-      IF ( Nsub==0 ) Nsub = 1
+      IF ( Nsub==0 ) THEN
+        IF ( Model/=99 ) STOP 'ERROR, nsub=0 when subbasin module called'
+        Nsub = 1
+      ENDIF
 
 ! Declared Variables
       ALLOCATE ( Sub_interflow(Nsub) )
@@ -110,7 +117,7 @@
 
       ALLOCATE ( Subinc_precip(Nsub) )
       IF ( declvar(MODNAME, 'subinc_precip', 'nsub', Nsub, 'double', &
-     &     'Area-weighted average precipiation from associated HRUs to each subbasin', &
+     &     'Area-weighted average precipitation from associated HRUs to each subbasin', &
      &     'inches', Subinc_precip)/=0 ) CALL read_error(3, 'subinc_precip')
 
       ALLOCATE ( Subinc_actet(Nsub) )
@@ -163,8 +170,7 @@
      &     'Area-weighted average snowpack water equivalent from associated HRUs of each subbasin', &
      &     'inches', Subinc_pkweqv)/=0 ) CALL read_error(3, 'subinc_pkweqv')
 
-      ALLOCATE ( Qsub(Nsub), Tree(Nsub, Nsub) )
-      ALLOCATE ( Sub_inq(Nsub) )
+      ALLOCATE ( Qsub(Nsub), Tree(Nsub, Nsub), Sub_inq(Nsub) )
       IF ( declvar(MODNAME, 'sub_inq', 'nsub', Nsub, 'double', &
      &     'Sum of streamflow from upstream subbasins to each subbasin', &
      &     'cfs', Sub_inq)/=0 ) CALL read_error(3, 'sub_inq')
@@ -182,17 +188,18 @@
 ! Allocate arrays for variables
       ALLOCATE ( Sub_area(Nsub), Subincstor(Nsub), Laststor(Nsub), Hru_subbasin(Nhru) )
 
-      ALLOCATE ( Subbasin_down(Nsub) )
-      IF ( declparam(MODNAME, 'subbasin_down', 'nsub', 'integer', &
-     &     '0', 'bounded', 'nsub', &
-     &     'Downstream subbasin for each subbasin', &
-     &     'Index number for the downstream subbasin whose inflow is outflow from this subbasin', &
-     &     'none')/=0 ) CALL read_error(1, 'subbasin_down')
-
-      IF ( declparam(MODNAME, 'hru_subbasin', 'nhru', 'integer', &
-     &     '0', 'bounded', 'nsub', &
-     &     'Index of subbasin assigned to each HRU', 'Index of subbasin assigned to each HRU', &
-     &     'none')/=0 ) CALL read_error(1, 'hru_subbasin')
+      IF ( Timestep==0 ) THEN
+        ALLOCATE ( Subbasin_down(Nsub) )
+        IF ( declparam(MODNAME, 'subbasin_down', 'nsub', 'integer', &
+     &       '0', 'bounded', 'nsub', &
+     &       'Downstream subbasin for each subbasin', &
+     &       'Index number for the downstream subbasin whose inflow is outflow from this subbasin', &
+     &       'none')/=0 ) CALL read_error(1, 'subbasin_down')
+        IF ( declparam(MODNAME, 'hru_subbasin', 'nhru', 'integer', &
+     &       '0', 'bounded', 'nsub', &
+     &       'Index of subbasin assigned to each HRU', 'Index of subbasin assigned to each HRU', &
+     &       'none')/=0 ) CALL read_error(1, 'hru_subbasin')
+      ENDIF
 
       END FUNCTION subdecl
 
@@ -203,10 +210,11 @@
       INTEGER FUNCTION subinit()
       USE PRMS_SUBBASIN
       USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, Print_debug, Inputerror_flag
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv, Timestep, DNEARZERO
-      USE PRMS_FLOWVARS, ONLY: Hru_impervstor, Ssres_stor, Soil_moist, Gwres_stor, Pkwater_equiv
+      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv, DNEARZERO
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Gwres_stor, Pkwater_equiv
       USE PRMS_OBS, ONLY: Cfs_conv
       USE PRMS_INTCP, ONLY: Hru_intcpstor
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error, PRMS_open_module_file
@@ -228,30 +236,28 @@
         IF ( kk/=0 ) Tree(kk, j) = 1
       ENDDO
 
-      IF ( Timestep==0 ) THEN
-        Sub_cfs = 0.0D0
-        Sub_cms = 0.0D0
-        Sub_inq = 0.0D0
-        Subinc_interflow = 0.0D0
-        Subinc_gwflow = 0.0D0
-        Subinc_sroff = 0.0D0
-        Subinc_precip = 0.0D0
-        Subinc_snowmelt = 0.0D0
-        Subinc_pkweqv = 0.0D0
-        Subinc_actet = 0.0D0
-        Subinc_snowcov = 0.0D0
-        Subinc_swrad = 0.0D0
-        Subinc_tminc = 0.0D0
-        Subinc_tmaxc = 0.0D0
-        Subinc_tavgc = 0.0D0
-        Subinc_potet = 0.0D0
-      ENDIF
+      Sub_cfs = 0.0D0
+      Sub_cms = 0.0D0
+      Sub_inq = 0.0D0
+      Subinc_interflow = 0.0D0
+      Subinc_gwflow = 0.0D0
+      Subinc_sroff = 0.0D0
+      Subinc_precip = 0.0D0
+      Subinc_snowmelt = 0.0D0
+      Subinc_pkweqv = 0.0D0
+      Subinc_actet = 0.0D0
+      Subinc_snowcov = 0.0D0
+      Subinc_swrad = 0.0D0
+      Subinc_tminc = 0.0D0
+      Subinc_tmaxc = 0.0D0
+      Subinc_tavgc = 0.0D0
+      Subinc_potet = 0.0D0
 
       IF ( Print_debug==14 ) THEN
         CALL PRMS_open_module_file(TREEUNIT, 'tree_structure')
-        WRITE (TREEUNIT, 9001) (j, j=1, Nsub)
+        WRITE ( TREEUNIT, 9001 ) (j, j=1, Nsub)
         DO j = 1, Nsub
-          WRITE (TREEUNIT, 9002) j, (Tree(j,k), k=1, Nsub)
+          WRITE ( TREEUNIT, 9002 ) j, (Tree(j,k), k=1, Nsub)
         ENDDO
       ENDIF
 
@@ -280,11 +286,11 @@
       ENDDO
 
       IF ( Print_debug==14 ) THEN
-        WRITE (TREEUNIT, 9003) (j, j=1, Nsub)
+        WRITE ( TREEUNIT, 9003 ) (j, j=1, Nsub)
         DO j = 1, Nsub
-          WRITE (TREEUNIT, 9002) j, (Tree(j,k), k=1, Nsub)
+          WRITE ( TREEUNIT, 9002 ) j, (Tree(j,k), k=1, Nsub)
         ENDDO
-        CLOSE (TREEUNIT)
+        CLOSE ( TREEUNIT )
       ENDIF
 
       Qsub = 0.0D0
@@ -338,15 +344,15 @@
 !***********************************************************************
       INTEGER FUNCTION subrun()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ngw, Nsub, Print_debug
-      USE PRMS_CASCADE, ONLY: Cascade_flag
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ngw, Nsub, Print_debug, Cascade_flag
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Hru_type, CFS2CMS_CONV, Hru_frac_perv
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_OBS, ONLY: Runoff, Cfs_conv
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc
-      USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, Hru_impervstor, Hortonian_lakes, Ssres_stor, Soil_moist, &
+      USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, Ssres_stor, Soil_moist, &
      &    Gwres_stor, Pkwater_equiv
       USE PRMS_INTCP, ONLY: Hru_intcpstor
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes
       USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       IMPLICIT NONE
@@ -482,3 +488,77 @@
 
       END FUNCTION subrun
 
+!***********************************************************************
+!     subbasin_restart - write or read precip_1sta restart file
+!***********************************************************************
+      SUBROUTINE subbasin_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_SUBBASIN
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=8) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Qsub
+        WRITE ( Restart_outunit ) Sub_area
+        WRITE ( Restart_outunit ) Subincstor
+        WRITE ( Restart_outunit ) Laststor
+        WRITE ( Restart_outunit ) Tree
+        WRITE ( Restart_outunit ) Sub_inq
+        WRITE ( Restart_outunit ) Sub_cfs
+        WRITE ( Restart_outunit ) Sub_cms
+        WRITE ( Restart_outunit ) Sub_interflow
+        WRITE ( Restart_outunit ) Sub_gwflow
+        WRITE ( Restart_outunit ) Sub_sroff
+        WRITE ( Restart_outunit ) Subinc_interflow
+        WRITE ( Restart_outunit ) Subinc_gwflow
+        WRITE ( Restart_outunit ) Subinc_sroff
+        WRITE ( Restart_outunit ) Subinc_precip
+        WRITE ( Restart_outunit ) Subinc_snowmelt
+        WRITE ( Restart_outunit ) Subinc_pkweqv
+        WRITE ( Restart_outunit ) Subinc_actet
+        WRITE ( Restart_outunit ) Subinc_potet
+        WRITE ( Restart_outunit ) Subinc_swrad
+        WRITE ( Restart_outunit ) Subinc_snowcov
+        WRITE ( Restart_outunit ) Subinc_tmaxc
+        WRITE ( Restart_outunit ) Subinc_tminc
+        WRITE ( Restart_outunit ) Subinc_tavgc
+        WRITE ( Restart_outunit ) Subinc_deltastor
+        WRITE ( Restart_outunit ) Subinc_wb
+        WRITE ( Restart_outunit ) Hru_subbasin
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Qsub
+        READ ( Restart_inunit ) Sub_area
+        READ ( Restart_inunit ) Subincstor
+        READ ( Restart_inunit ) Laststor
+        READ ( Restart_inunit ) Tree
+        READ ( Restart_inunit ) Sub_inq
+        READ ( Restart_inunit ) Sub_cfs
+        READ ( Restart_inunit ) Sub_cms
+        READ ( Restart_inunit ) Sub_interflow
+        READ ( Restart_inunit ) Sub_gwflow
+        READ ( Restart_inunit ) Sub_sroff
+        READ ( Restart_inunit ) Subinc_interflow
+        READ ( Restart_inunit ) Subinc_gwflow
+        READ ( Restart_inunit ) Subinc_sroff
+        READ ( Restart_inunit ) Subinc_precip
+        READ ( Restart_inunit ) Subinc_snowmelt
+        READ ( Restart_inunit ) Subinc_pkweqv
+        READ ( Restart_inunit ) Subinc_actet
+        READ ( Restart_inunit ) Subinc_potet
+        READ ( Restart_inunit ) Subinc_swrad
+        READ ( Restart_inunit ) Subinc_snowcov
+        READ ( Restart_inunit ) Subinc_tmaxc
+        READ ( Restart_inunit ) Subinc_tminc
+        READ ( Restart_inunit ) Subinc_tavgc
+        READ ( Restart_inunit ) Subinc_deltastor
+        READ ( Restart_inunit ) Subinc_wb
+        READ ( Restart_inunit ) Hru_subbasin
+      ENDIF
+      END SUBROUTINE subbasin_restart

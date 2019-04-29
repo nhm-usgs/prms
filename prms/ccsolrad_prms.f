@@ -19,7 +19,7 @@
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
         REAL, SAVE :: Crad_coef, Crad_exp
-        REAL, SAVE, ALLOCATABLE :: Ccov_slope(:), Ccov_intcp(:)
+        REAL, SAVE :: Ccov_slope(12), Ccov_intcp(12)
       END MODULE PRMS_CCSOLRAD_RADPL
 
 !***********************************************************************
@@ -59,17 +59,15 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
 ! Local Variables
-      INTEGER :: nc
       CHARACTER(LEN=80), SAVE :: Version_ccsolrad_prms
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ccsoldecl = 1
 
       Version_ccsolrad_prms =
-     +'$Id: ccsolrad_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_ccsolrad_prms, ' $' ) + 1
-      IF ( declmodule(MODNAME, PROCNAME,
-     +                Version_ccsolrad_prms(:nc))/=0 ) STOP
+     +'$Id: ccsolrad_prms.f 5592 2013-04-23 18:26:23Z rsregan $'
+      CALL print_module(Version_ccsolrad_prms,
+     +                  'Solar Radiation           ', 77)
+      MODNAME = 'ccsolrad_prms'
 
       ALLOCATE (Plrad(Nradpl))
 
@@ -82,7 +80,6 @@
      +     Radpl_potsw).NE.0 ) RETURN
 
 ! Declare Parameters
-      ALLOCATE (Ccov_slope(12))
       IF ( declparam(MODNAME, 'ccov_slope', 'nmonths', 'real',
      +     '-0.13', '-0.5', '-0.01',
      +     'Slope in temperature cloud cover relationship',
@@ -90,7 +87,6 @@
      +     ' cloud-cover relationship',
      +     'none').NE.0 ) RETURN
 
-      ALLOCATE ( Ccov_intcp(12) )
       IF ( declparam(MODNAME, 'ccov_intcp', 'nmonths', 'real',
      +     '1.83', '0.0', '5.0',
      +     'Intercept in temperature cloud cover relationship',

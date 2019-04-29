@@ -32,7 +32,6 @@
 ! DEGDAY = 360 degrees/days in year
 ! obliquity = 23.439 (obliquity of sun)
         CHARACTER(LEN=11), SAVE :: MODNAME
-        CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Table'
 !   Declared Variables
         REAL, SAVE, ALLOCATABLE :: Radpl_cossl(:)
         REAL, SAVE, ALLOCATABLE :: Radpl_soltab(:,:), Sunhrs_soltab(:,:)
@@ -92,18 +91,17 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getdim, declvar
+      INTEGER, EXTERNAL :: declparam, getdim, declvar
+      EXTERNAL :: print_module
 ! Local Variables
-      INTEGER :: nc
       CHARACTER(LEN=80), SAVE :: Version_soltab_prms
 !***********************************************************************
       solrdecl = 1
 
       Version_soltab_prms =
-     +'$Id: soltab_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_soltab_prms, ' $' ) + 1
-      IF ( declmodule(MODNAME, PROCNAME,
-     +     Version_soltab_prms(:nc))/=0 ) STOP
+     +'$Id: soltab_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+      CALL print_module(Version_soltab_prms,
+     +                  'Potential Solar Radiation ', 77)
       MODNAME = 'soltab_prms'
 
       Nradpl = getdim('nradpl')

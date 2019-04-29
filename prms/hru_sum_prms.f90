@@ -7,7 +7,6 @@
 !   Local Variables
       INTEGER, SAVE :: Hrutot_flg
       CHARACTER(LEN=12), SAVE:: MODNAME
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_ppt_mo(:), Hru_net_ppt_mo(:)
       REAL, SAVE, ALLOCATABLE :: Hru_potet_mo(:), Hru_actet_mo(:)
@@ -56,17 +55,14 @@
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar, declpri
-      EXTERNAL read_error
+      EXTERNAL read_error, print_module
 ! Local Variables
-      INTEGER :: i, nc
       CHARACTER(LEN=80), SAVE :: Version_hru_sum
 !***********************************************************************
       hsumbdecl = 1
 
-      Version_hru_sum = '$Id: hru_sum_prms.f90 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_hru_sum, 'Z' )
-      i = INDEX( Version_hru_sum, '.f90' ) + 3
-      IF ( declmodule(Version_hru_sum(6:i), PROCNAME, Version_hru_sum(i+2:nc))/=0 ) STOP
+      Version_hru_sum = '$Id: hru_sum_prms.f90 5532 2013-03-25 21:49:54Z rsregan $'
+      CALL print_module(Version_hru_sum, 'HRU Summary               ', 90)
       MODNAME = 'hru_sum_prms'
 
       ALLOCATE ( Hru_ppt_yr(Nhru), Hru_net_ppt_yr(Nhru) )
@@ -190,15 +186,16 @@
       USE PRMS_HRUSUM
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Hru_ppt, Potet, Swrad
-      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Soil_to_ssr, Hru_impervstor, &
-     &    Hru_actet, Infil, Sroff, Soil_moist, Hru_intcpevap, Pkwater_equiv
+      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Soil_to_ssr, &
+     &    Hru_actet, Infil, Sroff, Soil_moist, Pkwater_equiv
       USE PRMS_OBS, ONLY: Jday, Nowyear, Nowmonth, Nowday, Yrdays, Modays, Julwater
-      USE PRMS_INTCP, ONLY: Hru_intcpstor, Net_ppt
+      USE PRMS_INTCP, ONLY: Hru_intcpstor, Net_ppt, Hru_intcpevap
       USE PRMS_SNOW, ONLY: Tcal, Pk_den, Pk_temp, Snowmelt, Albedo
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor
       IMPLICIT NONE
 ! Functions
       INTRINSIC FLOAT
-      EXTERNAL opstr
+      EXTERNAL write_outfile
 ! Local Variables
       CHARACTER(LEN=150) :: buffer
       INTEGER :: i, j, ii
@@ -237,9 +234,9 @@
 
       IF ( Nowmonth==Pmo ) THEN
         hruprt(2) = FLOAT(Nowday)
-        CALL opstr('   hru   day   swr   tmx   tmn  oppt  nppt   int '// &
-     &             ' inls   pet   aet  smav pweqv   den  pact   alb  '// &
-     &             'tcal  smlt   infl    sro   s2gw   s2ss  imst   wbal')
+        CALL write_outfile('   hru   day   swr   tmx   tmn  oppt  nppt   int '// &
+     &                     ' inls   pet   aet  smav pweqv   den  pact   alb  '// &
+     &                     'tcal  smlt   infl    sro   s2gw   s2ss  imst   wbal')
         DO ii = 1, Active_hrus
           i = Hru_route_order(ii)
           IF ( Hru_type(i)==0 ) CYCLE
@@ -272,7 +269,7 @@
           hruprt(24) = wbal
           Stor_last(i) = stor
           WRITE (buffer, '(F6.0,F5.0,1X,16F6.2,4F7.4,F6.2,F7.4)') (hruprt(j), j=1, 24)
-          CALL opstr(buffer)
+          CALL write_outfile(buffer)
         ENDDO
       ELSEIF ( Pmo>0 ) THEN
         DO j = 1, Active_hrus
@@ -305,8 +302,8 @@
 
         IF ( Nowday==Modays(Nowmonth) ) THEN
           rmo = FLOAT(Nowmonth)
-          CALL opstr('   hru   mo                    oppt   nppt     '// &
-                     '        pet   aet        pweqv  2ssres  2gwres   smlt sroff')
+          CALL write_outfile('   hru   mo                    oppt   nppt     '// &
+                             '        pet   aet        pweqv  2ssres  2gwres   smlt sroff')
 
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
@@ -317,15 +314,14 @@
      &              Hru_actet_mo(i), Pkwater_equiv(i), &
      &              Soil_to_ssr_mo(i), Soil_to_gw_mo(i), &
      &              Hru_snowmelt_mo(i), Hru_sroff_mo(i)
-            CALL opstr(buffer(:106))
+          CALL write_outfile(buffer(:106))
           ENDDO
         ENDIF
 
         IF ( Julwater==Yrdays ) THEN
           ryr = FLOAT(Nowyear)
-          CALL opstr('   hru year                    oppt   nppt     '// &
-                     '        pet   aet        pweqv  2ssres  2gwres   smlt sroff')
-
+          CALL write_outfile('   hru year                    oppt   nppt     '// &
+                             '        pet   aet        pweqv  2ssres  2gwres   smlt sroff')
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             IF ( Hru_type(i)==0 ) CYCLE
@@ -335,7 +331,7 @@
      &              Hru_actet_yr(i), Pkwater_equiv(i), &
      &              Soil_to_ssr_yr(i), Soil_to_gw_yr(i), &
      &              Hru_snowmelt_yr(i), Hru_sroff_yr(i)
-            CALL opstr(buffer(:106))
+            CALL write_outfile(buffer(:106))
           ENDDO
         ENDIF
       ENDIF

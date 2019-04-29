@@ -21,7 +21,6 @@
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:)
       DOUBLE PRECISION, SAVE :: Last_soil_moist
       CHARACTER(LEN=10), SAVE :: MODNAME
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_soil_rechr
       REAL, SAVE, ALLOCATABLE :: Perv_actet(:)
@@ -64,19 +63,17 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL :: print_module
 ! Local Variables
-      INTEGER :: n, nc
       CHARACTER(LEN=80), SAVE :: Version_smbal_prms
 !***********************************************************************
       smdecl = 1
 
       Version_smbal_prms =
-     +'$Id: smbal_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_smbal_prms, 'Z' )
-      n = INDEX( Version_smbal_prms, '.f' ) + 1
-      IF ( declmodule(Version_smbal_prms(6:n), PROCNAME,
-     +     Version_smbal_prms(n+2:nc))/=0 ) STOP
+     +'$Id: smbal_prms.f 5573 2013-04-05 21:28:21Z rsregan $'
+      CALL print_module(Version_smbal_prms,'Soil Moisture Balance     ',
+     +                  77)
       MODNAME = 'smbal_prms'
 
 ! Declare Variables
@@ -247,10 +244,12 @@
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Potet
       USE PRMS_FLOWVARS, ONLY: Basin_actet, Hru_actet, Soil_to_gw,
      +    Basin_soil_to_gw, Soil_to_ssr, Basin_perv_et, Basin_lakeevap,
-     +    Soil_rechr_max, Soil_moist_max, Hru_impervevap, Infil,
-     +    Basin_soil_moist, Soil_moist, Hru_intcpevap, Soil_rechr
+     +    Soil_rechr_max, Soil_moist_max, Infil,
+     +    Basin_soil_moist, Soil_moist, Soil_rechr
       USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday
+      USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
+      USE PRMS_SRUNOFF, ONLY: Hru_impervevap
       IMPLICIT NONE
       INTRINSIC MIN, ABS
       EXTERNAL compute_actet

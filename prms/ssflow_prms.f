@@ -15,7 +15,6 @@
       REAL, SAVE, ALLOCATABLE :: Ssstor_init(:), Ssr2gw_exp(:)
 !   Local Variables
       CHARACTER(LEN=11), SAVE :: MODNAME
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Soil Zone'
       END MODULE PRMS_SSFLOW    
 
 !***********************************************************************
@@ -52,18 +51,16 @@
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
+      EXTERNAL :: print_module
 ! Local Variables
-      INTEGER:: n, nc
       CHARACTER(LEN=80), SAVE :: Version_ssflow_prms
 !***********************************************************************
       ssdecl = 1
 
       Version_ssflow_prms =
-     +'$Id: ssflow_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_ssflow_prms, 'Z' )
-      n = INDEX( Version_ssflow_prms, '.f' ) + 1
-      IF ( declmodule(Version_ssflow_prms(6:n), PROCNAME,
-     +     Version_ssflow_prms(n+2:nc))/=0 ) STOP
+     +'$Id: ssflow_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+      CALL print_module(Version_ssflow_prms,
+     +                  'Subsurface Reservoir      ', 77)
       MODNAME = 'ssflow_prms'
 
 ! Declare Variables

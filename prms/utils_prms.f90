@@ -1,3 +1,4 @@
+      ! $Id: utils_prms.f90 5610 2013-04-23 18:48:25Z rsregan $
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -85,10 +86,11 @@
 !***********************************************************************
 !     Read File to line before data starts in file
 !***********************************************************************
-      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret)
+      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
       USE PRMS_MODULE, ONLY: Nhru, Orad_flag
       IMPLICIT NONE
 ! Argument
+      INTEGER, INTENT(IN) :: Cbh_flag
       INTEGER, INTENT(OUT) :: Iunit, Iret
       CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
 ! Functions
@@ -108,17 +110,22 @@
             Iret = 1
             EXIT
           ELSEIF ( dum=='####' ) THEN
+            IF ( Cbh_flag==0 ) EXIT
             BACKSPACE Iunit
             BACKSPACE Iunit
-            IF ( Orad_flag==1 ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
-            READ ( Iunit, * ) dum, dim
-            !print *, 'utils: ', dum, dim
+            IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
+            READ ( Iunit, *, IOSTAT=ios ) dum, dim
+            IF ( ios/=0 ) THEN
+              WRITE ( *, '(/,A,/,A,/)' ) 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
+              Iret = 1
+              EXIT
+            ENDIF
             IF ( dim/=Nhru ) THEN
               PRINT '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', Nhru, ' CBH dimension=', dim, ' File: '//Fname
               STOP 'ERROR: update Control File with correct CBH files'
             ENDIF
             READ ( Iunit, FMT='(A4)' ) dum
-            IF ( Orad_flag==1 ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
+            IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
             i = 1
           ENDIF
         ENDDO
@@ -132,7 +139,7 @@
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit
-      INTEGER, INTENT (OUT) :: Next_yr, Next_mo, Next_day
+      INTEGER, INTENT(OUT) :: Next_yr, Next_mo, Next_day
 ! Local Variables
       INTEGER :: ios, i
       CHARACTER(LEN=80) :: dum
@@ -251,7 +258,7 @@
 
 !***********************************************************************
       SUBROUTINE write_2D_double_param(Iunit, Parm_name, Dimen_name1, Dimen1, &
-                                       Dimen_name2, Dimen2, Values)
+     &                                 Dimen_name2, Dimen2, Values)
 !***********************************************************************
       IMPLICIT NONE
 ! Arguments
@@ -273,14 +280,13 @@
 
 !***********************************************************************
       SUBROUTINE write_2D_double_array_grid(Iunit, Parm_name, Dimen_name1, &
-                                    Dimen1, Dimen_name2, Dimen2, Values)
+     &                                      Dimen1, Dimen_name2, Dimen2, Values)
 !***********************************************************************
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit, Dimen1, Dimen2
       DOUBLE PRECISION, INTENT(IN) :: Values(Dimen1, Dimen2)
-      CHARACTER(LEN=*), INTENT(IN) :: Parm_name
-      CHARACTER(LEN=*), INTENT(IN) :: Dimen_name1, Dimen_name2
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name1, Dimen_name2
 ! Local Variables
       INTEGER i, j
       CHARACTER(LEN=12) :: fmt
@@ -310,8 +316,8 @@
         READ (*, *)
       ENDIF
  9001 FORMAT ('Warning, module versions are not identical', /, &
-              '      Executable version: ', A, /, &
-              '  Parameter File version: ', A, /)
+     &        'Executable version: ', A, /, &
+     &        'Parameter File version: ', A, /)
       END SUBROUTINE version_check
 
 !**********************************************************************
@@ -384,11 +390,11 @@
       REAL, INTENT(IN) :: Tempc
 !***********************************************************************
       sat_vapor_press_poly = 6.11176750 + 0.443986062*Tempc &
-                             + 0.0143053301*Tempc**2 &
-                             + 0.265027242E-03*Tempc**3 &
-                             + 0.302246994E-05*Tempc**4 &
-                             + 0.203886313E-07*Tempc**5 &
-                             + 0.638780966E-10*Tempc**6
+     &                       + 0.0143053301*Tempc**2 &
+     &                       + 0.265027242E-03*Tempc**3 &
+     &                       + 0.302246994E-05*Tempc**4 &
+     &                       + 0.203886313E-07*Tempc**5 &
+     &                       + 0.638780966E-10*Tempc**6
 ! Mastin documentation for potet_dpm
 !      sat_vapor_press_poly = 23.38*exp(18.1-5303.3/(Tempc+273.0))
 ! Mastin documentation for param_leaf-loss.aml
@@ -410,6 +416,265 @@
 !***********************************************************************
       sat_vapor_press = 6.1078*EXP(17.269*Tempc/(237.30+Tempc))
       END FUNCTION sat_vapor_press
+
+!***********************************************************************
+! leap_day - is the year a leap year: (1=yes; 0=no)
+!***********************************************************************
+      INTEGER FUNCTION leap_day(Year)
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Year
+      ! Functions
+      INTRINSIC MOD
+!***********************************************************************
+      leap_day = 0
+      ! Check if leapyear - Start by identifying all years not divisible by 4
+      IF ( MOD(Year,4)==0 ) THEN
+        leap_day = 1
+        IF ( MOD(Year,100)==0 ) THEN
+          IF ( MOD(Year,400)/=0 ) leap_day = 0
+        ENDIF
+      ENDIF
+      END FUNCTION leap_day
+
+!***********************************************************************
+! write_outfile - print to model output file
+!***********************************************************************
+      SUBROUTINE write_outfile(String)
+      USE PRMS_MODULE, ONLY: PRMS_output_unit
+      IMPLICIT NONE
+      ! Functions
+      INTRINSIC LEN_TRIM
+      ! Arguments
+      CHARACTER(LEN=*), INTENT(IN) :: String
+      ! Local variable
+      INTEGER nchars
+!***********************************************************************
+      nchars = LEN_TRIM(String)
+      IF ( nchars>0 ) THEN
+        WRITE ( PRMS_output_unit, '(A)' ) String(:nchars)
+      ELSE
+        WRITE ( PRMS_output_unit, '(/)' )
+      ENDIF
+      END SUBROUTINE write_outfile
+
+!***********************************************************************
+! julian_day
+! computes the Julian date given a Gregorian calendar date
+! (Year, Month, Day) relative to: calendar (Jan 1),
+! solar (12/22 in Northern; 6/21 in Southern) and
+! water year (10/1 in Northern; 4/1 in Southern) start dates.
+! The Julian day starts at noon of the Gregorian day and
+! extends to noon the next Gregorian day.
+!***********************************************************************
+      INTEGER FUNCTION julian_day(Date_type, Year_type)
+      USE PRMS_BASIN, ONLY: Starttime, Endtime, Hemisphere
+      USE PRMS_OBS, ONLY: Nowtime
+      IMPLICIT NONE
+      ! Arguments
+      CHARACTER(LEN=*), INTENT(IN) :: Date_type ! "start", "end", "now"
+      CHARACTER(LEN=*), INTENT(IN) :: Year_type ! "calendar", "solar", "water", "absolute"
+      ! Functions
+      INTEGER, EXTERNAL :: compute_julday
+      ! Local Variables
+      INTEGER :: reftime_year, reftime_month, reftime_day, time_array(6)
+      INTEGER :: year, month, day, absolute_julday, relative_julday, length, found
+!***********************************************************************
+      IF ( Date_type(:3)=='end' ) THEN
+        time_array = Endtime
+      ELSEIF ( Date_type(:3)=='now' ) THEN
+        time_array = Nowtime
+      ELSEIF ( Date_type(:5)=='start' ) THEN
+        time_array = Starttime
+      ELSE
+        PRINT *, 'ERROR, invalid argument to compute Julian Day: ', Date_type
+        STOP
+      ENDIF
+      year = time_array(1)
+      month = time_array(2)
+      day = time_array(3)
+
+      found = 0
+      length = LEN(Year_type)
+      ! set reftime depending on type arg
+      IF ( length>4 ) THEN
+        IF ( Year_type(:5)=='solar' ) THEN
+          found = 1
+          IF ( Hemisphere==0 ) THEN ! Northern
+            IF ( month==12 .AND. day>21 ) THEN
+              reftime_year = year
+            ELSE
+              reftime_year = year - 1
+              reftime_month = 12
+              reftime_day = 21
+            ENDIF
+          ELSE ! Southern
+            IF ( month==6 .AND. day>20 ) THEN
+              reftime_year = year;
+            ELSE
+              reftime_year = year - 1
+              reftime_month = 6
+              reftime_day = 20
+            ENDIF
+          ENDIF
+        ELSEIF ( Year_type(:5)=='water' ) THEN
+          found = 1
+          IF ( Hemisphere==0 ) THEN ! Northern
+            IF ( month>9 ) THEN
+              reftime_year = year
+            ELSE
+              reftime_year = year - 1
+            ENDIF
+            reftime_month = 9
+            reftime_day = 30
+          ELSE ! Southern
+            IF ( month>3 ) THEN
+              reftime_year = year
+            ELSE
+              reftime_year = year - 1
+            ENDIF
+            reftime_month = 3
+            reftime_day = 31
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ( found==0 .AND. length>5 ) THEN
+        IF ( Year_type(:6)=='spring' ) THEN
+          found = 1
+          IF ( Hemisphere==0 ) THEN ! Northern
+            IF ( month>3 .OR. (month==3 .AND. day>20) ) THEN
+              reftime_year = year
+            ELSE
+              reftime_year = year - 1
+            ENDIF
+            reftime_month = 3
+            reftime_day = 20
+          ELSE ! Southern
+            IF ( month>9 .OR. (month==9 .AND. day>22) ) THEN
+              reftime_year = year
+            ELSE
+              reftime_year = year - 1
+            ENDIF
+            reftime_month = 9
+            reftime_day = 22
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ( found==0 .AND. length>7 ) THEN
+        IF ( Year_type(:8)=='calendar' ) THEN
+          found = 1
+          reftime_year = year - 1
+          reftime_month = 12
+          reftime_day = 31
+        ENDIF
+      ENDIF
+      IF ( found==0 ) THEN
+        PRINT *, 'ERROR, invalid year type argument to compute Julian Day: ', Year_type
+        STOP
+      ENDIF
+
+      ! set actual Julian Day
+      absolute_julday = compute_julday(year, month, day)
+
+      relative_julday = 0
+      IF ( length==8 ) THEN
+        IF ( Year_type(:8)=='calendar' ) relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
+      ELSE
+        relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
+      ENDIF
+      julian_day = absolute_julday - relative_julday
+
+      END FUNCTION julian_day
+
+!***********************************************************************
+! compute_julday
+! computes the Julian Day given a Gregorian calendar date
+!***********************************************************************
+      INTEGER FUNCTION compute_julday(Year, Month, Day)
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Year, Month, Day
+      ! Local Variables
+      !INTEGER yr, mo
+!!***********************************************************************
+!      mo = Month
+!      yr = Year
+!      IF ( Month < 3 ) THEN
+!        mo = mo + 12
+!        yr = yr - 1
+!      ENDIF
+!      compute_julday = Day + (153*mo - 457) / 5 + 365*yr + (yr/4) - (yr/100) + (yr/400) + 1721118.5
+      compute_julday = Day - 32075 + 1461*(Year+4800+(Month-14)/12)/4 + 367*(Month-2-(Month-14)/12*12) &
+     &    /12-3*((Year+4900+(Month-14)/12)/100)/4
+
+      END FUNCTION compute_julday
+
+!***********************************************************************
+! compute_gregorian
+! computes the Gregorian calendar date given the Julian Day
+!***********************************************************************
+      SUBROUTINE compute_gregorian(Julday, Year, Month, Day)
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(OUT) :: Year, Month, Day
+      INTEGER, INTENT(IN) :: Julday
+      ! Functions
+      INTRINSIC FLOOR, NINT
+      ! Local Variables
+      INTEGER m, n
+!***********************************************************************
+      m = Julday + 68569
+      n = 4*m/146097
+      m = m - (146097*n+3)/4
+      Year = 4000*(m+1)/1461001
+      m = m - 1461*Year/4+31
+      Month = 80*m/2447
+      Day = m - 2447*Month/80
+      m = Month/11
+      Month = Month + 2 - 12*m
+      Year = 100*(n-49) + Year + m
+
+      !
+      !Z = Julday + 0.5
+      !W = FLOOR((Z - 1867216.25)/36524.25)
+      !X = FLOOR(W/4.0)
+      !A = Z + 1.0 + W - X
+      !B = A + 1524.0
+      !C = FLOOR((B - 122.1)/365.25)
+      !D = FLOOR(365.25*C)
+      !E = FLOOR((B - D)/30.6001)
+      !F = FLOOR(30.6001*E)
+      !Day = NINT(B - D -F)
+      !Month = NINT(E - 1)
+      !IF ( Month>12 ) Month = Month - 12
+      !IF ( Month<3 ) THEN
+      !  Year = NINT(C - 4715)
+      !ELSE
+      !  Year = NINT(C - 4716)
+      !ENDIF
+      END SUBROUTINE compute_gregorian
+
+!***********************************************************************
+! julday_in_year
+! computes the Julian Day of a date
+!***********************************************************************
+      INTEGER FUNCTION julday_in_year(Year, Month, Day)
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Year, Month, Day
+      ! Functions
+      INTEGER, EXTERNAL :: leap_day
+      ! Local Variables
+      INTEGER daypmo(12), i
+      DATA daypmo/31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/
+!***********************************************************************
+      daypmo(2) = 28
+      IF ( leap_day(Year)==1 ) daypmo(2) = 29
+      julday_in_year = Day
+      DO i = 1, Month - 1
+        julday_in_year = julday_in_year + daypmo(i)
+      ENDDO
+      END FUNCTION julday_in_year
 
 !***********************************************************************
 !     Open PRMS input File and assign unit number
@@ -524,7 +789,7 @@
 ! print_module
 ! print module version information to user's screen
 !***********************************************************************
-      SUBROUTINE print_module(Description, Versn, Ftntype)
+      SUBROUTINE print_module(Versn, Description, Ftntype)
       USE PRMS_MODULE, ONLY: PRMS_output_unit
       IMPLICIT NONE
       ! Arguments
@@ -541,6 +806,20 @@
       ELSE
         n = INDEX( Versn, '.f' ) + 1
       ENDIF
-      PRINT '(A)', Description//Versn(6:n)//', version: '//Versn(n+2:nc)
-      WRITE ( PRMS_output_unit, '(A)' ) Description//Versn(6:n)//', version: '//Versn(n+2:nc)
+      PRINT '(A)', Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc-10)
+      WRITE ( PRMS_output_unit, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
       END SUBROUTINE print_module
+
+!***********************************************************************
+! check restart file module order
+!***********************************************************************
+      SUBROUTINE check_restart(Modname, Restart_module)
+      IMPLICIT NONE
+      ! Arguments
+      CHARACTER(LEN=*), INTENT(IN) :: Modname, Restart_module
+!***********************************************************************
+      IF ( Restart_module/=Modname ) THEN
+        PRINT *, 'ERROR READING RESTART FILE, expecting module: ', Modname, ' found: ', Restart_module
+        STOP
+      ENDIF
+      END SUBROUTINE check_restart

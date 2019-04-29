@@ -10,16 +10,14 @@
       USE PRMS_OBS, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SQRT, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
+      INTRINSIC SQRT
       REAL, EXTERNAL :: sat_vapor_press
-      EXTERNAL read_error
+      EXTERNAL print_module
 ! Local Variables
-      INTEGER :: i, j, nc
+      INTEGER :: i, j
       REAL :: hvap, satvapor, slpvp, prsr, psycnst, ratio, potet_tmp, eeq, temp
       CHARACTER(LEN=8), SAVE :: MODNAME
       CHARACTER(LEN=80), SAVE :: Version_potet_pt
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
       potet_pt = 0
 
@@ -65,10 +63,8 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_pt = '$Id: potet_pt.f90 5203 2013-01-09 01:25:02Z rsregan $'
-        nc = INDEX( Version_potet_pt, 'Z' ) + 1
-        i = INDEX( Version_potet_pt, '.f90' ) + 3
-        IF ( declmodule(Version_potet_pt(6:i), PROCNAME, Version_potet_pt(i+2:nc))/=0 ) STOP
+        Version_potet_pt = '$Id: potet_pt.f90 5660 2013-04-30 20:14:42Z rsregan $'
+        CALL print_module(Version_potet_pt, 'Potential ET              ', 90)
         MODNAME = 'potet_pt'
 
 !      ELSEIF ( Process(:4)=='init' ) THEN

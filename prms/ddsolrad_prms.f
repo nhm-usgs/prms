@@ -18,8 +18,8 @@
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
         REAL, SAVE :: Radadj_slope, Radadj_intcp
-        REAL, SAVE, ALLOCATABLE :: Dday_slope(:), Dday_intcp(:)
-        REAL, SAVE, ALLOCATABLE :: Tmax_index(:)
+        REAL, SAVE :: Dday_slope(12), Dday_intcp(12)
+        REAL, SAVE :: Tmax_index(12)
       END MODULE PRMS_DDSOLRAD_RADPL
 
 !***********************************************************************
@@ -59,17 +59,15 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declmodule, declparam, declvar
 ! Local Variables
-      INTEGER :: nc
       CHARACTER(LEN=80), SAVE :: Version_ddsolrad_prms
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ddsoldecl = 1
 
       Version_ddsolrad_prms =
-     +'$Id: ddsolrad_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-      nc = INDEX( Version_ddsolrad_prms, ' $' ) + 1
-      IF ( declmodule(MODNAME, PROCNAME,
-     +                Version_ddsolrad_prms(:nc))/=0 ) STOP
+     +'$Id: ddsolrad_prms.f 5592 2013-04-23 18:26:23Z rsregan $'
+      CALL print_module(Version_ddsolrad_prms,
+     +                  'Solar Radiation           ', 77)
+      MODNAME = 'ddsolrad_prms'
 
       ALLOCATE (Plrad(Nradpl))
 
@@ -82,7 +80,6 @@
      +     Radpl_potsw).NE.0 ) RETURN
 
 ! Declare Parameters
-      ALLOCATE (Dday_slope(12))
       IF ( declparam(MODNAME, 'dday_slope', 'nmonths', 'real',
      +     '0.4', '0.2', '0.7',
      +     'Slope in temperature degree-day relationship',
@@ -90,7 +87,6 @@
      +     ' degree-day equation',
      +     'dday/degree').NE.0 ) RETURN
 
-      ALLOCATE (Dday_intcp(12))
       IF ( declparam(MODNAME, 'dday_intcp', 'nmonths', 'real',
      +     '-10.0', '-60.0', '4.0',
      +     'Intercept in temperature degree-day relationship',
@@ -122,7 +118,6 @@
      +     ' radiation for each HRU',
      +     'none').NE.0 ) RETURN
 
-      ALLOCATE (Tmax_index(12))
       IF ( declparam(MODNAME, 'tmax_index', 'nmonths', 'real',
      +     '50.0', '-10.0', '110.0',
      +     'Monthly index temperature',

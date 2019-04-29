@@ -22,19 +22,18 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
+      INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: c_to_f, f_to_c
-      EXTERNAL read_error, temp_set
+      EXTERNAL read_error, temp_set, print_module
 ! Declared Parameters
       INTEGER, SAVE :: Lo_index, Hi_index
 ! Local Variables
-      INTEGER :: j, k, nc
+      INTEGER :: j, k
       REAL :: eldif, elcor, tminsta
       REAL :: tmx, tmn, tcrx, tcrn, tmxsta, tmnsta, thi, tlo
       REAL, SAVE :: solrad_tmax_good, solrad_tmin_good
       REAL, SAVE, ALLOCATABLE :: elfac(:)
       CHARACTER(LEN=14), SAVE :: MODNAME
-      CHARACTER(LEN=26), PARAMETER:: PROCNAME='Temperature Distribution'
       CHARACTER(LEN=80), SAVE :: Version_temp_2sta_prms
 !***********************************************************************
       temp_2sta_prms = 0
@@ -93,10 +92,9 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_temp_2sta_prms =
-     +'$Id: temp_2sta_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_temp_2sta_prms, ' $' ) + 1
-        IF ( declmodule(MODNAME, PROCNAME, 
-     +       Version_temp_2sta_prms(:nc))/=0)STOP
+     +'$Id: temp_2sta_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+        CALL print_module(Version_temp_2sta_prms,
+     +                    'Temperature Distribution  ', 77)
         MODNAME = 'temp_2sta_prms'
 
         IF ( declparam(MODNAME, 'lo_index', 'one', 'integer',

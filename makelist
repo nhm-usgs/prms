@@ -3,7 +3,7 @@
 # $Id: makelist 5150 2012-12-19 21:33:33Z rsregan $
 #-------------------------------------------------------------------
 
-#MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/3.0.4/64bit/build/PRMS_SVN
+#MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/3.0.5/64bit/build/PRMS_SVN
 #MMFDIR      = $(MOWSDIR)/mmf/trunk
 #PRMSDIR     = $(MOWSDIR)/prmsIV
 #LIBDIR      = $(PRMSDIR)/lib
@@ -11,8 +11,7 @@
 #PRMSBRANCH  = $(PRMSDIR)/branch
 #BINDIR      = $(PRMSDIR)/bin
 #PRMSBASE    = $(LIBDIR)/libprmsbase.a
-##MMFLIB      = $(LIBDIR)/libmmf.a
-#MMFLIB      = /sshome/markstro/prmsLinuxDistribution/3.0.4/64bit/build/PRMS_SVN/lib/libmmf.a
+#MMFLIB      = /sshome/markstro/prmsLinuxDistribution/3.0.5/64bit/build/PRMS_SVN/lib/libmmf.a
 
 #########################################################
 # Configure tags for each system
@@ -27,7 +26,7 @@ LDFLAGS		=$(OPTLEVEL)
 # Define the Fortran compile flags
 ##########################################################
 #FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
-FFLAGS= $(OPTLEVEL) -Wall -fno-second-underscore -ffixed-line-length-0
+FFLAGS= $(OPTLEVEL) -Wall -fno-second-underscore
 FC		= gfortran
 
 ##########################################################

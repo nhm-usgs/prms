@@ -1,9 +1,9 @@
-#
+
 # Makefile for mmf
 # markstro
 # Tue Jul 26 08:43:10 MST 2005
 #
-# $Id: Makefile 6064 2011-10-27 20:56:21Z markstro $
+# $Id: Makefile 5145 2012-12-19 17:39:07Z rsregan $
 #
 
 MOWSDIR  = ../
@@ -13,7 +13,9 @@ RM       = rm -f
 AR       = ar ruv
 RANLIB   = ranlib
 
-CFLAGS   = -g -Wall -Werror-implicit-function-declaration
+#CFLAGS   = -g -Wall -Werror-implicit-function-declaration
+#CFLAGS   = -O3 -Wall -Werror-implicit-function-declaration
+CFLAGS   = -O -Wall -Werror-implicit-function-declaration
 
 SRCS = 	mmf.c parse_args.c alloc_space.c build_lists.c \
 	setup_cont.c decl_control.c control_addr.c \

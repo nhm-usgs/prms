@@ -16,12 +16,12 @@
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
         REAL, SAVE :: Crad_coef, Crad_exp
-        REAL, SAVE, ALLOCATABLE :: Ccov_slope(:), Ccov_intcp(:)
+        REAL, SAVE :: Ccov_slope(12), Ccov_intcp(12)
       END MODULE PRMS_CCSOLRAD
 !***********************************************************************
       INTEGER FUNCTION ccsolrad()
       USE PRMS_CCSOLRAD
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol
+      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol, Save_vars_to_file
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO, Hemisphere, Timestep
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Solrad_tmin, Solrad_tmax, &
      &    Ppt_rad_adj, Rad_conv, Hru_solsta, Basin_horad, Radmax, &
@@ -30,14 +30,12 @@
       USE PRMS_OBS, ONLY: Solrad, Nowtime, Jday, Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL read_error, print_module, ccsolrad_restart
 ! Local Variables
-      INTEGER :: j, jj, k, nc
+      INTEGER :: j, jj, k
       REAL :: pptadj, ccov, radadj
       CHARACTER(LEN=80), SAVE :: Version_ccsolrad
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Solar Radiation'
 !***********************************************************************
       ccsolrad = 0
 
@@ -103,14 +101,14 @@
         Basin_potsw = Basin_potsw*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ccsolrad = '$Id: ccsolrad.f90 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_ccsolrad, 'Z' )
-        k = INDEX( Version_ccsolrad, '.f90' ) + 3
-        IF ( declmodule(Version_ccsolrad(6:k), PROCNAME, Version_ccsolrad(k+2:nc))/=0 ) STOP
+        Version_ccsolrad = '$Id: ccsolrad.f90 5592 2013-04-23 18:26:23Z rsregan $'
+        CALL print_module(Version_ccsolrad, 'Solar Radiation           ', 90)
         MODNAME = 'ccsolrad'
 
 ! Declare Parameters
-        ALLOCATE ( Ccov_slope(12), Ccov_intcp(12) )
+
+        IF ( Timestep/=0 ) RETURN
+
         IF ( declparam(MODNAME, 'ccov_slope', 'nmonths', 'real', &
      &       '-0.13', '-0.5', '-0.01', &
      &       'Slope in temperature cloud cover relationship', &
@@ -136,12 +134,52 @@
 
       ELSEIF ( Process(:4)=='init' ) THEN
 ! Get parameters
+        IF ( Timestep/=0 ) THEN
+          CALL ccsolrad_restart(1)
+          RETURN
+        ENDIF
+
         IF ( getparam(MODNAME, 'ccov_slope', 12, 'real', Ccov_slope)/=0 ) CALL read_error(2, 'ccov_slope')
         IF ( getparam(MODNAME, 'ccov_intcp', 12, 'real', Ccov_intcp)/=0 ) CALL read_error(2, 'ccov_intcp')
         IF ( getparam(MODNAME, 'crad_coef', 1, 'real', Crad_coef)/=0 ) CALL read_error(2, 'crad_coef')
         IF ( getparam(MODNAME, 'crad_exp', 1, 'real', Crad_exp)/=0 ) CALL read_error(2, 'crad_exp')
         Observed_flag = 0
         IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = 1
+
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL ccsolrad_restart(0)
       ENDIF
 
       END FUNCTION ccsolrad
+
+!***********************************************************************
+!     Write to or read from restart file
+!***********************************************************************
+      SUBROUTINE ccsolrad_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CCSOLRAD
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=8) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Observed_flag
+        WRITE ( Restart_outunit ) Ccov_slope
+        WRITE ( Restart_outunit ) Ccov_intcp
+        WRITE ( Restart_outunit ) Crad_coef
+        WRITE ( Restart_outunit ) Crad_exp
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Observed_flag
+        READ ( Restart_inunit ) Ccov_slope
+        READ ( Restart_inunit ) Ccov_intcp
+        READ ( Restart_inunit ) Crad_coef
+        READ ( Restart_inunit ) Crad_exp
+      ENDIF
+      END SUBROUTINE ccsolrad_restart
+

@@ -17,23 +17,25 @@
       DOUBLE PRECISION, SAVE :: Last_intcp_stor, Basin_intcp_evap
       REAL, SAVE, ALLOCATABLE :: Net_rain(:), Net_snow(:), Net_ppt(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor(:), Intcp_evap(:)
-      REAL, SAVE, ALLOCATABLE :: Hru_intcpstor(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_intcpstor(:), Hru_intcpevap(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_pansta(:)
-      REAL, SAVE :: Potet_sublim
+      REAL, SAVE :: Potet_sublim, Epan_coef(12)
       REAL, SAVE, ALLOCATABLE :: Covden_sum(:), Covden_win(:)
       REAL, SAVE, ALLOCATABLE :: Snow_intcp(:), Srain_intcp(:)
-      REAL, SAVE, ALLOCATABLE :: Epan_coef(:), Wrain_intcp(:)
+      REAL, SAVE, ALLOCATABLE :: Wrain_intcp(:)
       END MODULE PRMS_INTCP
 
 !***********************************************************************
 !     Main intcp routine
 !***********************************************************************
       INTEGER FUNCTION intcp()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: intdecl, intinit, intrun
+      EXTERNAL :: intcp_restart
 !***********************************************************************
       intcp = 0
 
@@ -42,7 +44,13 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         intcp = intdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        intcp = intinit()
+        IF ( Timestep/=0 ) THEN
+          CALL intcp_restart(1)
+        ELSE
+          intcp = intinit()
+        ENDIF
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL intcp_restart(0)
       ENDIF
 
       END FUNCTION intcp
@@ -55,25 +63,31 @@
 !***********************************************************************
       INTEGER FUNCTION intdecl()
       USE PRMS_INTCP
-      USE PRMS_MODULE, ONLY: Nhru, Model, Et_flag
+      USE PRMS_MODULE, ONLY: Nhru, Model, Et_flag, Print_debug
+      USE PRMS_BASIN, ONLY: Timestep
       USE PRMS_OBS, ONLY: Nevap
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module, PRMS_open_module_file
 ! Local Variables
-      INTEGER :: n, nc
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Canopy Interception'
       CHARACTER(LEN=80), SAVE :: Version_intcp
 !***********************************************************************
       intdecl = 0
 
-      Version_intcp = '$Id: intcp.f90 5211 2013-01-10 00:14:17Z rsregan $'
-      nc = INDEX( Version_intcp, 'Z' )
-      n = INDEX( Version_intcp, '.f90' ) + 3
-      IF ( declmodule(Version_intcp(6:n), PROCNAME, Version_intcp(n+2:nc))/=0 ) STOP
+      Version_intcp = '$Id: intcp.f90 5613 2013-04-23 18:55:35Z rsregan $'
+      CALL print_module(Version_intcp, 'Canopy Interception       ', 90)
       MODNAME = 'intcp'
+
+      IF ( Print_debug==1 ) THEN
+        CALL PRMS_open_module_file(BALUNT, 'intcp.wbal')
+        WRITE ( BALUNT, 9001 )
+      ENDIF
+
+      ALLOCATE ( Hru_intcpevap(Nhru) )
+      IF ( declvar(MODNAME, 'hru_intcpevap', 'nhru', Nhru, 'real', &
+     &     'Evaporation from the canopy for each HRU', &
+     &     'inches', Hru_intcpevap)/=0 ) CALL read_error(3, 'hru_intcpevap')
 
       ALLOCATE ( Net_rain(Nhru) )
       IF ( declvar(MODNAME, 'net_rain', 'nhru', Nhru, 'real', &
@@ -131,13 +145,15 @@
      &     'Flag indicating interception storage for each HRU (0=no; 1=yes)', &
      &     'none', Intcp_on)/=0 ) CALL read_error(3, 'intcp_on')
 
-      ALLOCATE ( Epan_coef(12), Snow_intcp(Nhru), Srain_intcp(Nhru), Wrain_intcp(Nhru) )
-      ALLOCATE ( Covden_sum(Nhru), Covden_win(Nhru) )
+      ALLOCATE ( Snow_intcp(Nhru), Srain_intcp(Nhru), Wrain_intcp(Nhru) )
+      ALLOCATE ( Covden_sum(Nhru), Covden_win(Nhru), Intcp_transp_on(Nhru) )
       Use_pandata = 0
       IF ( Nevap>0 .AND. Et_flag==4 .OR. Model==99 ) THEN
         Use_pandata = 1
         ALLOCATE ( Hru_pansta(Nhru) )
       ENDIF
+
+      IF ( Timestep/=0 ) RETURN
 
 ! declare parameters
       IF ( declparam(MODNAME, 'epan_coef', 'nmonths', 'real', &
@@ -190,6 +206,8 @@
      &       'none')/=0 ) CALL read_error(1, 'hru_pansta')
       ENDIF
 
+ 9001 FORMAT ('    Date     Water Bal     Precip     Netppt  Intcpevap  Intcpstor  last_stor')
+
       END FUNCTION intdecl
 
 !***********************************************************************
@@ -199,23 +217,16 @@
       INTEGER FUNCTION intinit()
       USE PRMS_INTCP
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Inputerror_flag, Parameter_check_flag
-      USE PRMS_BASIN, ONLY: Hru_type, Timestep, NEARZERO, Cov_type
+      USE PRMS_BASIN, ONLY: Hru_type, NEARZERO, Cov_type, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on
       USE PRMS_OBS, ONLY: Nevap
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL read_error, PRMS_open_module_file
+      EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
+      INTEGER :: i, j
 !***********************************************************************
       intinit = 0
-
-      IF ( Print_debug==1 ) THEN
-        CALL PRMS_open_module_file(BALUNT, 'intcp.wbal')
-        WRITE ( BALUNT, 9001 )
-      ENDIF
-
-      ALLOCATE ( Intcp_transp_on(Nhru) )
 
       IF ( getparam(MODNAME, 'snow_intcp', Nhru, 'real', Snow_intcp)/=0 ) CALL read_error(2, 'snow_intcp')
       IF ( getparam(MODNAME, 'wrain_intcp', Nhru, 'real', Wrain_intcp)/=0 ) CALL read_error(2, 'wrain_intcp')
@@ -231,7 +242,8 @@
       ENDDO
       IF ( Use_pandata==1 ) THEN
         IF ( getparam(MODNAME, 'hru_pansta', Nhru, 'integer', Hru_pansta)/=0 ) CALL read_error(2, 'hru_pansta')
-        DO i = 1, Nhru
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
           IF ( Hru_pansta(i)<1 .OR. Hru_pansta(i)>Nevap ) THEN
             PRINT *, 'ERROR, hru_pansta = 0 or > nevap for HRU:', i, Hru_pansta(i)
             Inputerror_flag = 1
@@ -241,8 +253,9 @@
 
       IF ( getparam(MODNAME, 'potet_sublim', 1, 'real', Potet_sublim)/=0 ) CALL read_error(2, 'potet_sublim')
 
-      DO i = 1, Nhru
-        Intcp_transp_on(i) = Transp_on(i)
+      Intcp_transp_on = Transp_on
+      DO j = 1, Active_hrus
+        i = Hru_route_order(j)
         IF ( Covden_win(i)<0.0 .OR. Covden_win(i)>1.0 ) THEN
           PRINT *, 'ERROR, Covden_win value < 0.0 or > 1.0 for HRU:', i, Covden_win(i)
           Inputerror_flag = 1
@@ -253,41 +266,30 @@
         ENDIF
         IF ( Covden_win(i)<NEARZERO ) Covden_win(i) = 0.0
         IF ( Covden_sum(i)<NEARZERO ) Covden_sum(i) = 0.0
-  !      IF ( Covden_win(i)>Covden_sum(i) ) THEN
-  !        IF ( Print_debug>-1 ) THEN
-  !          PRINT *, 'Warning, covden_win>covden_sum, HRU:', i, Covden_win(i), Covden_sum(i)
-  !          PRINT *, ' Set covden_win to covden_sum'
-  !        ENDIF
-  !        Covden_win(i) = Covden_sum(i)
-  !      ENDIF
         IF ( Cov_type(i)/=0 .AND. Hru_type(i)==2 ) THEN
           IF ( Parameter_check_flag==1 ) THEN
             PRINT *, 'ERROR, cov_type value not equal be 0 for lake HRU:', i, Cov_type(i)
             Inputerror_flag = 1
           ELSE
-            IF ( Print_debug>-1 ) PRINT *,  'Warning, cov_type must be 0 for lakes,', &
-                 ' reset from:', Cov_type(i), ' to 0 for HRU:', i
+            IF ( Print_debug>-1 ) PRINT *,  'Warning, cov_type must be 0 for lakes, reset from:', Cov_type(i), ' to 0 for HRU:', i
             Cov_type(i) = 0
           ENDIF
         ENDIF
       ENDDO
 
-      IF ( Timestep==0 ) THEN
-        Intcp_stor = 0.0
-        Intcp_on = 0
-        Intcp_form = 0
-        Intcp_evap = 0.0
-        Hru_intcpstor = 0.0
-        Net_rain = 0.0
-        Net_snow = 0.0
-        Net_ppt = 0.0
-        Basin_net_ppt = 0.0D0
-        Basin_intcp_evap = 0.0D0
-        Basin_intcp_stor = 0.0D0
-        Last_intcp_stor = 0.0D0
-      ENDIF
-
- 9001 FORMAT ('    Date     Water Bal     Precip     Netppt  Intcpevap  Intcpstor  last_stor')
+      Intcp_stor = 0.0
+      Intcp_on = 0
+      Intcp_form = 0
+      Intcp_evap = 0.0
+      Hru_intcpevap = 0.0
+      Hru_intcpstor = 0.0
+      Net_rain = 0.0
+      Net_snow = 0.0
+      Net_ppt = 0.0
+      Basin_net_ppt = 0.0D0
+      Basin_intcp_evap = 0.0D0
+      Basin_intcp_stor = 0.0D0
+      Last_intcp_stor = 0.0D0
 
       END FUNCTION intinit
 
@@ -303,7 +305,7 @@
 ! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
      &    Hru_snow, Basin_ppt, Transp_on, Potet
-      USE PRMS_FLOWVARS, ONLY: Hru_intcpevap, Pkwater_equiv
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
       USE PRMS_OBS, ONLY: Pan_evap, Nowtime, Nowmonth, Nowday, Nowyear
       IMPLICIT NONE
       EXTERNAL intercept, read_error
@@ -371,8 +373,7 @@
                 stor_last = stor_last - changeover
               ENDIF
             ELSE
-              IF ( Print_debug>-1 ) PRINT *, 'covden_win=0 at winter changeover and has', &
-     &             ' canopy storage', intcpstor, changeover, i
+              IF ( Print_debug>-1 ) PRINT *, 'covden_win=0 at winter changeover and has canopy storage', intcpstor, changeover, i
               stor_last = 0.0
               intcpstor = 0.0
               Intcp_on(i) = 0
@@ -404,21 +405,22 @@
         ELSE
           stor = Wrain_intcp(i)
         ENDIF
-        IF ( Hru_rain(i)>0.0 .AND. cov>0.0 ) THEN
-
-          IF ( Cov_type(i)>1 ) THEN
-            CALL intercept(Hru_rain(i), stor, cov, Intcp_on(i), intcpstor, Net_rain(i))
-          ELSEIF ( Cov_type(i)==1 ) THEN
-            !rsr, 03/24/2008 intercept rain on snow-free grass,
-            !rsr             when not a mixed event
-            IF ( Pkwater_equiv(i)<DNEARZERO .AND. Hru_snow(i)<NEARZERO ) THEN
+        IF ( Hru_rain(i)>0.0 ) THEN
+          IF ( cov>0.0 ) THEN
+            IF ( Cov_type(i)>1 ) THEN
               CALL intercept(Hru_rain(i), stor, cov, Intcp_on(i), intcpstor, Net_rain(i))
-              !rsr 03/24/2008
-              !it was decided to leave the water in intcpstor rather
-              !than put the water in the snowpack, as doing so for a
-              !mixed event on grass with snow-free surface produces a
-              !divide by zero in snowcomp. Storage on grass will
-              !eventually evaporate
+            ELSEIF ( Cov_type(i)==1 ) THEN
+              !rsr, 03/24/2008 intercept rain on snow-free grass,
+              !rsr             when not a mixed event
+              IF ( Pkwater_equiv(i)<DNEARZERO .AND. Hru_snow(i)<NEARZERO ) THEN
+                CALL intercept(Hru_rain(i), stor, cov, Intcp_on(i), intcpstor, Net_rain(i))
+                !rsr 03/24/2008
+                !it was decided to leave the water in intcpstor rather
+                !than put the water in the snowpack, as doing so for a
+                !mixed event on grass with snow-free surface produces a
+                !divide by zero in snowcomp. Storage on grass will
+                !eventually evaporate
+              ENDIF
             ENDIF
           ENDIF
         ENDIF
@@ -426,16 +428,18 @@
 
 !******Determine amount of interception from snow
 
-        IF ( Hru_snow(i)>0.0 .AND. cov>0.0 ) THEN
-          Intcp_form(i) = 1
-          IF ( Cov_type(i)>1 ) THEN
-            stor = Snow_intcp(i)
-            CALL intercept(Hru_snow(i), stor, cov, Intcp_on(i), intcpstor, Net_snow(i))
-            IF ( Net_snow(i)<NEARZERO ) THEN   !rsr, added 3/9/2006
-              Net_rain(i) = Net_rain(i) + Net_snow(i)
-              Net_snow(i) = 0.0
-              Newsnow(i) = 0
-              Pptmix(i) = 0   ! reset to be sure it is zero
+        IF ( Hru_snow(i)>0.0 ) THEN
+          IF ( cov>0.0 ) THEN
+            Intcp_form(i) = 1
+            IF ( Cov_type(i)>1 ) THEN
+              stor = Snow_intcp(i)
+              CALL intercept(Hru_snow(i), stor, cov, Intcp_on(i), intcpstor, Net_snow(i))
+              IF ( Net_snow(i)<NEARZERO ) THEN   !rsr, added 3/9/2006
+                Net_rain(i) = Net_rain(i) + Net_snow(i)
+                Net_snow(i) = 0.0
+                Newsnow(i) = 0
+                Pptmix(i) = 0   ! reset to be sure it is zero
+              ENDIF
             ENDIF
           ENDIF
         ENDIF
@@ -514,7 +518,7 @@
           delstor = Hru_intcpstor(i) - stor_last
           hrubal = Hru_rain(i) + Hru_snow(i) - Net_rain(i) - Net_snow(i) &
      &             - delstor - Hru_intcpevap(i) + changeover
-          IF ( ABS(hrubal)>1.0D-6 ) THEN
+          IF ( ABS(hrubal)>5.0D-6 ) THEN
             IF ( ABS(hrubal)>1.0D-4 ) THEN
               WRITE (BALUNT, *) 'Possible HRU water balance error'
             ELSE
@@ -584,3 +588,60 @@
       ENDIF
 
       END SUBROUTINE intercept
+
+!***********************************************************************
+!     intcp_restart - write or read intcp restart file
+!***********************************************************************
+      SUBROUTINE intcp_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_INTCP
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=5) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Basin_net_ppt, Basin_intcp_stor, Last_intcp_stor, Basin_intcp_evap, Potet_sublim
+        WRITE ( Restart_outunit ) Intcp_transp_on
+        WRITE ( Restart_outunit ) Intcp_on
+        WRITE ( Restart_outunit ) Intcp_form
+        WRITE ( Restart_outunit ) Net_rain
+        WRITE ( Restart_outunit ) Net_snow
+        WRITE ( Restart_outunit ) Net_ppt
+        WRITE ( Restart_outunit ) Intcp_stor
+        WRITE ( Restart_outunit ) Intcp_evap
+        WRITE ( Restart_outunit ) Hru_intcpstor
+        WRITE ( Restart_outunit ) Hru_intcpevap
+        IF ( Use_pandata==1 ) WRITE ( Restart_outunit ) Hru_pansta
+        WRITE ( Restart_outunit ) Covden_sum
+        WRITE ( Restart_outunit ) Covden_win
+        WRITE ( Restart_outunit ) Epan_coef
+        WRITE ( Restart_outunit ) Snow_intcp
+        WRITE ( Restart_outunit ) Srain_intcp
+        WRITE ( Restart_outunit ) Wrain_intcp
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Basin_net_ppt, Basin_intcp_stor, Last_intcp_stor, Basin_intcp_evap, Potet_sublim
+        READ ( Restart_inunit ) Intcp_transp_on
+        READ ( Restart_inunit ) Intcp_on
+        READ ( Restart_inunit ) Intcp_form
+        READ ( Restart_inunit ) Net_rain
+        READ ( Restart_inunit ) Net_snow
+        READ ( Restart_inunit ) Net_ppt
+        READ ( Restart_inunit ) Intcp_stor
+        READ ( Restart_inunit ) Intcp_evap
+        READ ( Restart_inunit ) Hru_intcpstor
+        READ ( Restart_inunit ) Hru_intcpevap
+        IF ( Use_pandata==1 ) READ ( Restart_inunit ) Hru_pansta
+        READ ( Restart_inunit ) Covden_sum
+        READ ( Restart_inunit ) Covden_win
+        READ ( Restart_inunit ) Epan_coef
+        READ ( Restart_inunit ) Snow_intcp
+        READ ( Restart_inunit ) Srain_intcp
+        READ ( Restart_inunit ) Wrain_intcp
+      ENDIF
+      END SUBROUTINE intcp_restart

@@ -6,20 +6,17 @@
       USE PRMS_MODULE, ONLY: Process
       USE PRMS_BASIN, ONLY: Basin_area_inv, CFS2CMS_CONV
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
-      USE PRMS_FLOWVARS, ONLY: Basin_sroff, Basin_ssflow, Basin_cfs, &
-          Basin_cms, Basin_stflow_in, Basin_sroff_cfs, Basin_ssflow_cfs, &
-          Basin_gwflow_cfs, Basin_stflow_out
+      USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cfs, Basin_cms, Basin_stflow_in, &
+      &   Basin_sroff_cfs, Basin_ssflow_cfs, Basin_gwflow_cfs, Basin_stflow_out
       USE PRMS_OBS, ONLY: Cfs_conv
+      USE PRMS_SRUNOFF, ONLY: Basin_sroff
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule
+      EXTERNAL :: print_module
 ! Local Variables
-      INTEGER :: i, nc
       DOUBLE PRECISION :: area_fac
       CHARACTER(LEN=8), SAVE :: MODNAME
       CHARACTER(LEN=80), SAVE :: Version_strmflow
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Streamflow Routing'
 !***********************************************************************
       strmflow = 0
 
@@ -36,10 +33,8 @@
         Basin_gwflow_cfs = Basin_gwflow*area_fac
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_strmflow = '$Id: strmflow.f90 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_strmflow, 'Z' )
-        i = INDEX ( Version_strmflow, '.f90' ) + 3
-        IF ( declmodule(Version_strmflow(6:i), PROCNAME, Version_strmflow(i+2:nc))/=0 ) STOP
+        Version_strmflow = '$Id: strmflow.f90 5528 2013-03-22 21:54:44Z rsregan $'
+        CALL print_module(Version_strmflow, 'Streamflow Routing        ', 90)
         MODNAME = 'strmflow'
       ENDIF
 

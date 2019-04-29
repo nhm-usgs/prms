@@ -23,7 +23,7 @@ standard:
 #	  mkdir $(LIBDIR) ;                   \
 #	  echo  Created directory $(LIBDIR) ; \
 #	fi
-# Create bin directory, if necessary
+## Create bin directory, if necessary
 #	@if [ ! -d $(BINDIR) ]   ; then        \
 #	  mkdir $(BINDIR) ;                   \
 #	  echo  Created directory $(BINDIR) ; \
@@ -31,7 +31,7 @@ standard:
 	cd ./mmf; $(MAKE);
 	cd ./prms; $(MAKE);
 
-prmswatersmart:
+#prmswatersmart:
 # Create lib directory, if necessary
 #	@if [ ! -d $(LIBDIR) ]   ; then        \
 #	  mkdir $(LIBDIR) ;                   \

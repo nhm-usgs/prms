@@ -33,10 +33,11 @@
 !     Mapped results module
 !     ******************************************************************
       INTEGER FUNCTION map_results()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: map_resultsdecl, map_resultsinit, map_resultsclean, map_resultsrun
+      EXTERNAL :: map_results_restart
 !***********************************************************************
       map_results = 0
 
@@ -47,6 +48,7 @@
       ELSEIF ( Process(:4)=='init' ) THEN
         map_results = map_resultsinit()
       ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL map_results_restart(0)
         map_results = map_resultsclean()
       ENDIF
 
@@ -58,48 +60,56 @@
       INTEGER FUNCTION map_resultsdecl()
       USE PRMS_MAP_RESULTS
       USE PRMS_MODULE, ONLY: Model, Nhru, MapOutON_OFF, Nhrucell
+      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX, CHAR
-      INTEGER, EXTERNAL :: declmodule, declparam, getdim, control_string_array, control_integer
-      EXTERNAL read_error
+      INTRINSIC CHAR
+      INTEGER, EXTERNAL :: declparam, getdim, control_string_array, control_integer
+      EXTERNAL read_error, print_module
 ! Local Variables
-      INTEGER :: i, nc
+      INTEGER :: i
       CHARACTER(LEN=80), SAVE :: Version_map_results
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Summary'!***********************************************************************
+!***********************************************************************
       map_resultsdecl = 0
 
-      Version_map_results = '$Id: map_results.f90 5221 2013-01-14 21:55:28Z rsregan $'
-      nc = INDEX( Version_map_results, 'Z' )
-      i = INDEX( Version_map_results, '.f90' ) + 3
-      IF ( declmodule(Version_map_results(6:i), PROCNAME, Version_map_results(i+2:nc))/=0 ) STOP
+      Version_map_results = '$Id: map_results.f90 5599 2013-04-23 18:35:48Z rsregan $'
+      CALL print_module(Version_map_results, 'Summary                   ', 90)
       MODNAME = 'map_results'
 
       IF ( control_integer(NmapOutVars, 'nmapOutVars')/=0 ) CALL read_error(5, 'nmapOutVars')
       IF ( NmapOutVars==0 ) THEN
-        PRINT *, 'Warning, map_results requested with nmapOutVars equal 0, no map_results output is produced'
-        MapOutON_OFF = 0
-        RETURN
+        IF ( Model/=99 ) THEN
+          PRINT *, 'Warning, map_results requested with nmapOutVars equal 0, no map_results output is produced'
+          MapOutON_OFF = 0
+          RETURN
+        ENDIF
+      ELSE
+        ALLOCATE ( MapOutVar_names(NmapOutVars), Map_var_type(NmapOutVars), Nc_vars(NmapOutVars) )
+        ALLOCATE ( Map_var(Nhru, NmapOutVars), Map_var_dble(Nhru, NmapOutVars) )
+        MapOutVar_names = ' '
+        DO i = 1, NmapOutVars
+          IF ( control_string_array(MapOutVar_names(i), 'mapOutVar_names', i)/=0 ) CALL read_error(5, 'mapOutVar_names')
+        ENDDO
       ENDIF
-
-      ALLOCATE ( MapOutVar_names(NmapOutVars), Map_var_type(NmapOutVars), Nc_vars(NmapOutVars) )
-      ALLOCATE ( Map_var(Nhru, NmapOutVars), Map_var_dble(Nhru, NmapOutVars) )
-
-      MapOutVar_names = ' '
-      DO i = 1, NmapOutVars
-        IF ( control_string_array(MapOutVar_names(i), 'mapOutVar_names', i)/=0 ) CALL read_error(5, 'mapOutVar_names')
-      ENDDO
 
       Ngwcell = getdim('ngwcell')
       IF ( Ngwcell==-1 ) CALL read_error(6, 'ngwcell')
+      IF ( Model==99 .AND. Ngwcell==0 ) Ngwcell = 1
       Mapflg = 1
       IF ( (Nhru/=Ngwcell .AND. Ngwcell/=0) .OR. mapOutON_OFF==2 ) Mapflg = 0
 
       IF ( Mapflg==0 .OR. Model==99 ) THEN
-        IF ( Nhrucell<1 ) STOP 'ERROR, in map_results, nhru_cell = 0 and must be > 0'
-        ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell) )
-        ALLOCATE ( Map_var_id(Ngwcell) )
+        IF ( Nhrucell<1 ) THEN
+          IF ( Model==99 ) THEN
+            Nhrucell = 1
+          ELSE
+            STOP 'ERROR, in map_results, nhru_cell = 0 and must be > 0'
+          ENDIF
+        ENDIF
+        ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell), Map_var_id(Ngwcell) )
       ENDIF
+
+      IF ( Timestep/=0 ) RETURN
 
 ! Declared Parameters
       IF ( declparam(MODNAME, 'mapvars_freq', 'one', 'integer', &
@@ -158,37 +168,43 @@
      &    End_year, End_month, End_day, NEARZERO, Timestep
       IMPLICIT NONE
       INTRINSIC ABS
-      INTEGER, EXTERNAL :: getparam, getvartype
-      EXTERNAL read_error, PRMS_open_output_file
+      INTEGER, EXTERNAL :: getparam, getvartype, numchars
+      EXTERNAL read_error, PRMS_open_output_file, map_results_restart
 ! Local Variables
       INTEGER :: i, jj, is, ios, ierr
       REAL, ALLOCATABLE, DIMENSION(:) :: map_frac
 !***********************************************************************
       map_resultsinit = 0
 
+      Begin_results = 1
+      Begyr = Start_year
       IF ( Timestep==0 ) THEN
-        IF ( getparam(MODNAME, 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) &
-             CALL read_error(1, 'mapvars_freq')
+        IF ( getparam(MODNAME, 'mapvars_freq', 1, 'integer', Mapvars_freq)/=0 ) CALL read_error(1, 'mapvars_freq')
         IF ( getparam(MODNAME, 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
         IF ( getparam(MODNAME, 'prms_warmup', 1, 'integer', Prms_warmup)/=0 ) CALL read_error(2, 'prms_warmup')
+        IF ( getparam(MODNAME, 'mapvars_units', 1, 'integer', Mapvars_units)/=0 ) CALL read_error(2, 'Mapvars_units')
+        IF ( Prms_warmup>0 ) Begin_results = 0
+        Begyr = Begyr + Prms_warmup
+        IF ( Begyr>End_year ) THEN
+          PRINT *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
+          Inputerror_flag = 1
+        ENDIF
+      ELSE
+        CALL map_results_restart(1)
       ENDIF
 
-      IF ( Mapvars_freq==0 ) THEN
-        map_resultsinit = 0
-        RETURN
-      ENDIF
+      IF ( Mapvars_freq==0 ) RETURN
 
       WRITE ( Mapfmt, 9001 ) Ncol
 
-      IF ( Prms_warmup>0 ) THEN
-        Begin_results = 0
+      IF ( Mapvars_units==0 ) THEN
+        Conv_fac = 1.0D0
+      ELSEIF ( Mapvars_units==1 ) THEN
+        Conv_fac = 1.0D0/12.0D0
+      ELSEIF ( Mapvars_units==2 ) THEN
+        Conv_fac = 2.54D0
       ELSE
-        Begin_results = 1
-      ENDIF
-      Begyr = Start_year + Prms_warmup
-      IF ( Begyr>End_year ) THEN
-        PRINT *, 'ERROR, prms_warmup > than simulation time period:', Prms_warmup
-        Inputerror_flag = 1
+        Conv_fac = 0.0254D0
       ENDIF
       Lastyear = Begyr
       Totdays = 0
@@ -200,7 +216,7 @@
       Prevday = Start_day
       Map_var_type = 2
       DO jj = 1, NmapOutVars
-        Nc_vars(jj) = INDEX( MapOutVar_names(jj), CHAR(0) ) - 1
+        Nc_vars(jj) = numchars(MapOutVar_names(jj))
         Map_var_type(jj)= getvartype(MapOutVar_names(jj)(:Nc_vars(jj)), Map_var_type(jj) )
       ENDDO
 
@@ -260,6 +276,8 @@
       ENDIF
       IF ( ierr==1 ) STOP
 
+      IF ( Timestep/=0 ) RETURN
+
       IF ( Mapflg==0 ) THEN
         Nrow = Ngwcell/Ncol
         IF ( Ngwcell==0 ) STOP 'ERROR, dimension ngwcell must be specified > 0'
@@ -300,17 +318,6 @@
         Nrow = Nhru/Ncol
         IF ( Nhru/=Nrow*Ncol ) Nrow = Nrow + 1
         Numcells = Nhru
-      ENDIF
-
-      IF ( getparam(MODNAME, 'mapvars_units', 1, 'integer', Mapvars_units)/=0 ) CALL read_error(2, 'Mapvars_units')
-      IF ( Mapvars_units==0 ) THEN
-        Conv_fac = 1.0D0
-      ELSEIF ( Mapvars_units==1 ) THEN
-        Conv_fac = 1.0D0/12.0D0
-      ELSEIF ( Mapvars_units==2 ) THEN
-        Conv_fac = 2.54D0
-      ELSE
-        Conv_fac = 0.0254D0
       ENDIF
 
  9001 FORMAT ( '(',I8,'E10.3)' )
@@ -409,11 +416,11 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NmapOutVars
         IF ( Map_var_type(jj)==2 ) THEN
-          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
-     &                Nhru, 'real', Map_var(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
+          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Map_var(1, jj))/=0 ) &
+     &         CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Map_var_type(jj)==3 ) THEN
-          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), &
-     &                Nhru, 'double', Map_var_dble(1, jj))/=0 ) CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
+          IF ( getvar(MODNAME,MapOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Map_var_dble(1, jj))/=0 ) &
+     &         CALL read_error(4,MapOutVar_names(jj)(:Nc_vars(jj)))
         ENDIF
       ENDDO
 
@@ -597,3 +604,38 @@
         k = k + Ncol
       ENDDO
       END SUBROUTINE write_results
+
+!***********************************************************************
+!     map_results_restart - write or read map_results restart file
+!***********************************************************************
+      SUBROUTINE map_results_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_MAP_RESULTS
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=11) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Numcells, Nrow, Ncol, Prms_warmup, Mapvars_freq, Mapvars_units
+        IF ( Mapflg==0 ) THEN
+          WRITE ( Restart_outunit ) Map_var_id
+          WRITE ( Restart_outunit ) Gvr_map_id
+          WRITE ( Restart_outunit ) Gvr_hru_id
+          WRITE ( Restart_outunit ) Gvr_map_frac
+        ENDIF
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Numcells, Nrow, Ncol, Prms_warmup, Mapvars_freq, Mapvars_units
+        IF ( Mapflg==0 ) THEN
+          READ ( Restart_inunit ) Map_var_id
+          READ ( Restart_inunit ) Gvr_map_id
+          READ ( Restart_inunit ) Gvr_hru_id
+          READ ( Restart_inunit ) Gvr_map_frac
+        ENDIF
+      ENDIF
+      END SUBROUTINE map_results_restart

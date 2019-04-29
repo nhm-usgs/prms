@@ -12,19 +12,17 @@
 
       INTEGER FUNCTION transp_frost()
       USE PRMS_TRANSP_FROST
-      USE PRMS_MODULE, ONLY: Process, Nhru
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
+      USE PRMS_MODULE, ONLY: Process, Nhru, Save_vars_to_file
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Timestep
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_OBS, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
-      EXTERNAL read_error
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL read_error, print_module, transp_frost_restart
 ! Local Variables
-      INTEGER :: i, j, nc
+      INTEGER :: i, j
       CHARACTER(LEN=80), SAVE :: Version_transp_frost
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
 !***********************************************************************
       transp_frost = 0
 
@@ -46,34 +44,70 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp_frost = '$Id: transp_frost.f90 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_transp_frost, 'Z' )
-        i = INDEX( Version_transp_frost, '.f90' ) + 3
-        IF ( declmodule(Version_transp_frost(6:i), PROCNAME, Version_transp_frost(i+2:nc))/=0 ) STOP
+        Version_transp_frost = '$Id: transp_frost.f90 5594 2013-04-23 18:29:59Z rsregan $'
+        CALL print_module(Version_transp_frost, 'Transpiration Period      ', 90)
         MODNAME = 'transp_frost'
 
         ALLOCATE ( Spring_frost(Nhru), Fall_frost(Nhru) )
+
+        IF ( Timestep/=0 ) RETURN
+
         IF ( declparam(MODNAME, 'spring_frost', 'nhru', 'integer', &
-             '111', '1', '366', &
-             'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
-             'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
-             'Solar date')/=0 ) CALL read_error(1, 'spring_frost')
+     &       '111', '1', '366', &
+     &       'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
+     &       'The solar date (number of days after winter solstice) of the last killing frost of the spring', &
+     &       'Solar date')/=0 ) CALL read_error(1, 'spring_frost')
         IF ( declparam(MODNAME, 'fall_frost', 'nhru', 'integer', &
-             '264', '1', '366', &
-             'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
-             'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
-             'Solar date')/=0 ) CALL read_error(1, 'fall_frost')
+     &       '264', '1', '366', &
+     &       'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
+     &       'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
+     &       'Solar date')/=0 ) CALL read_error(1, 'fall_frost')
 
       ELSEIF ( Process(:4)=='init' ) THEN
+
+        IF ( Timestep/=0 ) THEN
+          CALL transp_frost_restart(1)
+          RETURN
+        ENDIF
+
         IF ( getparam(MODNAME, 'spring_frost', Nhru, 'integer', Spring_frost)/=0 ) CALL read_error(2, 'spring_frost')
         IF ( getparam(MODNAME, 'fall_frost', Nhru, 'integer', Fall_frost)/=0 ) CALL read_error(2, 'fall_frost')
 
-        DO i = 1, Nhru
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
           IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
-            Transp_on(i) = 1    
+            Transp_on(i) = 1
             Basin_transp_on = 1
           ENDIF
         ENDDO
+
+      ELSEIF ( Process(:5)=='clean' ) THEN
+        IF ( Save_vars_to_file==1 ) CALL transp_frost_restart(0)
       ENDIF
 
       END FUNCTION transp_frost
+
+!***********************************************************************
+!     Write to or read from restart file
+!***********************************************************************
+      SUBROUTINE transp_frost_restart(In_out)
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_TRANSP_FROST
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      EXTERNAL check_restart
+      ! Local Variable
+      CHARACTER(LEN=12) :: module_name
+!***********************************************************************
+      IF ( In_out==0 ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Fall_frost
+        WRITE ( Restart_outunit ) Spring_frost
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Fall_frost
+        READ ( Restart_inunit ) Spring_frost
+      ENDIF
+      END SUBROUTINE transp_frost_restart

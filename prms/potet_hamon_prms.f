@@ -17,16 +17,15 @@
 ! Functions
       INTRINSIC EXP, INDEX
       INTEGER, EXTERNAL :: getparam, declmodule, declparam
-      EXTERNAL read_error
+      EXTERNAL read_error, print_module
 ! Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
-      REAL, SAVE, ALLOCATABLE :: Hamon_coef(:)
+      REAL, SAVE :: Hamon_coef(12)
 ! Local Variables
-      INTEGER :: i, ir, j, nc
+      INTEGER :: i, ir, j
       REAL :: dyl, vpsat, vdsat, hamoncoef_mo
       CHARACTER(LEN=16), SAVE :: MODNAME
       CHARACTER(LEN=80), SAVE :: Version_potet_hamon_prms
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
 !***********************************************************************
       potet_hamon_prms = 0
 
@@ -49,10 +48,9 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_potet_hamon_prms =
-     +'$Id: potet_hamon_prms.f 5169 2012-12-28 23:51:03Z rsregan $'
-        nc = INDEX( Version_potet_hamon_prms, ' $' ) +1
-        IF ( declmodule(MODNAME, PROCNAME, 
-     +               Version_potet_hamon_prms(:nc))/=0 ) STOP
+     +'$Id: potet_hamon_prms.f 5602 2013-04-23 18:42:50Z rsregan $'
+        CALL print_module(Version_potet_hamon_prms,
+     +                    'Potential ET              ', 77)
         MODNAME = 'potet_hamon_prms'
 
         ALLOCATE ( Hru_radpl(Nhru) )
@@ -62,7 +60,6 @@
      +       'Index of radiation plane used to compute solar'//
      +       ' radiation for an HRU',
      +       'none')/=0 ) CALL read_error(1, 'hru_radpl')
-        ALLOCATE ( Hamon_coef(12) )
         IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real',
      +       '0.0055', '0.004', '0.008',
      +       'Monthly air temperature coefficient - Hamon',
