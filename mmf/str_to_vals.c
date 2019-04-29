@@ -1,42 +1,25 @@
-/**************************************************************************
- * str_to_vals.c: decodes a string into values, and loads memory addresses
+/*+
+ * United States Geological Survey
  *
- * Examples of legal strings for this routine:
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : str_to_vals
+ * COMMENT  : decodes a string into values, and loads memory addresses
+ *            Examples of legal strings for this routine:
  *
- *           "1 2 3 4 5"
- *           "1.0, 2.2, 19e9"
- *           "1*23.5, 7*1 13 12*3"
+ *            "1 2 3 4 5"
+ *            "1.0, 2.2, 19e9"
+ *            "1*23.5, 7*1 13 12*3"
  *
  * Blanks, commas, tabs and newlines may delimit the values.
  * The repeat count is optional, but must be greater than 0 if included.
  * If the total number of entries is less than required, the sequence
  * is repeated.
  *
- * $Id: str_to_vals.c 5222 2013-01-14 23:06:22Z markstro $
+ * $Id: str_to_vals.c 6195 2014-02-07 21:49:14Z rsregan $
  *
-   $Revision: 5222 $
-        $Log: str_to_vals.c,v $
-        Revision 1.7  1996/02/19 20:01:17  markstro
-        Now lints pretty clean
+-*/
 
-        Revision 1.6  1994/11/23 20:12:59  markstro
-        More malloc_dbg changes
-
- * Revision 1.5  1994/11/22  17:20:37  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/11/08  16:17:51  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.3  1994/09/30  14:55:25  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:17:39  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define STR_TO_VALS_C
 #include <stdio.h>
 #include <string.h>
@@ -226,7 +209,5 @@ long str_to_vals (char *encoded_string, long size, long type, char *store_addr) 
 
   }
 
-//ufree(scopy);
   return S2V_SUCCESS;
-
 }

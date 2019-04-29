@@ -2,72 +2,10 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : alloc_space.c
- * AUTHOR   : Mike Dixon CADSWES March 1990
- * DATE     : Thu 20 Oct 1994
- * FUNCTION : alloc_space.c
+ * FUNCTION : alloc_space
  * COMMENT  : allocates space for variables
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: alloc_space.c 5145 2012-12-19 17:39:07Z rsregan $
- *
- *  $Revision: 5145 $
- *       $Log: alloc_space.c,v $
- *       Revision 1.19  1996/04/29 16:22:56  markstro
- *       Unknown
- *
- * Revision 1.18  1996/04/09  21:04:00  markstro
- * (1) Work on control files
- * (2) Runtime graphs
- *
- * Revision 1.17  1996/02/26  14:50:56  markstro
- * Some sensitivity work.
- *
- * Revision 1.16  1996/02/19  19:59:26  markstro
- * Now lints pretty clean
- *
- *       Revision 1.15  1994/11/23 20:12:40  markstro
- *       More malloc_dbg changes
- *
- * Revision 1.14  1994/11/22  17:19:08  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.13  1994/11/08  16:17:15  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.12  1994/10/24  14:18:07  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.11  1994/09/30  14:53:50  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.10  1994/03/07  21:19:57  markstro
- * Changes from TERRA
- *
- * Unknown
- *
- * Revision 1.8  1994/02/01  18:49:38  markstro
- * Made the declaration of read vars dynamic -- no more MAXREADVARS
- *
- * Revision 1.7  1994/02/01  18:35:01  markstro
- * Made the declaration of controls dynamic -- no more MAXCONTROLS
- *
- * Revision 1.6  1994/02/01  18:11:04  markstro
- * Made the declaration of dimensions dynamic -- no more MAXDIMENS
- *
- * Revision 1.5  1994/02/01  17:41:24  markstro
- * Made the declaration of parameters dynamic -- no more MAXPARAMS
- *
- * Revision 1.4  1994/02/01  17:14:06  markstro
- * Made the declaration of variables dynamic -- no more MAXVARS
- *
- * Revision 1.3  1994/01/31  20:15:54  markstro
- * Make sure that all source files have CVS log.
+ * $Id: alloc_space.c 7206 2015-02-17 16:13:09Z rsregan $
  *
 -*/
 
@@ -76,15 +14,6 @@
 #include <string.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : alloc_space
  | COMMENT		:
@@ -112,7 +41,7 @@ void alloc_space (void) {
    * default dimension "one"
    */
 
-  decldim ("one", 1, 1, "Default dimension with value 1");
+  decldim ("one", 1, 1, "Dimension of scalar parameters and variables");
 
   /*
    * space for the public variable pointer array
@@ -163,8 +92,4 @@ void alloc_space (void) {
 	Mparaminfo = strdup ("Default case");
 	Mdatainfo = strdup ("Default case");
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
 

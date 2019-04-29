@@ -1,37 +1,17 @@
-/**************************************************************************
- * timing.c: timing functions
+/*+
+ * United States Geological Survey
  *
- * The routines with a _ suffix are called from Fortran
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : timing
+ * COMMENT  : timing functions
+ *            The routines with a _ suffix are called from Fortran
+ *            The routines without the suffix are called from C
  *
- * The routines without the suffix are called from C
+ * $Id: timing.c 6195 2014-02-07 21:49:14Z rsregan $
  *
- * $Id: timing.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: timing.c,v $
-        Revision 1.7  1997/04/18 16:44:15  markstro
-        (1)  Commented out errno problem with opening files from fortran.
-        (2)  Put in checks for saving parameter file when loading new one.
-        (3)  Changes to runcontrol.c and timing.c unknown
+-*/
 
-        Revision 1.6  1996/02/19 20:01:20  markstro
-        Now lints pretty clean
-
-        Revision 1.5  1994/11/22 17:20:38  markstro
-        (1) Cleaned up dimensions and parameters.
-        (2) Some changes due to use of malloc_dbg.
-
- * Revision 1.4  1994/11/08  16:17:52  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.3  1994/09/30  14:55:26  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:17:43  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define TIMING_C
 #include <stdio.h>
 #include <string.h>
@@ -84,13 +64,6 @@ void dattim_ (char *dwhen, ftnint *timearray, ftnlen dwhenlen) {
   timearray[3] = ta[3];
   timearray[4] = ta[4];
   timearray[5] = ta[5];
-  
-
-  /*
-   * free up array
-   */
-
-//ufree(when);
 
 }
 
@@ -194,13 +167,6 @@ long julian_ (char *jwhen, char *jtype, ftnlen jwhenlen, ftnlen jtypelen) {
    */
 
   retval = julian(when, type);
-
-  /*
-   * free up arrays
-   */
-
-//ufree(when);
-//ufree(type);
 
   return retval;
 

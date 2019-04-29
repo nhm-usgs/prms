@@ -1,17 +1,21 @@
-      ! $Id: utils_prms.f90 5610 2013-04-23 18:48:25Z rsregan $
+      ! $Id: utils_prms.f90 7218 2015-03-05 21:46:16Z rsregan $
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
-      SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret)
+      SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret, Cbh_binary_flag)
 ! Argument
-      INTEGER, INTENT(IN) :: Iunit, Year, Month, Day
+      INTEGER, INTENT(IN) :: Iunit, Year, Month, Day, Cbh_binary_flag
       INTEGER, INTENT(OUT) :: Iret
 ! Local Variables
       INTEGER :: yr, mo, dy
 !***********************************************************************
       Iret = 0
       DO
-        READ ( Iunit, *, IOSTAT=Iret ) yr, mo, dy
+        IF ( Cbh_binary_flag==0 ) THEN
+          READ ( Iunit, *, IOSTAT=Iret ) yr, mo, dy
+        ELSE
+          READ ( Iunit, IOSTAT=Iret ) yr, mo, dy
+        ENDIF
         IF ( Iret==-1 ) PRINT *, 'ERROR, end-of-file found reading input file for date:', Year, Month, Day
         IF ( Iret/=0 ) RETURN
         IF ( yr==Year .AND. mo==Month .AND. dy==Day ) EXIT
@@ -86,11 +90,11 @@
 !***********************************************************************
 !     Read File to line before data starts in file
 !***********************************************************************
-      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
+      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag, Cbh_binary_flag)
       USE PRMS_MODULE, ONLY: Nhru, Orad_flag
       IMPLICIT NONE
 ! Argument
-      INTEGER, INTENT(IN) :: Cbh_flag
+      INTEGER, INTENT(IN) :: Cbh_flag, Cbh_binary_flag
       INTEGER, INTENT(OUT) :: Iunit, Iret
       CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
 ! Functions
@@ -98,15 +102,21 @@
 ! Local Variables
       INTEGER :: i, ios, dim
       CHARACTER(LEN=4) :: dum
+      CHARACTER(LEN=80) :: dum2
 !***********************************************************************
-      CALL PRMS_open_input_file(Iunit, Fname, Paramname, 0, Iret)
+      CALL PRMS_open_input_file(Iunit, Fname, Paramname, Cbh_binary_flag, Iret)
       IF ( Iret==0 ) THEN
 ! read to line before data starts in each file
         i = 0
         DO WHILE ( i==0 )
-          READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
+          IF ( Cbh_binary_flag==0 ) THEN
+            READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
+          ELSE
+            READ ( Iunit, IOSTAT=ios ) dum2
+            READ ( dum2, '(A4)' ) dum
+          ENDIF
           IF ( ios/=0 ) THEN
-            WRITE ( *, '(/,A,/,A,/)' ) 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
+            WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
             Iret = 1
             EXIT
           ELSEIF ( dum=='####' ) THEN
@@ -114,9 +124,14 @@
             BACKSPACE Iunit
             BACKSPACE Iunit
             IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
-            READ ( Iunit, *, IOSTAT=ios ) dum, dim
+            IF ( Cbh_binary_flag==0 ) THEN
+              READ ( Iunit, *, IOSTAT=ios ) dum, dim
+            ELSE
+              READ ( Iunit, IOSTAT=ios ) dum2
+              READ ( dum2, * ) dum, dim
+            ENDIF
             IF ( ios/=0 ) THEN
-              WRITE ( *, '(/,A,/,A,/)' ) 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
+              WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
               Iret = 1
               EXIT
             ENDIF
@@ -124,7 +139,11 @@
               PRINT '(/,2(A,I7))', '***CBH file dimension incorrect*** nhru=', Nhru, ' CBH dimension=', dim, ' File: '//Fname
               STOP 'ERROR: update Control File with correct CBH files'
             ENDIF
-            READ ( Iunit, FMT='(A4)' ) dum
+            IF ( Cbh_binary_flag==0 ) THEN
+              READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
+            ELSE
+              READ ( Iunit, IOSTAT=ios ) dum
+            ENDIF
             IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
             i = 1
           ENDIF
@@ -212,7 +231,7 @@
       CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name
 ! Local Variables
       INTEGER i
-      CHARACTER(LEN=40), PARAMETER :: fmt1 = '("####", /, A, /, "1", /, A, /, I6, "1")'
+      CHARACTER(LEN=48), PARAMETER :: fmt1 = '("####", /, A, /, "1", /, A, /, I6, /, "1")'
 !***********************************************************************
       WRITE ( Iunit, fmt1 ) Parm_name, Dimen_name, Dimen
       DO i = 1, Dimen
@@ -230,7 +249,7 @@
       CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name
 ! Local Variables
       INTEGER i
-      CHARACTER(LEN=40), PARAMETER :: fmt1 = '("####", /, A, /, "1", /, A, /, I6, "2")'
+      CHARACTER(LEN=48), PARAMETER :: fmt1 = '("####", /, A, /, "1", /, A, /, I6, /, "2")'
 !***********************************************************************
       WRITE ( Iunit, fmt1) Parm_name, Dimen_name, Dimen
       DO i = 1, Dimen
@@ -315,7 +334,7 @@
         PRINT *, 'Enter return to continue'
         READ (*, *)
       ENDIF
- 9001 FORMAT ('Warning, module versions are not identical', /, &
+ 9001 FORMAT ('WARNING, module versions are not identical', /, &
      &        'Executable version: ', A, /, &
      &        'Parameter File version: ', A, /)
       END SUBROUTINE version_check
@@ -414,7 +433,7 @@
 ! Arguments
       REAL, INTENT(IN) :: Tempc
 !***********************************************************************
-      sat_vapor_press = 6.1078*EXP(17.269*Tempc/(237.30+Tempc))
+      sat_vapor_press = 6.1078*EXP( (17.26939*Tempc)/(237.30+Tempc) )
       END FUNCTION sat_vapor_press
 
 !***********************************************************************
@@ -468,8 +487,9 @@
 ! extends to noon the next Gregorian day.
 !***********************************************************************
       INTEGER FUNCTION julian_day(Date_type, Year_type)
-      USE PRMS_BASIN, ONLY: Starttime, Endtime, Hemisphere
-      USE PRMS_OBS, ONLY: Nowtime
+      USE PRMS_MODULE, ONLY: Starttime, Endtime
+      USE PRMS_BASIN, ONLY: Hemisphere
+      USE PRMS_SET_TIME, ONLY: Nowtime
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Date_type ! "start", "end", "now"
@@ -505,17 +525,17 @@
               reftime_year = year
             ELSE
               reftime_year = year - 1
-              reftime_month = 12
-              reftime_day = 21
             ENDIF
+            reftime_month = 12
+            reftime_day = 21
           ELSE ! Southern
             IF ( month==6 .AND. day>20 ) THEN
               reftime_year = year;
             ELSE
               reftime_year = year - 1
-              reftime_month = 6
-              reftime_day = 20
             ENDIF
+            reftime_month = 6
+            reftime_day = 20
           ENDIF
         ELSEIF ( Year_type(:5)=='water' ) THEN
           found = 1
@@ -700,8 +720,8 @@
       ENDIF
       IF ( ios/=0 ) THEN
         WRITE ( *, '(/,2A,/,A,/,2A,/)' ) 'ERROR opening input file: ', Fname(:nchars), &
-     &                             'check to be sure the input file exists', &
-     &                             'file specified by control parameter: ', Paramname
+     &                                   'check to be sure the input file exists', &
+     &                                   'file specified by control parameter: ', Paramname
         Iret = 1
       ENDIF
       END SUBROUTINE PRMS_open_input_file
@@ -790,7 +810,7 @@
 ! print module version information to user's screen
 !***********************************************************************
       SUBROUTINE print_module(Versn, Description, Ftntype)
-      USE PRMS_MODULE, ONLY: PRMS_output_unit
+      USE PRMS_MODULE, ONLY: PRMS_output_unit, Model, Logunt
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Description, Versn
@@ -807,7 +827,8 @@
         n = INDEX( Versn, '.f' ) + 1
       ENDIF
       PRINT '(A)', Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc-10)
-      WRITE ( PRMS_output_unit, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
+      WRITE ( Logunt, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
+      IF ( Model/=2 ) WRITE ( PRMS_output_unit, '(A)' ) Description//' '//Versn(6:n)//', version: '//Versn(n+2:nc)
       END SUBROUTINE print_module
 
 !***********************************************************************
@@ -823,3 +844,120 @@
         STOP
       ENDIF
       END SUBROUTINE check_restart
+
+!***********************************************************************
+! check restart file dimensions order
+!***********************************************************************
+      SUBROUTINE check_restart_dimen(Dimen, Oldval, Newval, ierr)
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Oldval, Newval
+      INTEGER, INTENT(INOUT) :: ierr
+      CHARACTER(LEN=*), INTENT(IN) :: Dimen
+!***********************************************************************
+      IF ( Oldval/=Newval ) THEN
+        PRINT *, 'ERROR READING RESTART FILE, for dimension ', Dimen
+        PRINT *, '      restart value=', Oldval, ' new value=', Newval
+        ierr = 1
+      ENDIF
+      END SUBROUTINE check_restart_dimen
+
+!***********************************************************************
+! Print date
+!***********************************************************************
+      SUBROUTINE print_date(Flag)
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Nowhour, Nowminute
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Flag
+!***********************************************************************
+      IF ( Flag==1 ) THEN
+        PRINT 9001, Nowyear, Nowmonth, Nowday, Nowhour, Nowminute
+      ELSEIF ( Flag==0 ) THEN
+        PRINT 9001, Nowyear, Nowmonth, Nowday
+      ELSE
+        WRITE ( Flag, 9001 ) Nowyear, Nowmonth, Nowday
+      ENDIF
+ 9001 FORMAT ('    Date: ', I4, 2('/', I2.2), I3.2, ':', I2.2, /)
+      END SUBROUTINE print_date
+
+!***********************************************************************
+!     Check parameter value limits
+!***********************************************************************
+      SUBROUTINE check_param_value(Ihru, Param, Param_value, Iret)
+! Arguments
+      INTEGER, INTENT(IN) :: Ihru
+      REAL, INTENT(IN) :: Param_value
+      CHARACTER(LEN=*), INTENT(IN) :: Param
+      INTEGER, INTENT(INOUT) :: Iret
+!***********************************************************************
+      IF ( Param_value<0.0 .OR. Param_value>1.0 ) THEN
+        PRINT *, 'ERROR, ', Param, ' < 0.0 or > 1.0 for HRU:', Ihru, ' value specified:', Param_value
+        Iret = 1
+      ENDIF
+      END SUBROUTINE check_param_value
+
+!***********************************************************************
+!     Check parameter value limits
+!***********************************************************************
+      SUBROUTINE check_param_limits(Indx, Param, Param_value, Lower_val, Upper_val, Iret)
+! Arguments
+      INTEGER, INTENT(IN) :: Indx
+      REAL, INTENT(IN) :: Param_value, Lower_val, Upper_val
+      CHARACTER(LEN=*), INTENT(IN) :: Param
+      INTEGER, INTENT(INOUT) :: Iret
+!***********************************************************************
+      IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
+        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
+        PRINT *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
+        Iret = 1
+      ENDIF
+      END SUBROUTINE check_param_limits
+
+!***********************************************************************
+!     Check integer parameter value limits
+!***********************************************************************
+      SUBROUTINE checkint_param_limits(Indx, Param, Param_value, Lower_val, Upper_val, Iret)
+! Arguments
+      INTEGER, INTENT(IN) :: Indx, Param_value, Lower_val, Upper_val
+      CHARACTER(LEN=*), INTENT(IN) :: Param
+      INTEGER, INTENT(INOUT) :: Iret
+!***********************************************************************
+      IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
+        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
+        PRINT *, '       lower bound:', Lower_val, ' upper bound:', Upper_val
+        Iret = 1
+      ENDIF
+      END SUBROUTINE checkint_param_limits
+
+!***********************************************************************
+!     Check parameter value against dimension
+!***********************************************************************
+      SUBROUTINE checkdim_param_limits(Indx, Param, Dimen, Param_value, Lower_val, Upper_val, Iret)
+! Arguments
+      INTEGER, INTENT(IN) :: Indx, Param_value, Lower_val, Upper_val
+      CHARACTER(LEN=*), INTENT(IN) :: Param, Dimen
+      INTEGER, INTENT(INOUT) :: Iret
+!***********************************************************************
+      IF ( Param_value<Lower_val .OR. Param_value>Upper_val ) THEN
+        PRINT *, 'ERROR, bad value, parameter: ', Param, ' Value:', Param_value, ' array index:', Indx
+        PRINT *, '       lower bound:', Lower_val, ' ', Dimen, '=', Upper_val
+        Iret = 1
+      ENDIF
+      END SUBROUTINE checkdim_param_limits
+
+!***********************************************************************
+!     Check parameter value < 0.0
+!***********************************************************************
+      SUBROUTINE check_param_zero(Indx, Param, Param_value, Iret)
+! Arguments
+      INTEGER, INTENT(IN) :: Indx
+      REAL, INTENT(IN) :: Param_value
+      CHARACTER(LEN=*), INTENT(IN) :: Param
+      INTEGER, INTENT(INOUT) :: Iret
+!***********************************************************************
+      IF ( Param_value<0.0 ) THEN
+        PRINT *, 'ERROR, value < 0.0, parameter: ', Param, ' Value:', Param_value, ' HRU:', Indx
+        Iret = 1
+      ENDIF
+      END SUBROUTINE check_param_zero

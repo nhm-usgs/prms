@@ -5,7 +5,6 @@
       MODULE PRMS_HRUSUM
       IMPLICIT NONE
 !   Local Variables
-      INTEGER, SAVE :: Hrutot_flg
       CHARACTER(LEN=12), SAVE:: MODNAME
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_ppt_mo(:), Hru_net_ppt_mo(:)
@@ -54,15 +53,15 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar, declpri
+      INTEGER, EXTERNAL :: declparam, declvar, declpri
       EXTERNAL read_error, print_module
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_hru_sum
 !***********************************************************************
       hsumbdecl = 1
 
-      Version_hru_sum = '$Id: hru_sum_prms.f90 5532 2013-03-25 21:49:54Z rsregan $'
-      CALL print_module(Version_hru_sum, 'HRU Summary               ', 90)
+      Version_hru_sum = '$Id: hru_sum_prms.f90 7125 2015-01-13 16:54:29Z rsregan $'
+      CALL print_module(Version_hru_sum, 'Output Summary              ', 90)
       MODNAME = 'hru_sum_prms'
 
       ALLOCATE ( Hru_ppt_yr(Nhru), Hru_net_ppt_yr(Nhru) )
@@ -140,8 +139,7 @@
 !***********************************************************************
       INTEGER FUNCTION hsumbinit()
       USE PRMS_HRUSUM
-      USE PRMS_MODULE, ONLY: Nhru, Nssr, Ngw
-      USE PRMS_BASIN, ONLY: Timestep
+      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
@@ -152,30 +150,25 @@
       IF ( getparam(MODNAME, 'pmo', 1, 'integer', Pmo)/=0 ) CALL read_error(2, 'pmo')
       IF ( getparam(MODNAME, 'moyrsum', 1, 'integer', Moyrsum)/=0 ) CALL read_error(2, 'moyrsum')
 
-      IF ( Timestep==0 ) THEN
-        DO i = 1, Nhru
-          Hru_ppt_mo(i) = 0.0
-          Hru_net_ppt_mo(i) = 0.0
-          Hru_potet_mo(i) = 0.0
-          Hru_actet_mo(i) = 0.0
-          Hru_snowmelt_mo(i) = 0.0
-          Hru_sroff_mo(i) = 0.0
-          Hru_ppt_yr(i) = 0.0
-          Hru_net_ppt_yr(i) = 0.0
-          Hru_potet_yr(i) = 0.0
-          Hru_actet_yr(i) = 0.0
-          Hru_snowmelt_yr(i) = 0.0
-          Hru_sroff_yr(i) = 0.0
-          Soil_to_gw_mo(i) = 0.0
-          Soil_to_gw_yr(i) = 0.0
-          Soil_to_ssr_mo(i) = 0.0
-          Soil_to_ssr_yr(i) = 0.0
-          Stor_last(i) = 0.0
-        ENDDO
-      ENDIF
-
-      Hrutot_flg = 0
-      IF ( Nhru==Nssr .AND. Nhru==Ngw ) Hrutot_flg = 1
+      DO i = 1, Nhru
+        Hru_ppt_mo(i) = 0.0
+        Hru_net_ppt_mo(i) = 0.0
+        Hru_potet_mo(i) = 0.0
+        Hru_actet_mo(i) = 0.0
+        Hru_snowmelt_mo(i) = 0.0
+        Hru_sroff_mo(i) = 0.0
+        Hru_ppt_yr(i) = 0.0
+        Hru_net_ppt_yr(i) = 0.0
+        Hru_potet_yr(i) = 0.0
+        Hru_actet_yr(i) = 0.0
+        Hru_snowmelt_yr(i) = 0.0
+        Hru_sroff_yr(i) = 0.0
+        Soil_to_gw_mo(i) = 0.0
+        Soil_to_gw_yr(i) = 0.0
+        Soil_to_ssr_mo(i) = 0.0
+        Soil_to_ssr_yr(i) = 0.0
+        Stor_last(i) = 0.0
+      ENDDO
 
       END FUNCTION hsumbinit
 
@@ -188,7 +181,7 @@
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Hru_ppt, Potet, Swrad
       USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Soil_to_ssr, &
      &    Hru_actet, Infil, Sroff, Soil_moist, Pkwater_equiv
-      USE PRMS_OBS, ONLY: Jday, Nowyear, Nowmonth, Nowday, Yrdays, Modays, Julwater
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Yrdays, Modays, Julwater
       USE PRMS_INTCP, ONLY: Hru_intcpstor, Net_ppt, Hru_intcpevap
       USE PRMS_SNOW, ONLY: Tcal, Pk_den, Pk_temp, Snowmelt, Albedo
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor
@@ -339,4 +332,3 @@
  9001 FORMAT (F7.0, F5.0, 16X, 2F7.2, F16.2, F6.2, F13.2, 2F8.2, 2F7.2)
 
       END FUNCTION hsumbrun
-

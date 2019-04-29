@@ -1,6 +1,13 @@
-/*
- *  $Id: structs.h 5145 2012-12-19 17:39:07Z rsregan $
- */
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION :
+ * COMMENT  :
+ *
+ *  $Id: structs.h 6195 2014-02-07 21:49:14Z rsregan $
+ *
+-*/
 
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
@@ -26,8 +33,11 @@ typedef struct {
   char *module;
   char *name;
   long ndimen;
+  long pf_ndimen;
   struct dimen_t **dimen;
+  char **pf_dimNames;
   long size;
+  long pf_size;
   long type;
   long bound_status;
   struct dimen_t *bound_dimen;
@@ -40,7 +50,7 @@ typedef struct {
   char *units;
   char *format;
   long column_width;
-  char **value_desc;
+  //char **value_desc;
   char *value_string;
   char *min_string;
   char *max_string;

@@ -18,8 +18,8 @@
         REAL, SAVE, ALLOCATABLE :: Radpl_potsw(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
-        REAL, SAVE :: Crad_coef, Crad_exp
-        REAL, SAVE :: Ccov_slope(12), Ccov_intcp(12)
+        REAL, SAVE :: Crad_coef, Crad_exp, Radj_sppt, Radj_wppt, Radmax
+        REAL, SAVE :: Ccov_slope(12), Ccov_intcp(12), Ppt_rad_adj(12)
       END MODULE PRMS_CCSOLRAD_RADPL
 
 !***********************************************************************
@@ -57,16 +57,16 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
+      INTEGER, EXTERNAL :: declparam, declvar
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_ccsolrad_prms
 !***********************************************************************
       ccsoldecl = 1
 
       Version_ccsolrad_prms =
-     +'$Id: ccsolrad_prms.f 5592 2013-04-23 18:26:23Z rsregan $'
+     +'$Id: ccsolrad_prms.f 6523 2014-06-18 22:42:29Z rsregan $'
       CALL print_module(Version_ccsolrad_prms,
-     +                  'Solar Radiation           ', 77)
+     +                  'Solar Radiation             ', 77)
       MODNAME = 'ccsolrad_prms'
 
       ALLOCATE (Plrad(Nradpl))
@@ -114,6 +114,35 @@
      +     ' radiation for each HRU',
      +     'none').NE.0 ) RETURN
 
+      IF ( declparam(MODNAME, 'radmax', 'one', 'real',
+     +     '0.8', '0.1', '1.0',
+     +     'Maximum fraction of potential solar radiation (decimal)',
+     +     'Maximum fraction of the potential solar radiation that'//
+     +    ' may reach the ground due to haze, dust, smog, and so forth',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'radj_sppt', 'one', 'real',
+     +     '0.44', '0.0', '1.0',
+     +    'Adjustment to solar radiation on precipitation day - summer',
+     +     'Adjustment factor for computed solar radiation for summer'//
+     +     ' day with greater than ppt_rad_adj inches of precipitation',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'radj_wppt', 'one', 'real',
+     +     '0.5', '0.0', '1.0',
+     +    'Adjustment to solar radiation on precipitation day - winter',
+     +     'Adjustment factor for computed solar radiation for winter'//
+     +     ' day with greater than ppt_rad_adj inches of precipitation',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'ppt_rad_adj', 'nmonths', 'real',
+     +     '0.02', '0.0', '0.5',
+     +     'Radiation reduced if basin precipitation above this value',
+     +     'Monthly minimum precipitation, if basin precipitation'//
+     +     ' exceeds this value, radiation is'//
+     +     ' multiplied by radj_sppt or radj_wppt adjustment factor',
+     +     'inches')/=0 ) CALL read_error(1, 'ppt_rad_adj')
+
       ccsoldecl = 0
       END FUNCTION ccsoldecl
 
@@ -123,7 +152,6 @@
       INTEGER FUNCTION ccsolinit()
       USE PRMS_CCSOLRAD_RADPL
       USE PRMS_MODULE, ONLY: Nhru
-      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
 !***********************************************************************
@@ -144,7 +172,19 @@
       IF ( getparam(MODNAME, 'crad_exp', 1, 'real', Crad_exp)
      +     .NE.0 ) RETURN
 
-      IF ( Timestep==0 ) Radpl_potsw = 0.0
+      IF ( getparam(MODNAME, 'radmax', 1, 'real', Radmax)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'radj_sppt', 1, 'real', Radj_sppt)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'radj_wppt', 1, 'real', Radj_wppt)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'ppt_rad_adj', 12, 'real', Ppt_rad_adj)
+     +     .NE.0 ) RETURN
+
+      Radpl_potsw = 0.0
 
       ccsolinit = 0
       END FUNCTION ccsolinit
@@ -156,13 +196,13 @@
       INTEGER FUNCTION ccsolrun()
       USE PRMS_CCSOLRAD_RADPL
       USE PRMS_MODULE, ONLY: Nsol
-      USE PRMS_OBS, ONLY: Solrad, Nowmonth, Jday
+      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
+      USE PRMS_OBS, ONLY: Solrad
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order,
      +    Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin,
-     +    Basin_obs_ppt, Ppt_rad_adj, Basin_solsta, Orad,
-     +    Basin_horad, Basin_potsw, Swrad, Radmax, Radj_sppt, Radj_wppt,
-     +    Rad_conv, Hru_solsta
+     +    Basin_obs_ppt, Basin_solsta, Orad, Basin_horad,
+     +    Basin_potsw, Swrad, Rad_conv, Hru_solsta
       USE PRMS_SOLTAB_RADPL, ONLY: Nradpl, Hemisphere, Radpl_soltab,
      +    Radpl_cossl
       IMPLICIT NONE
@@ -197,14 +237,14 @@
               pptadj = Radj_sppt
             ENDIF
           ELSE ! Southern Hemisphere
-            IF ( Jday>79 .OR. Jday<265 ) THEN ! Equinox
+            IF ( Jday>79 .AND. Jday<265 ) THEN ! Equinox
               pptadj = Radj_wppt
             ELSE
               pptadj = Radj_sppt
             ENDIF
           ENDIF
         ENDIF
-        radadj = Crad_coef + (1.-Crad_coef)*((1.-ccov)**Crad_exp)
+        radadj = Crad_coef + (1.0-Crad_coef)*((1.0-ccov)**Crad_exp)
         IF ( radadj.GT.Radmax ) radadj = Radmax
         radadj = radadj*pptadj
         Orad = radadj*Basin_horad

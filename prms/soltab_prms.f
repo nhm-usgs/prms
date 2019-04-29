@@ -65,13 +65,11 @@
 !     solrsetdims - declares soltab_prms module specific dimensions
 !***********************************************************************
       INTEGER FUNCTION solrsetdims()
+      USE PRMS_MODULE, ONLY: MAXDIM
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: decldim
       EXTERNAL read_error
-! Local Variables
-      ! Maximum values are no longer limits
-      INTEGER, PARAMETER :: MAXDIM = 500
 !***********************************************************************
       solrsetdims = 0
 
@@ -99,9 +97,9 @@
       solrdecl = 1
 
       Version_soltab_prms =
-     +'$Id: soltab_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+     +'$Id: soltab_prms.f 6833 2014-10-09 21:26:29Z rsregan $'
       CALL print_module(Version_soltab_prms,
-     +                  'Potential Solar Radiation ', 77)
+     +                  'Potential Solar Radiation   ', 77)
       MODNAME = 'soltab_prms'
 
       Nradpl = getdim('nradpl')
@@ -135,7 +133,7 @@
       IF ( declparam(MODNAME, 'radpl_slope', 'nradpl', 'real',
      +     '0.0', '0.0', '10.0',
      +     'Radiation plane slope',
-     +     'Slope of each radiation plane, specified as change in '//
+     +     'Slope of each radiation plane, specified as change in'//
      +     ' vertical length divided by change in horizontal length',
      +     'decimal fraction').NE.0 ) RETURN
 
@@ -268,7 +266,7 @@
       ENDIF
 
       DEALLOCATE ( basin_sunhrs, e, dm )
-      DEALLOCATE ( Radpl_slope, Radpl_aspect, Radpl_lat )
+      !DEALLOCATE ( Radpl_slope, Radpl_aspect, Radpl_lat )
 
       solrinit = 0
       END FUNCTION solrinit

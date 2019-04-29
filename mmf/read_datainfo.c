@@ -1,63 +1,13 @@
 /*+
  * United States Geological Survey
  *
- * PROJECT  : Modular Modelling System (MMS)
- * NAME     : read_datainfo.c
- * AUTHOR   : CADSWES; modified by Steve Markstrom (markstro)
- * DATE     : Wed 09 Mar 1994
- * FUNCTION :
- * COMMENT  : read_datainfo.c: reads the data file and updates the
- *                datainfo string and the data variable names and
- *                sizes
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : read_datainfo
+ * COMMENT  : reads the data file and updates the
+ *            datainfo string and the data variable names and sizes
  *
- * $Id: read_datainfo.c 5145 2012-12-19 17:39:07Z rsregan $
+ * $Id: read_datainfo.c 6195 2014-02-07 21:49:14Z rsregan $
  *
-   $Revision: 5145 $
-        $Log: read_datainfo.c,v $
-        Revision 1.15  2000/03/07 20:35:18  markstro
-        Added comments to data file header
-
-        Revision 1.14  1996/02/19 20:00:41  markstro
-        Now lints pretty clean
-
-        Revision 1.13  1995/03/20 22:44:40  markstro
-        DG changes
-
- * Revision 1.12  1994/11/22  17:20:10  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.11  1994/11/08  16:17:37  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.10  1994/10/24  14:18:50  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.9  1994/09/30  14:54:55  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.8  1994/08/02  17:46:36  markstro
- * Split data file capabilities
- *
- * Revision 1.7  1994/05/18  17:15:55  markstro
- * TERRA changed mhms to mms
- *
- * Revision 1.6  1994/03/11  21:16:38  markstro
- * Got rid of client_data data types.
- *
- * Revision 1.5  1994/02/01  21:17:16  markstro
- * Unknown
- *
- * Revision 1.4  1994/02/01  18:49:39  markstro
- * Made the declaration of read vars dynamic -- no more MAXREADVARS
- *
- * Revision 1.3  1994/01/31  20:17:12  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -67,15 +17,6 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : read_datainfo
  | COMMENT      :
@@ -235,6 +176,3 @@ char *read_datainfo (FILE_DATA *fd) {
 
    return (NULL);
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/

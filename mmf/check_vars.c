@@ -1,55 +1,11 @@
 /*+
  * United States Geological Survey
  *
- * PROJECT  : Modular Modelling System (MMS)
- * NAME     : check_vars.c
- * AUTHOR   : Steve Markstrom (markstro)
- * DATE     : Thu 16 Dec 1993
- * FUNCTION :
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : check_vars
  * COMMENT  :
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: check_vars.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        Revision 1.12  2006/11/27  rsregan
-	change gis to ani
-
-        $Log: check_vars.c,v $
-        Revision 1.11  1997/11/13 17:13:28  markstro
-        unknown
-
-        Revision 1.10  1996/02/19 19:59:33  markstro
-        Now lints pretty clean
-
-        Revision 1.9  1994/12/15 19:12:30  markstro
-        Changes for Christoph:  (1) More work on setting data file labels;
-        and (2) Fixed problems with empty display variable lists.
-
- * Revision 1.8  1994/11/08  16:17:16  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.7  1994/10/24  14:18:09  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.6  1994/09/30  14:53:52  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.5  1994/07/07  14:23:53  markstro
- * DG fixes
- *
- * Revision 1.4  1994/06/21  20:20:20  markstro
- * More work on taking the module name out of the DB keyword.
- *
- * Revision 1.3  1994/05/11  14:29:30  markstro
- * Changes from TERRA
- *
- * Revision 1.2  1994/01/31  20:15:57  markstro
- * Make sure that all source files have CVS log.
+ * $Id: check_vars.c 6441 2014-05-21 23:35:01Z rsregan $
  *
 -*/
 
@@ -57,16 +13,6 @@
 #define CHECK_VARS_C
 #include <string.h>
 #include "mms.h"
-
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : CHECK_stat_vars
@@ -117,7 +63,7 @@ char * CHECK_disp_vars (void) {
        static char	err_message[256];
 	int		status = 0;
 	int		i, j;
-	char	buf[MAXDATALNLEN], buf0[MAXDATALNLEN], buf1[MAXDATALNLEN], buf2[MAXDATALNLEN];
+	char	buf[MAXVARLEN], buf0[MAXVARLEN], buf1[MAXVARLEN], buf2[MAXVARLEN];
 	char	*dv_name, *dv_index, *ptr;
 
 	for (i = 0; i < *(control_lvar ("ndispGraphs")); i++) {
@@ -144,7 +90,6 @@ char * CHECK_disp_vars (void) {
 	else
 		return (NULL);
 }
-
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : CHECK_ani_vars
@@ -213,7 +158,4 @@ char *CHECK_map_vars (void) {
     else
         return (NULL);
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
 

@@ -2,50 +2,14 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : getvar.c
- * AUTHOR   : CADSWES
- * DATE     : Mon 08 Apr 1996
- * FUNCTION :
- * COMMENT  :
- * getvar.c: gets the value associated with a module and name, and copies
- * it into the variable provided by the calling routine.
+ * FUNCTION : getvar() to be called from C
+ *            getvar_() to be called from Fortran
+ *            Returns 0 if successful, 1 otherwise.
+ * COMMENT  : gets the value associated with a module and name, and copies
+ *            it into the variable provided by the calling routine.
  *
- * There are 2 functions: getvar() to be called from C
- *                        getvar_() to be called from Fortran
+ * $Id: getvar.c 6195 2014-02-07 21:49:14Z rsregan $
  *
- * Returns 0 if successful, 1 otherwise.
- *
- * REF      :
- * REVIEW   :
- * PR NRS   :
- *
- * $Id: getvar.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: getvar.c,v $
-        Revision 1.8  1996/04/09 21:04:06  markstro
-        (1) Work on control files
-        (2) Runtime graphs
-
- * Revision 1.7  1996/02/19  20:00:06  markstro
- * Now lints pretty clean
- *
-        Revision 1.6  1995/05/25 14:26:31  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.5  1994/11/22  17:19:41  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/09/30  14:54:25  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.3  1994/06/16  16:47:10  markstro
- * Worked over runcontrol.c
- *
- * Revision 1.2  1994/01/31  20:16:33  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -54,15 +18,6 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION		: getvar_
  | COMMENT		: called from Fortran, sorts out args and calls getvar()
@@ -241,7 +196,6 @@ long getvar (char *module, char *name, long maxsize, char *type, double *value) 
 		}
 	}
 
-//      free (vkey);
 	return (0);
 }
 
@@ -292,7 +246,3 @@ long getvarsize_ (char *vname, ftnlen vnamelen) {
 
 	return (var->size);
 }
-/**8************************** TEST DRIVER ****************************/
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-

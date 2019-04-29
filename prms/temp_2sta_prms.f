@@ -16,9 +16,9 @@
       USE PRMS_BASIN, ONLY: Hru_elev, Basin_area_inv, Hru_area, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Hru_tsta,
      +    Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, Basin_tmin,
-     +    Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Tmax_adj, Tmin_adj,
-     +    Basin_tsta
-      USE PRMS_OBS, ONLY: Nowtime, Nowyear, Nowmonth, Nowday, Tmax, Tmin
+     +    Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta
+      USE PRMS_SET_TIME, ONLY: Nowtime, Nowyear, Nowmonth, Nowday
+      USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, INDEX
@@ -27,6 +27,7 @@
       EXTERNAL read_error, temp_set, print_module
 ! Declared Parameters
       INTEGER, SAVE :: Lo_index, Hi_index
+      REAL, SAVE, ALLOCATABLE :: Tmax_adj(:), Tmin_adj(:)
 ! Local Variables
       INTEGER :: j, k
       REAL :: eldif, elcor, tminsta
@@ -92,9 +93,9 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_temp_2sta_prms =
-     +'$Id: temp_2sta_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+     +'$Id: temp_2sta_prms.f 7115 2015-01-06 00:09:15Z rsregan $'
         CALL print_module(Version_temp_2sta_prms,
-     +                    'Temperature Distribution  ', 77)
+     +                    'Temperature Distribution    ', 77)
         MODNAME = 'temp_2sta_prms'
 
         IF ( declparam(MODNAME, 'lo_index', 'one', 'integer',
@@ -109,12 +110,29 @@
      +       'Index of upper temperature station for daily lapse'//
      +       ' rate computations',
      +       'none')/=0 ) CALL read_error(1, 'hi_index')
+        ALLOCATE ( Tmax_adj(Nhru), Tmin_adj(Nhru) )
+        IF ( declparam(MODNAME, 'tmax_adj', 'nhru', 'real',
+     +       '0.0', '-10.0', '10.0',
+     +       'HRU maximum temperature adjustment',
+     +       'Adjustment to maximum temperature for each HRU,'//
+     +       ' estimated on the basis of slope and aspect',
+     +       'temp_units')/=0 ) CALL read_error(1, 'tmax_adj')
+        IF ( declparam(MODNAME, 'tmin_adj', 'nhru', 'real',
+     +       '0.0', '-10.0', '10.0',
+     +       'HRU minimum temperature adjustment',
+     +       'Adjustment to minimum temperature for each HRU,'//
+     +       ' estimated on the basis of slope and aspect',
+     +       'temp_units')/=0 ) CALL read_error(1, 'tmin_adj')
 
       ELSEIF ( Process(:4)=='init' ) THEN
         IF ( getparam(MODNAME, 'lo_index', 1, 'integer', Lo_index)
      +       /=0 ) CALL read_error(2, 'lo_index')
         IF ( getparam(MODNAME, 'hi_index', 1, 'integer', Hi_index)
      +       /=0 ) CALL read_error(2, 'hi_index')
+        IF ( getparam(MODNAME, 'tmax_adj', Nhru, 'real', Tmax_adj)
+     +       /=0 ) CALL read_error(2, 'tmax_adj')
+        IF ( getparam(MODNAME, 'tmin_adj', Nhru, 'real', Tmin_adj)
+     +       /=0 ) CALL read_error(2, 'tmin_adj')
 
         ALLOCATE ( elfac(Nhru) )
         tminsta = Tsta_elev(Lo_index)

@@ -2,61 +2,12 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : read_vars.c
- * AUTHOR   : Steve Markstrom (markstro)
- * DATE     : Tue 22 Nov 1994
  * FUNCTION : read_vars
  * COMMENT  : reads the vars data base from a file.
- *             File name is passed in as an argument
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ *            File name is passed in as an argument
  *
- * $Id: read_vars.c 5145 2012-12-19 17:39:07Z rsregan $
+ * $Id: read_vars.c 6441 2014-05-21 23:35:01Z rsregan $
  *
-   $Revision: 5145 $
-        $Log: read_vars.c,v $
-        Revision 1.12  2000/02/18 18:27:06  markstro
-        Made previous Julian time a global.  It is set to -1.0 before the run
-        so that read_line knows to recalculate it.
-
-        Revision 1.11  1999/11/30 22:06:18  markstro
-        Added nsteps to the var save file.
-
-        Revision 1.10  1999/10/22 17:14:37  markstro
-        Added private variables
-
-        Revision 1.9  1996/04/09 21:04:12  markstro
-        (1) Work on control files
-        (2) Runtime graphs
-
- * Revision 1.8  1996/02/19  20:00:45  markstro
- * Now lints pretty clean
- *
-        Revision 1.7  1995/02/10 23:58:32  markstro
-        Bug fixes for class
-
- * Revision 1.6  1994/11/22  17:20:13  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.5  1994/09/30  14:54:59  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.4  1994/09/09  14:56:28  markstro
- * (1)  Fixed up main edit menu.
- * (2)  Added a "notes" field to dimension indicies
- * (3)  A little more Rosenbrock work.
- * (4)  Fixed the list selector -- changed button names & first item
- *      selected by default.
- * (5)  Modified spread sheet help to be able to display dimension notes
- * (6)  Ran some source through "cb"
- *
- * Revision 1.3  1994/05/18  17:15:57  markstro
- * TERRA changed mhms to mms
- *
- * Revision 1.2  1994/01/31  20:17:15  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -67,14 +18,8 @@
 #include <string.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
 /**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 static int read_var_line (char *, char *, FILE *, char *);
-
-/**5*********************** LOCAL VARIABLES ***************************/
 
 /**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
@@ -93,8 +38,8 @@ int read_vars (char *var_file_name) {
 	double *dvalptr;
 	float *fvalptr;
 	long *lvalptr;
-	char line[MAXDATALNLEN], key[MAXDATALNLEN];
-	char dimen[MAXDATALNLEN];
+	char line[MAXVARLEN], key[MAXVARLEN];
+	char dimen[MAXVARLEN];
 	char *pathname;
 	char *endptr;
 
@@ -106,24 +51,22 @@ int read_vars (char *var_file_name) {
    if ((var_file = fopen (pathname, "r")) == NULL) {
       (void)fprintf(stderr, "WARNING - read_vars - cannot open file '%s'\n",
                     pathname);
-//    ufree(pathname);
       return(0);
    }
 
 /*
 * read in run info string
 */
-   if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+   if (fgets(line, MAXVARLEN, var_file) == NULL) {
       fclose(var_file);
       return(0);
    }
-//   if (Mparaminfo) free (Mparaminfo);
    Mparaminfo = strdup (line);
 
 /*
 * read in last nstep
 */
-   if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+   if (fgets(line, MAXVARLEN, var_file) == NULL) {
       fclose(var_file);
       return(0);
    }
@@ -133,7 +76,7 @@ int read_vars (char *var_file_name) {
 /*
 * read in last time step
 */
-   if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+   if (fgets(line, MAXVARLEN, var_file) == NULL) {
       fclose(var_file);
       return(0);
    }
@@ -147,7 +90,7 @@ int read_vars (char *var_file_name) {
 /*
 * read in last delta time
 */
-   if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+   if (fgets(line, MAXVARLEN, var_file) == NULL) {
       fclose(var_file);
       return(0);
    }
@@ -165,7 +108,7 @@ int read_vars (char *var_file_name) {
 */
    (void)strcpy(line, " ");
    while (strncmp(line, "####", 4)) {
-      if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+      if (fgets(line, MAXVARLEN, var_file) == NULL) {
          fclose(var_file);
          return(0);
       }
@@ -181,7 +124,7 @@ int read_vars (char *var_file_name) {
 * get dimen name
 */
 
-      if(fgets(key, MAXDATALNLEN, var_file) == NULL) {
+      if(fgets(key, MAXVARLEN, var_file) == NULL) {
          (void)fprintf(stderr, "ERROR - read_var, reading dimen name.\n");
          (void)fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
          return(1);
@@ -200,7 +143,7 @@ int read_vars (char *var_file_name) {
 /*
 * get dimen size
 */
-         if(fgets(line, MAXDATALNLEN, var_file) == NULL) {
+         if(fgets(line, MAXVARLEN, var_file) == NULL) {
             (void)fprintf(stderr, "ERROR - read_var, reading dimen size.\n");
             fprintf(stderr,"Early end-of-file, file '%s'\n",var_file_name);
             return(1);
@@ -242,7 +185,7 @@ variables:
 */
       (void)strcpy(line, " ");
       while (strncmp(line, "####", 4)) {
-         if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+         if (fgets(line, MAXVARLEN, var_file) == NULL) {
             fclose(var_file);
             return(0);
          }
@@ -251,7 +194,7 @@ variables:
 /*
 * get key
 */
-      if(fgets(key, MAXDATALNLEN, var_file) == NULL) {
+      if(fgets(key, MAXVARLEN, var_file) == NULL) {
          (void)fprintf(stderr, "ERROR - read_var, reading var key.\n");
          (void)fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
          return(1);
@@ -262,7 +205,7 @@ variables:
 /*
 * get number of dimensions
 */
-         if(fgets(line, MAXDATALNLEN, var_file) == NULL) {
+         if(fgets(line, MAXVARLEN, var_file) == NULL) {
             (void)fprintf(stderr, "ERROR - read_var, reading var ndimen.\n");
             fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
             return(1);
@@ -281,7 +224,7 @@ variables:
 */
 
          for (i = 0; i < var->ndimen; i++) {
-            if(fgets(dimen, MAXDATALNLEN, var_file) == NULL) {
+            if(fgets(dimen, MAXVARLEN, var_file) == NULL) {
                (void)fprintf(stderr, "ERROR - read_var, reading var dimen.\n");
                (void)fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
                return(1);
@@ -304,7 +247,7 @@ variables:
 * get var size
 */
 
-         if(fgets(line, MAXDATALNLEN, var_file) == NULL) {
+         if(fgets(line, MAXVARLEN, var_file) == NULL) {
             (void)fprintf(stderr, "ERROR - read_var, reading var size.\n");
             (void)fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
             return(1);
@@ -329,7 +272,7 @@ variables:
 /*
 * get type
 */
-         if(fgets(line, MAXDATALNLEN, var_file) == NULL) {
+         if(fgets(line, MAXVARLEN, var_file) == NULL) {
             (void)fprintf(stderr, "ERROR - read_var, reading var type.\n");
             (void)fprintf(stderr, "Early end-of-file, file '%s'\n", var_file_name);
             return(1);
@@ -385,7 +328,7 @@ variables:
    } /* while */
 
    fclose(var_file);
-// ufree(pathname);
+
    return(0);
 }
 
@@ -399,7 +342,7 @@ variables:
 \*--------------------------------------------------------------------*/
 static int read_var_line (char *key, char *line, FILE *var_file, char *var_file_name) {
 
-	if (fgets(line, MAXDATALNLEN, var_file) == NULL) {
+	if (fgets(line, MAXVARLEN, var_file) == NULL) {
 		(void)fprintf(stderr,
 		    "ERROR - read_var, reading data.\n");
 		(void)fprintf(stderr,
@@ -411,6 +354,3 @@ static int read_var_line (char *key, char *line, FILE *var_file, char *var_file_
 	return(0);
 
 }
-/**8************************** TEST DRIVER ****************************/
-
-

@@ -1,35 +1,20 @@
-/*************************************************************************
- * control_var.c : returns pointers to various control array entries
+/*+
+ * United States Geological Survey
  *
- * control_var - generic, returns (char *) as a generic pointer
- * control_lvar - returns long *
- * control_fvar - returns float *
- * control_dvar - returns double *
- * control_svar - returns char ** - string
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : control_var - generic, returns (char *) as a generic pointer
+ *            control_lvar - returns long *
+ *            control_fvar - returns float *
+ *            control_dvar - returns double *
+ *            control_svar - returns char ** - string
+ *            returns pointers to various control array entries
+ * COMMENT  :
+ *
+ * $Id: control_var.c 7217 2015-03-05 21:45:51Z rsregan $
+ *
+-*/
 
- * $Id: control_var.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: control_var.c,v $
-        Revision 1.6  1996/02/19 19:59:36  markstro
-        Now lints pretty clean
-
-        Revision 1.5  1994/11/22 17:19:13  markstro
-        (1) Cleaned up dimensions and parameters.
-        (2) Some changes due to use of malloc_dbg.
-
- * Revision 1.4  1994/11/08  16:17:18  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.3  1994/09/30  14:53:55  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:16:00  markstro
- * Make sure that all source files have CVS log.
- *
- *************************************************************************/
-
+/**1************************ INCLUDE FILES ****************************/
 #define CONTROL_VAR_C
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +38,6 @@ char *control_var (char *key) {
 	    "ERROR - control_var - key '%s' not found.\n", key);
     exit(1);
   }
-
   return (char *) control->start_ptr;
 
 }
@@ -101,6 +85,7 @@ double *control_dvar (char *key) {
 char **control_svar (char *key) {
   return ((char **) control_var(key));
 }
+
 /*--------------------------------------------------------------------*\
  | FUNCTION     : control_string_
  | COMMENT		: called from fortran
@@ -119,8 +104,6 @@ long control_string_ (char *retval, char *tag, ftnlen len, ftnlen tlen) {
 	strncpy (retval, *control_svar(foo), len);
 	return 0;
 }
-
-
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : control_string_array_
@@ -159,5 +142,46 @@ long control_integer_ (int *retval, char *key, ftnlen len) {
 	foo[len] = '\0';
 
 	*retval = *control_var(foo);
+	return 0;
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : control_integer_array_
+ | COMMENT		: called from fortran
+ | PARAMETERS   :
+ | RETURN VALUE : 
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+long control_integer_array_ (int *retval, int *index, char *key, ftnlen tlen) {
+	char *foo;
+	long intVal;
+    long *longs;
+    int i;
+
+	foo = (char *) umalloc(tlen + 1);
+	strncpy(foo, key, tlen);
+	foo[tlen] = '\0';
+
+    longs = (long *) control_var(foo);
+    i = *index - 1;
+	intVal = *(longs+i);
+	*retval = (int)intVal;
+	return 0;
+}
+
+/*--------------------------------------------------------------------*\
+| FUNCTION     : control_file_name_
+| COMMENT		: called from fortran
+| PARAMETERS   :
+| RETURN VALUE :
+| RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+long control_file_name_(char *retval, ftnlen tlen) {
+	char *foo;
+	foo = (char *)umalloc(tlen + 1);
+	strncpy(foo, MAltContFile, tlen);
+	foo[tlen] = '\0';
+	memset(retval, ' ', tlen);
+	strncpy(retval, foo, tlen);
 	return 0;
 }

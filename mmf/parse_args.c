@@ -2,64 +2,10 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : parse_args.c
- * AUTHOR   : Mike Dixon CADSWES
- * DATE     : March 1990
  * FUNCTION : parse_args
  * COMMENT  : parses the command line arguments
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: parse_args.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: parse_args.c,v $
-        Revision 1.15  1999/10/22 17:14:36  markstro
-        Added private variables
-
-        Revision 1.14  1999/08/25 17:44:33  markstro
-        Version for MMS 1.1.1
-
-        Revision 1.13  1999/08/24 16:34:12  markstro
-        Version 1.1.1
-
-        Revision 1.12  1997/11/25 15:49:37  markstro
-        Initial version
-
-        Revision 1.11  1997/09/26 16:32:25  markstro
-        Added ESP batch run mode.
-
-        Revision 1.10  1996/02/19 20:00:34  markstro
-        Now lints pretty clean
-
-        Revision 1.9  1995/05/25 14:26:33  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.8  1994/11/22  17:20:03  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.7  1994/11/08  16:17:33  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.6  1994/10/24  14:18:47  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.5  1994/08/31  21:50:36  markstro
- * Unknown
- *
- * Revision 1.4  1994/03/23  20:05:36  markstro
- * Changes from TERRA
- *
- * Revision 1.3  1994/02/11  23:12:10  markstro
- * Fixed up the "Edit Dimension Index Names" stuff.
- *
- * Revision 1.2  1994/01/31  20:17:03  markstro
- * Make sure that all source files have CVS log.
+ * $Id: parse_args.c 6195 2014-02-07 21:49:14Z rsregan $
  *
 -*/
 
@@ -70,15 +16,6 @@
 #include <stdlib.h> 
 #include "mms.h" 
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : parse_args
  | COMMENT		:
@@ -117,18 +54,8 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
             MAltContFile = (char *)((argv[i]));
             MAltContFile+=2;
 
-         } else if (!strncmp(argv[i],"-E",2)){
-            MAltEnvFile = (char *)((argv[i]));
-            MAltEnvFile+=2;
-
          } else if (!strncmp(argv[i],"-batch", 6)){
             batch_run_mode = TRUE;
-
-         } else if (!strncmp(argv[i],"-esp", 4)){
-            esp_mode = TRUE;
-
-         } else if (!strncmp(argv[i],"-rosenbrock", 11)){
-            rosenbrock_mode = TRUE;
 
          } else if (!strncmp(argv[i],"-print", 6)){
             print_mode = TRUE;
@@ -155,7 +82,3 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
       }
    }
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

@@ -2,92 +2,12 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : declparam.c
- * AUTHOR   : CADSWES
- * DATE     : 
- * FUNCTION :
+ * FUNCTION : declparam() to be called from C
+ *            declparam_() to be called from Fortran
+ *            Returns 0 if successful, 1 otherwise.
  * COMMENT  : initializes a module variable entry in the memory database
  *
- *      There are 2 functions: declparam() to be called from C
- *                             declparam_() to be called from Fortran
- *
- *      Returns 0 if successful, 1 otherwise.
- * REF      :
- * REVIEW   :
- * PR NRS   :
- *
- * $Id: declparam.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: declparam.c,v $
-        Revision 1.21  2001/05/04 20:58:22  markstro
-        Added the xml print file
-
-        Revision 1.20  1996/09/10 16:25:22  markstro
-        Unknown
-
- * Revision 1.19  1996/02/19  19:59:50  markstro
- * Now lints pretty clean
- *
-        Revision 1.18  1995/06/08 18:01:49  markstro
-        (1)  Fixed info window
-        (2)  Changed b functions to mem functions for solaris compatibility
-        (3)  Fixed default values in spreadsheet help
-
- * Revision 1.17  1995/03/20  22:44:35  markstro
- * DG changes
- *
- * Revision 1.16  1995/02/10  23:58:25  markstro
- * Bug fixes for class
- *
- * Revision 1.15  1995/02/01  17:47:21  markstro
- * Addition of Rosenbrock optimization.  Start of sensitivity.  Many bug fixes.
- *
- * Revision 1.14  1994/11/25  18:13:40  markstro
- * unknown
- *
- * Revision 1.13  1994/11/22  17:19:25  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.12  1994/10/24  14:18:18  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.11  1994/10/13  17:53:35  markstro
- * (1) Added annotation to parameter values through the spreadsheet
- * (2) Included <string.h> in a few more files that needed it.
- *
- * Revision 1.10  1994/09/30  14:54:08  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.9  1994/09/20  21:58:43  markstro
- * Got rid of some compiler warnings
- *
- * Revision 1.8  1994/09/13  16:23:13  markstro
- * Added "bounded" check to parameter db verification.
- *
- * Revision 1.7  1994/09/13  15:20:21  markstro
- * (1) Check to make sure that parameters being declared are consistent wit
- *     parameters already declared.
- * (2) Ran through cb and put in headers.
- *
- * Revision 1.6  1994/06/16  16:47:06  markstro
- * Worked over runcontrol.c
- *
- * Revision 1.5  1994/06/13  18:40:27  markstro
- * When there are declarations of the same parameter from different modules
- * there is no longer an error message.  The modules now just use the same
- * entry in the parameter DB.
- *
- * Revision 1.4  1994/02/01  21:17:12  markstro
- * Unknown
- *
- * Revision 1.3  1994/02/01  17:41:25  markstro
- * Made the declaration of parameters dynamic -- no more MAXPARAMS
- *
- * Revision 1.2  1994/01/31  20:16:09  markstro
- * Make sure that all source files have CVS log.
+ * $Id: declparam.c 6441 2014-05-21 23:35:01Z rsregan $
  *
 -*/
 
@@ -97,10 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "mms.h"
-
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
 
 /**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 static int CHECK_param_in_db (char *, char *, char *, int,
@@ -224,12 +140,8 @@ long declparam_u (char *module, char *name, char *dimen, char *type, char *value
 
 	param->references[param->num_references++] = var;
 
-	//((float *)(var))[0] = 1234.5;
-	//((float *)(var))[1] = 234.5;
-
 	return 0;
 }
-
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : declparam_
@@ -299,23 +211,7 @@ long declparam_ (char *mname, char *pname, char *pdimen, char *ptype,
 	retval = declparam(module, name, dimen, type, value,
 	    minimum, maximum, descr, help, units);
 
-/*
-* free up strings 
-*/
-
-//      ufree(module);
-//      ufree(name);
-//      ufree(dimen);
-//      ufree(type);
-//      ufree(value);
-//      ufree(minimum);
-//      ufree(maximum);
-//      ufree(descr);
-//      ufree(help);
-//      ufree(units);
-
 	return(retval);
-
 }
 
 /*--------------------------------------------------------------------*\
@@ -359,13 +255,6 @@ long declparam (char *module, char *name, char *dimen, char *type, char *value,
 	if (!(var_type = VAR_type (type)))
 		return (0);
 
-//Not sure why this stuff is needed. Don't seem to be using it
-	//// DANGER - markstro - this overrides the module name that is passed in
-	//// from the module and replaces it with the name of the last module that
-	//// called declmodule
-	//module = current_module->name;
-	//ADD_to_list (current_module->params, pkey);
-
 	if (CHECK_param_in_db (pkey, module, dimen, var_type, value,
 									minimum, maximum, descr, help, units)) {
 		return (0);
@@ -404,6 +293,11 @@ long declparam (char *module, char *name, char *dimen, char *type, char *value,
 /*
 * determine dimensions
 */
+	if (dimen == NULL) { // If dimen is NULL then this is a mapping parameter declared by read_params and not any module.  Most of the information is unknown so return.
+		sort_params();
+		return(0);
+	}
+
 	tmpdimen = strdup (dimen);
 	token = strtok (tmpdimen, ",");
 
@@ -431,7 +325,6 @@ long declparam (char *module, char *name, char *dimen, char *type, char *value,
 		param->dimen[i++] = dim_addr (token);
 		token = strtok ((char *) NULL, ",");
 	}
-//      ufree (tmpdimen);
 
 /*
 * check to see if the parameter values are to be bounded by a dimension.
@@ -499,9 +392,9 @@ long declparam (char *module, char *name, char *dimen, char *type, char *value,
 /*
 **	Set up the pointers to the description strings.
 */
-	param->value_desc = (char **)umalloc (param->size * sizeof (char *));
-	for (i = 0; i < param->size; i++)
-		param->value_desc[i] = NULL;
+//	param->value_desc = (char **)umalloc (param->size * sizeof (char *));
+//	for (i = 0; i < param->size; i++)
+//		param->value_desc[i] = NULL;
 
 	sort_params();
 	return(0);
@@ -622,9 +515,6 @@ long declparam_p (char *module, char *name, char *dimen, char *type, char *value
 
 	param->references[param->num_references++] = var;
 
-	//((float *)(var))[0] = 1234.5;
-	//((float *)(var))[1] = 234.5;
-
 	return 0;
 }
 
@@ -737,6 +627,3 @@ static int VAR_type (char *type) {
 	(void)fprintf(stderr, "ERROR - declparam - type '%s' is illegal.\n", type);
 		return (0);
 }
-
-/**8************************** TEST DRIVER ****************************/
-

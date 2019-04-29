@@ -71,9 +71,9 @@
       smdecl = 1
 
       Version_smbal_prms =
-     +'$Id: smbal_prms.f 5573 2013-04-05 21:28:21Z rsregan $'
-      CALL print_module(Version_smbal_prms,'Soil Moisture Balance     ',
-     +                  77)
+     +'$Id: smbal_prms.f 7125 2015-01-13 16:54:29Z rsregan $'
+      CALL print_module(Version_smbal_prms,
+     +                  'Soil Moisture Balance       ', 77)
       MODNAME = 'smbal_prms'
 
 ! Declare Variables
@@ -132,11 +132,10 @@
       INTEGER FUNCTION sminit()
       USE PRMS_SMBAL
       USE PRMS_MODULE, ONLY: Nhru, Print_debug
-      USE PRMS_BASIN, ONLY: Timestep, Hru_perv, Hru_type, NEARZERO,
+      USE PRMS_BASIN, ONLY: Hru_perv, Hru_type, NEARZERO,
      +    Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Soil_moist_max, Soil_rechr_max,
      +    Basin_soil_moist, Soil_moist, Soil_rechr
-      USE PRMS_OBS, ONLY: Nowyear
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
@@ -150,21 +149,18 @@
       IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type)
      +     .NE.0 ) RETURN
 
-      IF ( Timestep==0 ) THEN
 ! initialize arrays (dimensioned Nhru)
-        DO i = 1, Nhru
-          Perv_actet(i) = 0.0
-          Soil2gw(i) = 0
-! do only once so restart uses saved values
-          IF ( getparam(MODNAME, 'soil_moist_init', Nhru, 'real',
-     +         Soil_moist_init).NE.0 ) STOP
-          IF ( getparam(MODNAME, 'soil_rechr_init', Nhru, 'real',
-     +         Soil_rechr_init).NE.0 ) STOP
-          Soil_rechr(i) = Soil_rechr_init(i)
-          Soil_moist(i) = Soil_moist_init(i)
-        ENDDO
-        DEALLOCATE ( Soil_rechr_init, Soil_moist_init )
-      ENDIF
+      IF ( getparam(MODNAME, 'soil_moist_init', Nhru, 'real',
+     +     Soil_moist_init).NE.0 ) STOP
+      IF ( getparam(MODNAME, 'soil_rechr_init', Nhru, 'real',
+     +     Soil_rechr_init).NE.0 ) STOP
+      DO i = 1, Nhru
+        Perv_actet(i) = 0.0
+        Soil2gw(i) = 0
+        Soil_rechr(i) = Soil_rechr_init(i)
+        Soil_moist(i) = Soil_moist_init(i)
+      ENDDO
+      !DEALLOCATE ( Soil_rechr_init, Soil_moist_init )
 
       IF ( Print_debug.EQ.1 ) THEN
         OPEN (BALUNT, FILE='smbal.wbal')
@@ -237,7 +233,7 @@
 !***********************************************************************
       INTEGER FUNCTION smrun()
       USE PRMS_SMBAL
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Dprst_flag
+      USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_BASIN, ONLY: Hru_area, Hru_perv, Hru_frac_perv,
      +    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type,
      +    Cov_type
@@ -246,7 +242,7 @@
      +    Basin_soil_to_gw, Soil_to_ssr, Basin_perv_et, Basin_lakeevap,
      +    Soil_rechr_max, Soil_moist_max, Infil,
      +    Basin_soil_moist, Soil_moist, Soil_rechr
-      USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap
@@ -480,4 +476,3 @@
       Perv_actet = et
 
       END SUBROUTINE compute_actet
-

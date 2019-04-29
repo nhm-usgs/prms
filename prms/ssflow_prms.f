@@ -46,11 +46,11 @@
 !***********************************************************************
       INTEGER FUNCTION ssdecl()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nssr
+      USE PRMS_MODULE, ONLY: Nssr
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
+      INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: print_module
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_ssflow_prms
@@ -58,9 +58,9 @@
       ssdecl = 1
 
       Version_ssflow_prms =
-     +'$Id: ssflow_prms.f 5532 2013-03-25 21:49:54Z rsregan $'
+     +'$Id: ssflow_prms.f 7125 2015-01-13 16:54:29Z rsregan $'
       CALL print_module(Version_ssflow_prms,
-     +                  'Subsurface Reservoir      ', 77)
+     +                  'Subsurface Reservoir        ', 77)
       MODNAME = 'ssflow_prms'
 
 ! Declare Variables
@@ -88,17 +88,17 @@
      +     '0.1', '0.0', '1.0',
      +     'Linear subsurface routing coefficient',
      +     'Coefficient to route subsurface storage to streamflow'//
-     +     ' using the following equation: '//
+     +     ' using the following equation:'//
      +     ' ssres_flow = ssrcoef_lin * ssres_stor +'//
      +     ' ssrcoef_sq * ssres_stor**2',
-     +     '1/day').NE.0 ) RETURN
+     +     'fraction/day').NE.0 ) RETURN
 
       ALLOCATE (Ssrcoef_sq(Nssr))
       IF ( declparam(MODNAME, 'ssrcoef_sq', 'nssr', 'real',
      +     '0.1', '0.0', '1.0',
      +     'Non-linear subsurface routing coefficient',
      +     'Coefficient to route subsurface storage to streamflow'//
-     +     ' using the following equation: '//
+     +     ' using the following equation:'//
      +     ' ssres_flow = ssrcoef_lin * ssres_stor +'//
      +     ' ssrcoef_sq * ssres_stor**2',
      +     'none').NE.0 ) RETURN
@@ -144,9 +144,9 @@
 !***********************************************************************
       INTEGER FUNCTION ssinit()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Nhru, Nssr
+      USE PRMS_MODULE, ONLY: Nssr
       USE PRMS_FLOWVARS, ONLY: Basin_ssstor, Ssres_stor
-      USE PRMS_BASIN, ONLY: Timestep, Ssres_area, Hru_ssres, Hru_type,
+      USE PRMS_BASIN, ONLY: Ssres_area, Hru_ssres, Hru_type,
      +    Basin_area_inv, NEARZERO, Active_hrus, Hru_route_order
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -170,17 +170,14 @@
       IF ( getparam(MODNAME, 'ssrmax_coef', Nssr, 'real', Ssrmax_coef)
      +     .NE.0 ) RETURN
 
-! do only once so restart uses saved values
-      IF ( Timestep==0 ) THEN
 ! initialize scalers
-        Basin_ssin = 0.0D0
-        Basin_ssr2gw = 0.0D0
+      Basin_ssin = 0.0D0
+      Basin_ssr2gw = 0.0D0
 ! initialize arrays (dimensioned Nssr)
-        IF ( getparam(MODNAME, 'ssstor_init', Nssr, 'real',
-     +       Ssstor_init).NE.0 ) STOP
-        Ssres_stor = Ssstor_init
-        DEALLOCATE ( Ssstor_init )
-      ENDIF
+      IF ( getparam(MODNAME, 'ssstor_init', Nssr, 'real',
+     +     Ssstor_init).NE.0 ) STOP
+      Ssres_stor = Ssstor_init
+      !DEALLOCATE ( Ssstor_init )
 
       DO k = 1, Active_hrus
         i = Hru_route_order(k)
@@ -218,7 +215,7 @@
 !***********************************************************************
       INTEGER FUNCTION ssrun()
       USE PRMS_SSFLOW
-      USE PRMS_MODULE, ONLY: Nhru, Nssr
+      USE PRMS_MODULE, ONLY: Nssr
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area,
      +    Hru_ssres, Ssres_area, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Ssres_flow, Ssr_to_gw,
@@ -333,4 +330,3 @@
       ENDIF
 
       END SUBROUTINE inter_gw_flow
-

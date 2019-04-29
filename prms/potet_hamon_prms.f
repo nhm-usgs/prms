@@ -12,11 +12,11 @@
      +    Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
       USE PRMS_SOLTAB_RADPL, ONLY: Sunhrs_soltab
-      USE PRMS_OBS, ONLY: Nowmonth, Jday
+      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, INDEX
-      INTEGER, EXTERNAL :: getparam, declmodule, declparam
+      INTEGER, EXTERNAL :: getparam, declparam
       EXTERNAL read_error, print_module
 ! Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
@@ -48,9 +48,9 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         Version_potet_hamon_prms =
-     +'$Id: potet_hamon_prms.f 5602 2013-04-23 18:42:50Z rsregan $'
+     +'$Id: potet_hamon_prms.f 6066 2013-11-01 23:29:32Z rsregan $'
         CALL print_module(Version_potet_hamon_prms,
-     +                    'Potential ET              ', 77)
+     +                    'Potential ET                ', 77)
         MODNAME = 'potet_hamon_prms'
 
         ALLOCATE ( Hru_radpl(Nhru) )

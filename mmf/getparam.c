@@ -1,49 +1,18 @@
-/**************************************************************************
- * getparam.c: gets the parameter associated with a module and name, and
- * copies it into the space provided by the calling routine.
+/*+
+ * United States Geological Survey
  *
- * There are 2 functions: getparam() to be called from C
- *                        getparam_() to be called from Fortran
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : getparam() to be called from C
+ *            getparam_() to be called from Fortran
+ *            Returns 0 if successful, 1 otherwise.
+ * COMMENT  : gets the parameter associated with a module and name, and
+ *            copies it into the space provided by the calling routine.
  *
- * Returns 0 if successful, 1 otherwise.
+ * $Id: getparam.c 6195 2014-02-07 21:49:14Z rsregan $
  *
- * $Id: getparam.c 5145 2012-12-19 17:39:07Z rsregan $
- *
-   $Revision: 5145 $
-        $Log: getparam.c,v $
-        Revision 1.10  1997/03/26 17:04:14  markstro
-        Added function getdataname
+-*/
 
-        Revision 1.9  1996/12/05 21:24:12  markstro
-        (1)  Added getoutname()
-        (2)  Sensitivity work
-        (3)  Optimization work
-
-        Revision 1.8  1996/10/10 13:26:32  markstro
-        (1) Work on Rosenbrock
-        (2) Bug in fix dimension size
-
-        Revision 1.7  1996/02/19 20:00:05  markstro
-        Now lints pretty clean
-
-        Revision 1.6  1995/05/25 14:26:30  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.5  1994/11/22  17:19:40  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/09/30  14:54:24  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.3  1994/06/16  16:47:09  markstro
- * Worked over runcontrol.c
- *
- * Revision 1.2  1994/01/31  20:16:32  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define GETPARAM_C
 #include <stdio.h>
 #include <string.h>
@@ -116,10 +85,6 @@ long getparam_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, double 
 
 // call C version of getparam()
 	retval = getparam(module, name, maxsize, type, pval);
-
-//ufree(module);
-//ufree(name);
-//ufree(type);
 
 	return(retval);
 }
@@ -490,9 +455,6 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
   strncpy(type, ptype, ptypelen);
   type[ptypelen] = '\0';
 
-
-
-
   param = param_addr(name);
 
   if (param == NULL) {
@@ -516,5 +478,4 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
    strncpy (pstring, *((char **)param->value + *pindex), pslen);
 
    return(0);
-
 }

@@ -1,17 +1,18 @@
 
 #-------------------------------------------------------------------
-# $Id: makelist 5150 2012-12-19 21:33:33Z rsregan $
+# $Id: makelist 6950 2014-10-30 22:50:23Z rsregan $
 #-------------------------------------------------------------------
 
-#MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/3.0.5/64bit/build/PRMS_SVN
-#MMFDIR      = $(MOWSDIR)/mmf/trunk
-#PRMSDIR     = $(MOWSDIR)/prmsIV
-#LIBDIR      = $(PRMSDIR)/lib
-#PRMSTRUNK   = $(PRMSDIR)/trunk
-#PRMSBRANCH  = $(PRMSDIR)/branch
-#BINDIR      = $(PRMSDIR)/bin
-#PRMSBASE    = $(LIBDIR)/libprmsbase.a
-#MMFLIB      = /sshome/markstro/prmsLinuxDistribution/3.0.5/64bit/build/PRMS_SVN/lib/libmmf.a
+MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/4.0.0/build/
+MMFDIR      = $(MOWSDIR)/mmf/trunk
+PRMSDIR     = $(MOWSDIR)/prmsIV
+LIBDIR      = $(MOWSDIR)/lib
+PRMSTRUNK   = $(PRMSDIR)/trunk
+PRMSTRUNKMD   = $(PRMSDIR)/trunk_2d
+PRMSBRANCH  = $(PRMSDIR)/branch
+BINDIR      = $(MOWSDIR)/bin
+PRMSBASE    = $(LIBDIR)/libprmsbase.a
+MMFLIB      = $(LIBDIR)/libmmf.a
 
 #########################################################
 # Configure tags for each system
@@ -25,8 +26,8 @@ LDFLAGS		=$(OPTLEVEL)
 ##########################################################
 # Define the Fortran compile flags
 ##########################################################
-#FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
-FFLAGS= $(OPTLEVEL) -Wall -fno-second-underscore
+FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
+#FFLAGS= $(OPTLEVEL) -Wall -fno-second-underscore
 FC		= gfortran
 
 ##########################################################

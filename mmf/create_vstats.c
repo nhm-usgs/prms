@@ -2,50 +2,11 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : create_vstats.c
- * AUTHOR   : CADSWES
- * DATE     : Thu 20 Oct 1994
  * FUNCTION : create_vstats
  * COMMENT  : create linked list for stats variables
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: create_vstats.c 5145 2012-12-19 17:39:07Z rsregan $
+ * $Id: create_vstats.c 6195 2014-02-07 21:49:14Z rsregan $
  *
-   $Revision: 5145 $
-        $Log: create_vstats.c,v $
-        Revision 1.10  1996/06/28 19:32:22  markstro
-        (1) Fixed 3d control window.
-        (2) Fixed stats.
-
- * Revision 1.9  1996/02/19  19:59:41  markstro
- * Now lints pretty clean
- *
-        Revision 1.8  1995/05/25 14:26:23  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.7  1994/11/22  17:19:17  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.6  1994/11/08  16:17:20  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.5  1994/10/24  14:18:13  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.4  1994/09/30  14:53:59  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.3  1994/06/21  20:20:23  markstro
- * More work on taking the module name out of the DB keyword.
- *
- * Revision 1.2  1994/01/31  20:16:04  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -55,15 +16,6 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : create_vstats
  | COMMENT		:
@@ -133,6 +85,3 @@ void create_vstats (void) {
 	}
 }
 
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/

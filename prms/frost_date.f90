@@ -8,10 +8,10 @@
       USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
-      USE PRMS_OBS, ONLY: Jsol
+      USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INT
+      INTRINSIC NINT
       INTEGER, EXTERNAL :: declparam, getparam, get_season
       EXTERNAL read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
@@ -29,7 +29,7 @@
       DOUBLE PRECISION, SAVE :: basin_fall_frost, basin_spring_frost
       INTEGER, SAVE :: oldSeason, fallFrostCount, springFrostCount, fall1, spring1
       INTEGER, SAVE :: switchToSpringToday, switchToFallToday, Iunit
-      INTEGER, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
+      REAL, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
       INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
       CHARACTER(LEN=10), SAVE :: MODNAME
@@ -97,14 +97,14 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date.f90 5528 2013-03-22 21:54:44Z rsregan $'
-        CALL print_module(Version_frost_date, 'Transpiration Period      ', 90)
+        Version_frost_date = '$Id: frost_date.f90 6900 2014-10-29 16:01:04Z rsregan $'
+        CALL print_module(Version_frost_date, 'Preprocessing               ', 90)
         MODNAME = 'frost_date'
 
         IF ( declparam(MODNAME, 'frost_temp', 'one', 'real', &
      &       '28.0', '-10.0', '32.0', &
      &       'Temperature of killing frost', 'Temperature of killing frost', &
-     &       'degrees')/=0 ) CALL read_error(1, 'frost_temp')
+     &       'temp_units')/=0 ) CALL read_error(1, 'frost_temp')
 
 ! Allocate arrays for local variables
         ALLOCATE ( fall_frost(Nhru), spring_frost(Nhru) )
@@ -124,11 +124,11 @@
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
         IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
-          spring1 = 0
-          fall1 = 366
+          spring1 = 1
+          fall1 = 365
         ELSE
-          spring1 = 366
-          fall1 = 0
+          spring1 = 365
+          fall1 = 1
         ENDIF
 
       ELSEIF ( Process(:5)=='clean' ) THEN
@@ -136,8 +136,14 @@
         basin_spring_frost = 0.0D0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          fall_frost(j) = fallFrostSum(j)/fallFrostCount
-          spring_frost(j) = springFrostSum(j)/springFrostCount
+          IF ( fallFrostCount==0 ) fallFrostCount = 1
+          fall_frost(j) = NINT( fallFrostSum(j)/fallFrostCount )
+          IF ( fallFrostCount==0 ) fallFrostCount = 1
+          spring_frost(j) = NINT( springFrostSum(j)/springFrostCount )
+          fall_frost(j) = fall_frost(j) + 10
+          IF ( fall_frost(j)>365 ) fall_frost(j) = 365
+          spring_frost(j) = spring_frost(j) + 10
+          IF ( spring_frost(j)>365 ) spring_frost(j) = spring_frost(j) - 365
           basin_fall_frost = basin_fall_frost + fall_frost(j)*Hru_area(j)
           basin_spring_frost = basin_spring_frost + spring_frost(j)*Hru_area(j)
         ENDDO
@@ -146,8 +152,8 @@
 
         CALL write_integer_param(Iunit, 'fall_frost', 'nhru', Nhru, fall_frost)
         CALL write_integer_param(Iunit, 'spring_frost', 'nhru', Nhru, spring_frost)
-        basin_fall(1) = INT ( basin_fall_frost )
-        basin_spring(1) = INT ( basin_spring_frost )
+        basin_fall(1) = NINT( basin_fall_frost )
+        basin_spring(1) = NINT( basin_spring_frost )
         CALL write_integer_param(Iunit, 'basin_fall_frost', 'one', 1, basin_fall)
         CALL write_integer_param(Iunit, 'basin_spring_frost', 'one', 1, basin_spring)
       ENDIF
@@ -159,7 +165,7 @@
 !*************************************************************
       INTEGER FUNCTION get_season()
       USE PRMS_BASIN, ONLY: Hemisphere
-      USE PRMS_OBS, ONLY: Jsol
+      USE PRMS_SET_TIME, ONLY: Jsol
 !*************************************************************
       get_season = 2 ! default is fall frost
       IF ( Hemisphere==0 ) THEN ! Northern Hemisphere

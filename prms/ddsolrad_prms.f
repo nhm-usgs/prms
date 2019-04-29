@@ -17,9 +17,10 @@
         REAL, SAVE, ALLOCATABLE :: Radpl_potsw(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru_radpl(:)
-        REAL, SAVE :: Radadj_slope, Radadj_intcp
+        REAL, SAVE :: Radadj_slope, Radadj_intcp, Radmax
+        REAL, SAVE :: Radj_sppt, Radj_wppt, Ppt_rad_adj(12)
         REAL, SAVE :: Dday_slope(12), Dday_intcp(12)
-        REAL, SAVE :: Tmax_index(12)
+        REAL, SAVE :: Tmax_index(12), Tmax_allrain(12)
       END MODULE PRMS_DDSOLRAD_RADPL
 
 !***********************************************************************
@@ -57,16 +58,16 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, declvar
+      INTEGER, EXTERNAL :: declparam, declvar
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_ddsolrad_prms
 !***********************************************************************
       ddsoldecl = 1
 
       Version_ddsolrad_prms =
-     +'$Id: ddsolrad_prms.f 5592 2013-04-23 18:26:23Z rsregan $'
+     +'$Id: ddsolrad_prms.f 6317 2014-03-28 21:46:37Z rsregan $'
       CALL print_module(Version_ddsolrad_prms,
-     +                  'Solar Radiation           ', 77)
+     +                  'Solar Radiation             ', 77)
       MODNAME = 'ddsolrad_prms'
 
       ALLOCATE (Plrad(Nradpl))
@@ -124,7 +125,45 @@
      +     'Monthly (January to December) index temperature used'//
      +     ' to determine precipitation adjustments to solar'//
      +     ' radiation',
-     +     'degrees F').NE.0 ) RETURN
+     +     'degrees Fahrenheit').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'tmax_allrain', 'nmonths', 'real',
+     +     '38.0', '-8.0', '60.0',
+     +     'Precipitation is rain if HRU max temperature >= this value',
+     +     'Monthly (January to December) maximum air temperature'//
+     +     ' when precipitation is assumed to be rain; if HRU air'//
+     +     ' temperature is greater than or equal to this value,'//
+     +     ' precipitation is rain',
+     +     'temp_units')/=0 ) CALL read_error(1, 'tmax_allrain')
+
+      IF ( declparam(MODNAME, 'radmax', 'one', 'real',
+     +     '0.8', '0.1', '1.0',
+     +     'Maximum fraction of potential solar radiation (decimal)',
+     +     'Maximum fraction of the potential solar radiation that'//
+     +    ' may reach the ground due to haze, dust, smog, and so forth',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'radj_sppt', 'one', 'real',
+     +     '0.44', '0.0', '1.0',
+     +    'Adjustment to solar radiation on precipitation day - summer',
+     +     'Adjustment factor for computed solar radiation for summer'//
+     +     ' day with greater than ppt_rad_adj inches of precipitation',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'radj_wppt', 'one', 'real',
+     +     '0.5', '0.0', '1.0',
+     +    'Adjustment to solar radiation on precipitation day - winter',
+     +     'Adjustment factor for computed solar radiation for winter'//
+     +     ' day with greater than ppt_rad_adj inches of precipitation',
+     +     'decimal fraction').NE.0 ) RETURN
+
+      IF ( declparam(MODNAME, 'ppt_rad_adj', 'nmonths', 'real',
+     +     '0.02', '0.0', '0.5',
+     +     'Radiation reduced if basin precipitation above this value',
+     +     'Monthly minimum precipitation, if basin precipitation'//
+     +     ' exceeds this value, radiation is'//
+     +     ' multiplied by radj_sppt or radj_wppt adjustment factor',
+     +     'inches')/=0 ) CALL read_error(1, 'ppt_rad_adj')
 
       ddsoldecl = 0
       END FUNCTION ddsoldecl
@@ -135,7 +174,6 @@
       INTEGER FUNCTION ddsolinit()
       USE PRMS_DDSOLRAD_RADPL
       USE PRMS_MODULE, ONLY: Nhru
-      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
 !***********************************************************************
@@ -159,7 +197,22 @@
       IF ( getparam(MODNAME, 'tmax_index', 12, 'real', Tmax_index)
      +     .NE.0 ) RETURN
 
-      IF ( Timestep==0 ) Radpl_potsw = 0.0
+      IF ( getparam(MODNAME, 'tmax_allrain', 12, 'real', Tmax_allrain)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'radmax', 1, 'real', Radmax)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'radj_sppt', 1, 'real', Radj_sppt)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'radj_wppt', 1, 'real', Radj_wppt)
+     +     .NE.0 ) RETURN
+
+      IF ( getparam(MODNAME, 'ppt_rad_adj', 12, 'real', Ppt_rad_adj)
+     +     .NE.0 ) RETURN
+
+      Radpl_potsw = 0.0
 
       ddsolinit = 0
       END FUNCTION ddsolinit
@@ -174,12 +227,12 @@
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order,
      +    Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Orad,
-     +    Basin_obs_ppt, Tmax_allrain, Ppt_rad_adj, Basin_solsta,
-     +    Basin_horad, Basin_potsw, Radj_sppt, Radj_wppt, Swrad,
-     +    Hru_solsta, Radmax, Rad_conv
+     +    Basin_obs_ppt, Basin_solsta, Basin_horad, Basin_potsw, Swrad,
+     +    Hru_solsta, Rad_conv
       USE PRMS_SOLTAB_RADPL, ONLY: Nradpl, Hemisphere, Radpl_soltab,
      +    Radpl_cossl
-      USE PRMS_OBS, ONLY: Solrad, Jday, Nowmonth
+      USE PRMS_SET_TIME, ONLY: Jday, Nowmonth
+      USE PRMS_OBS, ONLY: Solrad
       IMPLICIT NONE
       INTRINSIC INT
 ! Local Variables
@@ -221,7 +274,7 @@
                 pptadj = Radj_sppt
               ENDIF
             ELSE ! Southern Hemisphere
-              IF ( Jday>79 .OR. Jday<265 ) THEN ! Equinox
+              IF ( Jday>79 .AND. Jday<265 ) THEN ! Equinox
                 pptadj = Radj_wppt
               ELSE
                 pptadj = Radj_sppt

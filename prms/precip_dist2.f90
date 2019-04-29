@@ -25,18 +25,17 @@
         REAL, SAVE, ALLOCATABLE :: Psta_mon(:, :)
         REAL, SAVE, ALLOCATABLE :: Psta_xlong(:), Psta_ylat(:)
         REAL, SAVE, ALLOCATABLE :: Hru_ylat(:), Hru_xlong(:)
+!      REAL, SAVE, ALLOCATABLE :: Maxmon_prec(:)
       END MODULE PRMS_PRECIP_DIST2
 
 !***********************************************************************
 !     Main precipitation routine
 !***********************************************************************
       INTEGER FUNCTION precip_dist2()
-      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
-      USE PRMS_BASIN, ONLY: Timestep
+      USE PRMS_MODULE, ONLY: Process
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: pptdist2decl, pptdist2init, pptdist2run
-      EXTERNAL :: precip_dist2_restart
 !***********************************************************************
       precip_dist2 = 0
 
@@ -45,13 +44,7 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         precip_dist2 = pptdist2decl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Timestep/=0 ) THEN
-          CALL precip_dist2_restart(1)
-        ELSE
-          precip_dist2 = pptdist2init()
-        ENDIF
-      ELSEIF ( Process(:5)=='clean' ) THEN
-        IF ( Save_vars_to_file==1 ) CALL precip_dist2_restart(0)
+        precip_dist2 = pptdist2init()
       ENDIF
 
       END FUNCTION precip_dist2
@@ -59,7 +52,7 @@
 !***********************************************************************
 !     pptdist2decl - set up parameters for precipitation computations
 !   Declared Parameters
-!     tmax_allrain, tmax_allsnow, adjmix_rain, adjust_snow
+!     tmax_allrain, tmax_allsnow, adjmix_rain
 !     rain_mon, snow_mon, precip_units
 !     hru_area, temp_units, maxmon_prec, dist2, psta_xlong, psta_ylong
 !     hru_ylat, hru_xlong, max_psta, dist_max, maxday_prec
@@ -67,30 +60,27 @@
       INTEGER FUNCTION pptdist2decl()
       USE PRMS_PRECIP_DIST2
       USE PRMS_MODULE, ONLY: Model, Nhru, Nrain
-      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
 ! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_precip_dist2
+      CHARACTER(LEN=80), SAVE :: Version_precip
 !***********************************************************************
       pptdist2decl = 0
 
-      Version_precip_dist2 = '$Id: precip_dist2.f90 5596 2013-04-23 18:33:25Z rsregan $'
-      CALL print_module(Version_precip_dist2, 'Precipitation Distribution', 90)
+      Version_precip = '$Id: precip_dist2.f90 7115 2015-01-06 00:09:15Z rsregan $'
+      CALL print_module(Version_precip, 'Precipitation Distribution  ', 90)
       MODNAME = 'precip_dist2'
 
-      IF ( Nrain<2 .AND. Model/=99 ) &
-     &     STOP 'ERROR, precip_dist2 requires at least 2 precipitation measurement stations'
+      IF ( Nrain<2 .AND. Model/=99 ) THEN
+        PRINT *, 'ERROR, precip_dist2 requires at least 2 precipitation measurement stations'
+        STOP
+      ENDIF
 
-! declare parameters
-      ALLOCATE ( Rain_mon(Nhru, 12), Snow_mon(Nhru, 12) )
-      ALLOCATE ( Psta_mon(Nrain, 12) )
       ALLOCATE ( N_psta(Nhru), Dist2(Nhru, Nrain) )
 
-      IF ( Timestep/=0 ) RETURN
-
+! declare parameters
       IF ( declparam(MODNAME, 'dist_max', 'one', 'real', &
      &     '1.0E9', '0.0', '1.0E9', &
      &     'Maximum distance from HRU to include a climate station', &
@@ -98,9 +88,9 @@
      &     'feet')/=0 ) CALL read_error(1, 'dist_max')
 
       IF ( declparam(MODNAME, 'max_psta', 'one', 'integer', &
-     &     '50', '2', '50', &
+     &     '2', 'bounded', 'nrain', &
      &     'Maximum number of precipitation stations to distribute to an HRU', &
-     &     'Maximum number of precipitation stations to distribute to an HRU', &
+     &     'Maximum number of precipitation measurement stations to distribute to an HRU', &
      &     'none')/=0 ) CALL read_error(1, 'max_psta')
 
       IF ( declparam(MODNAME, 'maxday_prec', 'one', 'real', &
@@ -109,20 +99,34 @@
      &     'Maximum measured precipitation value above which precipitation is assumed to be in error', &
      &     'precip_units')/=0 ) CALL read_error(1, 'maxday_prec')
 
+!      ALLOCATE ( Maxmon_prec(12) )
+!      IF ( decl param(MODNAME, 'maxmon_prec', 'nmonths', 'real', &
+!     &     '5.0', '0.0', '15.0', &
+!     &     'Maximum monthly precipitation for any weather site', &
+!     &     'If measured monthly (January to December) precipitation'// &
+!     &     ' is > maxmon_prec value,'// &
+!     &     ' precipitation is assumed to be in error', &
+!     &     'precip_units')/=0 ) CALL read_error(1, 'maxmon_prec')
+
+      ALLOCATE ( Rain_mon(Nhru, 12) )
       IF ( declparam(MODNAME, 'rain_mon', 'nhru,nmonths', 'real', &
      &     '1.0', '0.0', '50.0', &
      &     'Rain adjustment factor, by month for each HRU', &
      &     'Monthly (January to December) factor to rain on each HRU'// &
-     &     ' to adjust precipitation distributed to each HRU to account for differences in elevation, and so forth', &
+     &     ' to adjust precipitation distributed to each HRU to'// &
+     &     ' account for differences in elevation, and so forth', &
      &     'precip_units')/=0 ) CALL read_error(1, 'rain_mon')
 
+      ALLOCATE ( Snow_mon(Nhru, 12) )
       IF ( declparam(MODNAME, 'snow_mon', 'nhru,nmonths', 'real', &
      &     '1.0', '0.0', '50.0', &
      &     'Rain adjustment factor, by month for each HRU', &
      &     'Monthly (January to December) factor to snow on each HRU'// &
-     &     ' to adjust precipitation distributed to each HRU to account for differences in elevation, and so forth', &
+     &     ' to adjust precipitation distributed to each HRU to'// &
+     &     ' account for differences in elevation, and so forth', &
      &     'precip_units')/=0 ) CALL read_error(1, 'snow_mon')
 
+      ALLOCATE ( Psta_mon(Nrain, 12) )
       IF ( declparam(MODNAME, 'psta_mon', 'nrain,nmonths', 'real', &
      &     '1.0', '0.00001', '50.0', &
      &     'Monthly precipitation for each of the nrain precipitation measurement stations', &
@@ -167,7 +171,7 @@
       INTEGER FUNCTION pptdist2init()
       USE PRMS_PRECIP_DIST2
       USE PRMS_MODULE, ONLY: Nhru, Nrain, Inputerror_flag, Parameter_check_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO, SMALLPARAM
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -181,18 +185,43 @@
       pptdist2init = 0
 
 ! NEW PARAMETERS
-      IF ( getparam(MODNAME, 'maxday_prec', 1, 'real', Maxday_prec)/=0 ) CALL read_error(2, 'maxday_prec')
-      IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max)/=0 ) CALL read_error(2, 'dist_max')
-      IF ( getparam(MODNAME, 'max_psta', 1, 'real', Max_psta)/=0 ) CALL read_error(2, 'max_psta')
-      IF ( getparam(MODNAME, 'rain_mon', Nhru*12, 'real', Rain_mon)/=0 ) CALL read_error(2, 'rain_mon')
-      IF ( getparam(MODNAME, 'snow_mon', Nhru*12, 'real', Snow_mon)/=0 ) CALL read_error(2, 'snow_mon')
-      IF ( getparam(MODNAME, 'psta_mon', Nrain*12, 'real', Psta_mon)/=0 ) CALL read_error(2, 'psta_mon')
-      IF ( getparam(MODNAME, 'psta_xlong', Nrain, 'real', Psta_xlong)/=0 ) CALL read_error(2, 'psta_xlong')
-      IF ( getparam(MODNAME, 'psta_ylat', Nrain, 'real', Psta_ylat)/=0 ) CALL read_error(2, 'psta_ylat')
-      IF ( getparam(MODNAME, 'hru_xlong', Nhru, 'real', Hru_xlong)/=0 ) CALL read_error(2, 'hru_xlong')
-      IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat)/=0 ) CALL read_error(2, 'hru_ylat')
+      IF ( getparam(MODNAME, 'maxday_prec', 1, 'real', Maxday_prec) &
+     &     /=0 ) CALL read_error(2, 'maxday_prec')
 
-! CALCULATE DISTANCE FROM EACH HRU TO EACH NRAIN GAGE, AS AN INVERSE FUNCTION, THEN SQUARE IT
+      IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max) &
+     &     /=0 ) CALL read_error(2, 'dist_max')
+
+      IF ( getparam(MODNAME, 'max_psta', 1, 'real', Max_psta) &
+     &     /=0 ) CALL read_error(2, 'max_psta')
+      IF ( Max_psta>Nrain ) Max_psta = Nrain
+
+!      IF ( get param(MODNAME, 'maxmon_prec', 12, 'real', Maxmon_prec) &
+!           /=0 ) CALL read_error(2, 'maxmon_prec')
+
+      IF ( getparam(MODNAME, 'rain_mon', Nhru*12, 'real', Rain_mon) &
+     &     /=0 ) CALL read_error(2, 'rain_mon')
+
+      IF ( getparam(MODNAME, 'snow_mon', Nhru*12, 'real', Snow_mon) &
+     &     /=0 ) CALL read_error(2, 'snow_mon')
+
+      IF ( getparam(MODNAME, 'psta_mon', Nrain*12, 'real', Psta_mon) &
+     &     /=0 ) CALL read_error(2, 'psta_mon')
+
+      IF ( getparam(MODNAME, 'psta_xlong', Nrain, 'real', Psta_xlong) &
+     &     /=0 ) CALL read_error(2, 'psta_xlong')
+
+      IF ( getparam(MODNAME, 'psta_ylat', Nrain, 'real', Psta_ylat) &
+     &     /=0 ) CALL read_error(2, 'psta_ylat')
+
+      IF ( getparam(MODNAME, 'hru_xlong', Nhru, 'real', Hru_xlong) &
+     &     /=0 ) CALL read_error(2, 'hru_xlong')
+
+      IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
+     &     /=0 ) CALL read_error(2, 'hru_ylat')
+! END NEW
+
+! CALCULATE DISTANCE FROM EACH HRU TO EACH NRAIN GAGE,
+! AS AN INVERSE FUNCTION, THEN SQUARE IT
 
       N_psta = 0
       ALLOCATE ( Nuse_psta(Max_psta,Nhru), nuse_psta_dist(Max_psta,Nhru) )
@@ -232,22 +261,22 @@
           ENDIF
 
           DO j = 1, 12
-            IF ( Psta_mon(k,j)<0.00001 ) THEN
-              PRINT *, 'psta_mon needs to be at least 0.00001'
-              IF ( Parameter_check_flag==1 ) THEN
+            IF ( Psta_mon(k,j)<SMALLPARAM ) THEN
+              PRINT *, 'psta_mon needs to be at least:', SMALLPARAM
+              IF ( Parameter_check_flag>0 ) THEN
                 PRINT *, 'ERROR, HRU:', k, 'month:', j, ', psta_mon:', Psta_mon(k, j)
                 Inputerror_flag = 1
               ELSE
-                PRINT *, 'Warning, HRU:', k, 'month:', j, ', psta_mon:', &
-     &                   Psta_mon(k, j), ') set to 0.00001'
-                Psta_mon(k, j) = 0.00001
+                PRINT *, 'WARNING, HRU:', k, 'month:', j, ', psta_mon:', &
+     &                   Psta_mon(k, j), ') set to', SMALLPARAM
+                Psta_mon(k, j) = SMALLPARAM
               ENDIF
             ENDIF
           ENDDO
         ENDDO
       ENDDO
-      DEALLOCATE ( nuse_psta_dist, Psta_xlong, Psta_ylat )
-      DEALLOCATE ( Hru_xlong, Hru_ylat )
+      DEALLOCATE ( nuse_psta_dist )
+      ! DEALLOCATE ( Psta_xlong, Psta_ylat, Hru_xlong, Hru_ylat )
 
       END FUNCTION pptdist2init
 
@@ -257,18 +286,21 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2run()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, &
-     &    Basin_area_inv, NEARZERO, DNEARZERO
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
-     &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, Adjmix_rain, Precip_units
-      USE PRMS_OBS, ONLY: Precip, Nowtime, Nowmonth
+     &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
+     &    Adjmix_rain, Precip_units
+      USE PRMS_SET_TIME, ONLY: Nowmonth
+      USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
+! Functions
       INTRINSIC ABS
+      EXTERNAL :: print_date
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
-      REAL :: tdiff, allrain_mo, pcor, prec, adjmix_mo, ppt_sngl
-      DOUBLE PRECISION :: sum_obs, sumdist, sump, ppt
+      REAL :: tdiff, allrain_mo, pcor, prec, adjmix_mo, ppt, sumdist, sump
+      DOUBLE PRECISION :: sum_obs
 !***********************************************************************
       pptdist2run = 0
 
@@ -311,9 +343,9 @@
 
 ! Determine if any precipitation on HRU=i, if not start next HRU
 
-        ppt = 0.0D0
-        sumdist = 0.0D0
-        sump = 0.0D0
+        ppt = 0.0
+        sumdist = 0.0
+        sump = 0.0
         allmissing = 0
         DO kk = 1, N_psta(i)
           k = Nuse_psta(kk, i)
@@ -322,6 +354,7 @@
 
 !???rsr, pcor should only be used for portion of precipitation that is rain
           IF ( Precip(k)>=0.0 .AND. Precip(k)<=Maxday_prec ) THEN
+!     +         Precip(k)<Maxmon_prec(Nowmonth) ) THEN
             allmissing = 1
             !rsr, if all rain use rain adjustment
             IF ( iform==2 ) THEN
@@ -336,30 +369,31 @@
             sump = sump + prec
             ppt = ppt + prec*Dist2(i, k)
 !          ELSE
-!            PRINT *, 'bad precipitation value, HRU:', k, Precip(k), Nowtime
+!            PRINT *, 'bad precipitation value, HRU:', k, Precip(k)
+!            CALL print_date(1)
           ENDIF
         ENDDO
         IF ( allmissing==0 ) THEN
-          PRINT *,'ERROR, all precipitation stations have missing data', Nowtime
+          PRINT *,'ERROR, all precipitation stations have missing data'
+          CALL print_date(1)
           STOP
         ENDIF
 
         ! Ignore small amounts of preicipitation on an HRU
-        IF ( ppt<DNEARZERO ) CYCLE
+        IF ( ppt<NEARZERO ) CYCLE
 
-        IF ( sumdist>0.0D0 ) ppt = ppt/sumdist
+        IF ( sumdist>0.0 ) ppt = ppt/sumdist
 
-        IF ( Precip_units==1 ) ppt = ppt/25.4D0
-        ppt_sngl = SNGL(ppt)
-        Hru_ppt(i) = ppt_sngl
+        IF ( Precip_units==1 ) ppt = ppt/25.4
+        Hru_ppt(i) = ppt
         sum_obs = sum_obs + ppt*Hru_area(i)
 
         IF ( iform==2 ) THEN
-          Hru_rain(i) = ppt_sngl
+          Hru_rain(i) = ppt
           Prmx(i) = 1.0
 
         ELSEIF ( iform==1 ) THEN
-          Hru_snow(i) = ppt_sngl
+          Hru_snow(i) = ppt
           Newsnow(i) = 1
 
        ! precipitation is a mixture of rain and snow
@@ -373,11 +407,11 @@
 !******If not, it is a rain/snow mixture
           IF ( Prmx(i)<1.0 ) THEN
             Pptmix(i) = 1
-            Hru_rain(i) = Prmx(i)*ppt_sngl
-            Hru_snow(i) = ppt_sngl - Hru_rain(i)
+            Hru_rain(i) = Prmx(i)*ppt
+            Hru_snow(i) = ppt - Hru_rain(i)
             Newsnow(i) = 1
           ELSE
-            Hru_rain(i) = ppt_sngl
+            Hru_rain(i) = ppt
             Prmx(i) = 1.0
           ENDIF
         ENDIF
@@ -393,39 +427,3 @@
       Basin_snow = Basin_snow*Basin_area_inv
 
       END FUNCTION pptdist2run
-
-!***********************************************************************
-!     precip_dist2_restart - write or read precip_dist2 restart file
-!***********************************************************************
-      SUBROUTINE precip_dist2_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Nhru
-      USE PRMS_PRECIP_DIST2
-      IMPLICIT NONE
-      ! Argument
-      INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
-      ! Local Variable
-      CHARACTER(LEN=12) :: module_name
-!***********************************************************************
-      IF ( In_out==0 ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Max_psta, Maxday_prec, Dist_max
-        WRITE ( Restart_outunit ) N_psta
-        WRITE ( Restart_outunit ) Nuse_psta
-        WRITE ( Restart_outunit ) Dist2
-        WRITE ( Restart_outunit ) Rain_mon
-        WRITE ( Restart_outunit ) Snow_mon
-        WRITE ( Restart_outunit ) Psta_mon
-      ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Max_psta, Maxday_prec, Dist_max
-        ALLOCATE ( Nuse_psta(Max_psta, Nhru) )
-        READ ( Restart_inunit ) N_psta
-        READ ( Restart_inunit ) Nuse_psta
-        READ ( Restart_inunit ) Dist2
-        READ ( Restart_inunit ) Rain_mon
-        READ ( Restart_inunit ) Snow_mon
-        READ ( Restart_inunit ) Psta_mon
-      ENDIF
-      END SUBROUTINE precip_dist2_restart

@@ -5,17 +5,16 @@
       IMPLICIT NONE
 !   Local Variables
       CHARACTER(LEN=11), SAVE :: MODNAME
+      INTEGER, SAVE :: Use_pandata
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
       REAL, SAVE, ALLOCATABLE :: Tsta_elev_feet(:), Tsta_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Psta_elev_feet(:), Psta_elev_meters(:)
-      REAL, SAVE, ALLOCATABLE :: Tmax_allsnow_hru_f(:), Tmax_allrain_hru_month_f(:, :)
-      REAL, SAVE :: Tmax_allrain_f(12), Tmax_allsnow_f
+      REAL, SAVE :: Tmax_allrain_f(12), Tmax_allsnow_f, Tmax_allsnow_c
 !   Declared Variables - Precip
       INTEGER, SAVE, ALLOCATABLE :: Newsnow(:), Pptmix(:)
       DOUBLE PRECISION, SAVE :: Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt
       REAL, SAVE, ALLOCATABLE :: Hru_ppt(:), Hru_rain(:), Hru_snow(:), Prmx(:)
-      REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Variables - Temp
       DOUBLE PRECISION, SAVE :: Basin_temp, Basin_tmax, Basin_tmin
       REAL, SAVE :: Solrad_tmax, Solrad_tmin
@@ -26,22 +25,21 @@
       INTEGER, SAVE, ALLOCATABLE :: Transp_on(:)
 !   Declared Variables - Potetential ET
       DOUBLE PRECISION, SAVE :: Basin_potet
-      REAL, SAVE, ALLOCATABLE :: Potet(:), Potet_coef_hru_mo(:, :)
+      REAL, SAVE, ALLOCATABLE :: Potet(:)
 !   Declared Parameters and Variables - Solar Radiation
       INTEGER, SAVE :: Basin_solsta
-      INTEGER, SAVE, ALLOCATABLE :: Hru_solsta(:)
+      INTEGER, SAVE, ALLOCATABLE :: Hru_solsta(:), Hru_pansta(:)
       DOUBLE PRECISION, SAVE :: Basin_horad, Basin_potsw
-      REAL, SAVE :: Radj_sppt, Radj_wppt, Radmax, Rad_conv, Orad, Ppt_rad_adj(12)
+      REAL, SAVE :: Rad_conv, Orad
       REAL, SAVE, ALLOCATABLE :: Swrad(:)
 !   Declared Parameters - Temp
       INTEGER, SAVE :: Temp_units, Basin_tsta
       INTEGER, SAVE, ALLOCATABLE :: Hru_tsta(:)
-      REAL, SAVE, ALLOCATABLE :: Tsta_elev(:), Tmax_adj(:), Tmin_adj(:)
+      REAL, SAVE, ALLOCATABLE :: Tsta_elev(:), Tmax_aspect_adjust(:), Tmin_aspect_adjust(:)
 !   Declared Parameters - Precip
       INTEGER, SAVE :: Precip_units
-      REAL, SAVE :: Tmax_allsnow, Adjmix_rain(12), Tmax_allrain(12), Adjust_snow(12), Adjust_rain(12)
+      REAL, SAVE :: Tmax_allsnow, Adjmix_rain(12), Tmax_allrain(12)
       REAL, SAVE, ALLOCATABLE :: Psta_elev(:)
-      REAL, SAVE, ALLOCATABLE :: Tmax_allsnow_hru(:), Tmax_allrain_hru_mo(:, :)
       END MODULE PRMS_CLIMATEVARS
 
 !***********************************************************************
@@ -50,32 +48,28 @@
 !***********************************************************************
       MODULE PRMS_FLOWVARS
       IMPLICIT NONE
-!   Local Variables
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:), Dprst_vol_thres_open(:)
 !   Declared Variables
       ! snow
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pkwater_equiv(:)
       ! soilzone
-      DOUBLE PRECISION, SAVE :: Basin_ssflow, Basin_soil_to_gw, Basin_actet, Basin_lakeevap
-      DOUBLE PRECISION, SAVE :: Basin_swale_et, Basin_perv_et, Basin_soil_moist, Basin_ssstor
-      REAL, SAVE, ALLOCATABLE :: Hru_actet(:), Soil_moist(:), Soil_to_gw(:), Slow_flow(:)
-      REAL, SAVE, ALLOCATABLE :: Soil_to_ssr(:), Ssres_in(:), Ssr_to_gw(:), Slow_stor(:)
+      DOUBLE PRECISION, SAVE :: Basin_ssflow, Basin_soil_to_gw
+      DOUBLE PRECISION, SAVE :: Basin_actet, Basin_lakeevap
+      DOUBLE PRECISION, SAVE :: Basin_swale_et, Basin_perv_et
+      DOUBLE PRECISION, SAVE :: Basin_soil_moist, Basin_ssstor
+      REAL, SAVE, ALLOCATABLE :: Hru_actet(:), Soil_moist(:)
+      REAL, SAVE, ALLOCATABLE :: Soil_to_gw(:), Slow_flow(:)
+      REAL, SAVE, ALLOCATABLE :: Soil_to_ssr(:), Ssres_in(:)
+      REAL, SAVE, ALLOCATABLE :: Ssr_to_gw(:), Slow_stor(:)
       REAL, SAVE, ALLOCATABLE :: Ssres_stor(:), Ssres_flow(:), Soil_rechr(:)
       ! srunoff
       REAL, SAVE, ALLOCATABLE :: Sroff(:), Imperv_stor(:), Infil(:)
-      ! Surface-Depression Storage
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open(:), Dprst_vol_clos(:)
-      ! gwflow
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwres_stor(:)
       ! lakes
       DOUBLE PRECISION, SAVE :: Basin_lake_stor, Basin_2ndstflow
-      REAL, SAVE, ALLOCATABLE :: Elevlake(:)
       ! streamflow
       DOUBLE PRECISION, SAVE :: Basin_cfs, Basin_cms, Basin_ssflow_cfs, Basin_sroff_cfs
-      DOUBLE PRECISION, SAVE :: Basin_stflow_in, Basin_gwflow_cfs, Basin_stflow_out
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_outflow(:), Seg_upstream_inflow(:), Seg_lateral_inflow(:)
-      REAL, SAVE, ALLOCATABLE :: Seginc_ssflow(:), Seginc_sroff(:), Seginc_gwflow(:), Seginc_swrad(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_outflow(:), Seg_inflow(:)
+      DOUBLE PRECISION, SAVE :: Basin_stflow_in, Basin_gwflow_cfs, Basin_stflow_out, Flow_out
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_upstream_inflow(:), Seg_lateral_inflow(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_outflow(:), Seg_inflow(:)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Soil_rechr_max(:), Sat_threshold(:)
       REAL, SAVE, ALLOCATABLE :: Snowinfil_max(:), Imperv_stor_max(:)
@@ -85,8 +79,7 @@
 !     Main climateflow routine
 !***********************************************************************
       INTEGER FUNCTION climateflow()
-      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
-      USE PRMS_BASIN, ONLY: Timestep
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: climateflow_decl, climateflow_init
@@ -97,11 +90,8 @@
       IF ( Process(:4)=='decl' ) THEN
         climateflow = climateflow_decl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Timestep/=0 ) THEN
-          CALL climateflow_restart(1)
-        ELSE
-          climateflow = climateflow_init()
-        ENDIF
+        IF ( Init_vars_from_file==1 ) CALL climateflow_restart(1)
+        climateflow = climateflow_init()
       ELSEIF ( Process(:5)=='clean' ) THEN
         IF ( Save_vars_to_file==1 ) CALL climateflow_restart(0)
       ENDIF
@@ -114,11 +104,11 @@
       INTEGER FUNCTION climateflow_decl()
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Model, Nhru, Nssr, Nsegment, Strmflow_module, Et_flag, &
-     &    Dprst_flag, Temp_module, Ngw, Ntemp, Precip_module, Solrad_module, Transp_module, Et_module, &
-     &    Soilzone_module, Srunoff_module, Nrain, Nsol, Cascade_flag, Cascadegw_flag, Strmflow_flag, &
-     &    Strmflow_module, Nlake, Nratetbl, Soilzone_flag
-      USE PRMS_BASIN, ONLY: Timestep
+      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Model, Nhru, Nssr, Nevap, &
+     &    Nsegment, Strmflow_module, Temp_module, Ntemp, Stream_order_flag, &
+     &    Precip_module, Solrad_module, Transp_module, Et_module, &
+     &    Soilzone_module, Srunoff_module, Nrain, Nsol, Call_cascade, Et_flag, &
+     &    Lake_route_flag, Nratetbl, Soilzone_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
@@ -128,24 +118,24 @@
 !***********************************************************************
       climateflow_decl = 0
 
-      Version_climateflow = '$Id: climateflow.f90 5642 2013-04-25 22:34:21Z rsregan $'
-      CALL print_module(Version_climateflow, 'States and Fluxes         ', 90)
+      Version_climateflow = '$Id: climateflow.f90 7232 2015-03-09 22:49:39Z rsregan $'
+      CALL print_module(Version_climateflow, 'Common States and Fluxes    ', 90)
       MODNAME = 'climateflow'
 
       ALLOCATE ( Tmaxf(Nhru) )
       IF ( declvar(Temp_module, 'tmaxf', 'nhru', Nhru, 'real', &
      &     'Maximum air temperature distributed to each HRU', &
-     &     'degrees F', Tmaxf)/=0 ) CALL read_error(3, 'tmaxf')
+     &     'degrees Fahrenheit', Tmaxf)/=0 ) CALL read_error(3, 'tmaxf')
 
       ALLOCATE ( Tminf(Nhru) )
       IF ( declvar(Temp_module, 'tminf', 'nhru', Nhru, 'real', &
      &     'Minimum air temperature distributed to each HRU', &
-     &     'degrees F', Tminf)/=0 ) CALL read_error(3, 'tminf')
+     &     'degrees Fahrenheit', Tminf)/=0 ) CALL read_error(3, 'tminf')
 
       ALLOCATE ( Tavgf(Nhru) )
       IF ( declvar(Temp_module, 'tavgf', 'nhru', Nhru, 'real', &
      &     'Average air temperature distributed to each HRU', &
-     &     'degrees F', Tavgf)/=0 ) CALL read_error(3, 'tavgf')
+     &     'degrees Fahrenheit', Tavgf)/=0 ) CALL read_error(3, 'tavgf')
 
       ALLOCATE ( Tmaxc(Nhru) )
       IF ( declvar(Temp_module, 'tmaxc', 'nhru', Nhru, 'real', &
@@ -185,7 +175,8 @@
 ! PRECIPITATION VARIABLES AND PARAMETERS
       ALLOCATE ( Pptmix(Nhru) )
       IF ( declvar(Precip_module, 'pptmix', 'nhru', Nhru, 'integer', &
-     &     'Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)', &
+     &     'Flag to indicate if precipitation is a mixture of rain'// &
+     &     ' and snow for each HRU (0=no; 1=yes)', &
      &     'none', Pptmix)/=0 ) CALL read_error(3, 'pptmix')
 
       ALLOCATE ( Newsnow(Nhru) )
@@ -236,17 +227,6 @@
      &     'Snow distributed to each HRU', &
      &     'inches', Hru_snow)/=0 ) CALL read_error(3, 'hru_snow')
 
-      IF ( Precip_flag==5 .OR. Precip_flag==6 .OR. Model==99 ) THEN
-        ALLOCATE ( Tmax_rain_sta(Nrain) )
-        IF ( declvar(Precip_module, 'tmax_rain_sta', 'nrain', Nrain, 'real', &
-     &       'Maximum temperature distributed to the precipitation measurement stations', &
-     &       'degrees F', Tmax_rain_sta)/=0 ) CALL read_error(3, 'tmax_rain_sta')
-        ALLOCATE ( Tmin_rain_sta(Nrain) )
-        IF ( declvar(Precip_module, 'tmin_rain_sta', 'nrain', Nrain, 'real', &
-     &       'Minimum temperature distributed to the precipitation measurement stations', &
-     &       'degrees F', Tmin_rain_sta)/=0 ) CALL read_error(3, 'tmin_rain_sta')
-      ENDIF
-
 ! Solar Radiation variables
       ALLOCATE ( Swrad(Nhru) )
       IF ( declvar(Solrad_module, 'swrad', 'nhru', Nhru, 'real', &
@@ -285,9 +265,11 @@
      &     'Basin area-weighted average potential ET', &
      &     'inches', Basin_potet)/=0 ) CALL read_error(3, 'basin_potet')
 
+! Soilzone variables
       ALLOCATE ( Soil_rechr(Nhru) )
       IF ( declvar(Soilzone_module, 'soil_rechr', 'nhru', Nhru, 'real', &
-     &     'Storage for recharge zone (upper portion) of the capillary reservoir that is available for both'// &
+     &     'Storage for recharge zone (upper portion) of the'// &
+     &     ' capillary reservoir that is available for both'// &
      &     ' evaporation and transpiration', &
      &     'inches', Soil_rechr)/=0 ) CALL read_error(3, 'soil_rechr')
 
@@ -303,19 +285,21 @@
 
       ALLOCATE ( Slow_flow(Nhru) )
       IF ( declvar(Soilzone_module, 'slow_flow', 'nhru', Nhru, 'real', &
-     &     'Interflow from gravity reservoir storage that flows to the stream network for each HRU', &
+     &     'Interflow from gravity reservoir storage that flows to'// &
+     &     ' the stream network for each HRU', &
      &     'inches', Slow_flow)/=0 ) CALL read_error(3, 'slow_flow')
 
       ALLOCATE ( Ssres_flow(Nssr) )
       IF ( declvar(Soilzone_module, 'ssres_flow', 'nssr', Nssr, 'real', &
-     &     'Interflow from gravity and preferential-flow reservoirs to the stream network for each HRU', &
+     &     'Interflow from gravity and preferential-flow reservoirs'// &
+     &     ' to the stream network for each HRU', &
      &     'inches', Ssres_flow)/=0 ) CALL read_error(3, 'ssres_flow')
 
       IF ( declvar(Soilzone_module, 'basin_ssflow', 'one', 1, 'double', &
-     &     'Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network', &
+     &     'Basin area-weighted average interflow from gravity and'// &
+     &     ' preferential-flow reservoirs to the stream network', &
      &     'inches', Basin_ssflow)/=0 ) CALL read_error(3, 'basin_ssflow')
 
-! soilzone
       IF ( declvar(Soilzone_module, 'basin_swale_et', 'one', 1, 'double', &
      &     'Basin area-weighted average ET from swale HRUs', &
      &     'inches', Basin_swale_et)/=0 ) CALL read_error(3, 'basin_swale_et')
@@ -362,23 +346,19 @@
 
       ALLOCATE ( Soil_to_gw(Nhru) )
       IF ( declvar(Soilzone_module, 'soil_to_gw', 'nhru', Nhru, 'real', &
-     &     'Portion of excess flow to the capillary reservoir that drains to the associated GWR for each HRU', &
+     &     'Portion of excess flow to the capillary reservoir that'// &
+     &     ' drains to the associated GWR for each HRU', &
      &     'inches', Soil_to_gw)/=0 ) CALL read_error(3, 'soil_to_gw')
 
       ALLOCATE ( Soil_to_ssr(Nhru) )
       IF ( declvar(Soilzone_module, 'soil_to_ssr', 'nhru', Nhru, 'real', &
-     &     'Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU', &
+     &     'Portion of excess flow to the capillary reservoir that'// &
+     &     ' flows to the gravity reservoir for each HRU', &
      &     'inches', Soil_to_ssr)/=0 ) CALL read_error(3, 'soil_to_ssr')
 
       IF ( declvar(Soilzone_module, 'basin_soil_to_gw', 'one', 1, 'double', &
      &     'Basin average excess flow to capillary reservoirs that drains to GWRs', &
      &     'inches', Basin_soil_to_gw)/=0 ) CALL read_error(3, 'basin_soil_to_gw')
-
-! gwflow
-      ALLOCATE ( Gwres_stor(Ngw) )
-      IF ( declvar('gwflow', 'gwres_stor', 'ngw', Ngw, 'double', &
-     &     'Storage in each GWR', &
-     &     'inches', Gwres_stor)/=0 ) CALL read_error(3, 'gwres_stor')
 
 ! srunoff
       ALLOCATE ( Imperv_stor(Nhru) )
@@ -422,47 +402,28 @@
      &     'cfs', Basin_ssflow_cfs)/=0 ) CALL read_error(3, 'basin_ssflow')
 
       IF ( declvar(Strmflow_module, 'basin_gwflow_cfs', 'one', 1, 'double', &
-     &     'Groundwater flow leaving the basin through the stream network', &
+     &     'Basin area-weighted average of groundwater flow to the stream network', &
      &     'cfs', Basin_gwflow_cfs)/=0 ) CALL read_error(3, 'basin_gwflow_cfs')
 
-      IF ( Cascade_flag==1 .OR. Cascadegw_flag==1 .OR. Strmflow_flag>1 ) THEN
-        IF ( Nsegment==0 .AND. Model/=99 ) STOP 'ERROR, nsegment=0, must be > 0 for selected module options'
+      IF ( Call_cascade==1 .OR. Stream_order_flag==1 ) THEN
+        IF ( Nsegment==0 .AND. Model/=99 ) &
+     &       STOP 'ERROR, nsegment=0, must be > 0 for selected module options'
       ENDIF
 
-      IF ( Strmflow_flag>1 .OR. Model==99 ) THEN
-        ALLOCATE ( Seginc_swrad(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seginc_swrad', 'nsegment', Nsegment, 'real', &
-     &       'Area-weighted average solar radiation for each segment'// &
-     &       ' from HRUs contributing flow to the segment', &
-     &       'Langleys', Seginc_swrad)/=0 ) CALL read_error(3, 'seginc_swrad')
-
-        ALLOCATE ( Seginc_ssflow(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seginc_ssflow', 'nsegment', Nsegment, 'real', &
-     &       'Area-weighted average interflow for each segment from'// &
-     &       ' HRUs contributing flow to the segment', &
-     &       'cfs', Seginc_ssflow)/=0 ) CALL read_error(3, 'seginc_ssflow')
-
-        ALLOCATE ( Seginc_gwflow(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seginc_gwflow', 'nsegment', Nsegment, 'real', &
-     &       'Area-weighted average groundwater discharge for each'// &
-     &       ' segment from HRUs contributing flow to the segment', &
-     &       'cfs', Seginc_gwflow)/=0 ) CALL read_error(3, 'seginc_gwflow')
-
-        ALLOCATE ( Seginc_sroff(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seginc_sroff', 'nsegment', Nsegment, 'real', &
-     &       'Area-weighted average surface runoff for each'// &
-     &       ' segment from HRUs contributing flow to the segment', &
-     &       'cfs', Seginc_sroff)/=0 ) CALL read_error(3, 'seginc_sroff')
-
+      IF ( Stream_order_flag==1 ) THEN
         ALLOCATE ( Seg_outflow(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seg_outflow', 'nsegment', Nsegment, 'real', &
+        IF ( declvar(Strmflow_module, 'seg_outflow', 'nsegment', Nsegment, 'double', &
      &       'Streamflow leaving a segment', &
      &       'cfs', Seg_outflow)/=0 ) CALL read_error(3, 'seg_outflow')
 
         ALLOCATE ( Seg_inflow(Nsegment) )
-        IF ( declvar(Strmflow_module, 'seg_inflow', 'nsegment', Nsegment, 'real', &
+        IF ( declvar(Strmflow_module, 'seg_inflow', 'nsegment', Nsegment, 'double', &
      &       'Total flow entering a segment', &
      &       'cfs', Seg_inflow)/=0 ) CALL read_error(3, 'seg_inflow')
+
+        IF ( declvar(Strmflow_module, 'flow_out', 'one', 1, 'double', &
+     &       'Total flow out of model domain', &
+     &       'cfs', Flow_out)/=0 ) CALL read_error(3, 'flow_out')
 
         ALLOCATE ( Seg_lateral_inflow(Nsegment) )
         IF ( declvar(Strmflow_module, 'seg_lateral_inflow', 'nsegment', Nsegment, 'double', &
@@ -475,31 +436,16 @@
      &       'cfs', Seg_upstream_inflow)/=0 ) CALL read_error(3, 'seg_upstream_inflow')
       ENDIF
 
-      IF ( (Strmflow_flag==2.AND.Nlake>0) .OR. Model==99 ) THEN
-        IF ( declvar(Strmflow_module, 'basin_lake_stor', 'one', 1, 'double', &
-     &       'Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing', &
-     &       'inches', Basin_lake_stor)/=0 ) CALL read_error(3, 'basin_lake_stor')
-        ALLOCATE ( Elevlake(Nlake) )
-        IF ( declvar(Strmflow_module, 'elevlake', 'nlake', Nlake, 'real', &
-     &       'Elevation of each lake using broad-crested weir or gate opening routing', &
-     &       'feet', Elevlake)/=0 ) CALL read_error(3, 'elevlake')
-        IF ( Nratetbl>0 .OR. Model==99 ) THEN
+      IF ( declvar(Strmflow_module, 'basin_lake_stor', 'one', 1, 'double', &
+     &     'Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing', &
+     &     'inches', Basin_lake_stor)/=0 ) CALL read_error(3, 'basin_lake_stor')
+
+      IF ( Lake_route_flag==1 .OR. Model==99 ) THEN
+        IF ( Nratetbl>0 ) THEN
           IF ( declvar(Strmflow_module, 'basin_2ndstflow', 'one', 1, 'double', &
      &         'Basin volume-weighted average streamflow from each lake with a second outlet', &
      &         'inches', Basin_2ndstflow)/=0 ) CALL read_error(3, 'basin_2ndstflow')
         ENDIF
-      ENDIF
-
-      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
-        ALLOCATE ( Dprst_vol_open(Nhru) )
-        IF ( declvar(Srunoff_module, 'dprst_vol_open', 'nhru', Nhru, 'double', &
-     &       'Storage volume in open surface depressions for each HRU', &
-     &       'acre-inches', Dprst_vol_open)/=0 ) CALL read_error(3, 'dprst_vol_open')
-        ALLOCATE ( Dprst_vol_clos(Nhru) )
-        IF ( declvar(Srunoff_module, 'dprst_vol_clos', 'nhru', Nhru, 'double', &
-     &       'Storage volume in closed surface depressions for each HRU', &
-     &       'acre-inches', Dprst_vol_clos)/=0 ) CALL read_error(3, 'dprst_vol_clos')
-        ALLOCATE ( Dprst_vol_open_max(Nhru), Dprst_vol_clos_max(Nhru), Dprst_vol_thres_open(Nhru) )
       ENDIF
 
       ALLOCATE ( Pkwater_equiv(Nhru) )
@@ -507,41 +453,24 @@
      &     'Snowpack water equivalent on each HRU', &
      &     'inches', Pkwater_equiv)/=0 ) CALL read_error(3, 'pkwater_equiv')
 
-      ALLOCATE ( Hru_outflow(Nhru) )
-      IF ( declvar(MODNAME, 'hru_outflow', 'nhru', Nhru, 'double', &
-     &     'Total flow leaving each HRU', &
-     &     'cfs', Hru_outflow)/=0 ) CALL read_error(3, 'hru_outflow')
-
-      ! Allocate parameters
-      IF ( Temp_flag<7 .OR. Model==99 ) ALLOCATE ( Tsta_elev(Ntemp), Tsta_elev_meters(Ntemp), Tsta_elev_feet(Ntemp) )
-      IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==4 .OR. Model==99 ) ALLOCATE ( Hru_tsta(Nhru) )
-      IF ( (Temp_flag/=3.AND.Temp_flag/=7.AND.Temp_flag/=8) .OR. Model==99 ) ALLOCATE ( Tmax_adj(Nhru), Tmin_adj(Nhru) )
+      ! Allocate local variables
+      IF ( Temp_flag<7 .OR. Model==99 ) ALLOCATE ( Tsta_elev_meters(Ntemp), Tsta_elev_feet(Ntemp) )
       IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 .OR. Model==99 ) &
-     &     ALLOCATE ( Psta_elev(Nrain), Psta_elev_meters(Nrain), Psta_elev_feet(Nrain) )
-      IF ( Nsol>0 .OR. Model==99 ) ALLOCATE ( Hru_solsta(Nhru) )
-      IF ( Et_flag==5 .OR. Et_flag==6 .OR. Et_flag==10 .OR. Model==99 ) ALLOCATE ( Potet_coef_hru_mo(Nhru,12) )
-      IF ( Soilzone_flag==1 ) ALLOCATE ( Sat_threshold(Nhru) )
-      ALLOCATE ( Soil_moist_max(Nhru), Soil_rechr_max(Nhru) )
-      ALLOCATE ( Snowinfil_max(Nhru), Imperv_stor_max(Nhru), Tmax_hru(Nhru), Tmin_hru(Nhru) )
-      ALLOCATE ( Tmax_allsnow_hru_f(Nhru) )
-      IF ( Precip_flag==8 .OR. Model==99 ) ALLOCATE ( Tmax_allsnow_hru(Nhru) )
-      IF ( Precip_flag==7 .OR. Precip_flag==8 .OR. Model==99 ) THEN
-        IF ( Precip_flag==7 .OR. Precip_flag==8 .OR. Model==99 ) ALLOCATE ( Tmax_allrain_hru_month_f(Nhru,12) )
-        IF ( Precip_flag==8 .OR. Model==99 ) ALLOCATE ( Tmax_allrain_hru_mo(Nhru,12) )
-      ENDIF
-
-      IF ( Timestep/=0 ) RETURN
+     &     ALLOCATE ( Psta_elev_meters(Nrain), Psta_elev_feet(Nrain) )
+      ALLOCATE ( Tmax_hru(Nhru), Tmin_hru(Nhru) )
 
 ! Declare Parameters
       IF ( Temp_flag<7 .OR. Model==99 ) THEN
+        ALLOCATE ( Tsta_elev(Ntemp) )
         IF ( declparam(Temp_module, 'tsta_elev', 'ntemp', 'real', &
-     &       '0', '-300.0', '30000.0', &
+     &       '0.0', '-300.0', '30000.0', &
      &       'Temperature station elevation', &
-     &       'Elevation of each temperature measurement station', &
+     &       'Elevation of each air-temperature-measurement station', &
      &       'elev_units')/=0 ) CALL read_error(1, 'tsta_elev')
       ENDIF
 
       IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==4 .OR. Model==99 ) THEN
+        ALLOCATE ( Hru_tsta(Nhru) )
         IF ( declparam(Temp_module, 'hru_tsta', 'nhru', 'integer', &
      &       '1', 'bounded', 'ntemp', &
      &       'Index of base temperature station for HRU', &
@@ -549,21 +478,25 @@
      &       'none')/=0 ) CALL read_error(1, 'hru_tsta')
       ENDIF
 
-      IF ( (Temp_flag/=3.AND.Temp_flag/=7.AND.Temp_flag/=8) .OR. Model==99 ) THEN
+      ! 1sta, laps, xyz_dist, ide_dist
+      IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==5 .OR. Temp_flag==6 .OR. Model==99 ) THEN
+        ALLOCATE ( Tmax_aspect_adjust(Nhru) )
         IF ( declparam(Temp_module, 'tmax_adj', 'nhru', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'HRU maximum temperature adjustment', &
-     &       'Adjustment to maximum temperature for each HRU, estimated based on slope and aspect', &
+     &       'Adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_adj')
+
+        ALLOCATE ( Tmin_aspect_adjust(Nhru) )
         IF ( declparam(Temp_module, 'tmin_adj', 'nhru', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'HRU minimum temperature adjustment', &
-     &       'Adjustment to minimum temperature for each HRU, estimated based on slope and aspect', &
+     &       'Adjustment to minimum temperature for each HRU, estimated on the basis of slope and aspect', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmin_adj')
       ENDIF
 
       IF ( declparam(Precip_module, 'tmax_allrain', 'nmonths', 'real', &
-     &     '40.0', '0.0', '90.0', &
+     &     '38.0', '-8.0', '60.0', &
      &     'Precipitation is rain if HRU max temperature >= this value', &
      &     'Monthly (January to December) maximum air temperature'// &
      &     ' when precipitation is assumed to be rain; if HRU air'// &
@@ -577,48 +510,16 @@
      &     ' to be snow; if HRU air temperature is less than or equal to this value, precipitation is snow', &
      &     'temp_units')/=0 ) CALL read_error(1, 'tmax_allsnow')
 
-      IF ( Precip_flag==8 .OR. Model==99 ) THEN
-        IF ( declparam(Precip_module, 'tmax_allsnow_hru', 'nhru','real', &
-     &       '32.0', '-10.0', '40.0', &
-     &       'Maximum temperature when precipitation is all snow for each HRU', &
-     &       'Maximum air temperature when precipitation is assumed'// &
-     &       ' to be snow for each HRU; if HRU air temperature is'// &
-     &       ' less than or equal to this value, precipitation is snow', &
-     &       'temp_units')/=0 ) CALL read_error(1, 'tmax_allsnow_hru')
-
-        IF ( declparam(Precip_module, 'tmax_allrain_hru_mo', 'nhru,nmonths', 'real', &
-     &       '40.0', '0.0', '90.0', &
-     &       'Precipitation is rain if HRU max temperature >= this value for each month', &
-     &       'Monthly maximum air temperature when precipitation is'// &
-     &       ' assumed to be rain for each HRU; if HRU air'// &
-     &       ' temperature is greater than or equal to this value, precipitation is rain', &
-     &       'temp_units')/=0 ) CALL read_error(1, 'tmax_allrain_hru_mo')
-      ENDIF
-
-      IF ( Precip_flag/=8 .OR. Model==99 ) THEN
-        IF ( declparam(Precip_module, 'adjmix_rain', 'nmonths', 'real', &
-     &       '1.0', '0.0', '3.0', &
-     &       'Adjustment factor for rain in a rain/snow mix', &
-     &       'Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'adjmix_rain')
-      ENDIF
-
-      IF ( Precip_flag==5 .OR. Precip_flag==6 .OR. Model==99 ) THEN
-        IF ( declparam(Precip_module, 'adjust_snow', 'nmonths', 'real', &
-     &       '0.01', '0.0', '1.0', &
-     &       'Monthly (January to December) downscaling adjustment factor for snow', &
-     &       'Monthly (January to December) downscaling adjustment factor for snow', &
-     &       'decimal fraction')/=0 ) CALL read_error(1,'adjust_snow')
-        IF ( declparam(Precip_module, 'adjust_rain', 'nmonths', 'real', &
-     &       '0.01', '0.0', '1.0', &
-     &       'Monthly (January to December) downscaling adjustment factor for rain', &
-     &       'Monthly (January to December) downscaling adjustment factor for rain', &
-     &       'decimal fraction')/=0 ) CALL read_error(1,'adjust_rain')
-      ENDIF
+      IF ( declparam(Precip_module, 'adjmix_rain', 'nmonths', 'real', &
+     &     '1.0', '0.6', '1.4', &
+     &     'Adjustment factor for rain in a rain/snow mix', &
+     &     'Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event', &
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'adjmix_rain')
 
       IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 .OR. Model==99 ) THEN
+        ALLOCATE ( Psta_elev(Nrain) )
         IF ( declparam(Precip_module, 'psta_elev', 'nrain', 'real', &
-     &       '0', '-300.0', '30000.0', &
+     &       '0.0', '-300.0', '30000.0', &
      &       'Precipitation station elevation', &
      &       'Elevation of each precipitation measurement station', &
      &       'elev_units')/=0 ) CALL read_error(1, 'psta_elev')
@@ -644,42 +545,20 @@
      &     'Units for measured precipitation (0=inches; 1=mm)', &
      &     'none')/=0 ) CALL read_error(1, 'precip_units')
 
-      IF ( declparam(Solrad_module, 'ppt_rad_adj', 'nmonths', 'real', &
-     &     '0.02', '0.0', '0.5', &
-     &     'Radiation reduced if basin precipitation above this value', &
-     &     'Monthly minimum precipitation, if basin precipitation exceeds this value, radiation is'// &
-     &     ' multiplied by radj_sppt or radj_wppt adjustment factor', &
-     &     'inches')/=0 ) CALL read_error(1, 'ppt_rad_adj')
-
-      IF ( declparam(Solrad_module, 'radmax', 'one', 'real', &
-     &     '0.8', '0.1', '1.0', &
-     &     'Maximum fraction of potential solar radiation (decimal)', &
-     &     'Maximum fraction of the potential solar radiation that may reach the ground due to haze, dust, smog, and so forth', &
-     &     'decimal fraction')/=0 ) CALL read_error(1, 'radmax')
-
-      IF ( declparam(Solrad_module, 'radj_sppt', 'one', 'real', &
-     &     '0.44', '0.0', '1.0', &
-     &     'Adjustment to solar radiation on precipitation day - summer', &
-     &     'Adjustment factor for computed solar radiation for summer day with greater than ppt_rad_adj inches of precipitation', &
-     &     'decimal fraction')/=0 ) CALL read_error(1, 'radj_sppt')
-
-      IF ( declparam(Solrad_module, 'radj_wppt', 'one', 'real', &
-     &     '0.5', '0.0', '1.0', &
-     &    'Adjustment to solar radiation on precipitation day - winter', &
-     &     'Adjustment factor for computed solar radiation for winter day with greater than ppt_rad_adj inches of precipitation', &
-     &     'decimal fraction')/=0 ) CALL read_error(1, 'radj_wppt')
-
-      IF ( Nsol>0 .OR. Model==99 ) THEN
+      IF ( Nsol>0 ) THEN
         IF ( declparam(Solrad_module, 'rad_conv', 'one', 'real', &
      &       '1.0', '0.1', '100.0', &
      &       'Conversion factor to Langleys for measured radiation', &
      &       'Conversion factor to Langleys for measured solar radiation', &
-     &       'none')/=0 ) CALL read_error(1, 'rad_conv')
+     &       'Langleys/radiation units')/=0 ) CALL read_error(1, 'rad_conv')
+
         IF ( declparam(Solrad_module, 'basin_solsta', 'one', 'integer', &
      &       '0', 'bounded', 'nsol', &
      &       'Index of main solar radiation station', &
-     &       'Index of solar radiation station used to compute basin radiation values', &
+     &       'Index of solar radiation station used to compute basin radiation values, used when dimension nsol>0', &
      &       'none')/=0 ) CALL read_error(1, 'basin_solsta')
+
+        ALLOCATE ( Hru_solsta(Nhru) )
         IF ( declparam(Solrad_module, 'hru_solsta', 'nhru', 'integer', &
      &       '0', 'bounded', 'nsol', &
      &       'Index of solar radiation station associated with each HRU', &
@@ -687,45 +566,56 @@
      &       'none')/=0 ) CALL read_error(1, 'hru_solsta')
       ENDIF
 
-      IF ( Et_flag==5 .OR. Et_flag==6 .OR. Et_flag==10 .OR. Model==99 ) THEN
-        IF ( declparam(Et_module, 'potet_coef_hru_mo', 'nhru,nmonths', 'real', &
-     &       '0.014', '0.005', '0.060', &
-     &       'Monthly potential ET coefficient adjustment factor', &
-     &       'Monthly potential ET coefficient adjustment factor for each HRU', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'potet_coef_hru_mo')
+      Use_pandata = 0
+      IF ( (Nevap>0 .AND. Et_flag==4) .OR. Model==99 ) THEN
+        Use_pandata = 1
+        ALLOCATE ( Hru_pansta(Nhru) )
+        IF ( declparam(MODNAME, 'hru_pansta', 'nhru', 'integer', &
+     &       '0', 'bounded', 'nevap', &
+     &       'Index of pan evaporation station for each HRU', &
+     &       'Index of pan evaporation station used to compute HRU potential ET', &
+     &       'none')/=0 ) CALL read_error(1, 'hru_pansta')
       ENDIF
 
-      IF ( Soilzone_flag==1 ) THEN
+      IF ( Soilzone_flag==1 .OR. Model==99 ) THEN
+        ALLOCATE ( Sat_threshold(Nhru) )
         IF ( declparam(Soilzone_module, 'sat_threshold', 'nhru', 'real', &
      &       '999.0', '1.0', '999.0', &
      &       'Soil saturation threshold, above field-capacity threshold', &
-     &       'Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and'// &
+     &       'Water holding capacity of the gravity and preferential-'// &
+     &       'flow reservoirs; difference between field capacity and'// &
      &       ' total soil saturation for each HRU', &
      &       'inches')/=0 ) CALL read_error(1, 'sat_threshold')
       ENDIF
 
+      ALLOCATE ( Soil_moist_max(Nhru) )
       IF ( declparam(Soilzone_module, 'soil_moist_max', 'nhru', 'real', &
-     &     '6.0', '0.001', '20.0', &
+     &     '2.0', '0.001', '10.0', &
      &     'Maximum value of water for soil zone', &
-     &     'Maximum available water holding capacity of capillary reservoir from land surface to rooting depth of the'// &
+     &     'Maximum available water holding capacity of capillary'// &
+     &     ' reservoir from land surface to rooting depth of the'// &
      &     ' major vegetation type of each HRU', &
      &     'inches')/=0 ) CALL read_error(1, 'soil_moist_max')
 
+      ALLOCATE ( Soil_rechr_max(Nhru) )
       IF ( declparam(Soilzone_module, 'soil_rechr_max', 'nhru', 'real', &
-     &     '2.0', '0.001', '10.0', &
+     &     '1.5', '0.001', '5.0', &
      &     'Maximum storage for soil recharge zone', &
-     &     'Maximum storage for soil recharge zone (upper portion of capillary reservoir where losses occur as both'// &
+     &     'Maximum storage for soil recharge zone (upper portion of'// &
+     &     ' capillary reservoir where losses occur as both'// &
      &     ' evaporation and transpiration); must be less than or equal to soil_moist_max', &
      &     'inches')/=0 ) CALL read_error(1, 'soil_rechr_max')
 
+      ALLOCATE ( Snowinfil_max(Nhru) )
       IF ( declparam(Srunoff_module, 'snowinfil_max', 'nhru', 'real', &
      &     '2.0', '0.0', '20.0', &
      &     'Maximum snow infiltration per day', &
      &     'Maximum snow infiltration per day for each HRU', &
      &     'inches/day')/=0 ) CALL read_error(1, 'snowinfil_max')
 
+      ALLOCATE ( Imperv_stor_max(Nhru) )
       IF ( declparam(Srunoff_module, 'imperv_stor_max', 'nhru', 'real', &
-     &     '0.0', '0.0', '10.0', &
+     &     '0.05', '0.0', '0.1', &
      &     'HRU maximum impervious area retention storage', &
      &     'Maximum impervious area retention storage for each HRU', &
      &     'inches')/=0 ) CALL read_error(1, 'imperv_stor_max')
@@ -739,17 +629,17 @@
       INTEGER FUNCTION climateflow_init()
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Et_flag, Et_module, Nhru, Nssr, Temp_module, Precip_module, Inputerror_flag, &
-     &    Solrad_module, Soilzone_module, Srunoff_module, Nsegment, Dprst_flag, Ntemp, Nrain, Nsol, &
-     &    Strmflow_flag, Nlake, Soilzone_flag
-      USE PRMS_BASIN, ONLY: Hru_type, Elev_units, FEET2METERS, METERS2FEET, NEARZERO, Active_hrus, Hru_route_order
+      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Nhru, Temp_module, Precip_module, &
+     &    Solrad_module, Soilzone_module, Srunoff_module, Stream_order_flag, Ntemp, Nrain, Nsol, &
+     &    Init_vars_from_file, Inputerror_flag, Inputerror_flag, Soilzone_flag
+      USE PRMS_BASIN, ONLY: Elev_units, FEET2METERS, METERS2FEET
       IMPLICIT NONE
 ! Functions
-      INTRINSIC DBLE
       INTEGER, EXTERNAL :: getparam
-      REAL, EXTERNAL :: c_to_f
+      EXTERNAL :: checkdim_param_limits, checkint_param_limits
+      REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
-      INTEGER :: i, j
+      INTEGER :: i
 !***********************************************************************
       climateflow_init = 0
 
@@ -766,88 +656,45 @@
         ENDDO
       ENDIF
 
-      IF ( Temp_flag/=3 .AND. Temp_flag/=7 .AND. Temp_flag/=8 ) THEN
-        IF ( getparam(Temp_module, 'tmax_adj', Nhru, 'real', Tmax_adj)/=0 ) CALL read_error(2, 'tmax_adj')
-        IF ( getparam(Temp_module, 'tmin_adj', Nhru, 'real', Tmin_adj)/=0 ) CALL read_error(2, 'tmin_adj')
+      IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==5 .OR. Temp_flag==6 ) THEN
+        IF ( getparam(Temp_module, 'tmax_adj', Nhru, 'real', Tmax_aspect_adjust)/=0 ) CALL read_error(2, 'tmax_adj')
+        IF ( getparam(Temp_module, 'tmin_adj', Nhru, 'real', Tmin_aspect_adjust)/=0 ) CALL read_error(2, 'tmin_adj')
       ENDIF
 
       IF ( getparam(Temp_module, 'temp_units', 1, 'integer', Temp_units)/=0 ) CALL read_error(2, 'temp_units')
+      CALL checkint_param_limits(1, 'temp_units', Temp_units, 0, 1, Inputerror_flag)
 
       IF ( Temp_flag<5 ) THEN
         IF ( getparam(Temp_module, 'basin_tsta', 1, 'integer', Basin_tsta)/=0 ) CALL read_error(2, 'basin_tsta')
-        IF ( Basin_tsta<1 .OR. Basin_tsta> Ntemp ) THEN
-          PRINT *, 'ERROR, basin_tsta value < 1 or > ntemp:', Basin_tsta, '; ntemp:', Ntemp
-          Inputerror_flag = 1
-        ENDIF
+        CALL checkdim_param_limits(1, 'basin_tsta', 'ntemp', Basin_tsta, 1, Ntemp, Inputerror_flag)
+      ELSE
+        Basin_tsta = 0
       ENDIF
 
       IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==4 ) THEN
         IF ( getparam(Temp_module, 'hru_tsta', Nhru, 'integer', Hru_tsta)/=0 ) CALL read_error(2, 'hru_tsta')
-        DO i = 1, Active_hrus
-          j = Hru_route_order(i)
-          IF ( Hru_tsta(j)<1 ) THEN
-            IF ( Hru_type(j)/=0 ) THEN
-              PRINT *, 'ERROR, hru_tsta value < 1 for HRU:', j, Hru_tsta(j)
-              Inputerror_flag = 1
-            ENDIF
-          ELSEIF ( Hru_tsta(j)>Ntemp ) THEN
-            PRINT *, 'ERROR, hru_tsta value > ntemp for HRU:', j, ', hru_tsta:', Hru_tsta(j), ', ntemp', Ntemp
-            Inputerror_flag = 1
-          ENDIF
-        ENDDO
       ENDIF
 
       IF ( getparam(Precip_module, 'tmax_allsnow', 1, 'real', Tmax_allsnow)/=0 ) CALL read_error(2, 'tmax_allsnow')
+
       IF ( getparam(Precip_module, 'tmax_allrain', 12, 'real', Tmax_allrain)/=0 ) CALL read_error(2, 'tmax_allrain')
+
       IF ( Temp_units==0 ) THEN
         Tmax_allsnow_f = Tmax_allsnow
+        Tmax_allsnow_c = f_to_c(Tmax_allsnow)
         Tmax_allrain_f = Tmax_allrain
       ELSE
         Tmax_allsnow_f = c_to_f(Tmax_allsnow)
+        Tmax_allsnow_c = Tmax_allsnow
         DO i = 1, 12
           Tmax_allrain_f(i) = c_to_f(Tmax_allrain(i))
         ENDDO
       ENDIF
-      IF ( Precip_flag==8 ) THEN
-        IF ( getparam(Precip_module, 'tmax_allsnow_hru', Nhru, 'real', Tmax_allsnow_hru)/=0 ) &
-     &       CALL read_error(2, 'tmax_allsnow_hru')
-        IF ( Temp_units==0 ) THEN
-          Tmax_allsnow_hru_f = Tmax_allsnow_hru
-        ELSE
-          DO i = 1, Nhru
-            Tmax_allsnow_hru_f(i) = c_to_f(Tmax_allsnow_hru(i))
-          ENDDO
-        ENDIF
-        DEALLOCATE ( Tmax_allsnow_hru )
-        IF ( getparam(Precip_module, 'tmax_allrain_hru_mo', Nhru*12, 'real', Tmax_allrain_hru_mo)/=0 ) &
-     &       CALL read_error(2, 'tmax_allrain_hru_mo')
-        IF ( Temp_units==0 ) THEN
-          Tmax_allrain_hru_month_f = Tmax_allrain_hru_mo
-        ELSE
-          DO i = 1, Nhru
-            DO j = 1, 12
-              Tmax_allrain_hru_month_f(i,j) = c_to_f(Tmax_allrain_hru_mo(i,j))
-            ENDDO
-          ENDDO
-        ENDIF
-      ELSE
-        IF ( getparam(Precip_module, 'adjmix_rain', 12, 'real', Adjmix_rain)/=0 ) CALL read_error(2, 'adjmix_rain')
-        DO i = 1, Nhru
-          Tmax_allsnow_hru_f(i) = Tmax_allsnow_f
-        ENDDO
-        IF ( Precip_flag==7 ) THEN
-          DO i = 1, Nhru
-            DO j = 1, 12
-              Tmax_allrain_hru_month_f(i,j) = Tmax_allrain_f(j)
-            ENDDO
-          ENDDO
-        ELSEIF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-          IF ( getparam(Precip_module, 'adjust_rain', 12, 'real', Adjust_rain)/=0 ) CALL read_error(2, 'adjust_rain')
-          IF ( getparam(Precip_module, 'adjust_snow', 12, 'real', Adjust_snow)/=0 ) CALL read_error(2, 'adjust_snow')
-        ENDIF
-      ENDIF
+
+      IF ( getparam(Precip_module, 'adjmix_rain', 12, 'real', Adjmix_rain)/=0 ) CALL read_error(2, 'adjmix_rain')
 
       IF ( getparam(Precip_module, 'precip_units', 1, 'integer', Precip_units)/=0 ) CALL read_error(2, 'precip_units')
+      CALL checkint_param_limits(1, 'precip_units', Precip_units, 0, 1, Inputerror_flag)
 
       IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 ) THEN
         IF ( getparam(Precip_module, 'psta_elev', Nrain, 'real', Psta_elev)/=0 ) CALL read_error(2, 'psta_elev')
@@ -862,33 +709,36 @@
         ENDDO
       ENDIF
 
-      IF ( getparam(Solrad_module, 'ppt_rad_adj', 12, 'real', Ppt_rad_adj)/=0 ) CALL read_error(2, 'ppt_rad_adj')
-
       IF ( Nsol>0 ) THEN
         IF ( getparam(Solrad_module, 'basin_solsta', 1, 'integer', Basin_solsta)/=0 ) CALL read_error(2, 'basin_solsta')
-        IF ( Basin_solsta<1 .OR. Basin_solsta>Nsol ) THEN
-          PRINT *, 'ERROR, basin_solsta value < 1 OR > nsol:', Basin_solsta, ', nsol:', Nsol
-          Inputerror_flag = 1
-        ENDIF
+        CALL checkdim_param_limits(1, 'basin_solsta', 'nsol', Basin_solsta, 1, Nsol, Inputerror_flag)
+
         IF ( getparam(Solrad_module, 'rad_conv', 1, 'real', Rad_conv)/=0 ) CALL read_error(2, 'rad_conv')
+
         IF ( getparam(Solrad_module, 'hru_solsta', Nhru, 'integer', Hru_solsta)/=0 ) CALL read_error(2, 'hru_solsta')
-        DO i = 1, Active_hrus
-          j = Hru_route_order(i)
-          IF ( Hru_solsta(j)<0 .OR. Hru_solsta(j)>Nsol ) THEN
-            PRINT *, 'ERROR, hru_solsta value < 1 or > nsol for HRU:', j, ', hru_solsta:', Hru_solsta(j), ', nsol:', Nsol
-            Inputerror_flag = 1
-          ENDIF
-        ENDDO
+      ELSE
+        Basin_solsta = 0
+        Rad_conv = 1.0
       ENDIF
 
-      IF ( getparam(Solrad_module, 'radmax', 1, 'real', Radmax)/=0 ) CALL read_error(2, 'radmax')
-      IF ( getparam(Solrad_module, 'radj_sppt', 1, 'real', Radj_sppt)/=0 ) CALL read_error(2, 'radj_sppt')
-      IF ( getparam(Solrad_module, 'radj_wppt', 1, 'real', Radj_wppt)/=0 ) CALL read_error(2, 'radj_wppt')
-
-      IF ( Et_flag==5 .OR. Et_flag==6 .OR. Et_flag==10 ) THEN
-        IF ( getparam(Et_module, 'potet_coef_hru_mo', Nhru*12, 'real', Potet_coef_hru_mo)/=0 ) &
-     &       CALL read_error(2, 'potet_coef_hru_mo')
+      IF ( Use_pandata==1 ) THEN
+        IF ( getparam(MODNAME, 'hru_pansta', Nhru, 'integer', Hru_pansta)/=0 ) CALL read_error(2, 'hru_pansta')
       ENDIF
+
+! FLOW VARIABLES AND PARAMETERS
+      IF ( Soilzone_flag==1 ) THEN
+        IF ( getparam(Soilzone_module, 'sat_threshold', Nhru, 'real', Sat_threshold)/=0 ) CALL read_error(2, 'sat_threshold')
+      ENDIF
+
+      IF ( getparam(Soilzone_module, 'soil_moist_max', Nhru, 'real', Soil_moist_max)/=0 ) CALL read_error(2, 'soil_moist_max')
+
+      IF ( getparam(Soilzone_module, 'soil_rechr_max', Nhru, 'real', Soil_rechr_max)/=0 ) CALL read_error(2, 'soil_rechr_max')
+
+      IF ( getparam(Srunoff_module, 'snowinfil_max', Nhru, 'real', Snowinfil_max)/=0 ) CALL read_error(2, 'snowinfil_max')
+
+      IF ( getparam(Srunoff_module, 'imperv_stor_max', Nhru, 'real', Imperv_stor_max)/=0 ) CALL read_error(2, 'imperv_stor_max')
+
+      IF ( Init_vars_from_file==1 ) RETURN
 
       Tmaxf = 0.0
       Tminf = 0.0
@@ -921,44 +771,6 @@
       Basin_transp_on = 0
       Basin_potet = 0.0D0
       Potet = 0.0
-      IF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-        Tmax_rain_sta = 0.0
-        Tmin_rain_sta = 0.0
-      ENDIF
-      IF ( Strmflow_flag>1 ) THEN
-        Seginc_gwflow = 0.0
-        Seginc_ssflow = 0.0
-        Seginc_sroff = 0.0
-        Seginc_swrad = 0.0
-        Seg_inflow = 0.0
-        Seg_outflow = 0.0
-        Seg_lateral_inflow = 0.0D0
-        Seg_upstream_inflow = 0.0D0
-      ENDIF
-
-! FLOW VARIABLES AND PARAMETERS
-      IF ( Soilzone_flag==1 ) THEN
-        IF ( getparam(Soilzone_module, 'sat_threshold', Nhru, 'real', Sat_threshold)/=0 ) CALL read_error(2, 'sat_threshold')
-      ENDIF
-      IF ( getparam(Soilzone_module, 'soil_moist_max', Nhru, 'real', Soil_moist_max)/=0 ) CALL read_error(2, 'soil_moist_max')
-      IF ( getparam(Soilzone_module, 'soil_rechr_max', Nhru, 'real', Soil_rechr_max)/=0 ) CALL read_error(2, 'soil_rechr_max')
-
-      ! Sanity checks for parameters
-      DO j = 1, Active_hrus
-        i = Hru_route_order(j)
-        IF ( Hru_type(i)==0 .OR. Hru_type(i)==2 ) CYCLE
-        IF ( Soil_moist_max(i)<0.001 ) THEN
-          PRINT *, 'ERROR, soil_moist_max value < 0.001, for HRU:', i, Soil_moist_max(i)
-          Inputerror_flag = 1
-        ENDIF
-        IF ( Soil_rechr_max(i)<0.001 ) THEN
-          PRINT *, 'ERROR, soil_rechr_max value < 0.001, for HRU:', i, Soil_rechr_max(i)
-          Inputerror_flag = 1
-        ENDIF
-      ENDDO
-
-      IF ( getparam(Srunoff_module, 'snowinfil_max', Nhru, 'real', Snowinfil_max)/=0 ) CALL read_error(2, 'snowinfil_max')
-      IF ( getparam(Srunoff_module, 'imperv_stor_max', Nhru, 'real', Imperv_stor_max)/=0 ) CALL read_error(2, 'imperv_stor_max')
 
 ! initialize scalers
       Basin_perv_et = 0.0D0
@@ -971,7 +783,6 @@
       Basin_ssstor = 0.0D0
       Basin_lake_stor = 0.0D0
       Basin_2ndstflow = 0.0D0
-      IF ( Strmflow_flag==2 .AND. Nlake>0 ) Elevlake = 0.0
 ! initialize arrays (dimensioned Nssr)
       Ssr_to_gw = 0.0
       Ssres_in = 0.0
@@ -987,17 +798,8 @@
       Infil = 0.0
       Sroff = 0.0
       Imperv_stor = 0.0
-      Soil_rechr = 0.0
-      Gwres_stor = 0.0D0
-      IF ( Dprst_flag==1 ) THEN
-        Dprst_vol_open = 0.0D0
-        Dprst_vol_clos = 0.0D0
-        Dprst_vol_open_max = 0.0D0
-        Dprst_vol_clos_max = 0.0D0
-        Dprst_vol_thres_open = 0.0D0
-      ENDIF
       Pkwater_equiv = 0.0D0
-      Hru_outflow = 0.0D0
+      Soil_rechr = 0.0
       Basin_cfs = 0.0D0
       Basin_cms = 0.0D0
       Basin_stflow_in = 0.0D0
@@ -1005,6 +807,14 @@
       Basin_ssflow_cfs = 0.0D0
       Basin_sroff_cfs = 0.0D0
       Basin_gwflow_cfs = 0.0D0
+      Flow_out = 0.0D0
+! initialize arrays (dimensioned Nsegment)
+      IF ( Stream_order_flag==1 ) THEN
+        Seg_inflow = 0.0D0
+        Seg_outflow = 0.0D0
+        Seg_upstream_inflow = 0.0D0
+        Seg_lateral_inflow = 0.0D0
+      ENDIF
 
       END FUNCTION climateflow_init
 
@@ -1013,7 +823,7 @@
 !***********************************************************************
       SUBROUTINE temp_set(Ihru, Tmax, Tmin, Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, Hru_area)
       USE PRMS_CLIMATEVARS, ONLY: Basin_temp, Basin_tmax, Basin_tmin, Temp_units, Tmax_hru, Tmin_hru
-      USE PRMS_OBS, ONLY: Nowyear, Nowmonth, Nowday
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
@@ -1023,7 +833,7 @@
       REAL, EXTERNAL :: c_to_f, f_to_c
 !***********************************************************************
       IF ( Temp_units==0 ) THEN
-!       degrees F
+!       degrees Fahrenheit
         Tmaxf = Tmax
         Tminf = Tmin
         Tavgf = (Tmax+Tmin)*0.5
@@ -1032,7 +842,7 @@
         Tavgc = f_to_c(Tavgf)
         Basin_temp = Basin_temp + Tavgf*Hru_area
       ELSE
-!       degrees C
+!       degrees Celsius
         Tmaxc = Tmax
         Tminc = Tmin
         Tavgc = (Tmax+Tmin)*0.5
@@ -1043,12 +853,11 @@
       ENDIF
  
       IF ( Tminf<-99.0 .OR. Tmaxf>150.0 ) THEN
-        PRINT *, 'ERROR, invalid temperature value for HRU:', Ihru, &
-     &           Tminf, Tmaxf, ' Date:', Nowyear, Nowmonth, Nowday
+        PRINT *, 'ERROR, invalid temperature value for HRU:', Ihru, Tminf, Tmaxf, ' Date:', Nowyear, Nowmonth, Nowday
         STOP
       ENDIF
-      Tmax_hru(Ihru) = Tmax
-      Tmin_hru(Ihru) = Tmin
+      Tmax_hru(Ihru) = Tmax ! in units temp_units
+      Tmin_hru(Ihru) = Tmin ! in units temp_units
 
       Basin_tmax = Basin_tmax + Tmax*Hru_area
       Basin_tmin = Basin_tmin + Tmin*Hru_area
@@ -1061,9 +870,11 @@
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f)
-      USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
+      USE PRMS_BASIN, ONLY: NEARZERO, IGNOREPPT
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
+! Functions
+      EXTERNAL :: print_date
 ! Arguments
       REAL, INTENT(IN) :: Tmax_allrain_f, Tmax_allsnow_f, Rain_adj, Snow_adj
       REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Hru_area
@@ -1095,23 +906,27 @@
 !******Otherwise precipitation is a mixture of rain and snow
       ELSE
         tdiff = Tmaxf - Tminf
+        IF ( tdiff<0.0 ) THEN
+          PRINT *, 'ERROR, tmax < tmin (degrees Fahrenheit), tmax:', Tmaxf, ' tmin:', TminF
+          CALL print_date(1)
+        ENDIF
         IF ( ABS(tdiff)<NEARZERO ) tdiff = 0.0001
         Prmx = ((Tmaxf-Tmax_allsnow_f)/tdiff)*Adjmix_rain
+        IF ( Prmx<IGNOREPPT ) Prmx = 0.0
 
 !******Unless mixture adjustment raises the proportion of rain to
 !******greater than or equal to 1.0 in which case it all rain
-        IF ( Prmx>=1.0 ) THEN
-          Hru_ppt = Precip*Rain_adj
-          Hru_rain = Hru_ppt
-          Prmx = 1.0
-
 !******If not, it is a rain/snow mixture
-        ELSE
+        IF ( Prmx<1.0 ) THEN
           Pptmix = 1
           Hru_ppt = Precip*Snow_adj
           Hru_rain = Prmx*Hru_ppt
           Hru_snow = Hru_ppt - Hru_rain
           Newsnow = 1
+        ELSE ! IF ( Prmx>=IGNOREPPT ) THEN
+          Hru_ppt = Precip*Rain_adj
+          Hru_rain = Hru_ppt
+          Prmx = 1.0
         ENDIF
       ENDIF
       Basin_ppt = Basin_ppt + Hru_ppt*Hru_area
@@ -1121,11 +936,10 @@
       END SUBROUTINE precip_form
 
 !***********************************************************************
-!     climateflow_restart - write or read climateflow restart file
+!     Write or read restart file
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Temp_flag, Precip_flag, Nlake, &
-     &    Dprst_flag, Et_flag, Nsol, Strmflow_flag, Nratetbl, Soilzone_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Stream_order_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       IMPLICIT NONE
@@ -1137,15 +951,14 @@
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Tmax_allsnow, Tmax_allsnow_f, Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt, Basin_temp, &
+        WRITE ( Restart_outunit ) Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt, Basin_temp, &
      &          Basin_tmax, Basin_tmin, Solrad_tmax, Solrad_tmin, Basin_transp_on, Basin_potet, Basin_horad, &
-     &          Basin_potsw, Temp_units, Precip_units, Radj_sppt, Radj_wppt, Radmax, Orad
+     &          Basin_potsw, Orad, Flow_out
         WRITE ( Restart_outunit ) Basin_cfs, Basin_cms, Basin_ssflow_cfs, Basin_sroff_cfs, Basin_stflow_in, &
      &          Basin_gwflow_cfs, Basin_stflow_out, Basin_ssflow, Basin_soil_to_gw, Basin_actet, &
      &          Basin_swale_et, Basin_perv_et, Basin_soil_moist, Basin_ssstor, Basin_lakeevap, Basin_lake_stor, Basin_2ndstflow
         WRITE ( Restart_outunit ) Tmax_hru
         WRITE ( Restart_outunit ) Tmin_hru
-        WRITE ( Restart_outunit ) Tmax_allrain_f
         WRITE ( Restart_outunit ) Newsnow
         WRITE ( Restart_outunit ) Pptmix
         WRITE ( Restart_outunit ) Hru_ppt
@@ -1162,8 +975,6 @@
         WRITE ( Restart_outunit ) Potet
         WRITE ( Restart_outunit ) Swrad
         WRITE ( Restart_outunit ) Pkwater_equiv
-        WRITE ( Restart_outunit ) Soil_moist_max
-        WRITE ( Restart_outunit ) Soil_rechr_max
         WRITE ( Restart_outunit ) Hru_actet
         WRITE ( Restart_outunit ) Soil_to_gw
         WRITE ( Restart_outunit ) Slow_flow
@@ -1175,84 +986,26 @@
         WRITE ( Restart_outunit ) Ssres_stor
         WRITE ( Restart_outunit ) Ssres_flow
         WRITE ( Restart_outunit ) Soil_rechr
-        IF ( Soilzone_flag==1 ) WRITE ( Restart_outunit ) Sat_threshold
         WRITE ( Restart_outunit ) Sroff
         WRITE ( Restart_outunit ) Imperv_stor
         WRITE ( Restart_outunit ) Infil
-        WRITE ( Restart_outunit ) Gwres_stor
-        WRITE ( Restart_outunit ) Snowinfil_max
-        WRITE ( Restart_outunit ) Imperv_stor_max
-        WRITE ( Restart_outunit ) Ppt_rad_adj
-        WRITE ( Restart_outunit ) Tmax_allrain
-        IF ( Precip_flag/=8 ) WRITE ( Restart_outunit ) Adjmix_rain
-        WRITE ( Restart_outunit ) Hru_outflow
-        IF ( Temp_flag<7 ) THEN
-          WRITE ( Restart_outunit ) Tsta_elev_feet
-          WRITE ( Restart_outunit ) Tsta_elev_meters
-          WRITE ( Restart_outunit ) Tsta_elev
-        ENDIF
-        IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 ) THEN
-          WRITE ( Restart_outunit ) Psta_elev_feet
-          WRITE ( Restart_outunit ) Psta_elev_meters
-          WRITE ( Restart_outunit ) Psta_elev
-        ENDIF
-        IF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-          WRITE ( Restart_outunit ) Tmax_rain_sta
-          WRITE ( Restart_outunit ) Tmin_rain_sta
-        ENDIF
-        IF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-          WRITE ( Restart_outunit ) Adjust_snow
-          WRITE ( Restart_outunit ) Adjust_rain
-        ENDIF
-        IF ( Et_flag==5 .OR. Et_flag==6 .OR. Et_flag==10 ) WRITE ( Restart_outunit ) Potet_coef_hru_mo
-        IF ( Nsol>0 ) THEN
-          WRITE ( Restart_outunit ) Hru_solsta
-          WRITE ( Restart_outunit ) Rad_conv
-          WRITE ( Restart_outunit ) Basin_solsta
-        ENDIF
-        IF ( Temp_flag<5 ) WRITE ( Restart_outunit ) Basin_tsta
-        IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==4 ) WRITE ( Restart_outunit ) Hru_tsta
-        IF ( Temp_flag/=3 .AND. Temp_flag/=7 .AND. Temp_flag/=8 ) THEN
-          WRITE ( Restart_outunit ) Tmax_adj
-          WRITE ( Restart_outunit ) Tmin_adj
-        ENDIF
-        WRITE ( Restart_outunit ) Tmax_allsnow_hru_f
-        IF ( Precip_flag==7 .OR. Precip_flag==8 ) WRITE ( Restart_outunit ) Tmax_allrain_hru_month_f
-        IF ( Precip_flag==8 ) WRITE ( Restart_outunit ) Tmax_allrain_hru_mo
-        IF ( Dprst_flag==1 ) THEN
-          WRITE ( Restart_outunit ) Dprst_vol_open
-          WRITE ( Restart_outunit ) Dprst_vol_clos
-          WRITE ( Restart_outunit ) Dprst_vol_open_max
-          WRITE ( Restart_outunit ) Dprst_vol_clos_max
-          WRITE ( Restart_outunit ) Dprst_vol_thres_open
-        ENDIF
-        IF ( Strmflow_flag>1 ) THEN
-          WRITE ( Restart_outunit ) Seginc_gwflow
-          WRITE ( Restart_outunit ) Seginc_ssflow
-          WRITE ( Restart_outunit ) Seginc_sroff
-          WRITE ( Restart_outunit ) Seginc_swrad
+        IF ( Stream_order_flag==1 ) THEN
           WRITE ( Restart_outunit ) Seg_inflow
           WRITE ( Restart_outunit ) Seg_outflow
           WRITE ( Restart_outunit ) Seg_lateral_inflow
           WRITE ( Restart_outunit ) Seg_upstream_inflow
         ENDIF
-        IF ( Strmflow_flag==2 .AND. Nlake>0 ) THEN
-          WRITE ( Restart_outunit ) Basin_lake_stor
-          WRITE ( Restart_outunit ) Elevlake
-          IF ( Nratetbl>0 ) WRITE ( Restart_outunit ) Basin_2ndstflow
-        ENDIF
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Tmax_allsnow, Tmax_allsnow_f, Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt, Basin_temp, &
+        READ ( Restart_inunit ) Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt, Basin_temp, &
      &         Basin_tmax, Basin_tmin, Solrad_tmax, Solrad_tmin, Basin_transp_on, Basin_potet, Basin_horad, &
-     &         Basin_potsw, Temp_units, Precip_units, Radj_sppt, Radj_wppt, Radmax, Orad
+     &         Basin_potsw, Orad, Flow_out
         READ ( Restart_inunit ) Basin_cfs, Basin_cms, Basin_ssflow_cfs, Basin_sroff_cfs, Basin_stflow_in, &
      &         Basin_gwflow_cfs, Basin_stflow_out, Basin_ssflow, Basin_soil_to_gw, Basin_actet, &
      &         Basin_swale_et, Basin_perv_et, Basin_soil_moist, Basin_ssstor, Basin_lakeevap, Basin_lake_stor, Basin_2ndstflow
         READ ( Restart_inunit ) Tmax_hru
         READ ( Restart_inunit ) Tmin_hru
-        READ ( Restart_inunit ) Tmax_allrain_f
         READ ( Restart_inunit ) Newsnow
         READ ( Restart_inunit ) Pptmix
         READ ( Restart_inunit ) Hru_ppt
@@ -1269,8 +1022,6 @@
         READ ( Restart_inunit ) Potet
         READ ( Restart_inunit ) Swrad
         READ ( Restart_inunit ) Pkwater_equiv
-        READ ( Restart_inunit ) Soil_moist_max
-        READ ( Restart_inunit ) Soil_rechr_max
         READ ( Restart_inunit ) Hru_actet
         READ ( Restart_inunit ) Soil_to_gw
         READ ( Restart_inunit ) Slow_flow
@@ -1282,71 +1033,14 @@
         READ ( Restart_inunit ) Ssres_stor
         READ ( Restart_inunit ) Ssres_flow
         READ ( Restart_inunit ) Soil_rechr
-        IF ( Soilzone_flag==1 ) READ ( Restart_inunit ) Sat_threshold
         READ ( Restart_inunit ) Sroff
         READ ( Restart_inunit ) Imperv_stor
         READ ( Restart_inunit ) Infil
-        READ ( Restart_inunit ) Gwres_stor
-        READ ( Restart_inunit ) Snowinfil_max
-        READ ( Restart_inunit ) Imperv_stor_max
-        READ ( Restart_inunit ) Ppt_rad_adj
-        READ ( Restart_inunit ) Tmax_allrain
-        IF ( Precip_flag/=8 ) READ ( Restart_inunit ) Adjmix_rain
-        READ ( Restart_inunit ) Hru_outflow
-        IF ( Temp_flag<7 ) THEN
-          READ ( Restart_inunit ) Tsta_elev_feet
-          READ ( Restart_inunit ) Tsta_elev_meters
-          READ ( Restart_inunit ) Tsta_elev
-        ENDIF
-        IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 ) THEN
-          READ ( Restart_inunit ) Psta_elev_feet
-          READ ( Restart_inunit ) Psta_elev_meters
-          READ ( Restart_inunit ) Psta_elev
-        ENDIF
-        IF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-          READ ( Restart_inunit ) Tmax_rain_sta
-          READ ( Restart_inunit ) Tmin_rain_sta
-        ENDIF
-        IF ( Precip_flag==5 .OR. Precip_flag==6 ) THEN
-          READ ( Restart_inunit ) Adjust_snow
-          READ ( Restart_inunit ) Adjust_rain
-        ENDIF
-        IF ( Et_flag==5 .OR. Et_flag==6 .OR. Et_flag==10 ) READ ( Restart_inunit ) Potet_coef_hru_mo
-        IF ( Nsol>0 ) THEN
-          READ ( Restart_inunit ) Hru_solsta
-          READ ( Restart_inunit ) Rad_conv
-          READ ( Restart_inunit ) Basin_solsta
-        ENDIF
-        IF ( Temp_flag<5 ) READ ( Restart_inunit ) Basin_tsta
-        IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==4 ) READ ( Restart_inunit ) Hru_tsta
-        IF ( Temp_flag/=3 .AND. Temp_flag/=7 .AND. Temp_flag/=8 ) THEN
-          READ ( Restart_inunit ) Tmax_adj
-          READ ( Restart_inunit ) Tmin_adj
-        ENDIF
-        READ ( Restart_inunit ) Tmax_allsnow_hru_f
-        IF ( Precip_flag==7 .OR. Precip_flag==8 ) READ ( Restart_inunit ) Tmax_allrain_hru_month_f
-        IF ( Precip_flag==8 ) READ ( Restart_inunit ) Tmax_allrain_hru_mo
-        IF ( Dprst_flag==1 ) THEN
-          READ ( Restart_inunit ) Dprst_vol_open
-          READ ( Restart_inunit ) Dprst_vol_clos
-          READ ( Restart_inunit ) Dprst_vol_open_max
-          READ ( Restart_inunit ) Dprst_vol_clos_max
-          READ ( Restart_inunit ) Dprst_vol_thres_open
-        ENDIF
-        IF ( Strmflow_flag>1 ) THEN
-          READ ( Restart_inunit ) Seginc_gwflow
-          READ ( Restart_inunit ) Seginc_ssflow
-          READ ( Restart_inunit ) Seginc_sroff
-          READ ( Restart_inunit ) Seginc_swrad
+        IF ( Stream_order_flag==1 ) THEN
           READ ( Restart_inunit ) Seg_inflow
           READ ( Restart_inunit ) Seg_outflow
           READ ( Restart_inunit ) Seg_lateral_inflow
           READ ( Restart_inunit ) Seg_upstream_inflow
-        ENDIF
-        IF ( Strmflow_flag==2 .AND. Nlake>0 ) THEN
-          READ ( Restart_inunit ) Basin_lake_stor
-          READ ( Restart_inunit ) Elevlake
-          IF ( Nratetbl>0 ) READ ( Restart_inunit ) Basin_2ndstflow
         ENDIF
       ENDIF
       END SUBROUTINE climateflow_restart

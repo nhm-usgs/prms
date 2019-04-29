@@ -4,7 +4,7 @@
 # Top-level makefile for the PRMS
 #
 #-------------------------------------------------------------------
-# $Id: Makefile 5149 2012-12-19 20:05:12Z rsregan $
+# $Id: Makefile 6950 2014-10-30 22:50:23Z rsregan $
 #-------------------------------------------------------------------
 
 include ./makelist
@@ -15,7 +15,7 @@ include ./makelist
 
 all: standard
 
-#prms_ws: prmswatersmart
+#prms_ws: prmsdynwu
 
 standard:
 # Create lib directory, if necessary
@@ -23,7 +23,7 @@ standard:
 #	  mkdir $(LIBDIR) ;                   \
 #	  echo  Created directory $(LIBDIR) ; \
 #	fi
-## Create bin directory, if necessary
+# Create bin directory, if necessary
 #	@if [ ! -d $(BINDIR) ]   ; then        \
 #	  mkdir $(BINDIR) ;                   \
 #	  echo  Created directory $(BINDIR) ; \
@@ -31,7 +31,11 @@ standard:
 	cd ./mmf; $(MAKE);
 	cd ./prms; $(MAKE);
 
-#prmswatersmart:
+#md:
+#	cd $(MMFDIR); $(MAKE);
+#	cd $(PRMSTRUNKMD); $(MAKE);
+
+#prmsdynwu:
 # Create lib directory, if necessary
 #	@if [ ! -d $(LIBDIR) ]   ; then        \
 #	  mkdir $(LIBDIR) ;                   \
@@ -43,12 +47,13 @@ standard:
 #	  echo  Created directory $(BINDIR) ; \
 #	fi
 #	cd $(MMFDIR); $(MAKE);
-#	cd $(PRMSTRUNK); $(MAKE);
-#	cd $(PRMSBRANCH); $(MAKE) prms_ws;
+#	cd $(PRMSTRUNKMD); $(MAKE);
+#	cd $(PRMSBRANCH); $(MAKE) prms_dynwu
 
 clean:
 	cd ./mmf; $(MAKE) clean;
 	cd ./prms; $(MAKE) clean;
+#	cd $(PRMSTRUNKMD); $(MAKE) clean;
 #	cd $(PRMSBRANCH); $(MAKE) clean;
 #	$(RM) $(BINDIR)/prmsIV $(BINDIR)/prmsIV_ws *~
 

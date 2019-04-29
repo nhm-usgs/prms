@@ -1,9 +1,9 @@
-
+#
 # Makefile for mmf
 # markstro
 # Tue Jul 26 08:43:10 MST 2005
 #
-# $Id: Makefile 5145 2012-12-19 17:39:07Z rsregan $
+# $Id: Makefile 6566 2014-07-11 15:50:51Z markstro $
 #
 
 MOWSDIR  = ../
@@ -22,12 +22,12 @@ SRCS = 	mmf.c parse_args.c alloc_space.c build_lists.c \
 	control_var.c read_params.c sort_dims.c sort_params.c sort_vars.c \
 	var_addr.c declvar.c str_to_vals.c\
 	declparam.c param_addr.c getdim.c timing.c getparam.c umalloc_etc.c \
-	julday.c getvar.c dprint.c julconvert.c oprint.c readvar.c decldim.c \
+	julday.c getvar.c julconvert.c readvar.c decldim.c \
 	get_times.c batch_run.c read_control.c dim_addr.c reset_dim.c read_line.c \
 	get_elem_add.c read_vars.c getdimname.c \
-	save_vars.c save_params.c load_param.c check_vars.c \
-	create_vstats.c free_vstats.c write_vstats.c uprint.c \
-	stats.c call_modules.c call_setdims.c \
+	save_params.c load_param.c check_vars.c \
+	create_vstats.c free_vstats.c write_vstats.c \
+	call_modules.c call_setdims.c \
 	read_datainfo.c putvar.c print_params.c print_vars.c \
 	print_model_info.c batch_run_functions.c graph_single_run.c \
 	control_array.c call_setdims.c call_modules.c

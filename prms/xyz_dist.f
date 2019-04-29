@@ -15,7 +15,6 @@
 ! temp_nuse(temp_nsta) - indicies of temperature stations used
 ! rain_nsta - number of precipitation stations used
 ! rain_nuse (rain_nsta) - indicies of rain stations used
-!rsr, note tmax_allsnow and tmax_allrain assumed to be in Fahrenheit
 !***********************************************************************
       MODULE PRMS_XYZ_DIST
       IMPLICIT NONE
@@ -38,11 +37,12 @@
       REAL, SAVE :: Solradelev
 !   Declared Variables
       INTEGER, SAVE :: Is_rain_day
+      REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Parameters
       INTEGER, SAVE :: Conv_flag
       REAL, SAVE, ALLOCATABLE :: Max_lapse(:, :), Min_lapse(:, :)
       REAL, SAVE, ALLOCATABLE :: Ppt_lapse(:, :)
-      REAL, SAVE :: Solrad_elev
+      REAL, SAVE :: Solrad_elev, Adjust_snow(12), Adjust_rain(12)
       REAL, SAVE :: Tmax_add, Tmax_div, Tmin_add, Tmin_div, Ppt_add
       REAL, SAVE :: X_add, X_div, Y_add, Y_div, Z_add, Z_div, Ppt_div
       INTEGER, SAVE, ALLOCATABLE :: Tsta_nuse(:)
@@ -62,8 +62,8 @@
 !     Main xyz_dist routine
 !***********************************************************************
       INTEGER FUNCTION xyz_dist()
-      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file
-      USE PRMS_BASIN, ONLY: Timestep
+      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file,
+     &    Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: xyzdecl, xyzinit, xyzrun, xyzsetdims
@@ -78,11 +78,8 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         xyz_dist = xyzdecl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Timestep/=0 ) THEN
-          CALL xyz_restart(1)
-        ELSE
-          xyz_dist = xyzinit()
-        ENDIF
+        IF ( Init_vars_from_file==1 )  CALL xyz_restart(1)
+        xyz_dist = xyzinit()
       ELSEIF ( Process(:5)=='clean' ) THEN
         IF ( Save_vars_to_file==1 ) CALL xyz_restart(0)
       ENDIF
@@ -124,7 +121,6 @@
       INTEGER FUNCTION xyzdecl()
       USE PRMS_XYZ_DIST
       USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain
-      USE PRMS_BASIN, ONLY: Timestep
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -135,9 +131,9 @@
       xyzdecl = 0
 
       Version_xyz_dist =
-     +'$Id: xyz_dist.f 5593 2013-04-23 18:28:48Z rsregan $'
+     +'$Id: xyz_dist.f 7125 2015-01-13 16:54:29Z rsregan $'
       CALL print_module(Version_xyz_dist,
-     +                  'Climate Distribution      ', 77)
+     +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'xyz_dist'
 
       IF ( declvar(MODNAME, 'is_rain_day', 'one', 1, 'integer',
@@ -145,30 +141,53 @@
      +     'none',
      +     Is_rain_day)/=0 ) CALL read_error(3, 'is_rain_day')
 
-      ALLOCATE ( MRUelev(Nhru), MRUx(Nhru), MRUy(Nhru) )
-      ALLOCATE ( Max_lapse(MAXLAPSE,12), Min_lapse(MAXLAPSE,12) )
-      ALLOCATE ( Ppt_lapse(MAXLAPSE,12) )
-      ALLOCATE (Temp_STAx(Ntemp), Temp_STAelev(Ntemp), Temp_STAy(Ntemp))
-      ALLOCATE ( Rain_STAx(Nrain), Pstaelev(Nrain), Rain_STAy(Nrain) )
-      ALLOCATE ( Temp_nuse(Ntemp), Rain_nuse(Nrain), PptMTH(Nrain,12) )
-      ALLOCATE ( Psta_freq_nuse(Nrain), Precip_xyz(Nrain) )
-      ALLOCATE ( TmaxMTH(Ntemp,12), TminMTH(Ntemp,12) )
+      ALLOCATE ( Tmax_rain_sta(Nrain) )
+      IF ( declvar(MODNAME, 'tmax_rain_sta', 'nrain', Nrain, 'real',
+     +     'Maximum temperature distributed to the precipitation'//
+     +     ' measurement stations',
+     +     'degrees Fahrenheit',
+     +     Tmax_rain_sta)/=0 ) CALL read_error(3, 'tmax_rain_sta')
 
-      IF ( Timestep/=0 ) RETURN
+      ALLOCATE ( Tmin_rain_sta(Nrain) )
+      IF ( declvar(MODNAME, 'tmin_rain_sta', 'nrain', Nrain, 'real',
+     +     'Minimum temperature distributed to the precipitation'//
+     +     ' measurement stations',
+     +     'degrees Fahrenheit',
+     +     Tmin_rain_sta)/=0 ) CALL read_error(3, 'tmin_rain_sta')
 
 ! declare parameters
+      IF ( declparam(MODNAME, 'adjust_snow', 'nmonths', 'real',
+     +     '-0.4', '-0.5', '0.5',
+     +     'Monthly (January to December) downscaling adjustment'//
+     +     ' factor for snow',
+     +     'Monthly (January to December) downscaling adjustment'//
+     +     ' factor for snow',
+     +     'decimal fraction')/=0 ) CALL read_error(1, 'adjust_snow')
+
+      IF ( declparam(MODNAME, 'adjust_rain', 'nmonths', 'real',
+     +     '-0.4', '-0.5', '0.5',
+     +     'Monthly (January to December) downscaling adjustment'//
+     +     ' factor for rain',
+     +     'Monthly (January to December) downscaling adjustment'//
+     +     ' factor for rain',
+     +     'decimal fraction')/=0 ) CALL read_error(1, 'adjust_rain')
+
+      ALLOCATE ( MRUelev(Nhru) )
+      ALLOCATE ( MRUx(Nhru) )
       IF ( declparam(MODNAME, 'hru_x', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each HRU (albers)',
      +     'Longitude (X) for each HRU in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'hru_x')
 
+      ALLOCATE ( MRUy(Nhru) )
       IF ( declparam(MODNAME, 'hru_y', 'nhru', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each HRU (albers)',
      +     'Latitude (Y) for each HRU in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'hru_y')
 
+      ALLOCATE ( Max_lapse(MAXLAPSE,12) )
       IF ( declparam(MODNAME, 'max_lapse', 'nlapse,nmonths', 'real',
      +     '0.0', '-100.0', '100.0',
      +     'Monthly maximum temperature lapse rate for each direction',
@@ -176,6 +195,7 @@
      +     ' lapse rate for each direction (X, Y, and Z)',
      +     'none')/=0 ) CALL read_error(1, 'max_lapse')
 
+      ALLOCATE ( Min_lapse(MAXLAPSE,12) )
       IF ( declparam(MODNAME, 'min_lapse', 'nlapse,nmonths', 'real',
      +     '0.0', '-100.0', '100.0',
      +     'Monthly minimum temperature lapse rate for each direction',
@@ -183,6 +203,7 @@
      +     ' lapse rate for each direction (X, Y, and Z)',
      +     'none')/=0 ) CALL read_error(1, 'min_lapse')
 
+      ALLOCATE ( Ppt_lapse(MAXLAPSE,12) )
       IF ( declparam(MODNAME, 'ppt_lapse', 'nlapse,nmonths', 'real',
      +     '0.0', '-10.0', '10.0',
      +     'Precipitation lapse rate',
@@ -190,20 +211,23 @@
      +     ' for each direction (X, Y, and Z)',
      +     'none')/=0 ) CALL read_error(1, 'ppt_lapse')
 
+      ALLOCATE ( Temp_STAx(Ntemp), Temp_STAelev(Ntemp) )
       IF ( declparam(MODNAME, 'tsta_x', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each temperature station (albers)',
-     +     'Longitude (X) for each temperature measurement station in'//
-     +     ' albers projection',
+     +     'Longitude (X) for each air-temperature-measurement'//
+     +     ' station in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'tsta_x')
 
+      ALLOCATE ( Temp_STAy(Ntemp) )
       IF ( declparam(MODNAME, 'tsta_y', 'ntemp', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each temperature station (albers)',
-     +     'Latitude (Y) for each temperature measurement station in'//
-     +     ' albers projection',
+     +     'Latitude (Y) for each air-temperature-measurement'//
+     +     ' station in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'tsta_y')
 
+      ALLOCATE ( Rain_STAx(Nrain), Pstaelev(Nrain) )
       IF ( declparam(MODNAME, 'psta_x', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'X for each precipitation station (albers)',
@@ -211,6 +235,7 @@
      +     ' in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'psta_x')
 
+      ALLOCATE ( Rain_STAy(Nrain) )
       IF ( declparam(MODNAME, 'psta_y', 'nrain', 'real',
      +     '0.0', '-1.0E7', '1.0E7',
      +     'Y for each precipitation station (albers)',
@@ -218,7 +243,7 @@
      +     ' in albers projection',
      +     'meters')/=0 ) CALL read_error(1, 'psta_y')
 
-      ALLOCATE ( Tsta_nuse(Ntemp) )
+      ALLOCATE ( Tsta_nuse(Ntemp), Temp_nuse(Ntemp) )
       IF ( declparam(MODNAME, 'tsta_nuse', 'ntemp', 'integer',
      +     '1', '0', '1',
      +     '0 = station not used; 1 = station used',
@@ -228,13 +253,13 @@
      +     'none')/=0 ) CALL read_error(1, 'tsta_nuse')
 
       IF ( declparam(MODNAME, 'solrad_elev', 'one', 'real',
-     +     '1000.0', '0.0', '10000.0',
+     +     '0.0', '-300.0', '30000.0',
      +     'Elevation of the solrad station used for DD curves',
      +     'Elevation of the solar radiation station used for'//
-     +     ' degree-day curves',
-     +     'meters')/=0 ) CALL read_error(1, 'solrad_elev')
+     +     ' degree-day curves to distribute temperature',
+     +     'elev_units')/=0 ) CALL read_error(1, 'solrad_elev')
 
-      ALLOCATE ( Psta_nuse(Nrain) )
+      ALLOCATE ( Psta_nuse(Nrain), Rain_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
      +     'The subset of precipitation stations used in the'//
@@ -245,6 +270,7 @@
      +     ' 1=station used)',
      +     'none')/=0 ) CALL read_error(1, 'psta_nuse')
 
+      ALLOCATE ( Psta_freq_nuse(Nrain) )
       IF ( declparam(MODNAME, 'psta_freq_nuse', 'nrain', 'integer',
      +     '1', '0', '1',
      +     'The subset of precipitation stations used to determine if'//
@@ -255,30 +281,33 @@
      +     ' (0=station not used; 1=station used)',
      +     'none')/=0 ) CALL read_error(1, 'psta_freq_nuse')
 
+      ALLOCATE ( TmaxMTH(Ntemp, 12) )
       IF ( declparam(MODNAME, 'tsta_month_max', 'ntemp,nmonths',
      +     'real',
-     +     '0.0', '-100.0', '200.0',
+     +     '0.0', '-100.0', '100.0',
      +     'Average monthly (January to December) maximum air'//
      +     ' temperature at each station',
      +     'Average monthly (January to December) maximum air'//
-     +     ' temperature at each temperature measurement station',
+     +     ' temperature at each air-temperature-measurement station',
      +     'temp_units')/=0 ) CALL read_error(1, 'tsta_month_max')
 
+      ALLOCATE ( TminMTH(Ntemp, 12) )
       IF ( declparam(MODNAME, 'tsta_month_min', 'ntemp,nmonths',
      +     'real',
-     +     '0.0', '-100.0', '200.0',
+     +     '0.0', '-100.0', '100.0',
      +     'Average monthly (January to December) minimum air'//
      +     ' temperature at each station',
      +     'Average monthly (January to December) minimum air'//
-     +     ' temperature at each temperature measurement station',
+     +     ' temperature at each air-temperature-measurement station',
      +     'temp_units')/=0 ) CALL read_error(1, 'tsta_month_min')
 
+      ALLOCATE ( PptMTH(Nrain, 12) )
       IF ( declparam(MODNAME, 'psta_month_ppt', 'nrain,nmonths',
      +     'real',
-     +     '0.0', '0.0', '200.0',
+     +     '0.0', '0.0', '20.0',
      +     'Average monthly precipitation at each station',
      +     'Average monthly (January to December) precipitation at'//
-     +     ' each measurement station',
+     +     ' each precipitation measurement station',
      +     'precip_units')/=0 ) CALL read_error(1, 'psta_month_ppt')
 
       IF ( declparam(MODNAME, 'x_add', 'one', 'real',
@@ -289,10 +318,10 @@
      +     'meters')/=0 ) CALL read_error(1, 'x_add')
 
       IF ( declparam(MODNAME, 'x_div', 'one', 'real',
-     +     '0.0', '-1.0E7', '1.0E7',
+     +     '1.0', '-1.0E7', '1.0E7',
      +     'X divisor term for climate station transform',
      +     'Standard deviation for the climate station transformation'//
-     +     ' equation for the longitude (X) coordinate',
+     +     ' equation for the longitude (X) coordinate (not 0.0)',
      +     'meters')/=0 ) CALL read_error(1, 'x_div')
 
       IF ( declparam(MODNAME, 'y_add', 'one', 'real',
@@ -303,10 +332,10 @@
      +     'meters')/=0 ) CALL read_error(1, 'y_add')
 
       IF ( declparam(MODNAME, 'y_div', 'one', 'real',
-     +     '0.0', '-1.0E7', '1.0E7',
+     +     '1.0', '-1.0E7', '1.0E7',
      +     'Y divisor term for climate station transform',
      +     'Standard deviation for the climate station transformation'//
-     +     ' equation for the latitude (Y) coordinate',
+     +     ' equation for the latitude (Y) coordinate (not 0.0)',
      +     'meters')/=0 ) CALL read_error(1, 'y_div')
 
       IF ( declparam(MODNAME, 'z_add', 'one', 'real',
@@ -317,56 +346,60 @@
      +     'meters')/=0 ) CALL read_error(1, 'z_add')
 
       IF ( declparam(MODNAME, 'z_div', 'one', 'real',
-     +     '0.0', '-1.0E7', '1.0E7',
+     +     '1.0', '-1.0E7', '1.0E7',
      +     'Z divisor term for climate station transform',
      +     'Standard deviation for the climate station transformation'//
-     +     ' equation for the elevation (Z) coordinate',
+     +     ' equation for the elevation (Z) coordinate (not 0.0)',
      +     'meters')/=0 ) CALL read_error(1, 'z_div')
 
       IF ( declparam(MODNAME, 'tmax_add', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
      +     'Maximum temperature additive term for climate station'//
      +     ' transform',
-     +     'Mean value for the climate station transformation'//
-     +     ' equation for maximum temperature',
+     +     'Mean value for the air-temperature-measurement station'//
+     +     ' transformation equation for maximum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_add')
 
       IF ( declparam(MODNAME, 'tmax_div', 'one', 'real',
-     +     '0.0', '-100.0', '100.0',
+     +     '1.0', '-100.0', '100.0',
      +     'Maximum temperature divisor term for climate station'//
      +     ' transform',
-     +     'Standard deviation for the climate station transformation'//
-     +     ' equation for maximum temperature',
+     +     'Standard deviation for the air-temperature-measurement'//
+     +     ' station transformation'//
+     +     ' equation for maximum temperature (not 0.0)',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_div')
 
       IF ( declparam(MODNAME, 'tmin_add', 'one', 'real',
      +     '0.0', '-100.0', '100.0',
-     +     'Minimum temperature additive term for climate station'//
-     +     ' transform',
-     +     'Mean value for the climate station transformation'//
-     +     ' equation for minimum temperature',
+     +     'Minimum temperature additive term for the air-temperature'//
+     +     '-measurement station transformation transform',
+     +     'Mean value for the air-temperature-measurement station'//
+     +     ' transformation equation for minimum temperature',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmin_add')
 
       IF ( declparam(MODNAME, 'tmin_div', 'one', 'real',
-     +     '0.0', '-100.0', '100.0',
-     +     'Minimum temperature divisor term for climate station'//
-     +     ' transform',
-     +     'Standard deviation for the climate station transformation'//
-     +     ' equation for minimum temperature',
+     +     '1.0', '-100.0', '100.0',
+     +     'Minimum temperature divisor term for the air-temperature'//
+     +     '-measurement station transformation transform',
+     +     'Standard deviation for the air-temperature-measurement'//
+     +     ' station transformation'//
+     +     ' equation for minimum temperature (not 0.0)',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmin_div')
 
       IF ( declparam(MODNAME, 'ppt_add', 'one', 'real',
      +     '0.0', '-10.0', '10.0',
-     +     'Precipitation additive term for climate station transform',
+     +     'Precipitation additive term for precipitation measurement'//
+     +     ' station transform',
      +     'Mean value for the precipitation measurement station'//
      +     ' transformation equation',
      +     'precip_units')/=0 ) CALL read_error(1, 'ppt_add')
 
       IF ( declparam(MODNAME, 'ppt_div', 'one', 'real',
-     +     '0.0', '-10.0', '10.0',
-     +     'Precipitation divisor term for climate station transform',
+     +     '1.0', '-10.0', '10.0',
+     +     'Precipitation divisor term for precipitation measurement'//
+     +     ' station transform',
      +     'Standard deviation for the precipitation measurement'//
-     +     ' station transformation equation',
+     +     ' station transformation equation (not 0.0)',
      +     'precip_units')/=0 ) CALL read_error(1, 'ppt_div')
 
       IF ( declparam(MODNAME, 'conv_flag', 'one', 'integer',
@@ -376,6 +409,8 @@
      +     ' 2=meters to feet)',
      +     'none')/=0 ) CALL read_error(1, 'conv_flag')
 
+      ALLOCATE ( Precip_xyz(Nrain) )
+
       END FUNCTION xyzdecl
 
 !***********************************************************************
@@ -383,21 +418,32 @@
 !***********************************************************************
       INTEGER FUNCTION xyzinit()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain
-      USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Hru_elev,
-     +    Active_hrus, Hru_route_order, FEET2METERS
+      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain,
+     +    Init_vars_from_file
+      USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
+     +    Hru_elev, Active_hrus, Hru_route_order, FEET2METERS
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL mean_by_month, read_error
 ! Local Variables
-      INTEGER :: i, m, ii, div_err
+      INTEGER :: i, m, ii, div_err, ierr
 !***********************************************************************
       xyzinit = 0
 
 ! Initialize declared variables
-      Is_rain_day = 0
+      IF ( Init_vars_from_file==0 ) THEN
+        Is_rain_day = 0
+        Tmax_rain_sta = 0.0
+        Tmin_rain_sta = 0.0
+      ENDIF
+
+      IF ( getparam(MODNAME, 'adjust_rain', 12, 'real', Adjust_rain)
+     +     /=0 ) CALL read_error(2, 'adjust_rain')
+
+      IF ( getparam(MODNAME, 'adjust_snow', 12, 'real', Adjust_snow)
+     +     /=0 ) CALL read_error(2, 'adjust_snow')
 
       IF ( getparam (MODNAME, 'solrad_elev', 1, 'real', Solrad_elev)
      +     /=0 ) CALL read_error(2, 'solrad_elev')
@@ -542,15 +588,9 @@
         ENDDO
         Solradelev = Solrad_elev*FEET2METERS
       ELSE
-        DO i = 1, Nhru
-          MRUelev(i) = Hru_elev(i)
-        ENDDO
-        DO i = 1, Ntemp
-          Temp_STAelev(i) = Tsta_elev(i)
-        ENDDO
-        DO i = 1, Nrain
-          Pstaelev(i) = Psta_elev(i)
-        ENDDO
+        MRUelev = Hru_elev
+        Temp_STAelev = Tsta_elev
+        Pstaelev = Psta_elev
         Solradelev = Solrad_elev
       ENDIF
 !
@@ -568,7 +608,9 @@
         MRUy(i) = (MRUy(i)+Y_add)/Y_div
       ENDDO
 
+      ierr = 0
       Temp_nsta = 0
+      Temp_nuse = 0
       DO i = 1, Ntemp
 !       Temp_STAelev(i) = (Temp_STAelev(i)+Z_add)/Z_div
 !       temp_STAx(i) = (temp_STAx(i)+X_add)/X_div
@@ -578,9 +620,15 @@
           Temp_nuse(Temp_nsta) = i
         ENDIF
       ENDDO
+      IF ( Temp_nsta<2 ) THEN
+        PRINT *, 'ERROR, need to select at least 2 temperature stations'
+        PRINT *, '       using temp_nuse for xyz_dist'
+        ierr = 1
+      ENDIF
 
       ALLOCATE ( Pstax(Nrain), Pstay(Nrain) )
       Rain_nsta = 0
+      Rain_nuse = 0
       DO i = 1, Nrain
         Pstaelev(i) = (Pstaelev(i)+Z_add)/Z_div
         Pstax(i) = (Rain_STAx(i)+X_add)/X_div
@@ -590,7 +638,15 @@
           Rain_nuse(Rain_nsta) = i
         ENDIF
       ENDDO
-      DEALLOCATE ( Psta_nuse, Tsta_nuse )
+      IF ( Rain_nsta<2 ) THEN
+        PRINT*,'ERROR, need to select at least 2 precipitation stations'
+        PRINT *, '       using temp_nuse for xyz_dist'
+        ierr = 1
+      ENDIF
+      IF ( ierr==1 ) THEN
+        Inputerror_flag = 1
+        RETURN
+      ENDIF
 !
 ! calculate the station mean by month
 !
@@ -611,9 +667,9 @@
 !***********************************************************************
       INTEGER FUNCTION xyzrun()
       USE PRMS_XYZ_DIST
-      USE PRMS_CLIMATEVARS, ONLY: Adjmix_rain, Adjust_snow, Adjust_rain,
-     +    Tmax_allrain
-      USE PRMS_OBS, ONLY: Nowtime, Rain_code, Nowmonth
+      USE PRMS_CLIMATEVARS, ONLY: Adjmix_rain, Tmax_allrain
+      USE PRMS_SET_TIME, ONLY: Nowmonth
+      USE PRMS_OBS, ONLY: Rain_code
       IMPLICIT NONE
 ! Functions
       EXTERNAL xyz_temp_run, xyz_rain_run
@@ -641,8 +697,8 @@
 !***********************************************************************
       SUBROUTINE xyz_temp_run(Max_lapse, Min_lapse, Meantmax, Meantmin,
      +                        Temp_meanx, Temp_meany, Temp_meanz)
-      USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Solradelev,
-     +    Temp_nuse, Tmin_add, Tmin_div, Tmax_add,
+      USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Tmax_rain_sta, Solradelev,
+     +    Tmin_rain_sta, Temp_nuse, Tmin_add, Tmin_div, Tmax_add,
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
@@ -651,8 +707,7 @@
      +    DNEARZERO, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
-     +    Tavgc, Tmin_adj, Tmax_adj, Psta_elev, Tmin_rain_sta,
-     +    Tmax_rain_sta
+     +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
@@ -846,8 +901,8 @@
 !
 !  Temperature adjustment by HRU
 !
-        tmax_hru = tmax_hru + Tmax_adj(i)
-        tmin_hru = tmin_hru + Tmin_adj(i)
+        tmax_hru = tmax_hru + Tmax_aspect_adjust(i)
+        tmin_hru = tmin_hru + Tmin_aspect_adjust(i)
 
 !
 !  If max is less than min, switch
@@ -877,8 +932,8 @@
      +                        Adjmix_rain, Rain_code, Adjust_snow,
      +                        Adjust_rain)
       USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Rain_STAx, Rain_STAy,
-     +    Rain_nuse, Ppt_add, Ppt_div, Rain_nsta,
-     +    Is_rain_day, Psta_freq_nuse, X_div, Y_div,
+     +    Rain_nuse, Ppt_add, Ppt_div, Rain_nsta, Tmax_rain_sta,
+     +    Tmin_rain_sta, Is_rain_day, Psta_freq_nuse, X_div, Y_div,
      +    Z_div, X_add, Y_add, Z_add, Precip_xyz, MAXLAPSE, MRUelev
       USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
@@ -886,8 +941,8 @@
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain, Tmax_allsnow,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev, Basin_obs_ppt,
-     +    Precip_units, Tmin_rain_sta, Tmax_rain_sta, Tmax_allsnow_f
-      USE PRMS_OBS, ONLY: Precip, Nowtime, Rain_day
+     +    Precip_units, Tmax_allsnow_f
+      USE PRMS_OBS, ONLY: Precip, Rain_day
       IMPLICIT NONE
 ! Functions
       INTRINSIC FLOAT, ABS, SNGL
@@ -1090,7 +1145,7 @@
      +    Temp_STAy, Ppt_add, Ppt_div, Tmin_add, Tmin_div, Tmax_add,
      +    X_div, Y_div, Z_div, X_add, Y_add, Z_add, Temp_STAelev
       USE PRMS_MODULE, ONLY: Ntemp, Nrain
-      USE PRMS_CLIMATEVARS, ONLY: Tsta_elev, Psta_elev
+      USE PRMS_CLIMATEVARS, ONLY: Psta_elev
       IMPLICIT NONE
       INTRINSIC FLOAT
 ! Arguments
@@ -1180,78 +1235,14 @@
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Temp_nsta, Rain_nsta,
-     +          Basin_centroid_x, Basin_centroid_y, Solradelev,
-     +          Is_rain_day, Conv_flag, Solrad_elev, Tmax_add,
-     +          Tmax_div, Tmin_add, Tmin_div, Ppt_add, X_add, X_div,
-     +          Y_add, Y_div, Z_add, Z_div, Ppt_div
-        WRITE ( Restart_outunit ) Rain_nuse
-        WRITE ( Restart_outunit ) Temp_nuse
-        WRITE ( Restart_outunit ) Meantmax
-        WRITE ( Restart_outunit ) Meantmin
-        WRITE ( Restart_outunit ) Temp_meanx
-        WRITE ( Restart_outunit ) Temp_meany
-        WRITE ( Restart_outunit ) Rain_meanx
-        WRITE ( Restart_outunit ) Rain_meany
-        WRITE ( Restart_outunit ) Temp_meanz
-        WRITE ( Restart_outunit ) Rain_meanz
-        WRITE ( Restart_outunit ) Meanppt
-        WRITE ( Restart_outunit ) Precip_xyz
-        WRITE ( Restart_outunit ) Temp_STAelev
-        WRITE ( Restart_outunit ) MRUelev
-        WRITE ( Restart_outunit ) Pstaelev
-        WRITE ( Restart_outunit ) Pstax
-        WRITE ( Restart_outunit ) Pstay
-        WRITE ( Restart_outunit ) Max_lapse
-        WRITE ( Restart_outunit ) Min_lapse
-        WRITE ( Restart_outunit ) Ppt_lapse
-        WRITE ( Restart_outunit ) Psta_freq_nuse
-        WRITE ( Restart_outunit ) MRUx
-        WRITE ( Restart_outunit ) MRUy
-        WRITE ( Restart_outunit ) Temp_STAx
-        WRITE ( Restart_outunit ) Temp_STAy
-        WRITE ( Restart_outunit ) Rain_STAx
-        WRITE ( Restart_outunit ) Rain_STAy
-        WRITE ( Restart_outunit ) TmaxMTH
-        WRITE ( Restart_outunit ) TminMTH
-        WRITE ( Restart_outunit ) PptMTH
+        WRITE ( Restart_outunit ) Is_rain_day
+        WRITE ( Restart_outunit ) Tmax_rain_sta
+        WRITE ( Restart_outunit ) Tmin_rain_sta
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Temp_nsta, Rain_nsta,
-     +          Basin_centroid_x, Basin_centroid_y, Solradelev,
-     +          Is_rain_day, Conv_flag, Solrad_elev, Tmax_add,
-     +          Tmax_div, Tmin_add, Tmin_div, Ppt_add, X_add, X_div,
-     +          Y_add, Y_div, Z_add, Z_div, Ppt_div
-        READ ( Restart_inunit ) Rain_nuse
-        READ ( Restart_inunit ) Temp_nuse
-        READ ( Restart_inunit ) Meantmax
-        READ ( Restart_inunit ) Meantmin
-        READ ( Restart_inunit ) Temp_meanx
-        READ ( Restart_inunit ) Temp_meany
-        READ ( Restart_inunit ) Rain_meanx
-        READ ( Restart_inunit ) Rain_meany
-        READ ( Restart_inunit ) Temp_meanz
-        READ ( Restart_inunit ) Rain_meanz
-        READ ( Restart_inunit ) Meanppt
-        READ ( Restart_inunit ) Precip_xyz
-        READ ( Restart_inunit ) Temp_STAelev
-        READ ( Restart_inunit ) MRUelev
-        READ ( Restart_inunit ) Pstaelev
-        READ ( Restart_inunit ) Pstax
-        READ ( Restart_inunit ) Pstay
-        READ ( Restart_inunit ) Max_lapse
-        READ ( Restart_inunit ) Min_lapse
-        READ ( Restart_inunit ) Ppt_lapse
-        READ ( Restart_inunit ) Psta_freq_nuse
-        READ ( Restart_inunit ) MRUx
-        READ ( Restart_inunit ) MRUy
-        READ ( Restart_inunit ) Temp_STAx
-        READ ( Restart_inunit ) Temp_STAy
-        READ ( Restart_inunit ) Rain_STAx
-        READ ( Restart_inunit ) Rain_STAy
-        READ ( Restart_inunit ) TmaxMTH
-        READ ( Restart_inunit ) TminMTH
-        READ ( Restart_inunit ) PptMTH
+        READ ( Restart_inunit ) Is_rain_day
+        READ ( Restart_inunit ) Tmax_rain_sta
+        READ ( Restart_inunit ) Tmin_rain_sta
       ENDIF
       END SUBROUTINE xyz_restart

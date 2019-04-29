@@ -2,34 +2,14 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : load_param.c
- * AUTHOR   :
- * DATE     :
  * FUNCTION : load_param
  * COMMENT  : Stores the parameter value, minima and maxima at the
- *  required address.  Uses str_to_vals to decode the strings and
- *  store the values. This routine mainly handles the error conditions.
- *  Examples of legal strings for this routine are given in str_to_vals.c
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ *            required address.  Uses str_to_vals to decode the strings and
+ *            store the values. This routine mainly handles the error conditions.
+ *            Examples of legal strings for this routine are given in str_to_vals.c
  *
- * $Id: load_param.c 5222 2013-01-14 23:06:22Z markstro $
+ * $Id: load_param.c 6195 2014-02-07 21:49:14Z rsregan $
  *
-   $Revision: 5222 $
-        $Log: load_param.c,v $
-        Revision 1.5  1996/02/19 20:00:15  markstro
-        Now lints pretty clean
-
-        Revision 1.4  1994/11/22 17:19:49  markstro
-        (1) Cleaned up dimensions and parameters.
-        (2) Some changes due to use of malloc_dbg.
-
- * Revision 1.3  1994/09/30  14:54:33  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:16:40  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -37,15 +17,6 @@
 #include <stdio.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : load_param
  | COMMENT		:
@@ -282,8 +253,3 @@ long load_param (PARAM *param) {
 	}
 	return(0);
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-
