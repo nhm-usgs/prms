@@ -8,12 +8,12 @@
       CHARACTER(LEN=80), PARAMETER :: &
      &  EQULS = '================================================================================'
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.0 04/11/2015'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 4.0.1 04/11/2015'
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Npoigages, Nhrucell, Nlake, Ngwcell
-      INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Nsegmentp1, Ndepl, Nobs, Nevap, Ndeplval
+      INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval
       INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
       INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag
@@ -22,10 +22,11 @@
       INTEGER, SAVE :: Temp_flag, Precip_flag, Climate_hru_flag, Climate_swrad_flag
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Cloud_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
-      INTEGER, SAVE :: Soltab_flag, Soilzone_flag, Hru_sum_flag
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
       INTEGER, SAVE :: Grid_flag, Logunt, First_timestep
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
+!      INTEGER, SAVE :: PRMS_strmflow_unit
+!      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Streamflow_out_file
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gvr_hru_pct_adjusted(:)
@@ -47,7 +48,6 @@
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Strmflow_module, Transp_module, Soilzone_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Model_mode, Precip_module, Solrad_module
-      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Soltab_module, Capillary_module
       END MODULE PRMS_MODULE
 
 !***********************************************************************
@@ -74,8 +74,7 @@
       EXTERNAL :: module_error, read_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, check_nhru_params, water_balance
       EXTERNAL :: prms_summary, nhru_summary, module_doc
-      INTEGER, EXTERNAL :: soltab_prms, temp_2sta_prms, hru_sum_prms, potet_hamon_prms
-      INTEGER, EXTERNAL :: ddsolrad_prms, ccsolrad_prms, smbal_prms, ssflow_prms
+      INTEGER, EXTERNAL :: cloud_cover
 ! Local Variables
       INTEGER :: i, iret, nc
 !***********************************************************************
@@ -105,28 +104,23 @@
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs', /, &
-     &        '   Potet Solar Rad: soltab, soltab_prms(deprecated)', /, &
-     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,', /, &
-     &        '                    temp_2sta_prms(deprecated)', /, &
+     &        '   Potet Solar Rad: soltab', /, &
+     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru', /, &
      &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
      &        '                    climate_hru', /, &
      &        'Temp & Precip Dist: xyz_dist, ide_dist', /, &
-     &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru,', /, &
-     &        '                    ddsolrad_prms (deprecated),', /, &
-     &        '                    ccsolrad_prms(deprecated)', /, &
+     &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru', /, &
      &        'Transpiration Dist: transp_tindex, climate_hru, transp_frost', /, &
      &        '      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,', /, &
-     &        '                    potet_hs, potet_pt, potet_pm,', /, &
-     &        '                    potet_hamon_prms(deprecated)', /, &
+     &        '                    potet_hs, potet_pt, potet_pm', /, &
      &        '      Interception: intcp', /, &
      &        '     Snow Dynamics: snowcomp', /, &
      &        '    Surface Runoff: srunoff_smidx, srunoff_carea', /, &
-     &        '         Soil Zone: soilzone, smbal_prms(deprecated),', /, &
-     &        '                    ssflow_prms(deprecated)', /, &
+     &        '         Soil Zone: soilzone', /, &
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum, strmflow_lake', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
-     &        '                    nhru_summary, water_balance, hru_sum_prms(deprecated)', /, &
+     &        '                    nhru_summary, water_balance', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 74('-'))
   16  FORMAT (//, 'Active modules listed in the order in which they are called:', //, 8X, 'Process', 16X, &
      &        'Module (source code version)')
@@ -221,12 +215,8 @@
 
         CALL check_nhru_params()
 
-        IF ( Soltab_flag==1 ) THEN
-          call_modules = soltab()
-        ELSE !IF ( Soltab_flag==2 ) THEN
-          call_modules = soltab_prms() ! deprecated
-        ENDIF
-        IF ( call_modules/=0 ) CALL module_error(Soltab_module, Arg, call_modules)
+        call_modules = soltab()
+        IF ( call_modules/=0 ) CALL module_error('soltab', Arg, call_modules)
       ENDIF
 
       call_modules = prms_time()
@@ -247,10 +237,8 @@
           call_modules = temp_1sta_laps()
         ELSEIF ( Temp_flag==3 ) THEN
           call_modules = temp_dist2()
-        ELSEIF ( Temp_flag==5 ) THEN
+        ELSE !IF ( Temp_flag==5 ) THEN
           call_modules = ide_dist()
-        ELSE !IF ( Temp_flag==4 ) THEN
-          call_modules = temp_2sta_prms() ! deprecated
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
@@ -276,15 +264,16 @@
         IF ( Process_flag==3 ) STOP
       ENDIF
 
+      IF ( Cloud_flag==1 ) THEN
+        call_modules = cloud_cover()
+        IF ( call_modules/=0 ) CALL module_error('cloud_cover', Arg, call_modules)
+      ENDIF
+
       IF ( Climate_swrad_flag==0 ) THEN
         IF ( Solrad_flag==1 ) THEN
           call_modules = ddsolrad()
-        ELSEIF ( Solrad_flag==2 ) THEN
+        ELSE !IF ( Solrad_flag==2 ) THEN
           call_modules = ccsolrad()
-        ELSEIF ( Solrad_flag==3 ) THEN
-          call_modules = ddsolrad_prms() ! deprecated
-        ELSE !IF ( Solrad_flag==4 ) THEN
-          call_modules = ccsolrad_prms() ! deprecated
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Solrad_module, Arg, call_modules)
       ENDIF
@@ -311,10 +300,8 @@
           call_modules = potet_pt()
         ELSEIF ( Et_flag==11 ) THEN
           call_modules = potet_pm()
-        ELSEIF ( Et_flag==10 ) THEN
+        ELSE !IF ( Et_flag==10 ) THEN
           call_modules = potet_hs()
-        ELSE !IF ( Et_flag==3 ) THEN
-          call_modules = potet_hamon_prms() ! deprecated
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Et_module, Arg, call_modules)
       ENDIF
@@ -338,15 +325,8 @@
       call_modules = srunoff()
       IF ( call_modules/=0 ) CALL module_error(Srunoff_module, Arg, call_modules)
 
-      IF ( Soilzone_flag==1 ) THEN
-        call_modules = soilzone()
-        IF ( call_modules/=0 ) CALL module_error(Soilzone_module, Arg, call_modules)
-      ELSE !IF ( Soilzone_flag==2 ) THEN
-        call_modules = smbal_prms() ! deprecated
-        IF ( call_modules/=0 ) CALL module_error(Soilzone_module, Arg, call_modules)
-        call_modules = ssflow_prms() ! deprecated
-        IF ( call_modules/=0 ) CALL module_error('ssflow_prms', Arg, call_modules)
-      ENDIF
+      call_modules = soilzone()
+      IF ( call_modules/=0 ) CALL module_error(Soilzone_module, Arg, call_modules)
 
       call_modules = gwflow()
       IF ( call_modules/=0 ) CALL module_error('gwflow', Arg, call_modules)
@@ -370,11 +350,6 @@
 
       call_modules = basin_sum()
       IF ( call_modules/=0 ) CALL module_error('basin_sum', Arg, call_modules)
-
-      IF ( Hru_sum_flag==1 ) THEN
-        call_modules = hru_sum_prms()
-        IF ( call_modules/=0 ) CALL module_error('hru_sum_prms', Arg, call_modules)
-      ENDIF
 
       IF ( Print_debug==1 ) CALL water_balance()
 
@@ -527,6 +502,9 @@
         PRINT *, 'WARNING, invalid temp_module value, change temp_laps_prms to temp_laps'
       ELSEIF ( Temp_module(:15)=='temp_dist2_prms' ) THEN
         PRINT *, 'WARNING, invalid temp_module value, change temp_dist2_prms to temp_dist2'
+      ELSEIF ( Temp_module(:14)=='temp_2sta_prms' ) THEN
+        PRINT *, 'ERROR, module temp_2sta_prms not available, use a different temp_module'
+        Inputerror_flag = 1
       ENDIF
       Precip_module = ' '
       IF ( control_string(Precip_module, 'precip_module')/=0 ) CALL read_error(5, 'precip_module')
@@ -573,8 +551,6 @@
         Temp_flag = 2
       ELSEIF ( Temp_module(:10)=='temp_dist2' ) THEN
         Temp_flag = 3
-      ELSEIF ( Temp_module(:9)=='temp_2sta' ) THEN ! deprecated
-        Temp_flag = 4
       ELSEIF ( Temp_module(:8)=='ide_dist' ) THEN
         Temp_flag = 5
         IF ( Precip_module(:8)/='ide_dist' ) THEN
@@ -616,8 +592,6 @@
       Climate_transp_flag = 0
       IF ( Transp_flag==3 ) Climate_transp_flag = 1
 
-      Hru_sum_flag = 0
-
       Et_module = ' '
       IF ( control_string(Et_module, 'et_module')/=0 ) CALL read_error(5, 'et_module')
       IF ( Et_module(:13)=='potet_jh_prms' ) THEN
@@ -629,12 +603,12 @@
         Inputerror_flag = 1
       ELSEIF ( Et_module(:20)=='potet_hamon_hru_prms' ) THEN
         PRINT *, 'WARNING, invalid et_module value, change potet_hamon_hru_prms to potet_hamon_hru'
+      ELSEIF ( Et_module(:16)=='potet_hamon_prms' ) THEN
+        PRINT *, 'ERROR, module potet_hamon_prms not available, use a different et_module, such as potet_hamon'
+        Inputerror_flag = 1
       ENDIF
       Et_flag = 1 ! potet_jh
-      IF ( Et_module(:16)=='potet_hamon_prms' ) THEN  ! deprecated
-        Et_flag = 3
-        Hru_sum_flag = 1
-      ELSEIF ( Et_module(:11)=='potet_hamon' ) THEN
+      IF ( Et_module(:11)=='potet_hamon' ) THEN
         Et_flag = 2
       ELSEIF ( Et_module(:11)=='climate_hru' ) THEN
         Et_flag = 7
@@ -673,19 +647,7 @@
         Inputerror_flag = 1
       ENDIF
 
-      Soilzone_module = 'soilzone            '
-      IF ( control_string(Soilzone_module, 'soilzone_module')/=0 ) Soilzone_module = 'soilzone            '
-      IF ( Soilzone_module(:5)/='smbal' .AND. Soilzone_module(:8)/='soilzone' ) THEN
-        PRINT '(/,A,/A)', 'ERROR: invalid soilzone_module value: ', Soilzone_module
-        Inputerror_flag = 1
-      ENDIF
-      Capillary_module = ' '
-      IF ( control_string(Capillary_module, 'capillary_module')/=0 ) Capillary_module = 'null'
-      IF ( Capillary_module(:5)=='smbal' ) Soilzone_module = 'smbal_prms          '
-      IF ( Soilzone_module(:5)=='smbal' ) Soilzone_module = 'smbal_prms          '
-
-      Soilzone_flag = 2 ! smbal and ssflow - deprecated
-      IF ( Soilzone_module(:8)=='soilzone' ) Soilzone_flag = 1
+      Soilzone_module = 'soilzone'
 
       Solrad_module = ' '
       IF ( control_string(Solrad_module, 'solrad_module')/=0 ) CALL read_error(5, 'solrad_module')
@@ -696,13 +658,7 @@
       ENDIF
       IF ( control_integer(Orad_flag, 'orad_flag')/=0 ) Orad_flag = 0
       Solrad_flag = 1 ! ddsolrad
-      IF ( Solrad_module(:13)=='ddsolrad_prms' ) THEN ! deprecated
-        Solrad_flag = 3
-        Hru_sum_flag = 1
-      ELSEIF ( Solrad_module(:13)=='ccsolrad_prms' ) THEN ! deprecated
-        Solrad_flag = 4
-        Hru_sum_flag = 1
-      ELSEIF ( Solrad_module(:11)=='climate_hru' ) THEN
+      IF ( Solrad_module(:11)=='climate_hru' ) THEN
         Solrad_flag = 7
       ELSEIF ( Solrad_module(:8)=='ccsolrad' ) THEN
         Solrad_flag = 2
@@ -734,16 +690,6 @@
         Strmflow_flag = 2
       ELSEIF ( Strmflow_module(:9)=='muskingum' ) THEN
         Strmflow_flag = 4
-      ENDIF
-
-! if radpl solrad is specified, use soltab_prms
-      IF ( Solrad_flag==3 .OR. Solrad_flag==4 ) THEN
-        Soltab_module = 'soltab_prms         ' ! deprecated
-        Soltab_flag = 2
-        Hru_sum_flag = 1
-      ELSE
-        Soltab_module = 'soltab              '
-        Soltab_flag = 1
       ENDIF
 
 ! cascade dimensions
@@ -844,10 +790,8 @@
       IF ( Nhru==0 .OR. Nssr==0 .OR. Ngw==0 ) THEN
         PRINT *, 'ERROR, nhru, nssr, and ngw must be > 0: nhru=', Nhru, ', nssr=', Nssr, ', ngw=', Ngw
         Inputerror_flag = 1
-      ENDIF
-
-      IF ( Soilzone_flag==1 .AND. Nssr/=Nhru ) THEN
-        PRINT *, 'ERROR, nssr must equal nhru to use the soilzone module: nssr=', Nssr, ' nhru=', Nhru
+      ELSEIF ( Nssr/=Nhru .OR. Ngw/=Nhru ) THEN
+        PRINT *, 'ERROR, nhru, nssr, and ngw must equal: nhru=', Nhru, ', nssr=', Nssr, ', ngw=', Ngw
         Inputerror_flag = 1
       ENDIF
 
@@ -901,13 +845,6 @@
       Nratetbl = getdim('nratetbl')
       IF ( Nratetbl==-1 ) CALL read_error(6, 'nratetbl')
 
-      IF ( Nsub>0 .OR. Strmflow_flag>1 .OR. Dprst_flag==1 ) THEN
-        IF ( Nhru/=Ngw .OR. Nhru/=Nssr ) THEN
-          PRINT 9001, Nhru, Nssr, Ngw
-          Inputerror_flag = 1
-        ENDIF
-      ENDIF
-
       IF ( Model==99 ) THEN
         IF ( Ntemp==0 ) Ntemp = 1
         IF ( Nrain==0 ) Nrain = 1
@@ -931,16 +868,20 @@
           STOP
         ENDIF
       ENDIF
-      Nsegmentp1 = Nsegment + 1
 
       Lake_route_flag = 0
       IF ( (Nlake>0.AND.Strmflow_flag==2) .OR. Model==99 ) Lake_route_flag = 1 ! strmflow_lake
       Stream_order_flag = 0
-      IF ( (Nsegment>0.AND.Strmflow_flag>1) .OR. Model==99 ) Stream_order_flag = 1 ! strmflow_in_out, muskingum, strmflow_lake
-
- 9001 FORMAT ('ERROR, nhru must equal nssr and ngw when using:', /, &
-     &        'subbasins, cascades, surface depressions, muskingum, or strmflow_lake nhru=', &
-     &        I8, ' nssr=', I8, ' ngw=', I8)
+      IF ( (Nsegment>0.AND.Strmflow_flag>1) .OR. Model==99 ) THEN
+        Stream_order_flag = 1 ! strmflow_in_out, muskingum, strmflow_lake
+!        Streamflow_out_file =  Model_output_file(:numchars(Model_output_file))//'_streamflow.out'
+!        CALL PRMS_open_output_file(PRMS_strmflow_unit, Streamflow_out_file, 'streamflow.out', 0, iret)
+!        IF ( iret/=0 ) STOP
+!        IF ( Print_debug>-1 ) THEN
+!          PRINT '(/, 2A)', 'Streamflow outflow written to file: ', Streamflow_out_file(:numchars(Streamflow_out_file))
+!          PRINT '(A)', EQULS
+!        ENDIF
+      ENDIF
 
       check_dims = Inputerror_flag
       END FUNCTION check_dims
@@ -957,7 +898,7 @@
       INTEGER, EXTERNAL :: temp_1sta_laps, temp_dist2
       INTEGER, EXTERNAL :: precip_1sta_laps, climate_hru
       INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist
-      INTEGER, EXTERNAL :: ddsolrad, ccsolrad
+      INTEGER, EXTERNAL :: ddsolrad, ccsolrad, cloud_cover
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
@@ -980,6 +921,7 @@
       test = precip_1sta_laps()
       test = precip_dist2()
       test = ddsolrad()
+      test = cloud_cover()
       test = ccsolrad()
       test = transp_tindex()
       test = frost_date()

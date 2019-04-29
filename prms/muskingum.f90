@@ -138,7 +138,7 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = '$Id: muskingum.f90 7231 2015-03-09 20:17:09Z rsregan $'
+      Version_muskingum = '$Id: muskingum.f90 7050 2014-12-02 19:06:41Z rsregan $'
       CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
       MODNAME = 'muskingum'
 

@@ -3,7 +3,7 @@
 # $Id: makelist 6950 2014-10-30 22:50:23Z rsregan $
 #-------------------------------------------------------------------
 
-MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/4.0.0/build/
+MOWSDIR     = /sshome/markstro/prmsLinuxDistribution/4.0.1/build/
 MMFDIR      = $(MOWSDIR)/mmf/trunk
 PRMSDIR     = $(MOWSDIR)/prmsIV
 LIBDIR      = $(MOWSDIR)/lib
@@ -13,6 +13,9 @@ PRMSBRANCH  = $(PRMSDIR)/branch
 BINDIR      = $(MOWSDIR)/bin
 PRMSBASE    = $(LIBDIR)/libprmsbase.a
 MMFLIB      = $(LIBDIR)/libmmf.a
+
+MMFLIBMD	= $(LIBDIR)/libmmf.a
+PRMSLIBMD	= $(LIBDIR)/libprmsbase.a
 
 #########################################################
 # Configure tags for each system

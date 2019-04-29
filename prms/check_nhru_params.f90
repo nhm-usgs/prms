@@ -27,7 +27,7 @@
       SUBROUTINE check_nhru_params_init()
       USE PRMS_CHECK_NHRU_PARAMS
       USE PRMS_MODULE, ONLY: Temp_flag, Ntemp, Nsol, Nevap, Parameter_check_flag, &
-     &    Print_debug, Inputerror_flag, Soilzone_flag
+     &    Print_debug, Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, SMALLPARAM, &
      &    Cov_type, Covden_win, Covden_sum
       USE PRMS_CLIMATEVARS, ONLY: Hru_tsta, Hru_solsta, Hru_pansta, Use_pandata
@@ -77,8 +77,7 @@
           CYCLE
         ENDIF
 
-        IF ( Soilzone_flag==1 ) &
-     &    CALL check_param_zero(i, 'sat_threshold', Sat_threshold(i), ierr)
+        CALL check_param_zero(i, 'sat_threshold', Sat_threshold(i), ierr)
         IF ( Soil_moist_max(i)<SMALLPARAM ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT *, 'ERROR, soil_moist_max value <', SMALLPARAM, ' for HRU:', i, ', value:', Soil_moist_max(i)

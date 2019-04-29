@@ -46,7 +46,7 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_hs.f90 6835 2014-10-10 19:18:29Z rsregan $'
+        Version_potet = '$Id: potet_hs.f90 7050 2014-12-02 19:06:41Z rsregan $'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_hs'
 

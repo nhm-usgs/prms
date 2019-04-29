@@ -18,7 +18,7 @@
       REAL, SAVE, ALLOCATABLE :: Intcp_stor(:), Intcp_evap(:)
       REAL, SAVE, ALLOCATABLE :: Hru_intcpstor(:), Hru_intcpevap(:), Canopy_covden(:)
 !   Declared Parameters
-      REAL, SAVE :: Potet_sublim, Epan_coef(12)
+      REAL, SAVE, ALLOCATABLE :: Potet_sublim(:), Epan_coef(:, :)
       REAL, SAVE, ALLOCATABLE :: Snow_intcp(:), Srain_intcp(:), Wrain_intcp(:)
       END MODULE PRMS_INTCP
 
@@ -65,7 +65,7 @@
 !***********************************************************************
       intdecl = 0
 
-      Version_intcp = '$Id: intcp.f90 7218 2015-03-05 21:46:16Z rsregan $'
+      Version_intcp = '$Id: intcp_2d.f90 7218 2015-03-05 21:46:16Z rsregan $'
       CALL print_module(Version_intcp, 'Canopy Interception         ', 90)
       MODNAME = 'intcp'
 
@@ -134,10 +134,11 @@
       ALLOCATE ( Intcp_transp_on(Nhru), Intcp_changeover(Nhru) )
 
 ! declare parameters
-      IF ( declparam(MODNAME, 'epan_coef', 'nmonths', 'real', &
+      ALLOCATE ( Epan_coef(Nhru,12) )
+      IF ( declparam(MODNAME, 'epan_coef', 'nhru,nmonths', 'real', &
      &     '1.0', '0.2', '3.0', &
      &     'Evaporation pan coefficient', &
-     &     'Monthly (January to December) evaporation pan coefficient', &
+     &     'Monthly (January to December) evaporation pan coefficient for each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'epan_coef')
 
       ALLOCATE ( Snow_intcp(Nhru) )
@@ -161,10 +162,11 @@
      &     'Winter rain interception storage capacity for the major vegetation type in each HRU', &
      &     'inches')/=0 ) CALL read_error(1, 'wrain_intcp')
 
-      IF ( declparam(MODNAME, 'potet_sublim', 'one', 'real', &
+      ALLOCATE ( Potet_sublim(Nhru) )
+      IF ( declparam(MODNAME, 'potet_sublim', 'nhru', 'real', &
      &     '0.5', '0.1', '0.75', &
-     &     'Fraction of potential ET that is sublimated from snow', &
-     &     'Fraction of potential ET that is sublimated from snow in the canopy and snowpack', &
+     &     'Fraction of potential ET that is sublimated from snow for each HRU', &
+     &     'Fraction of potential ET that is sublimated from snow in the canopy and snowpack for each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'potet_sublim')
 
       END FUNCTION intdecl
@@ -176,27 +178,31 @@
       INTEGER FUNCTION intinit()
       USE PRMS_INTCP
       USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Init_vars_from_file, Print_debug
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error
 ! Local Variables
-      INTEGER :: i
+      INTEGER :: i, j, jj
 !***********************************************************************
       intinit = 0
 
       IF ( getparam(MODNAME, 'snow_intcp', Nhru, 'real', Snow_intcp)/=0 ) CALL read_error(2, 'snow_intcp')
       IF ( getparam(MODNAME, 'wrain_intcp', Nhru, 'real', Wrain_intcp)/=0 ) CALL read_error(2, 'wrain_intcp')
       IF ( getparam(MODNAME, 'srain_intcp', Nhru, 'real', Srain_intcp)/=0 ) CALL read_error(2, 'srain_intcp')
-      IF ( getparam(MODNAME, 'epan_coef', 12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
+      IF ( getparam(MODNAME, 'epan_coef', Nhru*12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
       DO i = 1, 12
-        IF ( Epan_coef(i)<0.0 ) THEN
-          PRINT *, 'ERROR, epan_coef specified < 0.0 for month:', i, Epan_coef(i)
-          Inputerror_flag = 1
-        ENDIF
+        DO j = 1, Active_hrus
+          jj = Hru_route_order(j)
+          IF ( Epan_coef(jj,i)<0.0 ) THEN
+            PRINT *, 'ERROR, epan_coef specified < 0 for month:', i, Epan_coef(i, jj)
+            Inputerror_flag = 1
+          ENDIF
+        ENDDO
       ENDDO
 
-      IF ( getparam(MODNAME, 'potet_sublim', 1, 'real', Potet_sublim)/=0 ) CALL read_error(2, 'potet_sublim')
+      IF ( getparam(MODNAME, 'potet_sublim', Nhru, 'real', Potet_sublim)/=0 ) CALL read_error(2, 'potet_sublim')
 
       Intcp_changeover = 0.0
       IF ( Init_vars_from_file==0 ) THEN
@@ -384,8 +390,8 @@
         IF ( Intcp_on(i)==1 ) THEN
           IF ( Hru_ppt(i)<NEARZERO ) THEN
 
-            evrn = Potet(i)/Epan_coef(Nowmonth)
-            evsn = Potet_sublim*Potet(i)
+            evrn = Potet(i)/Epan_coef(i, Nowmonth)
+            evsn = Potet_sublim(i)*Potet(i)
 
             IF ( Use_pandata==1 ) THEN
               evrn = Pan_evap(Hru_pansta(i))

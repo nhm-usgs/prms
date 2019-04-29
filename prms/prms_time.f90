@@ -100,7 +100,7 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_time = '$Id: prms_time.f90 7209 2015-03-02 23:13:46Z rsregan $'
+        Version_prms_time = '$Id: prms_time.f90 7208 2015-03-02 23:13:16Z rsregan $'
         CALL print_module(Version_prms_time, 'PRMS Set Time Variables     ', 90)
 !        MODNAME = 'prms_time'
         Timestep_seconds = 86400.0D0

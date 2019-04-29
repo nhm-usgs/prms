@@ -8,8 +8,7 @@
         ! Local Variable
         CHARACTER(LEN=8), SAVE :: MODNAME
         ! Declared Parameters
-        REAL, SAVE, ALLOCATABLE :: Jh_coef_hru(:)
-        REAL, SAVE :: Jh_coef(12)
+        REAL, SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
       END MODULE PRMS_POTET_JH
 
       INTEGER FUNCTION potet_jh()
@@ -24,7 +23,7 @@
       EXTERNAL read_error, print_module, check_param_limits
 ! Local Variables
       INTEGER :: i, j, k
-      REAL :: elh, jhcoef_mon
+      REAL :: elh
       CHARACTER(LEN=80), SAVE :: Version_potet_jh
 !***********************************************************************
       potet_jh = 0
@@ -34,12 +33,11 @@
 ! 597.3 cal/gm at 0 C is the energy required to change the state of 
 ! water to vapor
 ! elh is the latent heat of vaporization (not including the *2.54)
-        jhcoef_mon = Jh_coef(Nowmonth)
         Basin_potet = 0.0D0
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           elh = (597.3-(0.5653*Tavgc(i)))*2.54
-          Potet(i) = jhcoef_mon*(Tavgf(i)-Jh_coef_hru(i))*Swrad(i)/elh
+          Potet(i) = Jh_coef(i, Nowmonth)*(Tavgf(i)-Jh_coef_hru(i))*Swrad(i)/elh
           IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
           Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
         ENDDO
@@ -47,15 +45,16 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_jh = '$Id: potet_jh.f90 6835 2014-10-10 19:18:29Z rsregan $'
+        Version_potet_jh = '$Id: potet_jh_2d.f90 7050 2014-12-02 19:06:41Z rsregan $'
         CALL print_module(Version_potet_jh, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_jh'
 
-        IF ( declparam(MODNAME, 'jh_coef', 'nmonths', 'real', &
+        ALLOCATE ( Jh_coef(Nhru,12) )
+        IF ( declparam(MODNAME, 'jh_coef', 'nhru,nmonths', 'real', &
      &       '0.014', '0.005', '0.1', &
-     &       'Monthly air temperature coefficient - Jensen-Haise', &
-     &       'Monthly (January to December) air temperature coefficient'// &
-     &       ' used in Jensen-Haise potential ET computations', &
+     &       'Monthly air temperature coefficient for each HRU - Jensen-Haise', &
+     &       'Monthly (January to December) air temperature coefficient used in Jensen-Haise potential ET computations'// &
+     &       ' for each HRU', &
      &       'per degrees Fahrenheit')/=0 ) CALL read_error(1, 'jh_coef')
 
         ALLOCATE ( Jh_coef_hru(Nhru) )
@@ -67,15 +66,15 @@
 
 !******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam(MODNAME, 'jh_coef', 12, 'real', Jh_coef)/=0 ) CALL read_error(2, 'jh_coef')
+        IF ( getparam(MODNAME, 'jh_coef', Nhru*12, 'real', Jh_coef)/=0 ) CALL read_error(2, 'jh_coef')
         IF ( getparam(MODNAME, 'jh_coef_hru', Nhru, 'real', Jh_coef_hru)/=0 ) CALL read_error(2, 'jh_coef_hru')
         IF ( Parameter_check_flag>0 ) THEN
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             CALL check_param_limits(i, 'jh_coef_hru', Jh_coef_hru(i), -50.0, 150.0, Inputerror_flag)
-          ENDDO
-          DO k = 1, 12
-            CALL check_param_limits(k, 'jh_coef', Jh_coef(k), -1.0, 10.0, Inputerror_flag)
+            DO k = 1, 12
+              CALL check_param_limits(k, 'jh_coef', Jh_coef(i, k), -1.0, 10.0, Inputerror_flag)
+            ENDDO
           ENDDO
         ENDIF
 

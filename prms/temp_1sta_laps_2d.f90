@@ -24,7 +24,7 @@
         CHARACTER(LEN=9), SAVE :: MODNAME
         ! Declared Parameters
         INTEGER, SAVE :: Max_missing
-        REAL, SAVE :: Tmax_lapse(12), Tmin_lapse(12)
+        REAL, SAVE, ALLOCATABLE :: Tmax_lapse(:, :), Tmin_lapse(:, :)
         INTEGER, SAVE, ALLOCATABLE :: Hru_tlaps(:)
       END MODULE PRMS_TEMP_1STA_LAPS
 
@@ -46,7 +46,7 @@
       EXTERNAL read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
-      REAL :: tmaxlaps_mo, tminlaps_mo, tmx, tmn, tdiff
+      REAL :: tmx, tmn, tdiff
       CHARACTER(LEN=80), SAVE :: Version_temp
 !***********************************************************************
       temp_1sta_laps = 0
@@ -98,27 +98,29 @@
         Basin_tmin = 0.0D0
         Basin_temp = 0.0D0
         IF ( Temp_flag==1 ) THEN
-          tmaxlaps_mo = Tmax_lapse(Nowmonth)
-          tminlaps_mo = Tmin_lapse(Nowmonth)
-        ENDIF
-        DO jj = 1, Active_hrus
-          j = Hru_route_order(jj)
-          k = Hru_tsta(j)
-          IF ( Temp_flag==1 ) THEN
+          DO jj = 1, Active_hrus
+            j = Hru_route_order(jj)
+            k = Hru_tsta(j)
             IF ( Nowday==1 ) THEN
-              Tcrx(j) = tmaxlaps_mo*Elfac(j) - Tmax_aspect_adjust(j)
-              Tcrn(j) = tminlaps_mo*Elfac(j) - Tmin_aspect_adjust(j)
+              Tcrx(j) = Tmax_lapse(j, Nowmonth)*Elfac(j) - Tmax_aspect_adjust(j, Nowmonth)
+              Tcrn(j) = Tmin_lapse(j, Nowmonth)*Elfac(j) - Tmin_aspect_adjust(j, Nowmonth)
             ENDIF
             tmx = Tmax(k) - Tcrx(j)
             tmn = Tmin(k) - Tcrn(j)
-          ELSE
+            CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
+     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+          ENDDO
+        ELSE
+          DO jj = 1, Active_hrus
+            j = Hru_route_order(jj)
+            k = Hru_tsta(j)
             l = Hru_tlaps(j)
-            tmx = Tmax(k) + (Tmax(l) - Tmax(k))*Elfac(j) + Tmax_aspect_adjust(j)
-            tmn = Tmin(k) + (Tmin(l) - Tmin(k))*Elfac(j) + Tmin_aspect_adjust(j)
-          ENDIF
-          CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
-     &                  Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
-        ENDDO
+            tmx = Tmax(k) + (Tmax(l) - Tmax(k))*Elfac(j) + Tmax_aspect_adjust(j, Nowmonth)
+            tmn = Tmin(k) + (Tmin(l) - Tmin(k))*Elfac(j) + Tmin_aspect_adjust(j, Nowmonth)
+            CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
+     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+          ENDDO
+        ENDIF
         Basin_tmax = Basin_tmax*Basin_area_inv
         Basin_tmin = Basin_tmin*Basin_area_inv
         Basin_temp = Basin_temp*Basin_area_inv
@@ -140,7 +142,7 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_temp = '$Id: temp_1sta_laps.f90 7115 2015-01-06 00:09:15Z rsregan $'
+        Version_temp = '$Id: temp_1sta_laps_2d.f90 7208 2015-03-02 23:13:16Z rsregan $'
         IF ( Temp_flag==1 ) THEN
           MODNAME = 'temp_1sta'
           Version_temp = Version_temp(:14)//Version_temp(20:80)
@@ -155,18 +157,21 @@
 
         IF ( Temp_flag==1 .OR. Model==99 ) THEN
           ALLOCATE ( Tcrn(Nhru), Tcrx(Nhru) )
-          IF ( declparam(MODNAME, 'tmax_lapse', 'nmonths', 'real', &
-     &         '3.0', '-10.0', '10.0', &
-     &         'Monthly maximum temperature lapse rate', &
+          ALLOCATE ( Tmax_lapse(Nhru, 12) )
+          IF ( declparam(MODNAME, 'tmax_lapse', 'nhru,nmonths', 'real', &
+     &         '3.0', '-20.0', '20.0', &
+     &         'Monthly maximum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in maximum air temperature per 1000 elev_units of'// &
-     &         ' elevation change', &
+     &         ' elevation change for each HRU', &
      &         'temp_units/elev_units')/=0 ) CALL read_error(1, 'tmax_lapse')
+! 3 degC/ 1000 ft is adiabatic, or 9.8 degC/ 1000 m, or 5.4 degF/ 1000 ft, or 17.64 degF /1000 m
 
-          IF ( declparam(MODNAME, 'tmin_lapse', 'nmonths', 'real', &
-     &         '3.0', '-10.0', '10.0', &
-     &         'Monthly minimum temperature lapse rate', &
+          ALLOCATE ( Tmin_lapse(Nhru, 12) )
+          IF ( declparam(MODNAME, 'tmin_lapse', 'nhru,nmonths', 'real', &
+     &         '3.0', '-20.0', '20.0', &
+     &         'Monthly minimum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in minimum air temperture per 1000 elev_units of'// &
-     &         ' elevation change', &
+     &         ' elevation change for each HRU', &
      &         'temp_units/elev_units')/=0 ) CALL read_error(1, 'tmin_lapse')
         ENDIF
 
@@ -193,8 +198,8 @@
 
         ! Initialize variables, get parameter values, compute Elfac
         IF ( Temp_flag==1 ) THEN
-          IF ( getparam(MODNAME, 'tmin_lapse', 12, 'real', Tmin_lapse)/=0 ) CALL read_error(2, 'tmin_lapse')
-          IF ( getparam(MODNAME, 'tmax_lapse', 12, 'real', Tmax_lapse)/=0 ) CALL read_error(2, 'tmax_lapse')
+          IF ( getparam(MODNAME, 'tmin_lapse', Nhru*12, 'real', Tmin_lapse)/=0 ) CALL read_error(2, 'tmin_lapse')
+          IF ( getparam(MODNAME, 'tmax_lapse', Nhru*12, 'real', Tmax_lapse)/=0 ) CALL read_error(2, 'tmax_lapse')
         ELSE
           IF ( getparam(MODNAME, 'hru_tlaps', Nhru, 'integer', Hru_tlaps)/=0 ) CALL read_error(2, 'hru_tlaps') 
         ENDIF
@@ -205,31 +210,33 @@
         Nuse_tsta = 0
         Elfac = 0.0
         IF ( Temp_flag==1 ) THEN
-          tmaxlaps_mo = Tmax_lapse(Start_month)
-          tminlaps_mo = Tmin_lapse(Start_month)
           Tcrx = 0.0
           Tcrn = 0.0
-        ENDIF
-        DO i = 1, Active_hrus
-          j = Hru_route_order(i)
-          k = Hru_tsta(j)
-          Nuse_tsta(k) = 1
-          IF ( Temp_flag==1 ) THEN
+          DO i = 1, Active_hrus
+            j = Hru_route_order(i)
+            k = Hru_tsta(j)
+            Nuse_tsta(k) = 1
             Elfac(j) = (Hru_elev(j)-Tsta_elev(k))/1000.0
-            Tcrx(j) = tmaxlaps_mo*Elfac(j) - Tmax_aspect_adjust(j)
-            Tcrn(j) = tminlaps_mo*Elfac(j) - Tmin_aspect_adjust(j)
-          ELSE
-            ierr = 0
+            Tcrx(j) = Tmax_lapse(j, Start_month)*Elfac(j) - Tmax_aspect_adjust(j, Start_month)
+            Tcrn(j) = Tmin_lapse(j, Start_month)*Elfac(j) - Tmin_aspect_adjust(j, Start_month)
+          ENDDO
+        ELSE
+          ierr = 0
+          DO i = 1, Active_hrus
+            j = Hru_route_order(i)
             CALL checkdim_param_limits(j, 'hru_tlaps', 'ntemp', Hru_tlaps(j), 1, Ntemp, ierr)
-            IF ( ierr==0 ) THEN
-              tdiff = Tsta_elev(Hru_tlaps(j)) - Tsta_elev(k)
-              IF ( ABS(tdiff)<NEARZERO ) tdiff = 1.0
-              Elfac(j) = (Hru_elev(j)-Tsta_elev(k))/tdiff
-            ELSE
-              Inputerror_flag = 1
-            ENDIF
+            IF ( ierr==1 ) CYCLE ! if one error found no need to compute values
+            k = Hru_tsta(j)
+            Nuse_tsta(k) = 1
+            tdiff = Tsta_elev(Hru_tlaps(j)) - Tsta_elev(k)
+            IF ( ABS(tdiff)<NEARZERO ) tdiff = 1.0
+            Elfac(j) = (Hru_elev(j)-Tsta_elev(k))/tdiff
+          ENDDO
+          IF ( ierr==1 ) THEN
+            Inputerror_flag = 1
+            RETURN
           ENDIF
-        ENDDO
+        ENDIF
 
         IF ( Init_vars_from_file==0 ) THEN
           Solrad_tmax_good = Solrad_tmax
@@ -237,7 +244,7 @@
           Tmax_cnt = 0
           Tmin_cnt = 0
           DO i = 1, Ntemp
-            Tmax_prev(i) = Tmax_allrain(Start_month)
+            Tmax_prev(i) = Tmax_allrain(1, Start_month)
           ENDDO
           Tmin_prev = Tmax_prev
         ENDIF

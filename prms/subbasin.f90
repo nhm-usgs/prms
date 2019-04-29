@@ -219,10 +219,9 @@
       USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, Print_debug, Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, DNEARZERO
-      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor
-      USE PRMS_GWFLOW, ONLY: Gwres_stor
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error, PRMS_open_module_file
@@ -357,11 +356,11 @@
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
-     &    Ssres_stor, Soil_moist, Pkwater_equiv
+     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes
       USE PRMS_SOILZONE, ONLY: Lakein_sz
-      USE PRMS_GWFLOW, ONLY: Gwres_flow, Gwres_stor
+      USE PRMS_GWFLOW, ONLY: Gwres_flow
       IMPLICIT NONE
 ! Local Variables
       INTEGER :: j, jj, k

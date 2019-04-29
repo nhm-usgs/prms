@@ -7,6 +7,7 @@
       CHARACTER(LEN=7), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE :: Cfs2acft
       CHARACTER(LEN=80), SAVE :: Version_routing
+      !CHARACTER(LEN=32), SAVE :: Outfmt
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Seginc_ssflow(:), Seginc_sroff(:)
       REAL, SAVE, ALLOCATABLE :: Seginc_gwflow(:), Seginc_swrad(:), Seginc_potet(:)
@@ -53,7 +54,7 @@
 !***********************************************************************
       routingdecl = 0
 
-      Version_routing = '$Id: routing.f90 7209 2015-03-02 23:13:46Z rsregan $'
+      Version_routing = '$Id: routing.f90 7218 2015-03-05 21:46:16Z rsregan $'
       CALL print_module(Version_routing, 'Routing Initialization      ', 90)
       MODNAME = 'routing'
 
@@ -107,13 +108,15 @@
 !**********************************************************************
       INTEGER FUNCTION routinginit()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file !, PRMS_strmflow_unit
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: FT2_PER_ACRE
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
+! Local Variable
+      !INTEGER :: i
 !**********************************************************************
       routinginit = 0
 
@@ -130,6 +133,13 @@
 
       IF ( getparam(MODNAME, 'segment_type', Nsegment, 'integer', Segment_type)/=0 ) CALL read_error(2, 'segment_type') 
 
+      !WRITE ( Outfmt, 9001 ) Nsegment - 1
+      !WRITE ( PRMS_strmflow_unit, Outfmt ) (i, i = 1, Nsegment)
+      !WRITE ( Outfmt, 9002 ) Nsegment - 1
+
+! 9001 FORMAT ( '(',I8,'(I10,","),I10)' )
+! 9002 FORMAT ( '(',I8,'(E10.3,","),E10.3)' )
+
       END FUNCTION routinginit
 
 !***********************************************************************
@@ -137,12 +147,12 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment
+      USE PRMS_MODULE, ONLY: Nsegment !, PRMS_strmflow_unit
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, NEARZERO, &
      &    Hru_segment, Segment_hruarea, Tosegment, Noarea_flag, FT2_PER_ACRE
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
-      USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow
+      USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow !, Seg_outflow
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       IMPLICIT NONE
       INTRINSIC DBLE
@@ -173,6 +183,8 @@
           Seginc_potet(i) = Seginc_potet(i) + DBLE( Potet(j)*Hru_area(j) )
         ENDIF
       ENDDO
+
+      !WRITE ( PRMS_strmflow_unit, Outfmt ) (Seg_outflow(i), i = 1, Nsegment)
 
 ! Divide solar radiation and PET by sum of HRU area to get avarage
       IF ( Noarea_flag==0 ) THEN

@@ -37,7 +37,7 @@
 !***********************************************************************
       strmlkdecl = 0
 
-      Version_strmflow_lake = '$Id: strmflow_lake.f90 7125 2015-01-13 16:54:29Z rsregan $'
+      Version_strmflow_lake = '$Id: strmflow_lake.f90 7182 2015-01-29 20:36:25Z rsregan $'
       CALL print_module(Version_strmflow_lake, 'Streamflow Routing          ', 90)
 !      MODNAME = 'strmflow_lake'
 
@@ -52,7 +52,7 @@
       USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Lake_area, Segment_order, Tosegment, Obsin_segment
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Flow_out, &
-     &    Seg_lateral_inflow, Basin_lake_stor, Basin_2ndstflow, Seg_inflow, Seg_outflow, Seg_upstream_inflow
+     &    Seg_lateral_inflow, Basin_lake_stor, Seg_inflow, Seg_outflow, Seg_upstream_inflow
       USE PRMS_LAKE_ROUTE, ONLY: Lake_id, Lake_inflow, Lake_type, Lake_outflow, Lake_outcfs, Obsout_lake, &
      &    Din1, Nsos, Lake_sto, Lake_coef, Lake_vol, Lake_invol, Lake_outvol, Lake_outcms, Lake_stream_in
       USE PRMS_ROUTING, ONLY: Segment_type
@@ -113,6 +113,5 @@
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
-      Basin_2ndstflow = Basin_2ndstflow*Basin_area_inv
 
       END FUNCTION strmlkrun

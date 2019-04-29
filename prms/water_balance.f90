@@ -44,7 +44,7 @@
 !***********************************************************************
       SUBROUTINE water_balance_decl()
       USE PRMS_WATER_BALANCE
-      USE PRMS_MODULE, ONLY: Model, Nhru, Cascade_flag, Dprst_flag, Soilzone_flag
+      USE PRMS_MODULE, ONLY: Model, Nhru, Cascade_flag, Dprst_flag
       USE PRMS_SRUNOFF, ONLY: MODNAME
       IMPLICIT NONE
 ! Functions
@@ -53,12 +53,11 @@
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_water_balance
 !***********************************************************************
-      Version_water_balance = '$Id: water_balance.f90 7224 2015-03-06 16:23:48Z rsregan $'
+      Version_water_balance = '$Id: water_balance.f90 7225 2015-03-06 16:25:06Z rsregan $'
       CALL print_module(Version_water_balance, 'Water Balance Computations  ', 90 )
       MODNAME_WB = 'water_balance'
 
 ! Declare Variables
-      IF ( Soilzone_flag==1 ) THEN
       IF ( declvar(MODNAME_WB, 'basin_capillary_wb', 'one', 1, 'double', &
      &     'Basin area-weighted average capillary reservoir storage', &
      &     'inches', Basin_capillary_wb)/=0 ) CALL read_error(3, 'basin_capillary_wb')
@@ -72,7 +71,6 @@
      &     'inches', Basin_soilzone_wb)/=0 ) CALL read_error(3, 'basin_soilzone_wb')
 
       ALLOCATE ( Hru_storage_ante(Nhru) )
-      ENDIF
 
       IF ( Dprst_flag==1 ) THEN
         IF ( declvar(MODNAME_WB, 'basin_dprst_wb', 'one', 1, 'double', &
@@ -96,13 +94,11 @@
           WRITE ( SROUNIT, 9005 )
         ENDIF
 
-        IF ( Soilzone_flag==1 ) THEN
         CALL PRMS_open_module_file(SZUNIT, 'soilzone.wbal')
         IF ( Model==1 ) THEN
           WRITE ( SZUNIT, 9001 )
         ELSE
           WRITE ( SZUNIT, 9002 )
-        ENDIF
         ENDIF
 
         IF ( Model/=0 ) THEN
@@ -121,7 +117,7 @@
      &        '  slow stor dunnian gvr lake evap     gvr2sm       gwin  iteration')
  9003 FORMAT ('    Date     Water Bal     Precip     Netppt  Intcpevap  Intcpstor  last_stor changeover')
  9004 FORMAT ('    Date     Water Bal last store  GWR store', &
-              '   GW input    GW flow    GW sink    farflow GW upslope minarea_in   downflow')
+              '   GW input    GW flow    GW sink GW upslope minarea_in   downflow')
  9005 FORMAT ('    Date     Water Bal     Robal      Sroff      Infil  Impervevap Impervstor Dprst_evap Dprst_seep', &
      &        '   Perv Sro Imperv Sro  Dprst Sro')
  9006 FORMAT ('    Date     Water Bal     Robal      Sroff      Infil  Impervevap Impervstor Dprst_evap Dprst_seep', &
@@ -136,8 +132,9 @@
 !***********************************************************************
       SUBROUTINE water_balance_init()
       USE PRMS_WATER_BALANCE
-      USE PRMS_MODULE, ONLY: Model, Soilzone_flag
-      USE PRMS_GWFLOW, ONLY: Basin_gwstor, Hru_storage, Gwres_stor
+      USE PRMS_MODULE, ONLY: Model
+      USE PRMS_FLOWVARS, ONLY: Gwres_stor
+      USE PRMS_GWFLOW, ONLY: Basin_gwstor, Hru_storage
 !***********************************************************************
       Basin_capillary_wb = 0.0D0
       Basin_gravity_wb = 0.0D0
@@ -147,7 +144,7 @@
       IF ( Model/=0 ) THEN
         Last_basin_gwstor = Basin_gwstor
         Gwstor_ante = Gwres_stor
-        IF ( Soilzone_flag==1 ) Hru_storage_ante = Hru_storage
+        Hru_storage_ante = Hru_storage
       ENDIF
 
       END SUBROUTINE water_balance_init
@@ -157,14 +154,14 @@
 !***********************************************************************
       SUBROUTINE water_balance_run()
       USE PRMS_WATER_BALANCE
-      USE PRMS_MODULE, ONLY: Model, Cascade_flag, Cascadegw_flag, Dprst_flag, Kkiter, Soilzone_flag, Gw_rejected, Basin_szreject
+      USE PRMS_MODULE, ONLY: Model, Cascade_flag, Cascadegw_flag, Dprst_flag, Kkiter, Gw_rejected, Basin_szreject
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_frac_perv, Hru_area, Hru_perv, &
      &    Hru_type, Basin_area_inv, NEARZERO, Dprst_area_max, Hru_frac_imperv, Hru_frac_dprst, Cov_type
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Newsnow, Pptmix
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Soil_to_gw, Soil_to_ssr, &
      &    Infil, Soil_moist_max, Ssr_to_gw, Ssres_flow, Basin_soil_to_gw, Soil_moist, Ssres_stor, &
      &    Slow_flow, Basin_perv_et, Basin_ssflow, Basin_swale_et, Slow_stor, Ssres_in, Soil_rechr, &
-     &    Basin_lakeevap, Sroff, Hru_actet, Pkwater_equiv
+     &    Basin_lakeevap, Sroff, Hru_actet, Pkwater_equiv, Gwres_stor, Dprst_vol_open, Dprst_vol_clos
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Nowtime
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_INTCP, ONLY: Hru_intcpstor, Basin_net_ppt, Basin_intcp_evap, Basin_changeover, &
@@ -175,22 +172,22 @@
      &    Basin_snowmelt, Basin_snowevap, Basin_snowcov, Pkwater_ante
       USE PRMS_SRUNOFF, ONLY: Basin_infil, Hru_hortn_cascflow, Upslope_hortonian, Hru_impervstor, &
      &    Dprst_stor_hru, Basin_sroffp, Basin_sroffi, Basin_dprst_sroff, Basin_sroff_down, &
-     &    Basin_sroff_farflow, Basin_hortonian_lakes, Basin_imperv_evap, Basin_imperv_stor, &
+     &    Basin_hortonian_lakes, Basin_imperv_evap, Basin_imperv_stor, &
      &    Basin_dprst_evap, Basin_dprst_seep, Basin_sroff, Hru_impervevap, Dprst_seep_hru, &
-     &    Dprst_evap_hru, Dprst_sroff_hru, Dprst_insroff_hru, Dprst_vol_open, Dprst_vol_clos, &
+     &    Dprst_evap_hru, Dprst_sroff_hru, Dprst_insroff_hru, &
      &    Sro_to_dprst, Dprst_area_clos, Hortonian_flow, Dprst_in, Hru_sroffp, Hru_sroffi, Imperv_stor_ante, Dprst_stor_ante
       USE PRMS_SOILZONE, ONLY: Gvr2sm, Swale_actet, Dunnian_flow, Basin_sz2gw, &
      &    Perv_actet, Cap_infil_tot, Pref_flow_infil, Cap_waterin, Upslope_interflow, &
      &    Upslope_dunnianflow, Pref_flow, Pref_flow_stor, Soil_lower, Basin_sz_gwin, Gvr2pfr, Basin_ssin, &
-     &    Basin_szfarflow, Basin_lakeinsz, Basin_dunnian, Pref_flow_max, Pref_flow_den, Pref_flow_thrsh, &
+     &    Basin_lakeinsz, Basin_dunnian, Pref_flow_max, Pref_flow_den, Pref_flow_thrsh, &
      &    Basin_sm2gvr_max, Basin_cap_infil_tot, Basin_gvr2sm, Basin_slowflow, &
      &    Basin_dunnian_gvr, Basin_pref_flow_infil, Basin_dninterflow, Basin_pref_stor, Basin_dunnian_pfr, &
      &    Basin_dncascadeflow, Basin_capwaterin, Basin_sm2gvr, Basin_prefflow, Basin_slstor, Basin_gvr2pfr, &
      &    Hru_sz_cascadeflow, Pfr_dunnian_flow, Grav_gwin, Grav_dunnian_flow, Basin_dndunnianflow, &
      &    Soil_moist_tot, Soil_moist_ante, Ssres_stor_ante, Last_soil_moist, Last_ssstor
-      USE PRMS_GWFLOW, ONLY: Basin_dnflow, Basin_gwsink, Basin_farflow, Basin_gwstor_minarea_wb, Gwres_flow, &
+      USE PRMS_GWFLOW, ONLY: Basin_dnflow, Basin_gwsink, Basin_gwstor_minarea_wb, Gwres_flow, &
      &    Basin_gwstor, Basin_gwflow, Basin_gw_upslope, Basin_gwin, Gwres_sink, Hru_gw_cascadeflow, Gw_upslope, &
-     &    Gwminarea_flag, Gwstor_minarea_wb, Gwin_dprst, Gw_in_soil, Gw_in_ssr, Gwres_in, Hru_storage, Gwres_stor
+     &    Gwminarea_flag, Gwstor_minarea_wb, Gwin_dprst, Gw_in_soil, Gw_in_ssr, Gwres_in, Hru_storage
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS
@@ -307,7 +304,6 @@
           ENDIF
         ENDIF
 
-        IF ( Soilzone_flag==1 ) THEN
         last_sm = Soil_moist_ante(i)
         last_ss = Ssres_stor_ante(i)
 
@@ -402,7 +398,6 @@
             IF ( Cascadegw_flag==1 ) PRINT *, Gw_upslope(i)/harea, Hru_gw_cascadeflow(i)
             CALL print_date(0)
           ENDIF
-          ENDIF
 
           wbal = Gwstor_ante(i) + Gwres_in(i)/harea - Gwres_stor(i) - Gwres_sink(i) - Gwres_flow(i)
           IF ( Cascadegw_flag==1 ) wbal = wbal - Hru_gw_cascadeflow(i)
@@ -417,7 +412,7 @@
             IF ( Gwminarea_flag==1 ) WRITE ( BALUNT, * ) 'gwstor_minarea_wb', Gwstor_minarea_wb(i)
             IF ( Dprst_flag==1 ) WRITE ( BALUNT, * ) 'gwin_dprst', Gwin_dprst(i)
           ENDIF
-          IF ( Soilzone_flag==1 ) Hru_storage_ante(i) = Hru_storage(i)
+          Hru_storage_ante(i) = Hru_storage(i)
           Gwstor_ante(i) = Gwres_stor(i)
         ENDIF
       ENDDO
@@ -452,7 +447,7 @@
 ! srunoff
       robal = Basin_sroff - Basin_sroffp - Basin_sroffi - Basin_dprst_sroff
       IF ( Cascade_flag==1 ) THEN
-        robal = robal + Basin_sroff_down + Basin_sroff_farflow
+        robal = robal + Basin_sroff_down
         WRITE ( SROUNIT, 9002 ) Nowyear, Nowmonth, Nowday, basin_robal, &
      &          robal, Basin_sroff, Basin_infil, Basin_imperv_evap, &
      &          Basin_imperv_stor, Basin_dprst_evap, Basin_dprst_seep, &
@@ -473,7 +468,6 @@
       ENDIF
 
 ! soilzone
-      IF ( Soilzone_flag==1 ) THEN
       Basin_capillary_wb = Last_soil_moist - Basin_soil_moist - &
      &                     Basin_perv_et - Basin_sm2gvr_max + Basin_cap_infil_tot + &
      &                     Basin_gvr2sm - Basin_soil_to_gw
@@ -484,13 +478,13 @@
      &                    Basin_ssstor + Last_soil_moist - Basin_soil_moist - &
      &                    Basin_perv_et - Basin_swale_et - Basin_sz2gw - &
      &                    Basin_soil_to_gw - Basin_ssflow - Basin_dunnian - &
-     &                    Basin_szfarflow - Basin_lakeinsz + Basin_szreject
+     &                    Basin_lakeinsz + Basin_szreject
 
       IF ( ABS(Basin_gravity_wb)>DTOOSMALL ) WRITE ( BALUNT, * ) 'basin gvrbal issue', Basin_gravity_wb, &
      &     Last_ssstor, Basin_ssstor, Basin_sm2gvr, Basin_ssflow, Basin_sz2gw, Basin_dunnian, &
-     &     Basin_swale_et, Basin_gvr2sm, Basin_pref_flow_infil, Basin_dninterflow, Basin_pref_stor, Basin_szfarflow, &
+     &     Basin_swale_et, Basin_gvr2sm, Basin_pref_flow_infil, Basin_dninterflow, Basin_pref_stor, &
      &     Basin_dunnian_pfr, Basin_lakeinsz, Basin_dncascadeflow, Kkiter, &
-     &     Basin_sz_gwin, Basin_szreject, Basin_dunnian_gvr, Basin_slowflow, Basin_prefflow, Nowtime, Basin_sroff_farflow
+     &     Basin_sz_gwin, Basin_szreject, Basin_dunnian_gvr, Basin_slowflow, Basin_prefflow, Nowtime
       IF ( ABS(Basin_capillary_wb)>DTOOSMALL ) WRITE( BALUNT, * ) 'possible basin capillary balance issue', &
      &     Basin_capillary_wb, Last_soil_moist, Basin_soil_moist, Basin_perv_et, &
      &     Basin_sm2gvr, Basin_cap_infil_tot, Basin_gvr2sm, &
@@ -498,21 +492,21 @@
       IF ( ABS(Basin_soilzone_wb)>DTOOSMALL ) WRITE ( BALUNT, * ) 'possible basin soil zone rounding issue', &
      &     Basin_soilzone_wb, Basin_capwaterin, Basin_pref_flow_infil, Basin_infil, Basin_sz_gwin, &
      &     Last_ssstor, Basin_ssstor, Last_soil_moist, Basin_soil_moist, Basin_perv_et, Basin_swale_et, &
-     &     Basin_sz2gw, Basin_soil_to_gw, Basin_ssflow, Basin_dunnian, Basin_szfarflow, Basin_dncascadeflow, &
+     &     Basin_sz2gw, Basin_soil_to_gw, Basin_ssflow, Basin_dunnian, Basin_dncascadeflow, &
      &     Basin_gvr2sm, Basin_sm2gvr, Basin_lakeinsz, Basin_dunnian_pfr, Basin_szreject, Nowtime
       IF ( Basin_szreject>0.0 ) Basin_szreject = 0.0
 
       soil_in = soil_in*Basin_area_inv
       basin_bal = basin_bal*Basin_area_inv
       bsmbal = Last_soil_moist - Basin_soil_moist + Last_ssstor - Basin_ssstor - Basin_perv_et - Basin_sz2gw + soil_in - &
-     &         Basin_ssflow - Basin_soil_to_gw - Basin_dunnian - Basin_szfarflow - Basin_swale_et - Basin_lakeinsz
+     &         Basin_ssflow - Basin_soil_to_gw - Basin_dunnian - Basin_swale_et - Basin_lakeinsz
 
       IF ( Model==1 ) THEN
         WRITE ( SZUNIT, 9002 ) Nowyear, Nowmonth, Nowday, basin_bal, &
      &          bsmbal, Last_soil_moist, Basin_soil_moist, Last_ssstor, &
      &          Basin_ssstor, Basin_perv_et, Basin_sz2gw, Basin_ssflow, &
      &          Basin_soil_to_gw, Basin_dunnian, soil_in, Basin_lakeinsz, &
-     &          Basin_dncascadeflow, Basin_szfarflow, Basin_swale_et, &
+     &          Basin_dncascadeflow, Basin_swale_et, &
      &          Basin_prefflow, Basin_dunnian_pfr, &
      &          Basin_pref_stor, Basin_slstor, Basin_dunnian_gvr, Basin_lakeevap
       ELSE
@@ -520,7 +514,7 @@
      &          bsmbal, Last_soil_moist, Basin_soil_moist, Last_ssstor, &
      &          Basin_ssstor, Basin_perv_et, Basin_sz2gw, Basin_ssflow, &
      &          Basin_soil_to_gw, Basin_dunnian, soil_in, Basin_lakeinsz, &
-     &          Basin_dncascadeflow, Basin_szfarflow, Basin_swale_et, &
+     &          Basin_dncascadeflow, Basin_swale_et, &
      &          Basin_prefflow, Basin_dunnian_pfr, &
      &          Basin_pref_stor, Basin_slstor, Basin_dunnian_gvr, &
      &          Basin_lakeevap, Basin_gvr2sm, Basin_sz_gwin, Kkiter
@@ -531,14 +525,14 @@
      &          basin_bal, Last_soil_moist, Basin_soil_moist, &
      &          Last_ssstor, Basin_ssstor, Basin_perv_et, Basin_sz2gw, &
      &          soil_in, Basin_ssflow, Basin_soil_to_gw, Basin_dunnian, &
-     &          Basin_szfarflow, Basin_swale_et, Basin_lakeinsz
+     &          Basin_swale_et, Basin_lakeinsz
         WRITE ( BALUNT, * ) Basin_pref_stor, Basin_slstor
       ELSEIF ( ABS(bsmbal)>0.005D0 .OR. ABS(basin_bal)>DTOOSMALL ) THEN
         WRITE ( BALUNT, * ) 'Possible soilzone basin water balance ERROR', &
      &          bsmbal, basin_bal, Last_soil_moist, Basin_soil_moist, &
      &          Last_ssstor, Basin_ssstor, Basin_perv_et, Basin_sz2gw, &
      &          soil_in, Basin_ssflow, Basin_soil_to_gw, Basin_dunnian, &
-     &          Basin_szfarflow, Basin_swale_et, Basin_lakeinsz
+     &          Basin_swale_et, Basin_lakeinsz
         WRITE ( BALUNT, * ) Basin_pref_stor, Basin_slstor
       ELSEIF ( ABS(bsmbal)>0.0005D0 .OR. ABS(basin_bal)>DTOOSMALL ) THEN
         WRITE ( BALUNT, '(A,2F12.7)' ) 'Basin soilzone rounding issue', bsmbal, basin_bal
@@ -547,27 +541,26 @@
      &          soil_in, Basin_gvr2pfr, Basin_gvr2sm, Basin_dndunnianflow, &
      &          (soil_in - Basin_infil - Basin_sz_gwin)
       ENDIF
-      ENDIF
 
 ! gwflow
 
       ! not going to balance because gwstor under lakes is computed each time step
       ! fix for lakes
       IF ( Model/=0 ) THEN
-        ! gwin includes upslope flow, farflow, gwin_dprst, gw_in_soil, gw_in_ssr
+        ! gwin includes upslope flow, gwin_dprst, gw_in_soil, gw_in_ssr
         gwbal = Basin_gwin + Last_basin_gwstor - Basin_gwstor - Basin_gwsink &
-     &          - Basin_gwflow - Basin_dnflow - Basin_farflow+ Basin_gwstor_minarea_wb
+     &          - Basin_gwflow - Basin_dnflow + Basin_gwstor_minarea_wb
         IF ( DABS(gwbal)>DSMALL ) WRITE ( BALUNT, 9003 ) 'Possible GWR basin water balance issue', &
      &                                                   Nowyear, Nowmonth, Nowday, gwbal
         WRITE ( GWUNIT, 9002 ) Nowyear, Nowmonth, Nowday, &
      &          gwbal, Last_basin_gwstor, Basin_gwstor, Basin_gwin, &
-     &          Basin_gwflow, Basin_gwsink, Basin_farflow,&
+     &          Basin_gwflow, Basin_gwsink, &
      &          Basin_gw_upslope, Basin_gwstor_minarea_wb, Basin_dnflow
         Last_basin_gwstor = Basin_gwstor
       ENDIF
 
  9001 FORMAT (I5, 2('/', I2.2), I7, 26F11.5)
- 9002 FORMAT (I5, 2('/', I2.2), 24F11.5, I11)
+ 9002 FORMAT (I5, 2('/', I2.2), 23F11.5, I11)
  9003 FORMAT (A, I5, 2('/', I2.2), F12.6)
 
       END SUBROUTINE water_balance_run

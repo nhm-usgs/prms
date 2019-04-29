@@ -70,7 +70,7 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_pt.f90 6835 2014-10-10 19:18:29Z rsregan $'
+        Version_potet = '$Id: potet_pt.f90 7050 2014-12-02 19:06:41Z rsregan $'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_pt'
 

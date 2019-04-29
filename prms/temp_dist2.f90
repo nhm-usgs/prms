@@ -25,7 +25,6 @@
 !   Declared Parameters
       INTEGER, SAVE :: Max_tsta
       REAL, SAVE :: Dist_max
-      REAL, SAVE, ALLOCATABLE :: Tmax_mo_adj(:, :), Tmin_mo_adj(:, :)
       REAL, SAVE :: Monmin(12), Monmax(12)
       REAL, SAVE :: Lapsemin_min(12), Lapsemin_max(12)
       REAL, SAVE :: Lapsemax_min(12), Lapsemax_max(12)
@@ -61,7 +60,7 @@
 !***********************************************************************
 !     t2dist2decl - set up parameters for temperature computations
 !   Declared Parameters
-!     tsta_elev, tmax_mo_adj, tmin_mo_adj
+!     tsta_elev, tmax_adj, tmin_adj
 !     hru_elev, hru_area, temp_units, basin_tsta, max_tsta
 !     monmin, monmax, lapsemin_min, lapsemin_max, lapsemax_min
 !     lapsemax_max, tsta_xlong, tsta_ylat, hru_ylat, hru_xlong, dist_max
@@ -79,7 +78,7 @@
 !***********************************************************************
       t2dist2decl = 0
 
-      Version_temp = '$Id: temp_dist2.f90 7125 2015-01-13 16:54:29Z rsregan $'
+      Version_temp = '$Id: temp_dist2.f90 7237 2015-03-10 23:50:00Z rsregan $'
       CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
       MODNAME = 'temp_dist2'
 
@@ -196,22 +195,6 @@
 
 ! END NEW PARAMETERS
 
-      ALLOCATE ( Tmax_mo_adj(Nhru,12) )
-      IF ( declparam(MODNAME, 'tmax_mo_adj', 'nhru,nmonths', 'real', &
-     &     '0.0', '-10.0', '10.0', &
-     &     'HRU monthly maximum temperature adjustment', &
-     &     'Monthly (January to December) adjustment factor to'// &
-     &     ' maximum air temperature for each HRU, estimated on the basis of slope and aspect', &
-     &     'temp_units')/=0 ) CALL read_error(1, 'tmax_mo_adj')
-
-      ALLOCATE ( Tmin_mo_adj(Nhru,12) )
-      IF ( declparam(MODNAME, 'tmin_mo_adj', 'nhru,nmonths', 'real', &
-     &     '0.0', '-10.0', '10.0', &
-     &     'HRU monthly minimum temperature adjustment', &
-     &     'Monthly (January to December) adjustment factor to'// &
-     &     ' maximum air temperature for each HRU, estimated on the basis of slope and aspect', &
-     &     'temp_units')/=0 ) CALL read_error(1, 'tmin_mo_adj')
-
       END FUNCTION t2dist2decl
 
 !***********************************************************************
@@ -266,12 +249,6 @@
 
       IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
      &     /=0 ) CALL read_error(2, 'hru_ylat')
-
-      IF ( getparam(MODNAME, 'tmax_mo_adj', Nhru*12, 'real', Tmax_mo_adj) &
-     &     /=0 ) CALL read_error(2, 'tmax_mo_adj')
-
-      IF ( getparam(MODNAME, 'tmin_mo_adj', Nhru*12, 'real', Tmin_mo_adj) &
-     &     /=0 ) CALL read_error(2, 'tmin_mo_adj')
 
       IF ( Init_vars_from_file==0 ) THEN
         Basin_lapse_max = 0.0
@@ -343,7 +320,7 @@
       USE PRMS_TEMP_DIST2
       USE PRMS_MODULE, ONLY: Ntemp
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, DNEARZERO
-      USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
+      USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Tmax, Tmin
@@ -454,8 +431,8 @@
         ENDDO
 
         IF ( sumdist>DNEARZERO ) THEN
-          tmn = tmn/sumdist - Tmin_mo_adj(j, Nowmonth)
-          tmx = tmx/sumdist - Tmax_mo_adj(j, Nowmonth)
+          tmn = tmn/sumdist - Tmin_aspect_adjust(j, Nowmonth)
+          tmx = tmx/sumdist - Tmax_aspect_adjust(j, Nowmonth)
         ELSE
           tmn = (mn+mx)*0.5
           tmx = tmn

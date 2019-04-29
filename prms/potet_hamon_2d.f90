@@ -8,12 +8,12 @@
         REAL, PARAMETER :: ONE_12TH = 1.0/12.0
         CHARACTER(LEN=11), SAVE :: MODNAME
         ! Declared Parameter
-        REAL, SAVE :: Hamon_coef(12)
+        REAL, SAVE, ALLOCATABLE :: Hamon_coef(:, :)
       END MODULE PRMS_POTET_HAMON
 
       INTEGER FUNCTION potet_hamon()
       USE PRMS_POTET_HAMON
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
@@ -25,41 +25,44 @@
       EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      REAL :: dyl, vpsat, vdsat, hamoncoef_mo
+      REAL :: dyl, vpsat, vdsat
       CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_hamon = 0
 
       IF ( Process(:3)=='run' ) THEN
 !******Compute potential et for each HRU using Hamon formulation
-        hamoncoef_mo = Hamon_coef(Nowmonth)
         Basin_potet = 0.0D0
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
 ! Convert daylength from hours to 12 hour multiple (equal day and night period)
           dyl = Soltab_sunhrs(Jday, i)*ONE_12TH
-          vpsat = 6.108*EXP(17.26939*Tavgc(i)/(Tavgc(i)+237.3))
+          vpsat = 6.108*EXP(17.26939*Tavgc(i)/(Tavgc(i)+237.3)) ! in Hamon 1963, eqn. used 273.3??
           vdsat = 216.7*vpsat/(Tavgc(i)+273.3)
-          Potet(i) = hamoncoef_mo*dyl*dyl*vdsat
+          Potet(i) = Hamon_coef(i, Nowmonth)*dyl*dyl*vdsat !??? why day length squared??? Hamon 1963 did not square dyl, it was squared in 1961 original
+          ! pet = 0.1651*dyl*vdsat*HC  (default HC would be 1.2 for units mm/day
+          ! hamon_coef includes conversion to inches and 0.1651. hamon_coef = x*0.1651/25.4 = x*0.0065 so potet = inches/day
+          ! Potet(i) = hamoncoef*0.1651/25.4*dyl*vdsat  1963 version
           IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
           Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = '$Id: potet_hamon.f90 6862 2014-10-28 21:58:22Z rsregan $'
+        Version_potet = '$Id: potet_hamon_2d.f90 7074 2014-12-08 23:11:31Z rsregan $'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_hamon'
 
-        IF ( declparam(MODNAME, 'hamon_coef', 'nmonths', 'real', &
+        ALLOCATE ( Hamon_coef(Nhru,12) )
+        IF ( declparam(MODNAME, 'hamon_coef', 'nhru,nmonths', 'real', &
      &       '0.0055', '0.004', '0.008', &
      &       'Monthly air temperature coefficient - Hamon', &
-     &       'Monthly (January to December) air temperature coefficient used in Hamon potential ET computations', &
+     &       'Monthly (January to December) air temperature coefficient used in Hamon potential ET computations for each HRU', &
      &       'none')/=0 ) CALL read_error(1, 'hamon_coef')
 
 !******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam(MODNAME, 'hamon_coef', 12, 'real', Hamon_coef)/=0 ) CALL read_error(2, 'hamon_coef')
+        IF ( getparam(MODNAME, 'hamon_coef', Nhru*12, 'real', Hamon_coef)/=0 ) CALL read_error(2, 'hamon_coef')
       ENDIF
 
       END FUNCTION potet_hamon

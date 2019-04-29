@@ -15,7 +15,7 @@
       INTEGER, EXTERNAL :: declparam, getparam, get_season
       EXTERNAL read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
-      REAL, SAVE :: Frost_temp
+      REAL, SAVE, ALLOCATABLE :: Frost_temp(:)
 ! Local Variables
       ! fall_frost: The number of solar days after winter solstice of
       !             the first killing frost of the fall
@@ -86,22 +86,23 @@
         IF ( season==2 ) THEN
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Tmin_hru(j)<=Frost_temp .AND. currentFallFrost(j)==0 ) currentFallFrost(j) = Jsol
+            IF ( Tmin_hru(j)<=Frost_temp(j) .AND. currentFallFrost(j)==0 ) currentFallFrost(j) = Jsol
           ENDDO
 ! This is the spring phase, look for the latest spring frost.
         ELSE
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Tmin_hru(j)<=Frost_temp ) currentSpringFrost(j) = Jsol
+            IF ( Tmin_hru(j)<=Frost_temp(j) ) currentSpringFrost(j) = Jsol
           ENDDO
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date.f90 6900 2014-10-29 16:01:04Z rsregan $'
+        Version_frost_date = '$Id: frost_date_2d.f90 7050 2014-12-02 19:06:41Z rsregan $'
         CALL print_module(Version_frost_date, 'Preprocessing               ', 90)
         MODNAME = 'frost_date'
 
-        IF ( declparam(MODNAME, 'frost_temp', 'one', 'real', &
+        ALLOCATE ( Frost_temp(Nhru) )
+        IF ( declparam(MODNAME, 'frost_temp', 'nhru', 'real', &
      &       '28.0', '-10.0', '32.0', &
      &       'Temperature of killing frost', 'Temperature of killing frost', &
      &       'temp_units')/=0 ) CALL read_error(1, 'frost_temp')
@@ -112,7 +113,7 @@
         ALLOCATE ( currentFallFrost(Nhru), currentSpringFrost(Nhru) )
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam(MODNAME, 'frost_temp', 1, 'real', Frost_temp)/=0 ) CALL read_error(2, 'frost_temp')
+        IF ( getparam(MODNAME, 'frost_temp', Nhru, 'real', Frost_temp)/=0 ) CALL read_error(2, 'frost_temp')
         fall_frost = 0
         spring_frost = 0
         currentFallFrost = 0

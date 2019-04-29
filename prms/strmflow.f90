@@ -32,7 +32,7 @@
         Basin_gwflow_cfs = Basin_gwflow*area_fac
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_strmflow = '$Id: strmflow.f90 6548 2014-07-08 18:46:17Z rsregan $'
+        Version_strmflow = '$Id: strmflow.f90 7050 2014-12-02 19:06:41Z rsregan $'
         CALL print_module(Version_strmflow, 'Streamflow Routing          ', 90)
 !        MODNAME = 'strmflow'
       ENDIF

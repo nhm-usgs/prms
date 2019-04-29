@@ -18,16 +18,13 @@
         DOUBLE PRECISION, SAVE :: Basin_humidity, Basin_windspeed
         REAL, ALLOCATABLE :: Humidity_hru(:), Windspeed_hru(:)
         ! Declared Parameters
-        INTEGER, SAVE :: Adj_by_hru
-        INTEGER, SAVE, ALLOCATABLE :: Hru_subbasin(:)
-        REAL, SAVE, ALLOCATABLE :: Rain_sub_adj(:, :), Snow_sub_adj(:, :)
         REAL, SAVE, ALLOCATABLE :: Rain_cbh_adj(:, :), Snow_cbh_adj(:, :), Potet_cbh_adj(:, :)
-        REAL, SAVE, ALLOCATABLE :: Tmax_cbh_adj(:), Tmin_cbh_adj(:)
+        REAL, SAVE, ALLOCATABLE :: Tmax_cbh_adj(:, :), Tmin_cbh_adj(:, :)
       END MODULE PRMS_CLIMATE_HRU
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CLIMATE_HRU
-      USE PRMS_MODULE, ONLY: Process, Nhru, Climate_transp_flag, Orad_flag, Model, Nsub, Subbasin_flag, &
+      USE PRMS_MODULE, ONLY: Process, Nhru, Climate_transp_flag, Orad_flag, Model, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO, MM2INCH
@@ -47,8 +44,8 @@
       EXTERNAL :: read_error, precip_form, temp_set, find_header_end, find_current_time
       EXTERNAL :: read_cbh_date, check_cbh_value, check_cbh_intvalue, print_module
 ! Local Variables
-      INTEGER :: yr, mo, dy, i, hr, mn, sec, jj, ierr, istop, missing, j, k, ios
-      REAL :: tmax_hru, tmin_hru, ppt, harea, adjmix, allrain
+      INTEGER :: yr, mo, dy, i, hr, mn, sec, jj, ierr, istop, missing, ios
+      REAL :: tmax_hru, tmin_hru, ppt, harea
       CHARACTER(LEN=80), SAVE :: Version_climate_hru
 !***********************************************************************
       climate_hru = 0
@@ -145,8 +142,6 @@
 
         IF ( ierr/=0 ) STOP
 
-        adjmix = Adjmix_rain(Nowmonth)
-        allrain = Tmax_allrain_f(Nowmonth)
         missing = 0
         DO jj = 1, Active_hrus
           i = Hru_route_order(jj)
@@ -157,8 +152,8 @@
               CALL check_cbh_value('Tmaxf', Tmaxf(i), -99.0, 150.0, missing)
               CALL check_cbh_value('Tminf', Tminf(i), -99.0, 150.0, missing)
             ENDIF
-            tmax_hru = Tmaxf(i) + Tmax_cbh_adj(i)
-            tmin_hru = Tminf(i) + Tmin_cbh_adj(i)
+            tmax_hru = Tmaxf(i) + Tmax_cbh_adj(i, Nowmonth)
+            tmin_hru = Tminf(i) + Tmin_cbh_adj(i, Nowmonth)
             CALL temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i), &
      &                    Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
           ENDIF
@@ -197,9 +192,9 @@
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
      &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
-     &                         Prmx(i), allrain, &
+     &                         Prmx(i), Tmax_allrain_f(i,Nowmonth), &
      &                         Rain_cbh_adj(i,Nowmonth), Snow_cbh_adj(i,Nowmonth), &
-     &                         adjmix, harea, Basin_obs_ppt, Tmax_allsnow_f)
+     &                         Adjmix_rain(i,Nowmonth), harea, Basin_obs_ppt, Tmax_allsnow_f(i,Nowmonth))
             ENDIF
           ENDIF
 
@@ -243,7 +238,7 @@
         IF ( Windspeed_cbh_flag==1 ) Basin_windspeed = Basin_windspeed*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_hru = '$Id: climate_hru.f90 7115 2015-01-06 00:09:15Z rsregan $'
+        Version_climate_hru = '$Id: climate_hru_2d.f90 7115 2015-01-06 00:09:15Z rsregan $'
         MODNAME = 'climate_hru'
 
         IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = 1
@@ -275,29 +270,24 @@
 
 !   Declared Parameters
         IF ( Climate_temp_flag==1 .OR. Model==99 ) THEN
-          ALLOCATE ( Tmax_cbh_adj(Nhru) )
-          IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru', 'real', &
+          ALLOCATE ( Tmax_cbh_adj(Nhru,12) )
+          IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
-     &         'HRU maximum temperature adjustment', &
-     &         'Adjustment to maximum air temperature for each HRU, estimated on the basis of slope and aspect', &
+     &         'Monthly maximum temperature adjustment factor for each HRU', &
+     &         'Monthly (January to December) adjustment factor to maximum air temperature for each HRU,'// &
+     &         ' estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj')
 
-          ALLOCATE ( Tmin_cbh_adj(Nhru) )
-          IF ( declparam(MODNAME, 'tmin_cbh_adj', 'nhru', 'real', &
+          ALLOCATE ( Tmin_cbh_adj(Nhru,12) )
+          IF ( declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
-     &         'HRU minimum temperature adjustment', &
-     &         'Adjustment to minimum air temperature for each HRU, estimated on the basis of slope and aspect', &
+     &         'Monthly minimum temperature adjustment factor for each HRU', &
+     &         'Monthly (January to December) adjustment factor to minimum air temperature for each HRU,'// &
+     &         ' estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmin_cbh_adj')
         ENDIF
 
         IF ( Climate_precip_flag==1 .OR. Model==99 ) THEN
-          IF ( declparam(MODNAME, 'adj_by_hru', 'one', 'integer', &
-     &         '1', '0', '1', &
-     &         'Adjust precipitation by HRU or subbasin (0=subbasin; 1=HRU)', &
-     &         'Flag to indicate whether to adjust precipitation and'// &
-     &         ' air temperature by HRU or subbasin (0=subbasin; 1=HRU)', &
-     &         'none')/=0 ) CALL read_error(1, 'adj_by_hru')
-
           ALLOCATE ( Rain_cbh_adj(Nhru,12) )
           IF ( declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '2.0', &
@@ -315,31 +305,6 @@
      &         ' measured precipitation determined to be snow on'// &
      &         ' each HRU to account for differences in elevation, and so forth', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'snow_cbh_adj')
-
-          IF ( Nsub>0 ) THEN
-            ALLOCATE ( Hru_subbasin(Nhru) )
-            IF ( declparam(MODNAME, 'hru_subbasin', 'nhru', 'integer', &
-     &           '0', 'bounded', 'nsub', &
-     &           'Index of subbasin assigned to each HRU', &
-     &           'Index of subbasin assigned to each HRU', &
-     &           'none')/=0 ) CALL read_error(1, 'hru_subbasin')
-
-            ALLOCATE ( Rain_sub_adj(Nsub,12) )
-            IF ( declparam(MODNAME, 'rain_sub_adj', 'nsub,nmonths', 'real', &
-     &           '1.0', '0.5', '2.0', &
-     &           'Rain adjustment factor for each subbasin and month', &
-     &           'Monthly (January to December) rain adjustment factor to'// &
-     &           ' measured precipitation for each subbasin', &
-     &           'decimal fraction')/=0 ) CALL read_error(1, 'rain_sub_adj')
-
-            ALLOCATE ( Snow_sub_adj(Nsub,12) )
-            IF ( declparam(MODNAME, 'snow_sub_adj', 'nsub,nmonths', &
-     &           'real', '1.0', '0.5', '2.0', &
-     &           'Snow adjustment factor for each subbasin and month', &
-     &           'Monthly (January to December) snow adjustment factor to'// &
-     &           ' measured precipitation for each subbasin', &
-     &           'decimal fraction')/=0 ) CALL read_error(1, 'snow_sub_adj')
-          ENDIF
         ENDIF
 
         IF ( Climate_potet_flag==1 .OR. Model==99 ) THEN
@@ -362,42 +327,8 @@
         ierr = 0
 
         IF ( Climate_precip_flag==1 ) THEN
-          IF ( getparam(MODNAME, 'adj_by_hru', 1, 'integer', Adj_by_hru)/=0 ) CALL read_error(2, 'adj_by_hru')
-          IF ( Adj_by_hru==0 ) THEN
-            IF ( Nsub==0 ) THEN
-              PRINT *, 'ERROR, in climate_hru: adj_by_hru=0 and nsub=0'
-              PRINT *, 'must have subbasins to adjust precipitation by subbasin'
-              istop = 1
-            ELSE
-              IF ( Subbasin_flag==0 ) THEN
-                PRINT *, 'WARNING, in climate_hru: subbasin_flag and adj_by_hru = 0'
-                PRINT *, 'precipitation is adjusted using snow_sub_adj and rain_sub_adj'
-                PRINT *, 'if you do not want to use subbasin adjustments set parameter adj_by_hru = 1'
-              ENDIF
-              IF ( getparam(MODNAME, 'hru_subbasin', Nhru, 'integer', Hru_subbasin)/=0 ) CALL read_error(2, 'hru_subbasin')
-              IF ( getparam(MODNAME, 'rain_sub_adj', Nsub*12, 'real', Rain_sub_adj)/=0 ) CALL read_error(2, 'rain_sub_adj')
-              IF ( getparam(MODNAME, 'snow_sub_adj', Nsub*12, 'real', Snow_sub_adj)/=0 ) CALL read_error(2, 'snow_sub_adj')
-              Snow_cbh_adj = 1.0
-              Rain_cbh_adj = 1.0
-              DO k = 1, Active_hrus
-                i = Hru_route_order(k)
-                DO j = 1, 12
-                  jj = Hru_subbasin(i)
-                  IF ( jj==0 .OR. jj>nsub ) THEN
-                    PRINT *, 'ERROR, for adj_by_hru=0 all active HRUs must be in a subbasin between 1 and', Nsub
-                    PRINT *, 'For HRU:', i, ' hru_subbasin is specified as:', jj
-                    istop = 1
-                  ELSE
-                    Snow_cbh_adj(i, j) = Snow_sub_adj(jj, j)
-                    Rain_cbh_adj(i, j) = Rain_sub_adj(jj, j)
-                  ENDIF
-                ENDDO
-              ENDDO
-            ENDIF
-          ELSE
-            IF ( getparam(MODNAME, 'rain_cbh_adj', Nhru*12, 'real', Rain_cbh_adj)/=0 ) CALL read_error(2, 'rain_cbh_adj')
-            IF ( getparam(MODNAME, 'snow_cbh_adj', Nhru*12, 'real', Snow_cbh_adj)/=0 ) CALL read_error(2, 'snow_cbh_adj')
-          ENDIF
+          IF ( getparam(MODNAME, 'rain_cbh_adj', Nhru*12, 'real', Rain_cbh_adj)/=0 ) CALL read_error(2, 'rain_cbh_adj')
+          IF ( getparam(MODNAME, 'snow_cbh_adj', Nhru*12, 'real', Snow_cbh_adj)/=0 ) CALL read_error(2, 'snow_cbh_adj')
 
           IF ( control_string(Precip_day, 'precip_day')/=0 ) CALL read_error(5, 'precip_day')
           CALL find_header_end(Precip_unit, Precip_day, 'precip_day', ierr, 1, Cbh_binary_flag)
@@ -410,12 +341,11 @@
               istop = 1
             ENDIF
           ENDIF
-          !IF ( Nsub>0 ) DEALLOCATE ( Hru_subbasin, Rain_sub_adj, Snow_sub_adj )
         ENDIF
 
         IF ( Climate_temp_flag==1 ) THEN
-          IF ( getparam(MODNAME, 'tmax_cbh_adj', Nhru, 'real', Tmax_cbh_adj)/=0 ) CALL read_error(2, 'tmax_cbh_adj')
-          IF ( getparam(MODNAME, 'tmin_cbh_adj', Nhru, 'real', Tmin_cbh_adj)/=0 ) CALL read_error(2, 'tmin_cbh_adj')
+          IF ( getparam(MODNAME, 'tmax_cbh_adj', Nhru*12, 'real', Tmax_cbh_adj)/=0 ) CALL read_error(2, 'tmax_cbh_adj')
+          IF ( getparam(MODNAME, 'tmin_cbh_adj', Nhru*12, 'real', Tmin_cbh_adj)/=0 ) CALL read_error(2, 'tmin_cbh_adj')
 
           IF ( control_string(Tmax_day, 'tmax_day')/=0 ) CALL read_error(5, 'tmax_day')
           IF ( control_string(Tmin_day, 'tmin_day')/=0 ) CALL read_error(5, 'tmin_day')

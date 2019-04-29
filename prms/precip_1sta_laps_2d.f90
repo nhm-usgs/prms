@@ -49,7 +49,7 @@
       EXTERNAL :: print_date, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, ii, j, ierr
-      REAL :: adjmix_mo, allrain_f_mo, ppt
+      REAL :: ppt
       DOUBLE PRECISION :: sum_obs
       CHARACTER(LEN=80), SAVE :: Version_precip
 !***********************************************************************
@@ -72,8 +72,6 @@
         Basin_ppt = 0.0D0
         Basin_rain = 0.0D0
         Basin_snow = 0.0D0
-        allrain_f_mo = Tmax_allrain_f(Nowmonth)
-        adjmix_mo = Adjmix_rain(Nowmonth)
         sum_obs = 0.0D0
         DO ii = 1, Active_hrus
           i = Hru_route_order(ii)
@@ -89,8 +87,8 @@
           IF ( ppt>IGNOREPPT ) &
      &         CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), Tmaxf(i), &
      &                          Tminf(i), Pptmix(i), Newsnow(i), Prmx(i), &
-     &                          allrain_f_mo, Rain_adj_lapse(i,Nowmonth), Snow_adj_lapse(i,Nowmonth), &
-     &                          adjmix_mo, Hru_area(i), sum_obs, Tmax_allsnow_f)
+     &                          Tmax_allrain_f(i,Nowmonth), Rain_adj_lapse(i,Nowmonth), Snow_adj_lapse(i,Nowmonth), &
+     &                          Adjmix_rain(i,Nowmonth), Hru_area(i), sum_obs, Tmax_allsnow_f(i,Nowmonth))
         ENDDO
         Basin_ppt = Basin_ppt*Basin_area_inv
         Basin_obs_ppt = sum_obs*Basin_area_inv
@@ -98,7 +96,7 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip = '$Id: precip_1sta_laps.f90 7115 2015-01-06 00:09:15Z rsregan $'
+        Version_precip = '$Id: precip_1sta_laps_2d.f90 7115 2015-01-06 00:09:15Z rsregan $'
         IF ( Precip_flag==1 ) THEN
           MODNAME = 'precip_1sta'
           Version_precip = Version_precip(:16)//Version_precip(22:80)

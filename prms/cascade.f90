@@ -8,9 +8,6 @@
       INTEGER, SAVE :: MSGUNT
       CHARACTER(LEN=7), SAVE :: MODNAME
       INTEGER, SAVE :: Iorder, Igworder, Ndown, Gwcasc_flg
-      ! Flag to indicate if an HRU is connected to a far-field stream (0=no; 1=yes).
-      ! Flag to indicate if a GWR is connected to a far-field stream (0=no; 1=yes).
-      INTEGER, SAVE :: Outflow_flg, Outflow_gwrflg
 !   Computed Variables
       INTEGER, SAVE, ALLOCATABLE :: Hru_down(:, :), Gwr_down(:, :)
       INTEGER, SAVE, ALLOCATABLE :: Ncascade_hru(:), Ncascade_gwr(:)
@@ -84,7 +81,7 @@
 !***********************************************************************
       cascdecl = 0
 
-      Version_cascade = '$Id: cascade.f90 7125 2015-01-13 16:54:29Z rsregan $'
+      Version_cascade = '$Id: cascade.f90 7181 2015-01-29 20:35:38Z rsregan $'
       CALL print_module(Version_cascade, 'Cascading Flow              ', 90)
       MODNAME = 'cascade'
 
@@ -270,7 +267,7 @@
 !***********************************************************************
       SUBROUTINE init_cascade(Iret)
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Nhru, Ngw, Nsegment, Nsegmentp1, Print_debug, Ncascade, Ncascdgw
+      USE PRMS_MODULE, ONLY: Nhru, Ngw, Nsegment, Print_debug, Ncascade, Ncascdgw, Inputerror_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_area
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -353,9 +350,6 @@
       Ncascade_hru = 0
       hru_frac = 0.0
 
-      Outflow_flg = 0
-      Outflow_gwrflg = 0
-
       DO i = 1, Ncascade
         kup = Hru_up_id(i)
         IF ( kup<1 ) THEN
@@ -391,12 +385,11 @@
           IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'Cascade ignored as lake HRU cannot cascade to an HRU', &
      &                                                  i, kup, jdn, frac, istrm
         ELSE
-          ! if cascade is negative, then farfield, so ignore istrm
-!         IF ( jdn<0 .AND. istrm>0 ) THEN
+          ! if cascade is negative, used to call this farfield, now error
           IF ( jdn<0 ) THEN
-            IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) &
-     &           'down HRU<0 thus cascade is to strm_farfield', i, kup, jdn, frac, istrm
-            istrm = 0
+            PRINT *, 'ERROR, hru_down_id < 0, far field option no longer supported'
+            Inputerror_flag = 1
+            CYCLE
           ENDIF
 
           IF ( jdn>0 .AND. istrm<1 ) THEN
@@ -419,14 +412,7 @@
               IF ( istrm>0 ) THEN
                 Hru_down(1, kup) = -istrm
               ELSE
-                ! if jdn is negative then farfield
-                IF ( jdn<0 ) THEN
-                  IF ( Print_debug==13 ) WRITE ( MSGUNT, 9006 ) i, frac, Nsegmentp1
-                  Hru_down(1, kup) = -Nsegmentp1
-                  Outflow_flg = 1
-                ELSE
-                  Hru_down(1, kup) = jdn
-                ENDIF
+                Hru_down(1, kup) = jdn
               ENDIF
             ENDIF
           ELSE
@@ -446,14 +432,7 @@
             IF ( istrm>0 ) THEN
               Hru_down(kk, kup) = -istrm
             ELSE
-              ! if jdn is negative then farfield
-              IF ( jdn<0 ) THEN
-                IF ( Print_debug==13 ) WRITE ( MSGUNT, 9006 ) i, frac, Nsegmentp1
-                Hru_down(kk, kup) = -Nsegmentp1
-                Outflow_flg = 1
-              ELSE
-                Hru_down(kk, kup) = jdn
-              ENDIF
+              Hru_down(kk, kup) = jdn
             ENDIF
           ENDIF
         ENDIF
@@ -738,7 +717,7 @@
 !***********************************************************************
       SUBROUTINE initgw_cascade(Iret)
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Ngw, Nsegment, Nsegmentp1, Print_debug, Ncascdgw
+      USE PRMS_MODULE, ONLY: Ngw, Nsegment, Print_debug, Ncascdgw, Inputerror_flag
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Gwr_type, Hru_area
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -803,12 +782,11 @@
             PRINT *, 'Cascade ignored as down GWR & segment ids = 0', i, kup, jdn, frac, istrm
           ENDIF
         ELSE
-          ! if cascade is negative, then farfield, so ignore istrm
-!         IF ( jdn<0 .AND. istrm>0 ) THEN
+          ! if cascade is negative, used to call this farfield, now error
           IF ( jdn<0 ) THEN
-            IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'down GWR<0 thus cascade is to strm_farfield', &
-     &                                                    i, kup, jdn, frac, istrm 
-            istrm = 0
+            PRINT *, 'ERROR, gwr_down_id < 0, far field option no longer supported'
+            Inputerror_flag = 1
+            CYCLE
           ENDIF
 
           IF ( jdn>0 .AND. istrm<1 ) THEN
@@ -841,14 +819,7 @@
               IF ( istrm>0 ) THEN
                 Gwr_down(1, kup) = -istrm
               ELSE
-                ! if jdn is negative then farfield
-                IF ( jdn<0 ) THEN
-                  IF ( Print_debug==13 ) WRITE ( MSGUNT, 9006 ) i, frac, Nsegmentp1
-                  Gwr_down(1, kup) = -Nsegmentp1
-                  Outflow_gwrflg = 1
-                ELSE
-                  Gwr_down(1, kup) = jdn
-                ENDIF
+                Gwr_down(1, kup) = jdn
               ENDIF
             ENDIF
           ELSE
@@ -866,14 +837,7 @@
             IF ( istrm>0 ) THEN
               Gwr_down(kk, kup) = -istrm
             ELSE
-              ! if jdn is negative then farfield
-              IF ( jdn<0 ) THEN
-                IF ( Print_debug==13 ) WRITE ( MSGUNT, 9006 ) i, frac, Nsegmentp1
-                Gwr_down(kk, kup) = -Nsegmentp1
-                Outflow_gwrflg = 1
-              ELSE
-                Gwr_down(kk, kup) = jdn
-              ENDIF
+              Gwr_down(kk, kup) = jdn
             ENDIF
           ENDIF
         ENDIF

@@ -42,10 +42,10 @@
       !****************************************************************
       !   Declared Parameters
 
-      INTEGER, SAVE :: Melt_look, Melt_force, Tstorm_mo(12)
+      INTEGER, SAVE, ALLOCATABLE :: Melt_look(:), Melt_force(:), Tstorm_mo(:, :)
       INTEGER, SAVE, ALLOCATABLE :: Hru_deplcrv(:)
-      REAL, SAVE :: Albset_rnm, Albset_rna, Albset_snm, Albset_sna, Cecn_coef(12)
-      REAL, SAVE :: Emis_noppt, Potet_sublim, Freeh2o_cap
+      REAL, SAVE :: Albset_rnm, Albset_rna, Albset_snm, Albset_sna
+      REAL, SAVE, ALLOCATABLE :: Emis_noppt(:), Potet_sublim(:), Freeh2o_cap(:), Cecn_coef(:, :)
       REAL, SAVE :: Den_init, Settle_const, Den_max
       REAL, SAVE, ALLOCATABLE :: Rad_trncf(:), Snarea_thresh(:), Snowpack_init(:)
       REAL, SAVE, ALLOCATABLE :: Snarea_curve(:, :)
@@ -97,7 +97,7 @@
 !***********************************************************************
       snodecl = 0
 
-      Version_snowcomp = '$Id: snowcomp.f90 7244 2015-03-11 20:24:26Z rsregan $'
+      Version_snowcomp = '$Id: snowcomp_2d.f90 7245 2015-03-11 20:26:38Z rsregan $'
       CALL print_module(Version_snowcomp, 'Snow Dynamics               ', 90)
       MODNAME = 'snowcomp'
 
@@ -310,18 +310,20 @@
      &     'Average maximum snowpack density', &
      &     'gm/cm3')/=0 ) CALL read_error(1, 'den_max')
 
-      IF ( declparam(MODNAME, 'melt_look', 'one', 'integer', &
+      ALLOCATE ( Melt_look(Nhru) )
+      IF ( declparam(MODNAME, 'melt_look', 'nhru', 'integer', &
      &     '90', '1', '366', &
-     &     'Julian date to start looking for spring snowmelt', &
-     &     'Julian date to start looking for spring snowmelt stage;'// &
+     &     'Julian date to start looking for spring snowmelt for each HRU', &
+     &     'Julian date to start looking for spring snowmelt stage for each HRU;'// &
      &     ' varies with region depending on length of time that'// &
      &     ' permanent snowpack exists', &
      &     'Julian day')/=0 ) CALL read_error(1, 'melt_look')
 
-      IF ( declparam(MODNAME, 'melt_force', 'one', 'integer', &
+      ALLOCATE ( Melt_force(Nhru) )
+      IF ( declparam(MODNAME, 'melt_force', 'nhru', 'integer', &
      &     '140', '1', '366', &
-     &     'Julian date to force snowpack to spring snowmelt stage', &
-     &     'Julian date to force snowpack to spring snowmelt stage;'// &
+     &     'Julian date to force snowpack to spring snowmelt stage for each HRU', &
+     &     'Julian date to force snowpack to spring snowmelt stage for each HRU;'// &
      &     ' varies with region depending on length of time that'// &
      &     ' permanent snowpack exists', &
      &     'Julian day')/=0 ) CALL read_error(1, 'melt_force')
@@ -387,36 +389,41 @@
      &     ' snow albedo during the snowpack accumulation stage', &
      &     'inches')/=0 ) CALL read_error(1, 'albset_sna')
 
-      IF ( declparam(MODNAME, 'emis_noppt', 'one', 'real', &
+      ALLOCATE ( Emis_noppt(Nhru) )
+      IF ( declparam(MODNAME, 'emis_noppt', 'nhru', 'real', &
      &     '0.757', '0.757', '1.0', &
-     &     'Emissivity of air on days without precipitation', &
-     &     'Average emissivity of air on days without precipitation', &
+     &     'Emissivity of air on days without precipitation for each HRU', &
+     &     'Average emissivity of air on days without precipitation for each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'emis_noppt')
 
-      IF ( declparam(MODNAME, 'cecn_coef', 'nmonths', 'real', &
+      ALLOCATE ( Cecn_coef(Nhru,12) )
+      IF ( declparam(MODNAME, 'cecn_coef', 'nhru,nmonths', 'real', &
      &     '5.0', '2.0', '10.0', &
-     &     'Monthly convection condensation energy coefficient', &
-     &     'Monthly (January to December) convection condensation energy coefficient', &
+     &     'Monthly convection condensation energy coefficient for each HRU', &
+     &     'Monthly (January to December) convection condensation energy coefficient for each HRU', &
      &     'calories per degree Celsius above 0')/=0 ) CALL read_error(1, 'cecn_coef')
 
-      IF ( declparam(MODNAME, 'potet_sublim', 'one', 'real', &
+      ALLOCATE ( Potet_sublim(Nhru) )
+      IF ( declparam(MODNAME, 'potet_sublim', 'nhru', 'real', &
      &     '0.5', '0.1', '0.75', &
-     &     'Fraction of potential ET that is sublimated from snow', &
-     &     'Fraction of potential ET that is sublimated from snow in the canopy and snowpack', &
+     &     'Fraction of potential ET that is sublimated from snow for each HRU', &
+     &     'Fraction of potential ET that is sublimated from snow in the canopy and snowpack for each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'potet_sublim')
 
-      IF ( declparam(MODNAME, 'freeh2o_cap', 'one', 'real', &
+      ALLOCATE ( Freeh2o_cap(Nhru) )
+      IF ( declparam(MODNAME, 'freeh2o_cap', 'nhru', 'real', &
      &     '0.05', '0.01', '0.2', &
-     &     'Free-water holding capacity of snowpack', &
-     &     'Free-water holding capacity of snowpack expressed as a'// &
+     &     'Free-water holding capacity of snowpack for each HRU', &
+     &     'Free-water holding capacity of snowpack for each HRU, expressed as a'// &
      &     ' decimal fraction of the frozen water content of the snowpack (pk_ice)', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'freeh2o_cap')
 
-      IF ( declparam(MODNAME, 'tstorm_mo', 'nmonths', 'integer', &
+      ALLOCATE ( Tstorm_mo(Nhru,12) )
+      IF ( declparam(MODNAME, 'tstorm_mo', 'nhru,nmonths', 'integer', &
      &     '0', '0', '1', &
-     &     'Set to 1 if thunderstorms prevalent during month', &
+     &     'Set to 1 if thunderstorms prevalent during month for each HRU', &
      &     'Monthly flag (January to December) for prevalent storm'// &
-     &     ' type (0=frontal storms; 1=convective storms)', &
+     &     ' type for each HRU (0=frontal storms; 1=convective storms)', &
      &     'none')/=0 ) CALL read_error(1, 'tstorm_mo')
 
       IF ( Init_vars_from_file==0 ) THEN
@@ -466,21 +473,22 @@
 
       IF ( getparam(MODNAME, 'settle_const', 1, 'real', Settle_const)/=0 ) CALL read_error(2, 'settle_const')
 
-      IF ( getparam(MODNAME, 'melt_look', 1, 'integer', Melt_look)/=0 ) CALL read_error(2, 'melt_look')
-      IF ( getparam(MODNAME, 'melt_force', 1, 'integer', Melt_force)/=0 ) CALL read_error(2, 'melt_force')
+      IF ( getparam(MODNAME, 'melt_look', Nhru, 'integer', Melt_look)/=0 ) CALL read_error(2, 'melt_look')
+      IF ( getparam(MODNAME, 'melt_force', Nhru, 'integer', Melt_force)/=0 ) CALL read_error(2, 'melt_force')
       IF ( getparam(MODNAME, 'rad_trncf', Nhru, 'real', Rad_trncf)/=0 ) CALL read_error(2, 'rad_trncf')
       IF ( getparam(MODNAME, 'hru_deplcrv', Nhru, 'integer', Hru_deplcrv)/=0 ) CALL read_error(2, 'hru_deplcrv')
+! rsr?? should this be 11 or some other value, such as Nhru*Ndeplcurve
       IF ( getparam(MODNAME, 'snarea_curve', Ndepl*11, 'real', Snarea_curve)/=0 ) CALL read_error(2, 'snarea_curve')
       IF ( getparam(MODNAME, 'snarea_thresh', Nhru, 'real', Snarea_thresh)/=0 ) CALL read_error(2, 'snarea_thresh')
       IF ( getparam(MODNAME, 'albset_rnm', 1, 'real', Albset_rnm)/=0 ) CALL read_error(2, 'albset_rnm')
       IF ( getparam(MODNAME, 'albset_rna', 1, 'real', Albset_rna)/=0 ) CALL read_error(2, 'albset_rna')
       IF ( getparam(MODNAME, 'albset_sna', 1, 'real', Albset_sna)/=0 ) CALL read_error(2, 'albset_sna')
       IF ( getparam(MODNAME, 'albset_snm', 1, 'real', Albset_snm)/=0 ) CALL read_error(2, 'albset_snm')
-      IF ( getparam(MODNAME, 'emis_noppt', 1, 'real', Emis_noppt)/=0 ) CALL read_error(2, 'emis_noppt')
-      IF ( getparam(MODNAME, 'cecn_coef', 12, 'real', Cecn_coef)/=0 ) CALL read_error(2, 'cecn_coef')
-      IF ( getparam(MODNAME, 'potet_sublim', 1, 'real', Potet_sublim)/=0 ) CALL read_error(2, 'potet_sublim')
-      IF ( getparam(MODNAME, 'freeh2o_cap', 1, 'real', Freeh2o_cap)/=0 ) CALL read_error(2, 'freeh2o_cap')
-      IF ( getparam(MODNAME, 'tstorm_mo', 12, 'integer', Tstorm_mo)/=0 ) CALL read_error(2, 'tstorm_mo')
+      IF ( getparam(MODNAME, 'emis_noppt', Nhru, 'real', Emis_noppt)/=0 ) CALL read_error(2, 'emis_noppt')
+      IF ( getparam(MODNAME, 'cecn_coef', Nhru*12, 'real', Cecn_coef)/=0 ) CALL read_error(2, 'cecn_coef')
+      IF ( getparam(MODNAME, 'potet_sublim', Nhru, 'real', Potet_sublim)/=0 ) CALL read_error(2, 'potet_sublim')
+      IF ( getparam(MODNAME, 'freeh2o_cap', Nhru, 'real', Freeh2o_cap)/=0 ) CALL read_error(2, 'freeh2o_cap')
+      IF ( getparam(MODNAME, 'tstorm_mo', Nhru*12, 'integer', Tstorm_mo)/=0 ) CALL read_error(2, 'tstorm_mo')
 
       IF ( Init_vars_from_file==1 ) RETURN
 
@@ -609,7 +617,7 @@
         ! melt season
         !rsr, need to rethink this at some point
 !rsr10  IF ( Iso(i)/=2 ) THEN
-          IF ( Jday==Melt_force ) Iso(i) = 2 ! [flag]
+          IF ( Jday==Melt_force(i) ) Iso(i) = 2 ! [flag]
 !rsr10  ENDIF
 
         ! If the day of the water year is beyond the first day to
@@ -617,7 +625,7 @@
         ! then set the flag indicating to watch for melt season
         !rsr, need to rethink this at some point
 !rsr10  IF ( Mso(i)/=2 ) THEN
-          IF ( Jday==Melt_look ) Mso(i) = 2 ! [flag]
+          IF ( Jday==Melt_look(i) ) Mso(i) = 2 ! [flag]
 !rsr10  ENDIF
 
         ! Skip the HRU if there is no snowpack and no new snow
@@ -639,7 +647,7 @@
      &            Tavgc(i), Pkwater_equiv(i), Net_rain(i), Pk_def(i), &
      &            Pk_temp(i), Pk_ice(i), Freeh2o(i), Snowcov_area(i), &
      &            Snowmelt(i), Pk_depth(i), Pss(i), Pst(i), Net_snow(i), &
-     &            Pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c, Freeh2o_cap)
+     &            Pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), Freeh2o_cap(i))
 
         ! If there is still a snowpack
         IF ( Pkwater_equiv(i)>0.0D0 ) THEN
@@ -672,7 +680,7 @@
 
           ! Set the emissivity of the air to the emissivity when there
           ! is no precipitation
-          emis = Emis_noppt ! [fraction of radiation]
+          emis = Emis_noppt(i) ! [fraction of radiation]
           ! If there is any precipitation in the basin, reset the
           ! emissivity to 1
           IF ( Basin_ppt>DNEARZERO ) emis = 1.0 ! [fraction of radiation]
@@ -685,8 +693,8 @@
           swn = Swrad(i)*(1.0-Albedo(i))*Rad_trncf(i) ! [cal/cm^2]
                                                       ! or [Langleys]
           ! Set the convection-condensation for a half-day interval
-          cec = Cecn_coef(Nowmonth)*0.5 ! [cal/(cm^2 degC)]
-                                        ! or [Langleys / degC]
+          cec = Cecn_coef(i, Nowmonth)*0.5 ! [cal/(cm^2 degC)]
+                                           ! or [Langleys / degC]
           ! If the land cover is trees, reduce the convection-
           ! condensation parameter by half
           IF ( Cov_type(i)>2 ) cec = cec*0.5 ! [cal/(cm^2 degC)] RSR: cov_type=4 is valid for trees (coniferous)
@@ -782,12 +790,12 @@
           ! for the day
           temp = (Tminc(i)+Tavgc(i))*0.5
           ! calculate the night time energy balance
-          CALL snowbal(niteda, Tstorm_mo(Nowmonth), Iasw(i), &
-     &                 temp, esv, Basin_ppt, trd, Emis_noppt, &
+          CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
+     &                 temp, esv, Basin_ppt, trd, Emis_noppt(i), &
      &                 Canopy_covden(i), cec, Pkwater_equiv(i), &
      &                 Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), &
      &                 Snowcov_area(i), Snowmelt(i), Pk_depth(i), &
-     &                 Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap)
+     &                 Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap(i))
           ! track total heat flux from both night and day periods
           Tcal(i) = cals ! [cal/cm^2] or [Langleys]
 
@@ -801,12 +809,12 @@
             ! temparature is halfway between the maximum and average
             ! temperature for the day
             temp = (Tmaxc(i)+Tavgc(i))*0.5 ! [degrees C]
-            CALL snowbal(niteda, Tstorm_mo(Nowmonth), Iasw(i), &
-     &                   temp, esv, Basin_ppt, trd, Emis_noppt, &
+            CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
+     &                   temp, esv, Basin_ppt, trd, Emis_noppt(i), &
      &                   Canopy_covden(i), cec, Pkwater_equiv(i), &
      &                   Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), &
      &                   Snowcov_area(i), Snowmelt(i), Pk_depth(i), &
-     &                   Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap)
+     &                   Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap(i))
             ! track total heat flux from both night and day periods
             Tcal(i) = Tcal(i) + cals ! [cal/cm^2] or [Langleys]
           ENDIF
@@ -823,7 +831,7 @@
             ! or when transpiration is occuring with cover types of
             ! bare soil or grass
             IF ( Transp_on(i)==0 .OR. (Transp_on(i)==1 .AND. Cov_type(i)<2) ) &
-     &           CALL snowevap(Potet_sublim, Potet(i), Snowcov_area(i), &
+     &           CALL snowevap(Potet_sublim(i), Potet(i), Snowcov_area(i), &
      &                         Snow_evap(i), Pkwater_equiv(i), Pk_ice(i), &
      &                         Pk_def(i), Freeh2o(i), Pk_temp(i), Hru_intcpevap(i))
 !          ELSEIF ( Pkwater_equiv(i)<-DNEARZERO ) THEN

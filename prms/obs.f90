@@ -5,10 +5,9 @@
       IMPLICIT NONE
 !   Local Variables
       CHARACTER(LEN=3), SAVE :: MODNAME
-      INTEGER, SAVE :: Nform, Nsnow, Nsfelev, Nlakeelev, Nwind, Nhumid, Rain_flag
+      INTEGER, SAVE :: Nsnow, Nsfelev, Nlakeelev, Nwind, Nhumid, Rain_flag
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
-      INTEGER, SAVE, ALLOCATABLE :: Form_data(:)
       REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
       REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:)
       REAL, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
@@ -59,8 +58,6 @@
       obssetdims = 0
 
       IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
-      IF ( decldim('nform', 0, MAXDIM, &
-     &     'Number of precipitation-form data sets (deprecated, now ignored)')/=0 ) CALL read_error(7, 'nform')
       IF ( decldim('nsfelev', 0, MAXDIM, &
      &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nsfelev')
       IF ( decldim('nlakeelev', 0, MAXDIM, &
@@ -136,8 +133,6 @@
      &       'Langleys', Solrad)/=0 ) CALL read_error(8, 'solrad')
       ENDIF
 
-      Nform = getdim('nform')
-      IF ( Nform==-1 ) CALL read_error(6, 'nform')
       Nsnow = getdim('nsnow')
       IF ( Nsnow==-1 ) CALL read_error(6, 'nsnow')
       Nhumid = getdim('nhumid')
@@ -150,20 +145,11 @@
       IF ( Nlakeelev==-1 ) CALL read_error(6, 'nlakeelev')
 
       IF ( Model==99 ) THEN
-        IF ( Nform==0 ) Nform = 1
         IF ( Nsnow==0 ) Nsnow = 1
         IF ( Nhumid==0 ) Nhumid = 1
         IF ( Nwind==0 ) Nwind = 1
         IF ( Nsfelev==0 ) Nsfelev = 1
         IF ( Nlakeelev==0 ) Nlakeelev = 1
-      ENDIF
-
-      IF ( Nform>0 ) THEN
-        ALLOCATE ( Form_data(Nform) )
-        IF ( declvar(MODNAME, 'form_data', 'nform', Nform, 'integer', &
-     &       'Form of precipitation (0=not known; 1=snow; 2=rain) – deprecated, now ignored', &
-     &       'none', Form_data)/=0 ) CALL read_error(8, 'form_data')
-        PRINT *, 'WARNING, nform>0: form_data values are ignored'
       ENDIF
 
       IF ( Nsnow>0 ) THEN
@@ -275,7 +261,6 @@
         IF ( Nsol>0 ) Solrad = 0.0
         IF ( Nevap>0 ) Pan_evap = 0.0
         IF ( Nsnow>0 ) Snowdepth = 0.0
-        IF ( Nform>0 ) Form_data = 0
         IF ( Nlakeelev>0 ) Lake_elev = 0.0
         IF ( Nratetbl>0 ) Gate_ht = 0.0
         IF ( Nhumid>0 ) Humidity = 0.0
@@ -379,10 +364,6 @@
         ENDIF
       ENDIF
 
-      IF ( Nform>0 ) THEN
-        IF ( readvar(MODNAME, 'form_data')/=0 ) CALL read_error(8, 'form_data')
-      ENDIF
-
       IF ( Nevap>0 ) THEN
         IF ( readvar(MODNAME, 'pan_evap')/=0 ) CALL read_error(9, 'pan_evap')
         pan_missing = 0
@@ -440,13 +421,13 @@
       EXTERNAL check_restart, check_restart_dimen
       ! Local Variables
       INTEGER :: ierr, nrain_test, ntemp_test, nobs_test, nsol_test, nevap_test, nlakeelev_test
-      INTEGER :: nsnow_test, nform_test, nhumid_test, nwind_test, nratetbl_test
+      INTEGER :: nsnow_test, nhumid_test, nwind_test, nratetbl_test
       CHARACTER(LEN=3) :: module_name
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Nrain, Ntemp, Nobs, Nsol, Nevap, &
-     &          Nsnow, Nform, Nhumid, Nwind, Nratetbl, Nlakeelev
+     &          Nsnow, Nhumid, Nwind, Nratetbl, Nlakeelev
         IF ( Nrain>0 ) WRITE ( Restart_outunit ) Precip
         IF ( Ntemp>0 ) THEN
           WRITE ( Restart_outunit ) Tmax
@@ -460,7 +441,6 @@
         IF ( Nsol>0 ) WRITE ( Restart_outunit ) Solrad
         IF ( Nevap>0 ) WRITE ( Restart_outunit ) Pan_evap
         IF ( Nsnow>0 ) WRITE ( Restart_outunit ) Snowdepth
-        IF ( Nform>0 ) WRITE ( Restart_outunit ) Form_data
         IF ( Nhumid>0 ) WRITE ( Restart_outunit ) Humidity
         IF ( Nwind>0 ) WRITE ( Restart_outunit ) Wind_speed
         IF ( Rain_flag==1 ) WRITE ( Restart_outunit ) Rain_day
@@ -470,7 +450,7 @@
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) nrain_test, ntemp_test, nobs_test, nsol_test, nevap_test, &
-     &         nsnow_test, nform_test, nhumid_test, nwind_test, nratetbl_test, nlakeelev_test
+     &         nsnow_test, nhumid_test, nwind_test, nratetbl_test, nlakeelev_test
         ierr = 0
         CALL check_restart_dimen('nrain', nrain_test, Nrain, ierr)
         CALL check_restart_dimen('ntemp', ntemp_test, Ntemp, ierr)
@@ -478,7 +458,6 @@
         CALL check_restart_dimen('nsol', nsol_test, Nsol, ierr)
         CALL check_restart_dimen('nevap', nevap_test, Nevap, ierr)
         CALL check_restart_dimen('nsnow', nsnow_test, Nsnow, ierr)
-        CALL check_restart_dimen('nform', nform_test, Nform, ierr)
         CALL check_restart_dimen('nhumid', nhumid_test, Nhumid, ierr)
         CALL check_restart_dimen('nwind', nwind_test, Nwind, ierr)
         CALL check_restart_dimen('nratetbl', nratetbl_test, Nratetbl, ierr)
@@ -497,7 +476,6 @@
         IF ( Nsol>0 ) READ ( Restart_inunit ) Solrad
         IF ( Nevap>0 ) READ ( Restart_inunit ) Pan_evap
         IF ( Nsnow>0 ) READ ( Restart_inunit ) Snowdepth
-        IF ( Nform>0 ) READ ( Restart_inunit ) Form_data
         IF ( Nhumid>0 ) READ ( Restart_inunit ) Humidity
         IF ( Nwind>0 ) READ ( Restart_inunit ) Wind_speed
         IF ( Rain_flag==1 ) READ ( Restart_inunit ) Rain_day

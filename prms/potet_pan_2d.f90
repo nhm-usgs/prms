@@ -9,12 +9,12 @@
         REAL, SAVE, ALLOCATABLE :: Last_pan_evap(:)
         CHARACTER(LEN=9), SAVE :: MODNAME
         ! Declared Parameters
-        REAL, SAVE :: Epan_coef(12)
+        REAL, SAVE, ALLOCATABLE :: Epan_coef(:, :)
       END MODULE PRMS_POTET_PAN
 
       INTEGER FUNCTION potet_pan()
       USE PRMS_POTET_PAN
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Save_vars_to_file, Init_vars_from_file, Nevap
+      USE PRMS_MODULE, ONLY: Process, Nhru, Print_debug, Save_vars_to_file, Init_vars_from_file, Nevap
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta
       USE PRMS_SET_TIME, ONLY: Nowmonth
@@ -25,7 +25,6 @@
       EXTERNAL read_error, print_module, potet_pan_restart, print_date
 ! Local Variables
       INTEGER :: i, k, j
-      REAL :: epancoef_mo
       CHARACTER(LEN=80), SAVE :: Version_potet_pan
 !***********************************************************************
       potet_pan = 0
@@ -41,12 +40,11 @@
           ENDIF
         ENDDO
 
-        epancoef_mo = Epan_coef(Nowmonth)
         Basin_potet = 0.0D0
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           k = Hru_pansta(i)
-          Potet(i) = Pan_evap(k)*epancoef_mo
+          Potet(i) = Pan_evap(k)*Epan_coef(i, Nowmonth)
           IF ( Potet(i)<NEARZERO ) Potet(i) = 0.0
           Basin_potet = Basin_potet + Potet(i)*Hru_area(i)
         ENDDO
@@ -55,17 +53,18 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_pan = '$Id: potet_pan.f90 7125 2015-01-13 16:54:29Z rsregan $'
+        Version_potet_pan = '$Id: potet_pan_2d.f90 7125 2015-01-13 16:54:29Z rsregan $'
         CALL print_module(Version_potet_pan, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_pan'
 
         IF ( Nevap==0 ) STOP 'ERROR, potet_pan module selected, but nevap=0'
         ALLOCATE ( Last_pan_evap(Nevap) )
 
-        IF ( declparam(MODNAME, 'epan_coef', 'nmonths', 'real', &
+        ALLOCATE ( Epan_coef(Nhru,12) )
+        IF ( declparam(MODNAME, 'epan_coef', 'nhru,nmonths', 'real', &
      &       '1.0', '0.2', '3.0', &
      &       'Evaporation pan coefficient', &
-     &       'Monthly (January to December) evaporation pan coefficient', &
+     &       'Monthly (January to December) evaporation pan coefficient for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'epan_coef')
 
       ELSEIF ( Process(:4)=='init' ) THEN
@@ -75,7 +74,7 @@
           Last_pan_evap = 0.0
         ENDIF
 
-        IF ( getparam(MODNAME, 'epan_coef', 12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
+        IF ( getparam(MODNAME, 'epan_coef', Nhru*12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
 
       ELSEIF ( Process(:5)=='clean' ) THEN
         IF ( Save_vars_to_file==1 ) CALL potet_pan_restart(0)

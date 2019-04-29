@@ -17,7 +17,7 @@
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Hru_order_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
       DOUBLE PRECISION, SAVE :: Basin_area_inv, Basin_lat, Totarea, Active_area
-      REAL, SAVE, ALLOCATABLE :: Ssres_area(:), Hru_elev_feet(:), Hru_elev_meters(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_elev_feet(:), Hru_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_frac_clos(:)
       INTEGER, SAVE, ALLOCATABLE :: Gwr_type(:), Hru_route_order(:), Gwr_route_order(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_area(:)
@@ -33,12 +33,11 @@
 !   Declared Parameters
       INTEGER, SAVE :: Elev_units
       INTEGER, SAVE, ALLOCATABLE :: Hru_type(:), Cov_type(:)
-      INTEGER, SAVE, ALLOCATABLE :: Hru_ssres(:), Tosegment(:), Hru_segment(:), Obsin_segment(:)
+      INTEGER, SAVE, ALLOCATABLE :: Tosegment(:), Hru_segment(:), Obsin_segment(:)
       INTEGER, SAVE, ALLOCATABLE :: Lake_hru(:), Lake_hru_id(:) !not needed if no lakes
-      REAL, SAVE :: Basin_area
       REAL, SAVE, ALLOCATABLE :: Hru_area(:), Hru_percent_imperv(:), Hru_elev(:), Hru_lat(:)
       REAL, SAVE, ALLOCATABLE :: Covden_sum(:), Covden_win(:)
-      REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:)
+      REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:), Dprst_frac_hru(:)
       END MODULE PRMS_BASIN
 
 !***********************************************************************
@@ -65,12 +64,11 @@
 !   Declared Parameters
 !     print_debug, hru_area, hru_percent_imperv, hru_type, hru_elev,
 !     cov_type, hru_lat, dprst_frac_open, dprst_area, basin_area
-!     hru_ssres, lake_hru, lake_hru_id, tosegment, hru_segment, obsin_segment
+!     lake_hru, lake_hru_id, tosegment, hru_segment, obsin_segment
 !***********************************************************************
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nlake, Dprst_flag, Nsegment, Stream_order_flag, Et_flag, Precip_flag, &
-     &    Nssr, Soltab_flag, Lake_route_flag
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nlake, Dprst_flag, Nsegment, Stream_order_flag, Lake_route_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -78,7 +76,7 @@
 !***********************************************************************
       basdecl = 0
 
-      Version_basin = '$Id: basin.f90 7231 2015-03-09 20:17:09Z rsregan $'
+      Version_basin = '$Id: basin_2d.f90 7218 2015-03-05 21:46:16Z rsregan $'
       CALL print_module(Version_basin, 'Basin Definition            ', 90)
       MODNAME = 'basin'
 
@@ -131,6 +129,13 @@
      &       'Aggregate sum of surface-depression storage areas of each HRU', &
      &       'acres')/=0 ) CALL read_error(1, 'dprst_area')
 
+        ALLOCATE ( Dprst_frac_hru(Nhru) )
+        IF ( declparam(MODNAME, 'dprst_frac_hru', 'nhru', 'real', &
+     &       '0.0', '0.0', '0.999', &
+     &       'Fraction of each HRU area that has surface depressions', &
+     &       'Fraction of each HRU area that has surface depressions', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'dprst_frac_hru')
+
         ALLOCATE ( Dprst_frac_open(Nhru), Dprst_frac_clos(Nhru) )
         IF ( declparam(MODNAME, 'dprst_frac_open', 'nhru', 'real', &
      &       '1.0', '0.0', '1.0', &
@@ -143,15 +148,9 @@
 
       ! local arrays
       ALLOCATE ( Hru_route_order(Nhru), Gwr_route_order(Nhru), Gwr_type(Nhru) )
-      IF ( Et_flag==5 ) ALLOCATE ( Hru_elev_feet(Nhru) )
-      IF ( Precip_flag==5 ) ALLOCATE ( Hru_elev_meters(Nhru) )
+      ALLOCATE ( Hru_elev_feet(Nhru), Hru_elev_meters(Nhru) )
 
       ! Declared Parameters
-      IF ( declparam(MODNAME, 'basin_area', 'one', 'real', &
-     &     '0.0', '0.0', '1.0E9', &
-     &     'Area of basin', 'Area of basin', &
-     &     'acres')/=0 ) CALL read_error(1, 'basin_area')
-
       ALLOCATE ( Hru_area(Nhru) )
       IF ( declparam(MODNAME, 'hru_area', 'nhru', 'real', &
      &     '1.0', '0.01', '1.0E9', &
@@ -170,13 +169,11 @@
      &     'HRU mean elevation', 'Mean elevation for each HRU', &
      &     'elev_units')/=0 ) CALL read_error(1, 'hru_elev')
 
-      IF ( Soltab_flag==1 .OR. Model==99 ) THEN
-        ALLOCATE ( Hru_lat(Nhru) )
-        IF ( declparam(MODNAME, 'hru_lat', 'nhru', 'real', &
-     &       '40.0', '-90.0', '90.0', &
-     &       'HRU latitude', 'Latitude of each HRU', &
-     &       'angular degrees')/=0 ) CALL read_error(1, 'hru_lat')
-      ENDIF
+      ALLOCATE ( Hru_lat(Nhru) )
+      IF ( declparam(MODNAME, 'hru_lat', 'nhru', 'real', &
+     &     '40.0', '-90.0', '90.0', &
+     &     'HRU latitude', 'Latitude of each HRU', &
+     &     'angular degrees')/=0 ) CALL read_error(1, 'hru_lat')
 
       ALLOCATE ( Hru_percent_imperv(Nhru) )
       IF ( declparam(MODNAME, 'hru_percent_imperv', 'nhru', 'real', &
@@ -211,15 +208,6 @@
      &     'Winter vegetation cover density for major vegetation type', &
      &     'Winter vegetation cover density for the major vegetation type in each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'covden_win')
-
-      ALLOCATE ( Ssres_area(Nssr), Hru_ssres(Nhru) )
-      IF ( Nhru/=Nssr .OR. Model==99 ) THEN
-        IF ( declparam(MODNAME, 'hru_ssres', 'nhru', 'integer', &
-     &       '1', 'bounded', 'nssr', &
-     &       'Index of subsurface reservoir assigned to HRU', &
-     &       'Index of subsurface reservoir receiving excess water from capillary reservoir', &
-     &       'none')/=0 ) CALL read_error(1, 'hru_ssres')
-      ENDIF
 
       IF ( Stream_order_flag==1 .OR. Model==99 ) THEN
         ! local arrays
@@ -280,14 +268,14 @@
       USE PRMS_BASIN
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Nsegment, Cascade_flag, Dprst_flag, &
      &    Print_debug, Inputerror_flag, Model, PRMS_VERSION, Parameter_check_flag, Starttime, Endtime, &
-     &    Stream_order_flag, Nssr, Ngw, Et_flag, Precip_flag, Lake_route_flag, Soltab_flag
+     &    Stream_order_flag, Lake_route_flag
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
       EXTERNAL write_outfile, checkint_param_limits
       INTRINSIC ABS
 ! Local Variables
       CHARACTER(LEN=68) :: buffer
-      INTEGER :: i, j, k, test, lval
+      INTEGER :: i, j, k, test, lval, dprst_frac_flag
       INTEGER, ALLOCATABLE :: x_off(:)
       REAL :: harea, tmp
       DOUBLE PRECISION :: basin_imperv, basin_perv, basin_dprst
@@ -295,11 +283,8 @@
       basinit = 0
 
       IF ( getparam(MODNAME, 'hru_area', Nhru, 'real', Hru_area)/=0 ) CALL read_error(2, 'hru_area')
-      IF ( getparam(MODNAME, 'basin_area', 1, 'real', Basin_area)/=0 ) CALL read_error(2, 'basin_area')
       IF ( getparam(MODNAME, 'hru_elev', Nhru, 'real', Hru_elev)/=0 ) CALL read_error(2, 'hru_elev')
-      IF ( Soltab_flag==1 ) THEN
-        IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
-      ENDIF
+      IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
       IF ( getparam(MODNAME, 'hru_type', Nhru, 'integer', Hru_type)/=0 ) CALL read_error(2, 'hru_type')
       IF ( getparam(MODNAME, 'cov_type', Nhru, 'integer', Cov_type)/=0 ) CALL read_error(2, 'cov_type')
       IF ( getparam(MODNAME, 'covden_sum', Nhru, 'real', Covden_sum)/=0 ) CALL read_error(2, 'covden_sum')
@@ -311,6 +296,13 @@
       IF ( Dprst_flag==1 ) THEN
         IF ( getparam(MODNAME, 'dprst_frac_open', Nhru, 'real', Dprst_frac_open)/=0 ) CALL read_error(2, 'dprst_frac_open')
         IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
+        IF ( Dprst_area(1)<0.0 ) THEN
+          PRINT *, 'Using dprst_frac_hru instead of dprst_area'
+          IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, 'real', Dprst_frac_hru)/=0 ) CALL read_error(2, 'dprst_frac_hru')
+          dprst_frac_flag = 1
+        ELSE
+          dprst_frac_flag = 0
+        ENDIF
       ENDIF
 
       IF ( Stream_order_flag==1 ) THEN
@@ -382,13 +374,13 @@
           ENDIF
         ENDIF
 
-        IF ( Soltab_flag==1 ) Basin_lat = Basin_lat + Hru_lat(i)*harea
+        Basin_lat = Basin_lat + Hru_lat(i)*harea
         IF ( Elev_units==0 ) THEN
-          IF ( Et_flag==5 ) Hru_elev_feet(i) = Hru_elev(i)
-          IF ( Precip_flag==5 ) Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
+          Hru_elev_feet(i) = Hru_elev(i)
+          Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
         ELSE
-          IF ( Precip_flag==5 ) Hru_elev_meters(i) = Hru_elev(i)
-          IF ( Et_flag==5 ) Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
+          Hru_elev_meters(i) = Hru_elev(i)
+          Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
         ENDIF
         j = j + 1
         Hru_route_order(j) = i
@@ -409,21 +401,36 @@
         Hru_perv(i) = harea - Hru_imperv(i)
 
         IF ( Dprst_flag==1 ) THEN
-          IF ( Dprst_area(i)<SMALLPARAM ) THEN
-            IF ( ABS(Dprst_area(i))>0.0 ) THEN
-              PRINT 9001, 'dprst_area', SMALLPARAM, i, Dprst_area(i)
-              Dprst_area(i) = 0.0
+          IF ( dprst_frac_flag==1 ) THEN
+            IF ( Dprst_frac_hru(i)<SMALLPARAM ) THEN
+              IF ( ABS(Dprst_frac_hru(i))>0.0 ) THEN
+                IF ( Print_debug>-1 ) THEN
+                  IF ( ABS(Hru_frac_dprst(i))>0.0 ) PRINT 9001, 'dprst_frac_hru', SMALLPARAM, i, Dprst_frac_hru(i)
+                  Dprst_frac_hru(i) = 0.0
+                ENDIF
+              ENDIF
+            ELSEIF ( Dprst_frac_hru(i)>0.999 ) THEN
+              PRINT *, 'ERROR, dprst_frac_hru > 0.999 for HRU:', i, ', value:', Dprst_frac_hru(i)
+              Inputerror_flag = 1
             ENDIF
-          ELSEIF ( Dprst_area(i)>harea ) THEN
-            PRINT *, 'ERROR, dprst_area > hru_area for HRU:', i, ', value:', Dprst_area(i)
-            PRINT *, '       hru_area:', harea
-            Inputerror_flag = 1
-          ELSEIF ( Dprst_area(i)>0.999*harea ) THEN
-            PRINT *, 'ERROR, dprst_area > 0.999*hru_area for HRU:', i, ', value:', Dprst_area(i)
-            PRINT *, '       hru_area:', harea, '; fraction', 0.999*harea
-            Inputerror_flag = 1
+            Dprst_area_max(i) = Dprst_frac_hru(i)*harea
+          ELSE
+            IF ( Dprst_area(i)<SMALLPARAM ) THEN
+              IF ( ABS(Dprst_area(i))>0.0 ) THEN
+                PRINT 9001, 'dprst_area', SMALLPARAM, i, Dprst_area(i)
+                Dprst_area(i) = 0.0
+              ENDIF
+            ELSEIF ( Dprst_area(i)>harea ) THEN
+              PRINT *, 'ERROR, dprst_area > hru_area for HRU:', i, ', value:', Dprst_area(i)
+              PRINT *, '       hru_area:', harea
+              Inputerror_flag = 1
+            ELSEIF ( Dprst_area(i)>0.999*harea ) THEN
+              PRINT *, 'ERROR, dprst_area > 0.999*hru_area for HRU:', i, ', value:', Dprst_area(i)
+              PRINT *, '       hru_area:', harea, '; fraction', 0.999*harea
+              Inputerror_flag = 1
+            ENDIF
+            Dprst_area_max(i) = Dprst_area(i)
           ENDIF
-          Dprst_area_max(i) = Dprst_area(i)
           Hru_frac_dprst(i) = Dprst_area_max(i)/harea
           ! ignore very small depression storage
           IF ( Hru_frac_dprst(i)<SMALLPARAM ) THEN
@@ -619,41 +626,17 @@
         DEALLOCATE ( x_off )
       ENDIF
 
-      IF ( Nssr==Nhru ) THEN
-        DO i = 1, Nhru
-          Ssres_area(i) = Hru_area(i)
-          Hru_ssres(i) = i
+      Active_gwrs = Active_hrus
+      Gwr_route_order = Hru_route_order
+      Gwr_type = Hru_type
+      IF ( Model/=0 ) THEN
+        DO j = 1, Active_gwrs
+          i = Gwr_route_order(j)
+          IF ( Gwr_type(i)==3 ) THEN
+            IF ( Print_debug>-1 ) PRINT *, 'WARNING, GWRs cannot be swales for GWR:', i, ' set to 1'
+            Gwr_type(i) = 1
+          ENDIF
         ENDDO
-      ELSE
-        IF ( getparam(MODNAME, 'hru_ssres', Nhru, 'integer', Hru_ssres) &
-     &       /=0 ) CALL read_error(2, 'hru_ssres')
-        Ssres_area = 0.0
-        DO k = 1, Active_hrus
-          i = Hru_route_order(k)
-          j = Hru_ssres(i)
-          Ssres_area(j) = Ssres_area(j) + Hru_area(i)
-        ENDDO
-      ENDIF
-
-      IF ( Ngw==Nhru ) THEN
-        Active_gwrs = Active_hrus
-        Gwr_route_order = Hru_route_order
-        Gwr_type = Hru_type
-        IF ( Model/=0 ) THEN
-          DO j = 1, Active_gwrs
-            i = Gwr_route_order(j)
-            IF ( Gwr_type(i)==3 ) THEN
-              IF ( Print_debug>-1 ) PRINT *, 'WARNING, GWRs cannot be swales for GWR:', i, ' set to 1'
-              Gwr_type(i) = 1
-            ENDIF
-          ENDDO
-        ENDIF
-      ELSE
-        DO i = 1, Ngw
-          Gwr_route_order(i) = i
-        ENDDO
-        Active_gwrs = Ngw
-        Gwr_type = 1
       ENDIF
 
       Basin_area_inv = 1.0D0/Active_area

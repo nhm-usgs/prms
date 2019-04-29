@@ -30,10 +30,10 @@
       REAL, SAVE, ALLOCATABLE :: It0_gravity_stor_res(:), It0_sroff(:)
       REAL, SAVE, ALLOCATABLE :: It0_slow_stor(:), It0_potet(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_strm_seg_in(:)
-      DOUBLE PRECISION, SAVE :: It0_strm_farfield, It0_basin_soil_moist, It0_basin_ssstor
+      DOUBLE PRECISION, SAVE :: It0_basin_soil_moist, It0_basin_ssstor
       DOUBLE PRECISION, SAVE :: Basin_sz_gwin, Last_soil_moist, Last_ssstor
 !   Declared Variables
-      DOUBLE PRECISION, SAVE :: Basin_sz2gw, Basin_ssr2gw, Basin_cap_infil_tot
+      DOUBLE PRECISION, SAVE :: Basin_sz2gw, Basin_cap_infil_tot
       DOUBLE PRECISION, SAVE :: Basin_interflow_max, Basin_sm2gvr_max
       DOUBLE PRECISION, SAVE :: Basin_soil_rechr, Basin_dunnian_gvr
       DOUBLE PRECISION, SAVE :: Basin_recharge, Basin_pref_flow_infil
@@ -42,8 +42,7 @@
       DOUBLE PRECISION, SAVE :: Basin_dncascadeflow, Basin_dndunnianflow
       DOUBLE PRECISION, SAVE :: Basin_capwaterin, Basin_dunnian
       DOUBLE PRECISION, SAVE :: Basin_gvr2pfr, Basin_slowflow
-      DOUBLE PRECISION, SAVE :: Basin_szfarflow, Basin_pref_stor
-      DOUBLE PRECISION, SAVE :: Basin_slstor, Basin_prefflow
+      DOUBLE PRECISION, SAVE :: Basin_pref_stor, Basin_slstor, Basin_prefflow
       DOUBLE PRECISION, SAVE :: Basin_lakeinsz, Basin_lakeprecip
       DOUBLE PRECISION, SAVE :: Basin_cap_up_max
       DOUBLE PRECISION, SAVE :: Basin_soil_moist_tot
@@ -119,7 +118,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = '$Id: soilzone.f90 7223 2015-03-06 00:58:04Z rsregan $'
+      Version_soilzone = '$Id: soilzone.f90 7222 2015-03-06 00:23:14Z rsregan $'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -213,12 +212,6 @@
      &     'Basin area-weighted average drainage from gravity reservoirs to GWRs', &
      &     'inches', Basin_sz2gw)/=0 ) CALL read_error(3, 'basin_sz2gw')
 
-      ! kept for downward compatibilty, user's should only use
-      ! basin_sz2gw
-      IF ( declvar(MODNAME, 'basin_ssr2gw', 'one', 1, 'double', &
-     &     'Basin area-weighted average drainage from gravity reservoirs to GWRs', &
-     &     'inches', Basin_ssr2gw)/=0 ) CALL read_error(3, 'basin_ssr2gw')
-
       ALLOCATE ( Pref_flow_in(Nhru) )
       IF ( declvar('soilzone', 'pref_flow_in', 'nhru', Nhru, 'real', &
      &     'Infiltration and flow from gravity reservoir to the preferential-flow reservoir', &
@@ -253,7 +246,7 @@
      &       'inches', Basin_dninterflow)/=0 ) CALL read_error(3, 'basin_dninterflow')
 
         IF ( declvar(MODNAME, 'basin_dncascadeflow', 'one', 1, 'double', &
-     &       'Basin area-weighted average cascading interflow, Dunnian surface runoff, and farflow', &
+     &       'Basin area-weighted average cascading interflow and Dunnian surface runoff', &
      &       'inches', Basin_dncascadeflow)/=0 ) CALL read_error(3, 'basin_dncascadeflow')
 
         ALLOCATE ( Upslope_interflow(Nhru) )
@@ -270,7 +263,7 @@
 
         ALLOCATE ( Hru_sz_cascadeflow(Nhru) )
         IF ( declvar(MODNAME, 'hru_sz_cascadeflow', 'nhru', Nhru, 'real', &
-     &       'Cascading interflow, Dunnian surface runoff, and farflow from each HRU', &
+     &       'Cascading interflow and Dunnian surface runoff from each HRU', &
      &       'inches', Hru_sz_cascadeflow)/=0 ) CALL read_error(3, 'hru_sz_cascadeflow')
 
         IF ( Nlake>0 ) THEN
@@ -324,10 +317,6 @@
       IF ( declvar(MODNAME, 'basin_lakeprecip', 'one', 1, 'double', &
      &     'Basin area-weighted average precipitation on lake HRUs', &
      &     'inches', Basin_lakeprecip)/=0 ) CALL read_error(3, 'basin_lakeprecip')
-
-      IF ( declvar(MODNAME, 'basin_szfarflow', 'one', 1, 'double', &
-     &     'Basin area-weighted average farfield flow from gravity and preferential-flow reservoirs', &
-     &     'inches', Basin_szfarflow)/=0 ) CALL read_error(3, 'basin_szfarflow')
 
       ALLOCATE ( Swale_actet(Nhru) )
       IF ( declvar(MODNAME, 'swale_actet', 'nhru', Nhru, 'real', &
@@ -900,7 +889,7 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
       USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
-      USE PRMS_SRUNOFF, ONLY: Basin_sroff, Hru_impervevap, Strm_seg_in, Strm_farfield, Dprst_evap_hru
+      USE PRMS_SRUNOFF, ONLY: Basin_sroff, Hru_impervevap, Strm_seg_in, Dprst_evap_hru
       IMPLICIT NONE
 ! Functions
       INTRINSIC MIN, ABS, MAX, SNGL, DBLE
@@ -914,7 +903,6 @@
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capacity, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow
-      REAL :: farflow_slow, farflow_pref, farflow_dunn
       DOUBLE PRECISION :: gwin
 !***********************************************************************
       szrun = 0
@@ -943,7 +931,6 @@
             Gw2sm_grav(i) = 0.0
           ENDDO
           It0_strm_seg_in = Strm_seg_in
-          It0_strm_farfield = Strm_farfield
           It0_basin_soil_moist = Basin_soil_moist
           It0_basin_ssstor = Basin_ssstor
         ELSE
@@ -966,7 +953,6 @@
             Sm2gw_grav(i) = 0.0
           ENDDO
           Strm_seg_in = It0_strm_seg_in
-          Strm_farfield = It0_strm_farfield
         ENDIF
       ENDIF
 
@@ -1237,19 +1223,14 @@
               dnslowflow = 0.0
               dnpreflow = 0.0
               dndunn = 0.0
-              farflow_slow = 0.0
-              farflow_pref = 0.0
-              farflow_dunn = 0.0
               IF ( interflow+dunnianflw>0.0 ) THEN
                 CALL compute_cascades(i, Ncascade_hru(i), Slow_flow(i), &
      &                                prefflow, Dunnian_flow(i), dnslowflow, &
-     &                                dnpreflow, dndunn, farflow_slow, farflow_pref, farflow_dunn)
-                Hru_sz_cascadeflow(i) = dnslowflow + dnpreflow + dndunn + &
-     &                                  farflow_slow + farflow_pref + farflow_dunn
+     &                                dnpreflow, dndunn)
+                Hru_sz_cascadeflow(i) = dnslowflow + dnpreflow + dndunn
                 !IF ( Hru_sz_cascadeflow(i)<0.0 ) Hru_sz_cascadeflow(i) = 0.0
                 Basin_dninterflow = Basin_dninterflow + (dnslowflow+dnpreflow)*harea
                 Basin_dndunnianflow = Basin_dndunnianflow + dndunn*harea
-                Basin_szfarflow = Basin_szfarflow + (farflow_slow+farflow_pref+farflow_dunn)*harea
                 Basin_dncascadeflow = Basin_dncascadeflow + Hru_sz_cascadeflow(i)*harea
               ELSE
                 Hru_sz_cascadeflow(i) = 0.0
@@ -1257,8 +1238,7 @@
             ENDIF
           ENDIF
 
-! note ssres_flow does not include farfield flow as it leaves the stream network
-!      and model domain, thus not included in basin_cfs
+! treat pref_flow as interflow
           Ssres_flow(i) = Slow_flow(i)
           IF ( Pref_flow_flag(i)==1 ) THEN
             Pref_flow(i) = prefflow
@@ -1270,8 +1250,6 @@
           Basin_slowflow = Basin_slowflow + Slow_flow(i)*harea
 
 ! treat dunnianflw as surface runoff to streams
-! note sroff does not include farfield flow as it leaves the stream network
-!      and model domain, thus not included in basin_cfs
           Sroff(i) = Sroff(i) + Dunnian_flow(i)
           Basin_sroff = Basin_sroff + Sroff(i)*harea
           Basin_dunnian = Basin_dunnian + Dunnian_flow(i)*harea
@@ -1353,7 +1331,6 @@
       Basin_dninterflow = Basin_dninterflow*Basin_area_inv
       Basin_dndunnianflow = Basin_dndunnianflow*Basin_area_inv
       Basin_dncascadeflow = Basin_dncascadeflow*Basin_area_inv
-      Basin_szfarflow = Basin_szfarflow*Basin_area_inv
       Basin_gvr2pfr = Basin_gvr2pfr*Basin_area_inv
       Basin_slowflow = Basin_slowflow*Basin_area_inv
       Basin_recharge = Basin_recharge*Basin_area_inv
@@ -1594,20 +1571,17 @@
 !     Compute cascading interflow and excess flow
 !***********************************************************************
       SUBROUTINE compute_cascades(Ihru, Ncascade_hru, Slowflow, Preflow, &
-     &           Dunnian, Dnslowflow, Dnpreflow, Dndunnflow, &
-     &           Farflow_slow, Farflow_pref, Farflow_dunn)
-      USE PRMS_MODULE, ONLY: Nsegmentp1
+     &           Dunnian, Dnslowflow, Dnpreflow, Dndunnflow)
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
-      USE PRMS_SRUNOFF, ONLY: Strm_seg_in, Strm_farfield
+      USE PRMS_SRUNOFF, ONLY: Strm_seg_in
       IMPLICIT NONE
       INTRINSIC IABS, DBLE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Ncascade_hru
       REAL, INTENT(INOUT) :: Dunnian, Slowflow, Preflow
       REAL, INTENT(INOUT) :: Dnslowflow, Dnpreflow, Dndunnflow
-      REAL, INTENT(INOUT) :: Farflow_slow, Farflow_pref, Farflow_dunn
 ! Local Variables
       INTEGER :: j, k
       REAL :: frac, fracwt
@@ -1626,21 +1600,14 @@
 ! if hru_down(k, Ihru) < 0, cascade contributes to a stream
         ELSEIF ( j<0 ) THEN
           j = IABS(j)
-          IF ( j/=Nsegmentp1 ) THEN
-            Strm_seg_in(j) = Strm_seg_in(j) + DBLE( (Slowflow+Preflow+Dunnian)*Cascade_area(k, Ihru) )*Cfs_conv
-          ELSE
-            Strm_farfield = Strm_farfield + (Slowflow+Preflow+Dunnian)*Cascade_area(k, Ihru)*Cfs_conv
-            Farflow_slow = Farflow_slow + Slowflow*frac
-            Farflow_pref = Farflow_pref + Preflow*frac
-            Farflow_dunn = Farflow_dunn + Dunnian*frac
-          ENDIF
+          Strm_seg_in(j) = Strm_seg_in(j) + DBLE( (Slowflow+Preflow+Dunnian)*Cascade_area(k, Ihru) )*Cfs_conv
         ENDIF
       ENDDO
 
 ! reset Slowflow, Preflow, and Dunnian_flow as they accumulate flow to streams
-      Slowflow = Slowflow - Dnslowflow - Farflow_slow
-      Preflow = Preflow - Dnpreflow - Farflow_pref
-      Dunnian = Dunnian - Dndunnflow - Farflow_dunn
+      Slowflow = Slowflow - Dnslowflow
+      Preflow = Preflow - Dnpreflow
+      Dunnian = Dunnian - Dndunnflow
 
       END SUBROUTINE compute_cascades
 
@@ -1810,7 +1777,6 @@
       Basin_slowflow = 0.0D0
       Basin_prefflow = 0.0D0
       Basin_lakeprecip = 0.0D0
-      Basin_szfarflow = 0.0D0
       Basin_actet = 0.0D0
       Basin_perv_et = 0.0D0
       Basin_swale_et = 0.0D0
@@ -1840,7 +1806,7 @@
      &          Basin_soil_rechr, Basin_dunnian_gvr, Basin_recharge, Basin_ssin, Basin_sm2gvr, Basin_capwaterin, Basin_dunnian, &
      &          Basin_slowflow, Basin_slstor, Basin_cap_up_max, Basin_soil_moist_tot, Basin_gvr2sm, Et_type
         WRITE ( Restart_outunit ) Basin_prefflow, Basin_pref_flow_infil, Basin_pref_stor, Basin_gvr2pfr, Basin_dunnian_pfr
-        WRITE ( Restart_outunit ) Basin_dndunnianflow, Basin_dninterflow, Basin_dncascadeflow, Basin_szfarflow
+        WRITE ( Restart_outunit ) Basin_dndunnianflow, Basin_dninterflow, Basin_dncascadeflow
         WRITE ( Restart_outunit ) Basin_lakeinsz, Basin_lakeprecip
         WRITE ( Restart_outunit ) Perv_actet
         WRITE ( Restart_outunit ) Soil_moist_tot
@@ -1883,7 +1849,7 @@
      &         Basin_soil_rechr, Basin_dunnian_gvr, Basin_recharge, Basin_ssin, Basin_sm2gvr, Basin_capwaterin, Basin_dunnian, &
      &         Basin_slowflow, Basin_slstor, Basin_cap_up_max, Basin_soil_moist_tot, Basin_gvr2sm, Et_type
         READ ( Restart_inunit ) Basin_prefflow, Basin_pref_flow_infil, Basin_pref_stor, Basin_gvr2pfr, Basin_dunnian_pfr
-        READ ( Restart_inunit ) Basin_dndunnianflow, Basin_dninterflow, Basin_dncascadeflow, Basin_szfarflow
+        READ ( Restart_inunit ) Basin_dndunnianflow, Basin_dninterflow, Basin_dncascadeflow
         READ ( Restart_inunit ) Basin_lakeinsz, Basin_lakeprecip
         READ ( Restart_inunit ) Perv_actet
         READ ( Restart_inunit ) Soil_moist_tot

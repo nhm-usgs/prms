@@ -64,7 +64,7 @@
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = '$Id: soltab.f90 6841 2014-10-20 19:06:26Z rsregan $'
+      Version_soltab = '$Id: soltab.f90 7050 2014-12-02 19:06:41Z rsregan $'
       CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
       MODNAME = 'soltab'
 

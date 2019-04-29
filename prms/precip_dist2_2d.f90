@@ -69,7 +69,7 @@
 !***********************************************************************
       pptdist2decl = 0
 
-      Version_precip = '$Id: precip_dist2.f90 7115 2015-01-06 00:09:15Z rsregan $'
+      Version_precip = '$Id: precip_dist2_2d.f90 7115 2015-01-06 00:09:15Z rsregan $'
       CALL print_module(Version_precip, 'Precipitation Distribution  ', 90)
       MODNAME = 'precip_dist2'
 
@@ -299,7 +299,7 @@
       EXTERNAL :: print_date
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
-      REAL :: tdiff, allrain_mo, pcor, prec, adjmix_mo, ppt, sumdist, sump
+      REAL :: tdiff, pcor, prec, ppt, sumdist, sump
       DOUBLE PRECISION :: sum_obs
 !***********************************************************************
       pptdist2run = 0
@@ -308,8 +308,6 @@
       Basin_rain = 0.0D0
       Basin_snow = 0.0D0
       sum_obs = 0.0D0
-      allrain_mo = Tmax_allrain_f(Nowmonth)
-      adjmix_mo = Adjmix_rain(Nowmonth)
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
         Hru_ppt(i) = 0.0
@@ -323,7 +321,7 @@
 
 !******IF maximum temperature is below or equal to the base temperature
 !******for snow then precipitation is all snow
-        IF ( Tmaxf(i)<=Tmax_allsnow_f ) THEN
+        IF ( Tmaxf(i)<=Tmax_allsnow_f(i,Nowmonth) ) THEN
           ! precipitation is all snow
           iform = 1
 
@@ -334,7 +332,7 @@
 !******precipitation is all rain
 ! MODIFIED BELOW (10/99, JJV SO THAT ASSUMING ALWAYS TEMPERATURE DATA FOR A DAY
 ! FOR AT LEAST ONE SITE
-        ELSEIF ( Tminf(i)>Tmax_allsnow_f .OR. Tmaxf(i)>=allrain_mo ) THEN
+        ELSEIF ( Tminf(i)>Tmax_allsnow_f(i,Nowmonth) .OR. Tmaxf(i)>=Tmax_allrain_f(i,Nowmonth) ) THEN
           iform = 2
 !******Otherwise precipitation is a mixture of rain and snow
         ELSE
@@ -400,7 +398,7 @@
         ELSE
           tdiff = Tmaxf(i) - Tminf(i)
           IF ( ABS(tdiff)<NEARZERO ) tdiff = 0.01
-          Prmx(i) = ((Tmaxf(i)-Tmax_allsnow_f)/tdiff)*adjmix_mo
+          Prmx(i) = ((Tmaxf(i)-Tmax_allsnow_f(i, Nowmonth))/tdiff)*Adjmix_rain(i, Nowmonth)
 
 !******Unless mixture adjustment raises the proportion of rain to
 !******greater than or equal to 1.0 in which case it all rain
