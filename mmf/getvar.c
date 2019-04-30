@@ -76,7 +76,7 @@ long getvar (char *module, char *name, long maxsize, char *type, double *value) 
   
 /*
   vkey = (char *) umalloc(strlen(module) + strlen(name) + 2);
-  (void)strcpy(vkey, module);
+  (void)strncpy(vkey, module, strlen(module) + strlen(name) + 2);
   strcat(strcat(vkey, "."), name);
 */
 //  vkey = strdup (name);
@@ -147,7 +147,7 @@ long getvar (char *module, char *name, long maxsize, char *type, double *value) 
 		switch (var->type) {
 			case M_LONG:
 				memcpy ((char *)value, (char *)var->value,
-							var->size * sizeof(long));
+							var->size * sizeof(int));
 				break;
       
 			case M_FLOAT:
@@ -176,9 +176,9 @@ long getvar (char *module, char *name, long maxsize, char *type, double *value) 
 
 			switch (var->type) {
 				case M_LONG:
-					memcpy ((char *)ptr2, (char *)ptr1, n1 * sizeof(long));
-					ptr1 += n1 * sizeof(long);
-					ptr2 += n1 * sizeof(long);
+					memcpy ((char *)ptr2, (char *)ptr1, n1 * sizeof(int));
+					ptr1 += n1 * sizeof(int);
+					ptr2 += n1 * sizeof(int);
 					break;
 
 				case M_FLOAT:

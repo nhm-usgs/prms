@@ -95,7 +95,7 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip = 'precip_1sta_laps.f90 2016-05-10 15:48:00Z'
+        Version_precip = 'precip_1sta_laps.f90 2016-10-21 17:36:00Z'
         IF ( Precip_flag==1 ) THEN
           MODNAME = 'precip_1sta'
         ELSE
@@ -118,7 +118,7 @@
         ALLOCATE ( Rain_adj_lapse(Nhru, 12), Snow_adj_lapse(Nhru, 12) )
         IF ( Precip_flag==1 .OR. Model==99 ) THEN
           IF ( declparam(MODNAME, 'rain_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '2.0', &
+     &         '1.0', '0.5', '2.5', &
      &         'Monthly rain adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &
@@ -126,7 +126,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'rain_adj')
 
           IF ( declparam(MODNAME, 'snow_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '2.0', &
+     &         '1.0', '0.5', '2.5', &
      &         'Monthly snow adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &

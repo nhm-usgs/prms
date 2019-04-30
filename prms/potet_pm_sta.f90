@@ -6,23 +6,24 @@
 !   evapotranspiration over 116-yr period in the Platte River Basin,
 !   central Nebraska-USA: Journal of Hydrology, V. 420-421, p. 228-244
 !***********************************************************************
-      MODULE PRMS_POTET_PM
+      MODULE PRMS_POTET_PM_STA
         IMPLICIT NONE
         ! Local Variables
-        CHARACTER(LEN=8), SAVE :: MODNAME
+        CHARACTER(LEN=12), SAVE :: MODNAME
         !REAL, SAVE, ALLOCATABLE :: Tavgc_ante(:) ! if Tavgc_ante is used in future, need to add save in restart file
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
-      END MODULE PRMS_POTET_PM
+        INTEGER, SAVE, ALLOCATABLE :: Hru_windspeed_sta(:), Hru_humidity_sta(:)
+      END MODULE PRMS_POTET_PM_STA
 
 !***********************************************************************
-      INTEGER FUNCTION potet_pm()
-      USE PRMS_POTET_PM
-      USE PRMS_MODULE, ONLY: Process, Nhru, Humidity_cbh_flag
+      INTEGER FUNCTION potet_pm_sta()
+      USE PRMS_POTET_PM_STA
+      USE PRMS_MODULE, ONLY: Process, Nhru, Parameter_check_flag, Inputerror_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
-     &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity, Humidity_percent
-      USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru, Windspeed_hru
+     &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity
+      USE PRMS_OBS, ONLY: Humidity, Wind_speed, Nwind, Nhumid
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       IMPLICIT NONE
@@ -30,17 +31,16 @@
       INTRINSIC SQRT, DBLE, LOG, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: sat_vapor_press
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
       REAL :: A1, B1, t1, num, den, stab, sw
       CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
-      potet_pm = 0
+      potet_pm_sta = 0
 
       IF ( Process(:3)=='run' ) THEN
-        IF ( Humidity_cbh_flag==0 ) Humidity_hru = Humidity_percent(1, Nowmonth) 
         Basin_potet = 0.0D0
         Basin_humidity = 0.0D0
         DO j = 1, Active_hrus
@@ -71,12 +71,12 @@
           heat_flux = 0.0 ! Irmak and others (2012) says equal to zero for daily time step ! G
 
 ! Dew point temperature (Lawrence(2005) eqn. 8), degrees C
-! Humidity_hru is input as percent so divided by 100 to be in units of decimal fraction
+! Hru_humidity_sta is input as percent so divided by 100 to be in units of decimal fraction
           A1 = 17.625
           B1 = 243.04
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1)
-          den = A1 - LOG(Humidity_hru(i)/100.0) - t1
+          num = B1 * (LOG(Humidity(Hru_humidity_sta(i))/100.0) + t1)
+          den = A1 - LOG(Humidity(Hru_humidity_sta(i))/100.0) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
@@ -121,8 +121,8 @@
           net_rad = Swrad(i)*0.04184 - Lwrad_net(i)
 
           a = Vp_slope(i) * (net_rad - heat_flux) / elh * 1000.0
-          b = psycnst * Pm_n_coef(i,Nowmonth) * Windspeed_hru(i) * vp_deficit / (Tavgc(i) + 273.0)
-          c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Windspeed_hru(i)))
+          b = psycnst * Pm_n_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i)) * vp_deficit / (Tavgc(i) + 273.0)
+          c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i))))
 
 !  PM equation with crop_coef in mm/day
 !          Potet(i) = (a + b)/c
@@ -136,16 +136,16 @@
 
           IF ( Potet(i)<0.0 ) Potet(i) = 0.0
           Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
-          Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i)*Hru_area(i) )
+          Basin_humidity = Basin_humidity + DBLE( Hru_humidity_sta(i)*Hru_area(i) )
 !          Tavgc_ante(i) = Tavgc(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
         Basin_humidity = Basin_humidity*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_pm.f90 2018-04-18 11:10:00Z'
+        Version_potet = 'potet_pm_sta.f90 2018-04-18 11:10:00Z'
         CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_pm'
+        MODNAME = 'potet_pm_sta'
 
         ! Declare Parameters
         ALLOCATE ( Pm_n_coef(Nhru,12) )
@@ -169,16 +169,39 @@
      &       'Monthly (January to December) crop coefficient for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'crop_coef')
 
+        ALLOCATE ( Hru_windspeed_sta(Nhru) )
+        IF ( declparam(MODNAME, 'hru_windspeed_sta', 'nhru', 'integer', &
+     &       '0', 'bounded', 'nwind', &
+     &       'Index of wind speed measurement station for each HRU', &
+     &       'Index of wind speed measurement station for each HRU', &
+     &       'none')/=0 ) CALL read_error(1, 'hru_windspeed_sta')
+
+        ALLOCATE ( Hru_humidity_sta(Nhru) )
+        IF ( declparam(MODNAME, 'hru_humidity_sta', 'nhru', 'integer', &
+     &       '0', 'bounded', 'nhumid', &
+     &       'Index of humidity measurement station for each HRU', &
+     &       'Index of humidity measurement station for each HRU', &
+     &       'none')/=0 ) CALL read_error(1, 'hru_humidity_sta')
+
 !******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
         Vp_sat = 0.0
         IF ( getparam(MODNAME, 'pm_n_coef', Nhru*12, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
         IF ( getparam(MODNAME, 'pm_d_coef', Nhru*12, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
         IF ( getparam(MODNAME, 'crop_coef', Nhru*12, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
+        IF ( getparam(MODNAME, 'hru_windspeed_sta', Nhru, 'integer', Hru_windspeed_sta)/=0 ) CALL read_error(2,'hru_windspeed_sta')
+        IF ( getparam(MODNAME, 'hru_humidity_sta', Nhru, 'integer', Hru_humidity_sta)/=0 ) CALL read_error(2, 'hru_humidity_sta')
+        IF ( Parameter_check_flag>0 ) THEN
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            CALL checkdim_param_limits(i, 'hru_windspeed_sta', 'nhru', Hru_windspeed_sta(i), 1, Nwind, Inputerror_flag)
+            CALL checkdim_param_limits(i, 'hru_humidity_sta', 'nhru', Hru_humidity_sta(i), 1, Nhumid, Inputerror_flag)
+          ENDDO
+        ENDIF
 
         !ALLOCATE ( Tavgc_ante(Nhru) )
         !Tavgc_ante = Tavgc
 
       ENDIF
 
-      END FUNCTION potet_pm
+      END FUNCTION potet_pm_sta

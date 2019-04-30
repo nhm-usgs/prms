@@ -23,7 +23,7 @@
  | RETURN VALUE : void
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-void parse_args (int argc, char **argv, int *set_count, char **set_name, char **set_value) {
+void parse_args (int argc, char **argv, int *set_count, char **set_name, char **set_value, int set_size) {
 
    int i;
    char *ptr;
@@ -47,10 +47,11 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
 
    if (argc >= 2) {
       for (i = 1; i < argc ; i++) {
-         if (!strcmp(argv[i], "-debug")) {
-            Mdebuglevel = atoi(argv[i+1]);
-            i++;
-         } else if (!strncmp(argv[i],"-C",2)) {
+		 if (!strcmp(argv[i], "-debug")) {
+			 Mdebuglevel = atoi(argv[i+1]);
+			 i++;
+
+		 } else if (!strncmp(argv[i],"-C",2)) {
             MAltContFile = (char *)((argv[i]));
             MAltContFile+=2;
 
@@ -66,23 +67,29 @@ void parse_args (int argc, char **argv, int *set_count, char **set_name, char **
          } else if (!strncmp(argv[i],"-rtg", 4)){
             runtime_graph_on = TRUE;
 
-         } else if (!strncmp(argv[i],"-preprocess", 11)){
+		 } else if (!strncmp(argv[i],"-preprocess", 11)){
             preprocess_on = TRUE;
 
          } else if (!strncmp(argv[i],"-set",4)){
+
+            if ((*set_count) >= set_size) {
+               printf("parse_args: Overflow. Too many command line arguements set with -set flag.\n\n\n");
+               exit(1);
+            }
+
             i++;
             *(set_name + *set_count) = strdup ((char *)((argv[i])));
             i++;
             *(set_value + *set_count) = strdup ((char *)((argv[i])));
             (*set_count)++;
 
-         } else if (!strncmp(argv[i],"-MAXDATALNLEN",13)){
+		} else if (!strncmp(argv[i],"-MAXDATALNLEN",13)){
             max_data_ln_len = atoi(argv[i+1]);
-            i++;
+			i++;
 
-         } else { // Assume argument with no flag is control file name
-            MAltContFile = (char *)((argv[i]));
-         }
+		 } else { // Assume argument with no flag is control file name
+			MAltContFile = (char *)((argv[i]));
+		 }
       }
    }
 }

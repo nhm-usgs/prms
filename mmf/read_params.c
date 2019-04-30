@@ -7,6 +7,7 @@
  *            File name is passed in as an argument
  *
  * $Id$
+ * Last modified 03/27/2018 RSR modified for multiple values per line separated by spaces
  *
 -*/
 
@@ -88,6 +89,7 @@ char *read_dims (char *param_file_name) {
 	char *endptr;
 	char *nch;
 	int done;
+    int max_comment;
   
 /*
 * get param name, open file
@@ -124,7 +126,8 @@ char *read_dims (char *param_file_name) {
  *  Read in comments -- everything between version line and
  *  "** Dimensions **" line is a comment
  */
-	Comments = (char **)malloc (1000 * sizeof (char *));
+    max_comment = 1000;
+	Comments = (char **)malloc (max_comment * sizeof (char *));
 	nComments = 0;
 
 	while (strncmp (line, "** Dimensions **", 16)) {
@@ -134,8 +137,12 @@ char *read_dims (char *param_file_name) {
 		}
 
 		if (strncmp (line, "** Dimensions **", 16)) {
-//			printf ("Comment line = %s\n", line);
-			Comments[nComments++] = strdup (line);
+            if (nComments < max_comment) {
+//			     printf ("Comment line = %s\n", line);
+			    Comments[nComments++] = strdup (line);
+            } else {
+                printf("read_dims: more than %d dimension comments.\n", max_comment);
+            }
 		}
 	}
 
@@ -225,6 +232,10 @@ char *read_dims (char *param_file_name) {
 								done = TRUE;
 
 							} else if (line[0] == '@') {
+/* DANGER something wrong when reading dimension index.
+** when i comes in as 0, i gets decremented and notes[i] is
+** indexed to -1
+*/
 								i--;
 								nch = (char *)strchr (line, '\n');
 								if (nch) {
@@ -261,7 +272,7 @@ char *read_dims (char *param_file_name) {
 		} else {
 			key = (char *)strtok(line_p, " ");
 			key[strlen(key)] = '\0';
-			sprintf(buf, "dimension '%s' is not required", key);
+			snprintf(buf, 256, "dimension '%s' is not required", key);
 			fprintf (stderr,"\n%s\n", warning_string (buf));
 			line_p = get_next_line ();
 			line_p = get_next_line ();
@@ -368,7 +379,7 @@ static char *rp (int index, int map_flag) {
 					mapping_param = param_addr (mapParamName);
 
 					if (!mapping_param || !(mapping_param->read_in)) {
-						sprintf (buf, "\nERROR: mapping parameter %s must be set in parameter file before parameter %s\n",
+						snprintf (buf, 256, "\nERROR: mapping parameter %s must be set in parameter file before parameter %s\n",
 							mapParamName, param->name);
 						return (buf);
 					}
@@ -653,7 +664,7 @@ static char *READ_param_head (PARAM **param_ptr, int map_flag) {
 	npos = strchr(temp,'\n');
 	if (npos) *npos = '\0';
 
-	strcpy(key,temp);
+	strncpy(key, temp, max_data_ln_len);
 	key[strlen(temp)] = '\0';
 	
 /*
@@ -722,7 +733,7 @@ static char *READ_param_head (PARAM **param_ptr, int map_flag) {
 			} else {
 				(*param_ptr)->format = (char *)(realloc((*param_ptr)->format, strlen(tempfmt) + 1));
 			}   
-			(void)strcpy((*param_ptr)->format, tempfmt);
+			(void)strncpy((*param_ptr)->format, tempfmt, strlen(tempfmt)+1);
 		} else {
 			(*param_ptr)->format = NULL;
 		}
@@ -818,7 +829,7 @@ static char *READ_param_head (PARAM **param_ptr, int map_flag) {
 		if (!map_flag) {
 			silent_flag = *control_lvar("print_debug");
 			if (silent_flag > -2) {
-				sprintf (buf,"parameter '%s' is not required", key);
+				snprintf (buf, 256, "parameter '%s' is not required", key);
 				fprintf (stderr,"\n%s\n", warning_string (buf));
 			}
 		}
@@ -841,7 +852,7 @@ static char *READ_param_values (long size, long type, char *name,
     int  done;
 	int	desc_count = 0;
 	int repeat_count;
-	char delims[] = ",";
+	char delims[] = " ";
 	char *result = NULL;
 	char *comp_ptr = NULL;
 	static char *crap = NULL;
@@ -926,7 +937,7 @@ static char *READ_param_values (long size, long type, char *name,
 									bad_param_value (d, i, name, min_d, max_d);
 								}
 
-								if (comp_ptr != endp && *endp == '\n') {
+								if (comp_ptr != endp && (*endp == '\n' || *endp == '\0')) {
 									((double *)value)[i++] = d;
 								} else {
 									return error_string("parameter format error");
@@ -940,7 +951,7 @@ static char *READ_param_values (long size, long type, char *name,
 									bad_param_value (d, i, name, min_d, max_d);
 								}
 
-								if (comp_ptr != endp && *endp == '\n') {
+								if (comp_ptr != endp && (*endp == '\n' || *endp == '\0')) {
 									((float *)value)[i++] = (float)d;
 								} else {
 									return error_string("parameter format error");
@@ -956,7 +967,7 @@ static char *READ_param_values (long size, long type, char *name,
 									bad_param_value_l (l, i, name, min_l, max_l);
 								}
 
-								if (comp_ptr != endp && *endp == '\n') {
+								if (comp_ptr != endp && (*endp == '\n' || *endp == '\0')) {
 									((int *)value)[i++] = (int)l;
 								} else {
 									return error_string("parameter format error");
@@ -1260,8 +1271,14 @@ static void close_parameter_file () {
 static char *get_next_line () {
 	char *line_p;
 
+/* DANGER -- could have overflowed if max_data_ln_len was smaller than MAXDATALNLEN
+*/
 	if (line == NULL) {
-		line = (char *) umalloc(max_data_ln_len * sizeof(char));
+        if (max_data_ln_len < MAXDATALNLEN) {
+		   line = (char *) umalloc(MAXDATALNLEN * sizeof(char));
+        } else {
+		   line = (char *) umalloc(max_data_ln_len * sizeof(char));
+        }
 	}
 
 	if ((line_p = fgets (line, MAXDATALNLEN, param_file))) {
@@ -1279,7 +1296,7 @@ static char *get_next_line () {
 \*--------------------------------------------------------------------*/
 static char *error_string (char *message) {
 	static char buf[256];
-	sprintf (buf, "ERROR: %s; file is %s; line number %d", message, file_name, lineNumber);
+	snprintf (buf, 256, "ERROR: %s; file is %s; line number %d", message, file_name, lineNumber);
 	return buf;
 }
 
@@ -1292,7 +1309,7 @@ static char *error_string (char *message) {
 \*--------------------------------------------------------------------*/
 static char *warning_string (char *message) {
 	static char buf[256];
-	sprintf (buf, "WARNING: %s; file is %s; line number %d", message, file_name, lineNumber);
+	snprintf (buf, 256, "WARNING: %s; file is %s; line number %d", message, file_name, lineNumber);
 	return buf;
 }
 
@@ -1307,7 +1324,7 @@ static void bad_param_value_l (long l, int i, char *name, long min_l, long max_l
 	static char buf[256];
 
 	if (*control_lvar("parameter_check_flag") > 0) {
-		sprintf (buf, "%s[%d] = %d is out of range (%d to %d)", name, i, (int)l, (int)min_l, (int)max_l);
+		snprintf (buf, 256, "%s[%d] = %d is out of range (%d to %d)", name, i, (int)l, (int)min_l, (int)max_l);
 		fprintf (stderr, "%s\n", warning_string(buf));
 	}
 }
@@ -1323,7 +1340,7 @@ static void bad_param_value (double d, int i, char *name, double min_d, double m
 	static char buf[256];
 
 	if (*control_lvar("parameter_check_flag") > 0) {
-		sprintf (buf, "%s[%d] = %f is out of range (%f to %f)", name, i, d, min_d, max_d);
+		snprintf (buf, 256, "%s[%d] = %f is out of range (%f to %f)", name, i, d, min_d, max_d);
 		fprintf (stderr, "%s\n", warning_string(buf));
 	}
 }

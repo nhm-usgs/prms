@@ -70,7 +70,7 @@
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = 'subbasin.f90 2016-10-17 17:18:00Z'
+      Version_subbasin = 'subbasin.f90 2018-04-25 15:27:00Z'
       CALL print_module(Version_subbasin, 'Output Summary              ', 90)
       MODNAME = 'subbasin'
 
@@ -251,13 +251,13 @@
       USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, Print_debug, Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, DNEARZERO, Lake_hru_id, Cfs2cms_conv
-      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
       USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
-      USE PRMS_LAKE_ROUTE, ONLY: Lake_vol, Lake_outcfs
+      USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
@@ -381,7 +381,7 @@
               landstor = Lake_vol(Lake_hru_id(j))*12.0D0
               srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
               ssq = 0.0D0
-            ELSEIF ( Cascade_flag==1 ) THEN
+            ELSEIF ( Cascade_flag>0 ) THEN
               srq = Hortonian_lakes(j)*harea
               ssq = Lakein_sz(j)*harea
             ELSE
@@ -451,12 +451,13 @@
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
-     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor
+     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist, Soil_moist_max
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Lakein_sz, Soil_moist_frac, Cpr_stor_frac, Recharge
+!      USE PRMS_SOILZONE, ONLY: Lakein_sz, Soil_moist_frac, Cpr_stor_frac, Recharge
+      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge, Soil_moist_tot, Soil_zone_max
       USE PRMS_GWFLOW, ONLY: Gwres_flow
-      USE PRMS_LAKE_ROUTE, ONLY: Lake_vol, Lake_outcfs
+      USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
@@ -522,7 +523,7 @@
               landstor = Lake_vol(Lake_hru_id(j))*12.0D0
               srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
               ssq = 0.0D0
-            ELSEIF ( Cascade_flag==1 ) THEN
+            ELSEIF ( Cascade_flag>0 ) THEN
               srq = Hortonian_lakes(j)*harea
               ssq = Lakein_sz(j)*harea
             ELSE
@@ -546,8 +547,10 @@
           Subinc_tmaxc(k) = Subinc_tmaxc(k) + DBLE(Tmaxc(j))*harea
           Subinc_tavgc(k) = Subinc_tavgc(k) + DBLE(Tavgc(j))*harea
           Subinc_recharge(k) = Subinc_recharge(k) + Recharge(j)*harea
-          Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_frac(j)*harea
-          Subinc_capstor_frac(k) = Cpr_stor_frac(k) + Recharge(j)*harea
+!          Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_frac(j)*harea
+!          Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Cpr_stor_frac(k)*harea
+          Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_tot(j)/Soil_zone_max(j)*harea
+          Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Soil_moist(j)/Soil_moist_max(j)*harea
           Subinc_stor(k) = Subinc_stor(k) + soilstor + snowstor + landstor
           IF ( Model/=0 ) THEN
             gwq = DBLE(Gwres_flow(j))*harea
