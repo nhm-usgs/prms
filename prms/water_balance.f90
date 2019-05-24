@@ -54,7 +54,7 @@
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_water_balance
 !***********************************************************************
-      Version_water_balance = 'water_balance.f90 2018-04-25 15:28:00Z'
+      Version_water_balance = 'water_balance.f90 2019-05-24 14:46:00Z'
       CALL print_module(Version_water_balance, 'Water Balance Computations  ', 90 )
       MODNAME_WB = 'water_balance'
 
@@ -214,7 +214,7 @@
         ! intcp
         delstor = Hru_intcpstor(i) - Intcp_stor_ante(i)
         hrubal = Hru_rain(i) + Hru_snow(i) - Net_rain(i) - Net_snow(i) &
-     &           - delstor - Hru_intcpevap(i)
+     &           - delstor - Hru_intcpevap(i) - Intcp_changeover(i)
         IF ( Use_transfer_intcp==1 ) hrubal = hrubal + Gain_inches(i) - Net_apply(i)
         IF ( ABS(hrubal)>TOOSMALL ) THEN
           IF ( ABS(hrubal)>SMALL ) THEN
@@ -253,7 +253,7 @@
         ENDIF
 
         robal = Snowmelt(i) - Hortonian_flow(i) & !includes dprst runoff, if any
-     &          - Infil(i)*perv_frac - Hru_impervevap(i) + Imperv_stor_ante(i) - Hru_impervstor(i)
+     &          - Infil(i)*perv_frac - Hru_impervevap(i) + Imperv_stor_ante(i) - Hru_impervstor(i) + Intcp_changeover(i)
         IF ( Use_sroff_transfer==1 ) robal = robal + Net_apply(i)*perv_frac
         IF ( Net_ppt(i)>0.0 ) THEN
           IF ( Pptmix_nopack(i)==1 ) THEN
