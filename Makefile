@@ -13,10 +13,10 @@ include ./makelist
 all: standard
 
 standard:
-	cd ./mmf; $(MAKE);
-	cd ./prms; $(MAKE);
+	cd $(MMFDIR); $(MAKE);
+	cd $(PRMSDIR); $(MAKE);
 
 clean:
-	cd ./mmf; $(MAKE) clean;
-	cd ./prms; $(MAKE) clean;
+	cd $(MMFDIR); $(MAKE) clean;
+	cd $(PRMSDIR); $(MAKE) clean;
 

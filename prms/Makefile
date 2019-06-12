@@ -1,9 +1,7 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= ./prms
-MMFDIR	= ../mmf
-MMFLIB	= ../mmf/libmmf.a
+TARGET 	= ../$(BINDIR)/prms
 
 ####################################################
 # Rules for targets
@@ -13,13 +11,6 @@ all: $(TARGET)
 #
 # Define all object files which make up the library
 #
-
-
-# Archive properties
-SHA_PRMS:="$(shell git rev-parse HEAD)"
-ORIGIN_PRMS:="$(shell git config --get remote.origin.url)"
-TAG_PRMS:="(shell git tag)"
-COMMITDATE_PRMS:="$(shell git log -1 --format=%cd)"
 
 
 OBJS = \
@@ -73,7 +64,8 @@ OBJS = \
         write_climate_hru.o \
         prms_summary.o \
         basin_sum.o \
-        utils_prms.o
+        utils_prms.o \
+        stream_temp.o
 
 $(TARGET): $(OBJS)
 	$(RM) $(TARGET)
@@ -82,14 +74,8 @@ $(TARGET): $(OBJS)
 #
 # Define all object files which make up the library
 #
-print:
-	cd $(MMFDIR);make SHA_PRMS=$(SHA_PRMS) ORIGIN_PRMS=$(ORIGIN_PRMS) TAG_PRMS=$(TAG_PRMS) COMMITDATE_PRMS=$(COMMITDATE_PRMS) FFLAGS="$(FFLAGS)" LDFLAGS="$(LDFLAGS)" print; cd -
-
-$(LIBS):
-	cd $(MMFDIR);make SHA_PRMS=$(SHA_PRMS) ORIGIN_PRMS=$(ORIGIN_PRMS) TAG_PRMS=$(TAG_PRMS) COMMITDATE_PRMS=$(COMMITDATE_PRMS) FFLAGS="$(FFLAGS)" LDFLAGS="$(LDFLAGS)"; cd -
 
 clean:
-	cd $(MMFDIR);make clean; cd -
 	$(RM) $(TARGET)
 	$(RM) *.o *.mod *~
 
@@ -245,6 +231,9 @@ ide_dist.o: ide_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_cli
 
 xyz_dist.o: xyz_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) xyz_dist.f
+
+stream_temp.o: stream_temp.f90 prms_module.mod
+	$(FC) -c $(FFLAGS) stream_temp.f90
 
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o

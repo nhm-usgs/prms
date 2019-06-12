@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.0 04/05/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 06/12/2019'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
@@ -71,7 +71,7 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-!!      INTEGER, EXTERNAL :: stream_temp
+      INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
@@ -92,7 +92,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-04-05 14:45:00Z'
+        PRMS_versn = 'call_modules.f90 2019-06-12:14:50Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -122,7 +122,7 @@
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
      &        '                    muskingum_lake', /, &
-!!     &        'Stream Temperature: stream_temp', /, &
+     &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
      &        '                    basin_summary, nsegment_summary', /, &
@@ -351,7 +351,7 @@
       ENDIF
       IF ( call_modules/=0 ) CALL module_error(Strmflow_module, Arg, call_modules)
 
-!!      IF ( Stream_temp_flag==1 ) call_modules = stream_temp()
+      IF ( Stream_temp_flag==1 ) call_modules = stream_temp()
 
       IF ( Print_debug>-2 ) THEN
         call_modules = basin_sum()
@@ -636,11 +636,9 @@
       ENDIF
 
       ! stream_temp
-!!      IF ( control_integer(Stream_temp_flag, 'stream_temp_flag')/=0 ) Stream_temp_flag = 0
-      Stream_temp_flag = 0
+      IF ( control_integer(Stream_temp_flag, 'stream_temp_flag')/=0 ) Stream_temp_flag = 0
       ! 0 = CBH File; 1 = specified constant; 2 = Stations
-!!      IF ( control_integer(Strmtemp_humidity_flag, 'strmtemp_humidity_flag')/=0 ) Strmtemp_humidity_flag = 0
-      Strmtemp_humidity_flag = 0
+      IF ( control_integer(Strmtemp_humidity_flag, 'strmtemp_humidity_flag')/=0 ) Strmtemp_humidity_flag = 0
 
       Humidity_cbh_flag = 0
       Windspeed_cbh_flag = 0
@@ -1041,7 +1039,7 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
-!!      INTEGER, EXTERNAL :: stream_temp
+      INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta
 ! Local variable
@@ -1086,7 +1084,7 @@
       test = strmflow_in_out()
       test = muskingum()
       test = muskingum_lake()
-!!      test = stream_temp()
+      test = stream_temp()
       test = basin_sum()
       test = map_results()
       CALL nhru_summary()
@@ -1225,7 +1223,7 @@
       INTRINSIC TRIM
       ! Local Variables
       INTEGER :: nhru_test, dprst_test, nsegment_test, temp_test, et_test, ierr, time_step
-      INTEGER :: cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test
+      INTEGER :: cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, start_time(6), end_time(6)
       CHARACTER(LEN=MAXCONTROL_LENGTH) :: model_test
       CHARACTER(LEN=12) :: module_name
 !***********************************************************************
@@ -1233,12 +1231,18 @@
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Timestep, Nhru, Dprst_flag, Nsegment, Temp_flag, Et_flag, &
      &          Cascade_flag, Cascadegw_flag, Nhrucell, Nlake, Transp_flag, Model_mode
+        WRITE ( Restart_outunit ) Starttime, Endtime
       ELSE
         ierr = 0
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) time_step, nhru_test, dprst_test, nsegment_test, temp_test, et_test, &
      &         cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, model_test
+        READ ( Restart_inunit ) start_time, end_time
+        IF ( Print_debug>-2 ) PRINT 4, EQULS, 'Simulation time period of Restart File:', &
+     &       start_time(1), start_time(2), start_time(3), ' -', end_time(1), end_time(2), end_time(3), &
+     &       'Last time step of simulation: ', time_step, EQULS
+    4   FORMAT (/, A, /, 2(A, I5, 2('/',I2.2)), /, A, I0, /, A, /)
         IF ( TRIM(Model_mode)/=TRIM(model_test) ) THEN
           PRINT *, 'ERROR, Initial Conditions File saved for model_mode=', model_test
           PRINT *, '       Current model has model_mode=', Model_mode, ' they must be equal'
