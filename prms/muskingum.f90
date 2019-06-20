@@ -86,7 +86,7 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
-      CHARACTER(LEN=9), SAVE :: MODNAME
+      CHARACTER(LEN=14), SAVE :: MODNAME
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
       END MODULE PRMS_MUSKINGUM
@@ -123,7 +123,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmflow_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
@@ -133,9 +133,13 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2017-10-06 11:04:00Z'
+      Version_muskingum = 'muskingum.f90 2019-06-05 17:18:00Z'
+      IF ( Strmflow_flag==4 ) THEN
+        MODNAME = 'muskingum'
+      ELSE
+        MODNAME = 'muskingum_mann'
+      ENDIF
       CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
-      MODNAME = 'muskingum'
 
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )

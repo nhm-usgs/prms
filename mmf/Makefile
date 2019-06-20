@@ -4,8 +4,6 @@
 
 include ../makelist
 
-#MMFLIB	= ./libmmf.a
-
 SRCS = 	mmf.c parse_args.c alloc_space.c build_lists.c \
 	setup_cont.c decl_control.c control_addr.c \
 	control_var.c read_params.c sort_dims.c sort_params.c sort_vars.c \
@@ -33,6 +31,11 @@ MMFOBJS = ${SRCS:.c=.o}
 all: $(MMFLIB)
 
 $(MMFLIB): $(MMFOBJS)
+# Create lib directory, if necessary
+	@if [ ! -d $(LIBDIR) ]   ; then        \
+   	   mkdir $(LIBDIR) ;                   \
+	   echo  Created directory $(LIBDIR) ; \
+	fi
 	$(AR) $(MMFLIB) $(MMFOBJS)
 	$(RANLIB) $(MMFLIB)
 

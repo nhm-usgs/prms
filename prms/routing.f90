@@ -24,7 +24,8 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_outflow(:), Seg_ssflow(:), Seg_sroff(:), Seg_gwflow(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
-      REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_depth(:), K_coef(:), X_coef(:), Mann_n(:), Seg_width(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:) !in stream_temp too
       END MODULE PRMS_ROUTING
 
 !***********************************************************************
@@ -65,7 +66,7 @@
 !***********************************************************************
       routingdecl = 0
 
-      Version_routing = 'routing.f90 2018-04-25 13:08:00Z'
+      Version_routing = 'routing.f90 2019-06-05 17:22:00Z'
       CALL print_module(Version_routing, 'Routing Initialization      ', 90)
       MODNAME = 'routing'
 
@@ -124,6 +125,47 @@
       ! 8 = drains to ocean; 9 = sink (terminus to soil); 10 = inbound from Great Lakes;
       ! 11 = outbound to Great Lakes; 12 = ephemeral; + 100 user updated; 1000 user virtual segment
       ! 100 = user normal; 101 - 108 = not used; 109 sink (tosegment used by Lumen)
+
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 .OR. Model==99 ) THEN
+        ALLOCATE ( Mann_n(Nsegment) )
+        IF ( declparam( MODNAME, 'mann_n', 'nsegment', 'real', &
+     &     '0.04', '0.001', '0.15', &
+     &     'Mannings roughness coefficient', &
+     &     'Mannings roughness coefficient for each segment', &
+     &     'dimensionless')/=0 ) CALL read_error(1, 'mann_n')
+
+        ALLOCATE ( Seg_width(Nsegment) )
+        IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
+     &       '15.0', '0.18', '40000.0', &
+     &       'Segment river width', &
+     &       'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
+     &       'meters')/=0 ) CALL read_error(1, 'seg_width')
+
+        ALLOCATE ( Seg_slope(Nsegment) )
+        IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
+     &     '0.0001', '0.0000001', '2.0', &
+     &     'Surface slope of each segment', &
+     &     'Surface slope of each segment as approximation for bed slope of stream', &
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'seg_slope')
+
+        ALLOCATE ( Seg_length(Nsegment) )
+        IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
+     &     '1000.0', '0.001', '200000.0', &
+     &     'Length of each segment', &
+     &     'Length of each segment, bounds based on CONUS', &
+     &     'meters')/=0 ) CALL read_error(1, 'seg_length')
+      ENDIF
+
+      IF ( Strmflow_flag==7 .OR. Model==99 ) THEN
+        ALLOCATE ( Seg_depth(Nsegment) )
+        IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
+     &       '1.0', '0.03', '250.0', &
+     &       'Segment river depth', &
+     &       'Segment river depth at bankfull, shallowest from Blackburn-Lynch 2017,'//&
+     &       'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
+     &       'meters')/=0 ) CALL read_error(1, 'seg_width')
+      ENDIF
+
       ALLOCATE ( Segment_type(Nsegment) )
       IF ( declparam(MODNAME, 'segment_type', 'nsegment', 'integer', &
      &     '0', '0', '111', &
@@ -171,8 +213,8 @@
      &     'Index of measured streamflow station that replaces outflow from a segment', &
      &     'none')/=0 ) CALL read_error(1, 'obsout_segment')
 
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 ) ALLOCATE ( K_coef(Nsegment) )
       IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Model==99 ) THEN
-        ALLOCATE ( K_coef(Nsegment) )
         IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
      &       '1.0', '0.01', '24.0', &
      &       'Muskingum storage coefficient', &
@@ -180,6 +222,9 @@
      &       ' called the Muskingum storage coefficient; enter 1.0 for reservoirs,'// &
      &       ' diversions, and segment(s) flowing out of the basin', &
      &       'hours')/=0 ) CALL read_error(1, 'K_coef')
+      ENDIF
+
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 .OR. Model==99 ) THEN
         ALLOCATE ( X_coef(Nsegment) )
         IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
      &       '0.2', '0.0', '0.5', &
@@ -270,7 +315,7 @@
       EXTERNAL :: read_error
 ! Local Variable
       INTEGER :: i, j, test, lval, toseg, iseg, isegerr, ierr, eseg
-      REAL :: k, x, d, x_max
+      REAL :: k, x, d, x_max, velocity
       INTEGER, ALLOCATABLE :: x_off(:)
       CHARACTER(LEN=10) :: buffer
 !**********************************************************************
@@ -314,12 +359,21 @@
         Segment_type(i) = MOD( Segment_type(i), 100 )
       ENDDO
 
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
+        IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
+        IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
+        IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
+        IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+      ENDIF
+      IF ( Strmflow_flag==7 ) THEN
+        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
+      ENDIF
+
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
       IF ( getparam(MODNAME, 'obsin_segment', Nsegment, 'integer', Obsin_segment)/=0 ) CALL read_error(2, 'obsin_segment')
       IF ( getparam(MODNAME, 'obsout_segment', Nsegment, 'integer', Obsout_segment)/=0 ) CALL read_error(2, 'obsout_segment')
 
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) THEN
-        IF ( getparam(MODNAME, 'K_coef', Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'x_coef', Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
         ALLOCATE ( C1(Nsegment), C2(Nsegment), C0(Nsegment), Ts(Nsegment), Ts_i(Nsegment) )
       ENDIF
@@ -385,6 +439,7 @@
       ! Begin the loops for ordering segments
       ALLOCATE ( x_off(Nsegment) )
       x_off = 0
+      k_coef = 1
       Segment_order = 0
       lval = 0
       iseg = 0
@@ -429,94 +484,100 @@
 !      ENDIF
       DEALLOCATE ( x_off )
 
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) THEN
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==5 ) RETURN ! mizuroute or strmflow_in_out
 !
-!       Compute the three constants in the Muskingum routing equation based
-!       on the values of K_coef and a routing period of 1 hour. See the notes
-!       at the top of this file.
+!      Compute the three constants in the Muskingum routing equation based
+!      on the values of K_coef and a routing period of 1 hour. See the notes
+!      at the top of this file.
 !
-        C0 = 0.0
-        C1 = 0.0
-        C2 = 0.0
+      C0 = 0.0
+      C1 = 0.0
+      C2 = 0.0
 !make sure K>0
-        Ts = 1.0
-        ierr = 0
-        DO i = 1, Nsegment
-          IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) THEN
-            IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments'
-            K_coef(i) = 24.0
-          ENDIF
-          k = K_coef(i)
-          x = X_coef(i)
+      Ts = 1.0
+      ierr = 0
+      DO i = 1, Nsegment
+        IF ( Strmflow_flag==7 ) THEN ! muskingum_mann
+!          velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*
+!     &               ( Seg_width(i)*Seg_depth(i)/( Seg_width(i)+2.*Seg_depth(i) ) )**(2./3.)
+          velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say w>>d
+          K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
+        ENDIF
+
+        IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) K_coef(i) = 24.0 !K_coef must be specified = 24.0 for lake segments'
+        IF ( K_coef(i)<0.01 ) K_coef(i) = 0.01 !make compliant with old version of K_coef
+        IF ( K_coef(i)>24.0 ) K_coef(i) = 24.0
+        k = K_coef(i)
+        x = X_coef(i)
 
 ! check the values of k and x to make sure that Muskingum routing is stable
 
-          IF ( k<1.0 ) THEN
-!            IF ( Parameter_check_flag>0 ) THEN
-!              PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', i, ' has K_coef < 1.0,', k, &
-!     &              'this may produce unstable results'
+        IF ( k<1.0 ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
+            PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', i, ' has K_coef < 1.0,', k, &
+     &              'this may produce unstable results'
 !              ierr = 1
-  !          ENDIF
-!            Ts(i) = 0.0 ! not sure why this was set to zero, causes divide by 0 if K_coef < 1, BUG FIX 10/18/2016 RSR
-            Ts_i(i) = -1
-
-          ELSEIF ( k<2.0 ) THEN
-            Ts(i) = 1.0
-            Ts_i(i) = 1
-
-          ELSEIF ( k<3.0 ) THEN
-            Ts(i) = 2.0
-            Ts_i(i) = 2
-
-          ELSEIF ( k<4.0 ) THEN
-            Ts(i) = 3.0
-            Ts_i(i) = 3
-
-          ELSEIF ( k<6.0 ) THEN
-            Ts(i) = 4.0
-            Ts_i(i) = 4
-
-          ELSEIF ( k<8.0 ) THEN
-            Ts(i) = 6.0
-            Ts_i(i) = 6
-
-          ELSEIF ( k<12.0 ) THEN
-            Ts(i) = 8.0
-            Ts_i(i) = 8
-
-          ELSEIF ( k<24.0 ) THEN
-            Ts(i) = 12.0
-            Ts_i(i) = 12
-
-          ELSE
-            Ts(i) = 24.0
-            Ts_i(i) = 24
-
           ENDIF
+!          Ts(i) = 0.0 ! not sure why this was set to zero, causes divide by 0 if K_coef < 1, BUG FIX 10/18/2016 RSR
+          Ts_i(i) = -1
+
+        ELSEIF ( k<2.0 ) THEN
+          Ts(i) = 1.0
+          Ts_i(i) = 1
+
+        ELSEIF ( k<3.0 ) THEN
+          Ts(i) = 2.0
+          Ts_i(i) = 2
+
+        ELSEIF ( k<4.0 ) THEN
+          Ts(i) = 3.0
+          Ts_i(i) = 3
+
+        ELSEIF ( k<6.0 ) THEN
+          Ts(i) = 4.0
+          Ts_i(i) = 4
+
+        ELSEIF ( k<8.0 ) THEN
+          Ts(i) = 6.0
+          Ts_i(i) = 6
+
+        ELSEIF ( k<12.0 ) THEN
+          Ts(i) = 8.0
+          Ts_i(i) = 8
+
+        ELSEIF ( k<24.0 ) THEN
+          Ts(i) = 12.0
+          Ts_i(i) = 12
+
+        ELSE
+          Ts(i) = 24.0
+          Ts_i(i) = 24
+
+        ENDIF
 
 !  x must be <= t/(2K) the C coefficents will be negative. Check for this for all segments
 !  with Ts >= minimum Ts (1 hour).
-          IF ( Ts(i)>0.1 ) THEN
-            x_max = Ts(i) / (2.0 * k)
-            IF ( x>x_max ) THEN
-              PRINT *, 'ERROR, x_coef value is too large for stable routing for segment:', i, ' x_coef:', x
-              PRINT *, '       a maximum value of:', x_max, ' is suggested'
-              Inputerror_flag = 1
-              CYCLE
-            ENDIF
+        IF ( Ts(i)>0.1 ) THEN
+          x_max = Ts(i) / (2.0 * k)
+          IF ( x>x_max ) THEN
+            PRINT *, 'ERROR, x_coef value is too large for stable routing for segment:', i, ' x_coef:', x
+            PRINT *, '       a maximum value of:', x_max, ' is suggested'
+            Inputerror_flag = 1
+            CYCLE
           ENDIF
+        ENDIF
 
-          d = k - (k * x) + (0.5 * Ts(i))
-          IF ( ABS(d)<NEARZERO ) THEN
-            IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, segment ', i, ' computed value d <', NEARZERO, ', set to 0.0001'
-            d = 0.0001
-          ENDIF
-          C0(i) = (-(k * x) + (0.5 * Ts(i))) / d
-          C1(i) = ((k * x) + (0.5 * Ts(i))) / d 
-          C2(i) = (k - (k * x) - (0.5 * Ts(i))) / d
+        d = k - (k * x) + (0.5 * Ts(i))
+        IF ( ABS(d)<NEARZERO ) THEN
+          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, segment ', i, ' computed value d <', NEARZERO, ', set to 0.0001'
+          d = 0.0001
+        ENDIF
+        C0(i) = (-(k * x) + (0.5 * Ts(i))) / d
+        C1(i) = ((k * x) + (0.5 * Ts(i))) / d
+        C2(i) = (k - (k * x) - (0.5 * Ts(i))) / d
 
-          ! the following code was in the original musroute, but, not in Linsley and others
-          ! rsr, 3/1/2016 - having < 0 coefficient can cause negative flows as found by Jacob in GCPO headwater
+        ! the following code was in the original musroute, but, not in Linsley and others
+        ! rsr, 3/1/2016 - having < 0 coefficient can cause negative flows as found by Jacob in GCPO headwater
 !  if c2 is <= 0.0 then  short travel time though reach (less daily
 !  flows), thus outflow is mainly = inflow w/ small influence of previous
 !  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
@@ -525,31 +586,30 @@
 !  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
 !  c2 as is, reduce c1 by c0 and set c0=0
 ! SHORT travel time
-          IF ( C2(i)<0.0 ) THEN
-            IF ( Parameter_check_flag>0 ) THEN
-              PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
-              PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
-              PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
-            ENDIF
-            C1(i) = C1(i) + C2(i)
-            C2(i) = 0.0
+        IF ( C2(i)<0.0 ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
+            PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
+            PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
           ENDIF
+          C1(i) = C1(i) + C2(i)
+          C2(i) = 0.0
+        ENDIF
 
 ! LONG travel time
-          IF ( C0(i)<0.0 ) THEN
-            IF ( Parameter_check_flag>0 ) THEN
-              PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
-              PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
-              PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
-            ENDIF
-            C1(i) = C1(i) + C0(i)
-            C0(i) = 0.0
+        IF ( C0(i)<0.0 ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
+            PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
+            PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
           ENDIF
+          C1(i) = C1(i) + C0(i)
+          C0(i) = 0.0
+        ENDIF
 
-        ENDDO
-        IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
-        DEALLOCATE ( K_coef, X_coef)
-      ENDIF
+      ENDDO
+      IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
+      DEALLOCATE ( k_coef, X_coef)
 
       END FUNCTION routinginit
 

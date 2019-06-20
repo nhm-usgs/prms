@@ -45,7 +45,7 @@
 #define MAX(a,b) (a > b) ? a : b
 #endif
 
-#define MAXDATALNLEN 12000 /* max no. of chars in input file line */
+#define MAXDATALNLEN 60000 /* max no. of chars in input file line */
 
 #define ENDOFFILE 2L
 #define ENDOFDATA 1L

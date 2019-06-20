@@ -1,7 +1,7 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= ../$(BINDIR)/prms
+TARGET 	= $(BINDIR)/prms
 
 ####################################################
 # Rules for targets
@@ -55,6 +55,7 @@ OBJS = \
         strmflow_in_out.o \
         muskingum.o \
         muskingum_lake.o \
+        mizuroute.o \
         subbasin.o \
         map_results.o \
         nhru_summary.o \
@@ -62,14 +63,14 @@ OBJS = \
         nsegment_summary.o \
         basin_summary.o \
         write_climate_hru.o \
-        prms_summary.o \
+        prms_summary_lauren.o \
         basin_sum.o \
-        utils_prms.o \
-        stream_temp.o
+        stream_temp.o \
+        utils_prms.o
 
 $(TARGET): $(OBJS)
 	$(RM) $(TARGET)
-	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(FLIBS)
+	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(MIZULIB) $(FLIBS)
 
 #
 # Define all object files which make up the library
@@ -97,8 +98,8 @@ ddsolrad.o: ddsolrad.f90 prms_module.mod prms_climatevars.mod prms_soltab.mod pr
 ccsolrad.o: ccsolrad.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_soltab.mod prms_set_time.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) ccsolrad.f90
 
-prms_summary.o: prms_summary.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
-	$(FC) -c $(FFLAGS) prms_summary.f90
+prms_summary_lauren.o: prms_summary_lauren.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
+	$(FC) -c $(FFLAGS) prms_summary_lauren.f90
 
 muskingum.o: muskingum.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod
 	$(FC) -c $(FFLAGS) muskingum.f90
@@ -232,8 +233,11 @@ ide_dist.o: ide_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_cli
 xyz_dist.o: xyz_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) xyz_dist.f
 
-stream_temp.o: stream_temp.f90 prms_module.mod
+stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_soltab.mod prms_snow.mod prms_climate_hru.mod
 	$(FC) -c $(FFLAGS) stream_temp.f90
+
+mizuroute.o: mizuroute.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod
+	$(FC) -c $(FFLAGS) $(INCMIZU) mizuroute.f90
 
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o
