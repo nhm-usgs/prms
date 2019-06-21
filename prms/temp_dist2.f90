@@ -320,10 +320,11 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Ntemp
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, DNEARZERO, MAXTEMP, MINTEMP
+      USE PRMS_MODULE, ONLY: Ntemp, Glacier_flag
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, DNEARZERO, MAXTEMP, MINTEMP, &
+     &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
-     &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta
+     &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tsta_elev
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
@@ -361,7 +362,7 @@
       DO j = 1, Ntemp - 1
 
 ! check for missing or bad temps based on min and max daily values
-! observed for each month. 
+! observed for each month.
 
 ! the value of  -9999 = missing in HDB, and rdb
 
@@ -418,6 +419,7 @@
 
         DO kk = 1, N_tsta(j)
           k = Nuse_tsta(kk, j)
+          IF ( Hru_type(j)==4 .AND. Glacier_flag==1 ) Elfac(j, k) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
 
 ! check for missing or bad temps
           IF ( Tmax(k)<mn ) CYCLE

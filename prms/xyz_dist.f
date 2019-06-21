@@ -157,7 +157,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.75', '3.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -166,7 +166,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.75', '3.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -458,7 +458,7 @@
       USE PRMS_XYZ_DIST
       USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Hru_elev, Active_hrus, Hru_route_order, FEET2METERS
+     +    Hru_elev_ts, Active_hrus, Hru_route_order, FEET2METERS
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -595,7 +595,7 @@
 !
       IF ( Conv_flag==1 ) THEN
         DO i = 1, Nhru
-          MRUelev(i) = Hru_elev(i)*FEET2METERS
+          MRUelev(i) = Hru_elev_ts(i)*FEET2METERS
         ENDDO
         DO i = 1, Ntemp
           Temp_STAelev(i) = Tsta_elev(i)*FEET2METERS
@@ -605,7 +605,7 @@
         ENDDO
         Solradelev = Solrad_elev*FEET2METERS
       ELSE
-        MRUelev = Hru_elev
+        MRUelev = Hru_elev_ts
         Temp_STAelev = Tsta_elev
         Pstaelev = Psta_elev
         Solradelev = Solrad_elev
@@ -716,9 +716,9 @@
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
-      USE PRMS_MODULE, ONLY: Nrain
+      USE PRMS_MODULE, ONLY: Nrain, Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    DNEARZERO, Hru_route_order
+     +    DNEARZERO, Hru_route_order, Hru_type, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust
@@ -899,6 +899,12 @@
 
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
+        IF ( Glacier_flag==1 ) THEN
+          ! glacier module may have changed Hru_elev_meters
+          IF ( Hru_type(i)==4 )
+     +         MRUelev(i) = (Hru_elev_meters(i)+Z_add)/Z_div
+        ENDIF
+
 !
 !  At this point, all temperatures are in the units
 !  of the temperatures in the data file.

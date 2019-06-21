@@ -18,7 +18,7 @@
 !   Local Variables
       INTEGER, SAVE :: DBGUNT
       CHARACTER(LEN=8), SAVE :: MODNAME
-      INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
+      INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag, Is_land
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:), Pref_flow_flag(:)
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
       REAL, SAVE, ALLOCATABLE :: Soil_lower_stor_max(:)
@@ -59,7 +59,7 @@
       REAL, SAVE, ALLOCATABLE :: Pref_flow_infil(:), Pref_flow_in(:)
       REAL, SAVE, ALLOCATABLE :: Hru_sz_cascadeflow(:), Swale_actet(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_max(:), Snow_free(:)
-      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:) 
+      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
       REAL, SAVE, ALLOCATABLE :: Unused_potet(:)
 !      REAL, SAVE, ALLOCATABLE :: Cascade_interflow(:), Cascade_dunnianflow(:), Interflow_max(:)
@@ -700,7 +700,7 @@
           Pref_flow_stor(i) = Ssres_stor(i) - Slow_stor(i)
         ENDIF
         IF ( Soil2gw_max(i)>0.0 ) Soil2gw(i) = 1
-        IF ( Hru_type(i)==1 ) THEN ! interflow coefficient values don't matter unless land HRU
+        IF ( Hru_type(i)==1 .OR. Hru_type(i)==4 ) THEN ! interflow coefficient values don't matter unless land HRU
           IF ( Pref_flow_den(i)>0.0 ) THEN
             Pref_flow_flag(i) = 1
             Pref_flag = 1
@@ -845,7 +845,7 @@
       INTEGER FUNCTION szrun()
       USE PRMS_SOILZONE
       USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, &
-     &    GSFLOW_flag, Nlake, Cascade_flag, Dprst_flag
+     &    GSFLOW_flag, Nlake, Cascade_flag, Dprst_flag, Frozen_flag
       USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_frac_perv, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
      &    NEARZERO, Lake_hru_id, Cov_type, Numlake_hrus, Hru_area_dble
@@ -861,7 +861,7 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth !, Nowday
       USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
-      USE PRMS_SRUNOFF, ONLY: Basin_sroff, Hru_impervevap, Strm_seg_in, Dprst_evap_hru, Dprst_seep_hru
+      USE PRMS_SRUNOFF, ONLY: Basin_sroff, Hru_impervevap, Strm_seg_in, Dprst_evap_hru, Dprst_seep_hru, Frozen
       IMPLICIT NONE
 ! Functions
       INTRINSIC MIN, ABS, MAX, SNGL, DBLE
@@ -876,6 +876,7 @@
       REAL :: perv_frac, capacity, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow
       DOUBLE PRECISION :: gwin
+      INTEGER :: cfgi_frozen_hru
 !***********************************************************************
       szrun = 0
 
@@ -991,7 +992,9 @@
         IF ( avail_potet<0.0 ) avail_potet = 0.0
 !        Snowevap_aet_frac(i) = 0.0
 
-        !Hru_type can be 1 (land) or 3 (swale)
+        !Hru_type can be 1 (land) or 3 (swale) or 4 (glacier)
+        Is_land = 0
+        IF ( Hru_type(i)==1 .OR. Hru_type(i)==4 ) Is_land = 1
 
 !******Add infiltration to soil and compute excess
         ! note, perv_area has to be > 0.0
@@ -1013,6 +1016,20 @@
         ! perv_frac has to be > 0.001
         ! infil for pervious portion of HRU
         capwater_maxin = Infil(i)
+
+        cfgi_frozen_hru = 0
+        !Frozen is HRU variable that says if frozen gravity reservoir
+        ! For CFGI all inflow is assumed to be Dunnian Flow when frozen
+        IF ( Frozen_flag==1 ) THEN
+          IF ( Frozen(i)==1 ) THEN
+            IF ( Hru_type(i)==3 ) THEN
+              PRINT *, 'ERROR, a swale HRU cannot be frozen for CFGI, HRU:', i
+              STOP
+            ENDIF
+            cfgi_frozen_hru = 1
+          ENDIF
+        ENDIF
+
         ! compute preferential flow and storage, and any dunnian flow
         prefflow = 0.0
         IF ( Pref_flow_flag(i)==1 ) THEN
@@ -1022,17 +1039,22 @@
             pref_flow_maxin = capwater_maxin*Pref_flow_den(i)
             capwater_maxin = capwater_maxin - pref_flow_maxin
             pref_flow_maxin = pref_flow_maxin*perv_frac
-            ! compute contribution to preferential-flow reservoir storage
-            Pref_flow_stor(i) = Pref_flow_stor(i) + pref_flow_maxin
-            dunnianflw_pfr = MAX( 0.0, Pref_flow_stor(i)-Pref_flow_max(i) )
-            IF ( dunnianflw_pfr>0.0 ) THEN
+            IF ( cfgi_frozen_hru==1 ) THEN
+              dunnianflw_pfr = pref_flow_maxin
               Basin_dunnian_pfr = Basin_dunnian_pfr + dunnianflw_pfr*harea
-              Pref_flow_stor(i) = Pref_flow_max(i)
+            ELSE
+              ! compute contribution to preferential-flow reservoir storage
+              Pref_flow_stor(i) = Pref_flow_stor(i) + pref_flow_maxin
+              dunnianflw_pfr = MAX( 0.0, Pref_flow_stor(i)-Pref_flow_max(i) )
+              IF ( dunnianflw_pfr>0.0 ) THEN
+                Basin_dunnian_pfr = Basin_dunnian_pfr + dunnianflw_pfr*harea
+                Pref_flow_stor(i) = Pref_flow_max(i)
+              ENDIF
+              Pref_flow_infil(i) = pref_flow_maxin - dunnianflw_pfr
+              Basin_pref_flow_infil = Basin_pref_flow_infil + Pref_flow_infil(i)*harea
             ENDIF
-            Pref_flow_infil(i) = pref_flow_maxin - dunnianflw_pfr
-            Basin_pref_flow_infil = Basin_pref_flow_infil + Pref_flow_infil(i)*harea
+            Pfr_dunnian_flow(i) = dunnianflw_pfr
           ENDIF
-          Pfr_dunnian_flow(i) = dunnianflw_pfr
         ENDIF
 
         IF ( Cascade_flag>0 ) THEN
@@ -1049,16 +1071,17 @@
 !******Add infiltration to soil and compute excess
         gvr_maxin = 0.0
         Cap_waterin(i) = capwater_maxin
-
-        ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
-        IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
-          CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
-     &         Soil_rechr_max(i), Soil2gw_max(i), gvr_maxin, &
-     &         Soil_moist(i), Soil_rechr(i), Soil_to_gw(i), Soil2gw(i), perv_frac)
-          Cap_waterin(i) = Cap_waterin(i)*perv_frac
-          Basin_capwaterin = Basin_capwaterin + DBLE( Cap_waterin(i)*harea )
-          Basin_soil_to_gw = Basin_soil_to_gw + DBLE( Soil_to_gw(i)*harea )
-          Basin_sm2gvr_max = Basin_sm2gvr_max + DBLE( gvr_maxin*harea )
+        IF ( cfgi_frozen_hru==0 ) THEN
+          ! call even if capwate_maxin = 0, just in cast soil_moist now > Soil_moist_max
+          IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
+            CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
+     &           Soil_rechr_max(i), Soil2gw_max(i), gvr_maxin, &
+     &           Soil_moist(i), Soil_rechr(i), Soil_to_gw(i), Soil2gw(i), perv_frac)
+            Cap_waterin(i) = Cap_waterin(i)*perv_frac
+            Basin_capwaterin = Basin_capwaterin + DBLE( Cap_waterin(i)*harea )
+            Basin_soil_to_gw = Basin_soil_to_gw + DBLE( Soil_to_gw(i)*harea )
+            Basin_sm2gvr_max = Basin_sm2gvr_max + DBLE( gvr_maxin*harea )
+          ENDIF
         ENDIF
         ! Soil_to_ssr for whole HRU
         Soil_to_ssr(i) = gvr_maxin
@@ -1139,7 +1162,7 @@
         Potet_rechr(i) = 0.0
         Potet_lower(i) = 0.0
         pervactet = 0.0
-        IF ( Soil_moist(i)>0.0 ) THEN
+        IF ( Soil_moist(i)>0.0 .AND. cfgi_frozen_hru==0 ) THEN
           CALL compute_szactet(Soil_moist_max(i), Soil_rechr_max(i), Transp_on(i), Cov_type(i), &
      &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, &
      &                         avail_potet, Snow_free(i), Potet_rechr(i), Potet_lower(i))
@@ -1191,7 +1214,7 @@
 
 ! if HRU cascades,
 ! compute interflow and excess flow to each HRU or stream
-        IF ( Hru_type(i)==1 ) THEN
+        IF ( Is_land==1 ) THEN
           interflow = Slow_flow(i) + prefflow
 !          Interflow_max(i) = interflow
           Basin_interflow_max = Basin_interflow_max + interflow*harea

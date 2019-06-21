@@ -8,7 +8,7 @@
 !
 !   Lee, R., 1963, Evaluation of solar beam irradiation as a climatic parameter
 !   of mountain watersheds, Colorado State University Hydrology Papers, 2,
-!   50 pp. 
+!   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
       IMPLICIT NONE
@@ -210,7 +210,7 @@
      &                         Solar_declination(80), Solar_declination(94), Solar_declination(109), &
      &                         Solar_declination(123), Solar_declination(138), Solar_declination(152), &
      &                         Solar_declination(173)
-        CLOSE ( file_unit) 
+        CLOSE ( file_unit)
 ! from original soltab
 !     data obliquity/2.06699,2.06317,2.05582,2.04520,2.03243,2.01706,2.00080,
 !    +1.98553,1.96990,1.95714,1.94689,1.94005,1.93616/
@@ -221,7 +221,7 @@
 !     data jday/356,10,23,38,51,66,80,94,109,123,138,152,173/
       ENDIF
 
-      DEALLOCATE ( Hru_slope, Hru_aspect )
+!      DEALLOCATE ( Hru_slope, Hru_aspect ) !can't deallocate if have glaciers because call after init
 
       END FUNCTION sthinit
 
@@ -387,7 +387,7 @@
 !  This is the sunrise equation
 !  Lat is the latitude
 !  Solar_declination is the declination of the sun on a day
-!  T is the angle hour from the local meridian (local solar noon) to the 
+!  T is the angle hour from the local meridian (local solar noon) to the
 !  sunrise (negative) or sunset (positive).  The Earth rotates at the angular
 !  speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore, T/15 degress (T*24/pi
 !  in radians) gives the time of sunrise as the number of hours before the local

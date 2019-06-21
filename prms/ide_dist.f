@@ -95,7 +95,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.6', '0.6',
+     +     '-0.4', '-0.5', '2.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -104,7 +104,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.6', '0.6',
+     +     '-0.4', '-0.5', '2.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -341,9 +341,9 @@
       Basin_centroid_y = 0.0D0
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
-        Basin_centroid_x = Basin_centroid_x + 
+        Basin_centroid_x = Basin_centroid_x +
      +                     DBLE( (Hru_area(i)*Hru_x(i)) )
-        Basin_centroid_y = Basin_centroid_y + 
+        Basin_centroid_y = Basin_centroid_y +
      +                     DBLE( (Hru_area(i)*Hru_y(i)) )
       ENDDO
       Basin_centroid_x = Basin_centroid_x*Basin_area_inv
@@ -426,7 +426,8 @@
      +    Psta_x, Psta_y, Basin_centroid_x, Basin_centroid_y, Ndist_tsta
       USE PRMS_MODULE, ONLY: Nrain, Ntemp
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    Hru_route_order, Hru_elev_meters
+     +    Hru_route_order, Hru_elev_meters, Hru_elev_ts, Hru_type,
+     +    FEET2METERS, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust,
@@ -467,7 +468,13 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        z = Hru_elev_meters(n)
+        IF ( Hru_type(n)/=4 ) THEN
+          z = Hru_elev_meters(n)
+        ELSEIF ( Elev_units==0 ) THEN
+          z = Hru_elev_ts(n)*FEET2METERS
+        ELSE
+          z = Hru_elev_ts(n)
+        ENDIF
         IF ( Temp_wght_dist.GT.0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +       Tsta_y, y, Tmax, dat_dist, Ndist_tsta, Dist_exp)
@@ -596,7 +603,8 @@
      +    Adjust_snow, Adjust_rain, Tmax_allsnow_sta, Tmax_allrain_sta
       USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
-     +    Hru_route_order, MM2INCH, Hru_elev_meters
+     +    Hru_route_order, MM2INCH, Hru_elev_meters,
+     +    FEET2METERS, Hru_elev_ts, Hru_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
@@ -677,7 +685,13 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        z = Hru_elev_meters(n)
+        IF ( Hru_type(n)/=4 ) THEN
+          z = Hru_elev_meters(n)
+        ELSEIF ( Elev_units==0 ) THEN
+          z = Hru_elev_ts(n)*FEET2METERS
+        ELSE
+          z = Hru_elev_ts(n)
+        ENDIF
         IF ( Prcp_wght_dist>0.0 )
      +       CALL compute_inv(Nrain, Rain_nsta, Rain_nuse, Psta_x, x,
      +            Psta_y, y, Precip_ide, dat_dist, Ndist_psta, Dist_exp)
@@ -965,7 +979,7 @@
 !
 !=============================================================
       END SUBROUTINE compute_elv
- 
+
 !***********************************************************************
 !***********************************************************************
       SUBROUTINE SORT2(Imax, N, Ra, Rb)

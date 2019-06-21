@@ -1,7 +1,7 @@
 !***********************************************************************
 ! Distributes maximum, minimum, and average temperatures to each HRU
 ! using temperature data measured at one station and an estimated monthly
-! lapse rate (temp_1sta) or by computing a daily lapse rate based on 
+! lapse rate (temp_1sta) or by computing a daily lapse rate based on
 ! elevations with temperature data measured at two stations (temp_laps)
 !
 ! Variables needed from DATA FILE: tmax, tmin
@@ -31,9 +31,10 @@
       INTEGER FUNCTION temp_1sta_laps()
       USE PRMS_TEMP_1STA_LAPS
       USE PRMS_MODULE, ONLY: Process, Nhru, Ntemp, Save_vars_to_file, &
-     &    Inputerror_flag, Temp_flag, Init_vars_from_file, Model, Start_month, Print_debug
-      USE PRMS_BASIN, ONLY: Hru_elev, Hru_area, MAXTEMP, MINTEMP, &
-     &    Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
+     &    Inputerror_flag, Temp_flag, Init_vars_from_file, Model, Start_month, Print_debug, &
+     &    Glacier_flag
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, MAXTEMP, MINTEMP, &
+     &    Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
      &    Hru_tsta, Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, &
      &    Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tmax_allrain
@@ -44,9 +45,10 @@
       INTRINSIC INDEX, ABS
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
+      EXTERNAL compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
-      REAL :: tmx, tmn, tdiff
+      REAL :: tmx, tmn
       CHARACTER(LEN=80), SAVE :: Version_temp
 !***********************************************************************
       temp_1sta_laps = 0
@@ -106,6 +108,10 @@
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             IF ( Nowday==1 ) THEN
+              IF ( Glacier_flag==1 ) THEN
+                ! Hru_elev_ts is the antecedent glacier elevation
+                IF ( Hru_type(j)==4 ) Elfac(j) = (Hru_elev_ts(j) - Tsta_elev(k))/1000.0
+              ENDIF
               Tcrx(j) = Tmax_lapse(j, Nowmonth)*Elfac(j) - Tmax_aspect_adjust(j, Nowmonth)
               Tcrn(j) = Tmin_lapse(j, Nowmonth)*Elfac(j) - Tmin_aspect_adjust(j, Nowmonth)
             ENDIF
@@ -119,6 +125,10 @@
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             l = Hru_tlaps(j)
+            IF ( Glacier_flag==1 ) THEN
+              ! Hru_elev_ts is the antecedent glacier elevation
+              IF ( Hru_type(j)==4 ) CALL compute_temp_laps(Elfac(j), Hru_elev_ts(j), Tsta_elev(l), Tsta_elev(k))
+            ENDIF
             tmx = Tmax(k) + (Tmax(l) - Tmax(k))*Elfac(j) + Tmax_aspect_adjust(j, Nowmonth)
             tmn = Tmin(k) + (Tmin(l) - Tmin(k))*Elfac(j) + Tmin_aspect_adjust(j, Nowmonth)
             CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
@@ -177,7 +187,7 @@
           ALLOCATE ( Tcrn(Nhru), Tcrx(Nhru) )
           ALLOCATE ( Tmax_lapse(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmax_lapse', 'nhru,nmonths', 'real', &
-     &         '3.0', '-20.0', '20.0', &
+     &         '17.64', '-20.0', '20.0', &
      &         'Monthly maximum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in maximum air temperature per 1000 elev_units of'// &
      &         ' elevation change for each HRU', &
@@ -186,7 +196,7 @@
 
           ALLOCATE ( Tmin_lapse(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmin_lapse', 'nhru,nmonths', 'real', &
-     &         '3.0', '-20.0', '20.0', &
+     &         '17.64', '-20.0', '20.0', &
      &         'Monthly minimum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in minimum air temperture per 1000 elev_units of'// &
      &         ' elevation change for each HRU', &
@@ -219,7 +229,7 @@
           IF ( getparam(MODNAME, 'tmin_lapse', Nhru*12, 'real', Tmin_lapse)/=0 ) CALL read_error(2, 'tmin_lapse')
           IF ( getparam(MODNAME, 'tmax_lapse', Nhru*12, 'real', Tmax_lapse)/=0 ) CALL read_error(2, 'tmax_lapse')
         ELSEIF ( Temp_flag==2 ) THEN
-          IF ( getparam(MODNAME, 'hru_tlaps', Nhru, 'integer', Hru_tlaps)/=0 ) CALL read_error(2, 'hru_tlaps') 
+          IF ( getparam(MODNAME, 'hru_tlaps', Nhru, 'integer', Hru_tlaps)/=0 ) CALL read_error(2, 'hru_tlaps')
         ENDIF
         IF ( getparam(MODNAME, 'max_missing', 1, 'integer', Max_missing)/=0 ) CALL read_error(2, 'max_missing')
         Max_missing = Max_missing + 1
@@ -233,7 +243,8 @@
             j = Hru_route_order(i)
             k = Hru_tsta(j)
             Nuse_tsta(k) = 1
-            Elfac(j) = (Hru_elev(j)-Tsta_elev(k))/1000.0
+            ! Hru_elev_ts is the current elevation, either hru_elev or for restart Hru_elev_ts
+            Elfac(j) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
             Tcrx(j) = Tmax_lapse(j, Start_month)*Elfac(j) - Tmax_aspect_adjust(j, Start_month)
             Tcrn(j) = Tmin_lapse(j, Start_month)*Elfac(j) - Tmin_aspect_adjust(j, Start_month)
           ENDDO
@@ -245,9 +256,9 @@
             IF ( ierr==1 ) CYCLE ! if one error found no need to compute values
             k = Hru_tsta(j)
             Nuse_tsta(k) = 1
-            tdiff = Tsta_elev(Hru_tlaps(j)) - Tsta_elev(k)
-            IF ( ABS(tdiff)<NEARZERO ) tdiff = 1.0
-            Elfac(j) = (Hru_elev(j)-Tsta_elev(k))/tdiff
+            l = Hru_tlaps(j)
+            ! Hru_elev_ts is the current glacier elevation, either hru_elev or for restart Hru_elev_ts
+            CALL compute_temp_laps(Elfac(j), Hru_elev_ts(j), Tsta_elev(l), Tsta_elev(k))
           ENDDO
           IF ( ierr==1 ) THEN
             Inputerror_flag = 1
@@ -279,6 +290,25 @@
      &        'Fix Data File or increase parameter max_missing' )
 
       END FUNCTION temp_1sta_laps
+
+!***********************************************************************
+!     Compute lapse rate for an HRU
+!***********************************************************************
+      SUBROUTINE compute_temp_laps(Elfac, Hru_elev, Tsta_elev_laps, Tsta_elev_base)
+      USE PRMS_BASIN, ONLY: NEARZERO
+      IMPLICIT NONE
+! Arguments
+      REAL, INTENT(IN) :: Hru_elev, Tsta_elev_laps, Tsta_elev_base
+      REAL, INTENT(OUT) :: Elfac
+! Functions
+      INTRINSIC ABS
+! Local Variables
+      REAL :: tdiff
+!***********************************************************************
+      tdiff = Tsta_elev_laps - Tsta_elev_base
+      IF ( ABS(tdiff)<NEARZERO ) tdiff = 1.0
+      Elfac = (Hru_elev-Tsta_elev_base)/tdiff
+      END SUBROUTINE compute_temp_laps
 
 !***********************************************************************
 !     Write to or read from restart file
