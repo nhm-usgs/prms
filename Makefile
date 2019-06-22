@@ -13,9 +13,9 @@ include ./makelist
 # Standard Targets for Users
 #
 
-all: prms
+all: prmsglrip
 
-prms:
+prmsglrip:
 # Create lib directory, if necessary
 	@if [ ! -d $(MMFDIR) ]   ; then        \
 	  mkdir $(MMFDIR) ;                   \
