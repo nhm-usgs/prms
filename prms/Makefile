@@ -1,12 +1,17 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= $(BINDIR)/prms
+TARGET 	= $(BINDIR)/prmsg
+TARGET2 	= $(BINDIR)/prmsgrip
 
 ####################################################
 # Rules for targets
 ####################################################
-all: $(TARGET)
+all: $(TARGET) $(TARGET2)
+
+orig: $(TARGET)
+
+rip: $(TARGET2)
 
 #
 # Define all object files which make up the library
@@ -42,6 +47,7 @@ OBJS = \
         transp_frost.o \
         transp_tindex.o \
         frost_date.o \
+	glacr_melt.o \
         intcp.o \
         snowcomp.o \
         srunoff.o \
@@ -68,16 +74,78 @@ OBJS = \
         stream_temp.o \
         utils_prms.o
 
+RIP = \
+        call_modulesRip.o \
+        basin.o \
+        climateflow.o \
+        cascade.o \
+        soltab.o \
+        setup_param.o \
+        convert_params.o \
+        prms_time.o \
+        obs.o \
+        climate_hru.o \
+        potet_jh.o \
+        potet_pt.o \
+        potet_hs.o \
+        potet_pm.o \
+        potet_pm_sta.o \
+        potet_pan.o \
+        potet_hamon.o \
+        ddsolrad.o \
+        ccsolrad.o \
+        ide_dist.o \
+        xyz_dist.o \
+        precip_1sta_laps.o \
+        precip_dist2.o \
+        temp_1sta_laps.o \
+        temp_dist2.o \
+        transp_frost.o \
+        transp_tindex.o \
+        frost_date.o \
+	glacr_melt.o \
+        intcp.o \
+        snowcomp.o \
+        srunoff.o \
+        soilzone.o \
+        gwflow.o \
+        water_use_read.o \
+        dynamic_param_read.o \
+        water_balance.o \
+        routingRip.o \
+        strmflow.o \
+        strmflow_in_outCopy.o \
+        muskingumRip.o \
+        muskingum_lakeCopy.o \
+        mizurouteRip.o \
+        subbasin.o \
+        map_results.o \
+        nhru_summary.o \
+        nsub_summary.o \
+        nsegment_summary.o \
+        basin_summary.o \
+        write_climate_hru.o \
+        prms_summary_lauren.o \
+        basin_sumCopy.o \
+        utils_prms.o \
+        stream_tempCopy.o
+
 $(TARGET): $(OBJS)
 	$(RM) $(TARGET)
-	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(MIZULIB) $(FLIBS)
+	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(MIZULIB) $(INCMIZU) $(FLIBS)
+
+$(TARGET2): $(RIP)
+	$(RM) $(TARGET2)
+	$(FC) $(LDFLAGS) -o $(TARGET2) $(RIP) $(MMFLIB) $(MIZULIB) $(INCMIZU) $(FLIBS)
 
 #
 # Define all object files which make up the library
 #
 
 clean:
+	cd $(MMFDIR);make clean; cd -
 	$(RM) $(TARGET)
+	$(RM) $(TARGET2)
 	$(RM) *.o *.mod *~
 
 call_modules.o: call_modules.f90
@@ -100,9 +168,6 @@ ccsolrad.o: ccsolrad.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prm
 
 prms_summary_lauren.o: prms_summary_lauren.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
 	$(FC) -c $(FFLAGS) prms_summary_lauren.f90
-
-muskingum.o: muskingum.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod
-	$(FC) -c $(FFLAGS) muskingum.f90
 
 intcp.o: intcp.f90 prms_obs.mod prms_climatevars.mod prms_flowvars.mod prms_module.mod prms_basin.mod prms_water_use.mod prms_set_time.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) intcp.f90
@@ -139,9 +204,6 @@ climateflow.o: climateflow.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 
 soilzone.o: soilzone.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_intcp.mod prms_snow.mod prms_cascade.mod prms_climatevars.mod prms_set_time.mod prms_srunoff.mod
 	$(FC) -c $(FFLAGS) soilzone.f90
-
-routing.o: routing.f90 prms_module.mod prms_basin.mod prms_gwflow.mod prms_flowvars.mod prms_set_time.mod prms_water_use.mod prms_srunoff.mod
-	$(FC) -c $(FFLAGS) routing.f90
 
 subbasin.o: subbasin.f90 prms_module.mod prms_basin.mod prms_gwflow.mod prms_flowvars.mod prms_set_time.mod prms_intcp.mod prms_srunoff.mod prms_soilzone.mod prms_muskingum_lake.mod prms_snow.mod prms_climatevars.mod
 	$(FC) -c $(FFLAGS) subbasin.f90
@@ -236,9 +298,44 @@ xyz_dist.o: xyz_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_cli
 stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_soltab.mod prms_snow.mod prms_climate_hru.mod
 	$(FC) -c $(FFLAGS) stream_temp.f90
 
-mizuroute.o: mizuroute.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod
+glacr_melt.o: glacr_melt.f90 prms_snow.mod prms_intcp.mod prms_soltab.mod
+	$(FC) -c $(FFLAGS) glacr_melt.f90
+
+call_modulesRip.o: call_modulesRip.f90
+	$(FC) -c $(FFLAGS) call_modulesRip.f90
+
+muskingum.o: muskingum.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod prms_glacr.mod
+	$(FC) -c $(FFLAGS) muskingum.f90
+
+routing.o: routing.f90 prms_module.mod prms_basin.mod prms_gwflow.mod prms_flowvars.mod prms_set_time.mod prms_water_use.mod prms_srunoff.mod prms_glacr.mod
+	$(FC) -c $(FFLAGS) routing.f90
+
+mizuroute.o: mizuroute.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod prms_glacr.mod 
 	$(FC) -c $(FFLAGS) $(INCMIZU) mizuroute.f90
 
+muskingumRip.o: muskingumRip.f90 prms_moduleRip.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routingRip.mod prms_srunoff.mod prms_gwflow.mod prms_glacr.mod
+	$(FC) -c $(FFLAGS) muskingumRip.f90
+
+routingRip.o: routingRip.f90 prms_moduleRip.mod prms_basin.mod prms_gwflow.mod prms_flowvars.mod prms_set_time.mod prms_water_use.mod prms_srunoff.mod prms_glacr.mod
+	$(FC) -c $(FFLAGS) routingRip.f90
+
+mizurouteRip.o: mizurouteRip.f90 prms_moduleRip.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routingRip.mod prms_srunoff.mod prms_gwflow.mod prms_glacr.mod
+	$(FC) -c $(FFLAGS) $(INCMIZU) mizurouteRip.f90
+
+basin_sumCopy.o: basin_sumCopy.f90 prms_moduleRip.mod prms_basin.mod prms_flowvars.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_gwflow.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod prms_routingRip.mod
+	$(FC) -c $(FFLAGS) basin_sumCopy.f90
+
+muskingum_lakeCopy.o: muskingum_lakeCopy.f90 prms_moduleRip.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routingRip.mod prms_srunoff.mod prms_gwflow.mod prms_soilzone.mod
+	$(FC) -c $(FFLAGS) muskingum_lakeCopy.f90
+
+strmflow_in_outCopy.o: strmflow_in_outCopy.f90 prms_moduleRip.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_routingRip.mod prms_obs.mod prms_srunoff.mod prms_gwflow.mod 
+	$(FC) -c $(FFLAGS) strmflow_in_outCopy.f90
+
+stream_tempCopy.o: stream_tempCopy.f90 prms_module.mod prms_basin.mod prms_routingRip.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_soltab.mod prms_climatevars.mod prms_snow.mod
+	$(FC) -c $(FFLAGS) stream_tempCopy.f90
+
+prms_routingRip.mod: routingRip.o
+prms_moduleRip.mod: call_modulesRip.o
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o
 prms_module.mod: call_modules.o
@@ -256,4 +353,4 @@ prms_routing.mod: routing.o
 prms_water_use.mod: water_use_read.o
 prms_obs.mod: obs.o
 prms_set_time.mod: prms_time.o
-
+prms_glacr.mod: glacr_melt.o

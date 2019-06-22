@@ -10,15 +10,26 @@ include ./makelist
 # Standard Targets for Users
 #
 
-all: standard
+all: prms
 
-standard:
+prms:
+# Create lib directory, if necessary
+	@if [ ! -d $(MMFDIR) ]   ; then        \
+	  mkdir $(MMFDIR) ;                   \
+	  echo  Created directory $(MMFDIR) ; \
+	fi
+# Create bin directory, if necessary
+	@if [ ! -d $(BINDIR) ]   ; then        \
+	  mkdir $(BINDIR) ;                   \
+	  echo  Created directory $(BINDIR) ; \
+	fi
 	cd $(MMFDIR); $(MAKE);
-	cd $(MIZU); $(MAKE);
+	cd $(MIZUDIR); $(MAKE);
 	cd $(PRMSDIR); $(MAKE);
 
 clean:
 	cd $(MMFDIR); $(MAKE) clean;
-	cd $(MIZU); $(MAKE); clean;
+	cd $(MIZUDIR); $(MAKE) clean;
 	cd $(PRMSDIR); $(MAKE) clean;
-
+	$(RM) $(BINDIR)/prms*~
+	$(RM) $(BINDIR)/prmsrip*~

@@ -2,10 +2,17 @@
 #-------------------------------------------------------------------
 #-------------------------------------------------------------------
 
-MMFDIR      = ./mmf
-PRMSDIR     = ./prms
-BINDIR      = ../bin
-MMFLIB      = .$(MMFDIR)/libmmf.a
+F_MASTER    = /Users/amedin/Research/ExtCONUS_AK
+CODEDIR     = $(F_MASTER)/NHM_glacier
+MMFDIR      = $(CODEDIR)/mmf
+MIZUDIR     = $(CODEDIR)/mizu
+LIBDIR      = $(CODEDIR)/lib
+PRMSDIR     = $(CODEDIR)/prms
+BINDIR      = $(F_MASTER)/bin
+MMFLIB      = $(LIBDIR)/libmmf.a
+MIZULIB     = $(LIBDIR)/libmizu.a
+MIZULIB2    = $(LIBDIR)/libmizu2.a
+INCMIZU     = -I$(MIZUDIR)/include
 
 #########################################################
 # Configure tags for each system
@@ -16,21 +23,22 @@ ARC		= LINUX
 #OPTLEVEL	= -g
 OPTLEVEL	= -O -Bstatic
 #for gfortran
-#LDFLAGS	=$(OPTLEVEL)
+LDFLAGS	=$(OPTLEVEL)
 #for ifort
-LDFLAGS		=$(OPTLEVEL) -nofor_main
+#LDFLAGS	=$(OPTLEVEL) -nofor_main
+MFLAGS          = -ffree-line-length-none
 
 ##########################################################
 # Define the Fortran compile flags
 ##########################################################
 #for gfortran
-#FFLAGS= $(OPTLEVEL) -fbounds-check -fno-second-underscore -Wall
+FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore $(MFLAGS)
 #FFLAGS= $(OPTLEVEL) -fno-second-underscore
+FC		= gfortran
 #for ifort
 #FFLAGS= $(OPTLEVEL) -warn all -fltconsistency
-FFLAGS= $(OPTLEVEL) -fp-model source
-#FC		= gfortran
-FC		= ifort
+#FFLAGS= $(OPTLEVEL) -fp-model source
+#FC		= ifort
 
 ##########################################################
 # Define the C compile flags
@@ -38,19 +46,19 @@ FC		= ifort
 ##########################################################
 CFLAGS		= $(OPTLEVEL) -D$(ARC) -D_UF -Wall
 #for gfortran
-#CC		= gcc
+CC		= gcc
 #for ifort
-CC		= icc
+#CC		= icc
 
 ##########################################################
 # Define the libraries
 ##########################################################
 #for gfortran
-#MATHLIB		= -lm
-#GCLIB		= -lgfortran -lgcc $(MATHLIB)
+MATHLIB		= -lm
+GCLIB           = -L/opt/local/lib -lgfortran -lgcc_s.1
 #for ifort
-MATHLIB		= 
-GCLIB		= 
+#MATHLIB		= 
+#GCLIB		= 
 FLIBS    = $(GCLIB)
 
 ##########################################################
