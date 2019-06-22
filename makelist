@@ -2,8 +2,8 @@
 #-------------------------------------------------------------------
 #-------------------------------------------------------------------
 
-F_MASTER    = /Users/amedin/Research/ExtCONUS_AK
-CODEDIR     = $(F_MASTER)/NHM_glacier
+F_MASTER    = /Users/amedin/Research/Glaciers/ExtCONUS_AK
+CODEDIR     = $(F_MASTER)/NHM_glacr
 MMFDIR      = $(CODEDIR)/mmf
 MIZUDIR     = $(CODEDIR)/mizu
 LIBDIR      = $(CODEDIR)/lib
