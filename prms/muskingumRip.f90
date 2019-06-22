@@ -179,8 +179,9 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
+      USE PRMS_MODULE, ONLY: Nsegment, Ripst_flag, Glacier_flag
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Active_hrus, Hru_route_order, &
+     &    Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out
@@ -189,13 +190,19 @@
       USE PRMS_ROUTING, ONLY: Use_transfer_segment, Segment_delta_flow, Basin_segment_storage, &
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
-     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
+     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes, &
+     &    Flow_in_great_lakes, Stage_ts, Stage_ante, Seg_bankflow, Mann_n, Seg_width, Seg_slope, Basin_bankflow, &
+     &    Ripst_areafr_max, Bankfinite_hru, Basin_bankst_head, Seg_ripflow, Basin_ripflow, &
+     &    Basin_bankst_seep_rate, Basin_bankflow, Basin_bankst_seep, Basin_bankst_vol, &
+     &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_seep, Basin_ripst_evap, &
+     &    Basin_ripst_vol, Bankst_seep_rate
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SRUNOFF, ONLY: Basin_sroff
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
+      EXTERNAL comp_bank_storage, drain_the_swamp
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -230,6 +237,7 @@
       Seg_outflow = 0.0D0
       Inflow_ts = 0.0D0
       Currinsum = 0.0D0
+      IF ( Ripst_flag==1 ) Stage_ante =Stage_ts
 
 ! 24 hourly timesteps per day
       DO j = 1, 24
@@ -305,7 +313,70 @@
 
       ENDDO  ! timestep
 
+      DO i = 1, Nsegment
+        Seg_outflow(i) = Seg_outflow(i) * ONE_24TH
+      ENDDO
+      ! for stage estimate
+      IF ( Ripst_flag==1 ) THEN
+        Basin_bankst_seep = 0.D0
+        Basin_bankst_seep_rate = 0.0D0
+        Basin_bankst_head = 0.0D0
+        Basin_bankst_vol = 0.0D0
+        Basin_ripst_area = 0.0D0
+        Basin_ripst_seep = 0.0D0
+        Basin_ripst_evap = 0.0D0
+        Basin_ripst_vol = 0.0D0
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_bankflow = 0.0D0 !collect by segment that HRUs go to
+        DO i = 1, Nsegment
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF  ( Hru_segment(i)>0 .AND. (Bankfinite_hru(i)==0 .OR. Ripst_areafr_max(i)>0.0)) &
+     &      CALL comp_bank_storage(i)
+!           ******Compute the bank storage component
+!           transfers water between separate bank storage and stream depending on seepage
+        ENDDO
+        Basin_bankst_seep = Basin_bankst_seep*Basin_area_inv
+        Basin_bankst_head = Basin_bankst_head*Basin_area_inv
+        Basin_bankst_vol = Basin_bankst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Basin_bankst_seep_rate = Basin_bankst_seep_rate + Bankst_seep_rate(i) &
+     &                        *Seg_length(i)/SUM(Seg_length) !m2/day per stream ft length
+          Seg_outflow(i) = Seg_outflow(i)+Seg_bankflow(i)
+          IF (Seg_bankflow(i) < 0.0) THEN ! only could go negative because of bankflow if is negative
+            IF (Seg_outflow(i) < 0.0) THEN ! took out more than streamflow, this could also be a water_use problem
+              Seg_bankflow(i)  = Seg_bankflow(i) - Seg_outflow(i)
+              Seg_outflow(i) = 0.0
+            ENDIF
+          ENDIF
+        ENDDO
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_ripflow = 0.0D0
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF  ( Hru_segment(i)>0 .AND. Ripst_areafr_max(i)>0.0) &
+     &      CALL drain_the_swamp(i)
+!           ******Compute the overbank riparian storage component
+!           transfers water between separate riparian storage and stream depending on seepage
+        ENDDO
+        Basin_ripst_seep = Basin_ripst_seep*Basin_area_inv
+        Basin_ripst_evap = Basin_ripst_evap*Basin_area_inv
+        Basin_ripst_vol = Basin_ripst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Seg_outflow(i) = Seg_outflow(i)+Seg_ripflow(i) ! cannot go negative by design
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+      ENDIF
+
       Basin_segment_storage = 0.0D0
+      Basin_bankflow = 0.0D0
+      Basin_ripflow = 0.0D0
       Flow_out = 0.0D0
       Flow_to_lakes = 0.0D0
       Flow_to_ocean = 0.0D0
@@ -319,11 +390,10 @@
       Flow_in_great_lakes = 0.0D0
       Flow_replacement = 0.0D0
       DO i = 1, Nsegment
-        Seg_outflow(i) = Seg_outflow(i) * ONE_24TH
-        segout = Seg_outflow(i)
         segtype = Segment_type(i)
         Seg_inflow(i) = Seg_inflow(i) * ONE_24TH
         Seg_upstream_inflow(i) = Currinsum(i) * ONE_24TH
+        segout = Seg_outflow(i)
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
 ! includes closed basins (tosegment=0)
         IF ( segtype==1 ) THEN
@@ -353,6 +423,12 @@
         Segment_delta_flow(i) = Segment_delta_flow(i) + Seg_inflow(i) - segout
 !        IF ( Segment_delta_flow(i) < 0.0D0 ) PRINT *, 'negative delta flow', Segment_delta_flow(i)
         Basin_segment_storage = Basin_segment_storage + Segment_delta_flow(i)
+        IF ( Ripst_flag==1 ) THEN
+          Basin_bankflow = Basin_bankflow + Seg_bankflow(i)
+          Basin_ripflow = Basin_ripflow + Seg_ripflow(i)
+        ENDIF
+      ENDDO
+
       ENDDO
 
       area_fac = Cfs_conv/Basin_area_inv
@@ -369,6 +445,10 @@
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
       Basin_segment_storage = Basin_segment_storage/area_fac
+      IF ( Ripst_flag==1 ) THEN
+        Basin_bankflow = Basin_bankflow/area_fac
+        Basin_ripflow = Basin_ripflow/area_fac
+      ENDIF
 
       END FUNCTION muskingum_run
 
