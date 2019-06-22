@@ -1,8 +1,8 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= $(BINDIR)/prmsg
-TARGET2 	= $(BINDIR)/prmsgrip
+TARGET 	= $(BINDIR)/prmsgl
+TARGET2 	= $(BINDIR)/prmsglrip
 
 ####################################################
 # Rules for targets
@@ -69,7 +69,7 @@ OBJS = \
         nsegment_summary.o \
         basin_summary.o \
         write_climate_hru.o \
-        prms_summary_lauren.o \
+        prms_summary.o \
         basin_sum.o \
         stream_temp.o \
         utils_prms.o
@@ -125,7 +125,7 @@ RIP = \
         nsegment_summary.o \
         basin_summary.o \
         write_climate_hru.o \
-        prms_summary_lauren.o \
+        prms_summary.o \
         basin_sumCopy.o \
         utils_prms.o \
         stream_tempCopy.o
@@ -143,10 +143,7 @@ $(TARGET2): $(RIP)
 #
 
 clean:
-	cd $(MMFDIR);make clean; cd -
-	$(RM) $(TARGET)
-	$(RM) $(TARGET2)
-	$(RM) *.o *.mod *~
+	$(RM) $(OBJS) $(RIP) *.mod *~
 
 call_modules.o: call_modules.f90
 	$(FC) -c $(FFLAGS) call_modules.f90
@@ -166,8 +163,8 @@ ddsolrad.o: ddsolrad.f90 prms_module.mod prms_climatevars.mod prms_soltab.mod pr
 ccsolrad.o: ccsolrad.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_soltab.mod prms_set_time.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) ccsolrad.f90
 
-prms_summary_lauren.o: prms_summary_lauren.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
-	$(FC) -c $(FFLAGS) prms_summary_lauren.f90
+prms_summary.o: prms_summary.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
+	$(FC) -c $(FFLAGS) prms_summary.f90
 
 intcp.o: intcp.f90 prms_obs.mod prms_climatevars.mod prms_flowvars.mod prms_module.mod prms_basin.mod prms_water_use.mod prms_set_time.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) intcp.f90

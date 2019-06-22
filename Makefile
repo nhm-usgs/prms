@@ -3,6 +3,9 @@
 #
 # Top-level makefile for the PRMS
 #
+#-------------------------------------------------------------------
+# $Id: Makefile
+#-------------------------------------------------------------------
 
 include ./makelist
 
@@ -32,4 +35,3 @@ clean:
 	cd $(MIZUDIR); $(MAKE) clean;
 	cd $(PRMSDIR); $(MAKE) clean;
 	$(RM) $(BINDIR)/prms*~
-	$(RM) $(BINDIR)/prmsrip*~

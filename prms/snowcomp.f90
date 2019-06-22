@@ -50,7 +50,7 @@
       REAL, SAVE, ALLOCATABLE :: Glacr_pk_ice(:), Glacr_freeh2o(:), Glacrcov_area(:), Glacr_tcal(:)
       REAL, SAVE, ALLOCATABLE :: Glacrb_melt(:), Glacr_pk_def(:), Glacr_pk_temp(:), Glacr_air_avtemp(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_air_5avtemp1(:), Glacr_air_deltemp(:), Glacr_air_5avtemp(:)
-      REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:),Glacr_delsnow(:),
+      REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:),Glacr_delsnow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pkwater_ante(:), Glacr_pkwater_equiv(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pk_depth(:), Glacr_pss(:), Glacr_pst(:)
       !****************************************************************
@@ -104,7 +104,7 @@
 !***********************************************************************
       INTEGER FUNCTION snodecl()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Nhru, Ndepl, Init_vars_from_file, Glacier_flag
+      USE PRMS_MODULE, ONLY: Nhru, Ndepl, Init_vars_from_file, Glacier_flag, Model
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -832,6 +832,7 @@
         Glacr_tcal = 0.0
         Glacr_pk_den = 0.917
         Glacr_pk_temp = 0.0
+        Glacr_pk_ice = 0.0
         Glacr_pk_def = 0.0
         Glacr_pkwater_equiv = 0.0D0
         Glacr_evap = 0.0
@@ -853,9 +854,9 @@
                 reduce = 1.0
               ENDIF
               Glacr_pkwater_equiv(i) = Glacr_pk_den(i)*Glacr_pk_depth(i)
+              Glacr_pk_ice(i) = reduce*(SNGL(Glacr_pkwater_equiv(i)) - Glacr_freeh2o(i))/0.9340 !density of pure ice
             ENDIF
           ENDIF
-          Glacr_pk_ice(i) = reduce*(SNGL(Glacr_pkwater_equiv(i)) - Glacr_freeh2o(i))/0.9340 !density of pure ice
         ENDDO
         Glacr_pkwater_ante = Glacr_pkwater_equiv
         Glacr_pss = Glacr_pkwater_equiv
@@ -1256,6 +1257,7 @@
           ! track total heat flux from both night and day periods
           Tcal(i) = cals ! [cal/cm^2] or [Langleys]
 
+          iswn  = 0.0
           IF ( Active_glacier>=1 ) THEN
             IF ( Glacrcov_area(i)>0.0 ) THEN
               iswn = Swrad(i)*(1.0-Glacr_albedo(i))*Rad_trncf(i) ! [cal/cm^2] !want bare ice albedo
@@ -1366,7 +1368,7 @@
             Pkwater_equiv(i) = 0.0D0 ! just to be sure negative values are ignored
           ENDIF
           IF ( Active_glacier>=1 ) THEN
-            IF ( Glacrcov_area(i)>NEARZERO ) &
+            IF ( Glacrcov_area(i)>0.0 ) &
      &            CALL snowevap(Potet_sublim(i), Potet(i), Glacrcov_area(i), &
      &                         Glacr_evap(i), Glacr_pkwater_equiv(i), Glacr_pk_ice(i), &
      &                         Glacr_pk_def(i), Glacr_freeh2o(i), Glacr_pk_temp(i), Hru_intcpevap(i))
@@ -1808,7 +1810,7 @@
         Pkwater_equiv = 0.0D0
         ! Snowpack or glacr layer has been completely depleted, reset all states to no-snowpack values
         ! If melting glacier can still be snow, Ihru_gl >0 signifies glacier caloss
-		If (Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl)
+        If (Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl)
       ENDIF
 
       END SUBROUTINE caloss
@@ -1825,7 +1827,8 @@
       USE PRMS_BASIN, ONLY: CLOSEZERO, DNEARZERO
       IMPLICIT NONE
 ! Arguments
-      INTEGER, INTENT(IN) :: Iasw, Ihru_gl
+      INTEGER, INTENT(INOUT) :: Iasw
+      INTEGER, INTENT(IN) :: Ihru_gl
       REAL, INTENT(IN) :: Cal, Freeh2o_cap, Snowcov_area
       REAL, INTENT(INOUT) :: Freeh2o
       DOUBLE PRECISION, INTENT(INOUT) :: Pkwater_equiv
@@ -2501,7 +2504,7 @@
       REAL, INTENT(IN) :: Potet_sublim, Potet, Snowcov_area, Hru_intcpevap
       REAL, INTENT(INOUT) :: Pk_ice, Pk_def, Pk_temp
       DOUBLE PRECISION, INTENT(INOUT) :: Pkwater_equiv
-      REAL, INTENT(OUT) :: Snow_evap
+      REAL, INTENT(OUT) :: Snow_evap, Freeh2o
 ! Local Variables
       REAL :: avail_et, cal, ez
 !***********************************************************************

@@ -429,8 +429,6 @@
         ENDIF
       ENDDO
 
-      ENDDO
-
       area_fac = Cfs_conv/Basin_area_inv
       Basin_stflow_in = Basin_sroff + Basin_gwflow + Basin_ssflow ! not equal to basin_stflow_out if replacement flows
       Basin_cfs = Flow_out

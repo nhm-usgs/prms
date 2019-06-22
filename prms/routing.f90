@@ -637,7 +637,7 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, NEARZERO, FT2_PER_ACRE
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv

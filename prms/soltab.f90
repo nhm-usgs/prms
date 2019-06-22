@@ -19,6 +19,14 @@
 ! TWOPI ~ 6.2831853071786
 ! RADIANS ~ 0.017453292519943
 ! PI_12 ~ 3.8197186342055
+      DOUBLE PRECISION, PARAMETER :: ECCENTRICY = 0.01671D0
+      DOUBLE PRECISION, PARAMETER :: DAYSYR = 365.242D0
+      ! 0.016723401  daily change -1.115E-09, eccen = 0.016723401 + (julhour-julhour(1966,1,0,18))+dmin/60)/24*-1.115E-09
+      ! julday(1966,1,0.75 UT) = 2439126.25
+      ! eccen = 0.01675104-0.00004180*T-0.000000126*T^2  T is julian centuries (days time from epoch, is GMT from Jan 0.0
+      DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYSYR
+      DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS ! about 0.00143356672
+! DEGDAY = 360 degrees/days in year
       CHARACTER(LEN=6), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE :: Solar_declination(366), Soltab_basinpotsw(366)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_cossl(:), Soltab_sunhrs(:, :)
@@ -120,14 +128,6 @@
       DOUBLE PRECISION :: basin_cossl
       DOUBLE PRECISION :: basin_sunhrs(366), obliquity(366)
       DOUBLE PRECISION :: y, y2, y3, jddbl
-      DOUBLE PRECISION, PARAMETER :: ECCENTRICY = 0.01671D0
-      DOUBLE PRECISION, PARAMETER :: DAYSYR = 365.242D0
-      ! 0.016723401  daily change -1.115E-09, eccen = 0.016723401 + (julhour-julhour(1966,1,0,18))+dmin/60)/24*-1.115E-09
-      ! julday(1966,1,0.75 UT) = 2439126.25
-      ! eccen = 0.01675104-0.00004180*T-0.000000126*T^2  T is julian centuries (days time from epoch, is GMT from Jan 0.0
-      DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYSYR
-      DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS ! about 0.00143356672
-! DEGDAY = 360 degrees/days in year
 !***********************************************************************
       sthinit = 0
 

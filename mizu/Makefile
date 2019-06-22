@@ -57,5 +57,5 @@ install:
 		mv *.mod $(MIZUDIR)/include
 
 clean:
-	$(RM) $(MIZULIB) $(MIZUOBJS) *.mod *~
+	$(RM) $(MIZULIB) $(MIZUOBJS)
 	$(RM) $(MIZUDIR)/include/*.mod

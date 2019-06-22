@@ -182,11 +182,6 @@
      &     'Yearly mass balance for each glacier, indexed by Glacr_tag', &
      &     'inches', Gl_mb_yrcumul)/=0 ) CALL read_error(3, 'gl_mb_yrcumul')
 
-      ALLOCATE ( Glmax_mb_yrcumul(Nhru) )
-      IF ( declvar(MODNAME, 'glmax_mb_yrcumul', 'nhru', Nhru, 'double', &
-     &     'Finds max year mass balance for each glacier, indexed by Glacr_tag', &
-     &     'inches', Glmax_mb_yrcumul)/=0 ) CALL read_error(3, 'glmax_mb_yrcumul')
-
       IF ( declvar(MODNAME, 'basin_gl_area', 'one', 1, 'double',          &
      &     'Basin area-weighted average glacier-covered area', &
      &     'decimal fraction', Basin_gl_area)/=0 ) CALL read_error(3, 'basin_gl_area')
@@ -858,7 +853,7 @@
       USE PRMS_MODULE, ONLY: Nhru, Starttime
       USE PRMS_BASIN, ONLY: Hru_type, Hru_elev_ts, Basin_area_inv, Active_hrus, &
      &    Hru_route_order, NEARZERO, DNEARZERO, Elev_units, FEET2METERS, METERS2FEET, Hru_elev
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Julwater, Modays
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt, Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
      &    Snowfld_frac_init, Snowcov_area, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
@@ -915,8 +910,6 @@
       Gl_top_melt = 0.0
       Gl_ice_melt = 0.0
       Glacr_flow = 0.0
-      Gmbc_bsicm = 0.D0
-      Gmbc_bsicm_sego = 0.0D0
       Basin_snowicecov = Basin_snowicecov*Acre_inch2/Basin_area_inv
       gl_gain = 0.D0
 !
@@ -1502,6 +1495,7 @@
             in_top_melt_itot(jj) = 0.0D0
             tot_reserv(jj) = 0.0D0
             tot_reservi(jj) = 0.0D0
+            stor = 0.0
             IF ( jj==1 ) THEN
               stor = Stor_firn(Term(o),Nowmonth)/24.0 !days
             ELSEIF ( jj==2 ) THEN
@@ -1734,19 +1728,19 @@
 ! Local Variables
       INTEGER :: jd, n, nn
       DOUBLE PRECISION :: obliquity(366)
-      REAL :: y, y2, y3, jdreal !, dayangle
+      DOUBLE PRECISION :: y, y2, y3, jddbl
 !***********************************************************************
       recompute_soltab = 0
 ! initialize
       DO jd = 1, 366
-        jdreal = FLOAT( jd )
-        obliquity(jd) = 1.0 - (ECCENTRICY*COS((jdreal-3.0)*DEGDAYRAD))
-        y = SNGL(DEGDAYRAD)*(jdreal-1.0) ! assume noon
-        y2 = 2.0*y
-        y3 = 3.0*y
-        Solar_declination(jd) = 0.006918 - 0.399912*COS(y) + 0.070257*SIN(y) &
-     &                          - 0.006758*COS(y2) + 0.000907*SIN(y2) &
-     &                          - 0.002697*COS(y3) + 0.00148*SIN(y3)
+        jddbl = DBLE(jd)
+        obliquity(jd) = 1.0D0 - (ECCENTRICY*COS((jddbl-3.0D0)*DEGDAYRAD))
+        y = DEGDAYRAD*(jddbl-1.0D0) ! assume noon
+        y2 = 2.0D0*y
+        y3 = 3.0D0*y
+        Solar_declination(jd) = 0.006918D0 - 0.399912D0*COS(y) + 0.070257D0*SIN(y) &
+     &                          - 0.006758D0*COS(y2) + 0.000907D0*SIN(y2) &
+     &                          - 0.002697D0*COS(y3) + 0.00148D0*SIN(y3)
       ENDDO
 !   Module Variables
       DO nn = 1, Active_hrus

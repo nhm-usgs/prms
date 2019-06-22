@@ -92,7 +92,8 @@
       INTEGER FUNCTION srunoffdecl()
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru, Nsegment, Print_debug, &
-     &    Cascade_flag, Sroff_flag, Nlake, Init_vars_from_file, Call_cascade, PRMS4_flag
+     &    Cascade_flag, Sroff_flag, Nlake, Init_vars_from_file, Call_cascade, PRMS4_flag, &
+     &    Frozen_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
@@ -477,7 +478,7 @@
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Dprst_flag, Nhru, Nlake, Cascade_flag, Sroff_flag, &
      &    Init_vars_from_file, Call_cascade, Water_use_flag, &
-     &    Frozen_flag, Glacier_flag !, Parameter_check_flag
+     &    Frozen_flag!, Parameter_check_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
 !      USE PRMS_FLOWVARS, ONLY: Soil_moist_max
       IMPLICIT NONE
@@ -526,6 +527,11 @@
         Basin_contrib_fraction = 0.0D0
         Srp = 0.0
         Sri = 0.0
+        IF ( Frozen_flag==1 ) THEN
+          Frozen = 0
+          Cfgi = 0.0
+          Cfgi_prev = 0.0
+        ENDIF
       ENDIF
 
       IF ( getparam(MODNAME, 'carea_max', Nhru, 'real', Carea_max)/=0 ) CALL read_error(2, 'carea_max')
@@ -600,7 +606,7 @@
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
-      USE PRMS_CLIMATEVARS, ONLY: Potet
+      USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
      &    Imperv_stor_max, Snowinfil_max, Glacier_frac
       USE PRMS_CASCADE, ONLY: Ncascade_hru
@@ -612,8 +618,8 @@
 ! Local Variables
       INTEGER :: i, k, dprst_chk, frzen, active_glacier
       REAL :: srunoff, avail_et, hperv, sra, availh2o
-      DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff
-      REAL :: cfgi_sroff, cfgi_k, depth_cm
+      DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff, cfgi_sroff
+      REAL :: cfgi_k, depth_cm
       REAL :: glcrmltb, temp, temp2 ! Ashley glaciers
 !***********************************************************************
       srunoffrun = 0
@@ -709,7 +715,7 @@
           ELSE
             cfgi_k = 0.08
           ENDIF
-          depth_cm = Pk_depth(i)*2.54
+          depth_cm = SNGL(Pk_depth(i))*2.54
           Cfgi(i) = (Cfgi_decay*Cfgi_prev(i)) - (Tavgc(i)*(2.71828**(-0.4*cfgi_k*depth_cm)))
           IF ( active_glacier==1 ) THEN
             Cfgi(i) = 0.0 !if glacier over, want ground completely unfrozen, or below threshold, infiltration
@@ -736,16 +742,17 @@
         IF ( frzen==0 ) THEN
 ! DO IRRIGATION APPLICATION, ONLY DONE HERE, ASSUMES NO SNOW and
 ! only for pervious areas (just like infiltration)
-        IF ( Use_sroff_transfer==1 ) THEN
-          IF ( Net_apply(i)>0.0 ) THEN
-            sra = 0.0
-            Infil(i) = Infil(i) + Net_apply(i)
-            IF ( Hru_type(i)==1 ) THEN
-              CALL perv_comp(Net_apply(i), Net_apply(i), Infil(i), sra)
+          IF ( Use_sroff_transfer==1 ) THEN
+            IF ( Net_apply(i)>0.0 ) THEN
+              sra = 0.0
+              Infil(i) = Infil(i) + Net_apply(i)
+              IF ( Hru_type(i)==1 ) THEN
+                CALL perv_comp(Net_apply(i), Net_apply(i), Infil(i), sra)
 ! ** ADD in water from irrigation application and water-use transfer for pervious portion - sra (if any)
-              apply_sroff = DBLE( sra*hperv )
-              Basin_apply_sroff = Basin_apply_sroff + apply_sroff
-              runoff = runoff + apply_sroff
+                apply_sroff = DBLE( sra*hperv )
+                Basin_apply_sroff = Basin_apply_sroff + apply_sroff
+                runoff = runoff + apply_sroff
+              ENDIF
             ENDIF
           ENDIF
 
@@ -1508,7 +1515,7 @@
 !***********************************************************************
       SUBROUTINE srunoff_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Dprst_flag, &
-     &    Frozen_flag, Glacier_flag
+     &    Frozen_flag
       USE PRMS_SRUNOFF
       IMPLICIT NONE
       ! Argument

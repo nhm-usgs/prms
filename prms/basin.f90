@@ -70,7 +70,7 @@
       USE PRMS_BASIN
       USE PRMS_MODULE, ONLY: Model, Nhru, Dprst_flag, Lake_route_flag, &
      &    Et_flag, Precip_flag, Nlake, Cascadegw_flag, Stream_temp_flag, &
-     &    PRMS4_flag, Cascade_flag, Glacier_flag
+     &    PRMS4_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar

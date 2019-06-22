@@ -547,7 +547,7 @@
      &    Ripst_flag !, Print_debug
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: FT2_PER_ACRE, DNEARZERO, Active_hrus, Hru_route_order, Hru_area_dble, NEARZERO, &
-     &    Hru_area, FEET2METERS !, Active_area
+     &    Hru_area, FEET2METERS, CFS2CMS_CONV !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       IMPLICIT NONE
 ! Functions
@@ -931,7 +931,7 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, NEARZERO, FT2_PER_ACRE
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
@@ -1349,6 +1349,8 @@
       xd = 1.0+ bank_wid/2.0 ! at x = 1.0 is stage  which already know, calc at middle of bank storage area
       head=Bankst_head_pts(Ihru) !set at last height for initial
 ! Calculate heads, seepage, and bank storage using convolution
+      ripfrac = Ripst_areafr_max(Ihru)
+      IF (Bankfinite_hru(Ihru)==0) ripfrac = 1.0
       DO h = 1, (nbankd-1)
         head_sum = 0.0
         seep_sum = 0.0
@@ -1356,10 +1358,8 @@
           t = t0*delt
           td = t*a/(str_wid**2.0) !dimensionless
           IF (Bankfinite_hru(Ihru)==1) then !finite solution if transmissivity high, COMPUTATIONALLY EXPENSIVE, might eliminate
-            ripfrac = Ripst_areafr_max(Ihru)
             CALL LTST1(td, xd, tot_wid, bank_wid, head_step, head_step_grad)
           ELSE IF (Bankfinite_hru(Ihru)==0) then !semi-infinite solution
-            ripfrac = 1.0
             head_step = ERFC( (xd - 1.0)/SQRT((4.0*td)) )
             head_step_grad = -( 1.0/SQRT((PI*td)) )
           ENDIF
@@ -1394,7 +1394,6 @@
       Seg_bankflow(Hru_segment(Ihru)) = Seg_bankflow(Hru_segment(Ihru))-bankv(nbankd)/(24.*60.*60.)/CFS2CMS_CONV
       !FIX area change?? no I don't think so
       Basin_bankst_seep = Basin_bankst_seep + Bankst_seep_hru(Ihru)*Hru_area_dble(Ihru)
-
       Basin_bankst_head = Basin_bankst_head + ripfrac*Bankst_head(Ihru)* Hru_area_dble(Ihru)
       Basin_bankst_vol = Basin_bankst_vol+Bankst_stor_hru(Ihru)*Hru_area_dble(Ihru)
 
