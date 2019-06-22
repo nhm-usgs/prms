@@ -1,8 +1,8 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= $(BINDIR)/prmsgl
-TARGET2 	= $(BINDIR)/prmsglrip
+TARGET 	= $(BINDIR)/prms
+TARGET2 	= $(BINDIR)/prmsrip
 
 ####################################################
 # Rules for targets
