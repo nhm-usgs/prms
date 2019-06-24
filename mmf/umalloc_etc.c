@@ -1,13 +1,15 @@
-/**********************************************************************
- * umalloc_etc.c : memory allocation routines with error handling
+/*+
+ * United States Geological Survey
  *
- * utility routine
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : umalloc_etc
+ * COMMENT  : memory allocation routines with error handling
  *
- * Mike Dixon CADSWES CU July 1990
+ * $Id$
  *
- * $Id: umalloc_etc.c 4627 2008-10-01 16:48:11Z markstro $
- *
- **********************************************************************/
+-*/
+
+/**1************************ INCLUDE FILES ****************************/
 #define UMALLOC_ETC_C
 #include <stdlib.h>
 #include <stdio.h>
@@ -60,10 +62,12 @@ char *urealloc (char *ptr, unsigned size) {
 \*--------------------------------------------------------------------*/
 char *ucalloc (unsigned num, unsigned size) {
   char *ptr;
-  if ((ptr = (char *)calloc(num, size)) == NULL) 
-    if ((size != 0) && (num != 0))
+  if ((ptr = (char *)calloc(num, size)) == NULL) {
+    if ((size != 0) && (num != 0)) {
       (void)fprintf(stderr, "Cannot perform calloc, num, size = %d,%d\n",num,size);
       exit(1);
+    }
+  }
   return(ptr);
 }
 

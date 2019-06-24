@@ -1,49 +1,23 @@
-/**************************************************************************
- * putvar.c: gets the value associated with a module and name, and copies
- * it into the variable provided by the calling routine.
+/*+
+ * United States Geological Survey
  *
- * There are 2 functions: putvar() to be called from C
- *                        putvar_() to be called from Fortran
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : putvar() to be called from C
+ *            putvar_() to be called from Fortran
+ *            Returns 0 if successful, 1 otherwise.
+ * COMMENT  : gets the value associated with a module and name, and copies
+ *            it into the variable provided by the calling routine.
  *
- * Returns 0 if successful, 1 otherwise.
+* $Id$
  *
- * $Id: putvar.c 5702 2010-07-28 20:42:46Z rsregan $
- *
-   $Revision: 5702 $
-        $Log: putvar.c,v $
-        Revision 1.7  1996/02/19 20:00:38  markstro
-        Now lints pretty clean
+-*/
 
-        Revision 1.6  1995/05/25 14:26:34  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.5  1994/11/22  17:20:07  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/09/30  14:54:52  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.3  1994/08/01  16:35:58  markstro
- * Took module name out of key
- *
- * Revision 1.2  1994/01/31  20:17:09  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define PUTVAR_C
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "mms.h"
-/*
- **	OBJECTCENTER: Memory fault
- **		problem:  char *type was passed as a parameter to getparam
- **					realloced, and then freed in the calling procedure.
- **					for this action, the pointer of type must be passed.
- **		solution: change putvar to use local integer variable to avoid realloc
- */
 
 /*--------------------------------------------------------------------*\
  | FUNCTION     : putvar_
@@ -97,13 +71,6 @@ long putvar_ (char *mname, char *vname, ftnint *vmaxsize, char *vtype, double *v
 
   retval =  putvar(module, name, maxsize, type, value);
 
-  /*
-   * ufree up arrays
-   */
-
-//ufree(module);
-//ufree(name);
-//ufree(type);
   return retval;
 
 }
@@ -125,14 +92,13 @@ long putvar (char *module, char *name, long maxsize, char *type, double *value) 
   char *ptr1;
   char *ptr2;
 
-
   /*
    * compute the key
    */
 
 /*
   vkey = (char *) umalloc(strlen(module) + strlen(name) + 2);
-  (void)strcpy(vkey, module);
+  (void)strncpy(vkey, module, strlen(module) + strlen(name) + 2);
   strcat(strcat(vkey, "."), name);
 */
 //  vkey = strdup (name);
@@ -204,7 +170,7 @@ long putvar (char *module, char *name, long maxsize, char *type, double *value) 
     switch (var->type) {
       
     case M_LONG:
-      memcpy ((char *) var->value, (char *) value, var->size * sizeof(long));
+      memcpy ((char *) var->value, (char *) value, var->size * sizeof(int));
       break;
       
     case M_FLOAT:
@@ -236,9 +202,9 @@ long putvar (char *module, char *name, long maxsize, char *type, double *value) 
 	  switch (var->type) {
 	    
 	  case M_LONG:
-	    memcpy ((char *) ptr2, (char *) ptr1, n1 * sizeof(long));
-	    ptr1 += n1 * sizeof(long);
-	    ptr2 += n1 * sizeof(long);
+	    memcpy ((char *) ptr2, (char *) ptr1, n1 * sizeof(int));
+	    ptr1 += n1 * sizeof(int);
+	    ptr2 += n1 * sizeof(int);
 	    break;
 	    
 	  case M_FLOAT:
@@ -255,12 +221,6 @@ long putvar (char *module, char *name, long maxsize, char *type, double *value) 
 	  }
 	}
     }
-  /*
-   * free up arrays
-   */
-//ufree(vkey);
   
   return(0);
-  
 }
-  

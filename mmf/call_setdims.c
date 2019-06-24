@@ -1,8 +1,15 @@
-/*************************************************
- * call_setdims.c: created by 'mbuild'.
- * Creation time: Tue May 23 11:13:30 2006
- *************************************************/
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : call_setdims
+ * COMMENT  :
+ *
+ * $Id$
+ *
+-*/
 
+/**1************************ INCLUDE FILES ****************************/
 #include <stdio.h>
 #include "mms.h"
 

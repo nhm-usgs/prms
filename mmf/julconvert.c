@@ -1,37 +1,18 @@
-/*
- * convert Gregorian days to Julian date
+/*+
+ * United States Geological Survey
  *
- * Compile with 'cc greg2jul.c -o greg2jul'
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : julconvert
+ * COMMENT  : convert Gregorian days to Julian date
+ *            Modify as needed for your application.
+ *            The Julian day starts at noon of the Gregorian day and extends
+ *            to noon the next Gregorian day.
  *
- * Modify as needed for your application.
+ * $Id$
  *
- * The Julian day starts at noon of the Gregorian day and extends
- * to noon the next Gregorian day.
- *
- * $Id: julconvert.c 3622 2007-11-15 22:19:26Z markstro $
- *
-   $Revision: 3622 $
-		$Log: julconvert.c,v $
-		Revision 1.6  2001/04/03 18:18:06  markstro
-		Unknown
+-*/
 
-		Revision 1.5  2001/01/22 22:26:41  markstro
-		unknown
-
-		Revision 1.4  1999/08/24 16:34:09  markstro
-		Version 1.1.1
-
-		Revision 1.3  1996/02/19 20:00:14  markstro
-		Now lints pretty clean
-
-		Revision 1.2  1994/09/30 14:54:33  markstro
-		Initial work on function prototypes.
-
- * Revision 1.1  1994/03/24  22:46:20  markstro
- * Initial version from TERRA
- *
- */
-
+/**1************************ INCLUDE FILES ****************************/
 #define JULCONVERT_C
 #include <stdio.h>
 #include <string.h>

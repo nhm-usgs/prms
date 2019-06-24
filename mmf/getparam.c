@@ -1,49 +1,18 @@
-/**************************************************************************
- * getparam.c: gets the parameter associated with a module and name, and
- * copies it into the space provided by the calling routine.
+/*+
+ * United States Geological Survey
  *
- * There are 2 functions: getparam() to be called from C
- *                        getparam_() to be called from Fortran
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : getparam() to be called from C
+ *            getparam_() to be called from Fortran
+ *            Returns 0 if successful, 1 otherwise.
+ * COMMENT  : gets the parameter associated with a module and name, and
+ *            copies it into the space provided by the calling routine.
  *
- * Returns 0 if successful, 1 otherwise.
+ * $Id$
  *
- * $Id: getparam.c 7361 2012-08-14 20:28:23Z markstro $
- *
-   $Revision: 7361 $
-        $Log: getparam.c,v $
-        Revision 1.10  1997/03/26 17:04:14  markstro
-        Added function getdataname
+-*/
 
-        Revision 1.9  1996/12/05 21:24:12  markstro
-        (1)  Added getoutname()
-        (2)  Sensitivity work
-        (3)  Optimization work
-
-        Revision 1.8  1996/10/10 13:26:32  markstro
-        (1) Work on Rosenbrock
-        (2) Bug in fix dimension size
-
-        Revision 1.7  1996/02/19 20:00:05  markstro
-        Now lints pretty clean
-
-        Revision 1.6  1995/05/25 14:26:30  markstro
-        (1) Added batch mode
-        (2) Replaced "b" functions with "mem" versions
-
- * Revision 1.5  1994/11/22  17:19:40  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/09/30  14:54:24  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.3  1994/06/16  16:47:09  markstro
- * Worked over runcontrol.c
- *
- * Revision 1.2  1994/01/31  20:16:32  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define GETPARAM_C
 #include <stdio.h>
 #include <string.h>
@@ -117,10 +86,6 @@ long getparam_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, double 
 // call C version of getparam()
 	retval = getparam(module, name, maxsize, type, pval);
 
-//ufree(module);
-//ufree(name);
-//ufree(type);
-
 	return(retval);
 }
 
@@ -164,8 +129,8 @@ long getparam (char *module, char *name, int maxsize, char *type, double *pval) 
 
 //  Check to see if the parameter values were set in the Parameter File
 	if (param->read_in == 0) {
-		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", pkey, module);
-		(void)fprintf(stderr,"         Module default values are being used.\n");
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not\n", pkey, module);
+		(void)fprintf(stderr,"         set in the Parameter File. Module default values are being used.\n");
 	}
 
 // check that there is enough space allocated in the calling routine
@@ -314,7 +279,7 @@ long getoutname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
 	strncpy(foo, ext, elen);
 	foo[elen] = '\0';
 
-	ret = getoutname (dinfo, foo);
+	ret = getoutname (dinfo, len, foo);
 
     if (strlen (dinfo) >= (size_t)len) {
 		printf ("getoutname:  path name is too long for your buffer!\n");
@@ -330,8 +295,8 @@ long getoutname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
  | RETURN VALUE :
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long getoutname (char *dinfo, char *ext) {
-	sprintf(dinfo, "%s\\%s", *control_svar("model_output_file"), ext);
+long getoutname (char *dinfo, int dinlen, char *ext) {
+	snprintf(dinfo, dinlen, "%s\\%s", *control_svar("model_output_file"), ext);
 	return(0);
 }
 
@@ -350,7 +315,7 @@ long getdataname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
 	strncpy(foo, ext, elen);
 	foo[elen] = '\0';
 
-	retval = getdataname (dinfo, foo);
+	retval = getdataname (dinfo, len, foo);
 	return(retval);
 }
 
@@ -361,8 +326,8 @@ long getdataname_ (char *dinfo, char *ext, ftnlen len, ftnlen elen) {
  | RETURN VALUE :
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long getdataname (char *dinfo, char *ext) {
-	sprintf(dinfo, "%s%s", *control_svar("data_file"), ext);
+long getdataname (char *dinfo, int dinlen, char *ext) {
+	snprintf(dinfo, dinlen, "%s%s", *control_svar("data_file"), ext);
 	return(0);
 }
 
@@ -392,8 +357,8 @@ long getdataname (char *dinfo, char *ext) {
  | RETURN VALUE :
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-/*long getoutdirfile (char *dinfo, char *foo) {
-   sprintf(dinfo, "%s%s", *control_svar("mms_user_out_dir"), foo);
+/*long getoutdirfile (char *dinfo, int dinlen, char *foo) {
+   snprintf(dinfo, dinlen, "%s%s", *control_svar("mms_user_out_dir"), foo);
    return(0);
 }
 */
@@ -412,7 +377,7 @@ long getdataname (char *dinfo, char *ext) {
 	strncpy(foo, ext, elen);
 	foo[elen] = '\0';
 
-   retval = getuserdirfile (dinfo, foo);
+   retval = getuserdirfile (dinfo, len, foo);
    return(retval);
 }
 */
@@ -423,8 +388,8 @@ long getdataname (char *dinfo, char *ext) {
  | RETURN VALUE :
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-/*long getuserdirfile (char *dinfo, char *foo) {
-   sprintf(dinfo, "%s%s", *control_svar("mms_user_dir"), foo);
+/*long getuserdirfile (char *dinfo, int dinlen, char *foo) {
+   snprintf(dinfo, dinlen, "%s%s", *control_svar("mms_user_dir"), foo);
    return (0);
 }
 */
@@ -435,8 +400,8 @@ long getdataname (char *dinfo, char *ext) {
  | RETURN VALUE :
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
-long getparamfile (char *dinfo) {
-	sprintf(dinfo, "%s", *control_svar("param_file"));
+long getparamfile (char *dinfo, int dinlen) {
+	snprintf(dinfo, dinlen, "%s", *control_svar("param_file"));
 	return (0);
 }
 
@@ -449,7 +414,7 @@ long getparamfile (char *dinfo) {
 \*--------------------------------------------------------------------*/
 long getparamfile_ (char *dinfo, ftnlen len) {
 	long retval;
-	retval = getparamfile (dinfo);
+	retval = getparamfile (dinfo, len);
 	return(retval);
 }
 
@@ -490,9 +455,6 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
   strncpy(type, ptype, ptypelen);
   type[ptypelen] = '\0';
 
-
-
-
   param = param_addr(name);
 
   if (param == NULL) {
@@ -506,8 +468,8 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
   **  Check to see if the parameter values were set in the Parameter File
   */
   if (param->read_in == 0) {
-		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not set in the Parameter File.\n", name, module);
-		(void)fprintf(stderr,"         Module default values are being used.\n");
+		(void)fprintf(stderr,"\nWARNING: parameter %s is used by module %s but values are not\n", name, module);
+		(void)fprintf(stderr,"         set in the Parameter File. Module default values are being used.\n");
 //	  (void)fprintf(stderr,
 //	    "getparamstring - parameter %s is used but values are not set in the Parameter File.  Module default values are being used.\n", name);
   }
@@ -516,5 +478,4 @@ long getparamstring_ (char *mname, char *pname, ftnint *pmaxsize, char *ptype, f
    strncpy (pstring, *((char **)param->value + *pindex), pslen);
 
    return(0);
-
 }

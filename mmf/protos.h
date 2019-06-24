@@ -1,16 +1,17 @@
-/*
- *  $Id: protos.h 6387 2012-02-10 20:44:24Z markstro $
- */
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION :
+ * COMMENT  :
+ *
+ *  $Id$
+ *
+-*/
 
 /**1************* SWITCH FOR DEFINITION AND DECLARATION ***************/
 #ifndef MSYS_PROTO_H
 #define MSYS_PROTO_H
-
-/**2*********************** EXPORTED MACROS ***************************/
-
-/**3********************** EXPORTED TYPEDEFS **************************/
-
-/**4********************** EXPORTED VARIABLES *************************/
 
 /**5**************** DECLARATION EXPORTED FUNCTIONS *******************/
 
@@ -216,7 +217,7 @@ EXTERN int unscal (int *, float *, float *, float *, float *, int *);
 #define EXTERN extern
 #endif
 
-EXTERN void parse_args (int, char **, int *, char **, char **);
+EXTERN void parse_args (int, char **, int *, char **, char **, int);
 
 /***  read_datainfo.c  **************************************************/
 #undef EXTERN
@@ -490,9 +491,9 @@ EXTERN long getdim (char *);
 #endif
 
 EXTERN void getdimname_ (char *, ftnint *, char *, ftnlen, ftnlen);
-EXTERN void getdimname (char *, long, char *);
+EXTERN void getdimname (char *, long, char *, int);
 EXTERN void getdimdesc_ (char *, ftnint *, char *, ftnlen, ftnlen);
-EXTERN void getdimdesc (char *, long, char *);
+EXTERN void getdimdesc (char *, long, char *, int);
 
 /***  getparam.c  **************************************************/
 #undef EXTERN
@@ -508,13 +509,13 @@ EXTERN long getparam (char *, char *, int, char *, double *);
 EXTERN long getdatainfo_ (char *, ftnlen);
 EXTERN long getdatainfo (char *, ftnlen);
 EXTERN long getoutname_ (char *, char *, ftnlen, ftnlen);
-EXTERN long getoutname (char *, char *);
+EXTERN long getoutname (char *, int, char *);
 EXTERN long getdataname_ (char *, char *, ftnlen, ftnlen);
-EXTERN long getdataname (char *, char *);
+EXTERN long getdataname (char *, int, char *);
 EXTERN long getoutdirfile_ (char *, char *, ftnlen, ftnlen);
-EXTERN long getoutdirfile (char *, char *);
+EXTERN long getoutdirfile (char *, int, char *);
 EXTERN long getuserdirfile_ (char *, char *, ftnlen, ftnlen);
-EXTERN long getuserdirfile (char *, char *);
+EXTERN long getuserdirfile (char *, int, char *);
 
 /***  getvar.c  **************************************************/
 #undef EXTERN
@@ -598,7 +599,7 @@ EXTERN char *read_control (char *);
 #define EXTERN extern
 #endif
 
-EXTERN char *read_params (char *, int);
+EXTERN char *read_params (char *, int, int);
 EXTERN char *read_dims (char *);
 
 /***  read_vars.c  **************************************************/

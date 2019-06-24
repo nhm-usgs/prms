@@ -1,6 +1,13 @@
-/*
- *  $Id: structs.h 5788 2010-11-18 21:17:58Z markstro $
- */
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION :
+ * COMMENT  :
+ *
+ *  $Id$
+ *
+-*/
 
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
@@ -26,8 +33,11 @@ typedef struct {
   char *module;
   char *name;
   long ndimen;
+  long pf_ndimen;
   struct dimen_t **dimen;
+  char **pf_dimNames;
   long size;
+  long pf_size;
   long type;
   long bound_status;
   struct dimen_t *bound_dimen;
@@ -40,7 +50,7 @@ typedef struct {
   char *units;
   char *format;
   long column_width;
-  char **value_desc;
+  //char **value_desc;
   char *value_string;
   char *min_string;
   char *max_string;
@@ -102,19 +112,22 @@ typedef struct {
 typedef struct file_data_t {
 	FILE    *fp;
 	char    *name;
-	char    line[MAXDATALNLEN];
+//	char    line[MAXDATALNLEN];
+	char    *line;
 	char    *start_of_data;
 	float   delta_t;
-	char    info[MAXDATALNLEN];
+//	char    info[MAXDATALNLEN];
+	char    *info;
 	DATETIME    time;
 } FILE_DATA;
 
 typedef struct STAT_LIST_TYPE {
-  char key[MAXDATALNLEN];
-  char *element;
-  long type;
-  char *value;
-  struct STAT_LIST_TYPE *next;
+//  char key[MAXDATALNLEN];
+	char *key;
+	char *element;
+    long type;
+    char *value;
+    struct STAT_LIST_TYPE *next;
 } STAT_LIST_TYPE;   /* linked list element of stat vars */
 
 typedef struct module_data_t {

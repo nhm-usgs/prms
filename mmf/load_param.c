@@ -2,50 +2,22 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : load_param.c
- * AUTHOR   :
- * DATE     :
  * FUNCTION : load_param
  * COMMENT  : Stores the parameter value, minima and maxima at the
- *  required address.  Uses str_to_vals to decode the strings and
- *  store the values. This routine mainly handles the error conditions.
- *  Examples of legal strings for this routine are given in str_to_vals.c
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ *            required address.  Uses str_to_vals to decode the strings and
+ *            store the values. This routine mainly handles the error conditions.
+ *            Examples of legal strings for this routine are given in str_to_vals.c
  *
- * $Id: load_param.c 6757 2012-04-19 23:30:52Z rsregan $
+ * $Id$
  *
-   $Revision: 6757 $
-        $Log: load_param.c,v $
-        Revision 1.5  1996/02/19 20:00:15  markstro
-        Now lints pretty clean
-
-        Revision 1.4  1994/11/22 17:19:49  markstro
-        (1) Cleaned up dimensions and parameters.
-        (2) Some changes due to use of malloc_dbg.
-
- * Revision 1.3  1994/09/30  14:54:33  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:16:40  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
 #define LOAD_PARAM_C
 #include <stdio.h>
+#include <string.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : load_param
  | COMMENT		:
@@ -58,8 +30,8 @@ long load_param (PARAM *param) {
 	long i;
 	double *dval, *dmin, *dmax, *ddef;
 	float *fval, *fmin, *fmax, *fdef;
-	long *lval, *lmin, *lmax, *ldef;
-	char *sval, *sdef;
+	int *lval, *lmin, *lmax, *ldef;
+	char **sval, **sdef;    // 2016-01-13 PAN: added string pointers
 
 	if (param->type == M_DOUBLE) {
 		param->value = (char *)umalloc (param->size * sizeof (double));
@@ -72,10 +44,10 @@ long load_param (PARAM *param) {
 		param->min = (char *)umalloc (param->size * sizeof (float));
 		param->max = (char *)umalloc (param->size * sizeof (float));
 	} else if (param->type == M_LONG) {
-		param->value = (char *)umalloc (param->size * sizeof (long));
-		param->def = (char *)umalloc (param->size * sizeof (long));
-		param->min = (char *)umalloc (param->size * sizeof (long));
-		param->max = (char *)umalloc (param->size * sizeof (long));
+		param->value = (char *)umalloc (param->size * sizeof (int));
+		param->def = (char *)umalloc (param->size * sizeof (int));
+		param->min = (char *)umalloc (param->size * sizeof (int));
+		param->max = (char *)umalloc (param->size * sizeof (int));
 	} else if (param->type == M_STRING) {
 		param->value = (char *)umalloc (param->size * sizeof (char *));
 		param->def = (char *)umalloc (param->size * sizeof (char *));
@@ -87,7 +59,7 @@ long load_param (PARAM *param) {
 * decode minima
 */
 	if (param->bound_status == M_BOUNDED) {
-		lmin = (long *)(param->min);	
+		lmin = (int *)(param->min);	
 		for (i = 0; i < param->size; i++)
 			*lmin++ = 0;
 	} else {
@@ -104,7 +76,7 @@ long load_param (PARAM *param) {
 * decode maxima
 */
 	if (param->bound_status == M_BOUNDED) {
-		lmax = (long *)(param->max);	
+		lmax = (int *)(param->max);	
 		for (i = 0; i < param->size; i++)
 			*lmax++ = (long)(param->bound_dimen->value);
 	} else {
@@ -144,17 +116,19 @@ long load_param (PARAM *param) {
 			break;
 
 		case M_LONG:
-			lval = (long *)param->value;
-			ldef = (long *)param->def;
+			lval = (int *)param->value;
+			ldef = (int *)param->def;
 			for (i = 0; i < param->size; i++)
 				*lval++ = *ldef++;
 			break;
 
+        // 2016-01-13 PAN: Added case for string parameters
 		case M_STRING:
-			sval = (char *)param->value;
-			sdef = (char *)param->def;
-			for (i = 0; i < param->size; i++)
-				*sval++ = *sdef++;
+			sval = (char **) param->value;
+			sdef = (char **) param->def;
+			for (i = 0; i < param->size; i++) {
+                *(sval++) = strdup(*(sdef++));
+            }
 			break;
 	}
 
@@ -241,9 +215,9 @@ long load_param (PARAM *param) {
 
 	case M_LONG:
 
-		lval = (long *) param->value;
-		lmin = (long *) param->min;
-		lmax = (long *) param->max;
+		lval = (int *) param->value;
+		lmin = (int *) param->min;
+		lmax = (int *) param->max;
 
 		for (i = 0; i < param->size; i++) {
 
@@ -256,7 +230,7 @@ long load_param (PARAM *param) {
 				    param->min_string, param->max_string);
 //				(void)fprintf(stderr, "The problem is with posn no %ld.\n", i+1);
 				(void)fprintf(stderr,
-				    "Assigned minimum = %ld, maximum = %ld\n", lmin[i], lmax[i]);
+				    "Assigned minimum = %d, maximum = %d\n", lmin[i], lmax[i]);
 				return(1);
 			}
 
@@ -268,7 +242,7 @@ long load_param (PARAM *param) {
 				    param->value_string, param->min_string, param->max_string);
 				(void)fprintf(stderr, "       Assigned values are:\n");
 				(void)fprintf(stderr,
-				    "       Value = %ld, Minimum = %ld, Maximum = %ld\n",
+				    "       Value = %d, Minimum = %d, Maximum = %d\n",
 				    lval[i], lmin[i], lmax[i]);
 				return(1);
 			}
@@ -282,8 +256,3 @@ long load_param (PARAM *param) {
 	}
 	return(0);
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

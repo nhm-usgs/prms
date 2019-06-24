@@ -1,7 +1,15 @@
-/*
- *  $Id: mms.h 5090 2009-03-24 18:11:08Z rsregan $
- */
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION :
+ * COMMENT  :
+ *
+ *  $Id$
+ *
+-*/
 
+/**1************************ INCLUDE FILES ****************************/
 #include "defs.h"
 #include "structs.h"
 #include "globals.h"

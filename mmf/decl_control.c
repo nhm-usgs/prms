@@ -2,55 +2,10 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : decl_control.c
- * AUTHOR   :
- * DATE     :
  * FUNCTION : decl_control
  * COMMENT  : initializes a module variable entry in the memory database
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: decl_control.c 5788 2010-11-18 21:17:58Z markstro $
- *
-   $Revision: 5788 $
-        $Log: decl_control.c,v $
-        Revision 1.12  1996/04/09 21:04:05  markstro
-        (1) Work on control files
-        (2) Runtime graphs
-
- * Revision 1.11  1996/02/19  19:59:46  markstro
- * Now lints pretty clean
- *
-        Revision 1.10  1994/11/23 20:12:44  markstro
-        More malloc_dbg changes
-
- * Revision 1.9  1994/11/22  17:19:23  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.8  1994/11/08  16:17:24  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.7  1994/10/24  14:18:16  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.6  1994/09/30  14:54:05  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.5  1994/08/31  21:50:27  markstro
- * Unknown
- *
- * Revision 1.4  1994/02/01  21:17:10  markstro
- * Unknown
- *
- * Revision 1.3  1994/02/01  18:35:03  markstro
- * Made the declaration of controls dynamic -- no more MAXCONTROLS
- *
- * Revision 1.2  1994/01/31  20:16:07  markstro
- * Make sure that all source files have CVS log.
+ * $Id$
  *
 -*/
 
@@ -63,15 +18,6 @@
 
 /**************************************************************************/
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : add_control
  | COMMENT		: This allocates a control structure and adds it to the
@@ -245,6 +191,3 @@ void decl_control_ (char *ckey, ftnint *ctype, ftnint *csize, void *value, ftnle
 	decl_control(key, type, size, value);
 	return;
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/

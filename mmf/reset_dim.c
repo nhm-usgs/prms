@@ -2,63 +2,11 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : reset_dim.c
- * AUTHOR   : CADSWES
- * DATE     : 
- * FUNCTION :
+ * FUNCTION : reset_dim
  * COMMENT  :
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: reset_dim.c 5702 2010-07-28 20:42:46Z rsregan $
+ * $Id$
  *
-   $Revision: 5702 $
-        $Log: reset_dim.c,v $
-        Revision 1.15  1999/10/22 17:14:37  markstro
-        Added private variables
-
-        Revision 1.14  1996/04/29 16:23:15  markstro
-        Unknown
-
- * Revision 1.13  1996/02/19  20:00:49  markstro
- * Now lints pretty clean
- *
-        Revision 1.12  1995/03/20 20:42:27  markstro
-        Import fix
-
- * Revision 1.11  1994/11/23  20:12:50  markstro
- * More malloc_dbg changes
- *
- * Revision 1.10  1994/11/22  17:20:17  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.9  1994/11/08  16:17:41  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.8  1994/10/13  17:53:37  markstro
- * (1) Added annotation to parameter values through the spreadsheet
- * (2) Included <string.h> in a few more files that needed it.
- *
- * Revision 1.7  1994/09/30  14:55:02  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.6  1994/09/23  22:49:12  markstro
- * Unknown
- *
- * Revision 1.5  1994/09/15  22:13:53  markstro
- * Fixes for dimension index notes.
- *
- * Revision 1.4  1994/09/15  17:22:46  markstro
- * Added the call declfix to the system for declaring fixed dimensions.
- *
- * Revision 1.3  1994/05/23  14:27:26  markstro
- * Cleaned out a lot of includes in include files
- *
- * Revision 1.2  1994/01/31  20:17:19  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -72,16 +20,9 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
 /**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 static void resize_param (PARAM *, long, long, long, long);
 
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : reset_dim
  | COMMENT		:
@@ -131,12 +72,10 @@ void reset_dim (DIMEN *dim, long nnew) {
 	} else {
 		for (i = nnew + 1; i < nold; i++) {
 			if (dim->names && dim->names[i]) {
-//				free (dim->names[i]);
 				dim->names[i] = NULL;
 			}
 
 			if (dim->notes && dim->notes[i]) {
-//				free (dim->notes[i]);
 				dim->notes[i] = NULL;
 			}
 		}
@@ -297,12 +236,12 @@ static void resize_param (PARAM *param, long dimen_num, long nold, long nnew, lo
 /*
 **	resize the value_desc
 */
-	if (size_new)
-		param->value_desc = (char **) realloc (param->value_desc,
-			size_new * sizeof (char *));
-
-	for (i = param->size; i < size_new; i++)
-		param->value_desc[i] = NULL;
+//	if (size_new)
+//		param->value_desc = (char **) realloc (param->value_desc,
+//			size_new * sizeof (char *));
+//
+//	for (i = param->size; i < size_new; i++)
+//		param->value_desc[i] = NULL;
 
 /*
 * copy the data
@@ -371,7 +310,6 @@ static void resize_param (PARAM *param, long dimen_num, long nold, long nnew, lo
 				} /* j */
 			} /* inew */
 		} /* iframe */
-//		ufree(aptr_prev);
 
 		switch (icase) {
 			case VALUE_CASE:
@@ -389,7 +327,3 @@ static void resize_param (PARAM *param, long dimen_num, long nold, long nnew, lo
 		} /* switch (icase) */
 	} /* icase */
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

@@ -2,18 +2,12 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : graph_single_run.c
- * AUTHOR   : New version by Markstrom
- * DATE     : 
  * FUNCTION : graph_single_run
  * COMMENT  : graph routines for mms run
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: graph_single_run.c 5803 2010-12-08 22:38:20Z markstro $
+ * $Id$
  *
- */
+-*/
 
 /**1************************ INCLUDE FILES ****************************/
 #define GRAPH_SINGLE_RUN_C
@@ -23,12 +17,6 @@
 #include "mms.h"
 
 #define         MAXNUMBEROFGRAPHS               4
-
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 
 /**5*********************** LOCAL VARIABLES ***************************/
 long NdispGraphs;
@@ -176,8 +164,3 @@ int closeRuntimeGraphs (void) {
    printf ("closeRuntimeGraph\n");
    return (FALSE);
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

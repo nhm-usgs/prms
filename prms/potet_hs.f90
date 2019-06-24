@@ -4,23 +4,31 @@
 ! Hargreaves, G.H. and Z.A. Samani, 1985. Reference crop
 ! evapotranspiration from temperature. Transaction of ASAE 1(2):96-99.
 !***********************************************************************
+      MODULE PRMS_POTET_HS
+        IMPLICIT NONE
+        ! Local Variables
+        CHARACTER(LEN=8), SAVE :: MODNAME
+        ! Declared Parameters
+        REAL, SAVE, ALLOCATABLE :: Hs_krs(:, :)
+      END MODULE PRMS_POTET_HS
+
       INTEGER FUNCTION potet_hs()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_potet_hs, Potet_hs_nc
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
-      USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad, Potet_coef_hru_mo
-      USE PRMS_OBS, ONLY: Nowmonth
+      USE PRMS_POTET_HS
+      USE PRMS_MODULE, ONLY: Process, Nhru
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
+      USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad
+      USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SQRT, INDEX
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam
-      EXTERNAL read_error
+      INTRINSIC SQRT, DBLE, ABS
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      REAL :: temp_diff, coef_kt, swrad_inch_day, potet_tmp
-      CHARACTER(LEN=8), PARAMETER :: MODNAME = 'potet_hs'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Potential ET'
+      REAL :: temp_diff, swrad_inch_day !, coef_kt
+      CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
-      potet_hs = 1
+      potet_hs = 0
 
       IF ( Process(:3)=='run' ) THEN
         Basin_potet = 0.0D0
@@ -30,30 +38,34 @@
 !          swrad_mm_day = Swrad(i)/23.89/2.45
 !          swrad_mm_day = Swrad(i)*0.04184/2.45
           swrad_inch_day = Swrad(i)*0.000673 ! Langleys->in/day
-          coef_kt = 0.00185*(temp_diff**2) - 0.0433*temp_diff + 0.4023
-          potet_tmp = Potet_coef_hru_mo(i, Nowmonth)*coef_kt &
-                      *swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
-          IF ( potet_tmp<0.0 ) potet_tmp = 0.0
-          Basin_potet = Basin_potet + potet_tmp*Hru_area(i)
-          Potet(i) = potet_tmp
+! http://www.zohrabsamani.com/research_material/files/Hargreaves-samani.pdf
+!          coef_kt = 0.00185*(temp_diff**2) - 0.0433*temp_diff + 0.4023
+!          Potet(i) = Hs_krs(i, Nowmonth)*coef_kt*swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
+
+! Danger markstro
+!          Potet(i) = Hs_krs(i, Nowmonth)*swrad_inch_day*SQRT(temp_diff)*(Tavgc(i)+17.8)
+          Potet(i) = Hs_krs(i, Nowmonth)*swrad_inch_day*SQRT(ABS(temp_diff))*(Tavgc(i)+17.8)
+! End Danger
+          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
-!******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_hs = '$Id: potet_hs.f90 4611 2012-06-29 22:15:13Z rsregan $'
-        Potet_hs_nc = INDEX( Version_potet_hs, 'Z' ) + 1
-        i = INDEX( Version_potet_hs, '.f90' ) + 3
-        IF ( declmodule(Version_potet_hs(6:i), PROCNAME, Version_potet_hs(i+2:Potet_hs_nc))/=0 ) STOP
+        Version_potet = 'potet_hs.f90 2016-07-20 15:30:00Z'
+        CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
+        MODNAME = 'potet_hs'
 
+        ALLOCATE ( Hs_krs(Nhru,12) )
+        IF ( declparam(MODNAME, 'hs_krs', 'nhru,nmonths', 'real', &
+     &       '0.0135', '0.01', '0.24', &
+     &       'Potential ET adjustment factor - Hargreaves-Samani', &
+     &       'Monthly (January to December) adjustment factor used in Hargreaves-Samani potential ET computations for each HRU', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'hs_krs')
+
+!******Get parameters
       ELSEIF ( Process(:4)=='init' ) THEN
-        DO i = 1, Nhru
-          DO j = 1, 12 ! default coefficient = 0.0135, so update calibration coefficient
-            Potet_coef_hru_mo(i, j) = Potet_coef_hru_mo(i, j)*0.0135
-          ENDDO
-        ENDDO
-
+        IF ( getparam(MODNAME, 'hs_krs', Nhru*12, 'real', Hs_krs)/=0 ) CALL read_error(2, 'hs_krs')
       ENDIF
 
-      potet_hs = 0
       END FUNCTION potet_hs

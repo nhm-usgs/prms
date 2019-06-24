@@ -2,55 +2,11 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : get_elem_add.c
- * AUTHOR   : Programmer: Pedro J. Restrepo
- *              University of Colorado, CADSWES, June, 1992
- * DATE     : Jun 1992
- * FUNCTION :
+ * FUNCTION : get_elem_add
  * COMMENT  : This file contains utility routines for multiple index arrays.
- * REF      :
- * REVIEW   :
- * PR NRS   :
  *
- * $Id: get_elem_add.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id$
  *
-   $Revision: 3058 $
-        $Log: get_elem_add.c,v $
-        Revision 1.12  1996/02/19 20:00:01  markstro
-        Now lints pretty clean
-
-        Revision 1.11  1994/11/22 17:19:36  markstro
-        (1) Cleaned up dimensions and parameters.
-        (2) Some changes due to use of malloc_dbg.
-
- * Revision 1.10  1994/11/08  16:17:28  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.9  1994/10/24  14:18:27  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.8  1994/09/30  14:54:18  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.7  1994/08/02  17:46:31  markstro
- * Split data file capabilities
- *
- * Revision 1.6  1994/07/07  14:23:55  markstro
- * DG fixes
- *
- * Revision 1.5  1994/06/21  20:20:26  markstro
- * More work on taking the module name out of the DB keyword.
- *
- * Revision 1.4  1994/05/13  15:37:38  markstro
- * Changes from TERRA
- *
- * Revision 1.3  1994/05/11  14:29:31  markstro
- * Changes from TERRA
- *
- * Revision 1.2  1994/01/31  20:16:24  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -59,14 +15,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "mms.h"
-
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
 
 /**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
@@ -118,7 +66,7 @@ int CheckIndices (char *key, char *elemString, int type) {
 /*
 **	Parse the index string. First make a local copy
 */
-	(void)strcpy (tsave, elemString);
+	(void)strncpy (tsave, elemString, 80);
 
 /*
 **	Check for '(' and ')', and delete them
@@ -150,7 +98,7 @@ int CheckIndices (char *key, char *elemString, int type) {
 			*ptr = '\0';
 
 		strindx[list_count] = (char *)malloc (20 * sizeof (char));
-		(void)strcpy(strindx[list_count], t);
+		(void)strncpy(strindx[list_count], t, 20);
 		list_count++;
 
 		if (ptr)
@@ -201,9 +149,6 @@ int CheckIndices (char *key, char *elemString, int type) {
 			return(5);
 	}
 
-//      for (k = 0; k < nindex; k++) free((char *)strindx[k]);
-//      free((char *)strindx);
-//      free((char *)intindx);
 	return(0);
 }
   
@@ -244,7 +189,7 @@ char *GetElemAddress (char *key, char *elemString, int type) {
 /*
 **	first, make a temporary copy of the key
 */
-	(void)strcpy (tkey, key);
+	(void)strncpy (tkey, key, 80);
 
 /*
 **	strips leading blanks
@@ -286,7 +231,7 @@ char *GetElemAddress (char *key, char *elemString, int type) {
 /*
 **	parse the string. First make a local copy
 */
-	(void)strcpy (elmstr, elemString);
+	(void)strncpy (elmstr, elemString, 80);
 	temp = elmstr; 
 
 /*
@@ -319,7 +264,7 @@ char *GetElemAddress (char *key, char *elemString, int type) {
 
 		strindx[list_count] = (char *)malloc (20 * sizeof (char));
 
-		(void)strcpy (strindx[list_count], t);
+		(void)strncpy (strindx[list_count], t, 20);
 		list_count++;
 
 		if (ptr)
@@ -367,7 +312,3 @@ char *GetElemAddress (char *key, char *elemString, int type) {
 	}
     return NULL;
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

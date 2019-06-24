@@ -1,40 +1,20 @@
-/*************************************************************************
- * control_array routines
+/*+
+ * United States Geological Survey
  *
- * These return pointers to particular elements
- * in a control array.
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : control_array - generic, returns (char *) as a generic pointer
+ *            control_larray - returns long *
+ *            control_farray - returns float *
+ *            control_darray - returns double *
+ *            control_sarray - returns char ** - string
+ *            These return pointers to particular elements in a control array.
+ * COMMENT  : control_array routines
  *
- * control_array - generic, returns (char *) as a generic pointer
- * control_larray - returns long *
- * control_farray - returns float *
- * control_darray - returns double *
- * control_sarray - returns char ** - string
+ * $Id$
+ *
+-*/
 
- * $Id: control_array.c 6064 2011-10-27 20:56:21Z markstro $
- *
-   $Revision: 6064 $
-        $Log: control_array.c,v $
-        Revision 1.7  1996/02/19 19:59:35  markstro
-        Now lints pretty clean
-
-        Revision 1.6  1995/02/01 17:47:16  markstro
-        Addition of Rosenbrock optimization.  Start of sensitivity.  Many bug fixes.
-
- * Revision 1.5  1994/11/22  17:19:11  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.4  1994/11/08  16:17:17  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.3  1994/09/30  14:53:54  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:15:59  markstro
- * Make sure that all source files have CVS log.
- *
- *************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define CONTROL_ARRAY_C
 #include <stdlib.h>
 #include "mms.h"

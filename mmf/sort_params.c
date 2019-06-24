@@ -2,31 +2,11 @@
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : sort_params.c
- * AUTHOR   : 
- * DATE     : Thu 15 Sep 1994
  * FUNCTION : sort_params
  * COMMENT  : sorts the param array so that the key for each structure
- *             is in increasing alphabetical order
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ *            is in increasing alphabetical order
  *
- * $Id: sort_params.c 3058 2007-01-25 22:25:59Z rsregan $
- *
-   $Revision: 3058 $
-        $Log: sort_params.c,v $
-        Revision 1.5  1996/02/19 20:01:12  markstro
-        Now lints pretty clean
-
-        Revision 1.4  1994/09/30 14:55:20  markstro
-        Initial work on function prototypes.
-
- * Revision 1.3  1994/09/19  15:51:17  markstro
- * Fixed multiple dimension edit parameter window.
- *
- * Revision 1.2  1994/01/31  20:17:33  markstro
- * Make sure that all source files have CVS log.
+ * $Id$
  *
 -*/
 
@@ -36,14 +16,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mms.h"
-
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
 
 /**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
@@ -83,7 +55,3 @@ void sort_params (void) {
 		}
 	}
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/

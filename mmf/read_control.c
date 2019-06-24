@@ -1,34 +1,14 @@
 /*+
+** DANGER looks for spaces before comment and sets them to null so
+** data part of the line does not have any part of the comment
  * United States Geological Survey
  *
  * PROJECT  : Modular Modeling System (MMS)
- * NAME     : read_control.c
- * AUTHOR   : CADSWES
- * DATE     : Mon 08 Apr 1996
- * FUNCTION :
- * COMMENT  :
- * read_control.c: reads the control data base from a file
- * File name is obtained from the environment variable "mms_control_file"
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ * FUNCTION : read_control
+ * COMMENT  : reads the control data base from a file
+ *            File name is obtained from the environment variable "mms_control_file"
  *
- * $Id: read_control.c 6786 2012-04-20 16:25:53Z rsregan $
- *
-   $Revision: 6786 $
-        $Log: read_control.c,v $
-        Revision 1.21  1996/08/28 15:24:10  markstro
-        Unknown
-
- * Revision 1.20  1996/05/14  02:42:05  msbrewer
- * Cleaned up cvs conflicts. Bug fixes in dump_to_db.
- *
-        Revision 1.19  1996/04/29 16:23:09  markstro
-        Unknown
-
- * Revision 1.18  1996/04/09  21:04:09  markstro
- * (1) Work on control files
- * (2) Runtime graphs
+ * $Id$
  *
 -*/
 
@@ -40,17 +20,10 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
 /**4***************** DECLARATION LOCAL FUNCTIONS *********************/
 static char *rc (char *);
 char *fgets_rc (char *, int , FILE *);
 
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : read_control
  | COMMENT      :
@@ -97,20 +70,20 @@ static char *rc (char *control_name) {
    double   *dptr;
    float   *fptr;
    long   *lptr;
-   char   line[MAXDATALNLEN], *key;
+   char   line[MAXCTRLLINELEN], *key;
    static char      buf[256];
 
 /*
 * compute control path, open file
 */
    if ((control_file = fopen (control_name, "r")) == NULL) {
-      (void)sprintf (buf, "read_control: Couldn't open %s", control_name);
+      (void)snprintf (buf, 256, "read_control: Couldn't open %s", control_name);
       return (buf);
    }
 
-   if (!fgets_rc(line, MAXDATALNLEN, control_file)) {
+   if (!fgets_rc(line, MAXCTRLLINELEN, control_file)) {
       fclose (control_file);
-      (void)sprintf (buf, "read_control: Problems reading %s", control_name);
+      (void)snprintf (buf, 256, "read_control: Problems reading %s", control_name);
       return (buf);
    }
 
@@ -123,7 +96,7 @@ static char *rc (char *control_name) {
 **   Space fwd to #### header.
 */
       while (strncmp(line, "####", 4)) {
-         if (fgets_rc(line, MAXDATALNLEN, control_file) == NULL) {
+         if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
             fclose(control_file);
             return(NULL);
          }
@@ -131,8 +104,8 @@ static char *rc (char *control_name) {
 /*
 **   get key
 */
-      if (!fgets_rc (line, MAXDATALNLEN, control_file)) {
-         (void)sprintf (buf, "read_control: reading key; Early end-of-file");
+      if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
+         (void)snprintf (buf, 256, "read_control: reading key; Early end-of-file");
          printf ("read_control: reading key; Early end-of-file\n");
          return (buf);
       }
@@ -145,25 +118,34 @@ static char *rc (char *control_name) {
 /*
 **   get size
 */
-      if (!fgets_rc (line, MAXDATALNLEN, control_file)) {
-         (void)sprintf (buf,"read_control: reading size; key = %s", key);
+      if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
+         (void)snprintf (buf, 256, "read_control: reading size; key = %s", key);
          return (buf);
       }
 
       if ((size = atol(line)) < 0) {
-         (void)sprintf (buf, "read_control: negative size; key = %s, line = %s", key, line);
+         (void)snprintf (buf, 256, "read_control: negative size; key = %s, line = %s", key, line);
          return (buf);
       }
+
+/* DANGER check that size is within some range to prevent overflow.
+** This is a hack, but 1000 should be a good upper limit on the number of indexes for a control variable.
+*/
+      if (size > 999) {
+         (void)snprintf (buf, 256, "read_control: too many control indexes; size = %ld, key = %s, line = %s", size, key, line);
+         return (buf);
+      }
+
 /*
 **   get type
 */
-      if (!fgets_rc (line, MAXDATALNLEN, control_file)) {
-         (void)sprintf (buf, "WARNING: reading type; key = %s", key);
+      if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
+         (void)snprintf (buf, 256, "WARNING: reading type; key = %s", key);
          return (buf);
       }
 
       if (!(type = atol(line))) {
-         (void)sprintf (buf, "WARNING: invalid type; key = %s, line = %s", key, line);
+         (void)snprintf (buf, 256, "WARNING: invalid type; key = %s, line = %s", key, line);
          return (buf);
       }
 
@@ -188,8 +170,8 @@ static char *rc (char *control_name) {
 			dptr = (double *)umalloc (sizeof (double) * size);
             cp->start_ptr = (void *)dptr;
             for (i = 0; i < size; i++) {
-               if (fgets_rc(line, MAXDATALNLEN, control_file) == NULL) {
-                  (void)sprintf (buf, "read_control: key is %s.\n, file: %s", key, control_name);
+               if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
+                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -201,8 +183,8 @@ static char *rc (char *control_name) {
 			fptr = (float *)umalloc (sizeof (float) * size);
             cp->start_ptr = (void *)fptr;
             for (i = 0; i < size; i++) {
-               if (fgets_rc(line, MAXDATALNLEN, control_file) == NULL) {
-                  (void)sprintf (buf, "read_control: key is %s.\n, file: %s", key, control_name);
+               if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
+                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -214,8 +196,8 @@ static char *rc (char *control_name) {
 			lptr = (long *)umalloc (sizeof (long) * size);
             cp->start_ptr = (void *)lptr;
             for (i = 0; i < size; i++) {
-               if (fgets_rc(line, MAXDATALNLEN, control_file) == NULL) {
-                  (void)sprintf (buf, "read_control: key is %s.\n, file: %s", key, control_name);
+               if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
+                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -226,8 +208,8 @@ static char *rc (char *control_name) {
          case M_STRING:
 			cp->start_ptr = umalloc (sizeof (char *) * size);
             for (i = 0; i < size; i++) {
-               if (fgets_rc(line, MAXDATALNLEN, control_file) == NULL) {
-                  (void)sprintf (buf, "read_control: key is %s.\n, file: %s", key, control_name);
+               if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
+                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -278,8 +260,19 @@ char *fgets_rc (char *str, int num, FILE *stream) {
       } else if (strstr (str, "//")) {
 /*
 ** comment in data line
+** DANGER looks for spaces before comment and sets them to null so
+** data part of the line does not have any part of the comment
 */
          ptr2 = strstr (str, "//");
+
+/* New -- terminate data part of line where the comment starts
+*/
+         *(ptr2) = '\0';
+         
+/* Now look for spaces before the comment deliminator. If there
+** are some, null them out.
+*/
+
          ptr2--;
          while (*ptr2 != ' ') ptr2--;
          *(ptr2 + 1) = '\0';
@@ -289,8 +282,3 @@ char *fgets_rc (char *str, int num, FILE *stream) {
          return ptr;
       }
 }
-
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/
-

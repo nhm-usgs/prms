@@ -1,63 +1,13 @@
 /*+
  * United States Geological Survey
  *
- * PROJECT  : Modular Modelling System (MMS)
- * NAME     : read_datainfo.c
- * AUTHOR   : CADSWES; modified by Steve Markstrom (markstro)
- * DATE     : Wed 09 Mar 1994
- * FUNCTION :
- * COMMENT  : read_datainfo.c: reads the data file and updates the
- *                datainfo string and the data variable names and
- *                sizes
- * REF      :
- * REVIEW   :
- * PR NRS   :
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : read_datainfo
+ * COMMENT  : reads the data file and updates the
+ *            datainfo string and the data variable names and sizes
  *
- * $Id: read_datainfo.c 6844 2012-05-04 16:55:46Z markstro $
+ * $Id$
  *
-   $Revision: 6844 $
-        $Log: read_datainfo.c,v $
-        Revision 1.15  2000/03/07 20:35:18  markstro
-        Added comments to data file header
-
-        Revision 1.14  1996/02/19 20:00:41  markstro
-        Now lints pretty clean
-
-        Revision 1.13  1995/03/20 22:44:40  markstro
-        DG changes
-
- * Revision 1.12  1994/11/22  17:20:10  markstro
- * (1) Cleaned up dimensions and parameters.
- * (2) Some changes due to use of malloc_dbg.
- *
- * Revision 1.11  1994/11/08  16:17:37  markstro
- * (1) More proto type fine tuning
- * (2) fixed up data file reading
- *
- * Revision 1.10  1994/10/24  14:18:50  markstro
- * (1)  Integration of CADSWES's work on GIS.
- * (2)  Prototypes were added to the files referenced in "mms_proto.h".
- *
- * Revision 1.9  1994/09/30  14:54:55  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.8  1994/08/02  17:46:36  markstro
- * Split data file capabilities
- *
- * Revision 1.7  1994/05/18  17:15:55  markstro
- * TERRA changed mhms to mms
- *
- * Revision 1.6  1994/03/11  21:16:38  markstro
- * Got rid of client_data data types.
- *
- * Revision 1.5  1994/02/01  21:17:16  markstro
- * Unknown
- *
- * Revision 1.4  1994/02/01  18:49:39  markstro
- * Made the declaration of read vars dynamic -- no more MAXREADVARS
- *
- * Revision 1.3  1994/01/31  20:17:12  markstro
- * Make sure that all source files have CVS log.
 -*/
 
 /**1************************ INCLUDE FILES ****************************/
@@ -67,15 +17,6 @@
 #include <stdlib.h>
 #include "mms.h"
 
-/**2************************* LOCAL MACROS ****************************/
-
-/**3************************ LOCAL TYPEDEFS ***************************/
-
-/**4***************** DECLARATION LOCAL FUNCTIONS *********************/
-
-/**5*********************** LOCAL VARIABLES ***************************/
-
-/**6**************** EXPORTED FUNCTION DEFINITIONS ********************/
 /*--------------------------------------------------------------------*\
  | FUNCTION     : read_datainfo
  | COMMENT      :
@@ -87,14 +28,23 @@ char *read_datainfo (FILE_DATA *fd) {
 
    static char   err_buf[512];
    long   count, nline = 0;
-   char   line[MAXDATALNLEN], linecopy[MAXDATALNLEN];
+   static char   *line = NULL;
+   static char *linecopy = NULL;
    PUBVAR   *var;
    char   *key, *countstr, *endptr;
 
    Mnreads = 0;
 
-   if (!(fgets (fd->info, MAXDATALNLEN, fd->fp))) {
-      (void)sprintf (err_buf, "Can't read data file info string\n%s", fd->name);
+   if (line == NULL) {
+	   line = (char *) umalloc(max_data_ln_len * sizeof(char));
+   }
+
+   if (linecopy == NULL) {
+	   linecopy = (char *) umalloc(max_data_ln_len * sizeof(char));
+   }
+
+   if (!(fgets (fd->info, max_data_ln_len, fd->fp))) {
+      (void)snprintf (err_buf, 512, "Can't read data file info string\n%s", fd->name);
       return (err_buf);
    }
 
@@ -105,10 +55,10 @@ char *read_datainfo (FILE_DATA *fd) {
 **  Read the header of the data file.  The end of the header occures
 **  when a line starts with at least 4 "#"s.
 */
-   (void)strcpy (line, "");
+   (void)strncpy (line, "", max_data_ln_len);
    while (strncmp (line, "####", 4)) {
-      if ((fgets (line, MAXDATALNLEN, fd->fp)) == NULL) {
-         (void)sprintf (err_buf,"#### delimiter not found in data file\n%s", fd->name);
+      if ((fgets (line, max_data_ln_len, fd->fp)) == NULL) {
+         (void)snprintf (err_buf, 512, "#### delimiter not found in data file\n%s", fd->name);
          return (err_buf);
       }
 
@@ -145,11 +95,11 @@ char *read_datainfo (FILE_DATA *fd) {
 **    get key, check the var has been declared
 */
 
-            (void)strcpy(linecopy, line);
+            (void)strncpy(linecopy, line, max_data_ln_len);
             key = strtok(linecopy, " \t");
 
             if (key == NULL) {
-               (void)sprintf (err_buf,"Check format at line number %ld in\n%s\n%s", nline,
+               (void)snprintf (err_buf, 512, "Check format at line number %ld in\n%s\n%s", nline,
                   fd->name, line);
                return (err_buf);
             }
@@ -160,7 +110,7 @@ char *read_datainfo (FILE_DATA *fd) {
             countstr = strtok(NULL, " \t");
 
             if (countstr == NULL) {
-               (void)sprintf (err_buf,"Check format at line number %ld in\n%s\n%s", nline,
+               (void)snprintf (err_buf, 512, "Check format at line number %ld in\n%s\n%s", nline,
                   fd->name, line);
                return (err_buf);
             }
@@ -171,7 +121,7 @@ char *read_datainfo (FILE_DATA *fd) {
 				if (count > 0) {  // Old style Data files have variables with size 0. PRMS should now skip over these, as if they are not there.
 
 					if ((var = var_addr(key)) == NULL) {
-						(void)sprintf (err_buf,
+						(void)snprintf (err_buf,  512,
 							"Variable %s not declared at line number %ld in\n%s\n%s",
 							key, nline, fd->name, line);
 						return (err_buf);
@@ -187,7 +137,7 @@ char *read_datainfo (FILE_DATA *fd) {
 
 
 					if (errno || (count < 0)) {
-						(void)sprintf (err_buf,"Decoding %s at line number %ld in\n%s\n%s",
+						(void)snprintf (err_buf, 512, "Decoding %s at line number %ld in\n%s\n%s",
 							countstr, nline, fd->name, line);
 						return (err_buf);
 					}
@@ -226,8 +176,8 @@ char *read_datainfo (FILE_DATA *fd) {
 /*
 **   Read first line of data
 */
-   if (!(fgets (fd->line, MAXDATALNLEN, fd->fp))) {
-      (void)sprintf (err_buf,
+   if (!(fgets (fd->line, max_data_ln_len, fd->fp))) {
+      (void)snprintf (err_buf, 512,
          "read_datainfo: Data for first timestep not found in file %s\n",
          fd->name);
       return (err_buf);
@@ -235,6 +185,3 @@ char *read_datainfo (FILE_DATA *fd) {
 
    return (NULL);
 }
-/**7****************** LOCAL FUNCTION DEFINITIONS *********************/
-
-/**8************************** TEST DRIVER ****************************/

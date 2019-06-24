@@ -5,18 +5,17 @@
 ! Declared Parameters: frost_temp
 !***********************************************************************
       INTEGER FUNCTION frost_date()
-      USE PRMS_MODULE, ONLY: Process, Nhru, Version_frost_date, Frost_date_nc
-      USE PRMS_BASIN, ONLY: Timestep, Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
+      USE PRMS_MODULE, ONLY: Process, Nhru
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
-      USE PRMS_SOLTAB, ONLY: Hemisphere
-      USE PRMS_OBS, ONLY: Jsol
+      USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
 ! Functions
-      INTRINSIC INDEX, INT
-      INTEGER, EXTERNAL :: declmodule, declparam, getparam, get_ftnunit, get_season
-      EXTERNAL read_error, write_integer_param
+      INTRINSIC NINT, DBLE
+      INTEGER, EXTERNAL :: declparam, getparam, get_season
+      EXTERNAL read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
-      REAL, SAVE :: Frost_temp
+      REAL, SAVE, ALLOCATABLE :: Frost_temp(:)
 ! Local Variables
       ! fall_frost: The number of solar days after winter solstice of
       !             the first killing frost of the fall
@@ -30,13 +29,13 @@
       DOUBLE PRECISION, SAVE :: basin_fall_frost, basin_spring_frost
       INTEGER, SAVE :: oldSeason, fallFrostCount, springFrostCount, fall1, spring1
       INTEGER, SAVE :: switchToSpringToday, switchToFallToday, Iunit
-      INTEGER, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
       INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
-      CHARACTER(LEN=10), PARAMETER :: MODNAME = 'frost_date'
-      CHARACTER(LEN=26), PARAMETER :: PROCNAME = 'Transpiration Period'
+      CHARACTER(LEN=10), SAVE :: MODNAME
+      CHARACTER(LEN=80), SAVE :: Version_frost_date
 !***********************************************************************
-      frost_date = 1
+      frost_date = 0
 
       IF ( Process(:3)=='run' ) THEN
         season = get_season()
@@ -65,7 +64,7 @@
             j = Hru_route_order(jj)
             currentFallFrost(j) = 0
             IF ( currentSpringFrost(j)==0 ) currentSpringFrost(j) = spring1
-            springFrostSum(j) = springFrostSum(j) + currentSpringFrost(j)
+            springFrostSum(j) = springFrostSum(j) + DBLE( currentSpringFrost(j) )
           ENDDO
 
 ! If this is the first timestep of spring, unset the
@@ -78,7 +77,7 @@
             j = Hru_route_order(jj)
             currentSpringFrost(j) = 0
             IF ( currentFallFrost(j)==0 ) currentFallFrost(j) = fall1
-            fallFrostSum(j) = fallFrostSum(j) + currentFallFrost(j)
+            fallFrostSum(j) = fallFrostSum(j) + DBLE( currentFallFrost(j) )
           ENDDO
         ENDIF
 
@@ -87,26 +86,26 @@
         IF ( season==2 ) THEN
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Tmin_hru(j)<=Frost_temp .AND. currentFallFrost(j)==0 ) currentFallFrost(j) = Jsol
+            IF ( Tmin_hru(j)<=Frost_temp(j) .AND. currentFallFrost(j)==0 ) currentFallFrost(j) = Jsol
           ENDDO
 ! This is the spring phase, look for the latest spring frost.
         ELSE
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Tmin_hru(j)<=Frost_temp ) currentSpringFrost(j) = Jsol
+            IF ( Tmin_hru(j)<=Frost_temp(j) ) currentSpringFrost(j) = Jsol
           ENDDO
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = '$Id: frost_date.f90 4431 2012-04-23 18:59:02Z rsregan $'
-        Frost_date_nc = INDEX( Version_frost_date, 'Z' )
-        j = INDEX( Version_frost_date, '.f90' ) + 3
-        IF ( declmodule(Version_frost_date(6:j), PROCNAME, Version_frost_date(j+2:Frost_date_nc))/=0 ) STOP
+        Version_frost_date = 'frost_date.f90 2016-03-04 17:57:51Z'
+        CALL print_module(Version_frost_date, 'Preprocessing               ', 90)
+        MODNAME = 'frost_date'
 
-        IF ( declparam(MODNAME, 'frost_temp', 'one', 'real', &
-             '28.0', '-10.0', '32.0', &
-             'Temperature of killing frost', 'Temperature of killing frost', &
-             'degrees')/=0 ) CALL read_error(1, 'frost_temp')
+        ALLOCATE ( Frost_temp(Nhru) )
+        IF ( declparam(MODNAME, 'frost_temp', 'nhru', 'real', &
+     &       '28.0', '-10.0', '32.0', &
+     &       'Temperature of killing frost', 'Temperature of killing frost', &
+     &       'temp_units')/=0 ) CALL read_error(1, 'frost_temp')
 
 ! Allocate arrays for local variables
         ALLOCATE ( fall_frost(Nhru), spring_frost(Nhru) )
@@ -114,26 +113,23 @@
         ALLOCATE ( currentFallFrost(Nhru), currentSpringFrost(Nhru) )
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( getparam(MODNAME, 'frost_temp', 1, 'real', Frost_temp)/=0 ) CALL read_error(2, 'frost_temp')
-        IF ( Timestep==0 ) THEN
-          fall_frost = 0
-          spring_frost = 0
-          currentFallFrost = 0
-          currentSpringFrost = 0
-          fallFrostSum = 0
-          springFrostSum = 0
-        ENDIF
+        IF ( getparam(MODNAME, 'frost_temp', Nhru, 'real', Frost_temp)/=0 ) CALL read_error(2, 'frost_temp')
+        fall_frost = 0
+        spring_frost = 0
+        currentFallFrost = 0
+        currentSpringFrost = 0
+        fallFrostSum = 0.0D0
+        springFrostSum = 0.0D0
         fallFrostCount = 0
         springFrostCount = 0
-        Iunit = get_ftnunit(351)
-        OPEN (Iunit, FILE='frost_date.param')
+        CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
         IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
-          spring1 = 0
-          fall1 = 366
+          spring1 = 1
+          fall1 = 365
         ELSE
-          spring1 = 366
-          fall1 = 0
+          spring1 = 365
+          fall1 = 1
         ENDIF
 
       ELSEIF ( Process(:5)=='clean' ) THEN
@@ -141,8 +137,14 @@
         basin_spring_frost = 0.0D0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          fall_frost(j) = fallFrostSum(j)/fallFrostCount
-          spring_frost(j) = springFrostSum(j)/springFrostCount
+          IF ( fallFrostCount==0 ) fallFrostCount = 1
+          fall_frost(j) = NINT( fallFrostSum(j)/DBLE( fallFrostCount ) )
+          IF ( fallFrostCount==0 ) fallFrostCount = 1
+          spring_frost(j) = NINT( springFrostSum(j)/DBLE( springFrostCount ) )
+          fall_frost(j) = fall_frost(j) + 10
+          IF ( fall_frost(j)>365 ) fall_frost(j) = 365
+          spring_frost(j) = spring_frost(j) + 10
+          IF ( spring_frost(j)>365 ) spring_frost(j) = spring_frost(j) - 365
           basin_fall_frost = basin_fall_frost + fall_frost(j)*Hru_area(j)
           basin_spring_frost = basin_spring_frost + spring_frost(j)*Hru_area(j)
         ENDDO
@@ -151,21 +153,20 @@
 
         CALL write_integer_param(Iunit, 'fall_frost', 'nhru', Nhru, fall_frost)
         CALL write_integer_param(Iunit, 'spring_frost', 'nhru', Nhru, spring_frost)
-        basin_fall(1) = INT ( basin_fall_frost )
-        basin_spring(1) = INT ( basin_spring_frost )
+        basin_fall(1) = NINT( basin_fall_frost )
+        basin_spring(1) = NINT( basin_spring_frost )
         CALL write_integer_param(Iunit, 'basin_fall_frost', 'one', 1, basin_fall)
         CALL write_integer_param(Iunit, 'basin_spring_frost', 'one', 1, basin_spring)
       ENDIF
 
-      frost_date = 0
       END FUNCTION frost_date
 
 !*************************************************************
 ! Figure out if the current solar day is in "spring" or "fall"
 !*************************************************************
       INTEGER FUNCTION get_season()
-      USE PRMS_SOLTAB, ONLY: Hemisphere
-      USE PRMS_OBS, ONLY: Jsol
+      USE PRMS_BASIN, ONLY: Hemisphere
+      USE PRMS_SET_TIME, ONLY: Jsol
 !*************************************************************
       get_season = 2 ! default is fall frost
       IF ( Hemisphere==0 ) THEN ! Northern Hemisphere

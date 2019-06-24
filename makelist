@@ -1,19 +1,22 @@
 
 #-------------------------------------------------------------------
-# $Id: makelist 3545 2011-08-08 16:36:42Z rsregan $
+# $Id: makelist 8328 2016-06-13 20:36:12Z rsregan $
 #-------------------------------------------------------------------
 
-#MOWSDIR     = ./
-#MMFDIR      = $(MOWSDIR)/mmf
-#PRMSDIR     = $(MOWSDIR)/prms
+#MMFDIR      = ./mmf
+#LIBDIR      = ../../lib
+#PRMSDIR    = ./prms
+#BINDIR      = ../../bin
+#MMFLIB      = $(LIBDIR)/libmmf.a
 
 #########################################################
 # Configure tags for each system
 ##########################################################
 ARC		= LINUX
 
-OPTLEVEL	= -g
-#OPTLEVEL	= -O3 -Bstatic
+#OPTLEVEL	= -g
+#OPTLEVEL	= -O -Bstatic
+OPTLEVEL	= -O --static
 LDFLAGS		=$(OPTLEVEL)
 
 ##########################################################

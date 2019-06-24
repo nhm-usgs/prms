@@ -1,6 +1,15 @@
-/*
- * $Id: print_model_info.c 6903 2012-05-15 17:41:28Z markstro $
- */
+/*+
+ * United States Geological Survey
+ *
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : print_model_info
+ * COMMENT  :
+ *
+ * $Id$
+ *
+-*/
+
+/**1************************ INCLUDE FILES ****************************/
 #define PRINT_MODEL_INFO_C
 #include <string.h>
 #include <stdio.h>
@@ -18,13 +27,13 @@
 \*--------------------------------------------------------------------*/
 int print_model_info (void) {
 
-  char pathname[MAXDATALNLEN];
+  char pathname[MAXPATHLEN];
   FILE *model_info_file;
   int i, j;
   MODULE_DATA *module;
   LIST *vlist, *plist;
 
-	(void)sprintf (pathname, "%s.mod_name", MAltContFile);
+	(void)snprintf (pathname, MAXPATHLEN, "%s.mod_name", MAltContFile);
 
 	if ((model_info_file = fopen (pathname, "w")) == NULL) {
 		(void)fprintf(stderr, "ERROR - print_model_info - creating file '%s'\n", pathname);
@@ -66,9 +75,7 @@ int print_model_info (void) {
 	}
 	//fprintf(model_info_file, "\n\n\n\n\n\n");
 
- 
   fclose(model_info_file);
 
   return(0);
-
 }

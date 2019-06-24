@@ -1,25 +1,16 @@
-/**************************************************************************
- * sort_vars.c: sorts the pubvar array so that the key for each
- * structure is in increasing alphabetical order
+/*+
+ * United States Geological Survey
  *
- * $Id: sort_vars.c 3058 2007-01-25 22:25:59Z rsregan $
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : sort_vars
+ * COMMENT  : sorts the pubvar array so that the key for each
+ *            structure is in increasing alphabetical order
  *
-   $Revision: 3058 $
-        $Log: sort_vars.c,v $
-        Revision 1.5  1996/02/19 20:01:12  markstro
-        Now lints pretty clean
+ * $Id$
+ *
+-*/
 
-        Revision 1.4  1994/11/10 23:26:51  markstro
-        (1)  Some memory fixes -- results of malloc_dbg.
-        (2)  More stuff removed from set menu.
-
- * Revision 1.3  1994/09/30  14:55:21  markstro
- * Initial work on function prototypes.
- *
- * Revision 1.2  1994/01/31  20:17:34  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #ifdef MALLOC_FUNC_CHECK
 #include <malloc_dbg.h>
 #endif

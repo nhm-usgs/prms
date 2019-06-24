@@ -1,26 +1,16 @@
-/**************************************************************************
- * var_addr.c: 
+/*+
+ * United States Geological Survey
  *
- * returns a pointer to a PUBVAR struct which contains the given key
- * returns NULL if key not found
+ * PROJECT  : Modular Modeling System (MMS)
+ * FUNCTION : var_addr
+ * COMMENT  : returns a pointer to a PUBVAR struct which contains the given key
+ *            returns NULL if key not found
  *
- * $Id: var_addr.c 3058 2007-01-25 22:25:59Z rsregan $
+ * $Id$
  *
-   $Revision: 3058 $
-        $Log: var_addr.c,v $
-        Revision 1.5  1999/10/22 17:14:38  markstro
-        Added private variables
+-*/
 
-        Revision 1.4  1996/02/19 20:01:23  markstro
-        Now lints pretty clean
-
-        Revision 1.3  1994/09/30 14:55:35  markstro
-        Initial work on function prototypes.
-
- * Revision 1.2  1994/01/31  20:17:54  markstro
- * Make sure that all source files have CVS log.
- *
- **************************************************************************/
+/**1************************ INCLUDE FILES ****************************/
 #define VAR_ADDR_C
 #include <stdio.h>
 #include <string.h>
