@@ -469,7 +469,7 @@
       right_day = 1
       IF ( Year/=Nowyear .OR. Month/=Nowmonth .OR. Day/=Nowday ) right_day = 0
       IF ( Ios/=0 .OR. right_day==0 ) THEN
-        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios 
+        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
         IF ( Ios==-1 ) THEN
           PRINT *, '       End-of-File found'
         ELSEIF ( right_day==0 ) THEN

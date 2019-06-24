@@ -992,29 +992,31 @@
             ENDIF
           ENDIF
           IF ( Active_glacier==2 ) Glacr_albedo(i) = Albedo_ice(i) !glacr_albedo doesn't change if snow field but could get zeroed out
-          IF ( Nowyear >= Starttime(1)+10 .AND. MOD(Nowyear-Starttime(1),5)==0 ) THEN
-            Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 10 years of data
-            Glacr_delsnow(i) = 10.0*(Glacr_5avsnow1(i) - Glacr_5avsnow(i))/Glacr_5avsnow1(i) !number of 10 percent (*100.0/10.0) changes
-          ENDIF
-          !keep before restart
-          IF ( MOD(Nowyear-Starttime(1),5)==0 ) THEN
-            IF ( Nowyear-Starttime(1)==5 ) THEN
-              Glacr_air_5avtemp1(i) = Glacr_air_5avtemp(i)
-              Glacr_5avsnow1(i) = Glacr_5avsnow(i)
+          IF ( isglacier==1 ) THEN
+            IF (Nowyear >= Starttime(1)+10 .AND. MOD(Nowyear-Starttime(1),5)==0 ) THEN
+              Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 10 years of data
+              Glacr_delsnow(i) = 10.0*(Glacr_5avsnow1(i) - Glacr_5avsnow(i))/Glacr_5avsnow1(i) !number of 10 percent (*100.0/10.0) changes
             ENDIF
-            Glacr_air_5avtemp(i) = 0.0 !zero out for new year restart
-            Glacr_5avsnow(i) = 0.0 !zero out for new year restart
-          ENDIF
-          Glacr_air_avtemp(i) = 0.0 !zero out for new year restart
-        ENDIF !end start of year calculations
+            !keep before restart
+            IF ( MOD(Nowyear-Starttime(1),5)==0 ) THEN
+              IF ( Nowyear-Starttime(1)==5 ) THEN
+                Glacr_air_5avtemp1(i) = Glacr_air_5avtemp(i)
+                Glacr_5avsnow1(i) = Glacr_5avsnow(i)
+              ENDIF
+              Glacr_air_5avtemp(i) = 0.0 !zero out for new year restart
+              Glacr_5avsnow(i) = 0.0 !zero out for new year restart
+            ENDIF
+            Glacr_air_avtemp(i) = 0.0 !zero out for new year restart
+          ENDIF !end start of year calculations
+        ENDIF
 
 ! Do for summer
-        IF ( isglacier==1 .AND. Julwater>151 .AND. Julwater<244) THEN ! Now following McGrath et al 2017, temp June-August, 92 days
-          Yrdays5 = Yrdays5 + 1
-          Glacr_air_5avtemp(i) = ( Glacr_air_5avtemp(i)*(Yrdays5-1)+ (Tminc(i)+Tavgc(i))*0.5 )/Yrdays5
-        ENDIF
+        IF ( isglacier==1 ) THEN
+          IF (Julwater>151 .AND. Julwater<244) THEN ! Now following McGrath et al 2017, temp June-August, 92 days
+            Yrdays5 = Yrdays5 + 1
+            Glacr_air_5avtemp(i) = ( Glacr_air_5avtemp(i)*(Yrdays5-1)+ (Tminc(i)+Tavgc(i))*0.5 )/Yrdays5
+          ENDIF
 ! Do for every time step
-        IF ( isglacier==1) THEN
           Glacr_air_avtemp(i) = ( Glacr_air_avtemp(i)*(Julwater-1)+ (Tminc(i)+Tavgc(i))*0.5 )/Julwater
           Glacr_5avsnow(i) = Glacr_5avsnow(i) + Net_snow(i)/5.0
         ENDIF
