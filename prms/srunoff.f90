@@ -756,6 +756,7 @@
             ENDIF
           ENDIF
 
+          availh2o = Intcp_changeover(i) + Net_rain(i)
           IF ( Isglacier==1 ) THEN ! Ashley glacier
             temp = Snowmelt(i) + glcrmltb !Snowmelt or 0.0
             temp2 = availh2o*(1.0-Glacier_frac(i))
@@ -767,10 +768,6 @@
           ENDIF
 
         ENDIF
-
-        availh2o = Intcp_changeover(i) + Net_rain(i)
-        CALL compute_infil(availh2o, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
-     &                     Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i))
 
         IF ( Dprst_flag==1 ) THEN
           Dprst_in(i) = 0.0D0

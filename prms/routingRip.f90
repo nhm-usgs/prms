@@ -620,6 +620,10 @@
         ALLOCATE ( C1(Nsegment), C2(Nsegment), C0(Nsegment), Ts(Nsegment), Ts_i(Nsegment) )
       ENDIF
 
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) THEN
+        IF ( getparam(MODNAME, 'K_coef', Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
+      ENDIF
+
 ! Riparian storage variables
       IF ( Ripst_flag==1 ) THEN
         Basin_bankst_seep = 0.D0
@@ -752,7 +756,6 @@
       ! Begin the loops for ordering segments
       ALLOCATE ( x_off(Nsegment) )
       x_off = 0
-      k_coef = 1
       Segment_order = 0
       lval = 0
       iseg = 0
@@ -763,7 +766,7 @@
           ! If segment "i" has not been crossed out consider it, else continue
           IF ( x_off(i)==1 ) CYCLE
           iseg = i
-          ! Test to see if segment "i" is the to segment from other segments
+          ! Test to see if segment "i" is the tosegment from other segments
           test = 1
           DO j = 1, Nsegment
             IF ( Tosegment(j)==i ) THEN
@@ -922,7 +925,7 @@
 
       ENDDO
       IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
-      DEALLOCATE ( k_coef, X_coef)
+      DEALLOCATE ( K_coef, X_coef)
 
       END FUNCTION routinginit
 

@@ -110,7 +110,6 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_precip(:), Lake_sroff(:), Lake_interflow(:), Lake_outvol_ts(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_seep_in(:), Lake_evap(:), Lake_2gw(:), Lake_outq2(:)
 !   Declared Parameters
-      REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
       ! lake_segment_id only required if cascades are active, otherwise use hru_segment
       INTEGER, SAVE, ALLOCATABLE :: Obsout_lake(:), Lake_out2(:), Nsos(:), Ratetbl_lake(:), Lake_segment_id(:)
       REAL, SAVE, ALLOCATABLE :: Lake_qro(:), Lake_coef(:), Elev_outflow(:), Weir_coef(:), Weir_len(:)
@@ -286,15 +285,6 @@
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
-
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
-        ALLOCATE ( Segment_flow_init(Nsegment) )
-        IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
-     &       '0.0', '0.0', '1.0E7', &
-     &       'Initial flow in each stream segment', &
-     &       'Initial flow in each stream segment', &
-     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
-      ENDIF
 
       ! Lake declared variables
       ALLOCATE ( Lake_inflow(Nlake) )
@@ -640,16 +630,6 @@
       DOUBLE PRECISION :: tmp
 !***********************************************************************
       muskingum_lake_init = 0
-
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
-        IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
-     &       CALL read_error(2,'segment_flow_init')
-        DO i = 1, Nsegment
-          Seg_outflow(i) = Segment_flow_init(i)
-        ENDDO
-        DEALLOCATE ( Segment_flow_init )
-      ENDIF
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment

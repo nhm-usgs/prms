@@ -150,7 +150,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nsegment
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -164,8 +164,7 @@
 !***********************************************************************
       muskingum_init = 0
 
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
-
+      !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
@@ -240,10 +239,10 @@
 
 ! current inflow to the segment is the time weighted average of the outflow
 ! of the upstream segments plus the lateral HRU inflow plus any gains.
-          currin = 0.0D0 !Seg_lateral_inflow(iorder) route this to outlet to be like mizuroute
+          currin = Seg_lateral_inflow(iorder) !note, this routes to inlet and mizuroute routes to outlet
           IF ( Obsin_segment(iorder)>0 ) Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
           currin = currin + Seg_upstream_inflow(iorder)
-          Seg_inflow(iorder) = Seg_inflow(iorder) + currin + Seg_lateral_inflow(iorder)
+          Seg_inflow(iorder) = Seg_inflow(iorder) + currin
           Inflow_ts(iorder) = Inflow_ts(iorder) + currin
           Currinsum(iorder) = Currinsum(iorder) + Seg_upstream_inflow(iorder)
 
@@ -262,7 +261,6 @@
 ! Outflow_ts is the value from last hour
               Outflow_ts(iorder) = Inflow_ts(iorder)
             ENDIF
-            Outflow_ts(iorder) = Outflow_ts(iorder)+Seg_lateral_inflow(iorder) !add it here instead to be like mizuroute
 
             ! pastin is equal to the Inflow_ts on the previous routed timestep
             Pastin(iorder) = Inflow_ts(iorder)
