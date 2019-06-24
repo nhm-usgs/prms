@@ -135,13 +135,6 @@
      &     'Mannings roughness coefficient for each segment', &
      &     'dimensionless')/=0 ) CALL read_error(1, 'mann_n')
 
-        ALLOCATE ( Seg_width(Nsegment) )
-        IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
-     &       '15.0', '0.18', '40000.0', &
-     &       'Segment river width', &
-     &       'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
-     &       'meters')/=0 ) CALL read_error(1, 'seg_width')
-
         ALLOCATE ( Seg_slope(Nsegment) )
         IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
      &     '0.0001', '0.0000001', '2.0', &
@@ -155,6 +148,15 @@
      &     'Length of each segment', &
      &     'Length of each segment, bounds based on CONUS', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
+      ENDIF
+
+      IF ( Strmflow_flag==6 .OR. Model==99 ) THEN
+        ALLOCATE ( Seg_width(Nsegment) )
+        IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
+     &       '15.0', '0.18', '40000.0', &
+     &       'Segment river width', &
+     &       'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
+     &       'meters')/=0 ) CALL read_error(1, 'seg_width')
       ENDIF
 
       IF ( Strmflow_flag==7 .OR. Model==99 ) THEN
@@ -371,9 +373,11 @@
 
       IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
-        IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
         IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
         IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+      ENDIF
+      IF ( Strmflow_flag==6 ) THEN
+        IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
       ENDIF
       IF ( Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
@@ -520,9 +524,7 @@
       ierr = 0
       DO i = 1, Nsegment
         IF ( Strmflow_flag==7 ) THEN ! muskingum_mann
-!          velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*
-!     &               ( Seg_width(i)*Seg_depth(i)/( Seg_width(i)+2.*Seg_depth(i) ) )**(2./3.)
-          velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say w>>d
+          velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say width>>depth
           K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
         ENDIF
 
