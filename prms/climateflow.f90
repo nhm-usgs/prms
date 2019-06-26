@@ -84,7 +84,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_upstream_inflow(:), Seg_lateral_inflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_outflow(:), Seg_inflow(:)
       ! glacr
-      REAL, SAVE, ALLOCATABLE :: Glacier_frac(:), Alt_above_ela(:), Snowfld_frac(:)
+      REAL, SAVE, ALLOCATABLE :: Glacier_frac(:), Alt_above_ela(:), Glrette_frac(:)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Soil_rechr_max(:), Sat_threshold(:)
       REAL, SAVE, ALLOCATABLE :: Snowinfil_max(:), Imperv_stor_max(:)
@@ -545,10 +545,10 @@
              'Fraction of glaciation (0=none; 1=100%)',                   &
              'decimal fraction', Glacier_frac)/=0 ) CALL read_error(3, 'glacier_frac')
 
-        ALLOCATE ( Snowfld_frac(Nhru) )
-          IF ( declvar(MODNAME, 'snowfld_frac', 'nhru', Nhru, 'real',     &
+        ALLOCATE ( Glrette_frac(Nhru) )
+          IF ( declvar(MODNAME, 'glrette_frac', 'nhru', Nhru, 'real',     &
              'Fraction of snow field (too small for glacier dynamics)',   &
-             'decimal fraction', Snowfld_frac)/=0 )  CALL read_error(3, 'snowfld_frac')
+             'decimal fraction', Glrette_frac)/=0 )  CALL read_error(3, 'glrette_frac')
 
         ALLOCATE ( Alt_above_ela(Nhru) )
         IF ( declvar(MODNAME, 'alt_above_ela', 'nhru', Nhru, 'real',      &
@@ -1377,7 +1377,7 @@
         WRITE ( Restart_outunit ) Pkwater_equiv
         IF ( Glacier_flag==1 ) THEN
           WRITE ( Restart_outunit) Glacier_frac
-          WRITE ( Restart_outunit) Snowfld_frac
+          WRITE ( Restart_outunit) Glrette_frac
           WRITE ( Restart_outunit) Alt_above_ela
         ENDIF
         WRITE ( Restart_outunit ) Soil_moist
@@ -1408,7 +1408,7 @@
         READ ( Restart_inunit ) Pkwater_equiv
         IF ( Glacier_flag==1 ) THEN
           READ ( Restart_inunit) Glacier_frac
-          READ ( Restart_inunit) Snowfld_frac
+          READ ( Restart_inunit) Glrette_frac
           READ ( Restart_inunit) Alt_above_ela
         ENDIF
         READ ( Restart_inunit ) Soil_moist

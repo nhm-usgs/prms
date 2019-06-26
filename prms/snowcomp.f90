@@ -64,7 +64,7 @@
       REAL, SAVE, ALLOCATABLE :: Rad_trncf(:), Snarea_thresh(:), Snowpack_init(:)
       REAL, SAVE, ALLOCATABLE :: Snarea_curve(:, :)
       REAL, SAVE, ALLOCATABLE :: Glacr_layer(:), Albedo_coef(:), Albedo_ice(:)
-      REAL, SAVE, ALLOCATABLE :: Glacr_freeh2o_cap(:), Glacier_frac_init(:), Snowfld_frac_init(:)
+      REAL, SAVE, ALLOCATABLE :: Glacr_freeh2o_cap(:), Glacier_frac_init(:), Glrette_frac_init(:)
 
       END MODULE PRMS_SNOW
 
@@ -169,37 +169,37 @@
 
         ALLOCATE ( Glacr_air_avtemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_avtemp', 'nhru', Nhru, 'real', &
-     &       'Current average year air temperature over glacier or snowfld HRU', &
+     &       'Current average year air temperature over glacier or glrette HRU', &
      &       'degrees Celsius', Glacr_air_avtemp)/=0 ) CALL read_error(3, 'glacr_air_avtemp')
 
        ALLOCATE ( Glacr_air_5avtemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_5avtemp', 'nhru', Nhru, 'real', &
-     &       'Current 5-yr average summer (June July Aug) air temperature over glacier or snowfld HRU', &
+     &       'Current 5-yr average summer (June July Aug) air temperature over glacier or glrette HRU', &
      &       'degrees Celsius', Glacr_air_5avtemp)/=0 ) CALL read_error(3, 'glacr_air_5avtemp')
 
         ALLOCATE ( Glacr_air_5avtemp1(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_5avtemp1', 'nhru', Nhru, 'real', &
-     &       'First 5-yr average summer temperature over glacier or snowfld HRU', &
+     &       'First 5-yr average summer temperature over glacier or glrette HRU', &
      &       'degrees Celsius', Glacr_air_5avtemp1)/=0 ) CALL read_error(3, 'glacr_air_5avtemp1')
 
         ALLOCATE ( Glacr_air_deltemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_deltemp', 'nhru', Nhru, 'real', &
-     &       'Change in 5-yr average air temperature over glacier or snowfld HRU from first', &
+     &       'Change in 5-yr average air temperature over glacier or glrette HRU from first', &
      &       'degrees Celsius', Glacr_air_deltemp)/=0 ) CALL read_error(3, 'glacr_air_deltemp')
 
        ALLOCATE ( Glacr_5avsnow(Nhru) )
         IF ( declvar(MODNAME, 'glacr_5avsnow', 'nhru', Nhru, 'real', &
-     &       'Current 5-yr average snow over glacier or snowfld HRU', &
+     &       'Current 5-yr average snow over glacier or glrette HRU', &
      &       'inches/yr', Glacr_5avsnow)/=0 ) CALL read_error(3, 'glacr_5avsnow')
 
         ALLOCATE ( Glacr_5avsnow1(Nhru) )
         IF ( declvar(MODNAME, 'glacr_5avsnow1', 'nhru', Nhru, 'real', &
-     &       'First 5-yr average snow over glacier or snowfld HRU', &
+     &       'First 5-yr average snow over glacier or glrette HRU', &
      &       'inches/yr', Glacr_5avsnow1)/=0 ) CALL read_error(3, 'glacr_5avsnow1')
 
         ALLOCATE ( Glacr_delsnow(Nhru) )
         IF ( declvar(MODNAME, 'glacr_delsnow', 'nhru', Nhru, 'real', &
-     &       'Change in 5-yr average snow over glacier or snowfld HRU from first', &
+     &       'Change in 5-yr average snow over glacier or glrette HRU from first', &
      &       'inches/yr', Glacr_delsnow)/=0 ) CALL read_error(3, 'glacr_delsnow')
 
         ALLOCATE ( Glacr_pk_temp(Nhru) )
@@ -249,7 +249,7 @@
 
         ALLOCATE ( Glacrcov_area(Nhru) )
         IF ( declvar(MODNAME, 'glacrcov_area', 'nhru', Nhru, 'real', &
-     &       'Ice-covered area on each glacier HRU or HRU with snow field at start of step', &
+     &       'Ice-covered area on each glacier HRU or HRU with glacierette at start of step', &
      &       'decimal fraction', Glacrcov_area)/=0 ) CALL read_error(3, 'glacrcov_area')
 
         ALLOCATE ( Glacr_pk_ice(Nhru) )
@@ -278,7 +278,7 @@
      &       'inches', Glacr_pst)/=0 ) CALL read_error(3, 'glacr_pst')
 
       IF ( declvar(MODNAME, 'basin_snowicecov', 'one', 1, 'double', &
-     &     'Basin area-weighted average snow and glacier and snowfld covered area', &
+     &     'Basin area-weighted average snow and glacier and glrette covered area', &
      &     'decimal fraction', Basin_snowicecov)/=0 ) CALL read_error(3, 'basin_snowicecov')
 
         ALLOCATE ( Glacr_freeh2o_cap(Nhru) )
@@ -305,12 +305,12 @@
      &       'Inital fraction of glaciation (0=none; 1=100%)', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'glacier_frac_init')
 
-          ALLOCATE ( Snowfld_frac_init(Nhru) )
-          IF ( declparam(MODNAME, 'snowfld_frac_init', 'nhru', 'real', &
+          ALLOCATE ( Glrette_frac_init(Nhru) )
+          IF ( declparam(MODNAME, 'glrette_frac_init', 'nhru', 'real', &
      &       '0.0', '0.0', '1.0', &
-     &       'Initial fraction of snow field (too small for glacier dynamics)', &
-     &       'Initial fraction of snow field (too small for glacier dynamics)', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'snowfld_frac_init')
+     &       'Initial fraction of glacierette (too small for glacier dynamics)', &
+     &       'Initial fraction of glacierette  (too small for glacier dynamics)', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'glrette_frac_init')
 
         ENDIF
       ENDIF
@@ -661,7 +661,7 @@
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv, Hru_route_order, Active_hrus, Hru_area_dble, &
      &    FEET2METERS, Elev_units, Hru_type
 !     USE PRMS_BASIN, ONLY: Hru_elev_feet
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Snowfld_frac, Alt_above_ela
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, ATAN, SNGL
@@ -763,8 +763,8 @@
           IF ( getparam(MODNAME, 'glacier_frac_init', Nhru, 'real', Glacier_frac_init)/=0 ) CALL read_error(2, 'glacier_frac_init')
           Glacr_albedo = 0.0
           Glacier_frac = Glacier_frac_init
-          IF ( getparam(MODNAME, 'snowfld_frac_init', Nhru, 'real', Snowfld_frac_init)/=0 ) CALL read_error(2, 'snowfld_frac_init')
-          Snowfld_frac = Snowfld_frac_init
+          IF ( getparam(MODNAME, 'glrette_frac_init', Nhru, 'real', Glrette_frac_init)/=0 ) CALL read_error(2, 'glrette_frac_init')
+          Glrette_frac = Glrette_frac_init
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             IF ( Glacier_frac(i)>0.0 ) THEN
@@ -780,13 +780,13 @@
                 Glacier_frac(i) = 0.0
               ENDIF
             ENDIF
-            IF ( Snowfld_frac(i)>0.0 ) THEN
+            IF ( Glrette_frac(i)>0.0 ) THEN
               IF ( Hru_type(i)==1 ) THEN
                 Glacr_albedo(i) = Albedo_ice(i)
               ELSE
-                PRINT *, 'Warning, snowfld_frac > 0, but hru_type not equal to 1, snowfld_frac set to 0'
-                PRINT *, 'in HRU ', i, 'snowfld_frac_init = ',Snowfld_frac_init(i)
-                Snowfld_frac(i) = 0.0
+                PRINT *, 'Warning, glrette_frac > 0, but hru_type not equal to 1, glrette_frac set to 0'
+                PRINT *, 'in HRU ', i, 'glrette_frac_init = ',Glrette_frac_init(i)
+                Glrette_frac(i) = 0.0
               ENDIF
             ENDIF
           ENDDO
@@ -874,7 +874,7 @@
      &    Basin_area_inv, Hru_route_order, Cov_type, INCH2M, FEET2METERS, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
      &    Hru_ppt, Prmx, Tmaxc, Tminc, Tavgc, Swrad, Potet, Transp_on, Tmax_allsnow_c
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Snowfld_frac, Alt_above_ela
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Julwater, Nowyear
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Canopy_covden, Hru_intcpevap
       IMPLICIT NONE
@@ -924,9 +924,9 @@
             Glacrb_melt(i) = 0.0 ! [inches]
             Glacr_evap(i) = 0.0 ! [inches]
             Glacr_pkwater_ante(i) = Glacr_pkwater_equiv(i)
-            IF ( Glacier_frac(i)>0.0 .OR. Snowfld_frac(i)>0.0 ) THEN
+            IF ( Glacier_frac(i)>0.0 .OR. Glrette_frac(i)>0.0 ) THEN
               IF (Glacier_frac(i)>0.0) Active_glacier = 1
-              IF (Snowfld_frac(i)>0.0) Active_glacier = 2
+              IF (Glrette_frac(i)>0.0) Active_glacier = 2
               Glacr_pk_den(i) = 0.917
               ! if melted whole active layer make 0 deg and no holding capacity
               IF ( Glacr_layer(i)==0.0 .OR. Glacr_pk_depth(i)>1.0D3 ) THEN
@@ -991,7 +991,7 @@
               Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)+300.0)/200.0 )
             ENDIF
           ENDIF
-          IF ( Active_glacier==2 ) Glacr_albedo(i) = Albedo_ice(i) !glacr_albedo doesn't change if snow field but could get zeroed out
+          IF ( Active_glacier==2 ) Glacr_albedo(i) = Albedo_ice(i) !glacr_albedo doesn't change if glacierette but could get zeroed out
           IF ( isglacier==1 ) THEN
             IF (Nowyear >= Starttime(1)+10 .AND. MOD(Nowyear-Starttime(1),5)==0 ) THEN
               Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 10 years of data
@@ -1068,7 +1068,7 @@
         ! initial snow covered area is complete (1)
         IF ( Newsnow(i)==1 .AND. Pkwater_equiv(i)<DNEARZERO ) Snowcov_area(i) = 1.0 ! [fraction of area]
         IF ( Active_glacier==1 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glacier_frac(i) ! calculate before melt
-        IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Snowfld_frac(i) ! calculate before melt
+        IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glrette_frac(i) ! calculate before melt
 
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
@@ -1097,7 +1097,7 @@
 ! FOLLOWING does basal melt on glacier
 !Paterson 2010 says 12 mm/yr for friction and geothermal heating
         IF ( Active_glacier==1 ) Glacrb_melt(i) = 12.0*0.03937/365.242*Glacier_frac(i)
-        IF ( Active_glacier==2 ) Glacrb_melt(i) = 12.0*0.03937/365.242*Snowfld_frac(i) !since not moving much, maybe =0
+        IF ( Active_glacier==2 ) Glacrb_melt(i) = 12.0*0.03937/365.242*Glrette_frac(i) !since not moving much, maybe =0
 
         ! If there is still a snowpack
         IF ( Pkwater_equiv(i)>0.0D0 ) THEN
@@ -1447,7 +1447,7 @@
 
         frac = 1.0
         IF ( Active_glacier==1 ) frac = (1.0 - Glacier_frac(i))
-        IF ( Active_glacier==2 ) frac = (1.0 - Snowfld_frac(i))
+        IF ( Active_glacier==2 ) frac = (1.0 - Glrette_frac(i))
         ! Sum volumes for basin totals
         Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*Hru_area(i)*frac ) !don't include stuff melting into glacier
         Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*DBLE( Hru_area(i)*frac ) !don't include stuff melting into glacier

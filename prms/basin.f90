@@ -166,7 +166,7 @@
 ! when GSFLOW can run in multi-mode will need these arrays
       IF ( Model/=0 .OR. Cascadegw_flag>0 ) ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
       ! potet_pm, potet_pm_sta, or potet_pt
-      IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) ALLOCATE ( Hru_elev_feet(Nhru) )
+      IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Glacier_flag==1 ) ALLOCATE ( Hru_elev_feet(Nhru) )
       ! ide_dist, potet_pm, potet_pm_sta, potet_pt, or stream_temp
       IF ( Precip_flag==5 .OR. Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Stream_temp_flag==1 ) &
      &     ALLOCATE ( Hru_elev_meters(Nhru) )
