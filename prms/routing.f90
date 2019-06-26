@@ -25,7 +25,7 @@
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
       REAL, SAVE, ALLOCATABLE :: Seg_depth(:), K_coef(:), X_coef(:), Mann_n(:), Seg_width(:), Segment_flow_init(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:) !in stream_temp too
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
       END MODULE PRMS_ROUTING
 
 !***********************************************************************
@@ -59,7 +59,7 @@
       INTEGER FUNCTION routingdecl()
       USE PRMS_ROUTING
       USE PRMS_MODULE, ONLY: Nhru, Nsegment, Model, Strmflow_flag, Cascade_flag, &
-     &    Init_vars_from_file
+     &    Stream_temp_flag, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -134,7 +134,9 @@
      &     'Mannings roughness coefficient', &
      &     'Mannings roughness coefficient for each segment', &
      &     'dimensionless')/=0 ) CALL read_error(1, 'mann_n')
+      ENDIF
 
+      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 .OR. Model==99 ) THEN
         ALLOCATE ( Seg_slope(Nsegment) )
         IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
      &     '0.0001', '0.0000001', '2.0', &
@@ -316,7 +318,8 @@
       INTEGER FUNCTION routinginit()
       USE PRMS_ROUTING
       USE PRMS_MODULE, ONLY: Nsegment, Nhru, Init_vars_from_file, Strmflow_flag, &
-     &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag !, Print_debug
+     &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag, &
+     &    Stream_temp_flag !, Print_debug
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: FT2_PER_ACRE, DNEARZERO, Active_hrus, Hru_route_order, Hru_area_dble, NEARZERO !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
@@ -373,7 +376,9 @@
 
       IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
-        IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
+      ENDIF
+      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7) THEN
+       IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
         IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
       ENDIF
       IF ( Strmflow_flag==6 ) THEN
@@ -381,6 +386,20 @@
       ENDIF
       IF ( Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
+      ENDIF
+
+! find segments that are too short and print them out as they are found
+      ierr = 0
+      DO i = 1, Nsegment
+         IF ( Seg_length(i)<NEARZERO ) THEN
+            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+            ierr = 1
+         ENDIF
+      ENDDO
+! exit if there are any segments that are too short
+      IF ( ierr==1 ) THEN
+         Inputerror_flag = ierr
+         RETURN
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')

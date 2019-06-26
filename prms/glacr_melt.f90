@@ -75,7 +75,7 @@
       DOUBLE PRECISION, SAVE :: Basin_gl_storstart
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_mb_yrcumul(:), Delta_volyr(:), Prev_vol(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Prev_area(:), Gl_mb_yrcumul(:), Gl_area(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumul(:), Glnet_ar_delta(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumul(:), Glnet_ar_delta(:), Gl_mbc_yrend(:)
 
       !****************************************************************
       !   Declared Parameters
@@ -181,6 +181,11 @@
       IF ( declvar(MODNAME, 'gl_mb_yrcumul', 'nhru', Nhru, 'double', &
      &     'Yearly mass balance for each glacier, indexed by Glacr_tag', &
      &     'inches', Gl_mb_yrcumul)/=0 ) CALL read_error(3, 'gl_mb_yrcumul')
+
+      ALLOCATE ( Gl_mb_cumul(Nhru) )
+      IF ( declvar(MODNAME, 'gl_mb_cumul', 'nhru', Nhru, 'double', &
+     &     'Cumulative mass balance for each glacier since start day, indexed by Glacr_tag', &
+     &     'inches', Gl_mb_cumul)/=0 ) CALL read_error(3, 'gl_mb_cumul')
 
       IF ( declvar(MODNAME, 'basin_gl_area', 'one', 1, 'double',          &
      &     'Basin area-weighted average glacier-covered area', &
@@ -347,7 +352,7 @@
       ENDIF
 
       ! local arrays
-      ALLOCATE ( Hru_area_inch2(Nhru))
+      ALLOCATE ( Hru_area_inch2(Nhru), Gl_mbc_yrend(Nhru) )
 
 ! declare parameters
       ALLOCATE ( Tohru(Nhru) )
@@ -489,6 +494,7 @@
         Delta_volyr = 0.0D0
         Gl_mb_yrcumul = 0.0D0
         Gl_mb_cumul = 0.0D0
+        Gl_mbc_yrend = 0.0D0
         Hru_slope_ts = Hru_slope
         Basal_elev = Hru_elev_ts ! Hru_elev_ts always set in basin, need in case of restart
         Basal_slope = Hru_slope_ts
@@ -506,6 +512,7 @@
         Basin_gl_storstart = 0.0D0
         Basin_gl_storvol = 0.0D0
       ENDIF
+
       hru_flowline = 0
       toflowline = 0
       str_idm = 1.0E15
@@ -534,6 +541,7 @@
           ENDIF
         ENDIF
       ENDDO
+
       IF ( count>0 ) THEN
   ! Number the glaciers and tags parts that belong together
         CALL tag_count(1, hru_flowline, toflowline, glacier_frac_use)
@@ -767,6 +775,7 @@
         !print*, 'Basin area acres=', 1.0/Basin_area_inv
       ENDIF ! skip all if no glaciers
 !
+
       END FUNCTION glacrinit
 
 !***********************************************************************
@@ -786,6 +795,7 @@
 !***********************************************************************
       glacrrun = 0
       count = 0
+
 !
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
@@ -796,6 +806,7 @@
           ENDIF
         ENDIF
       ENDDO
+
       IF( Ngl==0 ) THEN !no more glaciers, will first happen at 10/1 when size changes
         Gl_area = 0.D0
         Glnet_ar_delta = 0.0D0
@@ -807,6 +818,7 @@
         Delta_volyr = 0.0D0
         Gl_mb_yrcumul = 0.0D0
         Gl_mb_cumul = 0.0D0
+        Gl_mbc_yrend = 0.0D0
         Av_basal_slope = 0.0
         Av_fgrad = 0.0
         Hru_slope_ts = Basal_slope
@@ -1096,7 +1108,11 @@
             ENDDO
             Glnet_ar_delta=0.D0 !start at beginning
           ENDIF
-
+          DO o = 1, Ngl
+            p = Glacr_tag(Term(o)) !index by Glacr_tag
+            !for next year, positive mass outside
+            Gl_mbc_yrend(p) = Gl_mbc_yrend(p)+Gl_mb_yrcumul(p)
+          ENDDO
 !
 ! Do retreat/advance on whole glacier at end of year
 ! last year's area/volume is previous area
@@ -1318,6 +1334,7 @@
               Delta_volyr(p) = 0.0D0
               Gl_mb_yrcumul(p) = 0.0D0
               Gl_mb_cumul(p) = 0.0D0
+              Gl_mbc_yrend(p) = 0.0D0
               Av_basal_slope(p) = 0.0
               Av_fgrad(p) = 0.0
             ENDIF
@@ -1548,6 +1565,7 @@
         DO o = 1, Ngl
           p = Glacr_tag(Term(o)) !index by Glacr_tag
           Gl_mb_yrcumul(p) = tot_delta_mb(Term(o))/(Gl_area(p)*Acre_inch2) !if glaciers combine or split will jump to new area and terminus
+          Gl_mb_cumul(p) = Gl_mbc_yrend(p)+Gl_mb_yrcumul(p)
         ENDDO
       ENDIF
 !
@@ -3004,7 +3022,7 @@
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
-        WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta
+        WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
         WRITE ( Restart_outunit ) Basin_gl_top_gain
         WRITE ( Restart_outunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
         WRITE ( Restart_outunit ) Hru_glres_melt, Basin_gl_storstart
@@ -3033,7 +3051,7 @@
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
-        READ ( Restart_inunit ) Gl_mb_cumul, Glnet_ar_delta
+        READ ( Restart_inunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
         READ ( Restart_inunit ) Basin_gl_top_gain
         READ ( Restart_inunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
         READ ( Restart_inunit ) Hru_glres_melt, Basin_gl_storstart
