@@ -47,7 +47,7 @@
       REAL, SAVE, ALLOCATABLE :: Glacr_freeh2o_capm(:), Frac_swe(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pk_depth(:), Pkwater_ante(:), Ai(:)
       REAL, SAVE, ALLOCATABLE :: Glacrmelt(:), Glacr_evap(:), Glacr_albedo(:), Glacr_pk_den(:)
-      REAL, SAVE, ALLOCATABLE :: Glacr_pk_ice(:), Glacr_freeh2o(:), Glacrcov_area(:), Glacr_tcal(:)
+      REAL, SAVE, ALLOCATABLE :: Glacr_pk_ice(:), Glacr_freeh2o(:), Glacrcov_area(:)
       REAL, SAVE, ALLOCATABLE :: Glacrb_melt(:), Glacr_pk_def(:), Glacr_pk_temp(:), Glacr_air_avtemp(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_air_5avtemp1(:), Glacr_air_deltemp(:), Glacr_air_5avtemp(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:),Glacr_delsnow(:)
@@ -216,11 +216,6 @@
         IF ( declvar(MODNAME, 'glacr_pk_den', 'nhru', Nhru, 'real', &
      &       'Density of the icepack on each glacier HRU, hard-coded to equal 0.917', &
      &       'gm/cm3', Glacr_pk_den)/=0 ) CALL read_error(3, 'glacr_pk_den')
-
-        ALLOCATE ( Glacr_tcal(Nhru) )
-        IF ( declvar(MODNAME, 'glacr_tcal', 'nhru', Nhru, 'real', &
-     &       'Net icepack energy balance on each glacier HRU', &
-     &       'Langleys', Glacr_tcal)/=0 ) CALL read_error(3, 'glacr_tcal')
 
         ALLOCATE ( Glacr_albedo(Nhru) )
         IF ( declvar(MODNAME, 'glacr_albedo', 'nhru', Nhru, 'real', &
@@ -666,10 +661,9 @@
 ! Functions
       INTRINSIC :: DBLE, ATAN, SNGL
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error, snowcomp_restart, sca_deplcrv
+      EXTERNAL :: read_error, snowcomp_restart, sca_deplcrv, glacr_states_to_zero
 ! Local Variables
       INTEGER :: i, j
-      REAL :: reduce
 ! Save Variables
       REAL, SAVE :: acum_init(MAXALB), amlt_init(MAXALB)
       DATA acum_init/.80, .77, .75, .72, .70, .69, .68, .67, .66, .65, .64, .63, .62, .61, .60/
@@ -829,12 +823,12 @@
         Glacr_delsnow = 0.0
         Glacrb_melt = 0.0
         Glacrmelt = 0.0
-        Glacr_tcal = 0.0
-        Glacr_pk_den = 0.917
+        Glacr_pk_den = 0.0
         Glacr_pk_temp = 0.0
         Glacr_pk_ice = 0.0
         Glacr_pk_def = 0.0
         Glacr_pkwater_equiv = 0.0D0
+        Glacr_pkwater_ante = 0.0D0
         Glacr_evap = 0.0
         Glacr_freeh2o = 0.0
         Glacr_pk_depth = 0.0D0
@@ -844,22 +838,8 @@
         Glacr_freeh2o_capm = Glacr_freeh2o_cap
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
-          IF ( Glacier_frac(i)>0.0 ) THEN
-            IF ( Hru_type(i)==4 ) THEN
-              Glacr_pk_depth(i) = DBLE(Glacr_layer(i))
-              reduce = 0.8 !if start Glacr_pk_ice too close to Glacr_pk_depth can't grow with energy loss to free water gain
-              IF ( Glacr_layer(i)==0.0 ) THEN
-                Glacr_pk_depth(i) = 1.0D5
-                Glacr_freeh2o_capm(i) = 0.0
-                reduce = 1.0
-              ENDIF
-              Glacr_pkwater_equiv(i) = Glacr_pk_den(i)*Glacr_pk_depth(i)
-              Glacr_pk_ice(i) = reduce*(SNGL(Glacr_pkwater_equiv(i)) - Glacr_freeh2o(i))/0.9340 !density of pure ice
-            ENDIF
-          ENDIF
+          IF ( Glacier_frac(i)>0.0 .AND. Hru_type(i)==4 ) CALL glacr_states_to_zero(i,1)
         ENDDO
-        Glacr_pkwater_ante = Glacr_pkwater_equiv
-        Glacr_pss = Glacr_pkwater_equiv
       ENDIF
 
       END FUNCTION snoinit
@@ -928,7 +908,7 @@
               IF (Glacier_frac(i)>0.0) Active_glacier = 1
               IF (Glrette_frac(i)>0.0) Active_glacier = 2
               Glacr_pk_den(i) = 0.917
-              ! if melted whole active layer make 0 deg and no holding capacity
+              ! if no active layer make 0 deg and no holding capacity at start of each day
               IF ( Glacr_layer(i)==0.0 .OR. Glacr_pk_depth(i)>1.0D3 ) THEN
                 Glacr_pk_def(i) = 0.0
                 Glacr_pk_temp(i) = 0.0
@@ -965,7 +945,7 @@
           Lso(i) = 0 ! [counter]
 
 
-          IF ( Active_glacier>=1 ) CALL glacr_states_to_zero(i) !all snow on glacier becomes firn,
+          IF ( Active_glacier>=1 ) CALL glacr_states_to_zero(i,1) !all snow on glacier becomes firn, reset active layer thickness
           IF ( Active_glacier==1 ) THEN !do not zero out snowpack for snowfields because a lot is off glacier
           ! snow will melt more than should on snowfields if include a lot of low elevation
           !   if terminus glacier, and has snow will disappear off glacier but that is likely anyhow
@@ -1289,16 +1269,6 @@
      &                     Glacr_pk_def(i), Glacr_pk_temp(i), Glacr_pk_ice(i), Glacr_freeh2o(i), &
      &                     Glacrcov_area(i), Glacrmelt(i), Glacr_pk_depth(i), &
      &                     Glacr_pss(i), Glacr_pst(i), Glacr_pk_den(i), icst, icals, isw, Glacr_freeh2o_capm(i),i)
-              ! track total heat flux from both night and day periods
-              IF ( Glacr_pk_depth(i)<=0.0D0 ) THEN ! make infinite and 0 deg and no freewater capacity
-                ! should be just 0.0 but just in case
-                Glacr_pk_depth(i) = 1.0D5
-                Glacr_pkwater_equiv(i) = Glacr_pk_den(i)*Glacr_pk_depth(i)
-                Glacr_pk_ice(i) = SNGL(Glacr_pkwater_equiv(i)-Glacr_freeh2o(i))/0.9340 !density of pure ice
-                Glacr_pk_temp(i) = 0.0
-                Glacr_pk_def(i) = 0.0
-                Glacr_freeh2o_capm(i) = 0.0
-              ENDIF
             ENDIF
           ENDIF
 
@@ -1332,18 +1302,6 @@
      &                     Glacr_pk_def(i), Glacr_pk_temp(i), Glacr_pk_ice(i), Glacr_freeh2o(i), &
      &                     Glacrcov_area(i), Glacrmelt(i), Glacr_pk_depth(i), &
      &                     Glacr_pss(i), Glacr_pst(i), Glacr_pk_den(i), icst, icals, isw, Glacr_freeh2o_capm(i),i)
-              ! track total heat flux from both night and day periods
-              if(isnan(Glacrmelt(i)).OR. abs(Glacrmelt(i))>1.e15) &
-              Glacr_tcal(i) = Glacr_tcal(i) + icals ! [cal/cm^2] or [Langleys]
-              IF ( Glacr_pk_depth(i)<=0.0D0 ) THEN ! make infinite and 0 deg and no freewater capacity
-                ! should be just 0.0 but just in case
-                Glacr_pk_depth(i) = 1.0D5
-                Glacr_pkwater_equiv(i) = Glacr_pk_den(i)*Glacr_pk_depth(i)
-                Glacr_pk_ice(i) = SNGL(Glacr_pkwater_equiv(i))*0.9340 !density of pure ice
-                Glacr_pk_temp(i) = 0.0
-                Glacr_pk_def(i) = 0.0
-                Glacr_freeh2o_capm(i) = 0.0
-              ENDIF
             ENDIF
           ENDIF
 
@@ -1436,12 +1394,7 @@
           IF ( Glacr_pkwater_equiv(i)>0.0D0 ) THEN
             Glacr_pk_depth(i) = Glacr_pkwater_equiv(i)/DBLE(Glacr_pk_den(i))
           ELSE
-            Glacr_pk_depth(i) = 1.0D5
-            Glacr_pkwater_equiv(i) = Glacr_pk_den(i)*Glacr_pk_depth(i)
-            Glacr_pk_ice(i) = SNGL(Glacr_pkwater_equiv(i)-Glacr_freeh2o(i))/0.9340 !density of pure ice
-            Glacr_pk_temp(i) = 0.0
-            Glacr_pk_def(i) = 0.0
-            Glacr_freeh2o_capm(i) = 0.0
+            CALL glacr_states_to_zero(i,0)
           ENDIF
         ENDIF
 
@@ -1810,9 +1763,8 @@
 !        IF ( Pkwater_equiv<-DNEARZERO ) &
 !     &       PRINT *, 'snowpack issue 4, negative pkwater_equiv', Pkwater_equiv
         Pkwater_equiv = 0.0D0
-        ! Snowpack or glacr layer has been completely depleted, reset all states to no-snowpack values
-        ! If melting glacier can still be snow, Ihru_gl >0 signifies glacier caloss
-        If (Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl)
+        ! If on melting glacier ice/firn, Ihru_gl >0, so melted active layer (won't melt infinite ice layer)
+        If (Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl,0)
       ENDIF
 
       END SUBROUTINE caloss
@@ -1902,10 +1854,16 @@
         ! if on snow over glacier or active_layer and have excess energy from day over
         !        depth can melt from layer thickness, add depth to that layer
         IF ( pmlt>apk_ice .AND. Active_glacier>=1 ) THEN
+          !fractionate density with snow/active layer melting vs extra ice underneath melting
+          Pk_den = Pk_den*SNGL(apk_ice/pmlt) + 0.917*SNGL((pmlt-apk_ice)/pmlt)
           apk_ice = pmlt
-          Pk_ice =  apk_ice*Snowcov_area
-          Pkwater_equiv = Freeh2o + apmlt - Freeh2o_cap*(Pk_ice - apmlt)
-          Pk_depth = 0.0D0
+          Pk_ice =  apmlt
+          Pkwater_equiv = apmlt
+          Freeh2o = 0.0 ! [inches]
+          Iasw = 0
+          Pk_def = 0.0   ! [cal / cm^2]
+          Pk_temp = 0.0  ! [degreees C]
+          Pst = 0.0D0      ! [inches]
         ENDIF
 
         IF ( pmlt>apk_ice ) THEN ! will not happen if Active_glacier>=1 because of above
@@ -1974,8 +1932,9 @@
         Pk_temp = 0.0 ! [degrees C]
         Pk_def = 0.0 ! [cal/cm^2]
       ENDIF
-      IF ( Pkwater_equiv<=0.0D0 .AND. Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl)
-      ! Snowpack on glacier has been completely depleted, reset all states to no-snowpack values
+      IF ( Pkwater_equiv<=0.0D0 ) Pk_den = 0.0
+      ! If on melting glacier ice/firn, Ihru_gl >0, so melted active layer (won't melt infinite ice layer)
+      IF ( Pkwater_equiv<=0.0D0 .AND. Ihru_gl>0) CALL glacr_states_to_zero(Ihru_gl,0)
 
       END SUBROUTINE calin
 
@@ -2833,30 +2792,32 @@
 !***********************************************************************
 !     Set all glacier states to 0
 !***********************************************************************
-      SUBROUTINE glacr_states_to_zero(Ihru)
+      SUBROUTINE glacr_states_to_zero(Ihru, active_layer_present)
       USE PRMS_SNOW, ONLY: Glacr_freeh2o_cap, Glacr_freeh2o_capm, Glacr_pk_def, Glacr_pk_depth, &
      &    Glacr_layer, Glacr_pk_temp, Glacr_air_avtemp, Glacr_pkwater_equiv, Glacr_pk_den, &
-     &    Glacr_pk_ice, Glacr_pkwater_ante, Glacr_freeh2o, Glacr_pss
+     &    Glacr_pk_ice, Glacr_pkwater_ante, Glacr_freeh2o, Glacr_pss, Glacr_pk_den
       IMPLICIT NONE
 ! Arguments
-      INTEGER, INTENT(IN) :: Ihru
+      INTEGER, INTENT(IN) :: Ihru, active_layer_present
 ! Functions
       INTRINSIC ATAN, SNGL
 ! Local Variables
       REAL :: reduce
 !***********************************************************************
-      Glacr_freeh2o_capm(Ihru) = Glacr_freeh2o_cap(Ihru)
-      Glacr_pk_depth(Ihru) = DBLE(Glacr_layer(Ihru))
-      Glacr_pk_temp(Ihru) = Glacr_air_avtemp(Ihru) !start at average last year temp like Oerlemans 1992
-      reduce = 0.8 !if start Glacr_pk_ice too close to Glacr_pk_depth can't grow with energy loss to free water gain
-      IF ( Glacr_pk_temp(Ihru) > 0.0) Glacr_pk_temp(Ihru) = 0.0
-      IF ( Glacr_layer(Ihru)==0.0 ) THEN
+      IF ( Glacr_layer(Ihru)==0.0 .OR. active_layer_present==0) THEN
         Glacr_pk_depth(Ihru) = 1.0D5
         Glacr_pk_temp(Ihru) = 0.0
         Glacr_pk_def(Ihru) = 0.0
         Glacr_freeh2o_capm(Ihru) = 0.0
         reduce = 1.0
+      ElSE
+        Glacr_pk_depth(Ihru) = DBLE(Glacr_layer(Ihru))
+        Glacr_pk_temp(Ihru) = Glacr_air_avtemp(Ihru) !start at average last year temp like Oerlemans 1992
+        IF ( Glacr_pk_temp(Ihru) > 0.0) Glacr_pk_temp(Ihru) = 0.0
+        Glacr_freeh2o_capm(Ihru) = Glacr_freeh2o_cap(Ihru)
+        reduce = 0.8 !if start Glacr_pk_ice too close to Glacr_pk_depth can't grow with energy loss to free water gain
       ENDIF
+      Glacr_pk_den(Ihru) = 0.917
       Glacr_pkwater_equiv(Ihru) = Glacr_pk_den(Ihru)*Glacr_pk_depth(Ihru)
       Glacr_pkwater_ante(Ihru) = Glacr_pkwater_equiv(Ihru)
       Glacr_pk_ice(Ihru) = reduce*SNGL(Glacr_pkwater_equiv(Ihru)-Glacr_freeh2o(Ihru))/0.9340 !density of pure ice
@@ -2913,7 +2874,6 @@
           WRITE ( Restart_outunit ) Glacr_pk_ice
           WRITE ( Restart_outunit ) Glacr_freeh2o
           WRITE ( Restart_outunit ) Glacrcov_area
-          WRITE ( Restart_outunit ) Glacr_tcal
           WRITE ( Restart_outunit ) Glacr_pss
           WRITE ( Restart_outunit ) Glacr_pst
           WRITE ( Restart_outunit ) Glacr_pk_depth
@@ -2964,7 +2924,6 @@
           READ ( Restart_inunit ) Glacr_pk_ice
           READ ( Restart_inunit ) Glacr_freeh2o
           READ ( Restart_inunit ) Glacrcov_area
-          READ ( Restart_inunit ) Glacr_tcal
           READ ( Restart_inunit ) Glacr_pss
           READ ( Restart_inunit ) Glacr_pst
           READ ( Restart_inunit ) Glacr_pk_depth
