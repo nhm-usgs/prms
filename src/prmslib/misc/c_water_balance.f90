@@ -21,6 +21,7 @@ module PRMS_WATER_BALANCE
   character(len=*), parameter :: MODNAME = 'waterbal'
   character(len=*), parameter :: MODVERSION = '2018-08-30 15:38:00Z'
 
+  ! real(r32), parameter :: TOOSMALL = 3.1E-05
   real(r32), parameter :: TOOSMALL = 3.1E-05
   real(r32), parameter :: SMALL = 1.0E-04
   real(r32), parameter :: BAD = 1.0E-03
@@ -41,7 +42,7 @@ module PRMS_WATER_BALANCE
     real(r64), private :: last_basin_gwstor
 
     real(r64), private, allocatable :: gwstor_ante(:)
-    real(r64), private, allocatable :: hru_storage_ante(:)
+    ! real(r64), private, allocatable :: hru_storage_ante(:)
 
     ! Declared variables
     ! real(r64), private :: basin_capillary_wb
