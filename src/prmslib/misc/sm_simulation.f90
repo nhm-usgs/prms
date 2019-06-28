@@ -71,8 +71,8 @@ submodule (Simulation_class) sm_simulation
         if (.not. this%model_time%next(ctl_data)) exit
         ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
 
-        write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
-        9008 format(A, I4, 2('/', I2.2))
+        ! write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
+        ! 9008 format(A, I4, 2('/', I2.2))
 
         call this%model_basin%run(ctl_data, this%model_time)
 

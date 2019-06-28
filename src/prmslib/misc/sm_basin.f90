@@ -107,7 +107,7 @@ contains
         end if
 
         this%next_dyn_covtype_date = get_first_time(this%covtype_unit, start_time(1:3))
-        write(output_unit, *) MODNAME, '%init() INFO: Dynamic cov_type next avail time: ', this%next_dyn_covtype_date
+        ! write(output_unit, *) MODNAME, '%init() INFO: Dynamic cov_type next avail time: ', this%next_dyn_covtype_date
 
         allocate(this%covtype_chgs(this%nhru))
 
@@ -276,7 +276,7 @@ contains
       if (dyn_covtype_flag == 1) then
         if (all(this%next_dyn_covtype_date == curr_time(1:3))) then
           read(this%covtype_unit, *) this%next_dyn_covtype_date, this%covtype_chgs
-          write(output_unit, 9008) MODNAME, '%run() INFO: covtype was updated. ', this%next_dyn_covtype_date
+          ! write(output_unit, 9008) MODNAME, '%run() INFO: covtype was updated. ', this%next_dyn_covtype_date
           ! TODO: some work
           ! update_parameter_i32(ctl_data, model_basin, model_time, dyn_output_unit, dyn_values, param_name, param)
           call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%covtype_chgs, 'cov_type', this%cov_type)

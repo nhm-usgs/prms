@@ -225,6 +225,7 @@ contains
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
 
       if (init_vars_from_file==0 .or. init_vars_from_file==2 .or. init_vars_from_file==3) then
+        allocate(this%snarea_curve_2d(11, nhru))
         this%snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
 
         do j=1, active_hrus

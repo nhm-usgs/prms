@@ -36,7 +36,6 @@ contains
 
       ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
       ! allocate(this%tavg_f(nhru))
-
     end associate
   end function
 
@@ -130,4 +129,5 @@ contains
       this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
     end associate
   end subroutine
+
 end submodule
