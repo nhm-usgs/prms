@@ -515,7 +515,7 @@
         Basin_gl_storvol = 0.0D0
       ENDIF
 
-      Glac_HRUnum_down = 0 ! 1 is the way Weasel delineation was designed
+      Glac_HRUnum_down = 1 ! 1 is the way Weasel delineation was designed
       ! 1 is terminus is smallest ID and top is largest. IDs are stacked.
       ! 0 is terminus is smallest ID and top is largest. IDs are stacked.
 
@@ -808,7 +808,6 @@
 !***********************************************************************
       glacrrun = 0
       count = 0
-
 !
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
