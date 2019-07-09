@@ -378,28 +378,27 @@
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
       ENDIF
       IF ( Stream_temp_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7) THEN
-       IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
+        IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
         IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+! find segments that are too short and print them out as they are found
+        ierr = 0
+        DO i = 1, Nsegment
+           IF ( Seg_length(i)<NEARZERO ) THEN
+              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+              ierr = 1
+           ENDIF
+        ENDDO
+! exit if there are any segments that are too short
+        IF ( ierr==1 ) THEN
+           Inputerror_flag = ierr
+           RETURN
+        ENDIF
       ENDIF
       IF ( Strmflow_flag==6 ) THEN
         IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
       ENDIF
       IF ( Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
-      ENDIF
-
-! find segments that are too short and print them out as they are found
-      ierr = 0
-      DO i = 1, Nsegment
-         IF ( Seg_length(i)<NEARZERO ) THEN
-            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
-            ierr = 1
-         ENDIF
-      ENDDO
-! exit if there are any segments that are too short
-      IF ( ierr==1 ) THEN
-         Inputerror_flag = ierr
-         RETURN
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')

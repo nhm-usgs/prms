@@ -611,26 +611,25 @@
       IF ( Stream_temp_flag==1 .OR. Ripst_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
         IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+! find segments that are too short and print them out as they are found
+        ierr = 0
+        DO i = 1, Nsegment
+           IF ( Seg_length(i)<NEARZERO ) THEN
+              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+              ierr = 1
+           ENDIF
+        ENDDO
+! exit if there are any segments that are too short
+        IF ( ierr==1 ) THEN
+           Inputerror_flag = ierr
+           RETURN
+        ENDIF
       ENDIF
       IF ( Ripst_flag==1 .OR. Strmflow_flag==6 ) THEN
         IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
       ENDIF
       IF ( Ripst_flag==1 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
-      ENDIF
-
-! find segments that are too short and print them out as they are found
-      ierr = 0
-      DO i = 1, Nsegment
-         IF ( Seg_length(i)<NEARZERO ) THEN
-            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
-            ierr = 1
-         ENDIF
-      ENDDO
-! exit if there are any segments that are too short
-      IF ( ierr==1 ) THEN
-         Inputerror_flag = ierr
-         RETURN
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
@@ -1184,10 +1183,8 @@
 !negative flow is out of stream into riparian
       Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow
       inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0))
-      IF ( Ripst_area_max(Ihru)>0.0 ) THEN
-        Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow_in
-        Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/Ripst_vol_max(Ihru))
-      ENDIF
+      Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow_in
+      Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/Ripst_vol_max(Ihru))
 ! Filled riparian storage surface area for each HRU:
 !  Fills outward from the river with one edge on river and with same depth and same side shape
 !  this works out to keeping fraction same for area and volume filled
@@ -1221,36 +1218,35 @@
       ! compute seepage
       Ripst_seep_hru(Ihru) = 0.0D0
       seep = 0.0
-      IF ( Ripst_area_max(Ihru)>0.0 ) THEN
-        IF ( Ripst_vol(Ihru)>NEARZERO ) THEN
-          ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
+      IF ( Ripst_vol(Ihru)>NEARZERO ) THEN
+        ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
 !assumed it was a one sided stream, here a headwater with both sides in one HRU
-          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
+        IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
 ! Stream ground area is stream side area (flat wall) and other side area (fraction of triangle (1) to rectangle (0))
-          ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
+        ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
      &              (SQRT( ripst_wid**2.0 + Ripst_depth(Ihru)**2.0 )- Ripst_depth(Ihru))*Tr_ratio(Ihru) + & !triangle
      &              2.0*Ripst_depth(Ihru) ) ) !stream and other side
 !assumed it was a one sided stream, here a headwater with both sides in one HRU
-          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
+        IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
 !seep in a day through ground surface area of riparian, m^3 into ft^3 to acre_in
 !Transmissivity would be way too big, maybe ssr2gw_rate
-          seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0)
-          !seep = 0.0 !if want to turn off seep
-          seep_in = seep*FT2_PER_ACRE*12.0
-          Ripst_vol(Ihru) = Ripst_vol(Ihru) - seep_in
-          IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
-            !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
-            seep_in = seep_in + Ripst_vol(Ihru)
-            seep = seep_in/(FT2_PER_ACRE*12.0)
-            Ripst_vol(Ihru) = 0.0D0
-          ENDIF
-          Ripst_seep_hru(Ihru) = seep_in/Hru_area_dble(Ihru) !inch per HRU
-        ENDIF
+        seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0)
+        !seep = 0.0 !if want to turn off seep
+        seep_in = seep*FT2_PER_ACRE*12.0
+        Ripst_vol(Ihru) = Ripst_vol(Ihru) - seep_in
         IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
-!          IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
+          !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
+          seep_in = seep_in + Ripst_vol(Ihru)
+          seep = seep_in/(FT2_PER_ACRE*12.0)
           Ripst_vol(Ihru) = 0.0D0
         ENDIF
+        Ripst_seep_hru(Ihru) = seep_in/Hru_area_dble(Ihru) !inch per HRU
       ENDIF
+      IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
+        !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
+        Ripst_vol(Ihru) = 0.0D0
+      ENDIF
+
       ! seep goes back in stream as positive flow, cfs
       Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru))+ seep/Timestep_seconds
       !Seg_ripflow(Hru_segment(Ihru)) = 0.0 !if want to turn off overbank flow

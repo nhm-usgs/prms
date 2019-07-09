@@ -946,9 +946,12 @@
 
 
           IF ( Active_glacier>=1 ) CALL glacr_states_to_zero(i,1) !all snow on glacier becomes firn, reset active layer thickness
-          IF ( Active_glacier==1 ) THEN !do not zero out snowpack for snowfields because a lot is off glacier
-          ! snow will melt more than should on snowfields if include a lot of low elevation
-          !   if terminus glacier, and has snow will disappear off glacier but that is likely anyhow
+          IF ( Active_glacier==1 ) THEN
+! If Active_glacier>=1 we are zeroing out snowpack if have glacierettes even though possibly a lot of HRU is not glacierized.
+! If Active_glacier==1 do not zero out glacierettes, but then will maybe never melt ice on glacierettes. If the climate is
+!	correct the snowpack will deplete quick because there is a lot of lower elevation than the glacierette included in the HRU.
+! Choice does not effect runoff much, but will effect Basin_pweqv and things like that
+            ! if terminus glacier, and has snow will disappear off glacier but that is likely anyhow
             Pkwater_equiv(i) = 0.0
             Pk_depth(i) = 0.0D0
             Pss(i) = 0.0D0
