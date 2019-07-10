@@ -1050,8 +1050,8 @@
         ! If there is no existing snow pack and there is new snow, the
         ! initial snow covered area is complete (1)
         IF ( Newsnow(i)==1 .AND. Pkwater_equiv(i)<DNEARZERO ) Snowcov_area(i) = 1.0 ! [fraction of area]
-        IF ( Active_glacier==1 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glacier_frac(i) ! calculate before melt
-        IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glrette_frac(i) ! calculate before melt
+        IF ( Active_glacier==1 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glacier_frac(i)
+        IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glrette_frac(i)
 
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
@@ -1104,6 +1104,8 @@
      &                  Albset_snm, Albset_rna, Albset_sna, Albedo(i), &
      &                  Int_alb(i), Salb(i), Slst(i))
         ENDIF
+        IF ( Active_glacier==1 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glacier_frac(i)
+        IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glrette_frac(i)
 
         IF ( Active_glacier>=1 ) THEN
 ! Albedo so transition snow to ice smooothly, see Oerlemans 1992, this is albedo if snowcovered ice too
@@ -1406,8 +1408,8 @@
         IF ( Active_glacier==2 ) frac = (1.0 - Glrette_frac(i))
         ! Sum volumes for basin totals
         Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*Hru_area(i)*frac ) !don't include stuff melting into glacier
-        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*DBLE( Hru_area(i)*frac ) !don't include stuff melting into glacier
-        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i)*Hru_area(i)*frac ) !don't include stuff melting into glacier
+        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*DBLE( Hru_area(i) )
+        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i)*Hru_area(i) )
         Basin_snowcov = Basin_snowcov + DBLE( Snowcov_area(i)*Hru_area(i) )
         Basin_pk_precip = Basin_pk_precip + DBLE( Pk_precip(i)*Hru_area(i) )
         Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*DBLE(Hru_area(i))
