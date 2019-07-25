@@ -1,0 +1,13 @@
+bin/
+build/
+include/
+lib/
+old/
+.idea/
+.vscode/
+*.mod
+*.swp
+*.o
+CMakeFiles
+cmake_install.cmake
+Makefile
