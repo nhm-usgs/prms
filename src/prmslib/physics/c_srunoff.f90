@@ -1,6 +1,6 @@
 module PRMS_SRUNOFF
   use variableKind
-  use iso_fortran_env, only: output_unit
+  use iso_fortran_env, only: output_unit, error_unit
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
@@ -76,8 +76,9 @@ module PRMS_SRUNOFF
     real(r32), allocatable :: carea_dif(:)
     real(r32), allocatable :: imperv_stor_ante(:)
 
-    real(r64) :: sri
-    real(r64) :: srp
+    ! 2019-05-28 PAN: moved as local to run()
+    ! real(r64) :: sri
+    ! real(r64) :: srp
 
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
@@ -211,6 +212,7 @@ module PRMS_SRUNOFF
       procedure, private :: imperv_et
       procedure, private :: perv_comp
       procedure, private :: read_dyn_params
+      procedure, nopass, private :: close_if_open
       procedure, nopass, private :: depression_surface_area
   end type
 
@@ -238,7 +240,6 @@ module PRMS_SRUNOFF
         !! Basin variables
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
-      ! type(Flowvars), intent(in) :: model_flow
       class(Potential_ET), intent(in) :: model_potet
       type(Interception), intent(in) :: intcp
       type(Snowcomp), intent(in) :: snow
@@ -253,12 +254,74 @@ module PRMS_SRUNOFF
     end subroutine
   end interface
 
+  ! interface
+  !   module subroutine check_capacity(this, model_climate, idx, srp)
+  !     class(Srunoff), intent(inout) :: this
+  !     type(Climateflow), intent(in) :: model_climate
+  !     integer(i32), intent(in) :: idx
+  !     real(r64), intent(inout) :: srp
+  !   end subroutine
+  ! end interface
+
   interface
-    module subroutine check_capacity(this, model_climate, idx)
-      class(Srunoff), intent(inout) :: this
-      type(Climateflow), intent(in) :: model_climate
-      ! type(Flowvars), intent(in) :: model_flow
+    module subroutine check_capacity(this, idx, soil_moist, soil_moist_max, &
+                                     infil, srp)
+      class(Srunoff), intent(in) :: this
       integer(i32), intent(in) :: idx
+      real(r32), intent(in) :: soil_moist
+      real(r32), intent(in) :: soil_moist_max
+      real(r32), intent(inout) :: infil
+      real(r64), intent(inout) :: srp
+    end subroutine
+  end interface
+
+  ! interface
+  !   module subroutine compute_infil(this, ctl_data, model_basin, model_climate, &
+  !                                   intcp, snow, idx, sri, srp)
+  !     class(Srunoff), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     type(Basin), intent(in) :: model_basin
+  !     type(Climateflow), intent(in) :: model_climate
+  !     type(Interception), intent(in) :: intcp
+  !     type(Snowcomp), intent(in) :: snow
+  !     integer(i32), intent(in) :: idx
+  !     real(r64), intent(inout) :: sri
+  !     real(r64), intent(inout) :: srp
+  !   end subroutine
+  ! end interface
+
+  interface
+    module subroutine compute_infil(this, ctl_data, idx, hru_type, net_ppt, net_rain, &
+                                    net_snow, pkwater_equiv, pptmix_nopack, &
+                                    snowmelt, soil_moist, soil_moist_max, soil_rechr, soil_rechr_max, &
+                                    contrib_frac, imperv_stor, infil, sri, srp)
+      class(Srunoff), intent(in) :: this
+      type(Control), intent(in) :: ctl_data
+      integer(i32), intent(in) :: idx
+      integer(i32), intent(in) :: hru_type
+      real(r32), intent(in) :: net_ppt
+      real(r32), intent(in) :: net_rain
+      real(r32), intent(in) :: net_snow
+      real(r64), intent(in) :: pkwater_equiv
+      logical, intent(in) :: pptmix_nopack
+      real(r32), intent(in) :: snowmelt
+      real(r32), intent(in) :: soil_moist
+      real(r32), intent(in) :: soil_moist_max
+      real(r32), intent(in) :: soil_rechr
+      real(r32), intent(in) :: soil_rechr_max
+      real(r32), intent(inout) :: contrib_frac
+      real(r32), intent(inout) :: imperv_stor
+      real(r32), intent(inout) :: infil
+      real(r64), intent(inout) :: sri
+      real(r64), intent(inout) :: srp
+    end subroutine
+  end interface
+
+  interface
+    module subroutine close_if_open(unit)
+        integer(i32), intent(in) :: unit
+
+        logical :: is_opened
     end subroutine
   end interface
 
@@ -281,43 +344,101 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine dprst_comp(this, ctl_data, model_basin, model_climate, model_potet, intcp, &
-                                 snow, model_time, idx, avail_et)
+    module subroutine dprst_comp(this, ctl_data, idx, model_basin, model_time, pkwater_equiv, &
+                                 potet, net_rain, net_snow, &
+                                 pptmix_nopack, snowmelt, snowcov_area, &
+                                 avail_et, sri, srp)
+                                !  dprst_insroff_hru, dprst_stor_hru, dprst_vol_clos, &
+                                !  dprst_vol_clos_frac, dprst_vol_frac, dprst_vol_open, &
+                                !  dprst_vol_open_frac, &
+                                !  dprst_area_clos, dprst_area_open, dprst_evap_hru, &
+                                !  dprst_seep_hru, dprst_sroff_hru)
       class(Srunoff), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Basin), intent(in) :: model_basin
-      type(Climateflow), intent(in) :: model_climate
-      class(Potential_ET), intent(in) :: model_potet
-      type(Interception), intent(in) :: intcp
-      type(Snowcomp), intent(in) :: snow
-      type(Time_t), intent(in) :: model_time
       integer(i32), intent(in) :: idx
+      type(Basin), intent(in) :: model_basin
+      type(Time_t), intent(in) :: model_time
+      real(r64), intent(in) :: pkwater_equiv
+      real(r32), intent(in) :: potet
+      real(r32), intent(in) :: net_rain
+      real(r32), intent(in) :: net_snow
+      logical, intent(in) :: pptmix_nopack
+      real(r32), intent(in) :: snowmelt
+      real(r32), intent(in) :: snowcov_area
       real(r32), intent(inout) :: avail_et
+      real(r64), intent(inout) :: sri
+      real(r64), intent(inout) :: srp
     end subroutine
   end interface
 
+  ! interface
+  !   module subroutine dprst_comp(this, ctl_data, model_basin, model_climate, model_potet, intcp, &
+  !                                snow, model_time, idx, avail_et, sri, srp)
+  !     class(Srunoff), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     type(Basin), intent(in) :: model_basin
+  !     type(Climateflow), intent(in) :: model_climate
+  !     class(Potential_ET), intent(in) :: model_potet
+  !     type(Interception), intent(in) :: intcp
+  !     type(Snowcomp), intent(in) :: snow
+  !     type(Time_t), intent(in) :: model_time
+  !     integer(i32), intent(in) :: idx
+  !     real(r32), intent(inout) :: avail_et
+  !     real(r64), intent(inout) :: sri
+  !     real(r64), intent(inout) :: srp
+  !   end subroutine
+  ! end interface
+
+  ! interface
+  !   module subroutine imperv_et(this, idx, potet, sca, avail_et)
+  !     class(Srunoff), intent(inout) :: this
+  !     ! type(Basin), intent(in) :: model_basin
+  !     integer(i32), intent(in) :: idx
+  !     real(r32), intent(in) :: potet
+  !     real(r32), intent(in) :: sca
+  !     real(r32), intent(in) :: avail_et
+  !   end subroutine
+  ! end interface
+
   interface
-    module subroutine imperv_et(this, idx, potet, sca, avail_et)
-      class(Srunoff), intent(inout) :: this
-      ! type(Basin), intent(in) :: model_basin
+    module subroutine imperv_et(this, idx, potet, sca, avail_et, imperv_evap, imperv_stor)
+      class(Srunoff), intent(in) :: this
       integer(i32), intent(in) :: idx
       real(r32), intent(in) :: potet
       real(r32), intent(in) :: sca
       real(r32), intent(in) :: avail_et
+      real(r32), intent(inout) :: imperv_evap
+      real(r32), intent(inout) :: imperv_stor
     end subroutine
   end interface
 
+  ! interface
+  !   module subroutine perv_comp(this, ctl_data, model_climate, idx, &
+  !                               pptp, ptc, srp)
+  !     class(Srunoff), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     type(Climateflow), intent(in) :: model_climate
+  !     integer(i32), intent(in) :: idx
+  !     real(r32), intent(in) :: pptp
+  !     real(r32), intent(in) :: ptc
+  !     ! real(r32), intent(inout) :: infil
+  !     real(r64), intent(inout) :: srp
+  !   end subroutine
+  ! end interface
+
   interface
-    module subroutine perv_comp(this, ctl_data, model_climate, idx, &
-                                pptp, ptc, srp)
-      class(Srunoff), intent(inout) :: this
+    module subroutine perv_comp(this, ctl_data, idx, soil_moist, soil_rechr, soil_rechr_max, &
+                                pptp, ptc, contrib_frac, infil, srp)
+      class(Srunoff), intent(in) :: this
       type(Control), intent(in) :: ctl_data
-      type(Climateflow), intent(in) :: model_climate
-      ! type(Flowvars), intent(in) :: model_flow
       integer(i32), intent(in) :: idx
       real(r32), intent(in) :: pptp
       real(r32), intent(in) :: ptc
-      ! real(r32), intent(inout) :: infil
+      real(r32), intent(in) :: soil_moist
+      real(r32), intent(in) :: soil_rechr
+      real(r32), intent(in) :: soil_rechr_max
+      real(r32), intent(inout) :: contrib_frac
+      real(r32), intent(inout) :: infil
       real(r64), intent(inout) :: srp
     end subroutine
   end interface
@@ -332,17 +453,4 @@ module PRMS_SRUNOFF
     end subroutine
   end interface
 
-  interface
-    module subroutine compute_infil(this, ctl_data, model_basin, model_climate, &
-                                    intcp, snow, idx)
-      class(Srunoff), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
-      type(Basin), intent(in) :: model_basin
-      type(Climateflow), intent(in) :: model_climate
-      ! type(Flowvars), intent(in) :: model_flow
-      type(Interception), intent(in) :: intcp
-      type(Snowcomp), intent(in) :: snow
-      integer(i32), intent(in) :: idx
-    end subroutine
-  end interface
 end module
