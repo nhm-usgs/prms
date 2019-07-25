@@ -50,7 +50,8 @@ module PRMS_GWFLOW
 
     real(r64), pointer :: basin_dnflow
     real(r64), pointer :: basin_gw_upslope
-
+    real(r64), allocatable :: hru_storage_ante(:)
+    real(r64), allocatable :: gwres_stor_ante(:)
 
     ! Output variables
     real(r64), pointer :: basin_gwflow

@@ -262,6 +262,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
           endif
         enddo
 
+        allocate(this%hru_storage_ante(nhru))
+        this%hru_storage_ante = this%hru_storage
+
+        allocate(this%gwres_stor_ante(nhru))
+        this%gwres_stor_ante = this%gwres_stor
+
         this%basin_gwstor = this%basin_gwstor * basin_area_inv
 
         if (dprst_flag == 1) then
@@ -424,6 +430,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
                 cfs_conv => model_time%cfs_conv, &
                 nowtime => model_time%Nowtime)
+
+        this%hru_storage_ante = this%hru_storage
+        this%gwres_stor_ante = this%gwres_stor
 
         if (cascadegw_flag > 0) then
           this%gw_upslope = 0.0_dp
