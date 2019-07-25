@@ -244,7 +244,7 @@ contains
       !       results in faster writing but larger file sizes (file sizes are
       !       still smaller than ASCII files).
       ! write(*, *) 'Create output netcdf'
-      call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl))
+      call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%file_hdl))
                           ! cache_size=33554432))
 
       ! Define the dimensions. NetCDF will hand back an ID for each.
@@ -312,12 +312,12 @@ contains
           ! Save the array size for this variable to an array for later
           this%outvar_size(jj) = 1
 
-          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-          !                                  outvar_datatype, time_dimid, this%outvar_id(jj)))
           call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-                                           outvar_datatype, time_dimid, this%outvar_id(jj), &
-                                           shuffle=.true., &
-                                           deflate_level=1))
+                                           outvar_datatype, time_dimid, this%outvar_id(jj)))
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                                  outvar_datatype, time_dimid, this%outvar_id(jj), &
+          !                                  shuffle=.true., &
+          !                                  deflate_level=1))
         else
           ! 2D output variable (e.g. time, nhru)
           ! Get the dimid for the outvar dimension
@@ -329,16 +329,16 @@ contains
           call this%err_check(nf90_inquire_dimension(this%file_hdl, ov_dimid, &
                                                      len=this%outvar_size(jj)))
 
-          cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
+          ! cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
           ! write(output_unit, *) 'cnk_sizes: ', cnk_sizes
 
-          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-          !                                  outvar_datatype, dimids, this%outvar_id(jj)))
           call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-                                           outvar_datatype, dimids, this%outvar_id(jj), &
-                                           shuffle=.true., &
-                                           deflate_level=1, &
-                                           chunksizes=cnk_sizes))
+                                           outvar_datatype, dimids, this%outvar_id(jj)))
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                                  outvar_datatype, dimids, this%outvar_id(jj), &
+          !                                  shuffle=.true., &
+          !                                  deflate_level=1, &
+          !                                  chunksizes=cnk_sizes))
         end if
 
         ! Add attributes for each variable
