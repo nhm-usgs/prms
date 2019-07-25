@@ -532,10 +532,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
 
         this%last_soil_moist = this%basin_soil_moist
         this%last_ssstor = this%basin_ssstor
+        this%dunnian_flow = 0.0
 
         ! initialize arrays (dimensioned nhru)
         ! TODO: 2018-06-21 - Uncomment once cascade module and lakes are ready.
-        ! this%dunnian_flow = 0.0
         ! if (cascade_flag == 1) then
         !   this%upslope_interflow = 0.0_dp
         !   this%upslope_dunnianflow = 0.0_dp
@@ -837,6 +837,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! and soil_rechr.
           ! NOTE: Should this occur before or after the GSFLOW-related
           !       code above?
+          ! write(output_unit, *) '**********ARRRRRGHHH!!!!!!'
           soil_moist = soil_moist_chg
           soil_rechr = soil_rechr_chg
 
@@ -851,9 +852,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%last_ssstor = this%basin_ssstor
         endif
 
-
         ! TODO: Do basin variables need to be initialized for each timestep?
-        basin_sroff = 0.0_dp
+        ! basin_sroff = 0.0_dp
         call this%reset_basin_vars()
 
         gwin = 0.0_dp
@@ -975,7 +975,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
           ! ****** Add infiltration to soil and compute excess
           ! gvr_maxin = 0.0
           this%cap_waterin(chru) = capwater_maxin
-
 
           ! Call even if capwater_maxin = 0, just in case soil_moist now > soil_moist_max
           if (capwater_maxin + soil_moist(chru) > 0.0) then
@@ -1194,7 +1193,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
             ! Treat dunnianflw as surface runoff to streams
             ! WARNING: PAN This is modifying sroff and basin_sroff from the srunoff module
             sroff(chru) = sroff(chru) + this%dunnian_flow(chru)
-            basin_sroff = basin_sroff + dble(sroff(chru) * hru_area(chru))
+            ! basin_sroff = basin_sroff + dble(sroff(chru) * hru_area(chru))
             this%ssres_stor(chru) = this%slow_stor(chru) + this%pref_flow_stor(chru)
           else
             ! For swales
@@ -1328,7 +1327,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
         endif
 
         ! WARNING: This replaces basin_sroff from srunoff module
-        basin_sroff = basin_sroff * basin_area_inv
+        ! basin_sroff = basin_sroff + dble(sroff(chru) * hru_area(chru))
+        ! basin_sroff = basin_sroff * basin_area_inv
+        basin_sroff = sum(dble(sroff * hru_area), mask=active_mask) * basin_area_inv
 
         ! TODO: Uncomment once lakes are working.
         ! if (nlake > 0) then
@@ -1459,6 +1460,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 ! hru_down_fracwt => model_cascade%hru_down_fracwt, &
                 strm_seg_in => runoff%strm_seg_in)
 
+        ! TODO: test for cascades
         do k=1, ncascade_hru
           ! TODO: Uncomment once cascade module is completed
           ! j = hru_down(k, ihru)
