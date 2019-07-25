@@ -8,6 +8,9 @@ module PRMS_FILE_IO_NETCDF
   public :: FileIO_netcdf
 
   type, extends(FileIO) :: FileIO_netcdf
+    character(len=:), allocatable :: override_dir
+    type(list) :: override_list
+
 
     contains
       procedure, public, pass(this) :: open => open_netcdf
