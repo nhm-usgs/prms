@@ -28,6 +28,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/sm_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_water_balance.f90"
     "${CMAKE_CURRENT_LIST_DIR}/m_utils_prms.f90")
+    # "${CMAKE_CURRENT_LIST_DIR}/forpy_mod.F90")
 
 # The simulation code must always be compiled without any optimization.
 # Any optimization will result in a segault early in execution.
