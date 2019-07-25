@@ -468,9 +468,9 @@ select case(buf)
     this%stats_output_file%name = last
     call this%stats_output_file%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
-  case('statvar_file')
-    this%statvar_file%name = last
-    call this%statvar_file%read(iUnit)
+  case('stat_var_file')
+    this%stat_var_file%name = last
+    call this%stat_var_file%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
   case('stream_temp_flag')
     this%stream_temp_flag%name = last
