@@ -2,6 +2,7 @@ submodule (PRMS_INTCP) sm_intcp
 contains
   module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
     use prms_constants, only: dp
+    use UTILS_PRMS, only: open_dyn_param_file, get_first_time
 
     type(Interception) :: this
     type(Control), intent(in) :: ctl_data
@@ -18,11 +19,19 @@ contains
     ! transp_on,
 
     ! -------------------------------------------------------------------------
-    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+    associate(covden_sum_dynamic => ctl_data%covden_sum_dynamic%values(1), &
+              covden_win_dynamic => ctl_data%covden_win_dynamic%values(1), &
+              dyn_covden_flag => ctl_data%dyn_covden_flag%value, &
+              dyn_intcp_flag => ctl_data%dyn_intcp_flag%value, &
+              init_vars_from_file => ctl_data%init_vars_from_file%value, &
               outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
+              snow_intcp_dynamic => ctl_data%snow_intcp_dynamic%values(1), &
+              srain_intcp_dynamic => ctl_data%srain_intcp_dynamic%values(1), &
+              start_time => ctl_data%start_time%values, &
+              wrain_intcp_dynamic => ctl_data%wrain_intcp_dynamic%values(1), &
 
               nhru => model_basin%nhru, &
 
@@ -95,22 +104,20 @@ contains
       this%net_snow = 0.0
 
       allocate(this%basin_changeover)
-      allocate(this%basin_hru_apply)
       allocate(this%basin_intcp_evap)
       allocate(this%basin_intcp_stor)
-      allocate(this%basin_net_apply)
       allocate(this%basin_net_ppt)
       allocate(this%basin_net_rain)
       allocate(this%basin_net_snow)
 
-      this%basin_changeover = 0.0_dp
-      this%basin_hru_apply = 0.0_dp
-      this%basin_intcp_evap = 0.0_dp
       this%basin_intcp_stor = 0.0_dp
-      this%basin_net_apply = 0.0_dp
-      this%basin_net_ppt = 0.0_dp
-      this%basin_net_rain = 0.0_dp
-      this%basin_net_snow = 0.0_dp
+
+      if (this%use_transfer_intcp) then
+        allocate(this%basin_hru_apply)
+        allocate(this%basin_net_apply)
+        this%basin_hru_apply = 0.0_dp
+        this%basin_net_apply = 0.0_dp
+      end if
 
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
@@ -154,6 +161,84 @@ contains
         ! TODO: hook up reading restart file
       endif
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! If requested, open dynamic parameter file(s)
+      this%has_dynamic_params = dyn_intcp_flag > 0 .or. dyn_covden_flag > 0
+
+      if (dyn_intcp_flag > 0) then
+          ! Open the output unit for summary information
+        open(NEWUNIT=this%dyn_output_unit, STATUS='REPLACE', FILE='dyn_' // MODNAME // '.out')
+      end if
+
+      if (any([1, 3, 5, 7]==dyn_intcp_flag)) then
+        ! Open the wrain_intcp_dynamic file
+        call open_dyn_param_file(nhru, this%wrain_intcp_unit, ierr, wrain_intcp_dynamic%s, 'wrain_intcp_dynamic')
+        if (ierr /= 0) then
+          write(output_unit, *) MODNAME, ' ERROR opening dynamic wrain_intcp parameter file.'
+          stop
+        end if
+
+        this%next_dyn_wrain_intcp_date = get_first_time(this%wrain_intcp_unit, start_time(1:3))
+        write(output_unit, *) ' Dynamic wrain_intcp next avail time: ', this%next_dyn_wrain_intcp_date
+
+        allocate(this%wrain_intcp_chgs(nhru))
+      end if
+
+      if (any([2, 3, 6, 7]==dyn_intcp_flag)) then
+        ! Open the srain_intcp_dynamic file
+        call open_dyn_param_file(nhru, this%srain_intcp_unit, ierr, srain_intcp_dynamic%s, 'srain_intcp_dynamic')
+        if (ierr /= 0) then
+          write(output_unit, *) MODNAME, ' ERROR opening dynamic srain_intcp parameter file.'
+          stop
+        end if
+
+        this%next_dyn_srain_intcp_date = get_first_time(this%srain_intcp_unit, start_time(1:3))
+        write(output_unit, *) ' Dynamic srain_intcp next avail time: ', this%next_dyn_srain_intcp_date
+
+        allocate(this%srain_intcp_chgs(nhru))
+      end if
+
+      if (any([4, 5, 6, 7]==dyn_intcp_flag)) then
+        ! Open the snow_intcp_dynamic file
+        call open_dyn_param_file(nhru, this%snow_intcp_unit, ierr, snow_intcp_dynamic%s, 'snow_intcp_dynamic')
+        if (ierr /= 0) then
+          write(output_unit, *) MODNAME, ' ERROR opening dynamic snow_intcp parameter file.'
+          stop
+        end if
+
+        this%next_dyn_snow_intcp_date = get_first_time(this%snow_intcp_unit, start_time(1:3))
+        write(output_unit, *) ' Dynamic snow_intcp next avail time: ', this%next_dyn_snow_intcp_date
+
+        allocate(this%snow_intcp_chgs(nhru))
+      end if
+
+      if (any([1, 3]==dyn_covden_flag)) then
+        ! Open the covden_sum_dynamic file
+        call open_dyn_param_file(nhru, this%covden_sum_unit, ierr, covden_sum_dynamic%s, 'covden_sum_dynamic')
+        if (ierr /= 0) then
+          write(output_unit, *) MODNAME, ' ERROR opening dynamic covden_sum parameter file.'
+          stop
+        end if
+
+        this%next_dyn_covden_sum_date = get_first_time(this%covden_sum_unit, start_time(1:3))
+        write(output_unit, *) ' Dynamic covden_sum next avail time: ', this%next_dyn_covden_sum_date
+
+        allocate(this%covden_sum_chgs(nhru))
+      end if
+
+      if (any([2, 3]==dyn_covden_flag)) then
+        ! Open the covden_win_dynamic file
+        call open_dyn_param_file(nhru, this%covden_win_unit, ierr, covden_win_dynamic%s, 'covden_win_dynamic')
+        if (ierr /= 0) then
+          write(output_unit, *) MODNAME, ' ERROR opening dynamic covden_win parameter file.'
+          stop
+        end if
+
+        this%next_dyn_covden_win_date = get_first_time(this%covden_win_unit, start_time(1:3))
+        write(output_unit, *) ' Dynamic covden_win next avail time: ', this%next_dyn_covden_win_date
+
+        allocate(this%covden_win_chgs(nhru))
+      end if
     end associate
   end function
 
@@ -162,12 +247,17 @@ contains
     class(Interception) :: this
       !! Interception class
 
+      if (this%has_dynamic_params) then
+        close(this%dyn_output_unit)
+      end if
+
     ! TODO: Add write restart file stuff
   end subroutine
 
 
-  module subroutine run_Interception(this, ctl_data, model_basin, &
-                                     model_potet, model_precip, model_transp, model_climate, model_time)
+  module subroutine run_Interception(this, ctl_data, model_basin, model_potet, &
+                                     model_precip, model_transp, model_climate, &
+                                     model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
                               LAKE, NEARZERO, DNEARZERO
     implicit none
@@ -192,11 +282,12 @@ contains
       !! Used for conversion of 2D index to 1D index
 
     real(r32) :: changeover
-    ! real(r32) :: cov
     real(r32) :: d
     real(r32) :: diff
     real(r32) :: evrn
     real(r32) :: evsn
+    real(r32) :: extra_water
+      !! used when cov_type transitions to bare soil and intcpstor > 0.0
     real(r32) :: intcpevap
     real(r32) :: intcpstor
     real(r32) :: last
@@ -204,28 +295,6 @@ contains
     real(r32) :: netsnow
     real(r32) :: stor
     real(r32) :: z
-
-    ! Control
-    ! nevap, nhru, et_module, print_debug
-
-    ! Basin
-    ! basin_area_inv, active_hrus, hru_route_order
-
-    ! Climate
-    ! hru_ppt, hru_rain, hru_snow, newsnow (RW), pkwater_equiv, pptmix (RW),
-
-    ! Parameters
-    ! hru_area, hru_pansta, hru_type, covden_sum, covden_win, cov_type, epan_coef,
-    ! potet_sublim, snow_intcp, srain_intcp, wrain_intcp,
-
-    ! Potential_ET
-    ! potet,
-
-    ! Time_t
-    ! Nowmonth, Cfs_conv
-
-    ! Transpiration
-    ! transp_on,
 
     ! TODO: Add the following later
     ! nevap (in potet_pan)
@@ -241,18 +310,13 @@ contains
               Cfs_conv => model_time%Cfs_conv, &
 
               nhru => model_basin%nhru, &
+              active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
               cov_type => model_basin%cov_type, &
               active_hrus => model_basin%active_hrus, &
               hru_area => model_basin%hru_area, &
               hru_route_order => model_basin%hru_route_order, &
               hru_type => model_basin%hru_type, &
-
-              ! covden_sum => param_data%covden_sum%values, &
-              ! covden_win => param_data%covden_win%values, &
-              ! snow_intcp => param_data%snow_intcp%values, &
-              ! srain_intcp => param_data%srain_intcp%values, &
-              ! wrain_intcp => param_data%wrain_intcp%values, &
 
               epan_coef => model_potet%epan_coef, &
               potet => model_potet%potet, &
@@ -268,6 +332,11 @@ contains
 
               transp_on => model_transp%transp_on)
 
+      ! Dynamic parameter read
+      if (this%has_dynamic_params) then
+        call this%read_dyn_params(ctl_data, model_basin, model_time)
+      end if
+
       ! pkwater_equiv is from last time step
       if (print_debug == 1) then
         this%intcp_stor_ante = this%hru_intcpstor
@@ -275,50 +344,63 @@ contains
       endif
 
       this%basin_changeover = 0.0_dp
-      this%basin_intcp_evap = 0.0_dp
-      this%basin_intcp_stor = 0.0_dp
-      this%basin_net_ppt = 0.0_dp
-      this%basin_net_rain = 0.0_dp
-      this%basin_net_snow = 0.0_dp
 
       ! zero application rate variables for today
-      ! if (this%use_transfer_intcp == 1) then
       if (this%use_transfer_intcp) then
-        this%basin_hru_apply = 0.0_dp
-        this%basin_net_apply = 0.0_dp
         this%net_apply = 0.0
       endif
 
+      this%intcp_on = .false.
+
+      this%intcp_form = 0
+      where (hru_snow > 0.0)
+        this%intcp_form = 1
+      end where
+
       do j=1, active_hrus
         chru = hru_route_order(j)
-        this%net_ppt(chru) = hru_ppt(chru)
+        ! this%net_ppt(chru) = hru_ppt(chru)
+        ! this%net_rain(chru) = hru_rain(chru)
+        ! this%net_snow(chru) = hru_snow(chru)
+        ! this%intcp_evap(chru) = 0.0
+        ! this%hru_intcpevap(chru) = 0.0
+        netrain = hru_rain(chru)
+        netsnow = hru_snow(chru)
+
+        changeover = 0.0
+        extra_water = 0.0
+        intcpevap = 0.0
+
+        ! TODO: why is this intcp_stor instead of hru_intcpstor
+        intcpstor = this%intcp_stor(chru)
 
         ! 2D index to 1D
         ! idx1D = (Nowmonth - 1) * nhru + chru
 
         if (hru_type(chru) == LAKE .or. cov_type(chru) == BARESOIL) then
           ! Lake or bare ground HRUs
-          this%net_rain(chru) = hru_rain(chru)
-          this%net_snow(chru) = hru_snow(chru)
-          this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
-          this%basin_net_snow = this%basin_net_snow + dble(hru_snow(chru) * hru_area(chru))
-          this%basin_net_rain = this%basin_net_rain + dble(hru_rain(chru) * hru_area(chru))
-          CYCLE
-        endif
+          if (cov_type(chru) == BARESOIL .and. intcpstor > 0.0) then
+            ! This happens when dynamic cov_type changes from >0 to zero and
+            ! intcp_stor has non-zero value from prior timestep.
+            ! NOTE: prms5 has extra_water = Hru_intcpstor(i)
+            ! extra_water = this%intcp_stor(chru)
+            extra_water = this%hru_intcpstor(chru)
 
-        changeover = 0.0
-        intcpevap = 0.0
-        intcpstor = this%intcp_stor(chru)
-        netrain = hru_rain(chru)
-        netsnow = hru_snow(chru)
-        this%intcp_form(chru) = 0
+            if (print_debug > -1) then
+              write(output_unit, *) 'WARNING: cov_type changed to 0 with canopy storage of: ', this%hru_intcpstor(chru)
+              write(output_unit, *) '         this storage will be moved to intcp_changeover; HRU: ', chru
+            end if
+
+            intcpstor = 0.0
+          end if
+        end if
 
         ! ******Adjust interception amounts for changes in summer/winter cover density
         if (transp_on(chru)) then
           this%canopy_covden(chru) = this%covden_sum(chru)
         else
           this%canopy_covden(chru) = this%covden_win(chru)
-        endif
+        end if
 
         ! *****Determine the amount of interception from rain
         if (.not. transp_on(chru) .and. this%intcp_transp_on(chru)) then
@@ -338,12 +420,11 @@ contains
               endif
             else
               if (print_debug > -1) then
-                print *, 'covden_win=0 at winter change over with canopy storage, HRU:', chru, &
-                         'intcp_stor:', intcpstor, ' covden_sum:', this%covden_sum(chru)
+                write(output_unit, *) 'covden_win=0 at winter change over with canopy storage, HRU:', chru, &
+                                      'intcp_stor:', intcpstor, ' covden_sum:', this%covden_sum(chru)
               endif
 
               intcpstor = 0.0
-              this%intcp_on(chru) = .false.
             endif
           endif
         elseif (transp_on(chru) .and. .not. this%intcp_transp_on(chru)) then
@@ -362,107 +443,94 @@ contains
               endif
             else
               if (print_debug > -1) then
-                print *, 'covden_sum=0 at summer change over with canopy storage, HRU:', chru, &
-                         'intcp_stor:', intcpstor, ' covden_win:', this%covden_win(chru)
+                write(output_unit, *) 'covden_sum=0 at summer change over with canopy storage, HRU:', chru, &
+                                      'intcp_stor:', intcpstor, ' covden_win:', this%covden_win(chru)
               endif
 
               intcpstor = 0.0
-              this%intcp_on(chru) = .false.
             endif
           endif
         endif
 
         ! *****Determine the amount of interception from rain
-        ! if (transp_on(chru) == 1) then
-        if (transp_on(chru)) then
-          stor = this%srain_intcp(chru)
-        else
-          stor = this%wrain_intcp(chru)
-        endif
+        if (hru_type(chru) /= LAKE .and. cov_type(chru) /= BARESOIL) then
+          if (transp_on(chru)) then
+            stor = this%srain_intcp(chru)
+          else
+            stor = this%wrain_intcp(chru)
+          endif
 
-        if (hru_rain(chru) > 0.0) then
-          if (this%canopy_covden(chru) > 0.0) then
-            if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
-              call this%intercept(this%intcp_on(chru), netrain, intcpstor, this%canopy_covden(chru), &
-                                  hru_rain(chru), stor)
-            elseif (cov_type(chru) == GRASSES) then
-              !rsr, 03/24/2008 intercept rain on snow-free grass, when not a mixed event
-              if (pkwater_equiv(chru) < DNEARZERO .and. netsnow < NEARZERO) then
-                call this%intercept(this%intcp_on(chru), netrain, intcpstor, &
-                                    this%canopy_covden(chru), hru_rain(chru), stor)
-                ! rsr 03/24/2008
-                ! It was decided to leave the water in intcpstor rather than put
-                ! the water in the snowpack, as doing so for a mixed event on
-                ! grass with snow-free surface produces a divide by zero in
-                ! snowcomp. Storage on grass will eventually evaporate.
+          if (hru_rain(chru) > 0.0) then
+            if (this%canopy_covden(chru) > 0.0) then
+              if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
+                call this%intercept(netrain, intcpstor, this%canopy_covden(chru), &
+                                    hru_rain(chru), stor)
+              elseif (cov_type(chru) == GRASSES) then
+                !rsr, 03/24/2008 intercept rain on snow-free grass, when not a mixed event
+                if (pkwater_equiv(chru) < DNEARZERO .and. netsnow < NEARZERO) then
+                  call this%intercept(netrain, intcpstor, this%canopy_covden(chru), &
+                                      hru_rain(chru), stor)
+                  ! rsr 03/24/2008
+                  ! It was decided to leave the water in intcpstor rather than put
+                  ! the water in the snowpack, as doing so for a mixed event on
+                  ! grass with snow-free surface produces a divide by zero in
+                  ! snowcomp. Storage on grass will eventually evaporate.
+                endif
               endif
             endif
           endif
-        endif
 
-        if (changeover > 0.0) then
-          if (print_debug > -1) then
-            print *, 'Change over storage added to rain throughfall:', changeover, '; HRU:', chru
-          endif
+          ! TODO: The following relies on water_use_read.f90 for this to work
+          ! NEXT intercept application of irrigation water, but only if
+          !  irrigation method (irr_type=hrumeth) is =0 for sprinkler method
+          ! if (this%use_transfer_intcp) then
+          !   this%gain_inches(chru) = 0.0
+          !
+          !   if (canopy_gain(chru) > 0.0) then
+          !     if (this%canopy_covden(chru) > 0.0) then
+          !       if (irr_type(chru) == 2) then
+          !         print *, 'WARNING, water-use transfer > 0, but irr_type = 2 (ignore), HRU:', chru, ', transfer:', canopy_gain(chru)
+          !         canopy_gain(chru) = 0.0
+          !       else
+          !         this%gain_inches(chru) = canopy_gain(chru) / sngl(cfs_conv) / this%canopy_covden(chru) / hru_area(chru)
+          !
+          !         if (irr_type(chru) == 0) then
+          !           call this%intercept(this%net_apply(chru), intcpstor, &
+          !                               this%canopy_covden(chru), this%gain_inches(chru), stor)
+          !         else ! Hrumeth=1
+          !           this%net_apply(chru) = this%gain_inches(chru)
+          !         endif
+          !       endif
+          !
+          !       ! this%basin_hru_apply = this%basin_hru_apply + dble(this%gain_inches(chru) * hru_area(chru))
+          !       ! this%basin_net_apply = this%basin_net_apply + dble(this%net_apply(chru) * hru_area(chru))
+          !     else
+          !       STOP 'ERROR, canopy transfer attempted to HRU with cov_den = 0.0'
+          !     endif
+          !   endif
+          ! endif
 
-          netrain = netrain + changeover
-          this%basin_changeover = this%basin_changeover + dble(changeover * hru_area(chru))
-        endif
+          ! ******Determine amount of interception from snow
+          if (hru_snow(chru) > 0.0) then
+            if (this%canopy_covden(chru) > 0.0) then
+              if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
+                stor = this%snow_intcp(chru)
+                call this%intercept(netsnow, intcpstor, this%canopy_covden(chru), &
+                                    hru_snow(chru), stor)
 
-        ! TODO: The following relies on water_use_read.f90 for this to work
-        ! NEXT intercept application of irrigation water, but only if
-        !  irrigation method (irr_type=hrumeth) is =0 for sprinkler method
-        ! if (this%use_transfer_intcp) then
-        !   this%gain_inches(chru) = 0.0
-        !
-        !   if (canopy_gain(chru) > 0.0) then
-        !     if (this%canopy_covden(chru) > 0.0) then
-        !       if (irr_type(chru) == 2) then
-        !         print *, 'WARNING, water-use transfer > 0, but irr_type = 2 (ignore), HRU:', chru, ', transfer:', canopy_gain(chru)
-        !         canopy_gain(chru) = 0.0
-        !       else
-        !         this%gain_inches(chru) = canopy_gain(chru) / sngl(cfs_conv) / this%canopy_covden(chru) / hru_area(chru)
-        !
-        !         if (irr_type(chru) == 0) then
-        !           call this%intercept(this%intcp_on(chru), this%net_apply(chru), intcpstor, &
-        !                               this%canopy_covden(chru), this%gain_inches(chru), stor)
-        !         else ! Hrumeth=1
-        !           this%net_apply(chru) = this%gain_inches(chru)
-        !         endif
-        !       endif
-        !
-        !       this%basin_hru_apply = this%basin_hru_apply + dble(this%gain_inches(chru) * hru_area(chru))
-        !       this%basin_net_apply = this%basin_net_apply + dble(this%net_apply(chru) * hru_area(chru))
-        !     else
-        !       STOP 'ERROR, canopy transfer attempted to HRU with cov_den = 0.0'
-        !     endif
-        !   endif
-        ! endif
-
-        ! ******Determine amount of interception from snow
-        if (hru_snow(chru) > 0.0) then
-          if (this%canopy_covden(chru) > 0.0) then
-            this%intcp_form(chru) = 1
-
-            if (any([SHRUBS, TREES, CONIFEROUS]==cov_type(chru))) then
-              stor = this%snow_intcp(chru)
-              call this%intercept(this%intcp_on(chru), netsnow, intcpstor, this%canopy_covden(chru), &
-                                  hru_snow(chru), stor)
-
-              if (netsnow < NEARZERO) then   !rsr, added 3/9/2006
-                netrain = netrain + netsnow
-                netsnow = 0.0
-                newsnow(chru) = 0
-                pptmix(chru) = 0   ! reset to be sure it is zero
+                if (netsnow < NEARZERO) then   !rsr, added 3/9/2006
+                  netrain = netrain + netsnow
+                  netsnow = 0.0
+                  newsnow(chru) = 0
+                  pptmix(chru) = 0   ! reset to be sure it is zero
+                endif
               endif
             endif
           endif
-        endif
-
-        this%net_ppt(chru) = netrain + netsnow
+        end if
 
         ! ******compute evaporation or sublimation of interception
-        if (this%intcp_on(chru)) then
+        if (intcpstor > 0.0) then
           ! If precipitation assume no evaporation or sublimation
           if (hru_ppt(chru) < NEARZERO) then
             ! evrn = potet(chru) / epan_coef(idx1D)
@@ -476,31 +544,26 @@ contains
             !   if (evrn < 0.0) evrn = 0.0
             ! endif
 
-            ! ******Compute snow interception loss
+            ! ****** Compute snow interception loss
             if (this%intcp_form(chru) == 1) then
               z = intcpstor - evsn
 
               if (z > 0.0) then
                 intcpevap = evsn
                 intcpstor = z
-                this%intcp_on(chru) = .true.
               else
                 intcpevap = intcpstor
                 intcpstor = 0.0
-                this%intcp_on(chru) = .false.
               endif
-            ! elseif ( Intcp_form(chru)==0 ) then
             else
               d = intcpstor - evrn
 
               if (d > 0.0) then
                 intcpevap = evrn
                 intcpstor = d
-                this%intcp_on(chru) = .true.
               else
                 intcpevap = intcpstor
                 intcpstor = 0.0
-                this%intcp_on(chru) = .false.
               endif
             endif
           endif
@@ -520,33 +583,48 @@ contains
         this%intcp_evap(chru) = intcpevap
         this%hru_intcpevap(chru) = intcpevap * this%canopy_covden(chru)
         this%intcp_stor(chru) = intcpstor
+        this%intcp_on(chru) = intcpstor > 0.0
         this%hru_intcpstor(chru) = intcpstor * this%canopy_covden(chru)
-        this%intcp_changeover(chru) = changeover
+        this%intcp_changeover(chru) = changeover + extra_water
 
         this%net_rain(chru) = netrain
         this%net_snow(chru) = netsnow
+        this%net_ppt(chru) = netrain + netsnow
 
         !rsr, question about depression storage for basin_net_ppt???
         !     My assumption is that cover density is for the whole HRU
-        this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
-        this%basin_net_snow = this%basin_net_snow + dble(this%net_snow(chru) * hru_area(chru))
-        this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * hru_area(chru))
-        this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * hru_area(chru))
-        this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * hru_area(chru))
+        ! this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
+        ! this%basin_net_snow = this%basin_net_snow + dble(this%net_snow(chru) * hru_area(chru))
+        ! this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * hru_area(chru))
+        ! this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * hru_area(chru))
+        ! this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * hru_area(chru))
+        this%basin_changeover = this%basin_changeover + dble(changeover * hru_area(chru))
 
+        if (changeover > 0.0 .and. print_debug > -1) then
+          write(output_unit, *) 'Change over storage:', changeover, '; HRU:', chru
+        endif
       enddo
 
-      this%basin_net_ppt = this%basin_net_ppt * basin_area_inv
-      this%basin_net_snow = this%basin_net_snow * basin_area_inv
-      this%basin_net_rain = this%basin_net_rain * basin_area_inv
-      this%basin_intcp_stor = this%basin_intcp_stor * basin_area_inv
-      this%basin_intcp_evap = this%basin_intcp_evap * basin_area_inv
+      !rsr, question about depression storage for basin_net_ppt???
+      !     My assumption is that cover density is for the whole HRU
+      this%basin_net_ppt = sum(dble(this%net_ppt * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_net_snow = sum(dble(this%net_snow * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_net_rain = sum(dble(this%net_rain * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_intcp_stor = sum(dble(this%hru_intcpstor * hru_area), mask=active_mask) * basin_area_inv
+      this%basin_intcp_evap = sum(dble(this%hru_intcpevap * hru_area), mask=active_mask) * basin_area_inv
+
+      ! this%basin_net_ppt = this%basin_net_ppt * basin_area_inv
+      ! this%basin_net_snow = this%basin_net_snow * basin_area_inv
+      ! this%basin_net_rain = this%basin_net_rain * basin_area_inv
+      ! this%basin_intcp_stor = this%basin_intcp_stor * basin_area_inv
+      ! this%basin_intcp_evap = this%basin_intcp_evap * basin_area_inv
       this%basin_changeover = this%basin_changeover * basin_area_inv
 
-      ! if (this%use_transfer_intcp == 1) then
       if (this%use_transfer_intcp) then
-        this%basin_net_apply = this%basin_net_apply * basin_area_inv
-        this%basin_hru_apply = this%basin_hru_apply * basin_area_inv
+        this%basin_net_apply = sum(dble(this%gain_inches * hru_area), mask=active_mask) * basin_area_inv
+        this%basin_hru_apply = sum(dble(this%net_apply * hru_area), mask=active_mask) * basin_area_inv
+        ! this%basin_net_apply = this%basin_net_apply * basin_area_inv
+        ! this%basin_hru_apply = this%basin_hru_apply * basin_area_inv
       endif
     end associate
   end subroutine
@@ -555,13 +633,10 @@ contains
   !***********************************************************************
   ! Subroutine to compute interception of rain or snow
   !***********************************************************************
-  module subroutine intercept(intcp_on, net_precip, intcp_stor, cov, precip, stor_max)
-  ! module subroutine intercept(precip, stor_max, cov, intcp_on, intcp_stor, net_precip)
+  module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
     implicit none
 
     ! Arguments
-    ! integer(i32), intent(out) :: intcp_on
-    logical, intent(out) :: intcp_on
     real(r32), intent(out) :: net_precip
     real(r32), intent(inout) :: intcp_stor
     real(r32), intent(in) :: cov
@@ -569,8 +644,6 @@ contains
     real(r32), intent(in) :: stor_max
 
     !***********************************************************************
-    intcp_on = .true.
-
     net_precip = precip * (1.0 - cov)
     intcp_stor = intcp_stor + precip
 
@@ -580,4 +653,102 @@ contains
     endif
   end subroutine
 
+
+  module subroutine read_dyn_params(this, ctl_data, model_basin, model_time)
+    use UTILS_PRMS, only: get_next_time, update_parameter
+    implicit none
+
+    class(Interception), intent(inout) :: this
+    type(Control), intent(in) :: ctl_data
+    type(Basin), intent(in) :: model_basin
+    type(Time_t), intent(in) :: model_time
+
+    associate(dyn_covden_flag => ctl_data%dyn_covden_flag%value, &
+              dyn_intcp_flag => ctl_data%dyn_intcp_flag%value, &
+
+              nhru => model_basin%nhru, &
+              active_hrus => model_basin%active_hrus, &
+              hru_area => model_basin%hru_area, &
+              hru_route_order => model_basin%hru_route_order, &
+              hru_type => model_basin%hru_type, &
+
+              curr_time => model_time%Nowtime)
+
+    ! 0=no; 1=file wrain_intcp_dynamic; 2=file srain_intcp_dynamic;
+    ! 4=file snow_intcp_dynamic; additive combinations
+    if (any([1, 3, 5, 7]==dyn_intcp_flag)) then
+      ! Updates of wrain_intcp
+      if (all(this%next_dyn_wrain_intcp_date == curr_time(1:3))) then
+        read(this%wrain_intcp_unit, *) this%next_dyn_wrain_intcp_date, this%wrain_intcp_chgs
+        write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: wrain_intcp was updated. ', this%next_dyn_wrain_intcp_date
+
+        ! Update wrain_intcp with new values
+        call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%wrain_intcp_chgs, 'wrain_intcp', this%wrain_intcp)
+        this%next_dyn_wrain_intcp_date = get_next_time(this%wrain_intcp_unit)
+      end if
+    endif
+
+    if (any([2, 3, 6, 7]==dyn_intcp_flag)) then
+      ! Updates of srain_intcp
+      if (all(this%next_dyn_srain_intcp_date == curr_time(1:3))) then
+        read(this%srain_intcp_unit, *) this%next_dyn_srain_intcp_date, this%srain_intcp_chgs
+        write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: srain_intcp was updated. ', this%next_dyn_srain_intcp_date
+
+        ! Update srain_intcp with new values
+        call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%srain_intcp_chgs, 'srain_intcp', this%srain_intcp)
+        this%next_dyn_srain_intcp_date = get_next_time(this%srain_intcp_unit)
+      end if
+    endif
+
+    if (any([4, 5, 6, 7]==dyn_intcp_flag)) then
+      ! Updates of snow_intcp
+      if (all(this%next_dyn_snow_intcp_date == curr_time(1:3))) then
+        read(this%snow_intcp_unit, *) this%next_dyn_snow_intcp_date, this%snow_intcp_chgs
+        write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: snow_intcp was updated. ', this%next_dyn_snow_intcp_date
+
+        ! Update snow_intcp with new values
+        call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%snow_intcp_chgs, 'snow_intcp', this%snow_intcp)
+        this%next_dyn_snow_intcp_date = get_next_time(this%snow_intcp_unit)
+      end if
+    endif
+
+    if (any([1, 3]==dyn_covden_flag)) then
+      ! Updates of covden_sum
+      if (all(this%next_dyn_covden_sum_date == curr_time(1:3))) then
+        read(this%covden_sum_unit, *) this%next_dyn_covden_sum_date, this%covden_sum_chgs
+        write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: covden_sum was updated. ', this%next_dyn_covden_sum_date
+
+        ! Update covden_sum with new values
+        call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%covden_sum_chgs, 'covden_sum', this%covden_sum)
+        this%next_dyn_covden_sum_date = get_next_time(this%covden_sum_unit)
+      end if
+    end if
+
+    if (any([2, 3]==dyn_covden_flag)) then
+      ! Updates of covden_win
+      if (all(this%next_dyn_covden_win_date == curr_time(1:3))) then
+        read(this%covden_win_unit, *) this%next_dyn_covden_win_date, this%covden_win_chgs
+        write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: covden_win was updated. ', this%next_dyn_covden_win_date
+
+        ! Update covden_win with new values
+        call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%covden_win_chgs, 'covden_win', this%covden_win)
+        this%next_dyn_covden_win_date = get_next_time(this%covden_win_unit)
+      end if
+    endif
+
+
+    9008 format(A, A, I4, 2('/', I2.2))
+
+    ! ! leave any interception storage unchanged, it will be evaporated based on new values in intcp module
+    ! IF (Wrainintcp_flag == 1) THEN
+    !   IF (Wrain_intcp_next_mo /= 0) THEN
+    !     IF (Wrain_intcp_next_yr == Nowyear .AND. Wrain_intcp_next_mo == Nowmonth .AND. Wrain_intcp_next_day == Nowday) THEN
+    !       READ (Wrain_intcp_unit, *) Wrain_intcp_next_yr, Wrain_intcp_next_mo, Wrain_intcp_next_day, Temp
+    !       CALL write_dynparam(Output_unit, Nhru, Updated_hrus, Temp, Wrain_intcp, 'wrain_intcp')
+    !       CALL is_eof(Wrain_intcp_unit, Wrain_intcp_next_yr, Wrain_intcp_next_mo, Wrain_intcp_next_day)
+    !     ENDIF
+    !   ENDIF
+    ! ENDIF
+    end associate
+  end subroutine
 end submodule

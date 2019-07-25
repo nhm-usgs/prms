@@ -5,6 +5,7 @@
 !***********************************************************************
 module PRMS_INTCP
   use variableKind
+  use iso_fortran_env, only: output_unit, error_unit
   use ModelBase_class, only: ModelBase
   use prms_constants, only: dp
   use Control_class, only: Control
@@ -82,8 +83,42 @@ module PRMS_INTCP
     ! integer(i32), allocatable, private :: intcp_on(:)
     ! integer(i32), allocatable, private :: intcp_transp_on(:)
 
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Dynamic parameter variables
+    logical, private :: has_dynamic_params
+
+    integer(i32), private :: dyn_output_unit
+      !! File handle to open dynamic parameter log file
+
+    integer(i32), private :: covden_sum_unit
+    integer(i32), private :: next_dyn_covden_sum_date(3)
+    real(r32), private, allocatable :: covden_sum_chgs(:)
+
+    integer(i32), private :: covden_win_unit
+    integer(i32), private :: next_dyn_covden_win_date(3)
+    real(r32), private, allocatable :: covden_win_chgs(:)
+
+    integer(i32), private :: snow_intcp_unit
+    integer(i32), private :: next_dyn_snow_intcp_date(3)
+    real(r32), private, allocatable :: snow_intcp_chgs(:)
+
+    integer(i32), private :: srain_intcp_unit
+    integer(i32), private :: next_dyn_srain_intcp_date(3)
+    real(r32), private, allocatable :: srain_intcp_chgs(:)
+
+    integer(i32), private :: wrain_intcp_unit
+    integer(i32), private :: next_dyn_wrain_intcp_date(3)
+    real(r32), private, allocatable :: wrain_intcp_chgs(:)
+
+
+    ! integer(i32), private :: imperv_frac_unit
+    ! integer(i32) :: next_dyn_imperv_frac_date(3)
+    ! real(r32), allocatable :: imperv_frac_chgs(:)
+
+
     contains
       procedure, nopass, private :: intercept
+      procedure, private :: read_dyn_params
       procedure, public :: run => run_Interception
       procedure, public :: cleanup => cleanup_Interception
   end type
@@ -127,9 +162,8 @@ module PRMS_INTCP
   end interface
 
   interface
-    module subroutine intercept(intcp_on, net_precip, intcp_stor, cov, precip, stor_max)
-      ! integer(i32), intent(out) :: intcp_on
-      logical, intent(out) :: intcp_on
+    module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
+      ! logical, intent(out) :: intcp_on
       real(r32), intent(out) :: net_precip
       real(r32), intent(inout) :: intcp_stor
       real(r32), intent(in) :: cov
@@ -138,4 +172,12 @@ module PRMS_INTCP
     end subroutine
   end interface
 
+  interface
+    module subroutine read_dyn_params(this, ctl_data, model_basin, model_time)
+      class(Interception), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Basin), intent(in) :: model_basin
+      type(Time_t), intent(in) :: model_time
+    end subroutine
+  end interface
 end module
