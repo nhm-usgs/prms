@@ -137,7 +137,7 @@ module Control_class
     type(sArray) :: statVar_names
     type(iScalar) :: statsON_OFF
     type(sArray) :: stats_output_file
-    type(sArray) :: statvar_file
+    type(sArray) :: stat_var_file
     type(iScalar) :: stream_temp_flag
     type(iScalar) :: stream_temp_shade_flag
     type(sArray) :: strmflow_module
