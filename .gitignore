@@ -1,5 +1,13 @@
-*.project
-*.o
+bin/
+build/
+include/
+lib/
+old/
+.idea/
+.vscode/
 *.mod
-*.a
-/prms/prms
+*.swp
+*.o
+CMakeFiles
+cmake_install.cmake
+Makefile
