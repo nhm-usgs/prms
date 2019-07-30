@@ -543,8 +543,9 @@
       DO i = 1, Nsegment
         IF ( Strmflow_flag==7 ) THEN ! muskingum_mann
           velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say width>>depth
-          K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped lenght
+          K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped length
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
+          print*, i, K_coef(i)
         ENDIF
 
         IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) K_coef(i) = 24.0 !K_coef must be specified = 24.0 for lake segments'

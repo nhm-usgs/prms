@@ -41,7 +41,7 @@
       INTEGER, SAVE :: Spring_jday, Summer_jday, Autumn_jday, Winter_jday
 !   Shade Parameters needed if stream_temp_shade_flag = 2
       REAL, SAVE, ALLOCATABLE :: Segshade_sum(:), Segshade_win(:)
-      REAL, SAVE:: Albedo, Melt_temp
+      REAL, SAVE:: Albedo_str, Melt_temp
       ! INTEGER, SAVE :: Shadeflg, now using stream_temp_shade_flag
       INTEGER, SAVE, ALLOCATABLE :: Ss_tau(:), Gw_tau(:)
 !   Control parameters
@@ -187,11 +187,11 @@
       ALLOCATE (gw_silo(nsegment,365), ss_silo(nsegment,365))
       ALLOCATE (hru_area_sum(nsegment))
 
-      IF ( declparam( MODNAME, 'albedo', 'one', 'real', &
+      IF ( declparam( MODNAME, 'albedo_str', 'one', 'real', &
      &     '0.10', '0.0', '1.0', &
      &     'Short-wave solar radiation reflected by streams', &
      &     'Short-wave solar radiation reflected by streams', &
-     &     'decimal fraction')/=0 ) CALL read_error(1, 'albedo')
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'albedo_str')
 
       ALLOCATE(lat_temp_adj(Nsegment,12))
       IF ( declparam( MODNAME, 'lat_temp_adj', 'nsegment,nmonths', 'real', &
@@ -401,7 +401,7 @@
 !***********************************************************************
       stream_temp_init = 0
 
-      IF ( getparam( MODNAME, 'albedo', 1, 'real', Albedo)/=0 ) CALL read_error(2, 'albedo')
+      IF ( getparam( MODNAME, 'albedo_str', 1, 'real', Albedo_str)/=0 ) CALL read_error(2, 'albedo_str')
       IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*12, 'real', lat_temp_adj)/=0 ) CALL read_error(2, 'lat_temp_adj')
 
       IF (getparam(MODNAME, 'seg_lat', Nsegment, 'real', Seg_lat)/=0 ) CALL read_error(2, 'seg_lat')
@@ -1098,7 +1098,7 @@
 !        2. DETERMINE THE MAXIMUM DAILY EQUILIBRIUM WATER TEMPERATURE PARAMETERS
 
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Seg_width_flow, Seg_humid, Press, MPS_CONVERT, &
-     &    Seg_ccov, Seg_potet, Albedo, seg_tave_gw
+     &    Seg_ccov, Seg_potet, Albedo_str, seg_tave_gw
       USE PRMS_BASIN, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
       USE PRMS_ROUTING, ONLY: Seginc_swrad, Seg_slope
@@ -1155,7 +1155,7 @@
 
 ! hf is heat from stream friction. See eqn. 14.  q_init is in CMS
       hf = 9805.0 * (q_init/Seg_width_flow(Seg_id)) * Seg_slope(Seg_id)
-      hs = (1.0 - sh) * sw_power * (1.0 - Albedo)
+      hs = (1.0 - sh) * sw_power * (1.0 - Albedo_str)
       hv = 5.24D-8 * DBLE(Svi) * (taabs**4)
 
 ! Stefan-Boltzmann constant = 5.670373D-08; emissivity of water = 0.9526, times each other: 5.4016D-08

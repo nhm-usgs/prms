@@ -36,12 +36,14 @@
       REAL, SAVE, ALLOCATABLE :: Hortonian_flow(:)
       REAL, SAVE, ALLOCATABLE :: Hru_impervevap(:), Hru_impervstor(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Strm_seg_in(:), Hortonian_lakes(:), Hru_hortn_cascflow(:)
-      REAL, SAVE, ALLOCATABLE :: Cfgi(:), Cfgi_prev(:)
-      INTEGER, SAVE, ALLOCATABLE :: Frozen(:)
 !   Declared Parameters
-      REAL, SAVE :: Cfgi_thrshld, Cfgi_decay
       REAL, SAVE, ALLOCATABLE :: Smidx_coef(:), Smidx_exp(:)
       REAL, SAVE, ALLOCATABLE :: Carea_min(:), Carea_max(:)
+!   Declared Parameters for Frozen Ground
+      REAL, SAVE :: Cfgi_thrshld, Cfgi_decay
+!   Declared Variables for Frozen Ground
+      REAL, SAVE, ALLOCATABLE :: Cfgi(:), Cfgi_prev(:)
+      INTEGER, SAVE, ALLOCATABLE :: Frozen(:)
 !   Declared Parameters for Depression Storage
       REAL, SAVE, ALLOCATABLE :: Op_flow_thres(:), Sro_to_dprst_perv(:)
       REAL, SAVE, ALLOCATABLE :: Va_clos_exp(:), Va_open_exp(:)
@@ -317,7 +319,7 @@
      &       'decimal fraction')/=0 ) CALL read_error(1, 'cfgi_decay')
 
         IF ( declparam(MODNAME, 'cfgi_thrshld', 'one', 'real', &
-     &       '83.0', '1.0', '500.0', &
+     &       '52.55', '5.0', '83.0', &
      &       'CFGI threshold value indicating frozen soil', &
      &       'CFGI threshold value indicating frozen soil', &
      &       'index')/=0 ) CALL read_error(1, 'cfgi_thrshld')
@@ -619,8 +621,8 @@
       INTEGER :: i, k, dprst_chk, frzen, active_glacier
       REAL :: srunoff, avail_et, hperv, sra, availh2o
       DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff, cfgi_sroff
-      REAL :: cfgi_k, depth_cm
-      REAL :: glcrmltb, temp, temp2 ! Ashley glaciers
+      REAL :: cfgi_k, depth_cm !frozen ground
+      REAL :: glcrmltb, temp, temp2 ! glaciers
 !***********************************************************************
       srunoffrun = 0
 
@@ -662,12 +664,12 @@
         Hruarea_dble = Hru_area_dble(i)
         Ihru = i
         runoff = 0.0D0
-        glcrmltb = 0.0 ! Ashley glacier
+        glcrmltb = 0.0 ! glacier
         Isglacier = 0
-        active_glacier = -1 ! not an Ashley glacier
+        active_glacier = -1 ! not an glacier
         IF ( Glacier_flag>0 ) THEN
           IF ( Hru_type(i)==4 ) THEN
-            IF ( Glacier_flag==1 ) THEN ! Ashley glacier
+            IF ( Glacier_flag==1 ) THEN ! glacier
               Isglacier = 1
               glcrmltb = Glacrb_melt(i)
               IF ( Glacier_frac(i)>0.0 ) THEN
@@ -715,11 +717,11 @@
           ELSE
             cfgi_k = 0.08
           ENDIF
-          depth_cm = SNGL(Pk_depth(i))*2.54
-          Cfgi(i) = (Cfgi_decay*Cfgi_prev(i)) - (Tavgc(i)*(2.71828**(-0.4*cfgi_k*depth_cm)))
+          depth_cm = SNGL(Pk_depth(i))*2.54 !depth of snow cover averaged over HRU
+          Cfgi(i) = Cfgi_decay*Cfgi_prev(i) - Tavgc(i)*( 2.71828**(-0.4*cfgi_k*depth_cm) )
           IF ( active_glacier==1 ) THEN
             Cfgi(i) = 0.0 !if glacier over, want ground completely unfrozen, or below threshold, infiltration
-            IF ( Glacier_frac(i)<1.0 ) Cfgi(i) = Cfgi_thrshld ! Ashley glacier with some open fraction
+            IF ( Glacier_frac(i)<1.0 ) Cfgi(i) = Cfgi_thrshld ! glacier with some open fraction
           ENDIF
           IF ( Cfgi(i)<0.0 ) Cfgi(i) = 0.0
           Cfgi_prev(i) = Cfgi(i)
@@ -757,7 +759,7 @@
           ENDIF
 
           availh2o = Intcp_changeover(i) + Net_rain(i)
-          IF ( Isglacier==1 ) THEN ! Ashley glacier
+          IF ( Isglacier==1 ) THEN ! glacier
             temp = Snowmelt(i) + glcrmltb !Snowmelt or 0.0
             temp2 = availh2o*(1.0-Glacier_frac(i))
             CALL compute_infil(temp2, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), temp, &
@@ -788,7 +790,7 @@
 !         **********************************************************
 
         srunoff = 0.0
-        IF ( Hru_type(i)==1 .OR. active_glacier==0 ) THEN ! could be an Ashley glacier-capable HRU with no ice
+        IF ( Hru_type(i)==1 .OR. active_glacier==0 ) THEN ! could be an glacier-capable HRU with no ice
 !******Compute runoff for pervious and impervious area, and depression storage area
           runoff = runoff + DBLE( Srp*hperv + Sri*Hruarea_imperv )
           srunoff = SNGL( runoff/Hruarea_dble )
@@ -927,7 +929,7 @@
       INTEGER :: hru_flag
 !***********************************************************************
       hru_flag = 0
-      IF ( Hru_type==1 .OR. Isglacier==1 ) hru_flag = 1 ! land or Ashley glacier
+      IF ( Hru_type==1 .OR. Isglacier==1 ) hru_flag = 1 ! land or glacier
 ! compute runoff from cascading Hortonian flow
       IF ( Cascade_flag>0 ) THEN
         avail_water = SNGL( Upslope_hortonian(Ihru) )

@@ -396,7 +396,7 @@
      &         ' if =0, then overbank storage is turned off, if also bankfinite_hru =1 bank storage is off', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'ripst_areafr_max')
 
-        ALLOCATE ( Porosity_seg(Nhru) )
+        ALLOCATE ( Porosity_seg(Nsegment) )
         IF ( declparam(MODNAME, 'porosity_seg', 'nsegment', 'real', &
      &       '0.4', '0.15', '0.75', &
      &       'Porosity of soil of riparian overbank flow storage', &
@@ -836,7 +836,7 @@
       DO i = 1, Nsegment
         IF ( Strmflow_flag==7 ) THEN ! muskingum_mann
           velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say width>>depth
-          K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped lenght
+          K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped length
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
         ENDIF
 

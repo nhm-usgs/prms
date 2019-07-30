@@ -48,7 +48,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pk_depth(:), Pkwater_ante(:), Ai(:)
       REAL, SAVE, ALLOCATABLE :: Glacrmelt(:), Glacr_evap(:), Glacr_albedo(:), Glacr_pk_den(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_pk_ice(:), Glacr_freeh2o(:), Glacrcov_area(:)
-      REAL, SAVE, ALLOCATABLE :: Glacrb_melt(:), Glacr_pk_def(:), Glacr_pk_temp(:), Glacr_air_avtemp(:)
+      REAL, SAVE, ALLOCATABLE :: Glacrb_melt(:), Glacr_pk_def(:), Glacr_pk_temp(:), Ann_tempc(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_air_5avtemp1(:), Glacr_air_deltemp(:), Glacr_air_5avtemp(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:),Glacr_delsnow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pkwater_ante(:), Glacr_pkwater_equiv(:)
@@ -167,10 +167,10 @@
              'Glacier basal melt, goes to soil', &
              'inches/day', Glacrb_melt)/=0 ) CALL read_error(3, 'glacrb_melt')
 
-        ALLOCATE ( Glacr_air_avtemp(Nhru) )
-        IF ( declvar(MODNAME, 'glacr_air_avtemp', 'nhru', Nhru, 'real', &
-     &       'Current average year air temperature over glacier or glrette HRU', &
-     &       'degrees Celsius', Glacr_air_avtemp)/=0 ) CALL read_error(3, 'glacr_air_avtemp')
+        ALLOCATE ( Ann_tempc(Nhru) )
+        IF ( declvar(MODNAME, 'ann_tempc', 'nhru', Nhru, 'real', &
+     &       'Current average year air temperature overs HRU', &
+     &       'degrees Celsius', Ann_tempc)/=0 ) CALL read_error(3, 'ann_tempc')
 
        ALLOCATE ( Glacr_air_5avtemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_5avtemp', 'nhru', Nhru, 'real', &
@@ -814,7 +814,7 @@
       Basin_glacrevap = 0.0D0
       IF ( Glacier_flag==1 ) THEN
         Alt_above_ela = 0.0
-        Glacr_air_avtemp = 0.0
+        Ann_tempc = 0.0
         Glacr_air_5avtemp = 0.0
         Glacr_air_5avtemp1 = 0.0
         Glacr_air_deltemp = 0.0
@@ -977,7 +977,7 @@
           IF ( Active_glacier==2 ) Glacr_albedo(i) = Albedo_ice(i) !glacr_albedo doesn't change if glacierette but could get zeroed out
           IF ( isglacier==1 ) THEN
             IF (Nowyear >= Starttime(1)+10 .AND. MOD(Nowyear-Starttime(1),5)==0 ) THEN
-              Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 10 years of data
+              Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 5 years of data
               Glacr_delsnow(i) = 10.0*(Glacr_5avsnow1(i) - Glacr_5avsnow(i))/Glacr_5avsnow1(i) !number of 10 percent (*100.0/10.0) changes
             ENDIF
             !keep before restart
@@ -989,7 +989,7 @@
               Glacr_air_5avtemp(i) = 0.0 !zero out for new year restart
               Glacr_5avsnow(i) = 0.0 !zero out for new year restart
             ENDIF
-            Glacr_air_avtemp(i) = 0.0 !zero out for new year restart
+            Ann_tempc(i) = 0.0 !zero out for new year restart
           ENDIF !end start of year calculations
         ENDIF
 
@@ -997,10 +997,10 @@
         IF ( isglacier==1 ) THEN
           IF (Julwater>151 .AND. Julwater<244) THEN ! Now following McGrath et al 2017, temp June-August, 92 days
             Yrdays5 = Yrdays5 + 1
-            Glacr_air_5avtemp(i) = ( Glacr_air_5avtemp(i)*(Yrdays5-1)+ (Tminc(i)+Tavgc(i))*0.5 )/Yrdays5
+            Glacr_air_5avtemp(i) = ( Glacr_air_5avtemp(i)*(Yrdays5-1)+ Tavgc(i) )/Yrdays5
           ENDIF
 ! Do for every time step
-          Glacr_air_avtemp(i) = ( Glacr_air_avtemp(i)*(Julwater-1)+ (Tminc(i)+Tavgc(i))*0.5 )/Julwater
+          Ann_tempc(i) = ( Ann_tempc(i)*(Julwater-1)+ Tavgc(i) )/Julwater
           Glacr_5avsnow(i) = Glacr_5avsnow(i) + Net_snow(i)/5.0
         ENDIF
 
@@ -1125,18 +1125,12 @@
           ! is no precipitation
           emis = Emis_noppt(i) ! [fraction of radiation]
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
-          !emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
+          !emis = ((temp+273.15)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
           ! If there is any precipitation in the HRU, reset the
           ! emissivity to 1
           IF ( Hru_ppt(i)>0.0 ) emis = 1.0 ! [fraction of radiation]
           ! Save the current value of emissivity
           esv = emis ! [fraction of radiation]
-          ! The incoming shortwave radiation is the HRU radiation
-          ! adjusted by the albedo (some is reflected back into the
-          ! atmoshphere) and the transmission coefficient (some is
-          ! intercepted by the winter vegetative canopy)
-          swn = Swrad(i)*(1.0-Albedo(i))*Rad_trncf(i) ! [cal/cm^2]
-                                                      ! or [Langleys]
           ! Set the convection-condensation for a half-day interval
           cec = Cecn_coef(i, Nowmonth)*0.5 ! [cal/(cm^2 degC)]
                                            ! or [Langleys / degC]
@@ -1144,48 +1138,6 @@
           ! condensation parameter by half
           IF ( Cov_type(i)>2 ) cec = cec*0.5 ! [cal/(cm^2 degC)] RSR: cov_type=4 is valid for trees (coniferous)
                                              ! or [Langleys / degC]
-
-          ! Calculate the new snow depth (Riley et al. 1973)
-          ! RSR: the following 3 lines of code were developed by Rob Payn, 7/10/2013
-          ! The snow depth depends on the previous snow pack water
-          ! equivalent plus the new net snow
-          Pss(i) = Pss(i) + DBLE( Net_snow(i) ) ! [inches]
-          dpt_before_settle = Pk_depth(i) + DBLE(Net_snow(i))*Deninv
-          dpt1 = dpt_before_settle + Settle_const_dble * ((Pss(i)*Denmaxinv) - dpt_before_settle)
-!          dpt1 = Pk_depth(i) + (Net_snow(i)*Deninv) + &
-!                 Settle_const * ((Pss(i)*Denmaxinv) - Pk_depth(i))
-!          dpt1 = ((Net_snow(i)*Deninv)+ (Setden*Pss(i))+Pk_depth(i))*Set1 ! [inches]
-          ! RAPCOMMENT - CHANGED TO THE APPROPRIATE FINITE DIFFERENCE
-          !             APPROXIMATION OF SNOW DEPTH
-          Pk_depth(i) = dpt1 ! [inches]
-
-          ! Calculate the snowpack density
-          IF ( dpt1>0.0D0 ) THEN
-            Pk_den(i) = SNGL( Pkwater_equiv(i)/dpt1 )
-          ELSE
-            Pk_den(i) = 0.0
-          ENDIF
-                               ! [inch water equiv / inch depth]
-
-          ! The effective thermal conductivity is approximated
-          ! (empirically) as 0.0077 times (snowpack density)^2
-          ! [cal / (sec g degC)] Therefore, the effective
-          ! conductivity term (inside the square root) in the
-          ! equation for conductive heat exchange can be
-          ! calculated as follows (0.0077*pk_den^2)/(pk_den*0.5)
-          ! where 0.5 is the specific heat of ice [cal / (g degC)]
-          ! this simplifies to the following
-          effk = 0.0154*Pk_den(i) ! [unitless]
-          ! 13751 is the number of seconds in 12 hours over pi
-          ! So for a half day, to calculate the conductive heat
-          ! exchange per cm snow per cm^2 area per degree
-          ! temperature difference is the following
-          ! In effect, multiplying cst times the temperature
-          ! gradient gives the heatexchange by heat conducted
-          ! (calories) per square cm of snowpack
-          cst = Pk_den(i)*(SQRT(effk*13751.0)) ! [cal/(cm^2 degC)]
-                                               ! or [Langleys / degC]
-
           ! Check whether to force spring melt
           ! Spring melt is forced if time is before the melt-force
           ! day and after the melt-look day (parameters)
@@ -1229,21 +1181,71 @@
           ! niteda is a flag indicating nighttime (1) or daytime (2)
           ! set the flag indicating night time
           niteda = 1 ! [flag]
-          ! no shortwave (solar) radiation at night
-          sw = 0.0 ! [cal / cm^2] or [Langleys]
           ! temparature is halfway between the minimum and average temperature
           ! for the day
           temp = (Tminc(i)+Tavgc(i))*0.5
-          ! calculate the night time energy balance
-          CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
-     &                 temp, esv, Hru_ppt(i), trd, Emis_noppt(i), &
-     &                 Canopy_covden(i), cec, Pkwater_equiv(i), &
-     &                 Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), &
-     &                 Snowcov_area(i), Snowmelt(i), Pk_depth(i), &
-     &                 Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap(i),-1)
-          ! track total heat flux from both night and day periods
-          Tcal(i) = cals ! [cal/cm^2] or [Langleys]
 
+          IF ( Pkwater_equiv(i)>0.0D0 ) THEN
+            ! The incoming shortwave radiation is the HRU radiation
+            ! adjusted by the albedo (some is reflected back into the
+            ! atmoshphere) and the transmission coefficient (some is
+            ! intercepted by the winter vegetative canopy)
+            swn = Swrad(i)*(1.0-Albedo(i))*Rad_trncf(i) ! [cal/cm^2]
+                                                      ! or [Langleys]
+            ! Calculate the new snow depth (Riley et al. 1973)
+            ! RSR: the following 3 lines of code were developed by Rob Payn, 7/10/2013
+            ! The snow depth depends on the previous snow pack water
+            ! equivalent plus the new net snow
+            Pss(i) = Pss(i) + DBLE( Net_snow(i) ) ! [inches]
+            dpt_before_settle = Pk_depth(i) + DBLE(Net_snow(i))*Deninv
+            dpt1 = dpt_before_settle + Settle_const_dble * ((Pss(i)*Denmaxinv) - dpt_before_settle)
+  !          dpt1 = Pk_depth(i) + (Net_snow(i)*Deninv) + &
+  !                 Settle_const * ((Pss(i)*Denmaxinv) - Pk_depth(i))
+  !          dpt1 = ((Net_snow(i)*Deninv)+ (Setden*Pss(i))+Pk_depth(i))*Set1 ! [inches]
+            ! RAPCOMMENT - CHANGED TO THE APPROPRIATE FINITE DIFFERENCE
+            !             APPROXIMATION OF SNOW DEPTH
+            Pk_depth(i) = dpt1 ! [inches]
+
+            ! Calculate the snowpack density
+            IF ( dpt1>0.0D0 ) THEN
+              Pk_den(i) = SNGL( Pkwater_equiv(i)/dpt1 )
+            ELSE
+              Pk_den(i) = 0.0
+            ENDIF
+                                 ! [inch water equiv / inch depth]
+
+            ! The effective thermal conductivity is approximated
+            ! (empirically) as 0.0077 times (snowpack density)^2
+            ! [cal / (sec g degC)] Therefore, the effective
+            ! conductivity term (inside the square root) in the
+            ! equation for conductive heat exchange can be
+            ! calculated as follows (0.0077*pk_den^2)/(pk_den*0.5)
+            ! where 0.5 is the specific heat of ice [cal / (g degC)]
+            ! this simplifies to the following
+            effk = 0.0154*Pk_den(i) ! [unitless]
+            ! 13751 is the number of seconds in 12 hours over pi
+            ! So for a half day, to calculate the conductive heat
+            ! exchange per cm snow per cm^2 area per degree
+            ! temperature difference is the following
+            ! In effect, multiplying cst times the temperature
+            ! gradient gives the heatexchange by heat conducted
+            ! (calories) per square cm of snowpack
+            cst = Pk_den(i)*(SQRT(effk*13751.0)) ! [cal/(cm^2 degC)]
+                                                 ! or [Langleys / degC]
+
+
+            ! no shortwave (solar) radiation at night
+            sw = 0.0 ! [cal / cm^2] or [Langleys]
+            ! calculate the night time energy balance
+            CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
+     &                   temp, esv, Hru_ppt(i), trd, Emis_noppt(i), &
+     &                   Canopy_covden(i), cec, Pkwater_equiv(i), &
+     &                   Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), &
+     &                   Snowcov_area(i), Snowmelt(i), Pk_depth(i), &
+     &                   Pss(i), Pst(i), Pk_den(i), cst, cals, sw, Freeh2o_cap(i),-1)
+            ! track total heat flux from both night and day periods
+            Tcal(i) = cals ! [cal/cm^2] or [Langleys]
+          ENDIF
           iswn  = 0.0
           IF ( Active_glacier>=1 ) THEN
             IF ( Glacrcov_area(i)>0.0 ) THEN
@@ -1277,16 +1279,16 @@
             ENDIF
           ENDIF
 
-          ! Compute energy balance for day period (if the snowpack
-          ! still exists)
-          IF ( Pkwater_equiv(i)>0.0D0 ) THEN
-            ! set the flag indicating daytime
-            niteda = 2 ! [flag]
+          ! Compute energy balance for day period
+          ! set the flag indicating daytime
+          niteda = 2 ! [flag]
+          ! temparature is halfway between the maximum and average
+          ! temperature for the day
+          temp = (Tmaxc(i)+Tavgc(i))*0.5 ! [degrees C]
+
+          IF ( Pkwater_equiv(i)>0.0D0 ) THEN !(if the snowpack still exists)
             ! set shortwave radiation as calculated earlier
             sw = swn ! [cal/cm^2] or [Langleys]
-            ! temparature is halfway between the maximum and average
-            ! temperature for the day
-            temp = (Tmaxc(i)+Tavgc(i))*0.5 ! [degrees C]
             CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
      &                   temp, esv, Hru_ppt(i), trd, Emis_noppt(i), &
      &                   Canopy_covden(i), cec, Pkwater_equiv(i), &
@@ -2234,7 +2236,7 @@
       ! Calculate the potential long wave energy from air based on
       ! temperature (assuming perfect black-body emission)
       ! Stefan Boltzmann/2 = (11.71E-8)/2 = 0.585E-7 because add for day and night
-      air = 0.585E-7*((Temp+273.16)**4.0) ! [cal/cm^2] or [Langleys]
+      air = 0.585E-7*((Temp+273.15)**4.0) ! [cal/cm^2] or [Langleys]
       ! set emissivity, which is the fraction of perfect black-body
       ! emission that is actually applied
       emis = Esv ! [fraction of radiation]
@@ -2799,7 +2801,7 @@
 !***********************************************************************
       SUBROUTINE glacr_states_to_zero(Ihru, active_layer_present)
       USE PRMS_SNOW, ONLY: Glacr_freeh2o_cap, Glacr_freeh2o_capm, Glacr_pk_def, Glacr_pk_depth, &
-     &    Glacr_layer, Glacr_pk_temp, Glacr_air_avtemp, Glacr_pkwater_equiv, Glacr_pk_den, &
+     &    Glacr_layer, Glacr_pk_temp, Ann_tempc, Glacr_pkwater_equiv, Glacr_pk_den, &
      &    Glacr_pk_ice, Glacr_pkwater_ante, Glacr_freeh2o, Glacr_pss, Glacr_pk_den
       IMPLICIT NONE
 ! Arguments
@@ -2817,7 +2819,7 @@
         reduce = 1.0
       ElSE
         Glacr_pk_depth(Ihru) = DBLE(Glacr_layer(Ihru))
-        Glacr_pk_temp(Ihru) = Glacr_air_avtemp(Ihru) !start at average last year temp like Oerlemans 1992
+        Glacr_pk_temp(Ihru) = Ann_tempc(Ihru) !start at average last year temp like Oerlemans 1992
         IF ( Glacr_pk_temp(Ihru) > 0.0) Glacr_pk_temp(Ihru) = 0.0
         Glacr_freeh2o_capm(Ihru) = Glacr_freeh2o_cap(Ihru)
         reduce = 0.8 !if start Glacr_pk_ice too close to Glacr_pk_depth can't grow with energy loss to free water gain
@@ -2885,7 +2887,7 @@
           WRITE ( Restart_outunit ) Glacr_pkwater_equiv
           WRITE ( Restart_outunit ) Glacr_pkwater_ante
           WRITE ( Restart_outunit ) Glacr_pk_temp
-          WRITE ( Restart_outunit ) Glacr_air_avtemp, Yrdays5
+          WRITE ( Restart_outunit ) Ann_tempc, Yrdays5
           WRITE ( Restart_outunit ) Glacr_air_5avtemp, Glacr_air_5avtemp1, Glacr_air_deltemp
           WRITE ( Restart_outunit ) Glacr_5avsnow, Glacr_5avsnow1, Glacr_delsnow
           WRITE ( Restart_outunit ) Glacr_pk_def
@@ -2935,7 +2937,7 @@
           READ ( Restart_inunit ) Glacr_pkwater_equiv
           READ ( Restart_inunit ) Glacr_pkwater_ante
           READ ( Restart_inunit ) Glacr_pk_temp
-          READ ( Restart_inunit ) Glacr_air_avtemp, Yrdays5
+          READ ( Restart_inunit ) Ann_tempc, Yrdays5
           READ ( Restart_inunit ) Glacr_air_5avtemp, Glacr_air_5avtemp1, Glacr_air_deltemp
           READ ( Restart_inunit ) Glacr_5avsnow, Glacr_5avsnow1, Glacr_delsnow
           READ ( Restart_inunit ) Glacr_pk_def
