@@ -7,6 +7,7 @@ MMFDIR      = $(F_MASTER)/mmf
 MIZUDIR     = $(F_MASTER)/mizu
 LIBDIR      = $(F_MASTER)/lib
 PRMSDIR     = $(F_MASTER)/prms
+PRMSRDIR    = $(F_MASTER)/prmsRip
 BINDIR      = $(F_MASTER)/bin
 MMFLIB      = $(LIBDIR)/libmmf.a
 MIZULIB     = $(LIBDIR)/libmizu.a
