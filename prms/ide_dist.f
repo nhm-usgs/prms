@@ -70,8 +70,7 @@
 !***********************************************************************
       idedecl = 0
 
-      Version_ide_dist =
-     +'ide_dist.f 2018-04-18 11:09:00Z'
+      Version_ide_dist = 'ide_dist.f 2019-07-12 10:34:00Z'
       CALL print_module(Version_ide_dist,
      +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'ide_dist'
@@ -95,7 +94,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.6', '0.6',
+     +     '-0.4', '-0.5', '2.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -104,7 +103,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.6', '0.6',
+     +     '-0.4', '-0.5', '2.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -251,9 +250,10 @@
 !***********************************************************************
       INTEGER FUNCTION ideinit()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Inputerror_flag,
+     +    Temp_units
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Active_hrus, Hru_route_order
+     +    Active_hrus, Hru_route_order, FEET2METERS
       IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
@@ -330,10 +330,16 @@
       IF ( getparam(MODNAME, 'tmax_allsnow_sta', Nrain*12, 'real',
      +     Tmax_allsnow_sta)/=0 ) CALL read_error(2, 'tmax_allsnow_sta')
 
-! dry adiabatic lapse rate (DALR) when extrapolating
-!       (DALR = 5.4oF/1000 meters)
-!      Dalr = 0.0177
-      Dalr = 5.4D0/1000.0D0
+! When the air contains little water, this lapse rate is known as the dry adiabatic lapse rate: 
+! The rate at which the temperature of a parcel of dry air decreases as the parcel is lifted in the atmosphere.
+! The dry adiabatic lapse rate (abbreviated DALR) is 5.4°F per 1000 ft or 9.8°C per km.
+! module needs Dalr in temp_units/meter
+      IF ( Temp_units==1 ) THEN
+        Dalr = 9.8D0/1000.0D0 ! °C/meter
+      ELSE
+        Dalr = DBLE( 5.4/(1000.0*FEET2METERS) ) ! °F/meter
+      ENDIF
+! Ashley had:       Dalr = 17.7D0/1000.0D0 ???
 !
 ! Compute basin centroid
 !
@@ -341,9 +347,9 @@
       Basin_centroid_y = 0.0D0
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
-        Basin_centroid_x = Basin_centroid_x + 
+        Basin_centroid_x = Basin_centroid_x +
      +                     DBLE( (Hru_area(i)*Hru_x(i)) )
-        Basin_centroid_y = Basin_centroid_y + 
+        Basin_centroid_y = Basin_centroid_y +
      +                     DBLE( (Hru_area(i)*Hru_y(i)) )
       ENDDO
       Basin_centroid_x = Basin_centroid_x*Basin_area_inv
@@ -426,7 +432,8 @@
      +    Psta_x, Psta_y, Basin_centroid_x, Basin_centroid_y, Ndist_tsta
       USE PRMS_MODULE, ONLY: Nrain, Ntemp
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    Hru_route_order, Hru_elev_meters
+     +    Hru_route_order, Hru_elev_meters, Hru_elev_ts, Hru_type,
+     +    FEET2METERS, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust,
@@ -467,7 +474,13 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        z = Hru_elev_meters(n)
+        IF ( Hru_type(n)/=4 ) THEN
+          z = Hru_elev_meters(n)
+        ELSEIF ( Elev_units==0 ) THEN
+          z = Hru_elev_ts(n)*FEET2METERS
+        ELSE
+          z = Hru_elev_ts(n)
+        ENDIF
         IF ( Temp_wght_dist.GT.0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +       Tsta_y, y, Tmax, dat_dist, Ndist_tsta, Dist_exp)
@@ -596,7 +609,8 @@
      +    Adjust_snow, Adjust_rain, Tmax_allsnow_sta, Tmax_allrain_sta
       USE PRMS_MODULE, ONLY: Nrain
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
-     +    Hru_route_order, MM2INCH, Hru_elev_meters
+     +    Hru_route_order, MM2INCH, Hru_elev_meters,
+     +    FEET2METERS, Hru_elev_ts, Hru_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
@@ -677,7 +691,13 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        z = Hru_elev_meters(n)
+        IF ( Hru_type(n)/=4 ) THEN
+          z = Hru_elev_meters(n)
+        ELSEIF ( Elev_units==0 ) THEN
+          z = Hru_elev_ts(n)*FEET2METERS
+        ELSE
+          z = Hru_elev_ts(n)
+        ENDIF
         IF ( Prcp_wght_dist>0.0 )
      +       CALL compute_inv(Nrain, Rain_nsta, Rain_nuse, Psta_x, x,
      +            Psta_y, y, Precip_ide, dat_dist, Ndist_psta, Dist_exp)
@@ -823,8 +843,7 @@
 ! NOTE: there is a problem with extreme values due to elevations greater or less than
 !       those present in the station data. To avoid extreme temperature due to extrapolation
 !       the slope will not be allowed to exceed the dry adiabatic lapse rate (DALR) when extrapolating
-!       (DALR = 5.4oF/1000 meters)
-!      dalr = 0.0177
+!       (DALR = 5.4oF/1000 feet or 9.8oC/1000 meters)
 !-----------------------------------------------------------------------------------------------------
       slope = -999.0D0
       b = -999.0D0
@@ -935,7 +954,7 @@
         CALL SORT2I(Imax, num, elev, rb)
         j1 = rb(1)
         j2 = rb(num)
-        slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1))
+        slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1)) ! temp_units/meter or precip_units/meter
         b = xmndat(j1) - (slope*xmnelv(j1))
         IF ( ABS(Itype)==1 ) THEN
           IF ( DABS(slope)>Dalr ) THEN
@@ -965,7 +984,7 @@
 !
 !=============================================================
       END SUBROUTINE compute_elv
- 
+
 !***********************************************************************
 !***********************************************************************
       SUBROUTINE SORT2(Imax, N, Ra, Rb)

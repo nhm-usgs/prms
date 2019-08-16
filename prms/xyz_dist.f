@@ -41,7 +41,8 @@
 !   Declared Parameters
       INTEGER, SAVE :: Conv_flag
       REAL, SAVE, ALLOCATABLE :: Max_lapse(:, :), Min_lapse(:, :)
-      REAL, SAVE, ALLOCATABLE :: Ppt_lapse(:, :)
+      REAL, SAVE, ALLOCATABLE :: Zmax_lapse(:), Zmin_lapse(:)
+      REAL, SAVE, ALLOCATABLE :: Ppt_lapse(:, :), Zppt_lapse(:)
       REAL, SAVE :: Solrad_elev
       REAL, SAVE, ALLOCATABLE :: Adjust_snow(:, :), Adjust_rain(:, :)
       REAL, SAVE :: Tmax_add, Tmax_div, Tmin_add, Tmin_div, Ppt_add
@@ -119,7 +120,7 @@
 !***********************************************************************
       INTEGER FUNCTION xyzdecl()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Model, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -130,7 +131,7 @@
       xyzdecl = 0
 
       Version_xyz_dist =
-     +'xyz_dist.f 2018-04-18 11:09:00Z'
+     +'xyz_dist.f 2019-08-16 09:56:00Z'
       CALL print_module(Version_xyz_dist,
      +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'xyz_dist'
@@ -157,7 +158,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.75', '3.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -166,7 +167,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.5', '0.5',
+     +     '-0.4', '-0.75', '3.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -207,10 +208,36 @@
       ALLOCATE ( Ppt_lapse(MAXLAPSE,12) )
       IF ( declparam(MODNAME, 'ppt_lapse', 'nlapse,nmonths', 'real',
      +     '0.0', '-10.0', '10.0',
-     +     'Precipitation lapse rate',
+     +     'Precipitation lapse rate for each direction',
      +     'Monthly (January to December) precipitation lapse rate'//
      +     ' for each direction (X, Y, and Z)',
      +     'none')/=0 ) CALL read_error(1, 'ppt_lapse')
+
+      IF ( Glacier_flag==1 .OR. Model==99 ) THEN
+        ALLOCATE ( Zmax_lapse(12) )
+        IF ( declparam(MODNAME, 'zmax_lapse', 'nmonths', 'real',
+     +       '0.0', '-100.0', '100.0',
+     +       'Monthly maximum temperature lapse rate for Z direction',
+     +       'Monthly (January to December) maximum air temperature'//
+     +       ' lapse rate for each Z direction',
+     +       'none')/=0 ) CALL read_error(1, 'zmax_lapse')
+
+        ALLOCATE ( Zmin_lapse(12) )
+        IF ( declparam(MODNAME, 'zmin_lapse', 'nmonths', 'real',
+     +       '0.0', '-100.0', '100.0',
+     +       'Monthly minimum temperature lapse rate for Z direction',
+     +       'Monthly (January to December) minimum air temperature'//
+     +       ' lapse rate for each Z direction',
+     +       'none')/=0 ) CALL read_error(1, 'zmin_lapse')
+
+        ALLOCATE ( Zppt_lapse(12) )
+        IF ( declparam(MODNAME, 'zppt_lapse', 'nmonths', 'real',
+     +       '0.0', '-10.0', '10.0',
+     +       'Precipitation lapse rate for Z direction',
+     +       'Monthly (January to December) precipitation lapse rate'//
+     +       ' for each Z direction',
+     +       'none')/=0 ) CALL read_error(1, 'zppt_lapse')
+      ENDIF
 
       ALLOCATE ( Temp_STAx(Ntemp), Temp_STAelev(Ntemp) )
       IF ( declparam(MODNAME, 'tsta_x', 'ntemp', 'real',
@@ -456,9 +483,10 @@
 !***********************************************************************
       INTEGER FUNCTION xyzinit()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain,
+     +    Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Hru_elev, Active_hrus, Hru_route_order, FEET2METERS
+     +    Hru_elev_ts, Active_hrus, Hru_route_order, FEET2METERS
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -466,7 +494,7 @@
       INTEGER, EXTERNAL :: getparam
       EXTERNAL mean_by_month, read_error
 ! Local Variables
-      INTEGER :: i, m, ii, ierr
+      INTEGER :: i, m, ii, div_err, ierr
 !***********************************************************************
       xyzinit = 0
 
@@ -498,6 +526,17 @@
 
       IF ( getparam(MODNAME, 'ppt_lapse', MAXLAPSE*12, 'real',
      +     Ppt_lapse)/=0 ) CALL read_error(2, 'ppt_lapse')
+
+      IF ( Glacier_flag==1 ) THEN
+        IF ( getparam(MODNAME, 'zmax_lapse', 12, 'real',
+     +       Zmax_lapse)/=0 ) CALL read_error(2, 'zmax_lapse')
+
+        IF ( getparam(MODNAME, 'zmin_lapse', 12, 'real',
+     +       Zmin_lapse)/=0 ) CALL read_error(2, 'zmin_lapse')
+
+        IF ( getparam(MODNAME, 'zppt_lapse', 12, 'real',
+     +       Zppt_lapse)/=0 ) CALL read_error(2, 'zppt_lapse')
+      ENDIF
 
       IF ( getparam(MODNAME, 'tsta_x', Ntemp, 'real', Temp_STAx)
      +     /=0 ) CALL read_error(2, 'tsta_x')
@@ -578,6 +617,36 @@
 
       IF ( getparam(MODNAME, 'tmax_allsnow_dist', 1, 'real',
      +   Tmax_allsnow_dist)/=0 ) CALL read_error(2, 'tmax_allsnow_dist')
+
+      div_err = 0
+      IF ( Z_div==0.0 ) THEN
+        PRINT *, 'ERROR, z_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( X_div==0.0 ) THEN
+        PRINT *, 'ERROR, x_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( Y_div==0.0 ) THEN
+        PRINT *, 'ERROR, y_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( Ppt_div==0.0 ) THEN
+        PRINT *, 'ERROR, ppt_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( Tmin_div==0.0 ) THEN
+        PRINT *, 'ERROR, tmin_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( Tmax_div==0.0 ) THEN
+        PRINT *, 'ERROR, tmax_div cannot be 0.0'
+        div_err = 1
+      ENDIF
+      IF ( div_err==1 ) THEN
+        Inputerror_flag = 1
+        RETURN
+      ENDIF
 !
 ! Compute basin centroid
 !
@@ -595,7 +664,7 @@
 !
       IF ( Conv_flag==1 ) THEN
         DO i = 1, Nhru
-          MRUelev(i) = Hru_elev(i)*FEET2METERS
+          MRUelev(i) = Hru_elev_ts(i)*FEET2METERS
         ENDDO
         DO i = 1, Ntemp
           Temp_STAelev(i) = Tsta_elev(i)*FEET2METERS
@@ -605,7 +674,7 @@
         ENDDO
         Solradelev = Solrad_elev*FEET2METERS
       ELSE
-        MRUelev = Hru_elev
+        MRUelev = Hru_elev_ts
         Temp_STAelev = Tsta_elev
         Pstaelev = Psta_elev
         Solradelev = Solrad_elev
@@ -683,23 +752,42 @@
 !               Outputs a daily max and min Temperature by HRU elevation
 !***********************************************************************
       INTEGER FUNCTION xyzrun()
+      USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_XYZ_DIST
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Rain_code
       IMPLICIT NONE
 ! Functions
       EXTERNAL xyz_temp_run, xyz_rain_run
+! Local Variables
+      REAL :: maxl(MAXLAPSE), minl(MAXLAPSE), pptl(MAXLAPSE)
 !***********************************************************************
       xyzrun = 0
 
-      CALL xyz_temp_run(Max_lapse(1, Nowmonth), Min_lapse(1, Nowmonth),
-     +                  Meantmax(Nowmonth), Meantmin(Nowmonth),
-     +                  Temp_meanx(Nowmonth), Temp_meany(Nowmonth),
-     +                  Temp_meanz(Nowmonth))
+      IF ( Glacier_flag==0 ) THEN
+        CALL xyz_temp_run(Max_lapse(1, Nowmonth), Min_lapse(1, Nowmonth),
+     +                    Meantmax(Nowmonth), Meantmin(Nowmonth),
+     +                    Temp_meanx(Nowmonth), Temp_meany(Nowmonth),
+     +                    Temp_meanz(Nowmonth))
 
-      CALL xyz_rain_run(Ppt_lapse(1, Nowmonth), Rain_meanx(Nowmonth),
-     +                  Rain_meany(Nowmonth), Rain_meanz(Nowmonth),
-     +                  Meanppt(Nowmonth), Rain_code(Nowmonth))
+        CALL xyz_rain_run(Ppt_lapse(1, Nowmonth), Rain_meanx(Nowmonth),
+     +                    Rain_meany(Nowmonth), Rain_meanz(Nowmonth),
+     +                    Meanppt(Nowmonth), Rain_code(Nowmonth))
+      ELSE
+        maxl(1:(MAXLAPSE-1)) = Max_lapse(1:(MAXLAPSE-1),Nowmonth)
+        maxl(MAXLAPSE) = Zmax_lapse(Nowmonth)
+        minl(1:(MAXLAPSE-1)) = Min_lapse(1:(MAXLAPSE-1),Nowmonth)
+        minl(MAXLAPSE) = Zmin_lapse(Nowmonth)
+        CALL xyz_temp_run(maxl, minl, Meantmax(Nowmonth),
+     +                    Meantmin(Nowmonth), Temp_meanx(Nowmonth),
+     +                    Temp_meany(Nowmonth), Temp_meanz(Nowmonth))
+
+        pptl(1:(MAXLAPSE-1)) = Ppt_lapse(1:(MAXLAPSE-1),Nowmonth)
+        pptl(MAXLAPSE) = Zppt_lapse(Nowmonth)
+        CALL xyz_rain_run(pptl, Rain_meanx(Nowmonth),
+     +                    Rain_meany(Nowmonth), Rain_meanz(Nowmonth),
+     +                    Meanppt(Nowmonth), Rain_code(Nowmonth))
+      ENDIF
 
       END FUNCTION xyzrun
 
@@ -716,9 +804,9 @@
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
-      USE PRMS_MODULE, ONLY: Nrain
+      USE PRMS_MODULE, ONLY: Nrain, Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    DNEARZERO, Hru_route_order
+     +    DNEARZERO, Hru_route_order, Hru_type, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust
@@ -899,6 +987,12 @@
 
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
+        IF ( Glacier_flag==1 ) THEN
+          ! glacier module may have changed Hru_elev_meters
+          IF ( Hru_type(i)==4 )
+     +         MRUelev(i) = (Hru_elev_meters(i)+Z_add)/Z_div
+        ENDIF
+
 !
 !  At this point, all temperatures are in the units
 !  of the temperatures in the data file.

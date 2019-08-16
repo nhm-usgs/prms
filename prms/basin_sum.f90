@@ -95,7 +95,7 @@
 !***********************************************************************
       sumbdecl = 0
 
-      Version_basin_sum = 'basin_sum.f90 2017-10-21 14:18:00Z'
+      Version_basin_sum = 'basin_sum.f90 2019-07-09 10:00:00Z'
       CALL print_module(Version_basin_sum, 'Summary                     ', 90)
       MODNAME = 'basin_sum'
 
@@ -445,6 +445,7 @@
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
      &                Basin_imperv_stor + Basin_lake_stor + &
      &                Basin_dprst_volop + Basin_dprst_volcl
+!glacier storage not known at start
 
       IF ( Print_freq/=0 ) THEN
         CALL header_print(Print_type)
@@ -473,7 +474,7 @@
 !***********************************************************************
       INTEGER FUNCTION sumbrun()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: Print_debug, Nobs, End_year, Strmflow_flag
+      USE PRMS_MODULE, ONLY: Print_debug, Nobs, End_year, Strmflow_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Active_area, Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_lakeevap, &
      &    Basin_actet, Basin_perv_et, Basin_swale_et, Hru_actet, &
@@ -484,6 +485,7 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Basin_gwstor, Basin_gwsink, Basin_gwstor_minarea_wb
       USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor, Basin_net_ppt
       USE PRMS_SNOW, ONLY: Basin_snowmelt, Basin_pweqv, Basin_snowevap
+      USE PRMS_GLACR, ONLY: Basin_gl_storage
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_imperv_evap, Basin_sroff, &
      &    Basin_dprst_evap, Basin_dprst_volcl, Basin_dprst_volop
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
@@ -507,11 +509,17 @@
 
 !*****Compute aggregated values
 
+!**** might need glacier
       Last_basin_stor = Basin_storage
       Basin_storage = Basin_soil_moist + Basin_intcp_stor + &
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
      &                Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) Basin_storage = Basin_storage + Basin_segment_storage
+! Basin_storage doesn't include any processes on glacier
+! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
+!   includes glaciers that have depth estimates and these are known to be iffy
+      IF ( Glacier_flag==1 ) Basin_storage = Basin_storage + Basin_gl_storage
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 ) &
+     &     Basin_storage = Basin_storage + Basin_segment_storage
 
 ! volume calculation for storage
       Basin_storvol = Basin_storage*Active_area

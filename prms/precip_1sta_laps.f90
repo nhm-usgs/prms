@@ -3,7 +3,7 @@
 ! to each HRU from one or more stations HRU using monthly correction
 ! factors to account for differences in altitude, spatial variation,
 ! topography, and measurement gage efficiency (precip_1sta)
-! or by computing a daily lapse rate using elevation data and using 
+! or by computing a daily lapse rate using elevation data and using
 ! specified adjustment factors for precipitation from two measurement
 ! stations(precip_laps)
 !   Declared Parameters
@@ -31,8 +31,10 @@
 
       INTEGER FUNCTION precip_1sta_laps()
       USE PRMS_PRECIP_1STA_LAPS
-      USE PRMS_MODULE, ONLY: Process, Nhru, Nrain, Inputerror_flag, Precip_flag, Model, Print_debug
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, Hru_elev, MM2INCH
+      USE PRMS_MODULE, ONLY: Process, Nhru, Nrain, Inputerror_flag, &
+     &    Precip_flag, Model, Print_debug, Glacier_flag
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, &
+     &    Hru_elev_ts, MM2INCH, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
      &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allrain_f, Tmax_allsnow_f, &
@@ -83,6 +85,10 @@
           Newsnow(i) = 0
           Pptmix(i) = 0
           ppt = Precip_local(Hru_psta(i))
+          IF ( Glacier_flag==1 .AND. Precip_flag==2 ) THEN
+            ! Hru_elev_ts is the antecedent glacier elevation
+            IF ( Hru_type(i)==4 ) CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev_ts(i))
+          ENDIF
           IF ( ppt>0.0 ) &
      &         CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), Tmaxf(i), &
      &                          Tminf(i), Pptmix(i), Newsnow(i), Prmx(i), &
@@ -95,7 +101,7 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip = 'precip_1sta_laps.f90 2016-10-21 17:36:00Z'
+        Version_precip = 'precip_1sta_laps.f90 2019-08-06 16:18:00Z'
         IF ( Precip_flag==1 ) THEN
           MODNAME = 'precip_1sta'
         ELSE
@@ -118,7 +124,7 @@
         ALLOCATE ( Rain_adj_lapse(Nhru, 12), Snow_adj_lapse(Nhru, 12) )
         IF ( Precip_flag==1 .OR. Model==99 ) THEN
           IF ( declparam(MODNAME, 'rain_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '2.5', &
+     &         '1.0', '0.5', '5.0', &
      &         'Monthly rain adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &
@@ -126,7 +132,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'rain_adj')
 
           IF ( declparam(MODNAME, 'snow_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '2.5', &
+     &         '1.0', '0.5', '5.0', &
      &         'Monthly snow adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &
@@ -202,7 +208,8 @@
             ierr = 0
             CALL checkdim_param_limits(i, 'hru_plaps', 'nrain', Hru_plaps(i), 1, Nrain, ierr)
             IF ( ierr==0 ) THEN
-              CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev(i))
+              ! Hru_elev_ts is the current elevation, either hru_elev or for restart Hru_elev_ts
+              CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev_ts(i))
             ELSE
               Inputerror_flag = 1
             ENDIF
@@ -242,7 +249,7 @@
         adj_p = (pmo_rate*elh_diff)/Pmn_mo(Hru_psta, j)
         IF ( Padj_sn(Hru_psta, j)>=0.0 ) THEN
           Snow_adj_lapse(Ihru, j) = 1.0 + Padj_sn(Hru_psta, j)*adj_p
-        ELSE 
+        ELSE
           Snow_adj_lapse(Ihru, j) = -Padj_sn(Hru_psta, j)
         ENDIF
         IF ( Padj_rn(Hru_psta,j)<0.0 ) THEN

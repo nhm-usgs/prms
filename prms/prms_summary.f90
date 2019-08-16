@@ -82,14 +82,14 @@
      &            Basin_cfs, Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, gageflow, &
      &            (Segmentout(i), i = 1, Npoigages)
 !     &            (Segmentout(i), Gageout(i), i = 1, Npoigages)
-        ELSE
+        ELSE ! special Lauren Hay output format
           WRITE ( chardate, '(I4.4,2(1X,I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
         ENDIF
 
 ! Declare procedure
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_summary = 'prms_summary.f90 2019-06-20 15:10:00Z'
+        Version_prms_summary = 'prms_summary.f90 2019-08-06 16:22:00Z'
         CALL print_module(Version_prms_summary, 'Output Summary              ', 90)
         MODNAME = 'prms_summary'
 
@@ -135,7 +135,7 @@
 !        Cfs_strings = ',cfs,cfs'
         IF ( CsvON_OFF==1 ) THEN
           Cfs_strings = ',cfs'
-        ELSE
+        ELSE ! special Lauren Hay output format
           Cfs_strings = ' cfs'
         ENDIF
 
@@ -170,7 +170,7 @@
               IF ( CsvON_OFF==1 ) THEN
                 WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ',seg_outflow_', Poi_gage_segment(i), '_gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
-              ELSE
+              ELSE ! special Lauren Hay output format
                 WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ' seg_outflow_', Poi_gage_segment(i), '_gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
               ENDIF
@@ -227,7 +227,7 @@
 
           WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages+NVARS, '(",",F0.4) )'
 !        WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
-        ELSE
+        ELSE ! special Lauren Hay output format
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+1, 'A )'
           WRITE ( Iunit, Fmt ) 'Date', &
      &            (Streamflow_pairs(i)(:Gageid_len(i)+20), i = 1, Npoigages)

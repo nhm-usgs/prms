@@ -69,7 +69,7 @@
 !***********************************************************************
       intdecl = 0
 
-      Version_intcp = 'intcp.f90 2019-05-30 13:38:00Z'
+      Version_intcp = 'intcp.f90 2019-08-08 15:49:00Z'
       CALL print_module(Version_intcp, 'Canopy Interception         ', 90)
       MODNAME = 'intcp'
 
@@ -258,14 +258,14 @@
 !***********************************************************************
       INTEGER FUNCTION intrun()
       USE PRMS_INTCP
-      USE PRMS_MODULE, ONLY: Print_debug
+      USE PRMS_MODULE, ONLY: Print_debug !, Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
      &    Hru_route_order, Hru_area, NEARZERO, DNEARZERO, Cov_type
       USE PRMS_WATER_USE, ONLY: Canopy_gain
 ! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
      &    Hru_snow, Transp_on, Potet, Use_pandata, Hru_pansta, Epan_coef, Potet_sublim
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv !, Glacier_frac
       USE PRMS_SET_TIME, ONLY: Nowmonth, Cfs_conv, Nowyear, Nowday
       USE PRMS_OBS, ONLY: Pan_evap
       IMPLICIT NONE
@@ -302,6 +302,11 @@
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
         harea = Hru_area(i)
+! could make grow trees with ts, or use dynamic parameters
+!        IF ( Glacier_flag==1) THEN
+!          IF ( Glacier_frac(i)>0 ) cov_type_ts(i)=0
+!          IF ( Glacier_frac(i)>0 ) cov_type_ts(i)=Cov_type(i)
+!        ENDIF
         netrain = Hru_rain(i)
         netsnow = Hru_snow(i)
 
