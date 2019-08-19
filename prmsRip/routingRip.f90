@@ -33,14 +33,14 @@
 !   Declared Parameters for Overbank Storage
       REAL, SAVE, ALLOCATABLE :: Tr_ratio(:), Porosity_seg(:), Ripst_et_coef(:), Ripst_frac_init(:)
 !   Declared Variables for Overbank Storage
-      DOUBLE PRECISION, SAVE :: Basin_ripst_evap, Basin_ripst_seep, Basin_ripflow, Basin_ripst_vol, Basin_ripst_area
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ripst_stor_hru(:), Ripst_seep_hru(:), Ripst_vol(:), Seg_ripflow(:)
+      DOUBLE PRECISION, SAVE :: Basin_ripst_evap, Basin_ripst_contrib, Basin_ripst_vol, Basin_ripst_area
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ripst_stor_hru(:), Ripst_vol(:), Seg_ripflow(:)
       REAL, SAVE, ALLOCATABLE :: Ripst_evap_hru(:), Ripst_frac(:)
 !   Declared Parameters for Bank Storage
       REAL, SAVE, ALLOCATABLE :: Specyield_seg(:), Bankst_head_init(:)
       INTEGER, SAVE, ALLOCATABLE :: Bankfinite_hru(:)
 !   Declared Variables for Bank Storage
-      DOUBLE PRECISION, SAVE :: Basin_bankst_head, Basin_bankst_seep_rate, Basin_bankflow
+      DOUBLE PRECISION, SAVE :: Basin_bankst_head, Basin_bankst_seep_rate
       DOUBLE PRECISION, SAVE :: Basin_bankst_seep, Basin_bankst_vol, Basin_bankst_area
       REAL, SAVE, ALLOCATABLE :: Bankst_head(:), Bankst_seep_rate(:), Bankst_seep_hru(:)
       REAL, SAVE, ALLOCATABLE :: Bankst_stor_hru(:), Bankst_head_pts(:)
@@ -152,9 +152,9 @@
      &       'Basin area-weighted average evaporation from riparian overbank flow storage', &
      &       'inches', Basin_ripst_evap)/=0 ) CALL read_error(3, 'basin_ripst_evap')
 
-        IF ( declvar(MODNAME, 'basin_ripst_seep', 'one', 1, 'double', &
-     &       'Basin area-weighted average seepage from riparian overbank flow storage', &
-     &       'inches', Basin_ripst_seep)/=0 ) CALL read_error(3, 'basin_ripst_seep')
+        IF ( declvar(MODNAME, 'basin_ripst_contrib', 'one', 1, 'double', &
+     &       'Basin area-weighted average contribution from riparian overbank flow storage into stream', &
+     &       'inches', Basin_ripst_contrib)/=0 ) CALL read_error(3, 'basin_ripst_contrib')
 
         IF ( declvar(MODNAME, 'basin_ripst_vol', 'one', 1, 'double', &
      &       'Basin area-weighted average storage volume in riparian overbank flow storage', &
@@ -174,11 +174,6 @@
      &       'Riparian overbank flow storage for each HRU', &
      &       'inches', Ripst_stor_hru)/=0 ) CALL read_error(3, 'ripst_stor_hru')
 
-        ALLOCATE ( Ripst_seep_hru(Nhru) )
-        IF ( declvar(MODNAME, 'ripst_seep_hru', 'nhru', Nhru, 'double', &
-     &       'Seepage from riparian overbank flow storage to associated riparian-GWR for each HRU', &
-     &       'inches', Ripst_seep_hru)/=0 ) CALL read_error(3, 'ripst_seep_hru')
-
         ALLOCATE ( Ripst_evap_hru(Nhru) )
         IF ( declvar(MODNAME, 'ripst_evap_hru', 'nhru', Nhru, 'real', &
      &       'Evaporation from riparian overbank flow storage for each HRU', &
@@ -194,10 +189,6 @@
      &      'Volume and area fraction of riparian overbank flow storage of the maximum storage for each HRU', &
      &      'decimal fraction', Ripst_frac)/=0 ) CALL read_error(3, 'ripst_frac')
 
-        IF ( declvar(MODNAME, 'basin_ripflow', 'one', 1, 'double', &
-     &     'Basin riparian area contribution to streamflow, negative if steam goes overbank', &
-     &     'cfs', Basin_bankflow)/=0 ) CALL read_error(3, 'basin_ripflow')
-
         ALLOCATE ( Ripst_vol_max(Nhru), Ripst_area(Nhru), Ripst_area_max(Nhru), Ripst_depth(Nhru) )
         ALLOCATE ( Seg_hru_num(Nsegment) )
 
@@ -207,7 +198,7 @@
      &      'meters', Basin_bankst_head)/=0 ) CALL read_error(3, 'basin_bankst_head')
 
         IF ( declvar(MODNAME, 'basin_bankst_seep', 'one', 1, 'double', &
-     &      'Basin area-weighted average seepage from bank storage to streams', &
+     &      'Basin area-weighted average seepage from bank storage to streams, negative is out of stream', &
      &      'inches', Basin_bankst_seep)/=0 ) CALL read_error(3, 'basin_bankst_seep')
 
         IF ( declvar(MODNAME, 'basin_bankst_vol', 'one', 1, 'double', &
@@ -221,10 +212,6 @@
         IF ( declvar(MODNAME, 'basin_bankst_seep_rate', 'one', 1, 'double', &
      &      'Basin rate of seepage from bank storage into stream per unit length stream', &
      &      'meter3/day/meter', Basin_bankst_seep_rate)/=0 ) CALL read_error(3, 'basin_bankst_seep_rate')
-
-        IF ( declvar(MODNAME, 'basin_bankflow', 'one', 1, 'double', &
-     &     'Basin bank storage contribution to streamflow can be negative if steam losing water', &
-     &     'cfs', Basin_bankflow)/=0 ) CALL read_error(3, 'basin_bankflow')
 
         ALLOCATE ( Bankst_head(Nhru) )
         IF ( declvar(MODNAME, 'bankst_head', 'nhru', Nhru, 'real', &
@@ -651,15 +638,12 @@
         Basin_bankst_seep_rate = 0.0D0
         Basin_bankst_head = 0.0D0
         Basin_bankst_vol = 0.0D0
-        Basin_bankflow = 0.0D0
         Basin_bankst_area = 0.0D0
-        Basin_ripflow = 0.0D0
         Basin_ripst_evap = 0.0D0
-        Basin_ripst_seep = 0.0D0
+        Basin_ripst_contrib = 0.0D0
         Basin_ripst_vol = 0.0D0
         Basin_ripst_area = 0.D0
         Ripst_evap_hru = 0.0
-        Ripst_seep_hru = 0.0D0
         Ripst_frac = 0.0
         Bankst_seep_hru = 0.0
         Bankst_seep_rate = 0.0
@@ -1146,16 +1130,18 @@
 !***********************************************************************
       SUBROUTINE drain_the_swamp(Ihru)
       USE PRMS_ROUTING, ONLY: Seg_width, Seg_depth, Seg_width, Hru_segment, Mann_n, &
-     &    Transmiss_seg, Tr_ratio, Ripst_vol_max, Ripst_et_coef, Ripst_evap_hru, &
-     &    Basin_ripst_vol, Basin_ripst_evap, Basin_ripst_seep, Ripst_stor_hru, &
-     &    Ripst_frac, Ripst_vol, Ripst_area_max, Ripst_area, Ripst_seep_hru, Seg_slope, &
-     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area, Seg_length
+     &    Tr_ratio, Ripst_vol_max, Ripst_et_coef, Ripst_evap_hru, Seg_length, &
+     &    Basin_ripst_vol, Basin_ripst_evap, Basin_ripst_contrib, Ripst_stor_hru, &
+     &    Ripst_frac, Ripst_vol, Ripst_area_max, Ripst_area, Seg_slope, &
+     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area !, Transmiss_seg
+      USE PRMS_MODULE, ONLY: Frozen_flag
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Hru_area, Hru_area_dble, FEET2METERS, &
      &    FT2_PER_ACRE, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
-      USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru
+      USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Frozen, Thaw_depth, Soil_depth, &
+    &     Dprst_seep_rate_open
       USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       IMPLICIT NONE
@@ -1164,104 +1150,116 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
 ! Local Variables
-      REAL :: ripst_avail_et, unsatisfied_et, ripst_evap, ripst_wid
+      REAL :: ripst_avail_et, unsatisfied_et, ripst_evap, ripst_wid, thaw_frac
       REAL :: inflow, inflow_in, max_depth
-      DOUBLE PRECISION :: seep, ripst_grnd, poss, seep_in
+      DOUBLE PRECISION :: seep, ripst_grnd, poss, seep_in, ripst_contrib_hru
 !***********************************************************************
+      thaw_frac = 1.0
+      IF (Frozen_flag==1) THEN
+        IF ( Frozen(Ihru)==1 ) THEN
+          thaw_frac = 0.0
+        ELSEIF ( Frozen(Ihru)==2) THEN
+          thaw_frac = Thaw_depth(Ihru)/Soil_depth(Ihru)
+        ENDIF
+      ENDIF
 !It won't get deeper than this depth, should be Seg_depth but not accurate or Seg_width and other terms not accurate
-      !max_depth = Seg_depth(Hru_segment(Ihru))*10.0
-      max_depth = Seg_depth(Hru_segment(Ihru))*1e30
+      !max_depth = Seg_depth(Hru_segment(Ihru))
+      max_depth = Seg_depth(Hru_segment(Ihru))*20.0
 ! amount possible in cfs given a river depth
       poss = Seg_width(Hru_segment(Ihru))*SQRT(Seg_slope(Hru_segment(Ihru)))* &
      &            max_depth**(3./5.)/ ( CFS2CMS_CONV*Mann_n(Hru_segment(Ihru)) )
 !inflow is water over bank, remove from Seg_outflow(Hru_segment(Ihru)) and give half to
 ! each side of bank, in acre inches
       inflow  = 0.0
-! in cfs, amount over amount possible
-      IF ( poss < Seg_outflow(Hru_segment(Ihru)) ) inflow = SNGL(Seg_outflow(Hru_segment(Ihru)) - poss)
+      inflow_in = 0.0
+! in cfs, amount over amount possible, no inflow if everything frozen, and then no outflow either
+      IF (thaw_frac>0.0) THEN
+        IF ( poss < Seg_outflow(Hru_segment(Ihru))) inflow = SNGL(Seg_outflow(Hru_segment(Ihru)) - poss)
 ! give it equally to each HRU surrounding it
-      inflow = inflow/REAL(Seg_hru_num(Hru_segment(Ihru)))
+        inflow = inflow/REAL(Seg_hru_num(Hru_segment(Ihru)))
 !negative flow is out of stream into riparian
-      Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow
-      inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0))
-      Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow_in
-      Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/Ripst_vol_max(Ihru))
+        Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow
+        inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0)) !inch acre
+        Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow_in
+        Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/(Ripst_vol_max(Ihru)*thaw_frac))
+        IF (Ripst_frac(Ihru)>1.0) Ripst_frac(Ihru) = 1.0
 ! Filled riparian storage surface area for each HRU:
 !  Fills outward from the river with one edge on river and with same depth and same side shape
 !  this works out to keeping fraction same for area and volume filled
-      Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru)
+        Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru)
 
-      ! evaporate water from riparian area based on snowcov_area
-      ! ripst_evap_open & ripst_evap_clos = inches-acres on the HRU
-      unsatisfied_et = Potet(Ihru) - Snow_evap(Ihru) - Hru_intcpevap(Ihru) &
+        ! evaporate water from riparian area based on snowcov_area
+        ! ripst_evap_open & ripst_evap_clos = inches-acres on the HRU
+        unsatisfied_et = Potet(Ihru) - Snow_evap(Ihru) - Hru_intcpevap(Ihru) &
     &                 - Hru_impervevap(Ihru) - Dprst_evap_hru(Ihru)
-      ripst_avail_et = Potet(Ihru)*(1.0-Snowcov_area(Ihru))*Ripst_et_coef(Ihru)
-      Ripst_evap_hru(Ihru) = 0.0
-      IF ( ripst_avail_et>0.0 ) THEN
-        ripst_evap = 0.0
-        IF ( Ripst_area(Ihru)>0.0 ) THEN
-          ripst_evap = MIN(Ripst_area(Ihru)*ripst_avail_et, SNGL(Ripst_vol(Ihru)))
-          IF ( ripst_evap/Hru_area(Ihru)>unsatisfied_et ) THEN
-            !IF ( Print_debug>-1 ) THEN
-            !  PRINT *, 'Warning, ripst evaporation > available ET, HRU:, ', Ihru, &
+        ripst_avail_et = 0.0
+        ripst_avail_et = Potet(Ihru)*(1.0-Snowcov_area(Ihru))*Ripst_et_coef(Ihru)
+        Ripst_evap_hru(Ihru) = 0.0
+        IF ( ripst_avail_et>0.0 ) THEN
+          ripst_evap = 0.0
+          IF ( Ripst_area(Ihru)>0.0 ) THEN
+            ripst_evap = MIN(Ripst_area(Ihru)*ripst_avail_et, SNGL(Ripst_vol(Ihru)))
+            IF ( ripst_evap/Hru_area(Ihru)>unsatisfied_et ) THEN
+              !IF ( Print_debug>-1 ) THEN
+              !  PRINT *, 'Warning, ripst evaporation > available ET, HRU:, ', Ihru, &
 !      &                 unsatisfied_et, ripst_evap*Ripst_frac(Ihru)
-            !  PRINT *, 'Set to available ET, perhaps ripst_et_coef specified too large'
-            !  PRINT *, 'Set print_debug to -1 to turn off message'
-            !ENDIF
-            ripst_evap = unsatisfied_et*Hru_area(Ihru)
+              !  PRINT *, 'Set to available ET, perhaps ripst_et_coef specified too large'
+              !  PRINT *, 'Set print_debug to -1 to turn off message'
+              !ENDIF
+              ripst_evap = unsatisfied_et*Hru_area(Ihru)
+            ENDIF
+            IF ( ripst_evap>SNGL(Ripst_vol(Ihru)) ) ripst_evap = SNGL( Ripst_vol(Ihru) )
+            Ripst_vol(Ihru) = Ripst_vol(Ihru) - DBLE( ripst_evap )
           ENDIF
-          IF ( ripst_evap>SNGL(Ripst_vol(Ihru)) ) ripst_evap = SNGL( Ripst_vol(Ihru) )
-          Ripst_vol(Ihru) = Ripst_vol(Ihru) - DBLE( ripst_evap )
+          Ripst_evap_hru(Ihru) = ripst_evap/Hru_area(Ihru)
         ENDIF
-        Ripst_evap_hru(Ihru) = ripst_evap/Hru_area(Ihru)
-      ENDIF
 
-      ! compute seepage
-      Ripst_seep_hru(Ihru) = 0.0D0
-      seep = 0.0
-      IF ( Ripst_vol(Ihru)>NEARZERO ) THEN
-        ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
+        ! compute seepage
+        seep = 0.0
+        seep_in = 0.0
+        IF ( Ripst_vol(Ihru)>NEARZERO) THEN
+          ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
 !assumed it was a one sided stream, here a headwater with both sides in one HRU
-        IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
+          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
 ! Stream ground area is stream side area (flat wall) and other side area (fraction of triangle (1) to rectangle (0))
-        ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
-     &              (SQRT( ripst_wid**2.0 + Ripst_depth(Ihru)**2.0 )- Ripst_depth(Ihru))*Tr_ratio(Ihru) + & !triangle
-     &              2.0*Ripst_depth(Ihru) ) ) !stream and other side
+          ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
+     &              (SQRT( ripst_wid**2.0 + (Ripst_depth(Ihru)*thaw_frac)**2.0 )- Ripst_depth(Ihru)*thaw_frac)*Tr_ratio(Ihru) + & !triangle
+     &              2.0*Ripst_depth(Ihru)*thaw_frac ) ) !stream and other side
 !assumed it was a one sided stream, here a headwater with both sides in one HRU
-        IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
+          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
 !seep in a day through ground surface area of riparian, m^3 into ft^3 to acre_in
-!Transmissivity would be way too big, maybe ssr2gw_rate
-        seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0)
-        !seep = 0.0 !if want to turn off seep
-        seep_in = seep*FT2_PER_ACRE*12.0
-        Ripst_vol(Ihru) = Ripst_vol(Ihru) - seep_in
+!Transmissivity way too big
+          !seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0) !acre_in
+!ground area to total surface area is 5/6, then use depression seep coeff but reduce because surface area smaller
+          seep = ripst_grnd/(ripst_grnd+Ripst_area(Ihru)*FT2_PER_ACRE/ FEET2METERS**2.0 )/(5.0/6.0) &
+     &         *Ripst_vol(Ihru)*Dprst_seep_rate_open(Ihru)/FT2_PER_ACRE/12.0
+          !seep = 0.0 !if want to turn off seep
+          seep_in = seep*FT2_PER_ACRE*12.0 ! inch acres
+          Ripst_vol(Ihru) = Ripst_vol(Ihru) - seep_in
+          IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
+            !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
+            seep_in = seep_in + Ripst_vol(Ihru)
+            seep = seep_in/FT2_PER_ACRE/12.0 !ft^3
+            Ripst_vol(Ihru) = 0.0D0
+          ENDIF
+        ENDIF
         IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
           !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
-          seep_in = seep_in + Ripst_vol(Ihru)
-          seep = seep_in/(FT2_PER_ACRE*12.0)
           Ripst_vol(Ihru) = 0.0D0
         ENDIF
-        Ripst_seep_hru(Ihru) = seep_in/Hru_area_dble(Ihru) !inch per HRU
+        ripst_contrib_hru = seep_in - inflow_in !inch per acre
+        ! seep goes back in stream as positive flow, cfs
+        Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru))+ seep/Timestep_seconds
+        !Seg_ripflow(Hru_segment(Ihru)) = 0.0 !if want to turn off overbank flow
+
+        Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/(Ripst_vol_max(Ihru)*thaw_frac))
+        Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru)
+        Ripst_stor_hru(Ihru) = Ripst_vol(Ihru)/Hru_area_dble(Ihru)
+        Basin_ripst_vol = Basin_ripst_vol + Ripst_vol(Ihru)
+        Basin_ripst_evap = Basin_ripst_evap + DBLE(Ripst_evap_hru(Ihru))*Hru_area_dble(Ihru)
+        Basin_ripst_contrib = Basin_ripst_contrib + ripst_contrib_hru
+        Basin_ripst_area =  Basin_ripst_area + Ripst_area(Ihru)
       ENDIF
-      IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
-        !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
-        Ripst_vol(Ihru) = 0.0D0
-      ENDIF
-
-      ! seep goes back in stream as positive flow, cfs
-      Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru))+ seep/Timestep_seconds
-      !Seg_ripflow(Hru_segment(Ihru)) = 0.0 !if want to turn off overbank flow
-
-!      print*, Ihru, Hru_segment(Ihru), poss, Seg_outflow(Hru_segment(Ihru)), Seg_ripflow(Hru_segment(Ihru)), Seg_depth(Hru_segment(Ihru)),&
-!     & Stage_ts(Hru_segment(Ihru))
-
-      Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/Ripst_vol_max(Ihru))
-      Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru)
-      Ripst_stor_hru(Ihru) = Ripst_vol(Ihru)/Hru_area_dble(Ihru)
-      Basin_ripst_vol = Basin_ripst_vol + Ripst_vol(Ihru)
-      Basin_ripst_evap = Basin_ripst_evap + DBLE(Ripst_evap_hru(Ihru))*Hru_area_dble(Ihru)
-      Basin_ripst_seep = Basin_ripst_seep + Ripst_seep_hru(Ihru)*Hru_area_dble(Ihru)
-      Basin_ripst_area =  Basin_ripst_area + Ripst_area(Ihru)
 
       END SUBROUTINE drain_the_swamp
 
@@ -1538,15 +1536,14 @@
           WRITE ( Restart_outunit ) Basin_bankst_head
           WRITE ( Restart_outunit ) Basin_bankst_vol
           WRITE ( Restart_outunit ) Basin_bankst_seep_rate
-          WRITE ( Restart_outunit ) Basin_bankst_seep, Basin_bankflow
+          WRITE ( Restart_outunit ) Basin_bankst_seep
           WRITE ( Restart_outunit ) Bankst_head, Seg_bankflow
           WRITE ( Restart_outunit ) Bankst_head_pts
           WRITE ( Restart_outunit ) Bankst_stor_hru
           WRITE ( Restart_outunit ) Stage_ante, Stage_ts
-          WRITE ( Restart_outunit ) Basin_ripflow
-          WRITE ( Restart_outunit ) Basin_ripst_evap, Basin_ripst_seep
+          WRITE ( Restart_outunit ) Basin_ripst_evap, Basin_ripst_contrib
           WRITE ( Restart_outunit ) Basin_ripst_vol, Basin_ripst_area
-          WRITE ( Restart_outunit ) Ripst_stor_hru, Ripst_seep_hru, Ripst_vol
+          WRITE ( Restart_outunit ) Ripst_stor_hru, Ripst_vol
           WRITE ( Restart_outunit ) Seg_ripflow, Ripst_evap_hru, Ripst_frac
         ENDIF
       ELSE
@@ -1560,15 +1557,14 @@
           READ ( Restart_inunit ) Basin_bankst_head
           READ ( Restart_inunit ) Basin_bankst_vol
           READ ( Restart_inunit ) Basin_bankst_seep_rate
-          READ ( Restart_inunit ) Basin_bankst_seep, Basin_bankflow
+          READ ( Restart_inunit ) Basin_bankst_seep
           READ ( Restart_inunit ) Bankst_head, Seg_bankflow
           READ ( Restart_inunit ) Bankst_head_pts
           READ ( Restart_inunit ) Bankst_stor_hru
           READ ( Restart_inunit ) Stage_ante, Stage_ts
-          READ ( Restart_inunit ) Basin_ripflow
-          READ ( Restart_inunit ) Basin_ripst_evap, Basin_ripst_seep
+          READ ( Restart_inunit ) Basin_ripst_evap, Basin_ripst_contrib
           READ ( Restart_inunit ) Basin_ripst_vol, Basin_ripst_area
-          READ ( Restart_inunit ) Ripst_stor_hru, Ripst_seep_hru, Ripst_vol
+          READ ( Restart_inunit ) Ripst_stor_hru, Ripst_vol
           READ ( Restart_inunit ) Seg_ripflow, Ripst_evap_hru, Ripst_frac
         ENDIF
       ENDIF

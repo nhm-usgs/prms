@@ -190,10 +190,10 @@
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes, &
-     &    Flow_in_great_lakes, Stage_ts, Stage_ante, Seg_bankflow, Mann_n, Seg_width, Seg_slope, Basin_bankflow, &
-     &    Ripst_areafr_max, Bankfinite_hru, Basin_bankst_head, Seg_ripflow, Basin_ripflow, &
-     &    Basin_bankst_seep_rate, Basin_bankflow, Basin_bankst_seep, Basin_bankst_vol, &
-     &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_seep, Basin_ripst_evap, &
+     &    Flow_in_great_lakes, Stage_ts, Stage_ante, Seg_bankflow, Mann_n, Seg_width, Seg_slope, &
+     &    Ripst_areafr_max, Bankfinite_hru, Basin_bankst_head, Seg_ripflow, &
+     &    Basin_bankst_seep_rate, Basin_bankst_seep, Basin_bankst_vol, &
+     &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_contrib, Basin_ripst_evap, &
      &    Basin_ripst_vol, Bankst_seep_rate
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SRUNOFF, ONLY: Basin_sroff
@@ -321,7 +321,7 @@
         Basin_bankst_head = 0.0D0
         Basin_bankst_vol = 0.0D0
         Basin_ripst_area = 0.0D0
-        Basin_ripst_seep = 0.0D0
+        Basin_ripst_contrib = 0.0D0
         Basin_ripst_evap = 0.0D0
         Basin_ripst_vol = 0.0D0
         Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
@@ -361,7 +361,7 @@
 !           ******Compute the overbank riparian storage component
 !           transfers water between separate riparian storage and stream depending on seepage
         ENDDO
-        Basin_ripst_seep = Basin_ripst_seep*Basin_area_inv
+        Basin_ripst_contrib = Basin_ripst_contrib*Basin_area_inv
         Basin_ripst_evap = Basin_ripst_evap*Basin_area_inv
         Basin_ripst_vol = Basin_ripst_vol*Basin_area_inv
         DO i = 1, Nsegment
@@ -373,8 +373,6 @@
       ENDIF
 
       Basin_segment_storage = 0.0D0
-      Basin_bankflow = 0.0D0
-      Basin_ripflow = 0.0D0
       Flow_out = 0.0D0
       Flow_to_lakes = 0.0D0
       Flow_to_ocean = 0.0D0
@@ -421,10 +419,6 @@
         Segment_delta_flow(i) = Segment_delta_flow(i) + Seg_inflow(i) - segout
 !        IF ( Segment_delta_flow(i) < 0.0D0 ) PRINT *, 'negative delta flow', Segment_delta_flow(i)
         Basin_segment_storage = Basin_segment_storage + Segment_delta_flow(i)
-        IF ( Ripst_flag==1 ) THEN
-          Basin_bankflow = Basin_bankflow + Seg_bankflow(i)
-          Basin_ripflow = Basin_ripflow + Seg_ripflow(i)
-        ENDIF
       ENDDO
 
       area_fac = Cfs_conv/Basin_area_inv
@@ -441,10 +435,6 @@
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
       Basin_segment_storage = Basin_segment_storage/area_fac
-      IF ( Ripst_flag==1 ) THEN
-        Basin_bankflow = Basin_bankflow/area_fac
-        Basin_ripflow = Basin_ripflow/area_fac
-      ENDIF
 
       END FUNCTION muskingum_run
 

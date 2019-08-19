@@ -1031,8 +1031,10 @@
               Glacr_5avsnow(i) = 0.0 !zero out for new year restart
             ENDIF
           ENDIF
-          Prev_ann_tempc(i) = Ann_tempc(i)
-          Ann_tempc(i) = 0.0 !zero out for new year restart
+          IF ( Glacier_flag==1 .OR. Frozen_flag==1) THEN
+            Prev_ann_tempc(i) = Ann_tempc(i)
+            Ann_tempc(i) = 0.0 !zero out for new year restart
+          ENDIF
         ENDIF !end start of year calculations
 
 ! Do for summer
@@ -1044,7 +1046,7 @@
 ! Do for every time step
           Glacr_5avsnow(i) = Glacr_5avsnow(i) + Net_snow(i)/5.0
         ENDIF
-        Ann_tempc(i) = ( Ann_tempc(i)*(Julwater-1)+ Tavgc(i) )/Julwater
+        IF ( Glacier_flag==1 .OR. Frozen_flag==1) Ann_tempc(i) = ( Ann_tempc(i)*(Julwater-1)+ Tavgc(i) )/Julwater
 
         ! HRU SET-UP - SET DEFAULT VALUES AND/OR BASE
         !              CONDITIONS FOR THIS TIME PERIOD
@@ -3007,7 +3009,7 @@
           WRITE ( Restart_outunit ) Glacr_pkwater_equiv
           WRITE ( Restart_outunit ) Glacr_pkwater_ante
           WRITE ( Restart_outunit ) Glacr_pk_temp
-          WRITE ( Restart_outunit ) Ann_tempc, Yrdays5, Prev_ann_tempc
+          WRITE ( Restart_outunit ) Yrdays5
           WRITE ( Restart_outunit ) Glacr_air_5avtemp, Glacr_air_5avtemp1, Glacr_air_deltemp
           WRITE ( Restart_outunit ) Glacr_5avsnow, Glacr_5avsnow1, Glacr_delsnow
           WRITE ( Restart_outunit ) Glacr_pk_def
@@ -3016,6 +3018,9 @@
         ENDIF
         IF ( Frozen_flag==1 ) THEN
           WRITE ( Restart_outunit ) Tcalin_nosnow, Tcalin_snow, Land_albedo
+        ENDIF
+        IF ( Glacier_flag==1 .OR. Frozen_flag==1) THEN
+          WRITE ( Restart_outunit ) Ann_tempc, Prev_ann_tempc
         ENDIF
       ELSE
         READ ( Restart_inunit ) module_name
@@ -3060,7 +3065,7 @@
           READ ( Restart_inunit ) Glacr_pkwater_equiv
           READ ( Restart_inunit ) Glacr_pkwater_ante
           READ ( Restart_inunit ) Glacr_pk_temp
-          READ ( Restart_inunit ) Ann_tempc, Yrdays5, Prev_ann_tempc
+          READ ( Restart_inunit ) Yrdays5
           READ ( Restart_inunit ) Glacr_air_5avtemp, Glacr_air_5avtemp1, Glacr_air_deltemp
           READ ( Restart_inunit ) Glacr_5avsnow, Glacr_5avsnow1, Glacr_delsnow
           READ ( Restart_inunit ) Glacr_pk_def
@@ -3068,7 +3073,10 @@
           READ ( Restart_inunit ) Glacr_freeh2o_capm
         ENDIF
         IF ( Frozen_flag==1 ) THEN
-          WRITE ( Restart_inunit ) Tcalin_nosnow, Tcalin_snow, Land_albedo
+          READ ( Restart_inunit ) Tcalin_nosnow, Tcalin_snow, Land_albedo
+        ENDIF
+        IF ( Glacier_flag==1 .OR. Frozen_flag==1) THEN
+          READ ( Restart_inunit ) Ann_tempc, Prev_ann_tempc
         ENDIF
       ENDIF
       END SUBROUTINE snowcomp_restart
