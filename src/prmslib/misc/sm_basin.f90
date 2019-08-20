@@ -6,7 +6,6 @@ contains
     use prms_constants, only: INACTIVE, LAND, LAKE, SWALE, NORTHERN, SOUTHERN, &
                               BCWEIR, GATEOP, PULS, LINEAR
     use UTILS_PRMS, only: open_dyn_param_file, get_first_time, get_next_time
-    ! use UTILS_CBH, only: find_header_end
     implicit none
 
     type(Basin) :: this

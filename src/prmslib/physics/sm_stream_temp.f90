@@ -357,7 +357,6 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
 
 
     module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_precip, model_temp, &
-                                     model_climate, &
                                      model_potet, model_obs, model_streamflow, snow, model_solrad, &
                                      model_time)
       use prms_constants, only: CFS2CMS_CONV, dp, NEARZERO
@@ -372,7 +371,6 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       type(Basin), intent(in) :: model_basin
       class(Precipitation), intent(in) :: model_precip
       class(Temperature), intent(in) :: model_temp
-      type(Climateflow), intent(in) :: model_climate
       class(Potential_ET), intent(in) :: model_potet
       type(Obs), intent(in) :: model_obs
       class(Streamflow), intent(in) :: model_streamflow
@@ -768,7 +766,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
             ! Compute the equilibrium temerature
             ! Out: te, ak1, ak2
             ! In: this%seg_shade, svi, i, t_o
-            call this%equilb(param_data, model_climate, model_streamflow, te, ak1, ak2, &
+            call this%equilb(param_data, model_streamflow, te, ak1, ak2, &
                              this%seg_shade(i), svi, i, t_o)
 
             ! Compute the daily mean water temperature
@@ -790,7 +788,7 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
     !*******************************************************************************
     !    "equilb"
     !*******************************************************************************
-    module subroutine equilb (this, param_data, model_climate, model_streamflow, ted, ak1d, &
+    module subroutine equilb (this, param_data, model_streamflow, ted, ak1d, &
                               ak2d, sh, svi, seg_id, t_o)
       ! PURPOSE:
       !   1. Determine the average daily equilibrium water temperature parameters
@@ -801,7 +799,6 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       ! Arguments:
       class(StreamTemp), intent(in) :: this
       type(Parameters), intent(in) :: param_data
-      type(Climateflow), intent(in) :: model_climate
       class(Streamflow), intent(in) :: model_streamflow
       real(r32), intent(out) :: ted
       real(r32), intent(out) :: ak1d

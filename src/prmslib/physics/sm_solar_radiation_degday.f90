@@ -89,9 +89,6 @@ contains
     ! real(r32), pointer :: radadj_slope_2d(:,:)
     ! real(r32), pointer :: tmax_index_2d(:,:)
 
-    ! Climateflow
-    ! hru_ppt, tmax_allrain_c
-
     ! Soltab
     ! hru_cossl, soltab_basinpotsw, soltab_horad_potsw, soltab_potsw,
 

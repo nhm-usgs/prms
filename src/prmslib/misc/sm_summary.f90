@@ -79,7 +79,6 @@ contains
   !***********************************************************************
   module subroutine run_Summary(this, ctl_data, model_time, model_basin)
     use conversions_mod, only: c_to_f
-    ! use prms_constants, only: dp
     implicit none
 
     class(Summary), intent(inout) :: this

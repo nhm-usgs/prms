@@ -164,26 +164,6 @@ module PRMS_STREAMFLOW
       class(SolarRadiation), intent(in) :: model_solrad
       type(Obs), intent(in) :: model_obs
     end subroutine
-    ! module subroutine run_Streamflow(this, ctl_data, model_basin, &
-    !                                  model_potet, groundwater, soil, runoff, &
-    !                                  model_time, model_solrad)
-    !   use prms_constants, only: dp, NEARZERO
-    !   implicit none
-
-    !   class(Streamflow) :: this
-    !     !! Streamflow class
-    !   type(Control), intent(in) :: ctl_data
-    !     !! Control file parameters
-    !   type(Basin), intent(in) :: model_basin
-    !     !! Basin variables
-    !   class(Potential_ET), intent(in) :: model_potet
-    !   type(Gwflow), intent(in) :: groundwater
-    !     !! Groundwater variables
-    !   type(Soilzone), intent(in) :: soil
-    !   type(Srunoff), intent(in) :: runoff
-    !   type(Time_t), intent(in) :: model_time
-    !   class(SolarRadiation), intent(in) :: model_solrad
-    ! end subroutine
   end interface
 
   interface

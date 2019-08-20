@@ -13,7 +13,6 @@ module SOLAR_RADIATION_CC
   use SOLAR_RADIATION, only: SolarRadiation
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
-  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_OBS, only: Obs
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_TEMPERATURE, only: Temperature

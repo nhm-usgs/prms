@@ -13,9 +13,6 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       integer(i32) :: ierr
       integer(i32) :: istop = 0
 
-      ! Control
-      ! nhru, cbh_binary_flag, print_debug, start_time, swrad_day,
-
       ! ------------------------------------------------------------------------
       ! Call the parent constructor first
       call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
@@ -59,17 +56,6 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       integer(i32) :: yr, mo, dy, hr, mn, sec
         !! junk vars to hold time info from files
 
-      ! Control
-      ! nhru, orad_flag
-
-      ! Parameter
-      ! hru_area
-
-      ! Basin
-      ! basin_area_inv
-
-      ! Time_t
-      ! day_of_year
       ! ----------------------------------------------------------------------
       associate(day_of_year => model_time%day_of_year, &
                 nhru => ctl_data%nhru%value, &

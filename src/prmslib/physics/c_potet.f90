@@ -33,7 +33,6 @@ module PRMS_POTET
 
     ! Output variables
     real(r64), allocatable :: basin_humidity
-      !! (moved from climateflow.f90)
     real(r64), allocatable :: basin_potet
 
     real(r32), allocatable :: humidity_hru(:)
@@ -70,7 +69,6 @@ module PRMS_POTET
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
-      ! type(Climateflow), intent(in) :: climate
       class(SolarRadiation), intent(in) :: model_solrad
       class(Temperature), intent(in) :: model_temp
     end subroutine
