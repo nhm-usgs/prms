@@ -47,6 +47,10 @@ contains
       ! original declare stuff
       ! this%Timestep_seconds = SECS_PER_DAY
       ! this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+      ! 2019-08-09 PAN: Added this back
+      this%Timestep_seconds = SECS_PER_DAY
+      this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+
       ! TODO: If cfs2inches is really needed it should not be in the time object
       !       causing a dependency to the Basin object.
       ! this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
@@ -115,7 +119,7 @@ contains
 
   module function next(this, ctl_data) result(res)
     use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
-                              HOUR_PER_DAY, MIN_PER_HOUR
+                              HOUR_PER_DAY, MIN_PER_HOUR, dp
 
     logical :: res
     class(Time_t), intent(inout) :: this
@@ -158,7 +162,7 @@ contains
     this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
     this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
     this%Timestep_seconds = dt * SECS_PER_HOUR
-    this%Cfs_conv = FT2_PER_ACRE / 12.0D0 / this%Timestep_seconds
+    this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
 
     ! TODO: If cfs2inches is really needed it should not be in the time object
     !       causing a dependency to the Basin object.
