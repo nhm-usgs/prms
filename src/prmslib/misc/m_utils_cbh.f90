@@ -276,6 +276,8 @@ module UTILS_CBH
       ! Get the varid of the data variable, based on its name.
       call check(nf90_inq_varid(iunit, param_name, varid))
 
+      deallocate(time_1D)
+      deallocate(units_txt)
     end subroutine
 
 
