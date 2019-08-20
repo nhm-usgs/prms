@@ -7,7 +7,7 @@ contains
   ! Climateflow constructor
   module function constructor_Summary(ctl_data, model_basin, model_time) result(this)
     use prms_constants, only: MAXFILE_LENGTH
-    use UTILS_PRMS, only: PRMS_open_output_file, print_module_info
+    use UTILS_PRMS, only: print_module_info
     implicit none
 
     type(Summary) :: this
@@ -61,6 +61,9 @@ contains
       allocate(this%outvar_id(noutvars))
       allocate(this%outvar_size(noutvars))
       allocate(this%var_daily(noutvars))
+
+      this%outvar_id = 0
+      this%outvar_size = 0
 
       filename = outVar_base_filename%s // suffix // '.nc'
 
@@ -142,6 +145,12 @@ contains
                                   start=[days_since_start+1])
         else
           rcount = (/ this%outvar_size(jj), 1 /)
+          ! write(output_unit, *) 'start: ', start, '  ocount: ', rcount
+          ! if (jj == 10) then
+          !   write(output_unit, *) 'before write_netcdf call'
+          !   write(output_unit, *) this%var_daily(jj)%ptr_r32
+          ! end if
+
           call this%write_netcdf(this%file_hdl, this%outvar_id(jj), &
                                   this%var_daily(jj), start=start, ocount=rcount)
         end if
@@ -174,15 +183,19 @@ contains
     starting_size = product(starting_chunk)
     res = starting_chunk
 
-    do xx=0, 1
-      do yy=0, 1
-        cnk_size = int((starting_chunk(1) + xx) * (starting_chunk(2) + yy))
+    if (chunk_percent > 1.0) then
+      res = (/ dims(1), dims(2) /)
+    else
+      do xx=0, 1
+        do yy=0, 1
+          cnk_size = int((starting_chunk(1) + xx) * (starting_chunk(2) + yy))
 
-        if (cnk_size > starting_size .and. cnk_size <= nvals_in_chunk) then
-          res = (/ starting_chunk(1) + xx, starting_chunk(2) + yy /)
-        end if
+          if (cnk_size > starting_size .and. cnk_size <= nvals_in_chunk) then
+            res = (/ starting_chunk(1) + xx, starting_chunk(2) + yy /)
+          end if
+        end do
       end do
-    end do
+    end if
   end function
 
   module subroutine create_netcdf(this, ctl_data, model_basin, model_time, filename)
@@ -243,9 +256,11 @@ contains
       !       Using NF90_CLOBBER (netcdf3) with an unlimited time dimension
       !       results in faster writing but larger file sizes (file sizes are
       !       still smaller than ASCII files).
+      !       NF90_64BIT_OFFSET
       ! write(*, *) 'Create output netcdf'
-      call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%file_hdl))
-                          ! cache_size=33554432))
+      call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl, &
+                          cache_size=33554432))
+      ! call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%file_hdl))
 
       ! Define the dimensions. NetCDF will hand back an ID for each.
       ! call this%err_check(nf90_def_dim(this%file_hdl, 'time', NF90_UNLIMITED, time_dimid))
@@ -296,9 +311,10 @@ contains
 
       ! TODO: Add nsub-related variable
 
-      ! Define the nhru-based output variables
+      ! Define the output variables
       do jj = 1, noutvars
         outvar_name = outVar_names%values(jj)%s
+        print *, 'CREATE OUTVAR: ', outvar_name
 
         ! Pull variable information from control class
         call output_variables%get(outvar_name, &
@@ -312,12 +328,12 @@ contains
           ! Save the array size for this variable to an array for later
           this%outvar_size(jj) = 1
 
-          call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-                                           outvar_datatype, time_dimid, this%outvar_id(jj)))
           ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-          !                                  outvar_datatype, time_dimid, this%outvar_id(jj), &
-          !                                  shuffle=.true., &
-          !                                  deflate_level=1))
+          !                                  outvar_datatype, time_dimid, this%outvar_id(jj)))
+          call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+                                           outvar_datatype, time_dimid, this%outvar_id(jj), &
+                                           shuffle=.true., &
+                                           deflate_level=1))
         else
           ! 2D output variable (e.g. time, nhru)
           ! Get the dimid for the outvar dimension
@@ -329,16 +345,17 @@ contains
           call this%err_check(nf90_inquire_dimension(this%file_hdl, ov_dimid, &
                                                      len=this%outvar_size(jj)))
 
-          ! cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
-          ! write(output_unit, *) 'cnk_sizes: ', cnk_sizes
-
-          call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-                                           outvar_datatype, dimids, this%outvar_id(jj)))
+          print *, '---- ', this%outvar_size(jj), days_in_model
           ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
-          !                                  outvar_datatype, dimids, this%outvar_id(jj), &
-          !                                  shuffle=.true., &
-          !                                  deflate_level=1, &
-          !                                  chunksizes=cnk_sizes))
+          !                                  outvar_datatype, dimids, this%outvar_id(jj)))
+
+          cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
+          write(output_unit, *) 'cnk_sizes: ', cnk_sizes
+          call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+                                           outvar_datatype, dimids, this%outvar_id(jj), &
+                                           shuffle=.true., &
+                                           deflate_level=1, &
+                                           chunksizes=cnk_sizes))
         end if
 
         ! Add attributes for each variable
@@ -574,6 +591,8 @@ contains
   end subroutine
 
   module subroutine write_netcdf_var_ptr(this, ncid, varid, data, start, ocount)
+    implicit none
+
     class(Summary), intent(in) :: this
     integer(i32), intent(in) :: ncid
     integer(i32), intent(in) :: varid
@@ -587,6 +606,12 @@ contains
     ! else
     !   call this%err_check(nf90_put_var(ncid, varid, data, start=start))
     ! end if
+
+    ! Sample from netcdf_expanded.f90
+    ! numDims                 = size(shape(values))
+    ! localStart (:         ) = 1
+    ! localCount (:numDims  ) = shape(values)
+
 
     if (associated(data%ptr_r32)) then
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_r32, start=start, count=ocount))
