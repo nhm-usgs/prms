@@ -6,7 +6,6 @@ module Control_class
   use sArray_class, only: sArray
   use iScalar_class, only: iScalar
   use rScalar_class, only: rScalar
-  ! use PRMS_FILE_IO, only: FileIO
   use PRMS_FILE_IO_NETCDF, only: FileIO_netcdf
   use PRMS_OUTVAR_LIST, only: outvar_list
   implicit none
