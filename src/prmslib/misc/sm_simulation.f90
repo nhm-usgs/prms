@@ -3,11 +3,11 @@ submodule (Simulation_class) sm_simulation
   contains
     !***********************************************************************
     ! Simulation constructor
-    module function constructor_Simulation(ctl_data) result(this)
+    module subroutine init_Simulation(this, ctl_data)
       use iso_fortran_env, only: output_unit
       implicit none
 
-      type(Simulation) :: this
+      class(Simulation), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
@@ -34,30 +34,66 @@ submodule (Simulation_class) sm_simulation
 
       ! this%summary_crap = Summary(ctl_data, this%model_basin, this%model_time)
 
+      ! TODO: Only used by streamflow_muskingum currently. Needs streamflow_cfs when using
+      !       replacement flow (obsin_segment). The Obs stuff is not completed so replacement
+      !       flows will crash the model.
       this%model_obs = Obs(ctl_data)
 
       allocate(Temperature_hru::this%model_temp)
-      this%model_temp = Temperature_hru(ctl_data, this%model_basin, this%model_summary)
+      call this%model_temp%init(ctl_data, this%model_basin, this%model_summary)
+      ! this%model_temp = Temperature_hru(ctl_data, this%model_basin, this%model_summary)
 
       allocate(Precipitation_hru::this%model_precip)
-      this%model_precip = Precipitation_hru(ctl_data, this%model_basin, this%model_temp, this%model_summary)
+      call this%model_precip%init(ctl_data, this%model_basin, this%model_temp, this%model_summary)
+      ! this%model_precip = Precipitation_hru(ctl_data, this%model_basin, this%model_temp, this%model_summary)
 
-      this%climate = Climateflow(ctl_data, this%model_basin, this%model_summary)
+      allocate(Climateflow::this%climate)
+      call this%climate%init(ctl_data, this%model_basin, this%model_summary)
+      ! this%climate = Climateflow(ctl_data, this%model_basin, this%model_summary)
 
-      this%solrad = Solrad_degday(ctl_data, this%model_basin, this%model_summary)
-      this%transpiration = Transp_tindex(ctl_data, this%model_basin, this%model_temp)
-      this%potet = Potet_jh(ctl_data, this%model_basin, this%model_summary)
-      this%intcp = Interception(ctl_data, this%model_basin, this%transpiration, this%model_summary)
-      this%snow = Snowcomp(ctl_data, this%model_basin, this%climate, this%model_summary)
-      this%runoff = Srunoff(ctl_data, this%model_basin, this%model_summary)
-      this%soil = Soilzone(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
-      this%groundwater = Gwflow(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
-      this%model_muskingum = Muskingum(ctl_data, this%model_basin, this%model_time, this%model_summary)
+      ! TODO: PAN - add logic for other solar radiation modules
+      allocate(Solrad_degday::this%solrad)
+      call this%solrad%init(ctl_data, this%model_basin, this%model_summary)
+      ! this%solrad = Solrad_degday(ctl_data, this%model_basin, this%model_summary)
+
+      ! TODO: PAN - add logic for other transpiration modules
+      allocate(Transp_tindex::this%transpiration)
+      call this%transpiration%init(ctl_data, this%model_basin, this%model_temp)
+      ! this%transpiration = Transp_tindex(ctl_data, this%model_basin, this%model_temp)
+
+      ! TODO: PAN - add logic for other potential ET modules
+      allocate(Potet_jh::this%potet)
+      call this%potet%init(ctl_data, this%model_basin, this%model_summary)
+      ! this%potet = Potet_jh(ctl_data, this%model_basin, this%model_summary)
+
+      allocate(Interception::this%intcp)
+      call this%intcp%init(ctl_data, this%model_basin, this%transpiration, this%model_summary)
+      ! this%intcp = Interception(ctl_data, this%model_basin, this%transpiration, this%model_summary)
+
+      allocate(Snowcomp::this%snow)
+      call this%snow%init(ctl_data, this%model_basin, this%climate, this%model_summary)
+      ! this%snow = Snowcomp(ctl_data, this%model_basin, this%climate, this%model_summary)
+
+      allocate(Srunoff::this%runoff)
+      call this%runoff%init(ctl_data, this%model_basin, this%model_summary)
+      ! this%runoff = Srunoff(ctl_data, this%model_basin, this%model_summary)
+
+      allocate(Soilzone::this%soil)
+      call this%soil%init(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
+      ! this%soil = Soilzone(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
+
+      allocate(Gwflow::this%groundwater)
+      call this%groundwater%init(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
+      ! this%groundwater = Gwflow(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
+
+      allocate(Muskingum::this%model_streamflow)
+      call this%model_streamflow%init(ctl_data, this%model_basin, this%model_time, this%model_summary)
+      ! this%model_muskingum = Muskingum(ctl_data, this%model_basin, this%model_time, this%model_summary)
 
       if (ctl_data%print_debug%value == 1) then
         this%model_waterbal = WaterBalance(ctl_data, this%model_basin, this%groundwater)
       endif
-    end function
+    end subroutine
 
     module subroutine run_Simulation(this, ctl_data)
       use iso_fortran_env, only: output_unit
@@ -71,8 +107,8 @@ submodule (Simulation_class) sm_simulation
         if (.not. this%model_time%next(ctl_data)) exit
         ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
 
-        ! write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
-        ! 9008 format(A, I4, 2('/', I2.2))
+        write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
+        9008 format(A, I4, 2('/', I2.2))
 
         call this%model_basin%run(ctl_data, this%model_time)
 
@@ -119,7 +155,7 @@ submodule (Simulation_class) sm_simulation
         ! call this%model_route%run(ctl_data, param_data, this%model_basin, this%climate, this%groundwater, this%soil, this%runoff, this%model_time, this%solrad)
 
         ! print *, '10'
-        call this%model_muskingum%run(ctl_data, this%model_basin, &
+        call this%model_streamflow%run(ctl_data, this%model_basin, &
                                       this%potet, this%groundwater, this%soil, &
                                       this%runoff, this%model_time, this%solrad, &
                                       this%model_obs)
