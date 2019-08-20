@@ -23,6 +23,8 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       ! ------------------------------------------------------------------------
       ! Open netcdf file as read only
+      ! print *, 'TRYING TO OPEN: ', filename
+      this%file_hdl = 0
       call this%err_check(nf90_open(filename, NF90_NOWRITE, this%file_hdl))
     end subroutine
 
@@ -186,6 +188,27 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
       ! Get the varid of the data variable, based on its name.
       ! write(output_unit, *) 'Loading ', name
       call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
+
+      ! Read the data
+      call this%err_check(nf90_get_var(this%file_hdl, varid, var_data))
+    end subroutine
+
+
+    module subroutine get_variable_i64_2d(this, name, var_data)
+      implicit none
+
+      class(FileIO_netcdf), intent(in) :: this
+      character(len=*), intent(in) :: name
+      integer(i64), allocatable, intent(inout) :: var_data(:, :)
+
+      integer(i32) :: varid
+        !! Variable ID in the CBH netcdf file
+
+      ! ------------------------------------------------------------------------
+      ! Get the varid of the data variable, based on its name.
+      ! write(output_unit, *) 'Loading ', name
+      call this%err_check(nf90_inq_varid(this%file_hdl, name, varid))
+      write(*, *) 'Int var: ', name, ' ID: ', varid
 
       ! Read the data
       call this%err_check(nf90_get_var(this%file_hdl, varid, var_data))
