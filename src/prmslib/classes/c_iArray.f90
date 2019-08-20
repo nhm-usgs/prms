@@ -57,6 +57,7 @@ module iArray_class
         !! Size in 1D of the class
 
       call this%allocate(N)
+      this%values = 0
     end function
     !====================================================================!
 

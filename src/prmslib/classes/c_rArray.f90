@@ -82,6 +82,7 @@ contains
           !! The shape of the rArray
 
         call this%allocate(dims)
+        this%values = 0.0
     end function
     !====================================================================!
 
