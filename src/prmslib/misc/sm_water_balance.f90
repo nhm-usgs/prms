@@ -436,7 +436,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                                hru_percent_imperv(chru), dprst_sroff_hru(chru)
               9200 format(I4, 2('/', I2.2), A, 9es11.3e3)
               9201 format(2X, 11es11.3e3)
-              9202 format(2X, 5es11.3e3, 1X, L)
+              9202 format(2X, 5es11.3e3, 1X, L1)
               9203 format(2X, 7es11.3e3)
             endif
 
@@ -471,7 +471,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                                                         hru_sroffp(chru), hru_sroffi(chru), hru_area_dble(chru)
             endif
 
-            9118 format(I4, 2('/', I2.2), 1X, L, 1X, 16es11.3e3)
+            9118 format(I4, 2('/', I2.2), 1X, L1, 1X, 16es11.3e3)
           endif
 
           last_sm = soil_moist_ante(chru)
