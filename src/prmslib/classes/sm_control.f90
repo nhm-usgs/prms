@@ -23,6 +23,7 @@ contains
 
     ! Initialize defaults for some control file parameters
     this%prms_warmup = iScalar(0)
+    this%cascade_flag = iScalar(0)
 
     this%control_filename = control_filename
 
@@ -44,9 +45,9 @@ contains
     end if
 
     ! Example for checking file suffix
-    write(*, *) this%param_file%values(1)%s
+    ! write(*, *) this%param_file%values(1)%s
     if (this%param_file%values(1)%s(index(this%param_file%values(1)%s, '.')+1:) == 'nc') then
-      write(*, *) 'Parameter netcdf file'
+      ! write(*, *) 'Parameter netcdf file'
       ! The parameter file is in netCDF format
       ! allocate(Temperature_hru::this%model_temp)
       ! this%model_temp = Temperature_hru(ctl_data, this%summary_by_basin, this%summary_by_hru)
@@ -169,6 +170,8 @@ contains
     integer(i32) :: iunit
 
     ! --------------------------------------------------------------------------
+    open_model_output_file = -1
+
     if (allocated(this%model_output_file%values)) then
       open(newunit=iunit, file=this%model_output_file%values(1)%s, status='replace', iostat=istat)
 
@@ -191,6 +194,8 @@ contains
     integer(i32) :: iunit
 
     ! --------------------------------------------------------------------------
+    open_var_save_file = -1
+
     if (allocated(this%var_save_file%values)) then
       open(newunit=iunit, file=this%var_save_file%values(1)%s, status='replace', &
            form='unformatted', access='stream', iostat=istat)
