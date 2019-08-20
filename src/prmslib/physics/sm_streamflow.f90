@@ -1,10 +1,10 @@
 submodule (PRMS_STREAMFLOW) sm_streamflow
   contains
-    module function constructor_Streamflow(ctl_data, model_basin, model_time, model_summary) result(this)
+    module subroutine init_Streamflow(this, ctl_data, model_basin, model_time, model_summary)
       use prms_constants, only: dp, DNEARZERO, FT2_PER_ACRE, NEARZERO
       implicit none
 
-      type(Streamflow) :: this
+      class(Streamflow), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
@@ -88,22 +88,34 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         ! Other variables
         allocate(this%hru_outflow(nhru))
+        this%hru_outflow = 0.0_dp
 
         allocate(this%seg_lateral_inflow(nsegment))
         this%seg_lateral_inflow = 0.0_dp
 
         allocate(this%seg_inflow(nsegment))
+        this%seg_inflow = 0.0_dp
+
         allocate(this%seg_outflow(nsegment))
+        this%seg_outflow = 0.0_dp
 
         if (cascade_flag == 0) then
           allocate(this%seg_gwflow(nsegment))
+          this%seg_gwflow = 0.0_dp
           allocate(this%seg_sroff(nsegment))
+          this%seg_sroff = 0.0_dp
           allocate(this%seg_ssflow(nsegment))
+          this%seg_ssflow = 0.0_dp
           allocate(this%seginc_gwflow(nsegment))
+          this%seginc_gwflow = 0.0_dp
           allocate(this%seginc_potet(nsegment))
+          this%seginc_potet = 0.0_dp
           allocate(this%seginc_sroff(nsegment))
+          this%seginc_sroff = 0.0_dp
           allocate(this%seginc_ssflow(nsegment))
+          this%seginc_ssflow = 0.0_dp
           allocate(this%seginc_swrad(nsegment))
+          this%seginc_swrad = 0.0_dp
         endif
 
         allocate(this%segment_delta_flow(nsegment))
@@ -134,44 +146,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         allocate(this%basin_stflow_in)
         allocate(this%basin_stflow_out)
 
-        ! Connect summary variables that need to be output
-        if (outVarON_OFF == 1) then
-          do jj = 1, outVar_names%size()
-            select case(outVar_names%values(jj)%s)
-              case('basin_cfs')
-                call model_summary%set_summary_var(jj, this%basin_cfs)
-              case('basin_cms')
-                call model_summary%set_summary_var(jj, this%basin_cms)
-              case('basin_gwflow_cfs')
-                call model_summary%set_summary_var(jj, this%basin_gwflow_cfs)
-              case('basin_segment_storage')
-                call model_summary%set_summary_var(jj, this%basin_segment_storage)
-              case('basin_sroff_cfs')
-                call model_summary%set_summary_var(jj, this%basin_sroff_cfs)
-              case('basin_stflow_in')
-                call model_summary%set_summary_var(jj, this%basin_stflow_in)
-              case('basin_stflow_out')
-                call model_summary%set_summary_var(jj, this%basin_stflow_out)
-              case('hru_outflow')
-                call model_summary%set_summary_var(jj, this%hru_outflow)
-              case('seg_inflow')
-                call model_summary%set_summary_var(jj, this%seg_inflow)
-              case('seg_lateral_inflow')
-                call model_summary%set_summary_var(jj, this%seg_lateral_inflow)
-              case('seg_outflow')
-                call model_summary%set_summary_var(jj, this%seg_outflow)
-              case('seg_sroff')
-                call model_summary%set_summary_var(jj, this%seg_sroff)
-              case('seg_ssflow')
-                call model_summary%set_summary_var(jj, this%seg_ssflow)
-              case('seg_upstream_inflow')
-                call model_summary%set_summary_var(jj, this%seg_upstream_inflow)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
-
         ! Now initialize everything
 
         ! TODO: Uncomment once water_use_flag is added
@@ -184,20 +158,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%basin_segment_storage = 0.0_dp
           this%segment_delta_flow = 0.0_dp
         endif
-
-        if (cascade_flag == 0) then
-          this%seg_gwflow = 0.0_dp
-          this%seg_sroff = 0.0_dp
-          this%seg_ssflow = 0.0_dp
-          this%seginc_gwflow = 0.0_dp
-          this%seginc_potet = 0.0_dp
-          this%seginc_sroff = 0.0_dp
-          this%seginc_ssflow = 0.0_dp
-          this%seginc_swrad = 0.0_dp
-        endif
-
-        this%seg_inflow = 0.0_dp
-        this%seg_outflow = 0.0_dp
 
         this%flow_out = 0.0_dp
         this%flow_headwater = 0.0_dp
@@ -304,17 +264,100 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         enddo
 
         deallocate(x_off)
-      end associate
-    end function
 
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
+            select case(outVar_names%values(jj)%s)
+              case('basin_cfs')
+                call model_summary%set_summary_var(jj, this%basin_cfs)
+              case('basin_cms')
+                call model_summary%set_summary_var(jj, this%basin_cms)
+              case('basin_gwflow_cfs')
+                call model_summary%set_summary_var(jj, this%basin_gwflow_cfs)
+              case('basin_segment_storage')
+                call model_summary%set_summary_var(jj, this%basin_segment_storage)
+              case('basin_sroff_cfs')
+                call model_summary%set_summary_var(jj, this%basin_sroff_cfs)
+              case('basin_stflow_in')
+                call model_summary%set_summary_var(jj, this%basin_stflow_in)
+              case('basin_stflow_out')
+                call model_summary%set_summary_var(jj, this%basin_stflow_out)
+              case('hru_outflow')
+                call model_summary%set_summary_var(jj, this%hru_outflow)
+              case('seg_gwflow')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seg_gwflow)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seg_inflow')
+                call model_summary%set_summary_var(jj, this%seg_inflow)
+              case('seg_lateral_inflow')
+                call model_summary%set_summary_var(jj, this%seg_lateral_inflow)
+              case('seg_outflow')
+                call model_summary%set_summary_var(jj, this%seg_outflow)
+              case('seg_sroff')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seg_sroff)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seg_ssflow')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seg_ssflow)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seg_upstream_inflow')
+                call model_summary%set_summary_var(jj, this%seg_upstream_inflow)
+              case('seginc_gwflow')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seginc_gwflow)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seginc_potet')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seginc_potet)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seginc_sroff')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seginc_sroff)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seginc_ssflow')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seginc_ssflow)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('seginc_swrad')
+                if (cascade_flag == 0) then
+                  call model_summary%set_summary_var(jj, this%seginc_swrad)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                end if
+              case('segment_delta_flow')
+                call model_summary%set_summary_var(jj, this%segment_delta_flow)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
+      end associate
+    end subroutine
 
     module subroutine run_Streamflow(this, ctl_data, model_basin, &
-                                  model_potet, groundwater, soil, runoff, &
-                                  model_time, model_solrad)
-      use prms_constants, only: dp, FT2_PER_ACRE, NEARZERO
+                                    model_potet, groundwater, soil, runoff, &
+                                    model_time, model_solrad, model_obs)
+      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, NEARZERO
       implicit none
 
-      class(Streamflow) :: this
+      class(Streamflow), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       class(Potential_ET), intent(in) :: model_potet
@@ -323,6 +366,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       type(Srunoff), intent(in) :: runoff
       type(Time_t), intent(in) :: model_time
       class(SolarRadiation), intent(in) :: model_solrad
+      type(Obs), intent(in) :: model_obs
 
       ! Local Variables
       integer(i32) :: i
@@ -435,7 +479,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
     end subroutine
 
     module subroutine cleanup_Streamflow(this)
-      class(Streamflow) :: this
+      class(Streamflow), intent(inout) :: this
         !! Streamflow class
     end subroutine
 end submodule

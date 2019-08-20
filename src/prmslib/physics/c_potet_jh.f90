@@ -8,7 +8,6 @@ module PRMS_POTET_JH
   use Control_class, only: Control
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
-  ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_POTET, only: Potential_ET
   use SOLAR_RADIATION, only: SolarRadiation
   use PRMS_TEMPERATURE, only: Temperature
@@ -18,34 +17,35 @@ module PRMS_POTET_JH
   private
   public :: Potet_jh
 
-  character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+  character(len=*), parameter :: MODDESC = 'Potential ET - Jensen-Haise'
   character(len=*), parameter :: MODNAME = 'potet_jh'
   character(len=*), parameter :: MODVERSION = '2018-10-10 16:37:00Z'
 
   type, extends(Potential_ET) :: Potet_jh
     ! Parameters
-    real(r32), allocatable :: jh_coef(:, :)
+    real(r32), allocatable, private :: jh_coef(:, :)
       !! Monthly (January to December) air temperature coefficient used in Jensen-Haise potential ET computations for each HRU
-    real(r32), allocatable :: jh_coef_hru(:)
+    real(r32), allocatable, private :: jh_coef_hru(:)
       !! Air temperature coefficient used in Jensen-Haise potential ET computations for each HRU
 
     ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.
     ! real(r32), private, allocatable :: tavg_f(:)
 
     contains
+      procedure, public :: init => init_Potet_jh
       procedure, public :: run => run_Potet_jh
   end type
 
-  interface Potet_jh
+  interface
     !! Potet_jh constructor
-    module function constructor_Potet_jh(ctl_data, model_basin, model_summary) result(this)
-      type(Potet_jh) :: this
+    module subroutine init_Potet_jh(this, ctl_data, model_basin, model_summary)
+      class(Potet_jh), intent(inout) :: this
         !! Poteh_jh class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

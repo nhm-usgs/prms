@@ -67,20 +67,21 @@ module PRMS_CLIMATEVARS
     ! real(r32), allocatable :: tmin_aspect_adjust(:, :)
 
     contains
+      procedure, public :: init => init_Climateflow
       procedure, public :: cleanup => cleanup_Climateflow
         !! Final code to execute after simulation
   end type
 
-  interface Climateflow
+  interface
     !! Climateflow constructor
-    module function constructor_Climateflow(ctl_data, model_basin, model_summary) result(this)
-      type(Climateflow) :: this
+    module subroutine init_Climateflow(this, ctl_data, model_basin, model_summary)
+      class(Climateflow), target, intent(inout) :: this
         !! Climateflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

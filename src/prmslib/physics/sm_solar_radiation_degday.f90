@@ -2,11 +2,11 @@ submodule (SOLAR_RADIATION_DEGDAY) sm_solar_radiation_degday
 contains
   !***********************************************************************
   ! Solrad_degday constructor
-  module function constructor_Solrad_degday(ctl_data, model_basin, model_summary) result(this)
+  module subroutine init_Solrad_degday(this, ctl_data, model_basin, model_summary)
     use UTILS_PRMS, only: print_module_info
     implicit none
 
-    type(Solrad_degday) :: this
+    class(Solrad_degday), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
@@ -16,7 +16,8 @@ contains
 
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%SolarRadiation = SolarRadiation(ctl_data, model_basin, model_summary)
+    call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
+    ! this%SolarRadiation = SolarRadiation(ctl_data, model_basin, model_summary)
 
     associate(print_debug => ctl_data%print_debug%value, &
               param_hdl => ctl_data%param_file_hdl, &
@@ -52,7 +53,7 @@ contains
       ! allocate(this%tmax_f(nhru))
 
     end associate
-  end function
+  end subroutine
 
 
   module subroutine run_Solrad_degday(this, ctl_data, model_time, model_precip, model_basin, model_temp)

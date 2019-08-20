@@ -17,8 +17,8 @@ module PRMS_TEMPERATURE_HRU
 
   type, extends(Temperature) :: Temperature_hru
     ! Parameters
-    real(r32), allocatable :: tmax_cbh_adj(:, :)
-    real(r32), allocatable :: tmin_cbh_adj(:, :)
+    real(r32), allocatable, private :: tmax_cbh_adj(:, :)
+    real(r32), allocatable, private :: tmin_cbh_adj(:, :)
 
     ! Local variables
     integer(i32), private :: tmax_funit
@@ -35,20 +35,34 @@ module PRMS_TEMPERATURE_HRU
     logical, private :: has_netcdf_tmin
 
     contains
+      procedure, public :: init => init_Temperature_hru
+
+      ! generic, public :: init => init_Temperature_hru
       procedure, public :: run => run_Temperature_hru
   end type
 
-  interface Temperature_hru
+  interface
     !! Temperature_hru constructor
-    module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
-      type(Temperature_hru) :: this
+    module subroutine init_Temperature_hru(this, ctl_data, model_basin, model_summary)
+      class(Temperature_hru), intent(inout) :: this
         !! Temperature_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
+  ! interface Temperature_hru
+  !   !! Temperature_hru constructor
+  !   module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
+  !     type(Temperature_hru) :: this
+  !       !! Temperature_hru class
+  !     type(Control), intent(in) :: ctl_data
+  !       !! Control file parameters
+  !     type(Basin), intent(in) :: model_basin
+  !     type(Summary), intent(inout) :: model_summary
+  !   end function
+  ! end interface
 
   interface
     module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, model_summary)

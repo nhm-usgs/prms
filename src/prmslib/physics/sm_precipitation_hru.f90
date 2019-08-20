@@ -1,11 +1,11 @@
 submodule(PRMS_PRECIPITATION_HRU) sm_precipitation_hru
 contains
   !! Precipitation_hru constructor
-  module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, model_summary) result(this)
+  module subroutine init_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_summary)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
-    type(Precipitation_hru) :: this
+    class(Precipitation_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
@@ -17,7 +17,8 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Precipitation = Precipitation(ctl_data, model_basin, model_temp, model_summary)
+    call this%Precipitation%init(ctl_data, model_basin, model_temp, model_summary)
+    ! this%Precipitation = Precipitation(ctl_data, model_basin, model_temp, model_summary)
 
     associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               end_time => ctl_data%end_time%values, &
@@ -68,7 +69,7 @@ contains
 
       if (istop == 1) STOP 'ERROR in precipitation_hru'
     end associate
-  end function
+  end subroutine
 
 
   module subroutine run_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_time, model_summary)

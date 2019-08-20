@@ -22,55 +22,56 @@ module PRMS_MUSKINGUM
 
   type, extends(Streamflow) :: Muskingum
     ! Parameters
-    real(r32), allocatable :: x_coef(:)
+    real(r32), allocatable, private :: x_coef(:)
       !! The amount of attenuation of the flow wave, called the Muskingum routing weighting factor; enter 0.0 for reservoirs, diversions, and segment(s) flowing out of the basin
-    real(r32), allocatable :: K_coef(:)
+    real(r32), allocatable, private :: K_coef(:)
       !! Travel time of flood wave from one segment to the next downstream segment, called the Muskingum storage coefficient; enter 1.0 for reservoirs, diversions, and segment(s) flowing out of the basin
 
     ! Local Variables
-    real(r64), allocatable :: currinsum(:)
-    real(r64), allocatable :: inflow_ts(:)
-    real(r64), allocatable :: outflow_ts(:)
-    real(r64), allocatable :: pastin(:)
-    real(r64), allocatable :: pastout(:)
+    real(r64), allocatable, private :: currinsum(:)
+    real(r64), allocatable, private :: inflow_ts(:)
+    real(r64), allocatable, private :: outflow_ts(:)
+    real(r64), allocatable, private :: pastin(:)
+    real(r64), allocatable, private :: pastout(:)
 
     ! Declared variables
 
     ! NOTE: ts_i, c0, c1, c2, ts moved from Streamflow because they
     !       are specific to muskingum or muskingum_lake.
     !       The muskingum_lake class will also declare these variables.
-    integer(i32), public, allocatable :: ts_i(:)
+    integer(i32), allocatable, private :: ts_i(:)
       !! used by muskingum and muskingum_lake
 
-    real(r64), public, allocatable :: c0(:)
+    real(r64), allocatable, private :: c0(:)
       !! used by muskingum and muskingum_lake
-    real(r64), public, allocatable :: c1(:)
+    real(r64), allocatable, private :: c1(:)
       !! used by muskingum and muskingum_lake
-    real(r64), public, allocatable :: c2(:)
+    real(r64), allocatable, private :: c2(:)
       !! used by muskingum and muskingum_lake
-    real(r64), public, allocatable :: ts(:)
+    real(r64), allocatable, private :: ts(:)
       !! used by muskingum and muskingum_lake
 
     contains
+      procedure, public :: init => init_Muskingum
       procedure, public :: run => run_Muskingum
       procedure, public :: cleanup => cleanup_Muskingum
   end type
 
-  interface Muskingum
+  interface
     !! Muskingum constructor
-    module function constructor_Muskingum(ctl_data, model_basin, &
-                                          model_time, model_summary) result(this)
+    module subroutine init_Muskingum(this, ctl_data, model_basin, &
+                                          model_time, model_summary)
       use prms_constants, only: dp
       implicit none
 
-      type(Muskingum) :: this
+      class(Muskingum), intent(inout) :: this
         !! Muskingum class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
 

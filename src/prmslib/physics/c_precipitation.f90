@@ -23,10 +23,10 @@ module PRMS_PRECIPITATION
     real(r32), allocatable :: tmax_allrain_offset(:, :)
 
     ! Output variables
-    real(r64), pointer :: basin_obs_ppt
-    real(r64), pointer :: basin_ppt
-    real(r64), pointer :: basin_rain
-    real(r64), pointer :: basin_snow
+    real(r64), allocatable :: basin_obs_ppt
+    real(r64), allocatable :: basin_ppt
+    real(r64), allocatable :: basin_rain
+    real(r64), allocatable :: basin_snow
 
     real(r32), allocatable :: hru_ppt(:)
     real(r32), allocatable :: hru_rain(:)
@@ -47,15 +47,16 @@ module PRMS_PRECIPITATION
     logical :: has_hru_summary_vars
 
     contains
+      procedure, public :: init => init_Precipitation
       procedure, public :: run => run_Precipitation
       procedure, public :: set_precipitation_form
       procedure, public :: set_summary_ptrs
   end type
 
-  interface Precipitation
+  interface
     !! Precipitation constructor
-    module function constructor_Precipitation(ctl_data, model_basin, model_temp, model_summary) result(this)
-      type(Precipitation) :: this
+    module subroutine init_Precipitation(this, ctl_data, model_basin, model_temp, model_summary)
+      class(Precipitation), intent(inout) :: this
         !! Precipitation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -63,8 +64,22 @@ module PRMS_PRECIPITATION
       class(Temperature), intent(in) :: model_temp
       type(Summary), intent(inout) :: model_summary
         !! Summary by HRU module
-    end function
+    end subroutine
   end interface
+
+  ! interface Precipitation
+  !   !! Precipitation constructor
+  !   module function constructor_Precipitation(ctl_data, model_basin, model_temp, model_summary) result(this)
+  !     type(Precipitation) :: this
+  !       !! Precipitation class
+  !     type(Control), intent(in) :: ctl_data
+  !       !! Control file parameters
+  !     type(Basin), intent(in) :: model_basin
+  !     class(Temperature), intent(in) :: model_temp
+  !     type(Summary), intent(inout) :: model_summary
+  !       !! Summary by HRU module
+  !   end function
+  ! end interface
 
   interface
     module subroutine run_Precipitation(this, ctl_data, model_basin, model_temp, model_time, model_summary)

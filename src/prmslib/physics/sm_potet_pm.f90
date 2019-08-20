@@ -1,11 +1,14 @@
 submodule(PRMS_POTET_PM) sm_potet_pm
 contains
-  module function constructor_Potet_pm(ctl_data, model_summary) result(this)
+  module subroutine init_Potet_pm(this, ctl_data, model_basin, model_summary)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
-    type(Potet_pm) :: this
+    class(Potet_pm), intent(inout) :: this
+      !! Poteh_pm class
     type(Control), intent(in) :: ctl_data
+      !! Control file parameters
+    type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: ierr
@@ -17,9 +20,11 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data, model_summary)
+    call this%Potential_ET%init(ctl_data, model_basin, model_summary)
+    ! this%Potential_ET = Potential_ET(ctl_data, model_summary)
 
-    associate(nhru => ctl_data%nhru%value, &
+    associate(nhru => model_basin%nhru%value, &
+
               outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -81,15 +86,14 @@ contains
         enddo
       endif
     end associate
-  end function
+  end subroutine
 
-  module subroutine run_Potet_pm(this, ctl_data, param_data, model_basin, model_temp, model_time, model_solrad)
+  module subroutine run_Potet_pm(this, ctl_data, model_basin, model_temp, model_time, model_solrad)
     use conversions_mod, only: sat_vapor_press
     implicit none
 
     class(Potet_pm), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Time_t), intent(in) :: model_time
@@ -153,11 +157,11 @@ contains
               tmax => model_temp%tmax, &
               tmin => model_temp%tmin, &
 
-              crop_coef => param_data%crop_coef%values, &
-              hru_area => param_data%hru_area%values, &
-              hru_elev => param_data%hru_elev%values, &
-              pm_d_coef => param_data%pm_d_coef%values, &
-              pm_n_coef => param_data%pm_n_coef%values, &
+              ! crop_coef => param_data%crop_coef%values, &
+              ! hru_area => param_data%hru_area%values, &
+              ! hru_elev => param_data%hru_elev%values, &
+              ! pm_d_coef => param_data%pm_d_coef%values, &
+              ! pm_n_coef => param_data%pm_n_coef%values, &
 
               soltab_potsw => model_solrad%soltab_potsw, &
               swrad => model_solrad%swrad, &

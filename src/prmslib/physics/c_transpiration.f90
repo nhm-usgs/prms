@@ -4,6 +4,8 @@ module PRMS_TRANSPIRATION
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
+  use PRMS_SET_TIME, only: Time_t
+  use PRMS_TEMPERATURE, only: Temperature
   use prms_constants, only: dp
   implicit none
 
@@ -22,24 +24,30 @@ module PRMS_TRANSPIRATION
     ! integer(i32), allocatable :: transp_on(:)
 
   contains
-    procedure, public :: run_Transpiration
+    procedure, public :: init => init_Transpiration
+    procedure, public :: run => run_Transpiration
   end type
 
-  interface Transpiration
+  interface
     !! Transpiration constructor
-    module function constructor_Transpiration(ctl_data, model_basin) result(this)
-      type(Transpiration) :: this
+    module subroutine init_Transpiration(this, ctl_data, model_basin, model_temp)
+      class(Transpiration), intent(inout) :: this
         !! Transpiration class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-    end function
+        !! Model basin information
+      class(Temperature), intent(in) :: model_temp
+    end subroutine
   end interface
 
   interface
-    module subroutine run_Transpiration(this, ctl_data)
+    module subroutine run_Transpiration(this, ctl_data, model_time, model_basin, model_temp)
       class(Transpiration), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
+      type(Time_t), intent(in) :: model_time
+      type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface
 

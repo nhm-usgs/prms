@@ -30,9 +30,9 @@ module PRMS_INTCP
     ! Dimensions
 
     ! Parameters
-    real(r32), allocatable :: covden_sum(:)
+    real(r32), allocatable, private :: covden_sum(:)
       !! Summer vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable :: covden_win(:)
+    real(r32), allocatable, private :: covden_win(:)
       !! Winter vegetation cover density for the major vegetation type in each HRU
     real(r32), allocatable :: snow_intcp(:)
       !! Snow interception storage capacity for the major vegetation type in each HRU
@@ -52,16 +52,16 @@ module PRMS_INTCP
     ! integer(i32) :: use_transfer_intcp
     logical :: use_transfer_intcp
 
-    real(r64), pointer :: basin_changeover
+    real(r64), allocatable :: basin_changeover
 
     ! Output variables
-    real(r64), pointer :: basin_hru_apply
-    real(r64), pointer :: basin_intcp_evap
-    real(r64), pointer :: basin_intcp_stor
-    real(r64), pointer :: basin_net_apply
-    real(r64), pointer :: basin_net_ppt
-    real(r64), pointer :: basin_net_rain
-    real(r64), pointer :: basin_net_snow
+    real(r64), allocatable :: basin_hru_apply
+    real(r64), allocatable :: basin_intcp_evap
+    real(r64), allocatable :: basin_intcp_stor
+    real(r64), allocatable :: basin_net_apply
+    real(r64), allocatable :: basin_net_ppt
+    real(r64), allocatable :: basin_net_rain
+    real(r64), allocatable :: basin_net_snow
 
     real(r32), allocatable :: canopy_covden(:)
     real(r32), allocatable :: hru_intcpevap(:)
@@ -117,23 +117,39 @@ module PRMS_INTCP
 
 
     contains
+      procedure, private :: init_Interception
       procedure, nopass, private :: intercept
       procedure, private :: read_dyn_params
+
+      generic, public :: init => init_Interception
       procedure, public :: run => run_Interception
       procedure, public :: cleanup => cleanup_Interception
   end type
 
-  interface Interception
+  ! interface Interception
+  !   !! Intercept constructor
+  !   module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
+  !     type(Interception) :: this
+  !       !! Interception class
+  !     type(Control), intent(in) :: ctl_data
+  !       !! Control file parameters
+  !     type(Basin), intent(in) :: model_basin
+  !     class(Transpiration), intent(in) :: model_transp
+  !     type(Summary), intent(inout) :: model_summary
+  !   end function
+  ! end interface
+
+  interface
     !! Intercept constructor
-    module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
-      type(Interception) :: this
+    module subroutine init_Interception(this, ctl_data, model_basin, model_transp, model_summary)
+      class(Interception) :: this
         !! Interception class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       class(Transpiration), intent(in) :: model_transp
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

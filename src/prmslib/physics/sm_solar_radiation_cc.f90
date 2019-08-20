@@ -1,15 +1,14 @@
 submodule(SOLAR_RADIATION_CC) sm_solar_radiation_cc
 contains
-  module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, model_summary) result(this)
+  module subroutine init_Solrad_cc(this, ctl_data, model_basin, model_temp, model_summary)
     use conversions_mod, only: c_to_f
     use prms_constants, only: dp
     implicit none
-    type(Solrad_cc) :: this
+
+    class(Solrad_cc), intent(inout) :: this
       !! Solrad_cc class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
-    type(Parameters), intent(in) :: param_data
-      !! Parameters
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Summary), intent(inout) :: model_summary
@@ -21,7 +20,8 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
+    call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
+    ! this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
@@ -69,19 +69,17 @@ contains
         enddo
       endif
     end associate
-  end function
+  end subroutine
 
-  module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, model_precip, model_basin)
+  module subroutine run_Solrad_cc(this, ctl_data, model_time, model_obs, model_precip, model_basin)
     use prms_constants, only: dp
     implicit none
 
     class(Solrad_cc), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Obs), intent(in) :: model_obs
     class(Precipitation), intent(in) :: model_precip
-    ! type(Climateflow), intent(in) :: climate
     type(Basin), intent(in) :: model_basin
 
     ! Local Variables

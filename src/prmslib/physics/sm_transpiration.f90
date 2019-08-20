@@ -1,14 +1,11 @@
 submodule(PRMS_TRANSPIRATION) sm_transpiration
 contains
-  module function constructor_Transpiration(ctl_data, model_basin) result(this)
-    type(Transpiration) :: this
-      !! Transpiration class
+  module subroutine init_Transpiration(this, ctl_data, model_basin, model_temp)
+    class(Transpiration), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-      !! Control file parameters
     type(Basin), intent(in) :: model_basin
+    class(Temperature), intent(in) :: model_temp
 
-    ! Control
-    ! nhru,
     ! --------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               nhru => model_basin%nhru)
@@ -23,15 +20,17 @@ contains
       allocate(this%transp_on(nhru))
       this%transp_on = .false.
     end associate
-  end function
+  end subroutine
 
-  module subroutine run_Transpiration(this, ctl_data)
+  module subroutine run_Transpiration(this, ctl_data, model_time, model_basin, model_temp)
     class(Transpiration), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
+    type(Time_t), intent(in) :: model_time
+    type(Basin), intent(in) :: model_basin
+    class(Temperature), intent(in) :: model_temp
 
     ! --------------------------------------------------------------------------
-
-
+    print *, 'Transpiration%run() stub'
   end subroutine
 
 end submodule

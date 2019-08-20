@@ -1,11 +1,14 @@
 submodule(PRMS_POTET_HRU) sm_potet_hru
 contains
-  module function constructor_Potet_hru(ctl_data, model_summary) result(this)
+  module subroutine init_Potet_hru(this, ctl_data, model_basin, model_summary)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
-    type(Potet_hru) :: this
+    class(Potet_hru), intent(inout) :: this
+      !! Poteh_jh class
     type(Control), intent(in) :: ctl_data
+      !! Control file parameters
+    type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
 
     ! Local variables
@@ -17,9 +20,10 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Potential_ET = Potential_ET(ctl_data, model_summary)
+    call this%Potential_ET%init(ctl_data, model_basin, model_summary)
+    ! this%Potential_ET = Potential_ET(ctl_data, model_summary)
 
-    associate(nhru => ctl_data%nhru%value, &
+    associate(nhru => model_basin%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               print_debug => ctl_data%print_debug%value, &
               potet_day => ctl_data%potet_day%values(1), &
@@ -40,17 +44,15 @@ contains
         call find_current_time(ierr, this%et_funit, start_time, (cbh_binary_flag==1))
       endif
     end associate
-  end function
+  end subroutine
 
-  module subroutine run_Potet_hru(this, ctl_data, param_data, model_time, model_basin)
+  module subroutine run_Potet_hru(this, ctl_data, model_time, model_basin)
     use prms_constants, only: dp
-    ! use UTILS_PRMS, only: get_array
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
     class(Potet_hru), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
     type(Basin), intent(in) :: model_basin
 

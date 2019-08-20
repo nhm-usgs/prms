@@ -1,12 +1,12 @@
 submodule (PRMS_GWFLOW) sm_gwflow
   contains
 
-    module function constructor_Gwflow(ctl_data, model_basin, &
-                                       model_climate, intcp, soil, runoff, model_summary) result(this)
+    module subroutine init_Gwflow(this, ctl_data, model_basin, model_climate, &
+                                  intcp, soil, runoff, model_summary)
       use prms_constants, only: dp, SWALE
       implicit none
 
-      type(Gwflow) :: this
+      class(Gwflow), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(in) :: model_climate
@@ -325,7 +325,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%hru_streamflow_out = 0.0_dp
         this%hru_lateral_flow = 0.0_dp
       end associate
-    end function
+    end subroutine
 
 
 

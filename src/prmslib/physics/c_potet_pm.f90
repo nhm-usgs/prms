@@ -41,25 +41,26 @@ module PRMS_POTET_PM
     real(r32), allocatable :: windspeed_hru(:)
 
     contains
+      procedure, public :: init => init_Potet_pm
       procedure, public :: run => run_Potet_pm
   end type
 
-  interface Potet_pm
+  interface
     !! Potet_pm constructor
-    module function constructor_Potet_pm(ctl_data, model_summary) result(this)
-      type(Potet_pm) :: this
+    module subroutine init_Potet_pm(this, ctl_data, model_basin, model_summary)
+      class(Potet_pm), intent(inout) :: this
         !! Poteh_pm class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
+      type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface
-    module subroutine run_Potet_pm(this, ctl_data, param_data, model_basin, model_temp, model_time, model_solrad)
+    module subroutine run_Potet_pm(this, ctl_data, model_basin, model_temp, model_time, model_solrad)
       class(Potet_pm), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Time_t), intent(in) :: model_time

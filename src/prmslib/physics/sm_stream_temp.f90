@@ -333,6 +333,25 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
             endif
           enddo
         enddo
+
+        ! TODO: Add output variables
+        ! dlit
+        ! seg_ccov
+        ! seg_humid
+        ! seg_maxtemp
+        ! seg_melt
+        ! seg_potet
+        ! seg_rain
+        ! seg_shade
+        ! seg_width
+        ! t_ground
+        ! t_gw
+        ! t_roff
+        ! t_ss
+        ! temp_avg
+        ! upstrm_temp
+
+
       end associate
     end function
 

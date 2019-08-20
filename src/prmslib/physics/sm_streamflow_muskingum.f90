@@ -1,12 +1,12 @@
 submodule (PRMS_MUSKINGUM) sm_muskingum
   contains
-    module function constructor_Muskingum(ctl_data, model_basin, &
-                                          model_time, model_summary) result(this)
+    module subroutine init_Muskingum(this, ctl_data, model_basin, &
+                                          model_time, model_summary)
       use, intrinsic :: iso_fortran_env, only: output_unit
       use prms_constants, only: dp, NEARZERO
       implicit none
 
-      type(Muskingum) :: this
+      class(Muskingum), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
@@ -23,7 +23,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       ! -----------------------------------------------------------------------
       ! Call the parent constructor first
-      this%Streamflow = Streamflow(ctl_data, model_basin, model_time, model_summary)
+      call this%Streamflow%init(ctl_data, model_basin, model_time, model_summary)
+      ! this%Streamflow = Streamflow(ctl_data, model_basin, model_time, model_summary)
 
       associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 param_hdl => ctl_data%param_file_hdl, &
@@ -177,20 +178,20 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           this%outflow_ts = 0.0_dp
         endif
 
-        this%basin_segment_storage = 0.0_dp
+        ! this%basin_segment_storage = 0.0_dp
+        ! do cseg = 1, nsegment
+        !   this%basin_segment_storage = this%basin_segment_storage + this%seg_outflow(cseg)
+        ! enddo
+        ! this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
 
-        do cseg = 1, nsegment
-          this%basin_segment_storage = this%basin_segment_storage + this%seg_outflow(cseg)
-        enddo
-
-        this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
+        this%basin_segment_storage = sum(this%seg_outflow) * basin_area_inv / cfs_conv
 
         write(output_unit, *) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
         write(output_unit, *) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
         write(output_unit, *) '  Muskingum coefficient (min(c2), max(c2)): ', minval(this%c2), maxval(this%c2)
         write(output_unit, *) '  Muskingum coefficient (min(ts), max(ts)): ', minval(this%ts), maxval(this%ts)
       end associate
-    end function
+    end subroutine
 
 
     module subroutine run_Muskingum(this, ctl_data, model_basin, &
@@ -244,8 +245,9 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       !     c0, c1, and c2: initialized in the "init" part of this module
 
       ! Call parent class run routine first
-      call this%run_Streamflow(ctl_data, model_basin, model_potet, &
-                               groundwater, soil, runoff, model_time, model_solrad)
+      ! call this%run_Streamflow(ctl_data, model_basin, model_potet, &
+      call this%Streamflow%run(ctl_data, model_basin, model_potet, &
+                               groundwater, soil, runoff, model_time, model_solrad, model_obs)
 
       associate(nsegment => model_basin%nsegment, &
                 basin_area_inv => model_basin%basin_area_inv, &

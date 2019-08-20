@@ -1,11 +1,10 @@
 submodule(PRMS_TEMPERATURE_HRU) sm_temperature_hru
 contains
-
-  module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
+  module subroutine init_Temperature_hru(this, ctl_data, model_basin, model_summary)
     use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
     implicit none
 
-    type(Temperature_hru) :: this
+    class(Temperature_hru), intent(inout) :: this
       !! Temperature_hru class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
@@ -21,7 +20,8 @@ contains
 
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Temperature = Temperature(ctl_data, model_basin, model_summary)
+    ! this%Temperature = Temperature(ctl_data, model_basin, model_summary)
+    call this%Temperature%init(ctl_data, model_basin, model_summary)
 
     associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
               end_time => ctl_data%end_time%values, &
@@ -89,7 +89,96 @@ contains
 
       if (istop == 1) STOP 'ERROR in temperature_hru'
     end associate
-  end function
+  end subroutine
+  ! module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
+  !   use UTILS_CBH, only: find_current_time, find_header_end, open_netcdf_cbh_file, read_netcdf_cbh_file
+  !   implicit none
+
+  !   type(Temperature_hru) :: this
+  !     !! Temperature_hru class
+  !   type(Control), intent(in) :: ctl_data
+  !     !! Control file parameters
+  !   type(Basin), intent(in) :: model_basin
+  !   type(Summary), intent(inout) :: model_summary
+
+  !   ! Local variables
+  !   integer(i32) :: ierr
+  !   integer(i32) :: istop = 0
+
+  !   ! Control
+  !   ! nhru, cbh_binary_flag, print_debug, start_time, tmax_day, tmin_day,
+
+  !   ! ------------------------------------------------------------------------
+  !   ! Call the parent constructor first
+  !   this%Temperature = Temperature(ctl_data, model_basin, model_summary)
+
+  !   associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
+  !             end_time => ctl_data%end_time%values, &
+  !             print_debug => ctl_data%print_debug%value, &
+  !             start_time => ctl_data%start_time%values, &
+  !             tmax_day => ctl_data%tmax_day%values(1), &
+  !             tmin_day => ctl_data%tmin_day%values(1), &
+  !             param_hdl => ctl_data%param_file_hdl, &
+
+  !             nhru => model_basin%nhru, &
+  !             nmonths => model_basin%nmonths)
+
+  !     call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+  !     if (print_debug > -2) then
+  !       ! Output module and version information
+  !       call this%print_module_info()
+  !     endif
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! Read the parameters for the temperature by HRU module
+  !     allocate(this%tmax_cbh_adj(nhru, nmonths))
+  !     call param_hdl%get_variable('tmax_cbh_adj', this%tmax_cbh_adj)
+  !     ! write(*, *) this%tmax_cbh_adj(:,1)
+
+  !     allocate(this%tmin_cbh_adj(nhru, nmonths))
+  !     call param_hdl%get_variable('tmin_cbh_adj', this%tmin_cbh_adj)
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! Open netcdf or ascii-base cbh files
+  !     if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
+  !       ! Read a netcdf file
+  !       call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
+  !                                 tmax_day%s, 'tmax', start_time, end_time, nhru)
+  !       this%has_netcdf_tmax = .true.
+  !     else
+  !       ! Open and read tmax cbh file
+  !       call find_header_end(nhru, this%tmax_funit, ierr, tmax_day%s, &
+  !                            'tmax_day', (cbh_binary_flag==1))
+  !       if (ierr == 1) then
+  !         istop = 1
+  !       else
+  !         call find_current_time(ierr, this%tmax_funit, start_time, (cbh_binary_flag==1))
+  !       endif
+
+  !       this%has_netcdf_tmax = .false.
+  !     endif
+
+  !     if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
+  !       call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
+  !                                 tmin_day%s, 'tmin', start_time, end_time, nhru)
+  !       this%has_netcdf_tmin = .true.
+  !     else
+  !       ! Open and read tmin cbh file
+  !       call find_header_end(nhru, this%tmin_funit, ierr, tmin_day%s, &
+  !                            'tmin_day', (cbh_binary_flag==1))
+  !       if (ierr == 1) then
+  !         istop = 1
+  !       else
+  !         call find_current_time(ierr, this%tmin_funit, start_time, (cbh_binary_flag==1))
+  !       endif
+
+  !       this%has_netcdf_tmin = .false.
+  !     endif
+
+  !     if (istop == 1) STOP 'ERROR in temperature_hru'
+  !   end associate
+  ! end function
 
 
   module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, model_summary)

@@ -83,20 +83,20 @@ module PRMS_SRUNOFF
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
 
-    real(r64), pointer :: basin_apply_sroff
+    real(r64), allocatable :: basin_apply_sroff
     real(r32), allocatable :: hru_area_imperv(:)
     real(r32), allocatable :: hru_area_perv(:)
 
 
     ! Output variables
-    real(r64), pointer :: basin_contrib_fraction
-    real(r64), pointer :: basin_hortonian
-    real(r64), pointer :: basin_imperv_evap
-    real(r64), pointer :: basin_imperv_stor
-    real(r64), pointer :: basin_infil
-    real(r64), pointer :: basin_sroff
-    real(r64), pointer :: basin_sroffi
-    real(r64), pointer :: basin_sroffp
+    real(r64), allocatable :: basin_contrib_fraction
+    real(r64), allocatable :: basin_hortonian
+    real(r64), allocatable :: basin_imperv_evap
+    real(r64), allocatable :: basin_imperv_stor
+    real(r64), allocatable :: basin_infil
+    real(r64), allocatable :: basin_sroff
+    real(r64), allocatable :: basin_sroffi
+    real(r64), allocatable :: basin_sroffp
 
     real(r32), allocatable :: dprst_area_max(:)
     real(r32), allocatable :: hru_frac_perv(:)
@@ -106,9 +106,9 @@ module PRMS_SRUNOFF
     ! Cascades
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
     ! output variables
-    real(r64), pointer :: basin_hortonian_lakes
-    real(r64), pointer :: basin_sroff_down
-    real(r64), pointer :: basin_sroff_upslope
+    real(r64), allocatable :: basin_hortonian_lakes
+    real(r64), allocatable :: basin_sroff_down
+    real(r64), allocatable :: basin_sroff_upslope
 
     real(r32), allocatable :: contrib_fraction(:)
     real(r32), allocatable :: hortonian_flow(:)
@@ -151,11 +151,11 @@ module PRMS_SRUNOFF
     logical :: srunoff_updated_soil
 
     ! Output variables
-    real(r64), pointer :: basin_dprst_evap
-    real(r64), pointer :: basin_dprst_seep
-    real(r64), pointer :: basin_dprst_sroff
-    real(r64), pointer :: basin_dprst_volcl
-    real(r64), pointer :: basin_dprst_volop
+    real(r64), allocatable :: basin_dprst_evap
+    real(r64), allocatable :: basin_dprst_seep
+    real(r64), allocatable :: basin_dprst_sroff
+    real(r64), allocatable :: basin_dprst_volcl
+    real(r64), allocatable :: basin_dprst_volop
 
     real(r64), allocatable :: dprst_seep_hru(:)
       !! r64 is correct
@@ -203,6 +203,7 @@ module PRMS_SRUNOFF
     ! integer(i32) :: dyn_output_unit
 
     contains
+      procedure, public :: init => init_Srunoff
       procedure, public :: run => run_Srunoff
       procedure, public :: cleanup => cleanup_Srunoff
       procedure, private :: check_capacity
@@ -216,16 +217,16 @@ module PRMS_SRUNOFF
       procedure, nopass, private :: depression_surface_area
   end type
 
-  interface Srunoff
+  interface
     !! Srunoff constructor
-    module function constructor_Srunoff(ctl_data, model_basin, model_summary) result(this)
-      type(Srunoff) :: this
+    module subroutine init_Srunoff(this, ctl_data, model_basin, model_summary)
+      class(Srunoff), intent(inout) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

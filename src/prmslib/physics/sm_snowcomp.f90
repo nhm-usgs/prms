@@ -3,11 +3,11 @@ submodule (PRMS_SNOW) sm_snowcomp
 
 contains
   ! Snowcomp constructor
-  module function constructor_Snowcomp(ctl_data, model_basin, model_climate, model_summary) result(this)
+  module subroutine init_Snowcomp(this, ctl_data, model_basin, model_climate, model_summary)
     use prms_constants, only: dp
     implicit none
 
-    type(Snowcomp) :: this
+    class(Snowcomp), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     type(Climateflow), intent(inout) :: model_climate
@@ -183,44 +183,6 @@ contains
       this%basin_snowmelt = 0.0_dp
       this%basin_tcal = 0.0_dp
 
-      ! Connect summary variables that need to be output
-      if (outVarON_OFF == 1) then
-        do jj = 1, outVar_names%size()
-          ! TODO: This is where the daily basin values are linked based on
-          !       what was requested in basinOutVar_names.
-          select case(outVar_names%values(jj)%s)
-            case('basin_pk_precip')
-              call model_summary%set_summary_var(jj, this%basin_pk_precip)
-            case('basin_pweqv')
-              call model_summary%set_summary_var(jj, this%basin_pweqv)
-            case('basin_snowcov')
-              call model_summary%set_summary_var(jj, this%basin_snowcov)
-            case('basin_snowdepth')
-              call model_summary%set_summary_var(jj, this%basin_snowdepth)
-            case('basin_snowevap')
-              call model_summary%set_summary_var(jj, this%basin_snowevap)
-            case('basin_snowmelt')
-              call model_summary%set_summary_var(jj, this%basin_snowmelt)
-            case('basin_tcal')
-              call model_summary%set_summary_var(jj, this%basin_tcal)
-            case('freeh2o')
-              call model_summary%set_summary_var(jj, this%freeh2o)
-            case('pk_def')
-              call model_summary%set_summary_var(jj, this%pk_def)
-            case('pk_ice')
-              call model_summary%set_summary_var(jj, this%pk_ice)
-            case('snow_evap')
-              call model_summary%set_summary_var(jj, this%snow_evap)
-            case('snowcov_area')
-              call model_summary%set_summary_var(jj, this%snowcov_area)
-            case('snowmelt')
-              call model_summary%set_summary_var(jj, this%snowmelt)
-            case default
-              ! pass
-          end select
-        enddo
-      endif
-
       ! TODO: Hookup the read from restart file code
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
 
@@ -259,14 +221,52 @@ contains
         this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
 
         ! NOTE: can deallocate parameter snowpack_init at this point
-        ! deallocate(param_data%snowpack_init%values)
+        deallocate(this%snowpack_init)
 
         this%pkwater_ante = pkwater_equiv
         this%pss = pkwater_equiv
         this%pst = pkwater_equiv
       endif
+
+      ! Connect summary variables that need to be output
+      if (outVarON_OFF == 1) then
+        do jj = 1, outVar_names%size()
+          ! TODO: This is where the daily basin values are linked based on
+          !       what was requested in basinOutVar_names.
+          select case(outVar_names%values(jj)%s)
+            case('basin_pk_precip')
+              call model_summary%set_summary_var(jj, this%basin_pk_precip)
+            case('basin_pweqv')
+              call model_summary%set_summary_var(jj, this%basin_pweqv)
+            case('basin_snowcov')
+              call model_summary%set_summary_var(jj, this%basin_snowcov)
+            case('basin_snowdepth')
+              call model_summary%set_summary_var(jj, this%basin_snowdepth)
+            case('basin_snowevap')
+              call model_summary%set_summary_var(jj, this%basin_snowevap)
+            case('basin_snowmelt')
+              call model_summary%set_summary_var(jj, this%basin_snowmelt)
+            case('basin_tcal')
+              call model_summary%set_summary_var(jj, this%basin_tcal)
+            case('freeh2o')
+              call model_summary%set_summary_var(jj, this%freeh2o)
+            case('pk_def')
+              call model_summary%set_summary_var(jj, this%pk_def)
+            case('pk_ice')
+              call model_summary%set_summary_var(jj, this%pk_ice)
+            case('snow_evap')
+              call model_summary%set_summary_var(jj, this%snow_evap)
+            case('snowcov_area')
+              call model_summary%set_summary_var(jj, this%snowcov_area)
+            case('snowmelt')
+              call model_summary%set_summary_var(jj, this%snowmelt)
+            case default
+              ! pass
+          end select
+        enddo
+      endif
     end associate
-  end function
+  end subroutine
 
 
   !***********************************************************************

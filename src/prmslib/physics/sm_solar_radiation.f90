@@ -1,10 +1,10 @@
 submodule (SOLAR_RADIATION) sm_solar_radiation
 contains
-  module function constructor_SolarRadiation(ctl_data, model_basin, model_summary) result(this)
+  module subroutine init_SolarRadiation(this, ctl_data, model_basin, model_summary)
     use UTILS_PRMS, only: PRMS_open_module_file
     implicit none
 
-    type(SolarRadiation) :: this
+    class(SolarRadiation), intent(inout) :: this
       !! SolarRadiation class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
@@ -218,7 +218,18 @@ contains
         enddo
       endif
     end associate
-  end function
+  end subroutine
+
+  module subroutine run_SolarRadiation(this, ctl_data, model_time, model_precip, model_basin, model_temp)
+    class(SolarRadiation), intent(inout) :: this
+    type(Control), intent(in) :: ctl_data
+    type(Time_t), intent(in) :: model_time
+    class(Precipitation), intent(in) :: model_precip
+    type(Basin), intent(in) :: model_basin
+    class(Temperature), intent(in) :: model_temp
+
+    print *, 'SolarRadiation%run() stub'
+  end subroutine
 
 
   module subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, Obliquity, &

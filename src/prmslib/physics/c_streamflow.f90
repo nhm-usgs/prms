@@ -1,10 +1,12 @@
 module PRMS_STREAMFLOW
 
   use variableKind
+  use iso_fortran_env, only: output_unit
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
   use PRMS_GWFLOW, only: Gwflow
+  use PRMS_OBS, only: Obs
   use PRMS_POTET, only: Potential_ET
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SOILZONE, only: Soilzone
@@ -73,20 +75,20 @@ module PRMS_STREAMFLOW
       real(r64), allocatable :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
 
-      real(r64), pointer :: basin_cfs
+      real(r64), allocatable :: basin_cfs
         !! Streamflow leaving the basin through the stream network (cfs)
-      real(r64), pointer :: basin_cms
+      real(r64), allocatable :: basin_cms
         !! Streamflow leaving the basin through the stream network (cms)
-      real(r64), public, pointer :: basin_segment_storage
-      real(r64), pointer :: basin_gwflow_cfs
+      real(r64), public, allocatable :: basin_segment_storage
+      real(r64), allocatable :: basin_gwflow_cfs
         !! Basin area-weighted average of groundwater flow to the stream network
-      real(r64), pointer :: basin_sroff_cfs
+      real(r64), allocatable :: basin_sroff_cfs
         !! Basin area-weighted average surface runoff to the stream network
-      real(r64), pointer :: basin_ssflow_cfs
+      real(r64), allocatable :: basin_ssflow_cfs
         !! Interflow leaving the basin through the stream network
-      real(r64), pointer :: basin_stflow_in
+      real(r64), allocatable :: basin_stflow_in
         !! Basin area-weighted average lateral flow entering the stream network
-      real(r64), pointer :: basin_stflow_out
+      real(r64), allocatable :: basin_stflow_out
         !! Basin area-weighted average streamflow leaving through the stream network
         !! basin_sum, muskingum, muskingum_lake
 
@@ -125,31 +127,29 @@ module PRMS_STREAMFLOW
         !! muskingum, muskingum_lake
 
     contains
-      procedure, public :: run_Streamflow
-      procedure, public :: cleanup_Streamflow
+      procedure, public :: init => init_Streamflow
+      procedure, public :: run => run_Streamflow
+      procedure, public :: cleanup => cleanup_Streamflow
   end type
 
-  interface Streamflow
+  interface
     !! Streamflow constructor
-    module function constructor_Streamflow(ctl_data, model_basin, model_time, model_summary) result(this)
-      type(Streamflow) :: this
+    module subroutine init_Streamflow(this, ctl_data, model_basin, model_time, model_summary)
+      class(Streamflow), intent(inout) :: this
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Time_t), intent(in) :: model_time
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface
     module subroutine run_Streamflow(this, ctl_data, model_basin, &
-                                     model_potet, groundwater, soil, runoff, &
-                                     model_time, model_solrad)
-      use prms_constants, only: dp, NEARZERO
-      implicit none
-
-      class(Streamflow) :: this
+                                    model_potet, groundwater, soil, runoff, &
+                                    model_time, model_solrad, model_obs)
+      class(Streamflow), intent(inout) :: this
         !! Streamflow class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -162,12 +162,33 @@ module PRMS_STREAMFLOW
       type(Srunoff), intent(in) :: runoff
       type(Time_t), intent(in) :: model_time
       class(SolarRadiation), intent(in) :: model_solrad
+      type(Obs), intent(in) :: model_obs
     end subroutine
+    ! module subroutine run_Streamflow(this, ctl_data, model_basin, &
+    !                                  model_potet, groundwater, soil, runoff, &
+    !                                  model_time, model_solrad)
+    !   use prms_constants, only: dp, NEARZERO
+    !   implicit none
+
+    !   class(Streamflow) :: this
+    !     !! Streamflow class
+    !   type(Control), intent(in) :: ctl_data
+    !     !! Control file parameters
+    !   type(Basin), intent(in) :: model_basin
+    !     !! Basin variables
+    !   class(Potential_ET), intent(in) :: model_potet
+    !   type(Gwflow), intent(in) :: groundwater
+    !     !! Groundwater variables
+    !   type(Soilzone), intent(in) :: soil
+    !   type(Srunoff), intent(in) :: runoff
+    !   type(Time_t), intent(in) :: model_time
+    !   class(SolarRadiation), intent(in) :: model_solrad
+    ! end subroutine
   end interface
 
   interface
     module subroutine cleanup_Streamflow(this)
-      class(Streamflow) :: this
+      class(Streamflow), intent(inout) :: this
         !! Streamflow class
     end subroutine
   end interface

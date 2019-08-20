@@ -26,31 +26,32 @@ module SOLAR_RADIATION_DEGDAY
 
   type, extends(SolarRadiation) :: Solrad_degday
     ! Parameters
-    real(r32), allocatable :: tmax_index(:, :)
+    real(r32), allocatable, private :: tmax_index(:, :)
       !! Monthly (January to December) index temperature used to determine precipitation adjustments to solar radiation for each HRU
-    real(r32), allocatable :: dday_intcp(:, :)
+    real(r32), allocatable, private :: dday_intcp(:, :)
       !! Monthly (January to December) intercept in degree-day equation for each HRU
-    real(r32), allocatable :: dday_slope(:, :)
+    real(r32), allocatable, private :: dday_slope(:, :)
       !! Monthly (January to December) slope in degree-day equation for each HRU
-    real(r32), allocatable :: radadj_intcp(:, :)
+    real(r32), allocatable, private :: radadj_intcp(:, :)
       !! Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU
-    real(r32), allocatable :: radadj_slope(:, :)
+    real(r32), allocatable, private :: radadj_slope(:, :)
       !! Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU
 
     contains
+      procedure, public :: init => init_Solrad_degday
       procedure, public :: run => run_Solrad_degday
   end type
 
-  interface Solrad_degday
+  interface
     !! Solrad_degday constructor
-    module function constructor_Solrad_degday(ctl_data, model_basin, model_summary) result(this)
-      type(Solrad_degday) :: this
+    module subroutine init_Solrad_degday(this, ctl_data, model_basin, model_summary)
+      class(Solrad_degday), intent(inout) :: this
         !! Solrad_degday class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

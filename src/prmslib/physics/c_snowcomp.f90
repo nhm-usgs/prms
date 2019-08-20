@@ -35,45 +35,45 @@ module PRMS_SNOW
       !!
 
     ! Parameters
-    real(r32) :: albset_rna
+    real(r32), private :: albset_rna
       !! Fraction of rain in a mixed precipitation event above which the snow albedo is not reset; applied during the snowpack accumulation stage
-    real(r32) :: albset_rnm
+    real(r32), private :: albset_rnm
       !! Fraction of rain in a mixed precipitation event above which the snow albedo is not reset; applied during the snowpack melt stage
-    real(r32) :: albset_sna
+    real(r32), private :: albset_sna
       !! Minimum snowfall, in water equivalent, needed to reset snow albedo during the snowpack accumulation stage
-    real(r32) :: albset_snm
+    real(r32), private :: albset_snm
       !! Minimum snowfall, in water equivalent, needed to reset snow albedo during the snowpack melt stage
-    real(r32) :: den_init
+    real(r32), private :: den_init
       !! Initial density of new-fallen snow
-    real(r32) :: den_max
+    real(r32), private :: den_max
       !! Average maximum snowpack density
-    real(r32) :: settle_const
+    real(r32), private :: settle_const
       !! Snowpack settlement time constant
 
-    real(r32), allocatable :: emis_noppt(:)
+    real(r32), allocatable, private :: emis_noppt(:)
       !! Average emissivity of air on days without precipitation for each HRU
-    real(r32), allocatable :: freeh2o_cap(:)
+    real(r32), allocatable, private :: freeh2o_cap(:)
       !! Free-water holding capacity of snowpack expressed as a decimal fraction of the frozen water content of the snowpack (pk_ice) for each HRU
-    integer(i32), allocatable :: hru_deplcrv(:)
+    integer(i32), allocatable, private :: hru_deplcrv(:)
       !! Index number for the snowpack areal depletion curve associated with each HRU
-    integer(i32), allocatable :: melt_force(:)
+    integer(i32), allocatable, private :: melt_force(:)
       !! Julian date to force snowpack to spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    integer(i32), allocatable :: melt_look(:)
+    integer(i32), allocatable, private :: melt_look(:)
       !! Julian date to start looking for spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    real(r32), allocatable :: rad_trncf(:)
+    real(r32), allocatable, private :: rad_trncf(:)
       !! Transmission coefficient for short-wave radiation through the winter vegetation canopy
-    real(r32), allocatable :: snarea_curve(:)
+    real(r32), allocatable, private :: snarea_curve(:)
       !! Snow area depletion curve values, 11 values for each curve (0.0 to 1.0 in 0.1 increments)
-    real(r32), allocatable :: snarea_thresh(:)
+    real(r32), allocatable, private :: snarea_thresh(:)
       !! Maximum threshold snowpack water equivalent below which the snow-covered-area curve is applied
-    real(r32), allocatable :: snowpack_init(:)
+    real(r32), allocatable, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
-    real(r32), allocatable :: cecn_coef(:, :)
-    integer(i32), allocatable :: tstorm_mo(:, :)
+    real(r32), allocatable, private :: cecn_coef(:, :)
+    integer(i32), allocatable, private :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
-    real(r32), allocatable :: snarea_curve_2d(:, :)
+    real(r32), allocatable, private :: snarea_curve_2d(:, :)
       !! 2D copy of parameter snarea_curve
 
     ! Output variables
@@ -81,19 +81,19 @@ module PRMS_SNOW
       !! Maximum snowpack for each HRU
     real(r32), allocatable :: albedo(:)
       !! Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU [fraction]
-    real(r64), pointer :: basin_pk_precip
+    real(r64), allocatable :: basin_pk_precip
       !! Basin area-weighted average precipitation added to snowpack
-    real(r64), pointer :: basin_pweqv
+    real(r64), allocatable :: basin_pweqv
       !! Basin area-weighted average snowpack water equivalent
-    real(r64), pointer :: basin_snowcov
+    real(r64), allocatable :: basin_snowcov
       !! Basin area-weighted average snow-covered area
-    real(r64), pointer :: basin_snowdepth
+    real(r64), allocatable :: basin_snowdepth
       !! Basin area-weighted average snow depth
-    real(r64), pointer :: basin_snowevap
+    real(r64), allocatable :: basin_snowevap
       !! Basin area-weighted average evaporation and sublimation from snowpack
-    real(r64), pointer :: basin_snowmelt
+    real(r64), allocatable :: basin_snowmelt
       !! Basin area-weighted average snowmelt
-    real(r64), pointer :: basin_tcal
+    real(r64), allocatable :: basin_tcal
       !! Basin area-weighted average net snowpack energy balance
     real(r32), allocatable :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU
@@ -165,6 +165,7 @@ module PRMS_SNOW
     real(r32) :: amlt(MAXALB)
 
     contains
+      procedure, public :: init => init_Snowcomp
       procedure, public :: run => run_Snowcomp
 
       procedure, private :: calin
@@ -178,12 +179,11 @@ module PRMS_SNOW
   end type
 
 
-  interface Snowcomp
+  interface
     !! Snowcomp constructor
-    module function constructor_Snowcomp(ctl_data, model_basin, model_climate, model_summary) result(this)
-      type(Snowcomp) :: this
+    module subroutine init_Snowcomp(this, ctl_data, model_basin, model_climate, model_summary)
+      class(Snowcomp), intent(inout) :: this
         !! Snowcomp class
-
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
@@ -191,7 +191,7 @@ module PRMS_SNOW
       type(Climateflow), intent(inout) :: model_climate
         !! Climateflow
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

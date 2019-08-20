@@ -3,6 +3,9 @@ module PRMS_POTET
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   use PRMS_BASIN, only: Basin
+  use PRMS_SET_TIME, only: Time_t
+  use SOLAR_RADIATION, only: SolarRadiation
+  use PRMS_TEMPERATURE, only: Temperature
   use PRMS_SUMMARY, only: Summary
   implicit none
 
@@ -29,9 +32,9 @@ module PRMS_POTET
       !! Humidity CBH file unit
 
     ! Output variables
-    real(r64), pointer :: basin_humidity
+    real(r64), allocatable :: basin_humidity
       !! (moved from climateflow.f90)
-    real(r64), pointer :: basin_potet
+    real(r64), allocatable :: basin_potet
 
     real(r32), allocatable :: humidity_hru(:)
       !! (moved from climate_hru)
@@ -45,26 +48,31 @@ module PRMS_POTET
     ! real(r32), allocatable :: vp_sat(:)
 
     contains
-      procedure, public :: run_Potet
+      procedure, public :: init => init_Potet
+      procedure, public :: run => run_Potet
   end type
 
-  interface Potential_ET
+  interface
     !! Potential_ET constructor
-    module function constructor_Potet(ctl_data, model_basin, model_summary) result(this)
-      type(Potential_ET) :: this
+    module subroutine init_Potet(this, ctl_data, model_basin, model_summary)
+      class(Potential_ET), intent(inout) :: this
         !! Potential_ET class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface
-    module subroutine run_Potet(this, ctl_data, model_basin)
+    module subroutine run_Potet(this, ctl_data, model_basin, model_time, model_solrad, model_temp)
       class(Potential_ET), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
+      type(Time_t), intent(in) :: model_time
+      ! type(Climateflow), intent(in) :: climate
+      class(SolarRadiation), intent(in) :: model_solrad
+      class(Temperature), intent(in) :: model_temp
     end subroutine
   end interface
 end module

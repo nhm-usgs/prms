@@ -1,10 +1,10 @@
 submodule(PRMS_TRANSP_HRU) sm_transp_hru
 contains
-  module function constructor_Transp_hru(ctl_data) result(this)
+  module subroutine init_Transp_hru(this, ctl_data)
     use UTILS_CBH, only: find_header_end, find_current_time
     implicit none
 
-    type(Transp_hru) :: this
+    class(Transp_hru), intent(inout) :: this
       !! Transp_hru class
     type(Control), intent(in) :: ctl_data
       !! Control file parameters
@@ -42,7 +42,7 @@ contains
         call find_current_time(ierr, this%transp_funit, start_time, (cbh_binary_flag==1))
       endif
     end associate
-  end function
+  end subroutine
 
   module subroutine run_Transp_hru(this, ctl_data)
     class(Transp_hru), intent(inout) :: this

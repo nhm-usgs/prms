@@ -3,13 +3,13 @@ submodule (PRMS_CLIMATEVARS) sm_climateflow
 contains
   !***********************************************************************
   ! Climateflow constructor
-  module function constructor_Climateflow(ctl_data, model_basin, model_summary) result(this)
+  module subroutine init_Climateflow(this, ctl_data, model_basin, model_summary)
     use iso_fortran_env, only: output_unit, error_unit
-    use UTILS_PRMS, only: check_restart
+    ! use UTILS_PRMS, only: check_restart
     use prms_constants, only: INACTIVE, LAKE
     implicit none
 
-    type(Climateflow) :: this
+    class(Climateflow), target, intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
@@ -144,7 +144,7 @@ contains
       !   this%solrad_tmin = 0.0
       ! endif
     end associate
-  end function
+  end subroutine
 
 
   module subroutine cleanup_Climateflow(this, ctl_data)

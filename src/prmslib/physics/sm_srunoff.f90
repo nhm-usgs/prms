@@ -1,12 +1,12 @@
 submodule (PRMS_SRUNOFF) sm_srunoff
 
   contains
-    module function constructor_Srunoff(ctl_data, model_basin, model_summary) result(this)
+    module subroutine init_Srunoff(this, ctl_data, model_basin, model_summary)
       use prms_constants, only: dp, LAKE, INACTIVE
       use UTILS_PRMS, only: open_dyn_param_file, get_first_time !, get_next_time
       implicit none
 
-      type(Srunoff) :: this
+      class(Srunoff), intent(inout) :: this
         !! Srunoff class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -270,6 +270,12 @@ submodule (PRMS_SRUNOFF) sm_srunoff
                 call model_summary%set_summary_var(jj, this%hru_sroffi)
               case('hru_sroffp')
                 call model_summary%set_summary_var(jj, this%hru_sroffp)
+              case('strm_seg_in')
+                if (cascade_flag == 1 .or. cascadegw_flag > 0) then
+                  call model_summary%set_summary_var(jj, this%strm_seg_in)
+                else
+                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is only available when cascade or cascadegw is used."
+                end if
               case default
                 ! pass
             end select
@@ -340,7 +346,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         end if
 
       end associate
-    end function
+    end subroutine
 
 
 
@@ -1750,7 +1756,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             read(this%imperv_stor_unit, *) this%next_dyn_imperv_stor_date, this%imperv_stor_chgs
             ! write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: imperv_stor_max was updated. ', this%next_dyn_imperv_stor_date
 
-            ! Update hru_percent_imperv with new values
+            ! Update imperv_stor_max with new values
             call update_parameter(ctl_data, model_time, this%dyn_output_unit, this%imperv_stor_chgs, 'imperv_stor_max', this%imperv_stor_max)
             this%next_dyn_imperv_stor_date = get_next_time(this%imperv_stor_unit)
           end if
@@ -1918,11 +1924,13 @@ submodule (PRMS_SRUNOFF) sm_srunoff
               end if
             end if
 
-            if (hru_area_perv_old(chru) /= this%hru_area_perv(chru)) then
-              adj = hru_area_perv_old(chru) / this%hru_area_perv(chru)
-              this%soil_moist_chg(chru) = this%soil_moist_chg(chru) * adj
-              this%soil_rechr_chg(chru) = this%soil_rechr_chg(chru) * adj
-              this%srunoff_updated_soil = .true.
+            if (allocated(hru_area_perv_old)) then
+              if (hru_area_perv_old(chru) /= this%hru_area_perv(chru)) then
+                adj = hru_area_perv_old(chru) / this%hru_area_perv(chru)
+                this%soil_moist_chg(chru) = this%soil_moist_chg(chru) * adj
+                this%soil_rechr_chg(chru) = this%soil_rechr_chg(chru) * adj
+                this%srunoff_updated_soil = .true.
+              end if
             end if
           end if
 

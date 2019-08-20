@@ -18,9 +18,9 @@ module PRMS_PRECIPITATION_HRU
 
   type, extends(Precipitation) :: Precipitation_hru
     ! Parameters for precipitation by HRU
-    real(r32), allocatable :: rain_cbh_adj(:, :)
-    real(r32), allocatable :: snow_cbh_adj(:, :)
-    real(r32), allocatable :: adjmix_rain(:, :)
+    real(r32), allocatable, private :: rain_cbh_adj(:, :)
+    real(r32), allocatable, private :: snow_cbh_adj(:, :)
+    real(r32), allocatable, private :: adjmix_rain(:, :)
 
     ! Other variables
     integer(i32), private :: precip_funit
@@ -31,13 +31,14 @@ module PRMS_PRECIPITATION_HRU
     logical, private :: has_netcdf_precip
 
     contains
+      procedure, public :: init => init_Precipitation_hru
       procedure, public :: run => run_Precipitation_hru
   end type
 
-  interface Precipitation_hru
+  interface
     !! Precipitation_hru constructor
-    module function constructor_Precipitation_hru(ctl_data, model_basin, model_temp, model_summary) result(this)
-      type(Precipitation_hru) :: this
+    module subroutine init_Precipitation_hru(this, ctl_data, model_basin, model_temp, model_summary)
+      class(Precipitation_hru), intent(inout) :: this
         !! Precipitation_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -45,7 +46,7 @@ module PRMS_PRECIPITATION_HRU
       class(Temperature), intent(in) :: model_temp
       type(Summary), intent(inout) :: model_summary
         !! Summary by HRU module
-    end function
+    end subroutine
   end interface
 
   interface

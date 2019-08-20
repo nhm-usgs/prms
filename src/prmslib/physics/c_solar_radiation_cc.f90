@@ -12,7 +12,6 @@ module SOLAR_RADIATION_CC
   use variableKind
   use SOLAR_RADIATION, only: SolarRadiation
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_BASIN, only: Basin
   ! use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_OBS, only: Obs
@@ -31,40 +30,37 @@ module SOLAR_RADIATION_CC
 
   type, extends(SolarRadiation) :: Solrad_cc
     ! Declared Variables
-    real(r64), pointer :: basin_radadj
-    real(r64), pointer :: basin_cloud_cover
+    real(r64), allocatable :: basin_radadj
+    real(r64), allocatable :: basin_cloud_cover
     real(r32), allocatable :: cloud_radadj(:)
     real(r32), allocatable :: cloud_cover_hru(:)
 
     contains
+      procedure, public :: init => init_Solrad_cc
       procedure, public :: run => run_Solrad_cc
   end type
 
 
   interface Solrad_cc
     !! Solrad_cc constructor
-    module function constructor_Solrad_cc(ctl_data, param_data, model_basin, model_temp, model_summary) result(this)
-      type(Solrad_cc) :: this
+    module subroutine init_Solrad_cc(this, ctl_data, model_basin, model_temp, model_summary)
+      class(Solrad_cc), intent(inout) :: this
         !! Solrad_cc class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
       class(Temperature), intent(in) :: model_temp
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface
-    module subroutine run_Solrad_cc(this, ctl_data, param_data, model_time, model_obs, model_precip, model_basin)
+    module subroutine run_Solrad_cc(this, ctl_data, model_time, model_obs, model_precip, model_basin)
       class(Solrad_cc), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Obs), intent(in) :: model_obs
       class(Precipitation), intent(in) :: model_precip
-      ! type(Climateflow), intent(in) :: climate
       type(Basin), intent(in) :: model_basin
     end subroutine
   end interface

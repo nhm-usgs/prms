@@ -1,22 +1,19 @@
 submodule (PRMS_INTCP) sm_intcp
 contains
-  module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
+
+  module subroutine init_Interception(this, ctl_data, model_basin, model_transp, model_summary)
     use prms_constants, only: dp
     use UTILS_PRMS, only: open_dyn_param_file, get_first_time
+    implicit none
 
-    type(Interception) :: this
+    class(Interception) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Transpiration), intent(in) :: model_transp
     type(Summary), intent(inout) :: model_summary
 
     integer(i32) :: jj
-
-    ! Control
-    ! nhru, init_vars_from_file, print_debug
-
-    ! Transpiration
-    ! transp_on,
+    integer(i32) :: ierr
 
     ! -------------------------------------------------------------------------
     associate(covden_sum_dynamic => ctl_data%covden_sum_dynamic%values(1), &
@@ -88,7 +85,11 @@ contains
       allocate(this%net_ppt(nhru))
       allocate(this%net_rain(nhru))
       allocate(this%net_snow(nhru))
-      if (print_debug == 1) allocate(this%intcp_stor_ante(nhru))
+
+      if (print_debug == 1) then
+        allocate(this%intcp_stor_ante(nhru))
+        this%intcp_stor_ante = 0.0
+      end if
 
       this%canopy_covden = 0.0
       this%hru_intcpevap = 0.0
@@ -100,7 +101,7 @@ contains
       this%intcp_stor = 0.0
       this%intcp_transp_on = transp_on
       this%net_ppt = 0.0
-      this%net_rain = 0.0
+      this%net_rain = -200.
       this%net_snow = 0.0
 
       allocate(this%basin_changeover)
@@ -110,7 +111,12 @@ contains
       allocate(this%basin_net_rain)
       allocate(this%basin_net_snow)
 
+      this%basin_changeover = 0.0_dp
+      this%basin_intcp_evap = 0.0_dp
       this%basin_intcp_stor = 0.0_dp
+      this%basin_net_ppt = 0.0_dp
+      this%basin_net_rain = 0.0_dp
+      this%basin_net_snow = 0.0_dp
 
       if (this%use_transfer_intcp) then
         allocate(this%basin_hru_apply)
@@ -119,6 +125,11 @@ contains
         this%basin_net_apply = 0.0_dp
       end if
 
+      if (init_vars_from_file == 1) then
+        ! TODO: hook up reading restart file
+      endif
+
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
@@ -155,10 +166,6 @@ contains
               ! pass
           end select
         enddo
-      endif
-
-      if (init_vars_from_file == 1) then
-        ! TODO: hook up reading restart file
       endif
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -240,7 +247,275 @@ contains
         allocate(this%covden_win_chgs(nhru))
       end if
     end associate
-  end function
+
+  end subroutine
+
+
+  ! module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
+  !   use prms_constants, only: dp
+  !   use UTILS_PRMS, only: open_dyn_param_file, get_first_time
+  !   implicit none
+
+  !   type(Interception) :: this
+  !   type(Control), intent(in) :: ctl_data
+  !   type(Basin), intent(in) :: model_basin
+  !   class(Transpiration), intent(in) :: model_transp
+  !   type(Summary), intent(inout) :: model_summary
+
+  !   integer(i32) :: jj
+  !   integer(i32) :: ierr
+  !   integer(i64) :: crap
+
+  !   ! Control
+  !   ! nhru, init_vars_from_file, print_debug
+
+  !   ! Transpiration
+  !   ! transp_on,
+
+  !   ! -------------------------------------------------------------------------
+  !   associate(covden_sum_dynamic => ctl_data%covden_sum_dynamic%values(1), &
+  !             covden_win_dynamic => ctl_data%covden_win_dynamic%values(1), &
+  !             dyn_covden_flag => ctl_data%dyn_covden_flag%value, &
+  !             dyn_intcp_flag => ctl_data%dyn_intcp_flag%value, &
+  !             init_vars_from_file => ctl_data%init_vars_from_file%value, &
+  !             outVarON_OFF => ctl_data%outVarON_OFF%value, &
+  !             outVar_names => ctl_data%outVar_names, &
+  !             param_hdl => ctl_data%param_file_hdl, &
+  !             print_debug => ctl_data%print_debug%value, &
+  !             snow_intcp_dynamic => ctl_data%snow_intcp_dynamic%values(1), &
+  !             srain_intcp_dynamic => ctl_data%srain_intcp_dynamic%values(1), &
+  !             start_time => ctl_data%start_time%values, &
+  !             wrain_intcp_dynamic => ctl_data%wrain_intcp_dynamic%values(1), &
+
+  !             nhru => model_basin%nhru, &
+
+  !             transp_on => model_transp%transp_on)
+
+  !     call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+  !     if (print_debug > -2) then
+  !       ! Output module and version information
+  !       call this%print_module_info()
+  !     endif
+
+
+  !     ! Parameters
+  !     allocate(this%covden_sum(nhru))
+  !     call param_hdl%get_variable('covden_sum', this%covden_sum)
+
+  !     allocate(this%covden_win(nhru))
+  !     call param_hdl%get_variable('covden_win', this%covden_win)
+
+  !     allocate(this%snow_intcp(nhru))
+  !     call param_hdl%get_variable('snow_intcp', this%snow_intcp)
+
+  !     allocate(this%srain_intcp(nhru))
+  !     call param_hdl%get_variable('srain_intcp', this%srain_intcp)
+
+  !     allocate(this%wrain_intcp(nhru))
+  !     call param_hdl%get_variable('wrain_intcp', this%wrain_intcp)
+
+  !     ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
+  !     ! this%use_transfer_intcp = 0
+  !     this%use_transfer_intcp = .false.
+
+  !     ! if (Water_use_flag==1) then
+  !     !   ! irr_type may not exist if not doing water use so can't use associate
+  !     !   this%use_transfer_intcp = .true.
+  !     !
+  !     !   allocate(this%gain_inches(nhru))
+  !     !   allocate(this%net_apply(nhru))
+  !     !
+  !     !   this%gain_inches = 0.0
+  !     !   this%net_apply = 0.0
+  !     ! endif
+
+  !     allocate(this%canopy_covden(nhru))
+  !     allocate(this%hru_intcpevap(nhru))
+  !     allocate(this%hru_intcpstor(nhru))
+  !     allocate(this%intcp_changeover(nhru))
+  !     allocate(this%intcp_evap(nhru))
+  !     allocate(this%intcp_form(nhru))
+  !     allocate(this%intcp_on(nhru))
+  !     allocate(this%intcp_stor(nhru))
+  !     allocate(this%intcp_transp_on(nhru))
+  !     allocate(this%net_ppt(nhru))
+  !     allocate(this%net_rain(nhru))
+  !     allocate(this%net_snow(nhru))
+
+  !     if (print_debug == 1) then
+  !       allocate(this%intcp_stor_ante(nhru))
+  !       this%intcp_stor_ante = 0.0
+  !     end if
+
+  !     this%canopy_covden = 0.0
+  !     this%hru_intcpevap = 0.0
+  !     this%hru_intcpstor = 0.0
+  !     this%intcp_changeover = 0.0
+  !     this%intcp_evap = 0.0
+  !     this%intcp_form = 0
+  !     this%intcp_on = .false.
+  !     this%intcp_stor = 0.0
+  !     this%intcp_transp_on = transp_on
+  !     this%net_ppt = 0.0
+  !     this%net_rain = -200.
+  !     this%net_snow = 0.0
+
+  !     allocate(this%basin_changeover)
+  !     allocate(this%basin_intcp_evap)
+  !     allocate(this%basin_intcp_stor)
+  !     allocate(this%basin_net_ppt)
+  !     allocate(this%basin_net_rain)
+  !     allocate(this%basin_net_snow)
+
+  !     this%basin_changeover = 0.0_dp
+  !     this%basin_intcp_evap = 0.0_dp
+  !     this%basin_intcp_stor = 0.0_dp
+  !     this%basin_net_ppt = 0.0_dp
+  !     this%basin_net_rain = 0.0_dp
+  !     this%basin_net_snow = 0.0_dp
+
+  !     if (this%use_transfer_intcp) then
+  !       allocate(this%basin_hru_apply)
+  !       allocate(this%basin_net_apply)
+  !       this%basin_hru_apply = 0.0_dp
+  !       this%basin_net_apply = 0.0_dp
+  !     end if
+
+  !     if (init_vars_from_file == 1) then
+  !       ! TODO: hook up reading restart file
+  !     endif
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! Connect summary variables that need to be output
+  !     if (outVarON_OFF == 1) then
+  !       do jj = 1, outVar_names%size()
+  !         select case(outVar_names%values(jj)%s)
+  !           case('basin_changeover')
+  !             call model_summary%set_summary_var(jj, this%basin_changeover)
+  !           case('basin_hru_apply')
+  !             call model_summary%set_summary_var(jj, this%basin_hru_apply)
+  !           case('basin_intcp_evap')
+  !             call model_summary%set_summary_var(jj, this%basin_intcp_evap)
+  !           case('basin_intcp_stor')
+  !             call model_summary%set_summary_var(jj, this%basin_intcp_stor)
+  !           case('basin_net_apply')
+  !             call model_summary%set_summary_var(jj, this%basin_net_apply)
+  !           case('basin_net_ppt')
+  !             call model_summary%set_summary_var(jj, this%basin_net_ppt)
+  !           case('basin_net_rain')
+  !             call model_summary%set_summary_var(jj, this%basin_net_rain)
+  !           case('basin_net_snow')
+  !             call model_summary%set_summary_var(jj, this%basin_net_snow)
+  !           case('intcp_form')
+  !             call model_summary%set_summary_var(jj, this%intcp_form)
+  !           case('hru_intcpevap')
+  !             call model_summary%set_summary_var(jj, this%hru_intcpevap)
+  !           case('hru_intcpstor')
+  !             call model_summary%set_summary_var(jj, this%hru_intcpstor)
+  !           case('net_ppt')
+  !             call model_summary%set_summary_var(jj, this%net_ppt)
+  !           case('net_rain')
+  !             write(output_unit, *) '***net_rain: calling set_summary_var'
+  !             crap = loc(this%net_rain)
+  !             write(output_unit, *) '  address: ', crap
+  !             call model_summary%set_summary_var(jj, this%net_rain)
+  !           case('net_snow')
+  !             call model_summary%set_summary_var(jj, this%net_snow)
+  !           case default
+  !             ! pass
+  !         end select
+  !       enddo
+  !     endif
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! If requested, open dynamic parameter file(s)
+  !     this%has_dynamic_params = dyn_intcp_flag > 0 .or. dyn_covden_flag > 0
+
+  !     if (dyn_intcp_flag > 0) then
+  !         ! Open the output unit for summary information
+  !       open(NEWUNIT=this%dyn_output_unit, STATUS='REPLACE', FILE='dyn_' // MODNAME // '.out')
+  !     end if
+
+  !     if (any([1, 3, 5, 7]==dyn_intcp_flag)) then
+  !       ! Open the wrain_intcp_dynamic file
+  !       call open_dyn_param_file(nhru, this%wrain_intcp_unit, ierr, wrain_intcp_dynamic%s, 'wrain_intcp_dynamic')
+  !       if (ierr /= 0) then
+  !         write(output_unit, *) MODNAME, ' ERROR opening dynamic wrain_intcp parameter file.'
+  !         stop
+  !       end if
+
+  !       this%next_dyn_wrain_intcp_date = get_first_time(this%wrain_intcp_unit, start_time(1:3))
+  !       write(output_unit, *) ' Dynamic wrain_intcp next avail time: ', this%next_dyn_wrain_intcp_date
+
+  !       allocate(this%wrain_intcp_chgs(nhru))
+  !     end if
+
+  !     if (any([2, 3, 6, 7]==dyn_intcp_flag)) then
+  !       ! Open the srain_intcp_dynamic file
+  !       call open_dyn_param_file(nhru, this%srain_intcp_unit, ierr, srain_intcp_dynamic%s, 'srain_intcp_dynamic')
+  !       if (ierr /= 0) then
+  !         write(output_unit, *) MODNAME, ' ERROR opening dynamic srain_intcp parameter file.'
+  !         stop
+  !       end if
+
+  !       this%next_dyn_srain_intcp_date = get_first_time(this%srain_intcp_unit, start_time(1:3))
+  !       write(output_unit, *) ' Dynamic srain_intcp next avail time: ', this%next_dyn_srain_intcp_date
+
+  !       allocate(this%srain_intcp_chgs(nhru))
+  !     end if
+
+  !     if (any([4, 5, 6, 7]==dyn_intcp_flag)) then
+  !       ! Open the snow_intcp_dynamic file
+  !       call open_dyn_param_file(nhru, this%snow_intcp_unit, ierr, snow_intcp_dynamic%s, 'snow_intcp_dynamic')
+  !       if (ierr /= 0) then
+  !         write(output_unit, *) MODNAME, ' ERROR opening dynamic snow_intcp parameter file.'
+  !         stop
+  !       end if
+
+  !       this%next_dyn_snow_intcp_date = get_first_time(this%snow_intcp_unit, start_time(1:3))
+  !       write(output_unit, *) ' Dynamic snow_intcp next avail time: ', this%next_dyn_snow_intcp_date
+
+  !       allocate(this%snow_intcp_chgs(nhru))
+  !     end if
+
+  !     if (any([1, 3]==dyn_covden_flag)) then
+  !       ! Open the covden_sum_dynamic file
+  !       call open_dyn_param_file(nhru, this%covden_sum_unit, ierr, covden_sum_dynamic%s, 'covden_sum_dynamic')
+  !       if (ierr /= 0) then
+  !         write(output_unit, *) MODNAME, ' ERROR opening dynamic covden_sum parameter file.'
+  !         stop
+  !       end if
+
+  !       this%next_dyn_covden_sum_date = get_first_time(this%covden_sum_unit, start_time(1:3))
+  !       write(output_unit, *) ' Dynamic covden_sum next avail time: ', this%next_dyn_covden_sum_date
+
+  !       allocate(this%covden_sum_chgs(nhru))
+  !     end if
+
+  !     if (any([2, 3]==dyn_covden_flag)) then
+  !       ! Open the covden_win_dynamic file
+  !       call open_dyn_param_file(nhru, this%covden_win_unit, ierr, covden_win_dynamic%s, 'covden_win_dynamic')
+  !       if (ierr /= 0) then
+  !         write(output_unit, *) MODNAME, ' ERROR opening dynamic covden_win parameter file.'
+  !         stop
+  !       end if
+
+  !       this%next_dyn_covden_win_date = get_first_time(this%covden_win_unit, start_time(1:3))
+  !       write(output_unit, *) ' Dynamic covden_win next avail time: ', this%next_dyn_covden_win_date
+
+  !       allocate(this%covden_win_chgs(nhru))
+  !     end if
+
+  !     write(output_unit, *) '***net_rain: end of intcp%init()'
+  !     crap = loc(this%net_rain)
+  !     write(output_unit, *) '  address: ', crap
+  !   end associate
+
+  !         write(output_unit, *) '***net_rain: end of intcp%init() - outside associate'
+  !     crap = loc(this%net_rain)
+  !     write(output_unit, *) '  address: ', crap
+  ! end function
 
 
   module subroutine cleanup_Interception(this)
@@ -295,6 +570,7 @@ contains
     real(r32) :: netsnow
     real(r32) :: stor
     real(r32) :: z
+
 
     ! TODO: Add the following later
     ! nevap (in potet_pan)

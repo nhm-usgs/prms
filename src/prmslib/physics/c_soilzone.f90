@@ -28,58 +28,58 @@ module PRMS_SOILZONE
       !! (?should be in map_results?)
 
     ! Parameters
-    real(r32), allocatable :: fastcoef_lin(:)
+    real(r32), allocatable, private :: fastcoef_lin(:)
       !! Linear coefficient in equation to route preferential-flow storage down slope for each HRU
-    real(r32), allocatable :: fastcoef_sq(:)
+    real(r32), allocatable, private :: fastcoef_sq(:)
       !! Non-linear coefficient in equation to route preferential-flow storage down slope for each HRU
-    integer(i32), allocatable :: gvr_hru_id(:)
+    integer(i32), allocatable, private :: gvr_hru_id(:)
       !! (?should be in map_results?) Index of the HRU associated with each gravity reservoir
     ! real(r32), allocatable :: lake_evap_adj(:)
       !!
-    real(r32), allocatable :: pref_flow_den(:)
+    real(r32), allocatable, public :: pref_flow_den(:)
       !! Fraction of the soil zone in which preferential flow occurs for each HRU
-    real(r32), allocatable :: sat_threshold(:)
+    real(r32), allocatable, private :: sat_threshold(:)
       !! Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and total soil saturation for each HRU
-    real(r32), allocatable :: slowcoef_lin(:)
+    real(r32), allocatable, private :: slowcoef_lin(:)
       !! Linear coefficient in equation to route gravity-reservoir storage down slope for each HRU
-    real(r32), allocatable :: slowcoef_sq(:)
+    real(r32), allocatable, private :: slowcoef_sq(:)
       !! Non-linear coefficient in equation to route gravity- reservoir storage down slope for each HRU
-    integer(i32), allocatable :: soil_type(:)
+    integer(i32), allocatable, private :: soil_type(:)
       !! Soil type of each HRU (1=sand; 2=loam; 3=clay)
       ! NOTE: PAN - manual shows this as part of ET, but I only see it used in soilzone.
-    real(r32), allocatable :: soil2gw_max(:)
+    real(r32), allocatable, private :: soil2gw_max(:)
       !! Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
-    real(r32), allocatable :: ssr2gw_exp(:)
+    real(r32), allocatable, private :: ssr2gw_exp(:)
       !! Non-linear coefficient in equation used to route water from the gravity reservoirs to the GWR for each HRU
       ! NOTE: ?should be nssr?
-    real(r32), allocatable :: ssr2gw_rate(:)
+    real(r32), allocatable, private :: ssr2gw_rate(:)
       !! Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
       ! NOTE: ?should be nssr?
-    real(r32), allocatable :: ssstor_init_frac(:)
+    real(r32), allocatable, private :: ssstor_init_frac(:)
       !! Initial fraction of available water in the gravity plus preferential-flow reservoirs (fraction of sat_threshold) for each HRU
       ! NOTE: ?should be nssr?
 
 
     ! Local Variables
-    integer(i32) :: DBGUNT
-    integer(i32) :: et_type
+    integer(i32), private :: DBGUNT
+    integer(i32), private :: et_type
     ! integer(i32) :: pref_flag
-    logical :: pref_flag
+    logical, private :: pref_flag
       !! NOTE: PAN - What is this used for?
 
     ! integer(i32), allocatable :: pref_flow_flag(:)
-    logical, allocatable :: pref_flow_flag(:)
+    logical, allocatable, private :: pref_flow_flag(:)
 
     ! integer(i32), allocatable :: soil2gw(:)
     logical, allocatable, private :: soil2gw_flag(:)
 
-    real(r32), allocatable :: swale_limit(:)
-    real(r64), allocatable :: grav_dunnian_flow(:)
-    real(r64), allocatable :: gvr2pfr(:)
-    real(r64), allocatable :: pfr_dunnian_flow(:)
-    real(r32), allocatable :: soil_lower_stor_max(:)
-    real(r32), allocatable :: soil_moist_ante(:)
-    real(r32), allocatable :: ssres_stor_ante(:)
+    real(r32), allocatable, private :: swale_limit(:)
+    real(r64), allocatable, public :: grav_dunnian_flow(:)
+    real(r64), allocatable, public :: gvr2pfr(:)
+    real(r64), allocatable, public :: pfr_dunnian_flow(:)
+    real(r32), allocatable, public :: soil_lower_stor_max(:)
+    real(r32), allocatable, public :: soil_moist_ante(:)
+    real(r32), allocatable, public :: ssres_stor_ante(:)
 
     real(r64) :: it0_basin_soil_moist
     real(r64) :: it0_basin_ssstor
@@ -138,55 +138,55 @@ module PRMS_SOILZONE
 
 
     ! Output variables - basin
-    real(r64), pointer :: basin_actet
+    real(r64), allocatable :: basin_actet
       !! (moved from flowvars) Basin area-weighted average actual ET
-    real(r64), pointer :: basin_cap_infil_tot
-    real(r64), pointer :: basin_cap_up_max
-    real(r64), pointer :: basin_capwaterin
-    real(r64), pointer :: basin_cpr_stor_frac
-    real(r64), pointer :: basin_dncascadeflow
-    real(r64), pointer :: basin_dndunnianflow
-    real(r64), pointer :: basin_dninterflow
-    real(r64), pointer :: basin_dunnian
-    real(r64), pointer :: basin_dunnian_gvr
-    real(r64), pointer :: basin_dunnian_pfr
-    real(r64), pointer :: basin_gvr2pfr
-    real(r64), pointer :: basin_gvr2sm
-    real(r64), pointer :: basin_gvr_stor_frac
-    real(r64), pointer :: basin_interflow_max
-    real(r64), pointer :: basin_lakeevap
+    real(r64), allocatable :: basin_cap_infil_tot
+    real(r64), allocatable :: basin_cap_up_max
+    real(r64), allocatable :: basin_capwaterin
+    real(r64), allocatable :: basin_cpr_stor_frac
+    real(r64), allocatable :: basin_dncascadeflow
+    real(r64), allocatable :: basin_dndunnianflow
+    real(r64), allocatable :: basin_dninterflow
+    real(r64), allocatable :: basin_dunnian
+    real(r64), allocatable :: basin_dunnian_gvr
+    real(r64), allocatable :: basin_dunnian_pfr
+    real(r64), allocatable :: basin_gvr2pfr
+    real(r64), allocatable :: basin_gvr2sm
+    real(r64), allocatable :: basin_gvr_stor_frac
+    real(r64), allocatable :: basin_interflow_max
+    real(r64), allocatable :: basin_lakeevap
       !! (moved from flowvars) Basin area-weighted average lake evaporation
-    real(r64), pointer :: basin_lakeinsz
-    real(r64), pointer :: basin_lakeprecip
-    real(r64), pointer :: basin_perv_et
+    real(r64), allocatable :: basin_lakeinsz
+    real(r64), allocatable :: basin_lakeprecip
+    real(r64), allocatable :: basin_perv_et
       !! (moved from flowvars) Basin area-weighted average ET from capillary reservoirs
-    real(r64), pointer :: basin_pfr_stor_frac
-    real(r64), pointer :: basin_pref_flow_infil
-    real(r64), pointer :: basin_pref_stor
-    real(r64), pointer :: basin_prefflow
-    real(r64), pointer :: basin_recharge
-    real(r64), pointer :: basin_slowflow
-    real(r64), pointer :: basin_slstor
-    real(r64), pointer :: basin_sm2gvr
-    real(r64), pointer :: basin_sm2gvr_max  ! this is the same as basin_sm2gvr
-    real(r64), pointer :: basin_soil_lower_stor_frac
-    real(r64), pointer :: basin_soil_moist
+    real(r64), allocatable :: basin_pfr_stor_frac
+    real(r64), allocatable :: basin_pref_flow_infil
+    real(r64), allocatable :: basin_pref_stor
+    real(r64), allocatable :: basin_prefflow
+    real(r64), allocatable :: basin_recharge
+    real(r64), allocatable :: basin_slowflow
+    real(r64), allocatable :: basin_slstor
+    real(r64), allocatable :: basin_sm2gvr
+    real(r64), allocatable :: basin_sm2gvr_max  ! this is the same as basin_sm2gvr
+    real(r64), allocatable :: basin_soil_lower_stor_frac
+    real(r64), allocatable :: basin_soil_moist
       !! (from flowvars) Basin area-weighted average capillary reservoir storage
-    real(r64), pointer :: basin_soil_moist_tot
-    real(r64), pointer :: basin_soil_rechr
-    real(r64), pointer :: basin_soil_rechr_stor_frac
-    real(r64), pointer :: basin_soil_to_gw
+    real(r64), allocatable :: basin_soil_moist_tot
+    real(r64), allocatable :: basin_soil_rechr
+    real(r64), allocatable :: basin_soil_rechr_stor_frac
+    real(r64), allocatable :: basin_soil_to_gw
       !! (moved from flowvars) Basin average excess flow to capillary reservoirs that drain to GWRs
-    real(r64), pointer :: basin_ssflow
+    real(r64), allocatable :: basin_ssflow
       !! (moved from flowvars) Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network
-    real(r64), pointer :: basin_ssin
-    real(r64), pointer :: basin_ssstor
+    real(r64), allocatable :: basin_ssin
+    real(r64), allocatable :: basin_ssstor
       !! (moved from flowvars)
-    real(r64), pointer :: basin_swale_et
+    real(r64), allocatable :: basin_swale_et
       !! (moved from flowvars)
-    real(r64), pointer :: basin_sz_gwin
-    real(r64), pointer :: basin_sz_stor_frac
-    real(r64), pointer :: basin_sz2gw
+    real(r64), allocatable :: basin_sz_gwin
+    real(r64), allocatable :: basin_sz_stor_frac
+    real(r64), allocatable :: basin_sz2gw
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Variables for model_mode == 'GSFLOW'
@@ -221,6 +221,7 @@ module PRMS_SOILZONE
     ! real(r32), SAVE, allocatable :: Soil_rechr_ratio(:), Snowevap_aet_frac(:), Perv_avail_et(:), Cap_upflow_max(:)
 
     contains
+      procedure, public :: init => init_Soilzone
       procedure, public :: run => run_Soilzone
       procedure, public :: cleanup => cleanup_Soilzone
       procedure, private, nopass :: check_gvr_sm
@@ -235,10 +236,10 @@ module PRMS_SOILZONE
   end type
 
 
-  interface Soilzone
+  interface
     !! Soilzone constructor
-    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_runoff, model_summary) result(this)
-      type(Soilzone) :: this
+    module subroutine init_Soilzone(this, ctl_data, model_basin, model_climate, snow, model_runoff, model_summary)
+      class(Soilzone), intent(inout) :: this
         !! Soilzone class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
@@ -247,7 +248,7 @@ module PRMS_SOILZONE
       type(Snowcomp), intent(in) :: snow
       type(Srunoff), intent(inout) :: model_runoff
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
   end interface
 
   interface

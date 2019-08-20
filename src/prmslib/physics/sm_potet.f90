@@ -1,10 +1,10 @@
 submodule(PRMS_POTET) sm_potet
 contains
-  module function constructor_Potet(ctl_data, model_basin, model_summary) result(this)
+  module subroutine init_Potet(this, ctl_data, model_basin, model_summary)
     use UTILS_CBH, only: find_current_time, find_header_end
     implicit none
 
-    type(Potential_ET) :: this
+    class(Potential_ET), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
@@ -62,25 +62,25 @@ contains
       !   humidity_percent = 1.0
       ! endif
 
-      if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
-          (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
-        allocate(this%humidity_hru(nhru))
-        this%humidity_hru = 0.0
+      ! if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
+      !     (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
+      !   allocate(this%humidity_hru(nhru))
+      !   this%humidity_hru = 0.0
 
-        call find_header_end(nhru, this%humidity_funit, ierr, &
-                             ctl_data%humidity_day%values(1)%s, &
-                             'humidity_day', (cbh_binary_flag==1))
+      !   call find_header_end(nhru, this%humidity_funit, ierr, &
+      !                        ctl_data%humidity_day%values(1)%s, &
+      !                        'humidity_day', (cbh_binary_flag==1))
 
-        if (ierr == 1) then
-          istop = 1
-        else
-          ! TODO: Original code defaults ierr=2 which causes the humidity_cbh_flag
-          !       to be reset and allows climate_flow to use humidity_percent
-          !       from the parameter file instead. Need to figure out a good way
-          !       to handle this.
-          call find_current_time(ierr, this%humidity_funit, start_time, (cbh_binary_flag==1))
-        endif
-      endif
+      !   if (ierr == 1) then
+      !     istop = 1
+      !   else
+      !     ! TODO: Original code defaults ierr=2 which causes the humidity_cbh_flag
+      !     !       to be reset and allows climate_flow to use humidity_percent
+      !     !       from the parameter file instead. Need to figure out a good way
+      !     !       to handle this.
+      !     call find_current_time(ierr, this%humidity_funit, start_time, (cbh_binary_flag==1))
+      !   endif
+      ! endif
 
       allocate(this%basin_humidity)
       allocate(this%basin_potet)
@@ -105,26 +105,20 @@ contains
         enddo
       endif
     end associate
-  end function
+  end subroutine
 
-  module subroutine run_Potet(this, ctl_data, model_basin)
+  module subroutine run_Potet(this, ctl_data, model_basin, model_time, model_solrad, model_temp)
     class(Potential_ET), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
+    type(Time_t), intent(in) :: model_time
+    class(SolarRadiation), intent(in) :: model_solrad
+    class(Temperature), intent(in) :: model_temp
 
     ! Local variables
     integer(i32) :: jj
     integer(i32) :: ios
     integer(i32) :: yr, mo, dy, hr, mn, sec
-
-    ! Control
-    ! nhru, et_module, stream_temp_flag, strmtemp_humidity_flag,
-
-    ! Basin
-    ! basin_area_inv
-
-    ! Parameters
-    ! hru_area,
 
     ! --------------------------------------------------------------------------
     associate(et_module => ctl_data%et_module%values(1), &
@@ -135,6 +129,7 @@ contains
               basin_area_inv => model_basin%basin_area_inv, &
               hru_area => model_basin%hru_area)
 
+      ! WARNING: PAN - I think this will get moved to child classes
       ! Humidity
       if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
           (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then

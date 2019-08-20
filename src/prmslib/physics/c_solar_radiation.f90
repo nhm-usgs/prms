@@ -6,6 +6,9 @@ module SOLAR_RADIATION
   use PRMS_BASIN, only: Basin
   use prms_constants, only: dp
   use PRMS_SUMMARY, only: Summary
+  use PRMS_PRECIPITATION, only: Precipitation
+  use PRMS_SET_TIME, only: Time_t
+  use PRMS_TEMPERATURE, only: Temperature
   implicit none
 
   private
@@ -43,10 +46,10 @@ module SOLAR_RADIATION
       !! Solar radiation at each measurement station
 
     ! Output variables
-    real(r64), pointer :: basin_horad
-    real(r64), pointer :: basin_orad
-    real(r64), pointer :: basin_potsw
-    real(r64), pointer :: basin_swrad
+    real(r64), allocatable :: basin_horad
+    real(r64), allocatable :: basin_orad
+    real(r64), allocatable :: basin_potsw
+    real(r64), allocatable :: basin_swrad
     real(r32) :: orad
     real(r32), allocatable :: orad_hru(:)
     real(r32), allocatable :: swrad(:)
@@ -75,22 +78,35 @@ module SOLAR_RADIATION
     real(r64), allocatable :: soltab_horad_potsw(:, :)
 
     contains
+      procedure, public :: init => init_SolarRadiation
+      procedure, public :: run => run_SolarRadiation
       procedure, nopass, private :: compute_soltab
       procedure, nopass, private :: compute_t
       procedure, nopass, private :: func3
   end type
 
-  interface SolarRadiation
+  interface
     !! SolarRadiation constructor
-    module function constructor_SolarRadiation(ctl_data, model_basin, model_summary) result(this)
-      type(SolarRadiation) :: this
+    module subroutine init_SolarRadiation(this, ctl_data, model_basin, model_summary)
+      class(SolarRadiation), intent(inout) :: this
         !! SolarRadiation class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin
       type(Summary), intent(inout) :: model_summary
-    end function
+    end subroutine
+  end interface
+
+  interface
+    module subroutine run_SolarRadiation(this, ctl_data, model_time, model_precip, model_basin, model_temp)
+      class(SolarRadiation), intent(inout) :: this
+      type(Control), intent(in) :: ctl_data
+      type(Time_t), intent(in) :: model_time
+      class(Precipitation), intent(in) :: model_precip
+      type(Basin), intent(in) :: model_basin
+      class(Temperature), intent(in) :: model_temp
+    end subroutine
   end interface
 
   interface

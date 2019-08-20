@@ -21,17 +21,18 @@ module PRMS_TRANSP_HRU
       !! Transpiration CBH file unit
 
   contains
+    procedure, public :: init => init_Transp_hru
     procedure, public :: run => run_Transp_hru
   end type
 
-  interface Transp_hru
+  interface
     !! Transp_hru constructor
-    module function constructor_Transp_hru(ctl_data) result(this)
-      type(Transp_hru) :: this
+    module subroutine init_Transp_hru(this, ctl_data)
+      class(Transp_hru), intent(inout) :: this
         !! Transp_hru class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-    end function
+    end subroutine
   end interface
 
   interface

@@ -1,11 +1,11 @@
 submodule(PRMS_PRECIPITATION) sm_precipitation
 contains
-  module function constructor_Precipitation(ctl_data, model_basin, model_temp, model_summary) result(this)
+  module subroutine init_Precipitation(this, ctl_data, model_basin, model_temp, model_summary)
     use prms_constants, only: FAHRENHEIT
     use conversions_mod, only: f_to_c, c_to_f
     implicit none
 
-    type(Precipitation) :: this
+    class(Precipitation), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
@@ -161,7 +161,169 @@ contains
         end do
       end if
     end associate
-  end function
+  end subroutine
+  ! module function constructor_Precipitation(ctl_data, model_basin, model_temp, model_summary) result(this)
+  !   use prms_constants, only: FAHRENHEIT
+  !   use conversions_mod, only: f_to_c, c_to_f
+  !   implicit none
+
+  !   type(Precipitation) :: this
+  !   type(Control), intent(in) :: ctl_data
+  !   type(Basin), intent(in) :: model_basin
+  !   class(Temperature), intent(in) :: model_temp
+  !   type(Summary), intent(inout) :: model_summary
+
+  !   integer(i32) :: jj
+
+  !   ! --------------------------------------------------------------------------
+  !   associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
+  !             outVarON_OFF => ctl_data%outVarON_OFF%value, &
+  !             outVar_names => ctl_data%outVar_names, &
+  !             rst_unit => ctl_data%restart_output_unit, &
+  !             print_debug => ctl_data%print_debug%value, &
+  !             param_hdl => ctl_data%param_file_hdl, &
+
+  !             nhru => model_basin%nhru, &
+  !             nmonths => model_basin%nmonths, &
+
+  !             temp_units => model_temp%temp_units)
+
+  !     call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+  !     if (print_debug > -2) then
+  !       ! Output module and version information
+  !       call this%print_module_info()
+  !     endif
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! Setup the parameters first
+  !     allocate(this%tmax_allsnow(nhru, nmonths))
+  !     call param_hdl%get_variable('tmax_allsnow', this%tmax_allsnow)
+
+  !     allocate(this%tmax_allrain_offset(nhru, nmonths))
+  !     call param_hdl%get_variable('tmax_allrain_offset', this%tmax_allrain_offset)
+
+  !     call param_hdl%get_variable('precip_units', this%precip_units)
+
+  !     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  !     ! Setup other variables
+  !     allocate(this%hru_ppt(nhru))
+  !     allocate(this%hru_rain(nhru))
+  !     allocate(this%hru_snow(nhru))
+  !     allocate(this%prmx(nhru))
+
+  !     allocate(this%tmax_allrain(nhru, nmonths))
+  !     allocate(this%tmax_allrain_c(nhru, nmonths))
+  !     allocate(this%tmax_allrain_f(nhru, nmonths))
+  !     allocate(this%tmax_allsnow_c(nhru, nmonths))
+  !     allocate(this%tmax_allsnow_f(nhru, nmonths))
+
+  !     allocate(this%newsnow(nhru))
+  !     allocate(this%pptmix(nhru))
+
+  !     this%hru_ppt = 0.0
+  !     this%hru_rain = 0.0
+  !     this%hru_snow = 0.0
+  !     this%prmx = 0.0
+  !     this%pptmix = 0
+  !     this%newsnow = 0
+
+  !     ! TODO: PAN - these variables don't appear to be used anymore
+  !     ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
+  !     !     ctl_data%precip_module%values(1)%s == 'ide_dist' .or. &
+  !     !     ctl_data%precip_module%values(1)%s == 'xyz_dist') then
+  !     !   allocate(this%psta_elev_feet(nrain))
+  !     !   allocate(this%psta_elev_meters(nrain))
+  !     !
+  !     !   if (elev_units == FEET) then
+  !     !     this%psta_elev_feet = psta_elev
+  !     !     this%psta_elev_meters = psta_elev * FEET2METERS
+  !     !   else
+  !     !     this%psta_elev_meters = psta_elev
+  !     !     this%psta_elev_feet = psta_elev * METERS2FEET
+  !     !   endif
+  !     ! endif
+
+  !     ! ------------------------------------------------------------------------
+  !     ! Set tmax_allrain in units of the input values
+  !     ! tmax_allsnow must be in the units of the input values
+  !     if (temp_units == FAHRENHEIT) then
+  !       this%tmax_allsnow_f = this%tmax_allsnow
+  !       ! this%tmax_allsnow_f = reshape(tmax_allsnow, shape(this%tmax_allsnow_f))
+
+  !       ! NOTE: 2018-07-24 PAN: changed tmax_allsnow_2d to this%tmax_allsnow_f
+  !       !       This resulted in a minor change in value causing a different
+  !       !       branch to be followed in precip_form for 1996-02-22, hru=12,13
+  !       ! this%tmax_allrain_f = this%tmax_allsnow_f + tmax_allrain_offset_2d
+  !       ! this%tmax_allrain_f = this%tmax_allsnow_f + reshape(tmax_allrain_offset, shape(this%tmax_allrain_f))
+  !       ! this%tmax_allrain_f = reshape(tmax_allsnow + tmax_allrain_offset, shape(this%tmax_allrain_f))
+
+  !       ! this%tmax_allrain_f = reshape(tmax_allrain_offset, shape(this%tmax_allrain_f))
+  !       ! this%tmax_allrain_f = this%tmax_allrain_f + this%tmax_allsnow_f
+  !       this%tmax_allrain_f = this%tmax_allrain_offset + this%tmax_allsnow_f
+
+  !       this%tmax_allrain_c = f_to_c(this%tmax_allrain_f)
+  !       this%tmax_allsnow_c = f_to_c(this%tmax_allsnow_f)
+
+  !       this%tmax_allrain = this%tmax_allrain_f
+  !     else
+  !       ! Celsius
+  !       ! TODO: remove reshape and use a pointer
+  !       ! this%tmax_allsnow_c = reshape(tmax_allsnow, shape(this%tmax_allsnow_c))
+  !       this%tmax_allsnow_c = this%tmax_allsnow
+
+  !       ! this%tmax_allsnow_f = c_to_f(tmax_allsnow_2d)
+
+  !       ! this%tmax_allrain = tmax_allsnow_2d + tmax_allrain_offset_2d
+  !       this%tmax_allrain_c = this%tmax_allrain_offset + this%tmax_allsnow_c
+  !       ! this%tmax_allrain_c = this%tmax_allrain
+  !       this%tmax_allrain_f = c_to_f(this%tmax_allrain)
+  !     endif
+
+  !     allocate(this%basin_obs_ppt)
+  !     allocate(this%basin_ppt)
+  !     allocate(this%basin_rain)
+  !     allocate(this%basin_snow)
+
+  !     this%has_hru_summary_vars = .false.
+
+  !     ! Connect summary variables that need to be output
+  !     if (outVarON_OFF == 1) then
+  !       do jj = 1, outVar_names%size()
+  !         select case(outVar_names%values(jj)%s)
+  !           case('basin_obs_ppt')
+  !             call model_summary%set_summary_var(jj, this%basin_obs_ppt)
+  !           case('basin_ppt')
+  !             call model_summary%set_summary_var(jj, this%basin_ppt)
+  !           case('basin_rain')
+  !             call model_summary%set_summary_var(jj, this%basin_rain)
+  !           case('basin_snow')
+  !             call model_summary%set_summary_var(jj, this%basin_snow)
+  !           case('hru_ppt')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case('hru_rain')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case('hru_snow')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case('prmx')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case('newsnow')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case('pptmix')
+  !             this%has_hru_summary_vars = .true.
+  !             exit
+  !           case default
+  !             ! pass
+  !         end select
+  !       end do
+  !     end if
+  !   end associate
+  ! end function
 
 
   module subroutine run_Precipitation(this, ctl_data, model_basin, model_temp, model_time, model_summary)

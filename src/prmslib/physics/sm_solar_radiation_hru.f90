@@ -1,12 +1,11 @@
 submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
   contains
-    module function constructor_Solrad_hru(ctl_data, param_data, model_basin, model_summary) result(this)
+    module subroutine init_Solrad_hru(this, ctl_data, model_basin, model_summary)
       use UTILS_CBH, only: find_current_time, find_header_end
       implicit none
 
-      type(Solrad_hru) :: this
+      class(Solrad_hru), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Basin), intent(in) :: model_basin
       type(Summary), intent(inout) :: model_summary
 
@@ -19,7 +18,8 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
 
       ! ------------------------------------------------------------------------
       ! Call the parent constructor first
-      this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
+      call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
+      ! this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
 
       associate(nhru => ctl_data%nhru%value, &
                 cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -43,13 +43,12 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
           call find_current_time(ierr, this%swrad_funit, start_time, (cbh_binary_flag==1))
         endif
       end associate
-    end function
+    end subroutine
 
 
-    module subroutine run_Solrad_hru(this, ctl_data, param_data, model_time, model_basin)
+    module subroutine run_Solrad_hru(this, ctl_data, model_time, model_basin)
       class(Solrad_hru), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
-      type(Parameters), intent(in) :: param_data
       type(Time_t), intent(in) :: model_time
       type(Basin), intent(in) :: model_basin
 
@@ -75,7 +74,9 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       associate(day_of_year => model_time%day_of_year, &
                 nhru => ctl_data%nhru%value, &
                 orad_flag => ctl_data%orad_flag%value, &
+
                 basin_area_inv => model_basin%basin_area_inv, &
+
                 hru_area => param_data%hru_area%values)
 
         ! basin_horad = soltab_basinpotsw(day_of_year)  ! Calculated in cc/ddsolrad

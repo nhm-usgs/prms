@@ -1,10 +1,10 @@
 submodule (PRMS_SOILZONE) sm_soilzone
   contains
-    module function constructor_Soilzone(ctl_data, model_basin, model_climate, snow, model_runoff, model_summary) result(this)
+    module subroutine init_Soilzone(this, ctl_data, model_basin, model_climate, snow, model_runoff, model_summary)
       use prms_constants, only: dp, INACTIVE, LAND, LAKE, SWALE
       implicit none
 
-      type(Soilzone) :: this
+      class(Soilzone), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
       type(Climateflow), intent(inout) :: model_climate
@@ -413,6 +413,8 @@ submodule (PRMS_SOILZONE) sm_soilzone
         this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
         this%swale_limit = 0.0
 
+        ! ssstor_init_frac no longer needed at this point
+        deallocate(this%ssstor_init_frac)
 
         ! soil_moist = 0.0 ! WARNING: Overrides init in climateflow
         ! soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
@@ -627,7 +629,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !   endif
         ! endif
       end associate
-    end function
+    end subroutine
 
 
     module subroutine run_Soilzone(this, ctl_data, model_basin, model_time, &

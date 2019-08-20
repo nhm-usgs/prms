@@ -21,11 +21,11 @@ MODULE PRMS_TRANSP_TINDEX
 
   type, extends(Transpiration) :: Transp_tindex
     ! Parameters
-    integer(i32), allocatable :: transp_beg(:)
+    integer(i32), allocatable, private :: transp_beg(:)
       !! Month to begin summing maximum air temperature for each HRU; when sum is greater than or equal to transp_tmax, transpiration begins
-    integer(i32), allocatable :: transp_end(:)
+    integer(i32), allocatable, private :: transp_end(:)
       !! Month to stop transpiration computations; transpiration is computed thru end of previous month
-    real(r32), allocatable :: transp_tmax(:)
+    real(r32), allocatable, private :: transp_tmax(:)
       !! Temperature index to determine the specific date of the start of the transpiration period;’ the maximum air temperature for each HRU is summed starting with the first day of month transp_beg; when the sum exceeds this index, transpiration begins
 
 
@@ -33,30 +33,31 @@ MODULE PRMS_TRANSP_TINDEX
     ! integer(i32), allocatable :: transp_check(:)
     logical, allocatable, private :: transp_check(:)
 
-    integer(i32), allocatable :: transp_beg_restart(:)
-    integer(i32), allocatable :: transp_end_restart(:)
+    integer(i32), allocatable, private :: transp_beg_restart(:)
+    integer(i32), allocatable, private :: transp_end_restart(:)
 
     real(r32), allocatable, private :: tmax_sum(:)
     real(r32), allocatable, private :: transp_tmax_c(:)
-    real(r32), allocatable :: transp_tmax_restart(:)
+    real(r32), allocatable, private :: transp_tmax_restart(:)
 
     contains
+      procedure, public :: init => init_Transp_tindex
       procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, public :: run => run_Transp_tindex
 
   end type
 
-  interface Transp_tindex
+  interface
     !! Transp_tindex constructor
-    module function constructor_Transp_tindex(ctl_data, model_basin, model_temp) result(this)
-      type(Transp_tindex) :: this
+    module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp)
+      class(Transp_tindex), intent(inout) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
         !! Model basin information
       class(Temperature), intent(in) :: model_temp
-    end function
+    end subroutine
   end interface
 
   interface
