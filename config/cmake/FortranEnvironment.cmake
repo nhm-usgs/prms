@@ -109,7 +109,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   endif()
 
   # set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -funroll-all-loops -finline-functions")
-  # set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -funroll-all-loops -finline-functions")
+  set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -Wuninitialized")
 
   #set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -pg -fbacktrace -fcheck=all -finit-real=nan -ffpe-trap=zero,overflow,underflow -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant")
   #set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0 -pg -fbacktrace -fcheck=all -ffpe-trap=zero,overflow,underflow -Wall  -Waliasing -Wampersand -Wconversion -Wsurprising -Wc-binding-type -Wintrinsics-std -Wtabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant")
@@ -147,8 +147,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   endif()
 
   if(APPLE)
-    set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -no-prec-div -fp-model fast=2")
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_RELEASE} -O0 -g -traceback -CB -fp-stack-check -gen-interfaces -warn interfaces")
+    # -nostandard-realloc-lhs
+    # -standard-semantics
+    set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -mavx -fp-model source -heap-arrays 512")
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -stand f08 -diag-disable=5268 -O0 -g -traceback -debug extended -check all,shape,arg_temp_created -init=snan,arrays -fp-stack-check -ftrapuv -gen-interfaces -warn interfaces -warn all,nouncalled,nounused -heap-arrays 512")
   endif()
 endif()
 
