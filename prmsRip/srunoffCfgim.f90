@@ -976,7 +976,7 @@
         Basin_contrib_fraction = Basin_contrib_fraction + DBLE( Contrib_fraction(i)*hperv )
 
 !******Compute evaporation from impervious area
-        IF ( frzen==0 ) THEN
+        !IF ( frzen/=1 ) THEN  !Should we care that it's frozen if it's impervious? AVB
           IF ( Hruarea_imperv>0.0 ) THEN
             IF ( Imperv_stor(i)>0.0 ) THEN
               CALL imperv_et(Imperv_stor(i), Potet(i), Imperv_evap(i), Snowcov_area(i), avail_et)
@@ -999,7 +999,7 @@
             Hru_sroffi(i) = Sri*Imperv_frac
             Basin_sroffi = Basin_sroffi + DBLE( Sri*Hruarea_imperv )
           ENDIF
-        ENDIF
+        !ENDIF
 
         IF ( dprst_chk==1 ) Dprst_stor_hru(i) = (Dprst_vol_open(i)+Dprst_vol_clos(i))/Hruarea_dble
 

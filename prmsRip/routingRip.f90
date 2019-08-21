@@ -30,6 +30,7 @@
       REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
 !   Declared Parameters for Overbank and bank Storage
       REAL, SAVE, ALLOCATABLE :: Transmiss_seg(:), Ripst_areafr_max(:)
+      REAL, SAVE :: Bank_height_fac
 !   Declared Parameters for Overbank Storage
       REAL, SAVE, ALLOCATABLE :: Tr_ratio(:), Porosity_seg(:), Ripst_et_coef(:), Ripst_frac_init(:)
 !   Declared Variables for Overbank Storage
@@ -383,6 +384,12 @@
      &         ' if =0, then overbank storage is turned off, if also bankfinite_hru =1 bank storage is off', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'ripst_areafr_max')
 
+        IF ( declparam(MODNAME, 'bank_height_fac', 'one', 'real', &
+     &         '20.0', '1.0', '100.0', &
+     &         'Factor multiplied to Seg_depth to give maximum height of banks', &
+     &         'Factor multiplied to Seg_depth to give maximum height of banks for riparian overbank storage', &
+     &         'none')/=0 ) CALL read_error(1, 'bank_height_fac')
+
         ALLOCATE ( Porosity_seg(Nsegment) )
         IF ( declparam(MODNAME, 'porosity_seg', 'nsegment', 'real', &
      &       '0.4', '0.15', '0.75', &
@@ -697,6 +704,7 @@
 
       IF ( Ripst_flag==1 ) THEN
         IF ( getparam(MODNAME, 'ripst_areafr_max', Nhru, 'real', Ripst_areafr_max)/=0 ) CALL read_error(2, 'ripst_areafr_max')
+        IF ( getparam(MODNAME, 'bank_height_fac', 1, 'real', Bank_height_fac)/=0 ) CALL read_error(2, 'bank_height_fac')
         IF ( getparam(MODNAME, 'ripst_et_coef', Nhru, 'real', Ripst_et_coef)/=0 ) CALL read_error(2, 'ripst_et_coef')
         IF ( getparam(MODNAME, 'tr_ratio', Nhru, 'real', Tr_ratio)/=0 ) CALL read_error(2, 'tr_ratio')
         IF ( getparam(MODNAME, 'bankfinite_hru', Nhru, 'integer', Bankfinite_hru)/=0 ) CALL read_error(2, 'bankfinite_hru')
@@ -710,8 +718,8 @@
             IF (Bankfinite_hru(i)==1) Basin_bankst_area = Basin_bankst_area+Ripst_areafr_max(i)*Hru_area_dble(i) ! in inches
             IF (Bankfinite_hru(i)==0) Basin_bankst_area = Basin_bankst_area+Hru_area_dble(i) ! in inches
             Ripst_area_max(i) = Ripst_areafr_max(i)*Hru_area(i)
-! depth of hyporheic estimated at stream depth/porosity, Harvey and Wagner (2000) ??
-            Ripst_depth(i) = Seg_depth(Hru_segment(i)) / Porosity_seg(Hru_segment(i))
+! depth to depth of hyporheic, estimated at stream depth/porosity, Harvey and Wagner (2000)
+            Ripst_depth(i) = Seg_depth(Hru_segment(i)) / Porosity_seg(Hru_segment(i)) + Seg_depth(Hru_segment(i))
             IF (Ripst_areafr_max(i)==0.0) Ripst_depth(i) = 0.0
             Ripst_vol_max(i) = DBLE( Ripst_area_max(i)*Ripst_depth(i)*(1.0-0.5*Tr_ratio(i)) )
             Seg_hru_num(Hru_segment(i)) =Seg_hru_num(Hru_segment(i)) +1
@@ -1133,7 +1141,7 @@
      &    Tr_ratio, Ripst_vol_max, Ripst_et_coef, Ripst_evap_hru, Seg_length, &
      &    Basin_ripst_vol, Basin_ripst_evap, Basin_ripst_contrib, Ripst_stor_hru, &
      &    Ripst_frac, Ripst_vol, Ripst_area_max, Ripst_area, Seg_slope, &
-     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area !, Transmiss_seg
+     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area, Bank_height_fac !, Transmiss_seg
       USE PRMS_MODULE, ONLY: Frozen_flag
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Hru_area, Hru_area_dble, FEET2METERS, &
      &    FT2_PER_ACRE, CFS2CMS_CONV
@@ -1162,9 +1170,8 @@
           thaw_frac = Thaw_depth(Ihru)/Soil_depth(Ihru)
         ENDIF
       ENDIF
-!It won't get deeper than this depth, should be Seg_depth but not accurate or Seg_width and other terms not accurate
-      !max_depth = Seg_depth(Hru_segment(Ihru))
-      max_depth = Seg_depth(Hru_segment(Ihru))*20.0
+!It won't get deeper than this depth, should be close to Seg_depth but not accurate or Seg_width and other terms not accurate
+      max_depth = Seg_depth(Hru_segment(Ihru))*Bank_height_fac
 ! amount possible in cfs given a river depth
       poss = Seg_width(Hru_segment(Ihru))*SQRT(Seg_slope(Hru_segment(Ihru)))* &
      &            max_depth**(3./5.)/ ( CFS2CMS_CONV*Mann_n(Hru_segment(Ihru)) )
@@ -1406,6 +1413,7 @@
       Bankst_head(Ihru) = Bankst_head(Ihru) + 0.5*Bankst_head_pts(Ihru)
       ! m2 per 24 hr per stream segment for both sides of stream
       ! seep hru is inch over hru seeping out per day
+
       Bankst_seep_hru(Ihru) = -12.0*bankv(nbankd)/SNGL(CFS2CMS_CONV*Hru_area(Ihru)*FT2_PER_ACRE)
       Bankst_seep_rate(Hru_segment(Ihru)) = Bankst_seep_rate(Hru_segment(Ihru)) - bank(nbankd)
       Bankst_stor_hru(Ihru) = Bankst_stor_hru(Ihru)- Bankst_seep_hru(Ihru) !inch over hru
