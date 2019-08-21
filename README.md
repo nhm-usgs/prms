@@ -1,2 +1,3 @@
 # prms
 Precipitation Runoff Modeling System
+This fork makes two executables when doing 'make'. The executable /bin/prms will have capabilities of turning on the glacier_flag, the stream_temp_flag, the frozen_flag (that uses the old CFGI with no frozen depth just binary frozen state), and using the strmflow_module muskingum, muskingum_mann, or mizuroute. The  executable /bin/prmsrip will have capabilities of turning on the glacier_flag, the stream_temp_flag, the frozen_flag (that uses the new CFGImod with frozen depth), the ripst_flag, and using the strmflow_module muskingum, muskingum_mann, or mizuroute. 
