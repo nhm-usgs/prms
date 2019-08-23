@@ -839,9 +839,18 @@
 
 ! Find upstream intitial inflow temperature for segment i
 ! i is the current segment
-! k is the upstream segment
+! kk is the upstream segment
          fs = 0.0
          up_temp = 0.0
+         do k = 1, upstream_count(i)
+            kk = upstream_idx(i,k)
+            if (Seg_tave_water(kk) > -1.0) then
+               up_temp = up_temp + (Seg_tave_water(kk) * SNGL(Seg_outflow(kk)))
+               fs = fs + SNGL(Seg_outflow(kk))
+               endif
+            ENDIF
+         ENDDO
+
 !         DO k = 1, Nsegment
 !            IF ( Tosegment(k)==i ) THEN
 !               if (Seg_tave_water(k) > -1.0) then
