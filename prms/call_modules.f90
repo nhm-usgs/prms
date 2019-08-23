@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 06/12/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 RC'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw

@@ -842,14 +842,14 @@
 ! k is the upstream segment
          fs = 0.0
          up_temp = 0.0
-         DO k = 1, Nsegment
-            IF ( Tosegment(k)==i ) THEN
-               if (Seg_tave_water(k) > -1.0) then
-                  up_temp = up_temp + (Seg_tave_water(k) * SNGL(Seg_outflow(k)))
-                  fs = fs + SNGL(Seg_outflow(k))
-               endif
-            ENDIF
-         ENDDO
+!         DO k = 1, Nsegment
+!            IF ( Tosegment(k)==i ) THEN
+!               if (Seg_tave_water(k) > -1.0) then
+!                  up_temp = up_temp + (Seg_tave_water(k) * SNGL(Seg_outflow(k)))
+!                  fs = fs + SNGL(Seg_outflow(k))
+!               endif
+!            ENDIF
+!         ENDDO
          
          ! Finish computing seg_tave_upstream
          IF ( fs > NEARZERO) THEN
