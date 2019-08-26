@@ -20,6 +20,8 @@
       REAL, SAVE, ALLOCATABLE :: gw_sum(:), ss_sum(:)
       REAL, SAVE, ALLOCATABLE ::  gw_silo(:,:), ss_silo(:,:)
       REAL, SAVE, ALLOCATABLE :: hru_area_sum(:)
+      INTEGER, SAVE, ALLOCATABLE :: upstream_count(:)
+      INTEGER, SAVE, ALLOCATABLE :: upstream_idx(:,:)
       INTEGER, SAVE ::  gw_index, ss_index
 
 !   Declared Variables
@@ -406,7 +408,7 @@
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: COS, SIN, ABS, SIGN, ASIN
+      INTRINSIC :: COS, SIN, ABS, SIGN, ASIN, maxval
       INTEGER, EXTERNAL :: getparam
       REAL, EXTERNAL :: solalt
       EXTERNAL :: read_error, checkdim_param_limits
@@ -661,6 +663,33 @@
             endif
          enddo
       enddo
+
+! For each segment, figure out how many upstream segments.
+      ALLOCATE(upstream_count(Nsegment))
+      upstream_count = 0
+      do i = 1, nsegment
+         do j = 1, nsegment
+            if (tosegment(i) .eq. j) then
+               upstream_count(i) = upstream_count(i) + 1
+            endif
+         end do
+      end do
+
+! For each segment, figure out the upstream segments. These will be looped over to determine inflows and temps to each segment
+      ALLOCATE(upstream_idx(Nsegment, maxval(upstream_count)))
+      upstream_idx = 0
+      upstream_count = 0
+      do i = 1, nsegment
+         do j = 1, nsegment
+            if (tosegment(i) .eq. j) then
+               upstream_count(i) = upstream_count(i) + 1
+               upstream_idx(i,upstream_count(i)) = j
+            endif
+         end do
+      end do
+
+
+
       END FUNCTION stream_temp_init
 
 
@@ -676,7 +705,7 @@
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
-      USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Seginc_swrad
+      USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
@@ -688,7 +717,7 @@
       EXTERNAL :: equilb, lat_inflow, shday
 ! Local Variables
       REAL :: harea, svi, fs
-      INTEGER :: i, j, k, iseg
+      INTEGER :: i, j, k, kk, iseg
       REAL :: te, ak1, ak2, ccov
       DOUBLE PRECISION :: qlat
       REAL :: t_o, up_temp
@@ -847,7 +876,6 @@
             if (Seg_tave_water(kk) > -1.0) then
                up_temp = up_temp + (Seg_tave_water(kk) * SNGL(Seg_outflow(kk)))
                fs = fs + SNGL(Seg_outflow(kk))
-               endif
             ENDIF
          ENDDO
 
