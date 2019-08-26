@@ -669,7 +669,7 @@
       upstream_count = 0
       do i = 1, nsegment
          do j = 1, nsegment
-            if (tosegment(i) .eq. j) then
+            if (tosegment(j) .eq. i) then
                upstream_count(i) = upstream_count(i) + 1
             endif
          end do
@@ -681,13 +681,22 @@
       upstream_count = 0
       do i = 1, nsegment
          do j = 1, nsegment
-            if (tosegment(i) .eq. j) then
+            if (tosegment(j) .eq. i) then
                upstream_count(i) = upstream_count(i) + 1
                upstream_idx(i,upstream_count(i)) = j
             endif
          end do
       end do
 
+!      do i = 1, nsegment
+!         write(*, fmt="(1x,a,i0)", advance="no") "segment #", i
+!         write(*, fmt="(1x,a,i0)", advance="no") " ", upstream_count(i)
+!         do j = 1, upstream_count(i)
+!            write(*, fmt="(1x,a,i0)", advance="no") " ", upstream_idx(i,j)
+!         end do
+!         write(*, fmt="(1x,a)",advance="yes") " done"
+!      end do
+	
 
 
       END FUNCTION stream_temp_init
@@ -879,15 +888,6 @@
             ENDIF
          ENDDO
 
-!         DO k = 1, Nsegment
-!            IF ( Tosegment(k)==i ) THEN
-!               if (Seg_tave_water(k) > -1.0) then
-!                  up_temp = up_temp + (Seg_tave_water(k) * SNGL(Seg_outflow(k)))
-!                  fs = fs + SNGL(Seg_outflow(k))
-!               endif
-!            ENDIF
-!         ENDDO
-         
          ! Finish computing seg_tave_upstream
          IF ( fs > NEARZERO) THEN
             seg_tave_upstream(i) = up_temp / fs
