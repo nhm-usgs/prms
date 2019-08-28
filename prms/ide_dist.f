@@ -70,7 +70,8 @@
 !***********************************************************************
       idedecl = 0
 
-      Version_ide_dist = 'ide_dist.f 2019-07-12 10:34:00Z'
+      Version_ide_dist =
+     +'ide_dist.f 2018-04-18 11:09:00Z'
       CALL print_module(Version_ide_dist,
      +                  'Temp & Precip Distribution  ', 77)
       MODNAME = 'ide_dist'
@@ -250,10 +251,9 @@
 !***********************************************************************
       INTEGER FUNCTION ideinit()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Inputerror_flag,
-     +    Temp_units
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Active_hrus, Hru_route_order, FEET2METERS
+     +    Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
@@ -330,16 +330,10 @@
       IF ( getparam(MODNAME, 'tmax_allsnow_sta', Nrain*12, 'real',
      +     Tmax_allsnow_sta)/=0 ) CALL read_error(2, 'tmax_allsnow_sta')
 
-! When the air contains little water, this lapse rate is known as the dry adiabatic lapse rate: 
-! The rate at which the temperature of a parcel of dry air decreases as the parcel is lifted in the atmosphere.
-! The dry adiabatic lapse rate (abbreviated DALR) is 5.4°F per 1000 ft or 9.8°C per km.
-! module needs Dalr in temp_units/meter
-      IF ( Temp_units==1 ) THEN
-        Dalr = 9.8D0/1000.0D0 ! °C/meter
-      ELSE
-        Dalr = DBLE( 5.4/(1000.0*FEET2METERS) ) ! °F/meter
-      ENDIF
-! Ashley had:       Dalr = 17.7D0/1000.0D0 ???
+! dry adiabatic lapse rate (DALR) when extrapolating
+!       (DALR = 5.4oF/1000 meters)
+!      Dalr = 0.0177
+      Dalr = 5.4D0/1000.0D0
 !
 ! Compute basin centroid
 !
@@ -843,7 +837,8 @@
 ! NOTE: there is a problem with extreme values due to elevations greater or less than
 !       those present in the station data. To avoid extreme temperature due to extrapolation
 !       the slope will not be allowed to exceed the dry adiabatic lapse rate (DALR) when extrapolating
-!       (DALR = 5.4oF/1000 feet or 9.8oC/1000 meters)
+!       (DALR = 5.4oF/1000 meters)
+!      dalr = 0.0177
 !-----------------------------------------------------------------------------------------------------
       slope = -999.0D0
       b = -999.0D0
@@ -954,7 +949,7 @@
         CALL SORT2I(Imax, num, elev, rb)
         j1 = rb(1)
         j2 = rb(num)
-        slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1)) ! temp_units/meter or precip_units/meter
+        slope = (xmndat(j2)-xmndat(j1))/(xmnelv(j2)-xmnelv(j1))
         b = xmndat(j1) - (slope*xmnelv(j1))
         IF ( ABS(Itype)==1 ) THEN
           IF ( DABS(slope)>Dalr ) THEN

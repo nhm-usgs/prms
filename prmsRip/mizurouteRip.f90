@@ -54,9 +54,10 @@
 ! route kinematic waves through the river network
       integer, parameter    :: nens=1              ! number of ensemble members
       integer               :: iens                ! index of ensemble member
-      double precision, save :: T0               ! start of the time step (seconds) WE MUST HAVE THIS SOMEWHERE, SEE STATVAR PRINTING
+      double precision, save :: T0               ! start of the time step (seconds)
       double precision      :: T1               ! end of the time step (seconds)
       integer               :: LAKEFLAG            ! >0 if processing lakes
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:)
       CHARACTER(LEN=9), SAVE :: MODNAME
       END MODULE PRMS_MIZUROUTE
 
@@ -92,6 +93,7 @@
 !***********************************************************************
       INTEGER FUNCTION mizuroute_decl()
       USE PRMS_MIZUROUTE
+      USE PRMS_MODULE, ONLY: Nsegment
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -105,6 +107,8 @@
       CALL print_module(Version_mizuroute, 'Streamflow Routing          ', 90)
       MODNAME = 'mizuroute'
 
+      ALLOCATE ( Outflow_ts(Nsegment) )
+
       END FUNCTION mizuroute_decl
 
 !***********************************************************************
@@ -112,7 +116,7 @@
 !***********************************************************************
       INTEGER FUNCTION mizuroute_init()
       USE PRMS_MIZUROUTE
-      USE PRMS_MODULE, ONLY: Nsegment
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       USE PRMS_BASIN, ONLY: Basin_area_inv, FT2_PER_ACRE, FEET2METERS
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -127,7 +131,7 @@
       USE lake_param                                ! lake parameters
       USE lakes_flux                                ! fluxes in each lake
 ! ****
-      USE kwt_route,only:reachorder                 ! define the processing order for the stream segments
+      USE kwt_route,only:reachorder              ! define the processing order for the stream segments
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: read_error
@@ -140,6 +144,10 @@
       DOUBLE PRECISION :: totalArea(Nsegment)
 !***********************************************************************
       mizuroute_init = 0
+
+      IF ( Init_vars_from_file==0 ) THEN
+        Outflow_ts = 0.0D0
+      ENDIF
 
       !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
       Basin_segment_storage = 0.0D0
@@ -429,8 +437,9 @@
 !***********************************************************************
       INTEGER FUNCTION mizuroute_run()
       USE PRMS_MIZUROUTE
-      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, METERS2FEET, Basin_gl_cfs, Basin_gl_ice_cfs
+      USE PRMS_MODULE, ONLY: Nsegment, Ripst_flag, Glacier_flag
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, METERS2FEET, Active_hrus, Hru_route_order, &
+     &    Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out
@@ -439,7 +448,12 @@
       USE PRMS_ROUTING, ONLY: Mann_n, Seg_Width, Obsin_segment, Tosegment, Obsout_segment, &
      &    Segment_delta_flow, Segment_type, Basin_segment_storage, Flow_in_great_lakes, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Flow_terminus, &
-     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater
+     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, &
+     &    Stage_ts, Stage_ante, Seg_bankflow, Seg_slope, Bankst_seep_rate, &
+     &    Ripst_areafr_max, Bankfinite_hru, Basin_bankst_head, Seg_ripflow, &
+     &    Basin_bankst_seep_rate, Basin_bankst_seep, Basin_bankst_vol, &
+     &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_contrib, Basin_ripst_evap, &
+     &    Basin_ripst_vol, Bankst_seep_rate
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SRUNOFF, ONLY: Basin_sroff
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
@@ -450,13 +464,14 @@
       USE reach_flux                                ! fluxes in each reach
       USE lake_param                                ! lake parameters
       USE lakes_flux                                ! fluxes in each lake
-      USE kwt_route,only:qroute_rch                 ! route kinematic waves through the river network
+      USE kwt_route,only:qroute_rch          ! route kinematic waves through the river network
 
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
+      EXTERNAL comp_bank_storage, drain_the_swamp
 ! Local Variables
-      INTEGER :: i, segtype, ilake, toseg
+      INTEGER :: i, j, segtype, ilake, toseg
       DOUBLE PRECISION :: area_fac, segout
 !***********************************************************************
       mizuroute_run = 0
@@ -566,6 +581,7 @@
        Seg_inflow = 0.0D0
        Seg_outflow = 0.0D0
        Seg_upstream_inflow = 0.0D0
+       IF ( Ripst_flag==1 ) Stage_ante =Stage_ts
        if (doKWTroute) then
          RPARAM(:)%R_WIDTH =  DBLE(Seg_width) ! channel width (m)
          RPARAM(:)%R_MAN_N =  DBLE(Mann_n)  ! Manning's "n" paramater (unitless)
@@ -583,11 +599,9 @@
                            ierr,cmessage)  ! output: error control
            call handle_err(ierr,cmessage)
            !if(iRch==5) pause 'finished stream segment'
-
          end do  ! (looping through stream segments)
-
-         ! write routed runoff (m3/s) into cfs
          Seg_outflow(NETOPO(:)%REACHID)= RCHFLX(iens,:)%REACH_Q/CFS2CMS_CONV
+
          DO iSeg=1,nSegRoute
            irch = NETOPO(iSeg)%RHORDER
            toseg = Tosegment(irch)
@@ -596,8 +610,68 @@
          Seg_inflow(NETOPO(:)%REACHID) = Seg_lateral_inflow(NETOPO(:)%REACHID) + &
      &                                     Seg_upstream_inflow(NETOPO(:)%REACHID)
 
+
+         Outflow_ts(NETOPO(:)%REACHID)= RCHFLX(iens,:)%REACH_Q/CFS2CMS_CONV
        end if
       end do  ! (looping through ensemble members)
+
+      ! for stage estimate
+      IF ( Ripst_flag==1 ) THEN
+        Basin_bankst_seep = 0.D0
+        Basin_bankst_seep_rate = 0.0D0
+        Basin_bankst_head = 0.0D0
+        Basin_bankst_vol = 0.0D0
+        Basin_ripst_area = 0.0D0
+        Basin_ripst_contrib = 0.0D0
+        Basin_ripst_evap = 0.0D0
+        Basin_ripst_vol = 0.0D0
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_bankflow = 0.0D0 !collect by segment that HRUs go to
+        DO i = 1, Nsegment
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF ( Hru_segment(i)>0 .AND. (Bankfinite_hru(i)==0 .OR. Ripst_areafr_max(i)>0.0)) &
+     &      CALL comp_bank_storage(i)
+!           ******Compute the bank storage component
+!           transfers water between separate bank storage and stream depending on seepage
+        ENDDO
+        Basin_bankst_seep = Basin_bankst_seep*Basin_area_inv
+        Basin_bankst_head = Basin_bankst_head*Basin_area_inv
+        Basin_bankst_vol = Basin_bankst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Basin_bankst_seep_rate = Basin_bankst_seep_rate + Bankst_seep_rate(i) &
+     &                        *Seg_length(i)/SUM(Seg_length) !m2/day per stream ft length
+          Seg_outflow(i) = Seg_outflow(i)+Seg_bankflow(i)
+          IF (Seg_bankflow(i) < 0.0) THEN ! only could go negative because of bankflow if is negative
+            IF (Seg_outflow(i) < 0.0) THEN ! took out more than streamflow, this could also be a water_use problem
+              Seg_bankflow(i)  = Seg_bankflow(i) - Seg_outflow(i)
+              Seg_outflow(i) = 0.0
+            ENDIF
+          ENDIF
+        ENDDO
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_ripflow = 0.0D0
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF  ( Hru_segment(i)>0 .AND. Ripst_areafr_max(i)>0.0) &
+     &      CALL drain_the_swamp(i)
+!           ******Compute the overbank riparian storage component
+!           transfers water between separate riparian storage and stream depending on seepage
+        ENDDO
+        Basin_ripst_contrib = Basin_ripst_contrib*Basin_area_inv
+        Basin_ripst_evap = Basin_ripst_evap*Basin_area_inv
+        Basin_ripst_vol = Basin_ripst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Seg_outflow(i) = Seg_outflow(i)+Seg_ripflow(i) ! cannot go negative by design
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+      ENDIF
 
       T0 = T1
 
@@ -615,8 +689,8 @@
       Flow_in_great_lakes = 0.0D0
       Flow_replacement = 0.0D0
       DO i = 1, Nsegment
-        segout = Seg_outflow(i)
         segtype = Segment_type(i)
+        segout = Seg_outflow(i)
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
 ! includes closed basins (tosegment=0)
         IF ( segtype==1 ) THEN
@@ -694,8 +768,10 @@
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Outflow_ts
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Outflow_ts
       ENDIF
       END SUBROUTINE mizuroute_restart

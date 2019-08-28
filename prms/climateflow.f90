@@ -83,6 +83,8 @@
       DOUBLE PRECISION, SAVE :: Basin_stflow_in, Basin_gwflow_cfs, Basin_stflow_out, Flow_out
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_upstream_inflow(:), Seg_lateral_inflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_outflow(:), Seg_inflow(:)
+      ! glacr
+      REAL, SAVE, ALLOCATABLE :: Glacier_frac(:), Alt_above_ela(:), Glrette_frac(:)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Soil_rechr_max(:), Sat_threshold(:)
       REAL, SAVE, ALLOCATABLE :: Snowinfil_max(:), Imperv_stor_max(:)
@@ -122,7 +124,8 @@
       USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Model, Nhru, Nssr, Nevap, Nlake, &
      &    Nsegment, Strmflow_module, Temp_module, Ntemp, Stream_order_flag, GSFLOW_flag, &
      &    Precip_module, Solrad_module, Transp_module, Et_module, Init_vars_from_file, PRMS4_flag, &
-     &    Soilzone_module, Srunoff_module, Nrain, Nsol, Call_cascade, Et_flag, Dprst_flag, Solrad_flag
+     &    Soilzone_module, Srunoff_module, Nrain, Nsol, Call_cascade, Et_flag, Dprst_flag, &
+     &    Solrad_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
@@ -535,6 +538,24 @@
      &     'Snowpack water equivalent on each HRU', &
      &     'inches', Pkwater_equiv)/=0 ) CALL read_error(3, 'pkwater_equiv')
 
+! glacier variables
+      IF ( Glacier_flag==1 .OR. Model==99 ) THEN
+        ALLOCATE ( Glacier_frac(Nhru) )
+        IF ( declvar(MODNAME, 'glacier_frac', 'nhru', Nhru, 'real',       &
+             'Fraction of glaciation (0=none; 1=100%)',                   &
+             'decimal fraction', Glacier_frac)/=0 ) CALL read_error(3, 'glacier_frac')
+
+        ALLOCATE ( Glrette_frac(Nhru) )
+          IF ( declvar(MODNAME, 'glrette_frac', 'nhru', Nhru, 'real',     &
+             'Fraction of snow field (too small for glacier dynamics)',   &
+             'decimal fraction', Glrette_frac)/=0 )  CALL read_error(3, 'glrette_frac')
+
+        ALLOCATE ( Alt_above_ela(Nhru) )
+        IF ( declvar(MODNAME, 'alt_above_ela', 'nhru', Nhru, 'real',      &
+             'Altitude above equilibrium line altitude (ELA)',            &
+             'elev_units', Alt_above_ela)/=0 ) CALL read_error(3, 'alt_above_ela')
+      ENDIF
+
       ! Allocate local variables
       IF ( Temp_flag<7 .OR. Model==99 ) ALLOCATE ( Tsta_elev_meters(Ntemp), Tsta_elev_feet(Ntemp) )
       IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 .OR. Model==99 ) &
@@ -824,7 +845,7 @@
       USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Nhru, Nssr, Temp_module, Precip_module, Parameter_check_flag, &
      &    Solrad_module, Soilzone_module, Srunoff_module, Stream_order_flag, Ntemp, Nrain, Nsol, Nevap, &
      &    Init_vars_from_file, Inputerror_flag, Dprst_flag, Solrad_flag, Et_flag, Nlake, Et_module, Humidity_cbh_flag, &
-     &    PRMS4_flag, Print_debug, GSFLOW_flag 
+     &    PRMS4_flag, Print_debug, GSFLOW_flag
       USE PRMS_BASIN, ONLY: Elev_units, FEET2METERS, METERS2FEET, Active_hrus, Hru_route_order, Hru_type
       IMPLICIT NONE
 ! Functions
@@ -1333,7 +1354,8 @@
 !     Write or read restart file
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Stream_order_flag, Dprst_flag, Nlake, GSFLOW_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Stream_order_flag, Dprst_flag, &
+     &    Nlake, GSFLOW_flag, Glacier_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       IMPLICIT NONE
@@ -1353,6 +1375,11 @@
      &          Basin_swale_et, Basin_perv_et, Basin_soil_moist, Basin_ssstor, Basin_lakeevap, Basin_lake_stor
         WRITE ( Restart_outunit ) Transp_on
         WRITE ( Restart_outunit ) Pkwater_equiv
+        IF ( Glacier_flag==1 ) THEN
+          WRITE ( Restart_outunit) Glacier_frac
+          WRITE ( Restart_outunit) Glrette_frac
+          WRITE ( Restart_outunit) Alt_above_ela
+        ENDIF
         WRITE ( Restart_outunit ) Soil_moist
         WRITE ( Restart_outunit ) Slow_stor
         WRITE ( Restart_outunit ) Ssres_stor
@@ -1379,6 +1406,11 @@
      &         Basin_swale_et, Basin_perv_et, Basin_soil_moist, Basin_ssstor, Basin_lakeevap, Basin_lake_stor
         READ ( Restart_inunit ) Transp_on
         READ ( Restart_inunit ) Pkwater_equiv
+        IF ( Glacier_flag==1 ) THEN
+          READ ( Restart_inunit) Glacier_frac
+          READ ( Restart_inunit) Glrette_frac
+          READ ( Restart_inunit) Alt_above_ela
+        ENDIF
         READ ( Restart_inunit ) Soil_moist
         READ ( Restart_inunit ) Slow_stor
         READ ( Restart_inunit ) Ssres_stor

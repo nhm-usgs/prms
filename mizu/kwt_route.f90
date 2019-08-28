@@ -471,16 +471,20 @@ contains
   if(ierr/=0)then; message=trim(message)//trim(cmessage); return; endif
   ! check for negative flow
   IF (MINVAL(Q_JRCH).LT.0.0_dp) THEN
-    !ierr=20; message=trim(message)//'negative flow extracted from upstream reach'; return
-    NQ1 = SIZE(Q_JRCH)
-    DO n = 1, NQ1
-      IF (Q_JRCH(n).LT.0.0_dp) Q_JRCH(n) = 1.d-100
-    ENDDO
+   !ierr=20; message=trim(message)//'negative flow extracted from upstream reach'; return
+   NQ1 = SIZE(Q_JRCH)
+   DO n = 0,(NQ1-1)
+     IF (Q_JRCH(n).LT.0.0_dp) Q_JRCH(n) =1.d-100
+   ENDDO
   ENDIF
   ! check
   if(JRCH==ixPrint) print*, 'JRCH, Q_JRCH = ', JRCH, Q_JRCH
  ELSE
   ! set flow in headwater reaches to modelled streamflow from time delay histogram
+  RCHFLX(IENS,JRCH)%REACH_Q = RCHFLX(IENS,JRCH)%BASIN_QR(1)
+  IF (RCHFLX(IENS,JRCH)%REACH_Q.LT.0.0_dp) THEN
+    RCHFLX(IENS,JRCH)%REACH_Q = 1.d-100
+  ENDIF
   RCHFLX(IENS,JRCH)%REACH_Q = RCHFLX(IENS,JRCH)%BASIN_QR(1)
   RETURN  ! no upstream reaches (routing for sub-basins done using time-delay histogram)
  ENDIF
@@ -902,7 +906,7 @@ contains
   if(ierr/=0)then; message=trim(message)//'problem allocating array QD and TD'; return; endif
   ! get reach index
   IR = NETOPO(JRCH)%UREACHI(1)
-  ! get flow in m2/s (scaled by with of downstream reach)
+  ! get flow in m2/s (scaled by width of downstream reach)
   QD(1) = RCHFLX(IENS,IR)%BASIN_QR(1)/RPARAM(JRCH)%R_WIDTH
   TD(1) = T1
   if(JRCH == ixPrint) print*, 'special case: JRCH, IR = ', JRCH, IR
@@ -1038,7 +1042,6 @@ contains
   ! check that we're not stuck in a continuous do loop
   IF (JUPS.EQ.JUPS_OLD .AND. ITIM(JUPS).EQ.ITIM_OLD) THEN
    ierr=20; message=trim(message)//'stuck in the continuous do-loop'; return
-   ! or have little flow HOW KNOW THAT FIX
    EXIT
   ENDIF
   ! save jups and itim(jups) to check that we don't get stuck in a continuous do-loop

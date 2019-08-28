@@ -22,7 +22,7 @@
 
       SUBROUTINE precip_temp_grid()
       USE PRMS_PRECIP_TEMP_GRID
-      USE PRMS_MODULE, ONLY: Process, Model, Climate_precip_flag, Climate_temp_flag, &
+      USE PRMS_MODULE, ONLY: Process, Model, Temp_flag, Precip_flag, &
      &    Start_year, Start_month, Start_day, MAXDIM
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, MM2INCH, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
@@ -43,7 +43,7 @@
       CHARACTER(LEN=80), SAVE :: Version_climate_grid
 !***********************************************************************
        IF ( Process(:3)=='run' ) THEN
-        IF ( Climate_temp_flag==1 ) THEN
+        IF ( Temp_flag==9 ) THEN
           READ ( Tmax_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Tmax_grid_values(i), i=1,Ngrid)
           READ ( Tmin_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Tmin_grid_values(i), i=1,Ngrid)
           Basin_tmax = 0.0D0
@@ -53,7 +53,7 @@
           Tminf = 0.0
         ENDIF
 
-        IF ( Climate_precip_flag==1 ) THEN
+        IF ( Precip_flag==9 ) THEN
           READ ( Precip_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Precip_grid_values(i), i=1,Ngrid)
           Basin_ppt = 0.0D0
           Basin_rain = 0.0D0
@@ -65,11 +65,11 @@
         DO j = 1, Ngrid2hru
           kg = Grid2hru_id(j)
           kh = Hru2grid_id(j)
-          IF ( Climate_temp_flag==1 ) THEN
+          IF ( Temp_flag==9 ) THEN
             Tmaxf(kh) = Tmaxf(kh) + Tmax_grid_values(kg)*Hru2grid_pct(j) + Tmax_grid_adj(kg, Nowmonth)
             Tminf(kh) = Tminf(kh) + Tmin_grid_values(kg)*Hru2grid_pct(j) + Tmin_grid_adj(kg, Nowmonth)
           ENDIF
-          IF ( Climate_precip_flag==1 ) &
+          IF ( Precip_flag==9 ) &
        &       Hru_ppt(kh) = Hru_ppt(kh) + Precip_grid_values(kg)*Hru2grid_pct(j)*Precip_grid_adj(kg, Nowmonth)
         ENDDO
 
@@ -77,14 +77,14 @@
           i = Hru_route_order(j)
           harea = Hru_area(i)
 
-          IF ( Climate_temp_flag==1 ) THEN
+          IF ( Temp_flag==9 ) THEN
             tmax_hru = Tmaxf(i)
             tmin_hru = Tminf(i)
             CALL temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i), &
      &                    Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
           ENDIF
 
-          IF ( Climate_precip_flag==1 ) THEN
+          IF ( Precip_flag==9 ) THEN
 !******Initialize HRU variables
             Pptmix(i) = 0
             Newsnow(i) = 0
@@ -108,7 +108,7 @@
 
         ENDDO
 
-        IF ( Climate_temp_flag==1 ) THEN
+        IF ( Temp_flag==9 ) THEN
           Basin_tmax = Basin_tmax*Basin_area_inv
           Basin_tmin = Basin_tmin*Basin_area_inv
           Basin_temp = Basin_temp*Basin_area_inv
@@ -116,7 +116,7 @@
           Solrad_tmin = Basin_tmin
         ENDIF
 
-        IF ( Climate_precip_flag==1 ) THEN
+        IF ( Precip_flag==9 ) THEN
           Basin_ppt = Basin_ppt*Basin_area_inv
           Basin_obs_ppt = Basin_obs_ppt*Basin_area_inv
           Basin_rain = Basin_rain*Basin_area_inv
@@ -130,11 +130,11 @@
         IF ( decldim('ngrid', 0, MAXDIM, 'Number of grid values')/=0 ) CALL read_error(7, 'ngrid')
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_grid = 'precip_temp_grid.f90 2019-07-10 16:08:00Z'
+        Version_climate_grid = 'precip_temp_grid.f90 2019-08-16 17:22:00Z'
         MODNAME = 'precip_temp_grid'
 
-        IF ( Climate_temp_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Temperature Distribution    ', 90)
-        IF ( Climate_precip_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Precipitation Distribution  ', 90)
+        IF ( Temp_flag==9 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Temperature Distribution    ', 90)
+        IF ( Precip_flag==9 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Precipitation Distribution  ', 90)
 
         Ngrid2hru = getdim('ngrid2hru')
         IF ( Ngrid2hru==-1 ) CALL read_error(6, 'ngrid2hru')
@@ -145,10 +145,11 @@
           IF ( Ngrid==0 ) Ngrid = 1
         ENDIF
 
-        ALLOCATE ( Tmax_grid_values(Ngrid), Tmin_grid_values(Ngrid), Precip_grid_values(Ngrid) )
+        IF ( Temp_flag==9 ) ALLOCATE ( Tmax_grid_values(Ngrid), Tmin_grid_values(Ngrid) )
+        IF ( Precip_flag==9 ) ALLOCATE ( Precip_grid_values(Ngrid) )
 
 ! Declare parameters
-        IF ( Climate_temp_flag==1 .OR. Model==99 ) THEN
+        IF ( Temp_flag==9 .OR. Model==99 ) THEN
           ALLOCATE ( Tmax_grid_adj(Ngrid,12) )
           IF ( declparam(MODNAME, 'tmax_grid_adj', 'ngrid,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
@@ -165,7 +166,7 @@
      &         'temp_units')/=0 ) CALL read_error(1, 'tmin_grid_adj')
         ENDIF
 
-        IF ( Climate_precip_flag==1 .OR. Model==99 ) THEN
+        IF ( Precip_flag==9 .OR. Model==99 ) THEN
           ALLOCATE ( Precip_grid_adj(Ngrid, 12) )
           IF ( declparam(MODNAME, 'precip_grid_adj', 'ngrid,nmonths', 'real', &
      &       '1.0', '0.5', '2.0', &
@@ -206,12 +207,7 @@
         istop = 0
         ierr = 0
 
-        IF ( Climate_temp_flag==1 ) THEN
-          IF ( getparam(MODNAME, 'tmax_grid_adj', Ngrid*12, 'real', Tmax_grid_adj)/=0 ) CALL read_error(2, 'tmax_grid_adj')
-          IF ( getparam(MODNAME, 'tmin_grid_adj', Ngrid*12, 'real', Tmin_grid_adj)/=0 ) CALL read_error(2, 'tmin_grid_adj')
-        ENDIF
-
-        IF ( Climate_temp_flag==1 ) THEN
+        IF ( Temp_flag==9 ) THEN
           IF ( getparam(MODNAME, 'tmax_grid_adj', Ngrid*12, 'real', Tmax_grid_adj)/=0 ) CALL read_error(2, 'tmax_grid_adj')
           IF ( getparam(MODNAME, 'tmin_grid_adj', Ngrid*12, 'real', Tmin_grid_adj)/=0 ) CALL read_error(2, 'tmin_grid_adj')
           IF ( control_string(Tmax_grid, 'tmax_grid')/=0 ) CALL read_error(5, 'tmax_grid')
@@ -238,7 +234,7 @@
           ENDIF
         ENDIF
 
-        IF ( Climate_precip_flag==1 ) THEN
+        IF ( Precip_flag==9 ) THEN
           IF ( getparam(MODNAME, 'precip_grid_adj', Ngrid*12, 'real', Precip_grid_adj)/=0 ) CALL read_error(2, 'precip_grid_adj')
           IF ( control_string(Precip_grid, 'precip_grid')/=0 ) CALL read_error(5, 'precip_grid')
           CALL find_header_end(Precip_unit, Precip_grid, 'precip_grid', ierr, 1, 0)

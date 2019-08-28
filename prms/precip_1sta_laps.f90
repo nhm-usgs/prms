@@ -85,9 +85,11 @@
           Newsnow(i) = 0
           Pptmix(i) = 0
           ppt = Precip_local(Hru_psta(i))
-          IF ( Glacier_flag==1 .AND. Precip_flag==2 ) THEN
-            ! Hru_elev_ts is the antecedent glacier elevation
-            IF ( Hru_type(i)==4 ) CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev_ts(i))
+          IF ( Glacier_flag==1 ) THEN
+            IF ( Hru_type(i)==4 ) THEN
+              ! Hru_elev_ts is the antecedent glacier elevation
+              IF ( Precip_flag==2 ) CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev_ts(i))
+            ENDIF
           ENDIF
           IF ( ppt>0.0 ) &
      &         CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), Tmaxf(i), &
@@ -101,7 +103,7 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip = 'precip_1sta_laps.f90 2019-08-06 16:18:00Z'
+        Version_precip = 'precip_1sta_laps.f90 2016-10-21 17:36:00Z'
         IF ( Precip_flag==1 ) THEN
           MODNAME = 'precip_1sta'
         ELSE
@@ -115,7 +117,7 @@
 ! Declare parameters
         ALLOCATE ( Hru_psta(Nhru) )
         IF ( declparam(MODNAME, 'hru_psta', 'nhru', 'integer', &
-     &       '0', 'bounded', 'nrain', &
+     &       '1', 'bounded', 'nrain', &
      &       'Index of base precipitation station for HRU', &
      &       'Index of the base precipitation station used for lapse'// &
      &       ' rate calculations for each HRU', &
@@ -124,7 +126,7 @@
         ALLOCATE ( Rain_adj_lapse(Nhru, 12), Snow_adj_lapse(Nhru, 12) )
         IF ( Precip_flag==1 .OR. Model==99 ) THEN
           IF ( declparam(MODNAME, 'rain_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '5.0', &
+     &         '1.0', '0.5', '10.0', &
      &         'Monthly rain adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &
@@ -132,7 +134,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'rain_adj')
 
           IF ( declparam(MODNAME, 'snow_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '5.0', &
+     &         '1.0', '0.5', '2.5', &
      &         'Monthly snow adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured'// &
      &         ' precipitation on each HRU to account for'// &

@@ -95,7 +95,7 @@
 !***********************************************************************
       sumbdecl = 0
 
-      Version_basin_sum = 'basin_sum.f90 2019-07-09 10:00:00Z'
+      Version_basin_sum = 'basin_sum.f90 2017-10-21 14:18:00Z'
       CALL print_module(Version_basin_sum, 'Summary                     ', 90)
       MODNAME = 'basin_sum'
 
@@ -509,7 +509,6 @@
 
 !*****Compute aggregated values
 
-!**** might need glacier
       Last_basin_stor = Basin_storage
       Basin_storage = Basin_soil_moist + Basin_intcp_stor + &
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
@@ -518,8 +517,7 @@
 ! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
 !   includes glaciers that have depth estimates and these are known to be iffy
       IF ( Glacier_flag==1 ) Basin_storage = Basin_storage + Basin_gl_storage
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 ) &
-     &     Basin_storage = Basin_storage + Basin_segment_storage
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) Basin_storage = Basin_storage + Basin_segment_storage
 
 ! volume calculation for storage
       Basin_storvol = Basin_storage*Active_area

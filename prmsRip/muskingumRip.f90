@@ -80,50 +80,48 @@
 !      value of the inflow.
 !
 !***********************************************************************
-      MODULE PRMS_MUSKINGUM_MANN
+      MODULE PRMS_MUSKINGUM
       IMPLICIT NONE
 !   Local Variables
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
       CHARACTER(LEN=14), SAVE :: MODNAME
-!   Declared Parameters
-      REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
-      END MODULE PRMS_MUSKINGUM_MANN
+      END MODULE PRMS_MUSKINGUM
 
 !***********************************************************************
-!     Main muskingum_mann routine
+!     Main muskingum routine
 !***********************************************************************
-      INTEGER FUNCTION muskingum_mann()
+      INTEGER FUNCTION muskingum()
       USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: muskingum_mann_decl, muskingum_mann_init, muskingum_mann_run
-      EXTERNAL :: muskingum_mann_restart
+      INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
+      EXTERNAL :: muskingum_restart
 !***********************************************************************
-      muskingum_mann = 0
+      muskingum = 0
 
       IF ( Process(:3)=='run' ) THEN
-        muskingum_mann  = muskingum_mann_run()
+        muskingum  = muskingum_run()
       ELSEIF ( Process(:4)=='decl' ) THEN
-        muskingum_mann  = muskingum_mann_decl()
+        muskingum  = muskingum_decl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Init_vars_from_file>0 ) CALL muskingum_mann_restart(1)
-        muskingum_mann = muskingum_mann_init()
+        IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
+        muskingum = muskingum_init()
       ELSEIF ( Process(:5)=='clean' ) THEN
-        IF ( Save_vars_to_file==1 ) CALL muskingum_mann_restart(0)
+        IF ( Save_vars_to_file==1 ) CALL muskingum_restart(0)
       ENDIF
 
-      END FUNCTION muskingum_mann
+      END FUNCTION muskingum
 
 !***********************************************************************
-!     muskingum_mann_decl - Declare parameters and variables and allocate arrays
+!     muskingum_decl - Declare parameters and variables and allocate arrays
 !   Declared Parameters
 !     tosegment, hru_segment, obsin_segment, K_coef, x_coef
 !***********************************************************************
-      INTEGER FUNCTION muskingum_mann_decl()
-      USE PRMS_MUSKINGUM_MANN
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      INTEGER FUNCTION muskingum_decl()
+      USE PRMS_MUSKINGUM
+      USE PRMS_MODULE, ONLY: Nsegment, Strmflow_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
@@ -131,33 +129,28 @@
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_muskingum
 !***********************************************************************
-      muskingum_mann_decl = 0
+      muskingum_decl = 0
 
-      Version_muskingum = 'muskingum_mann.f90 2019-06/05 16:44:00Z'
+      Version_muskingum = 'muskingum.f90 2019-06-05 17:18:00Z'
+      IF ( Strmflow_flag==4 ) THEN
+        MODNAME = 'muskingum'
+      ELSE
+        MODNAME = 'muskingum_mann'
+      ENDIF
       CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
-      MODNAME = 'muskingum_mann'
 
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
 
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
-        ALLOCATE ( Segment_flow_init(Nsegment) )
-        IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
-     &       '0.0', '0.0', '1.0E7', &
-     &       'Initial flow in each stream segment', &
-     &       'Initial flow in each stream segment', &
-     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
-      ENDIF
-
-      END FUNCTION muskingum_mann_decl
+      END FUNCTION muskingum_decl
 
 !***********************************************************************
 !    muskingum_init - Get and check parameter values and initialize variables
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
-      USE PRMS_MUSKINGUM_MANN
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MUSKINGUM
+      USE PRMS_MODULE, ONLY: Nsegment
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -171,16 +164,7 @@
 !***********************************************************************
       muskingum_init = 0
 
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
-        IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
-     &       CALL read_error(2,'segment_flow_init')
-        DO i = 1, Nsegment
-          Seg_outflow(i) = Segment_flow_init(i)
-        ENDDO
-        DEALLOCATE ( Segment_flow_init )
-      ENDIF
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
-
+      !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
@@ -193,9 +177,10 @@
 !     muskingum_run - Compute routing summary values
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
-      USE PRMS_MUSKINGUM_MANN
-      USE PRMS_MODULE, ONLY: Nsegment
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv
+      USE PRMS_MUSKINGUM
+      USE PRMS_MODULE, ONLY: Nsegment, Ripst_flag, Glacier_flag
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Active_hrus, Hru_route_order, &
+     &    Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out
@@ -204,12 +189,19 @@
       USE PRMS_ROUTING, ONLY: Use_transfer_segment, Segment_delta_flow, Basin_segment_storage, &
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
-     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
+     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes, &
+     &    Flow_in_great_lakes, Stage_ts, Stage_ante, Seg_bankflow, Mann_n, Seg_width, Seg_slope, &
+     &    Ripst_areafr_max, Bankfinite_hru, Basin_bankst_head, Seg_ripflow, &
+     &    Basin_bankst_seep_rate, Basin_bankst_seep, Basin_bankst_vol, &
+     &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_contrib, Basin_ripst_evap, &
+     &    Basin_ripst_vol, Bankst_seep_rate
+      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SRUNOFF, ONLY: Basin_sroff
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
+      EXTERNAL comp_bank_storage, drain_the_swamp
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -244,6 +236,7 @@
       Seg_outflow = 0.0D0
       Inflow_ts = 0.0D0
       Currinsum = 0.0D0
+      IF ( Ripst_flag==1 ) Stage_ante =Stage_ts
 
 ! 24 hourly timesteps per day
       DO j = 1, 24
@@ -254,7 +247,7 @@
 
 ! current inflow to the segment is the time weighted average of the outflow
 ! of the upstream segments plus the lateral HRU inflow plus any gains.
-          currin = Seg_lateral_inflow(iorder)
+          currin = Seg_lateral_inflow(iorder) !note, this routes to inlet and mizuroute routes to outlet
           IF ( Obsin_segment(iorder)>0 ) Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
           currin = currin + Seg_upstream_inflow(iorder)
           Seg_inflow(iorder) = Seg_inflow(iorder) + currin
@@ -318,6 +311,68 @@
 
       ENDDO  ! timestep
 
+      DO i = 1, Nsegment
+        Seg_outflow(i) = Seg_outflow(i) * ONE_24TH
+      ENDDO
+      ! for stage estimate
+      IF ( Ripst_flag==1 ) THEN
+        Basin_bankst_seep = 0.D0
+        Basin_bankst_seep_rate = 0.0D0
+        Basin_bankst_head = 0.0D0
+        Basin_bankst_vol = 0.0D0
+        Basin_ripst_area = 0.0D0
+        Basin_ripst_contrib = 0.0D0
+        Basin_ripst_evap = 0.0D0
+        Basin_ripst_vol = 0.0D0
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_bankflow = 0.0D0 !collect by segment that HRUs go to
+        DO i = 1, Nsegment
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF  ( Hru_segment(i)>0 .AND. (Bankfinite_hru(i)==0 .OR. Ripst_areafr_max(i)>0.0)) &
+     &      CALL comp_bank_storage(i)
+!           ******Compute the bank storage component
+!           transfers water between separate bank storage and stream depending on seepage
+        ENDDO
+        Basin_bankst_seep = Basin_bankst_seep*Basin_area_inv
+        Basin_bankst_head = Basin_bankst_head*Basin_area_inv
+        Basin_bankst_vol = Basin_bankst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Basin_bankst_seep_rate = Basin_bankst_seep_rate + Bankst_seep_rate(i) &
+     &                        *Seg_length(i)/SUM(Seg_length) !m2/day per stream ft length
+          !print*, Seg_outflow(i)+Seg_bankflow(i),Seg_outflow(i),Seg_bankflow(i), i
+          Seg_outflow(i) = Seg_outflow(i)+Seg_bankflow(i)
+          IF (Seg_bankflow(i) < 0.0) THEN ! only could go negative because of bankflow if is negative
+            IF (Seg_outflow(i) < 0.0) THEN ! took out more than streamflow, this could also be a water_use problem
+              Seg_bankflow(i)  = Seg_bankflow(i) - Seg_outflow(i)
+              Seg_outflow(i) = 0.0
+            ENDIF
+          ENDIF
+        ENDDO
+        Bankst_seep_rate = 0.0 !collect by segment that HRUs go to
+        Seg_ripflow = 0.0D0
+        DO j = 1, Active_hrus
+          i = Hru_route_order(j)
+          IF  ( Hru_segment(i)>0 .AND. Ripst_areafr_max(i)>0.0) &
+     &      CALL drain_the_swamp(i)
+!           ******Compute the overbank riparian storage component
+!           transfers water between separate riparian storage and stream depending on seepage
+        ENDDO
+        Basin_ripst_contrib = Basin_ripst_contrib*Basin_area_inv
+        Basin_ripst_evap = Basin_ripst_evap*Basin_area_inv
+        Basin_ripst_vol = Basin_ripst_vol*Basin_area_inv
+        DO i = 1, Nsegment
+          Seg_outflow(i) = Seg_outflow(i)+Seg_ripflow(i) ! cannot go negative by design
+          Stage_ts(i) = ( Seg_outflow(i)*CFS2CMS_CONV &
+     &                     *Mann_n(i)/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+          IF (Stage_ts(i)>250.) Stage_ts(i) = 250.
+        ENDDO
+      ENDIF
+
       Basin_segment_storage = 0.0D0
       Flow_out = 0.0D0
       Flow_to_lakes = 0.0D0
@@ -332,11 +387,10 @@
       Flow_in_great_lakes = 0.0D0
       Flow_replacement = 0.0D0
       DO i = 1, Nsegment
-        Seg_outflow(i) = Seg_outflow(i) * ONE_24TH
-        segout = Seg_outflow(i)
         segtype = Segment_type(i)
         Seg_inflow(i) = Seg_inflow(i) * ONE_24TH
         Seg_upstream_inflow(i) = Currinsum(i) * ONE_24TH
+        segout = Seg_outflow(i)
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
 ! includes closed basins (tosegment=0)
         IF ( segtype==1 ) THEN
@@ -373,6 +427,11 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
+      IF ( Glacier_flag==1 ) THEN
+        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
+        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
+        Basin_gl_cfs = Basin_gl_top_melt*area_fac
+      ENDIF
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
@@ -381,18 +440,18 @@
       END FUNCTION muskingum_run
 
 !***********************************************************************
-!     muskingum_mann_restart - write or read restart file
+!     muskingum_restart - write or read restart file
 !***********************************************************************
-      SUBROUTINE muskingum_mann_restart(In_out)
+      SUBROUTINE muskingum_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
-      USE PRMS_MUSKINGUM_MANN
+      USE PRMS_MUSKINGUM
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Function
       EXTERNAL :: check_restart
       ! Local Variable
-      CHARACTER(LEN=14) :: module_name
+      CHARACTER(LEN=9) :: module_name
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
@@ -402,4 +461,4 @@
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Outflow_ts
       ENDIF
-      END SUBROUTINE muskingum_mann_restart
+      END SUBROUTINE muskingum_restart

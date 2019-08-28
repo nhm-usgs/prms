@@ -11,7 +11,8 @@
 ! needs to be modified if applied in the southern hemisphere. BUT, snow model would
 ! also be wrong with reset dates for WY Oct 1 resets.
 !
-! Permafrost/frozen ground calculations should be turned on with glaciers.
+! Permafrost/frozen ground calculations should be turned on with glaciers. But they
+! can also be turned on without glaciers.
 !
 ! Hru_elev_ts, Hru_elev_feet, Hru_elev_meters, and Hru_slope for glaciers are
 ! adjusted each timestep. Hru_aspect is not very realistic, since the glacier HRUs
@@ -25,56 +26,67 @@
 !
 ! HRUs with glaciers must have parameter glacier_frac(i)=1, unless they
 ! are at the terminus of the glacier (in which case they can have
-! glacier_frac(i)<1). Code assumes there is at least one glacier at the start, but may
-! disappear to nothing or just snowfields.
+! glacier_frac(i)<1). Hru numbering goes from largest HRU ID at top of glacier to
+! smallest at ID at bottom (the way Weasel delineation was designed). The parameter
+! Glac_HRUnum_down = 1 then in the init function. If the opposite direction,
+! then set Glac_HRUnum_down = 0. IDs need to be stacked.
 !
 ! HRUs containing insubstantial (relative to basin) glaciers have their glaciated
-! fraction as snowfld_frac(i)>0 (but <1)
+! fraction as glrette_frac(i)>0 (but <1)
 !
 ! NOTE: Multiple branches are possible in the melt generation, but basal topography
-!calculations will be mathematically unsound as each branch will be considered a different
-! glacier.
+! calculations will be mathematically unsound as each branch will be considered a
+! different glacier.
 !
 ! modified June 2012 by Steve Regan
 ! modified Jan 2017 by AE Van Beusekom
+! dedicated calibration variables removed 2019
 !
 !***********************************************************************
+
       MODULE PRMS_GLACR
+
       IMPLICIT NONE
-!   Local Variables
+      !****************************************************************
+      !   Local Variables
+
       ! Ngl - Number of glaciers counted by termini
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
       ! Nhrugl - Number of at least partially glacierized hrus at initiation
 !#of cells=Nhrugl,#of streams=Ntp,#of cells/stream<=Ntp, #of glaciers<=Nhru
       INTEGER, SAVE :: Nglres, Ngl, Ntp, Nhrugl, MbInit_flag, Output_unit, Fraw_unit, All_unit
-      INTEGER, SAVE :: Seven, Four, Dayhold
+      INTEGER, SAVE :: Seven, Four, Glac_HRUnum_down
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_inch2(:)
       REAL, PARAMETER :: Gravity = 9.8 ! m/s2
       REAL, PARAMETER :: Aflow = 1.e-25 ! Pa^-3/s, Farinotti 2009 could be 2.4e-24, could be 1e-26 see Patterson 2010
       REAL, PARAMETER :: Density = 917.0 ! kg/m3
       DOUBLE PRECISION, PARAMETER :: Acre_inch2 = 43560.0D0*12.0D0*12.0D0
       CHARACTER(LEN=5), SAVE :: MODNAME
-!   Declared Variables
-      REAL, SAVE, ALLOCATABLE :: Hru_glres_melt(:), Snowfld_melt(:), Gl_ice_melt(:), Glacr_elev_init(:)
+
+      !****************************************************************
+      !   Declared Variables
+
+      REAL, SAVE, ALLOCATABLE :: Hru_glres_melt(:), Glrette_melt(:), Gl_ice_melt(:), Glacr_elev_init(:)
       REAL, SAVE, ALLOCATABLE :: Basal_elev(:), Basal_slope(:), Keep_gl(:,:), Prev_outi(:, :), Prev_out(:, :)
       REAL, SAVE, ALLOCATABLE :: Ode_glacrva_coef(:), Av_basal_slope(:), Av_fgrad(:), Hru_slope_ts(:)
       REAL, SAVE, ALLOCATABLE :: Hru_mb_yrend(:), Glacr_flow(:), Glacr_slope_init(:), Gl_top_melt(:)
       INTEGER, SAVE, ALLOCATABLE :: Top(:), Term(:), Top_tag(:), Ela(:), Order_flowline(:)
       INTEGER, SAVE, ALLOCATABLE :: Glacr_tag(:), Ikeep_gl(:,:), Tohru(:)
-      DOUBLE PRECISION, SAVE :: Basin_gl_ice_melt, Basin_gl_area, Basin_gl_top_melt, Basin_snowicecov_pmo
-      DOUBLE PRECISION, SAVE :: Basin_snowicecov_mo, Basin_gl_top_gain, Basin_gl_storvol, Basin_gl_storage
+      DOUBLE PRECISION, SAVE :: Basin_gl_ice_melt, Basin_gl_area, Basin_gl_top_melt
+      DOUBLE PRECISION, SAVE :: Basin_gl_top_gain, Basin_gl_storvol, Basin_gl_storage
       DOUBLE PRECISION, SAVE :: Basin_gl_storstart
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_mb_yrcumul(:), Delta_volyr(:), Prev_vol(:), Mass_outside(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Prev_area(:), Gl_mb_yrcumul(:), Gl_area(:), Mass_out_neg(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glmax_mb_yrcumul(:), Glmin_mb_yrcumul(:), Glxn_mb_pyrcumul(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumul(:), Glnet_ar_delta(:), Gl_mbc_yrend(:), Gmbc_bsicm(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumulsv(:), Gmbc_bsicm_sego(:)
-!   Declared Parameters
-      INTEGER, SAVE, ALLOCATABLE :: Net_mbc_zero(:), Net_ard_zero(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_mb_yrcumul(:), Delta_volyr(:), Prev_vol(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Prev_area(:), Gl_mb_yrcumul(:), Gl_area(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumul(:), Glnet_ar_delta(:), Gl_mbc_yrend(:)
+
+      !****************************************************************
+      !   Declared Parameters
+
       REAL, SAVE :: Max_gldepth
       REAL, SAVE, ALLOCATABLE :: Glacrva_coef(:), Glacrva_exp(:), Hru_length(:), Hru_width(:)
       REAL, SAVE, ALLOCATABLE :: Stor_ice(:,:), Stor_snow(:,:), Stor_firn(:,:)
-      REAL, SAVE, ALLOCATABLE :: Hru_slope(:), Abl_elev_range(:), Hru_aspect(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_slope(:), Abl_elev_range(:)
+
       END MODULE PRMS_GLACR
 
 !***********************************************************************
@@ -85,6 +97,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: glacrdecl, glacrinit, glacrrun, glacrsetdims
+      EXTERNAL :: glacr_restart
 !***********************************************************************
       glacr = 0
 
@@ -116,15 +129,14 @@
 
       IF ( declfix('nglres', 3, 3, 'Number of reservoirs in a glacier')/=0 ) CALL read_error(7, 'nglres')
       Nglres = 3
-      IF ( declfix('seven', 6, 6, 'Need for keeping glacier variable real array ')/=0 ) CALL read_error(7, 'seven')
+      IF ( declfix('seven', 7, 7, 'Need for keeping glacier variable real array ')/=0 ) CALL read_error(7, 'seven')
       Seven = 7
       IF ( declfix('four',4, 4, 'Need for keeping glacier variable integer array')/=0 ) CALL read_error(7, 'four')
       Four = 4
 
-
       IF ( control_integer(MbInit_flag, 'mbInit_flag')/=0 ) MbInit_flag = 0
 
-      END FUNCTION GLACRSETDIMS
+      END FUNCTION glacrsetdims
 
 !***********************************************************************
 !     glacrdecl - declare parameters and variables for glacier runoff
@@ -141,7 +153,8 @@
 !***********************************************************************
       glacrdecl = 0
 
-      Version_glacr = 'glacrmelt.f90 2019-08-16 10:51:00Z'
+      Version_glacr = 'glacr_melt.f90 2019-06-19 17:14:45Z'
+      CALL print_module(Version_glacr, 'Glacier Dynamics            ', 90)
       MODNAME = 'glacr'
 
       IF ( declvar(MODNAME, 'nhrugl', 'one', 1, 'integer',              &
@@ -155,73 +168,26 @@
      &     'decimal fraction', Hru_slope_ts)/=0 ) CALL read_error(3, 'hru_slope_ts')
 
       IF ( declvar(MODNAME, 'basin_gl_top_melt', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and snowflds', &
+     &     'Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glrettes', &
      &     'inches', Basin_gl_top_melt)/=0 ) CALL read_error(3, 'basin_gl_top_melt')
 
       IF ( declvar(MODNAME, 'basin_gl_top_gain', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier surface gain (snow and rain minus evap) for all glaciers and snowflds', &
+     &     'Basin area-weighted glacier surface gain (snow and rain minus evap) for all glaciers and glrettes', &
      &     'inches', Basin_gl_top_gain)/=0 ) CALL read_error(3, 'basin_gl_top_gain')
 
       IF ( declvar(MODNAME, 'basin_gl_ice_melt', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and snowflds', &
+     &     'Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and glrettes', &
      &     'inches', Basin_gl_ice_melt)/=0 ) CALL read_error(3, 'basin_gl_ice_melt')
-
-      IF ( declvar(MODNAME, 'basin_snowicecov_pmo', 'one', 1, 'double', &
-     &     'Previous month basin area-weighted average snow and glacier and snowfld covered average area', &
-     &     'decimal fraction', Basin_snowicecov_pmo)/=0 ) CALL read_error(3, 'basin_snowicecov_pmo')
-
-      IF ( declvar(MODNAME, 'basin_snowicecov_mo', 'one', 1, 'double', &
-     &     'Monthly basin area-weighted average snow and glacier and snowfld covered average area', &
-     &     'fraction*days', Basin_snowicecov_mo)/=0 ) CALL read_error(3, 'basin_snowicecov_mo')
 
       ALLOCATE ( Gl_mb_yrcumul(Nhru) )
       IF ( declvar(MODNAME, 'gl_mb_yrcumul', 'nhru', Nhru, 'double', &
      &     'Yearly mass balance for each glacier, indexed by Glacr_tag', &
      &     'inches', Gl_mb_yrcumul)/=0 ) CALL read_error(3, 'gl_mb_yrcumul')
 
-      ALLOCATE ( Glmax_mb_yrcumul(Nhru) )
-      IF ( declvar(MODNAME, 'glmax_mb_yrcumul', 'nhru', Nhru, 'double', &
-     &     'Finds max year mass balance for each glacier, indexed by Glacr_tag', &
-     &     'inches', Glmax_mb_yrcumul)/=0 ) CALL read_error(3, 'glmax_mb_yrcumul')
-
-      ALLOCATE ( Glmin_mb_yrcumul(Nhru) )
-      IF ( declvar(MODNAME, 'glmin_mb_yrcumul', 'nhru', Nhru, 'double',           &
-     &     'Finds min year mass balance for each glacier, indexed by Glacr_tag', &
-     &     'inches', Glmin_mb_yrcumul)/=0 ) CALL read_error(3, 'glmin_mb_yrcumul')
-
-      ALLOCATE ( Glxn_mb_pyrcumul(Nhru) )
-      IF ( declvar(MODNAME, 'glxn_mb_pyrcumul', 'nhru', Nhru, 'double', &
-     &     'Holds on to previous min and previous max yr MB for each glacier, indexed by Glacr_tag', &
-     &     'inches', Glxn_mb_pyrcumul)/=0 ) CALL read_error(3, 'glxn_mb_pyrcumul')
-
       ALLOCATE ( Gl_mb_cumul(Nhru) )
       IF ( declvar(MODNAME, 'gl_mb_cumul', 'nhru', Nhru, 'double', &
-     &     'Cumulative mass balance for each glacier since last Net_mbc_zero day, indexed by Glacr_tag', &
+     &     'Cumulative mass balance for each glacier since start day, indexed by Glacr_tag', &
      &     'inches', Gl_mb_cumul)/=0 ) CALL read_error(3, 'gl_mb_cumul')
-
-      ALLOCATE ( Gl_mb_cumulsv(Nhru) )
-      IF ( declvar(MODNAME, 'gl_mb_cumulsv', 'nhru', Nhru, 'double', &
-     &     'Gl_mb_cumul saved from last day before Net_mbc_zero day, indexed by Glacr_tag', &
-     &     'inches', Gl_mb_cumulsv)/=0 ) CALL read_error(3, 'gl_mb_cumulsv')
-
-      ALLOCATE ( Gmbc_bsicm(Nhru) )
-      IF ( declvar(MODNAME, 'gmbc_bsicm', 'nhru', Nhru, 'double', &
-     &     'Holds on to Gl_mb_cumulsv for 177 days and Basin_snowicecov_pmo for calibration, indexed by Glacr_tag', &
-     &     'inches,frac', Gmbc_bsicm)/=0 ) CALL read_error(3, 'gmbc_bsicm')
-
-      ALLOCATE ( Gmbc_bsicm_sego(Nhru) )
-      IF ( declvar(MODNAME, 'gmbc_bsicm_sego', 'nhru', Nhru, 'double', &
-     &     'Combine Gl_mb_cumulsv on day, Basin_snowicecov_pmo, seg_outflow/stage at gage seg for calib, indexed by Glacr_tag', &
-     &     'inches,frac,cfs', Gmbc_bsicm_sego)/=0 ) CALL read_error(3, 'gmbc_bsicm_sego')
-
-      IF ( declvar(MODNAME, 'dayhold', 'one', 1, 'integer', &
-     &     'Number of days Gmbc_bsicm has equalled Gl_mb_cumulsv, only saves if less than 178', &
-     &     'days', Dayhold)/=0 ) CALL read_error(3, 'dayhold')
-
-      ALLOCATE ( Gl_mbc_yrend(Nhru) )
-      IF ( declvar(MODNAME, 'gl_mbc_yrend', 'nhru', Nhru, 'double', &
-     &     'Cumulative mass balance for each glacier at end of previous year, since last Net_mbc_zero year, indexed by Glacr_tag', &
-     &     'inches', Gl_mbc_yrend)/=0 ) CALL read_error(3, 'gl_mbc_yrend')
 
       IF ( declvar(MODNAME, 'basin_gl_area', 'one', 1, 'double',          &
      &     'Basin area-weighted average glacier-covered area', &
@@ -234,7 +200,7 @@
 
       ALLOCATE ( Glnet_ar_delta(Nhru) )
       IF ( declvar(MODNAME, 'glnet_ar_delta', 'nhru', Nhru, 'double',           &
-     &     'Sum of area change of each glacier since last Net_ard_zero year, indexed by Glacr_tag', &
+     &     'Sum of area change of each glacier since start year, indexed by Glacr_tag', &
      &     'acres', Glnet_ar_delta)/=0 ) CALL read_error(3, 'glnet_ar_delta')
 
       ALLOCATE ( Glacr_flow(Nhru) )
@@ -251,16 +217,6 @@
       IF ( declvar(MODNAME, 'hru_mb_yrcumul', 'nhru', Nhru, 'double',        &
      &     'Mass balance for a glacier HRU, cumulative for year',       &
      &     'inches', Hru_mb_yrcumul)/=0 ) CALL read_error(3, 'hru_mb_yrcumul')
-
-      ALLOCATE ( Mass_outside(Nhru) )
-      IF ( declvar(MODNAME, 'mass_outside', 'nhru', Nhru, 'double',        &
-     &     'Mass balance for a glacier gained after the min, cumulative for year, indexed by Glacr_tag',       &
-     &     'inches', Mass_outside)/=0 ) CALL read_error(3, 'mass_outside')
-
-      ALLOCATE ( Mass_out_neg(Nhru) )
-      IF ( declvar(MODNAME, 'mass_out_neg', 'nhru', Nhru, 'double',        &
-     &     'Mass balance for a glacier lost after Oct 1, cumulative for year, indexed by Glacr_tag',       &
-     &     'inches', Mass_out_neg)/=0 ) CALL read_error(3, 'mass_out_neg')
 
       ALLOCATE ( Top_tag(Nhru) )
       IF ( declvar(MODNAME, 'top_tag', 'nhru', Nhru, 'integer',         &
@@ -332,10 +288,10 @@
      &     'Amount of glacier surface melt (snow, ice, rain) from an HRU that goes into reservoirs', &
      &     'inches', Hru_glres_melt)/=0 ) CALL read_error(3, 'hru_glres_melt')
 
-      ALLOCATE ( Snowfld_melt(Nhru) )
-      IF ( declvar(MODNAME, 'snowfld_melt', 'nhru', Nhru, 'real',     &
-     &     'Amount of snow field surface melt (snow, ice, rain) from an HRU', &
-     &     'inches', Snowfld_melt)/=0 ) CALL read_error(3, 'snowfld_melt')
+      ALLOCATE ( Glrette_melt(Nhru) )
+      IF ( declvar(MODNAME, 'glrette_melt', 'nhru', Nhru, 'real',     &
+     &     'Amount of glacierette surface melt (snow, ice, rain) from an HRU', &
+     &     'inches', Glrette_melt)/=0 ) CALL read_error(3, 'glrette_melt')
 
       ALLOCATE ( Gl_top_melt(Nhru) )
       IF ( declvar(MODNAME, 'gl_top_melt', 'nhru', Nhru, 'real',        &
@@ -398,9 +354,9 @@
       ENDIF
 
       ! local arrays
-      ALLOCATE ( Hru_area_inch2(Nhru))
+      ALLOCATE ( Hru_area_inch2(Nhru), Gl_mbc_yrend(Nhru) )
 
-! Declared Parameters
+! declare parameters
       ALLOCATE ( Tohru(Nhru) )
       IF ( declparam(MODNAME, 'tohru', 'nhru', 'integer', &
      &     '0', 'bounded', 'nhru', &
@@ -415,29 +371,6 @@
      &     'HRU slope', &
      &     'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'hru_slope')
-
-      ALLOCATE ( Hru_aspect(Nhru) )
-      IF ( declparam(MODNAME, 'hru_aspect', 'nhru', 'real', &
-     &     '0.0', '0.0', '360.0', &
-     &     'HRU aspect', 'Aspect of each HRU', &
-     &     'angular degrees')/=0 ) CALL read_error(1, 'hru_aspect')
-     
-      ALLOCATE ( Net_mbc_zero(12) )
-      IF ( declparam(MODNAME, 'net_mbc_zero', 'nmonths', 'integer', &
-     &     '0', '0', '30000930', &
-     &     'YYYYMMDD to restart summing Gl_mb_cumul for cumulative MB, zero after day', &
-     &     'YYYYMMDD to restart summing Gl_mb_cumul for cumulative MB, zero after day'// &
-     &     ' allowed 12 dates between 0 and 30000930 A.D., values of 0 ignored', &
-     &     'none')/=0 ) CALL read_error(1, 'net_mbc_zero')
-
-      ALLOCATE ( Net_ard_zero(12) )
-      IF ( declparam(MODNAME, 'net_ard_zero', 'nmonths', 'integer', &
-     &     '0', '0', '3000', &
-     &     '10/1/Year to restart summing Glnet_ar_delta for cumulative area change', &
-     &     '10/1/Year to restart summing Glnet_ar_delta for cumulative area change'// &
-     &     'Glnet_ar_delta will still hold previous year value'// &
-     &     ' allowed 12 years between 0 and 3000, values of 0 ignored', &
-     &     'none')/=0 ) CALL read_error(1, 'net_ard_zero')
 
       IF ( declparam(MODNAME, 'max_gldepth', 'one', 'real', &
            '1.5', '0.1', '3.0', &
@@ -501,7 +434,7 @@
            'Average HRU snowfield ablation zones elevation range or ~ median-min elev', &
            'elev_units')/=0 ) CALL read_error(1, 'abl_elev_range')
 
-       END FUNCTION GLACRDECL
+       END FUNCTION glacrdecl
 
 !***********************************************************************
 !     glacrinit - Initialize glacr module - get parameter values
@@ -511,7 +444,7 @@
       USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file
       USE PRMS_BASIN, ONLY: Hru_area, Hru_elev_ts, Active_hrus, Hru_route_order, &
      &    Hru_type, Basin_area_inv, Hru_elev_meters
-      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Snowfld_frac
+      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam, get_ftnunit, compute_ela_aar
@@ -530,11 +463,12 @@
 !
 !***********************************************************************
       glacrinit = 0
+
+      IF ( Init_vars_from_file>0 ) CALL glacr_restart(1)
+
       IF ( getparam(MODNAME, 'max_gldepth', 1, 'real', Max_gldepth)/=0 ) CALL read_error(2, 'max_gldepth')
       IF ( getparam(MODNAME, 'glacrva_coef', Nhru, 'real', Glacrva_coef)/=0 ) CALL read_error(2, 'glacrva_coef')
       IF ( getparam(MODNAME, 'glacrva_exp', Nhru, 'real', Glacrva_exp)/=0 ) CALL read_error(2, 'glacrva_exp')
-      IF ( getparam(MODNAME, 'net_mbc_zero', 12, 'integer', Net_mbc_zero)/=0 ) CALL read_error(2, 'net_mbc_zero')
-      IF ( getparam(MODNAME, 'net_ard_zero', 12, 'integer', Net_ard_zero)/=0 ) CALL read_error(2, 'net_ard_zero')
       IF ( getparam(MODNAME, 'stor_ice', Nhru*12, 'real', Stor_ice)/=0 ) CALL read_error(2, 'stor_ice')
       IF ( getparam(MODNAME, 'stor_snow', Nhru*12, 'real', Stor_snow)/=0 ) CALL read_error(2, 'stor_snow')
       IF ( getparam(MODNAME, 'stor_firn', Nhru*12, 'real', Stor_firn)/=0 ) CALL read_error(2, 'stor_firn')
@@ -543,7 +477,6 @@
       IF ( getparam(MODNAME, 'abl_elev_range', Nhru, 'real', Abl_elev_range)/=0 ) CALL read_error(2, 'abl_elev_range')
       IF ( getparam(MODNAME, 'tohru', Nhru, 'integer', Tohru)/=0 ) CALL read_error(2, 'tohru')
       IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
-      IF ( getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
       IF ( Init_vars_from_file==0 ) THEN
         Alt_above_ela = 0.0
         Prev_out = 0.0
@@ -560,18 +493,10 @@
         Order_flowline = 0
         Ode_glacrva_coef = 0.0
         Hru_mb_yrcumul = 0.0D0
-        Mass_outside = 0.0D0
-        Mass_out_neg = 0.0D0
         Delta_volyr = 0.0D0
         Gl_mb_yrcumul = 0.0D0
         Gl_mb_cumul = 0.0D0
-        Gl_mb_cumulsv = 0.0D0
-        Gmbc_bsicm = 0.0D0
-        Gmbc_bsicm_sego = 0.0D0
         Gl_mbc_yrend = 0.0D0
-        Glmax_mb_yrcumul = -1.0D5
-        Glmin_mb_yrcumul = 1.0D5
-        Glxn_mb_pyrcumul = 0.0D0
         Hru_slope_ts = Hru_slope
         Basal_elev = Hru_elev_ts ! Hru_elev_ts always set in basin, need in case of restart
         Basal_slope = Hru_slope_ts
@@ -582,19 +507,18 @@
         Basin_gl_top_melt = 0.0D0
         Basin_gl_top_gain = 0.0D0
         Basin_gl_ice_melt = 0.0D0
-        Basin_snowicecov_pmo = 0.0D0
-        Basin_snowicecov_mo = 0.0D0
         Glnet_ar_delta = 0.0D0
         Ikeep_gl = 0
         Keep_gl = 0.0
         Basin_gl_storage = 0.0D0
         Basin_gl_storstart = 0.0D0
         Basin_gl_storvol = 0.0D0
-      ELSE
-        CALL glacr_restart(1)
-        RETURN ! don't recalculate values stored in Initial Conditions File
       ENDIF
-      Dayhold = 178
+
+      Glac_HRUnum_down = 1 ! 1 is the way Weasel delineation was designed
+      ! 1 is terminus is smallest ID and top is largest. IDs are stacked.
+      ! 0 is terminus is smallest ID and top is largest. IDs are stacked.
+
       hru_flowline = 0
       toflowline = 0
       str_idm = 1.0E15
@@ -617,12 +541,15 @@
         IF ( Hru_type(j)==4 ) THEN
           count = 1 !has at least one glacier
           glacier_frac_use(j) = 1.0
-          !should be end of extensions or branches-- will fail if Weasel doesn't set up this way and then should go off area of branch
-          IF ( Tohru(j)/=j-1 ) THEN
-             glacier_frac_use(j) = 0.999
+          !should be end of extensions or branches-- will fail if don't set up with indices stacked
+          IF ( Glac_HRUnum_down==1) THEN
+            IF (Tohru(j)/=j-1 ) glacier_frac_use(j) = 0.999
+          ELSEIF ( Glac_HRUnum_down==0) THEN
+            IF (Tohru(j)/=j+1 ) glacier_frac_use(j) = 0.999
           ENDIF
         ENDIF
       ENDDO
+
       IF ( count>0 ) THEN
   ! Number the glaciers and tags parts that belong together
         CALL tag_count(1, hru_flowline, toflowline, glacier_frac_use)
@@ -779,9 +706,13 @@
           Hru_area_inch2(j) = Hru_area(j)*Acre_inch2
           IF ( Hru_type(j)==4 ) THEN
             glacier_frac_use(j)= Glacier_frac(j)
-            !should be end of extensions or branches-- will fail if Weasel doesn't set up this way and then should go off area of branch
+            !should be end of extensions or branches-- will fail if don't set up with indices stacked
             ! making it so has no connected branches because branching bottom calculations don't work
-            IF ( Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0) glacier_frac_use(j) = 0.999
+            IF ( Glac_HRUnum_down==1) THEN
+              IF (Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
+            ELSEIF ( Glac_HRUnum_down==0) THEN
+              IF (Tohru(j)/=j+1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
+            ENDIF
           ENDIF
         ENDDO
         CALL tag_count(0, hru_flowline, toflowline, glacier_frac_use)
@@ -830,15 +761,16 @@
         !ENDDO
         Gl_area = 0.D0
         Basin_gl_area = 0.D0
+
         DO o = 1, Ngl
           p = Glacr_tag(Term(o)) !index by Glacr_tag
           Basin_gl_area = Basin_gl_area + curr_area(Term(o))
           Gl_area(p) = curr_area(Term(o))/Acre_inch2
-          print*, 'Glacr_tag', p, ', area acres branches=', Gl_area(p), ', terminus HRU=', Term(o)
+          !print*, 'Glacr_tag', p, ', area acres branches=', Gl_area(p), ', terminus HRU=', Term(o)
         ENDDO
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)==1 ) Basin_gl_area = Basin_gl_area + DBLE(Snowfld_frac(j))*Hru_area_inch2(j)
+          IF ( Hru_type(j)==1 ) Basin_gl_area = Basin_gl_area + DBLE(Glrette_frac(j))*Hru_area_inch2(j)
         ENDDO
   !
         doela = compute_ela_aar() !no previous years MB, get ELA from AAR ratio, need Prev_area
@@ -853,9 +785,10 @@
   !******Compute basin weighted averages
   ! Basin_area_inv is in 1/acres, Basin_gl_area in inches squared
         Basin_gl_area = (Basin_gl_area/Acre_inch2)*Basin_area_inv
-        print*, 'Basin area acres=', 1.0/Basin_area_inv
+        !print*, 'Basin area acres=', 1.0/Basin_area_inv
       ENDIF ! skip all if no glaciers
 !
+
       END FUNCTION glacrinit
 
 !***********************************************************************
@@ -866,7 +799,7 @@
       USE PRMS_GLACR
       USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, Hru_type, NEARZERO, &
      &                      Elev_units, Hru_elev_feet, Hru_elev_meters, FEET2METERS, METERS2FEET
-      USE PRMS_FLOWVARS, ONLY: Alt_above_ela, Snowfld_frac
+      USE PRMS_FLOWVARS, ONLY: Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: comp_glsurf, recompute_soltab
@@ -879,12 +812,13 @@
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
         IF ( Hru_type(i)==1 ) THEN
-          IF (Snowfld_frac(j)>NEARZERO) THEN
+          IF (Glrette_frac(j)>NEARZERO) THEN
             count=1 !has at least one snowfield
             EXIT
           ENDIF
         ENDIF
       ENDDO
+
       IF( Ngl==0 ) THEN !no more glaciers, will first happen at 10/1 when size changes
         Gl_area = 0.D0
         Glnet_ar_delta = 0.0D0
@@ -893,15 +827,10 @@
         Gl_ice_melt = 0.0
         Hru_mb_yrend = 0.0
         Hru_mb_yrcumul = 0.0D0
-        Mass_outside = 0.0D0
-        Mass_out_neg = 0.0D0
         Delta_volyr = 0.0D0
         Gl_mb_yrcumul = 0.0D0
         Gl_mb_cumul = 0.0D0
         Gl_mbc_yrend = 0.0D0
-        Glmax_mb_yrcumul = 0.0D0
-        Glmin_mb_yrcumul = 0.0D0
-        Glxn_mb_pyrcumul = 0.0D0
         Av_basal_slope = 0.0
         Av_fgrad = 0.0
         Hru_slope_ts = Basal_slope
@@ -943,16 +872,16 @@
 !     function comp_glsurf - Computes surface runoff using contributing area
 !                   computations
 !***********************************************************************
-      INTEGER FUNCTION comp_glsurf(glacr_exist, snowfld_exist)
+      INTEGER FUNCTION comp_glsurf(glacr_exist, glrette_exist)
       USE PRMS_GLACR
       USE PRMS_MODULE, ONLY: Nhru, Starttime
       USE PRMS_BASIN, ONLY: Hru_type, Hru_elev_ts, Basin_area_inv, Active_hrus, &
      &    Hru_route_order, NEARZERO, DNEARZERO, Elev_units, FEET2METERS, METERS2FEET, Hru_elev
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Julwater, Modays
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow
-      USE PRMS_SNOW, ONLY: Snowcov_area_tsi, Snowmelt, Glacrmelt, Glacr_air_deltemp, &
-     &    Snowfld_frac_init, Snowcov_area, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
-      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Snowfld_frac
+      USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt, Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
+     &    Glrette_frac_init, Snowcov_area, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
+      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: get_ftnunit, compute_ela_mb, compute_ela_aar, recompute_soltab
@@ -971,11 +900,12 @@
       DOUBLE PRECISION :: in_top_melt_tot(3), in_top_melt(3, Nhru), tot_delta_mb(Nhru), add_area(Nhru)
       DOUBLE PRECISION :: tot_reservi(3),in_top_melt_itot(3), in_top_melt_ice(3, Nhru), curr_areap(Nhru)
 ! Arguments
-      INTEGER, INTENT(IN) :: glacr_exist, snowfld_exist
+      INTEGER, INTENT(IN) :: glacr_exist, glrette_exist
 !***********************************************************************
       comp_glsurf = 1
-      dobot = 1 ! 1 calls bottom calcs, 0 doesn't: Set to 0 for calibrating, then run one extra step with it on?
-      botwrite = 1 ! 1 writes bottom calcs, 0 doesn't: Set to 0 for calibrating
+      dobot = 1 ! 1 calls bottom calcs, 0 doesn't: Set to 0 for calibrating, then run one extra step with it on
+      ! Should change so that saves the basal elevations (or reads in as parameter) and then recalibrating does not change
+      botwrite = 0 ! 1 writes bottom calcs, 0 doesn't: Set to 0 for calibrating
 ! initialize
       ela_elevt = 0.0
       gt = 0
@@ -1000,12 +930,10 @@
       Basin_gl_top_gain = 0.0D0
       Basin_gl_ice_melt = 0.0D0
       Hru_glres_melt = 0.0
-      Snowfld_melt = 0.0
+      Glrette_melt = 0.0
       Gl_top_melt = 0.0
       Gl_ice_melt = 0.0
       Glacr_flow = 0.0
-      Gmbc_bsicm = 0.D0
-      Gmbc_bsicm_sego = 0.0D0
       Basin_snowicecov = Basin_snowicecov*Acre_inch2/Basin_area_inv
       gl_gain = 0.D0
 !
@@ -1046,10 +974,13 @@
               j = Hru_route_order(jj)
               IF ( Hru_type(j)==4 ) THEN
                 glacier_frac_use(j)= Glacier_frac(j)
-                !should be end of extensions or branches-- will fail if Weasel doesn't set up this way,
-                ! and then should go off area of branch
+                !should be end of extensions or branches-- will fail if don't set up with indices stacked
                 ! making it so has no connected branches because branching bottom calculations don't work
-                IF ( Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0) glacier_frac_use(j) = 0.999
+                IF ( Glac_HRUnum_down==1) THEN
+                  IF (Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
+                ELSEIF ( Glac_HRUnum_down==0) THEN
+                  IF (Tohru(j)/=j+1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
+                ENDIF
               ENDIF
             ENDDO
             CALL tag_count(0, hru_flowline, toflowline, glacier_frac_use)
@@ -1188,7 +1119,7 @@
               p = Glacr_tag(Term(o)) !index by Glacr_tag
               Gl_area(p) = curr_area(Term(o))/Acre_inch2
               !IF (Term(o)== 1) print*,'Calibrate to Glacr_tag', p, 'of' ,Ngl
-              print*, 'Glacr_tag', p, 'of', Ngl,', area acres initial=', Gl_area(p), ', terminus HRU=', Term(o)
+              !print*, 'Glacr_tag', p, 'of', Ngl,', area acres initial=', Gl_area(p), ', terminus HRU=', Term(o)
             ENDDO
             Glnet_ar_delta=0.D0 !start at beginning
           ENDIF
@@ -1196,10 +1127,6 @@
             p = Glacr_tag(Term(o)) !index by Glacr_tag
             !for next year, positive mass outside
             Gl_mbc_yrend(p) = Gl_mbc_yrend(p)+Gl_mb_yrcumul(p)
-            IF (Gl_mb_yrcumul(p)+Mass_outside(p)>Glmin_mb_yrcumul(p)) &
-     &        Mass_outside(p) = Gl_mb_yrcumul(p)+Mass_outside(p)-Glmin_mb_yrcumul(p)
-            !for next year, reset negative mass outside
-            Mass_out_neg(p) = 0.D0
           ENDDO
 !
 ! Do retreat/advance on whole glacier at end of year
@@ -1383,9 +1310,6 @@
           ENDDO
           Gl_area = 0.D0
           Basin_gl_area = 0.D0
-          DO i = 1, 12 !restart so get first change here at next water year
-            IF ( Nowyear==Net_ard_zero(i)+1) Glnet_ar_delta = 0.0D0
-          ENDDO
           DO o = 1, Ngl
             p = Glacr_tag(Term(o)) !index by Glacr_tag
             Glnet_ar_delta(p) = Glnet_ar_delta(p) + ( curr_area(Term(o)) - curr_areap(Term(o)) )/Acre_inch2
@@ -1426,9 +1350,6 @@
               Gl_mb_yrcumul(p) = 0.0D0
               Gl_mb_cumul(p) = 0.0D0
               Gl_mbc_yrend(p) = 0.0D0
-              Glmax_mb_yrcumul(p) = 0.0D0
-              Glmin_mb_yrcumul(p) = 0.0D0
-              Glxn_mb_pyrcumul(p) = 0.0D0
               Av_basal_slope(p) = 0.0
               Av_fgrad(p) = 0.0
             ENDIF
@@ -1436,23 +1357,23 @@
         ENDIF
 !Snowfield area change uses Baumann and Winkler 2010 to change area every 10 years;
 ! technically each snowfield should have own ablation elevation range.
-        IF (snowfld_exist==1) THEN !have snowfields,
+        IF (glrette_exist==1) THEN !have snowfields,
           IF ( MOD(Nowyear-Starttime(1),10)==0 ) THEN !change them
             DO i = 1, Active_hrus
               j = Hru_route_order(i)
-              IF ( Hru_type(j)==1 .AND. Snowfld_frac(j)>NEARZERO) THEN
-                IF ( Elev_units==0 ) Snowfld_frac(j) = ( 170.0*METERS2FEET*Glacr_air_deltemp(j)/ &
-     &               Abl_elev_range(j) +1.0 )*Snowfld_frac_init(j)
-                IF ( Elev_units==1 ) Snowfld_frac(j) = ( 170.0*Glacr_air_deltemp(j)/ &
-     &               Abl_elev_range(j) +1.0 )*Snowfld_frac_init(j)
-                IF ( Snowfld_frac(j)<0.0 ) Snowfld_frac(j)=0.0
-                IF ( Snowfld_frac(j)>1.0 ) Snowfld_frac(j)=1.0
+              IF ( Hru_type(j)==1 .AND. Glrette_frac(j)>NEARZERO) THEN
+                IF ( Elev_units==0 ) Glrette_frac(j) = ( METERS2FEET*(45.7*Glacr_air_deltemp(j) &
+     &               -12.0*Glacr_delsnow(j))/Abl_elev_range(j) +1.0 )*Glrette_frac_init(j)
+                IF ( Elev_units==1 ) Glrette_frac(j) = ( (45.7*Glacr_air_deltemp(j) &
+     &               -12.0*Glacr_delsnow(j))/Abl_elev_range(j) +1.0 )*Glrette_frac_init(j)
+                IF ( Glrette_frac(j)<0.0 ) Glrette_frac(j)=0.0
+                IF ( Glrette_frac(j)>1.0 ) Glrette_frac(j)=1.0
               ENDIF
             ENDDO
           ENDIF
           DO i = 1, Active_hrus !every year
             j = Hru_route_order(i)
-            Basin_gl_area = Basin_gl_area + DBLE(Snowfld_frac(j))*Hru_area_inch2(j) !keep in inches
+            Basin_gl_area = Basin_gl_area + DBLE(Glrette_frac(j))*Hru_area_inch2(j) !keep in inches
           ENDDO
         ENDIF
 
@@ -1485,13 +1406,13 @@
           ENDIF
         ENDIF
         IF ( Hru_type(j)==1 ) THEN
-          Snowfld_melt(j) = 0.0
+          Glrette_melt(j) = 0.0
           !melting ice + melting snow (energy model), *area = volume
-          IF ( Snowfld_frac(j)>NEARZERO ) THEN
-            Snowfld_melt(j) = Snowfld_frac(j)*(Snowmelt(j) + Glacrmelt(j)/Snowfld_frac(j))
-            Snowmelt(j) = (1.0 - Snowfld_frac(j))*Snowmelt(j) ! this is the snowmelt that is not included in Snow field melt
-            gl_snow = Snowfld_frac(j)*(Net_rain(j)+Net_Snow(j)) !Pk_precip is zero if no snow, so don't use
-            gl_evap = Snowfld_frac(j)*(Snow_evap(j) + Glacr_evap(j)/Snowfld_frac(j))
+          IF ( Glrette_frac(j)>NEARZERO ) THEN
+            Glrette_melt(j) = Glrette_frac(j)*(Snowmelt(j) + Glacrmelt(j)/Glrette_frac(j))
+            Snowmelt(j) = (1.0 - Glrette_frac(j))*Snowmelt(j) ! this is the snowmelt that is not included in glacierette melt
+            gl_snow = Glrette_frac(j)*(Net_rain(j)+Net_Snow(j)) !Pk_precip is zero if no snow, so don't use
+            gl_evap = Glrette_frac(j)*(Snow_evap(j) + Glacr_evap(j)/Glrette_frac(j))
             gl_gain(j) = DBLE(gl_snow - gl_evap)
           ENDIF
         ENDIF
@@ -1523,7 +1444,7 @@
 
             IF ( lowest(ii)==Top(ii) ) THEN !glacier branch only 1 HRU
               thecase(ii) = 1
-            ELSEIF ( lowest(ii)==Ela(ii) .OR. Snowcov_area_tsi(lowest(ii))>NEARZERO ) THEN !no branch abl.zone
+            ELSEIF ( lowest(ii)==Ela(ii) .OR. Snowcov_area(lowest(ii))>NEARZERO ) THEN !no branch abl.zone
               thecase(ii) = 2
             ENDIF
 
@@ -1552,7 +1473,7 @@
                   IF ( Hru_type(j)==4 ) THEN
                     !find lowest in branch with snow cover below ELA
                     IF ( Top_tag(j)==Top_tag(Top(ii)) .AND.         &
-     &                    Snowcov_area_tsi(j)>NEARZERO .AND.        &
+     &                    Snowcov_area(j)>NEARZERO .AND.        &
      &                    Hru_elev_ts(j)<Hru_elev_ts(keep) ) keep = j
                   ENDIF
                 ENDDO
@@ -1565,7 +1486,7 @@
                   j = Hru_route_order(i)
                   IF ( Hru_type(j)==4 ) THEN
                     !find highest in branch with no snow cover below ELA
-                    IF ( Top_tag(j)==Top_tag(Top(ii)) .AND. Snowcov_area_tsi(j)<NEARZERO .AND. &
+                    IF ( Top_tag(j)==Top_tag(Top(ii)) .AND. Snowcov_area(j)<NEARZERO .AND. &
      &                    Hru_elev_ts(j)>Hru_elev_ts(keep) .AND.                               &
      &                    Hru_elev_ts(j)<Hru_elev_ts(Ela(ii)) ) keep = j
                   ENDIF
@@ -1606,6 +1527,7 @@
             in_top_melt_itot(jj) = 0.0D0
             tot_reserv(jj) = 0.0D0
             tot_reservi(jj) = 0.0D0
+            stor = 0.0
             IF ( jj==1 ) THEN
               stor = Stor_firn(Term(o),Nowmonth)/24.0 !days
             ELSEIF ( jj==2 ) THEN
@@ -1655,78 +1577,24 @@
             Basin_snowicecov = Basin_snowicecov + DBLE(( 1.-Snowcov_area(j) )*Glacier_frac(j))*Hru_area_inch2(j)
           ENDIF
         ENDDO
-        DO i = 1, 12
-          IF ( Nowyear*10000+Nowmonth*100+Nowday==Net_mbc_zero(i) ) THEN
-            Dayhold = 1
-            IF (i>1) THEN !first date is cumulative since start of simulation
-              DO o = 1, Ngl
-                p = Glacr_tag(Term(o)) !index by Glacr_tag
-                Gl_mb_cumulsv(p) = Gl_mb_cumul(p)
-                Gmbc_bsicm(p) = Gl_mb_cumulsv(p)
-                Gmbc_bsicm_sego(p) = Gl_mb_cumulsv(p)
-              ENDDO
-            ENDIF
-          ENDIF
-        ENDDO
-        !need a second day for calibrations with one MB point from Larsen estimates
-        IF (Net_mbc_zero(2)==20130901 .AND. Net_mbc_zero(3)==0 ) THEN
-          IF ( Nowyear*10000+Nowmonth*100+Nowday==20130801 ) THEN
-            DO o = 1, Ngl
-              p = Glacr_tag(Term(o)) !index by Glacr_tag
-              Gmbc_bsicm_sego(p) = Gl_mb_cumul(p)
-            ENDDO
-          ENDIF
-        ENDIF
-        IF ( Dayhold == 2 ) THEN
-          !zero it right before calculate so gets new start to cumulative
-          Gl_mb_cumul = 0.0D0
-          DO o = 1, Ngl
-            p = Glacr_tag(Term(o)) !index by Glacr_tag
-            Gl_mbc_yrend(p) = -Gl_mb_yrcumul(p)
-          ENDDO
-          IF (Nowyear*10000+Nowmonth*100+Nowday<Net_mbc_zero(2)) Dayhold = 178
-        ENDIF
         DO o = 1, Ngl
           p = Glacr_tag(Term(o)) !index by Glacr_tag
           Gl_mb_yrcumul(p) = tot_delta_mb(Term(o))/(Gl_area(p)*Acre_inch2) !if glaciers combine or split will jump to new area and terminus
           Gl_mb_cumul(p) = Gl_mbc_yrend(p)+Gl_mb_yrcumul(p)
-          IF (Dayhold<=177 .AND. Nowday/=3 ) THEN !on day three of each month == Basin_snowicecov_pmo if available
-            Gmbc_bsicm(p) = Gl_mb_cumulsv(p)
-            IF (o==1) Dayhold = Dayhold+1
-          ELSE
-            Gmbc_bsicm(p) = 0.D0
-          ENDIF
-          !NOTE: these dates will not be right if glacier is in southern hemisphere
-          IF ( Nowmonth<7) THEN
-            IF ( Nowmonth==1 .AND. Nowday==1) THEN
-              Glmax_mb_yrcumul(p) = -1.0D5
-              Glxn_mb_pyrcumul(p) = Glmin_mb_yrcumul(p)+Mass_out_neg(p)
-            ENDIF
-            IF ( Gl_mb_yrcumul(p)+Mass_outside(p)>Glmax_mb_yrcumul(p) )  Glmax_mb_yrcumul(p) = Gl_mb_yrcumul(p)+Mass_outside(p)
-          !NOTE: these dates will not be right if glacier is in southern hemisphere
-          ELSE IF ( Nowmonth>=7 .AND. Nowmonth<10) THEN
-            IF ( Nowmonth==7 .AND. Nowday==1 ) THEN
-              Glmin_mb_yrcumul(p) = 1.0D5
-              Glxn_mb_pyrcumul(p) = Glmax_mb_yrcumul(p)-Mass_out_neg(p)
-            ENDIF
-            IF ( Gl_mb_yrcumul(p)+Mass_outside(p)<Glmin_mb_yrcumul(p) ) Glmin_mb_yrcumul(p) = Gl_mb_yrcumul(p)+Mass_outside(p)
-          ELSE IF ( Nowmonth>=10) THEN
-            IF ( Gl_mb_yrcumul(p)+Mass_outside(p)<Mass_out_neg(p) ) Mass_out_neg(p) = Gl_mb_yrcumul(p)+Mass_outside(p)
-          ENDIF
         ENDDO
       ENDIF
 !
-      IF (snowfld_exist==1) THEN
+      IF (glrette_exist==1) THEN
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)==1 .AND. Snowfld_frac(j)>NEARZERO) THEN
+          IF ( Hru_type(j)==1 .AND. Glrette_frac(j)>NEARZERO) THEN
             ! all excess rain is included in melt, should be true unless Glacrmelt==0
-            IF ( Glacrmelt(j)-Net_rain(j)*Snowfld_frac(j)>NEARZERO ) &
-     &        Basin_gl_ice_melt = Basin_gl_ice_melt + DBLE(Glacrmelt(j)-Net_rain(j)*Snowfld_frac(j))*Hru_area_inch2(j)
-            Basin_gl_top_melt = Basin_gl_top_melt + DBLE(Snowfld_melt(j))*Hru_area_inch2(j)
+            IF ( Glacrmelt(j)-Net_rain(j)*Glrette_frac(j)>NEARZERO ) &
+     &        Basin_gl_ice_melt = Basin_gl_ice_melt + DBLE(Glacrmelt(j)-Net_rain(j)*Glrette_frac(j))*Hru_area_inch2(j)
+            Basin_gl_top_melt = Basin_gl_top_melt + DBLE(Glrette_melt(j))*Hru_area_inch2(j)
             Basin_gl_top_gain = Basin_gl_top_gain + DBLE(gl_gain(j))*Hru_area_inch2(j)
-            Basin_snowicecov = Basin_snowicecov + DBLE(( 1.-Snowcov_area(j) )*Snowfld_frac(j))*Hru_area_inch2(j)
-            Glacr_flow(j) = REAL(Snowfld_melt(j)*Hru_area_inch2(j))
+            Basin_snowicecov = Basin_snowicecov + DBLE(( 1.-Snowcov_area(j) )*Glrette_frac(j))*Hru_area_inch2(j)
+            Glacr_flow(j) = REAL(Glrette_melt(j)*Hru_area_inch2(j))
           ENDIF
         ENDDO
       ENDIF
@@ -1742,22 +1610,6 @@
 ! at zero point could back track it so gl_storage went from postive to zero
       Basin_gl_storage = Basin_gl_storage + Basin_gl_top_gain - Basin_glacrb_melt - Basin_gl_top_melt
       Basin_gl_storvol = Basin_gl_storage/Basin_area_inv
-!
-      IF ( Nowday==1 ) Basin_snowicecov_mo = 0.D0
-      Basin_snowicecov_mo = Basin_snowicecov_mo + Basin_snowicecov
-      IF ( Nowday==Modays(Nowmonth) ) THEN
-        Basin_snowicecov_mo = Basin_snowicecov_mo/Modays(Nowmonth)
-        Basin_snowicecov_pmo = Basin_snowicecov_mo
-      ENDIF
-      IF ( Nowday==3 ) THEN
-!equal to monthly value every 3rd of month, if this falls on glacier MB day, will overwrite
-        Gmbc_bsicm = Basin_snowicecov_pmo
-        !MODIS doesn't start till year 2000, so let streamflow have the space
-        IF ( (Nowyear>=2001 .OR. (Nowyear==2000.AND. Nowmonth>=4)).AND. &
-     &       (Nowyear<=2014 .OR. (Nowyear==2015.AND. Nowmonth<=4)) ) THEN
-          Gmbc_bsicm_sego = Basin_snowicecov_pmo
-         ENDIF
-      ENDIF
 !
       comp_glsurf = 0
 !
@@ -1898,7 +1750,7 @@
 !***********************************************************************
       INTEGER FUNCTION recompute_soltab()
       USE PRMS_GLACR, ONLY: Hru_slope_ts
-      USE PRMS_SOLTAB, ONLY: Hru_cossl, PI, RADIANS, &
+      USE PRMS_SOLTAB, ONLY: Hru_aspect, Hru_cossl, PI, RADIANS, &
      &    Soltab_potsw, Soltab_sunhrs, Solar_declination, &
      &    ECCENTRICY, DAYSYR, DEGDAY, DEGDAYRAD
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Hru_lat
@@ -1909,19 +1761,19 @@
 ! Local Variables
       INTEGER :: jd, n, nn
       DOUBLE PRECISION :: obliquity(366)
-      REAL :: y, y2, y3, jdreal !, dayangle
+      DOUBLE PRECISION :: y, y2, y3, jddbl
 !***********************************************************************
       recompute_soltab = 0
 ! initialize
       DO jd = 1, 366
-        jdreal = FLOAT( jd )
-        obliquity(jd) = 1.0 - (ECCENTRICY*COS((jdreal-3.0)*DEGDAYRAD))
-        y = SNGL(DEGDAYRAD)*(jdreal-1.0) ! assume noon
-        y2 = 2.0*y
-        y3 = 3.0*y
-        Solar_declination(jd) = 0.006918 - 0.399912*COS(y) + 0.070257*SIN(y) &
-     &                          - 0.006758*COS(y2) + 0.000907*SIN(y2) &
-     &                          - 0.002697*COS(y3) + 0.00148*SIN(y3)
+        jddbl = DBLE(jd)
+        obliquity(jd) = 1.0D0 - (ECCENTRICY*COS((jddbl-3.0D0)*DEGDAYRAD))
+        y = DEGDAYRAD*(jddbl-1.0D0) ! assume noon
+        y2 = 2.0D0*y
+        y3 = 3.0D0*y
+        Solar_declination(jd) = 0.006918D0 - 0.399912D0*COS(y) + 0.070257D0*SIN(y) &
+     &                          - 0.006758D0*COS(y2) + 0.000907D0*SIN(y2) &
+     &                          - 0.002697D0*COS(y3) + 0.00148D0*SIN(y3)
       ENDDO
 !   Module Variables
       DO nn = 1, Active_hrus
@@ -2148,7 +2000,7 @@
         xrawterm(j) = Keep_gl(j,7) ! in km
         ll(j) = xrawterm(j)*divu  !m
         flowc = 1/(2*Aflow*3.154E7) ! make Pa^nn yr
-        PRINT *,flowc, "1/2A Pa^3/yr", Aflow*3.154E7, "A Pa^-3/yr" !might want to see these
+        !PRINT *,flowc, "1/2A Pa^3/yr", Aflow*3.154E7, "A Pa^-3/yr" !might want to see these
         kk(j) = (( flowc*(ll(j)**(nn+1)) ) /( ((Density*Gravity)**nn) ))**(1.0/(2.0*nn+2)) ! scaling
         len_str = ie(j) - is(j) + 1
         len_str_true = len_str
@@ -2231,7 +2083,7 @@
           IF ( araw(i)<0.0 ) THEN
             ! If A is negative, then won't be able to converge.
             ! Shouldn't happen if MB is steady and glacier gets more negative MB as decrease elevation
-            PRINT *, 'Zeroed integral A (=',araw(i),') at x =',xraw(i)*ll(thestr)/1.0E3,'scaled x =',xraw(i)
+            !PRINT *, 'Zeroed integral A (=',araw(i),') at x =',xraw(i)*ll(thestr)/1.0E3,'scaled x =',xraw(i)
             IF (i>1) araw(i) = araw(i-1)!1.0E-5
             IF (i==1) araw(i) = 1.0E-5
           ENDIF
@@ -3128,8 +2980,8 @@
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: N
-      INTEGER, INTENT(INOUT) :: Iwksp(N)
-      REAL, INTENT(OUT) :: Ra(N), Rb(N), Rc(N), Rd(N), Re(N)
+      INTEGER, INTENT(OUT) :: Iwksp(N)
+      REAL, INTENT(INOUT) :: Ra(N), Rb(N), Rc(N), Rd(N), Re(N)
       REAL, INTENT(OUT) :: Wksp(N)
 ! Functions
       EXTERNAL indexx
@@ -3183,67 +3035,61 @@
       CHARACTER(LEN=5) :: module_name
 !***********************************************************************
       IF ( In_out==0 ) THEN
-        WRITE ( Restart_outunit, * ) MODNAME
-        WRITE ( Restart_outunit, * ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
-        WRITE ( Restart_outunit, * ) Glmax_mb_yrcumul, Glmin_mb_yrcumul, Glxn_mb_pyrcumul
-        WRITE ( Restart_outunit, * ) Gl_mb_cumul, Gl_mbc_yrend, Glnet_ar_delta
-        WRITE ( Restart_outunit, * ) Gmbc_bsicm, Gmbc_bsicm_sego
-        WRITE ( Restart_outunit, * ) Gl_mb_cumulsv, Dayhold, Basin_gl_top_gain
-        WRITE ( Restart_outunit, * ) Basin_gl_area, Gl_area, Basin_gl_ice_melt, Basin_snowicecov_pmo
-        WRITE ( Restart_outunit, * ) Basin_snowicecov_pmo, Basin_snowicecov_mo
-        WRITE ( Restart_outunit, * ) Hru_glres_melt, Mass_outside, Mass_out_neg, Basin_gl_storstart
-        WRITE ( Restart_outunit, * ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
-        WRITE ( Restart_outunit, * ) Basal_elev
-        WRITE ( Restart_outunit, * ) Keep_gl
-        WRITE ( Restart_outunit, * ) Ikeep_gl
-        WRITE ( Restart_outunit, * ) Basal_slope
-        WRITE ( Restart_outunit, * ) Av_basal_slope
-        WRITE ( Restart_outunit, * ) Av_fgrad
-        WRITE ( Restart_outunit, * ) Prev_out, Prev_outi
-        WRITE ( Restart_outunit, * ) Hru_mb_yrend
-        WRITE ( Restart_outunit, * ) Glacr_flow
-        WRITE ( Restart_outunit, * ) Gl_ice_melt
-        WRITE ( Restart_outunit, * ) Top
-        WRITE ( Restart_outunit, * ) Term
-        WRITE ( Restart_outunit, * ) Ela
-        WRITE ( Restart_outunit, * ) Order_flowline
-        WRITE ( Restart_outunit, * ) Ode_glacrva_coef
-        WRITE ( Restart_outunit, * ) Top_tag
-        WRITE ( Restart_outunit, * ) Glacr_tag
-        WRITE ( Restart_outunit, * ) Delta_volyr
-        WRITE ( Restart_outunit, * ) Hru_mb_yrcumul
-        WRITE ( Restart_outunit, * ) Hru_slope_ts
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
+        WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
+        WRITE ( Restart_outunit ) Basin_gl_top_gain
+        WRITE ( Restart_outunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
+        WRITE ( Restart_outunit ) Hru_glres_melt, Basin_gl_storstart
+        WRITE ( Restart_outunit ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
+        WRITE ( Restart_outunit ) Basal_elev
+        WRITE ( Restart_outunit ) Keep_gl
+        WRITE ( Restart_outunit ) Ikeep_gl
+        WRITE ( Restart_outunit ) Basal_slope
+        WRITE ( Restart_outunit ) Av_basal_slope
+        WRITE ( Restart_outunit ) Av_fgrad
+        WRITE ( Restart_outunit ) Prev_out, Prev_outi
+        WRITE ( Restart_outunit ) Hru_mb_yrend
+        WRITE ( Restart_outunit ) Glacr_flow
+        WRITE ( Restart_outunit ) Gl_ice_melt
+        WRITE ( Restart_outunit ) Top
+        WRITE ( Restart_outunit ) Term
+        WRITE ( Restart_outunit ) Ela
+        WRITE ( Restart_outunit ) Order_flowline
+        WRITE ( Restart_outunit ) Ode_glacrva_coef
+        WRITE ( Restart_outunit ) Top_tag
+        WRITE ( Restart_outunit ) Glacr_tag
+        WRITE ( Restart_outunit ) Delta_volyr
+        WRITE ( Restart_outunit ) Hru_mb_yrcumul
+        WRITE ( Restart_outunit ) Hru_slope_ts
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit, * ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
-        READ ( Restart_inunit, * ) Glmax_mb_yrcumul, Glmin_mb_yrcumul, Glxn_mb_pyrcumul
-        READ ( Restart_inunit, * ) Gl_mb_cumul, Gl_mbc_yrend, Glnet_ar_delta
-        READ ( Restart_inunit, * ) Gmbc_bsicm, Gmbc_bsicm_sego
-        READ ( Restart_inunit, * ) Gl_mb_cumulsv, Dayhold, Basin_gl_top_gain
-        READ ( Restart_inunit, * ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
-        READ ( Restart_inunit, * ) Basin_snowicecov_pmo, Basin_snowicecov_mo
-        READ ( Restart_inunit, * ) Hru_glres_melt, Mass_outside, Mass_out_neg, Basin_gl_storstart
-        READ ( Restart_inunit, * ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
-        READ ( Restart_inunit, * ) Basal_elev
-        READ ( Restart_inunit, * ) Keep_gl
-        READ ( Restart_inunit, * ) Ikeep_gl
-        READ ( Restart_inunit, * ) Basal_slope
-        READ ( Restart_inunit, * ) Av_basal_slope
-        READ ( Restart_inunit, * ) Av_fgrad
-        READ ( Restart_inunit, * ) Prev_out, Prev_outi
-        READ ( Restart_inunit, * ) Hru_mb_yrend
-        READ ( Restart_inunit, * ) Glacr_flow
-        READ ( Restart_inunit, * ) Gl_ice_melt
-        READ ( Restart_inunit, * ) Top
-        READ ( Restart_inunit, * ) Term
-        READ ( Restart_inunit, * ) Ela
-        READ ( Restart_inunit, * ) Order_flowline
-        READ ( Restart_inunit, * ) Ode_glacrva_coef
-        READ ( Restart_inunit, * ) Top_tag
-        READ ( Restart_inunit, * ) Glacr_tag
-        READ ( Restart_inunit, * ) Delta_volyr
-        READ ( Restart_inunit, * ) Hru_mb_yrcumul
-        READ ( Restart_inunit, * ) Hru_slope_ts
+        READ ( Restart_inunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
+        READ ( Restart_inunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
+        READ ( Restart_inunit ) Basin_gl_top_gain
+        READ ( Restart_inunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
+        READ ( Restart_inunit ) Hru_glres_melt, Basin_gl_storstart
+        READ ( Restart_inunit ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
+        READ ( Restart_inunit ) Basal_elev
+        READ ( Restart_inunit ) Keep_gl
+        READ ( Restart_inunit ) Ikeep_gl
+        READ ( Restart_inunit ) Basal_slope
+        READ ( Restart_inunit ) Av_basal_slope
+        READ ( Restart_inunit ) Av_fgrad
+        READ ( Restart_inunit ) Prev_out, Prev_outi
+        READ ( Restart_inunit ) Hru_mb_yrend
+        READ ( Restart_inunit ) Glacr_flow
+        READ ( Restart_inunit ) Gl_ice_melt
+        READ ( Restart_inunit ) Top
+        READ ( Restart_inunit ) Term
+        READ ( Restart_inunit ) Ela
+        READ ( Restart_inunit ) Order_flowline
+        READ ( Restart_inunit ) Ode_glacrva_coef
+        READ ( Restart_inunit ) Top_tag
+        READ ( Restart_inunit ) Glacr_tag
+        READ ( Restart_inunit ) Delta_volyr
+        READ ( Restart_inunit ) Hru_mb_yrcumul
+        READ ( Restart_inunit ) Hru_slope_ts
       ENDIF
       END SUBROUTINE glacr_restart

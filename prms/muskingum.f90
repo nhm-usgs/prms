@@ -87,8 +87,6 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
       CHARACTER(LEN=14), SAVE :: MODNAME
-!   Declared Parameters
-      REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
       END MODULE PRMS_MUSKINGUM
 
 !***********************************************************************
@@ -123,7 +121,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmflow_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Strmflow_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
@@ -145,15 +143,6 @@
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
 
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
-        ALLOCATE ( Segment_flow_init(Nsegment) )
-        IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
-     &       '0.0', '0.0', '1.0E7', &
-     &       'Initial flow in each stream segment', &
-     &       'Initial flow in each stream segment', &
-     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
-      ENDIF
-
       END FUNCTION muskingum_decl
 
 !***********************************************************************
@@ -161,7 +150,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nsegment
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -175,16 +164,7 @@
 !***********************************************************************
       muskingum_init = 0
 
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
-        IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
-     &       CALL read_error(2,'segment_flow_init')
-        DO i = 1, Nsegment
-          Seg_outflow(i) = Segment_flow_init(i)
-        ENDDO
-        DEALLOCATE ( Segment_flow_init )
-      ENDIF
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
-
+      !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
@@ -198,8 +178,8 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv
+      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out
@@ -209,6 +189,7 @@
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
+      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SRUNOFF, ONLY: Basin_sroff
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
@@ -258,7 +239,7 @@
 
 ! current inflow to the segment is the time weighted average of the outflow
 ! of the upstream segments plus the lateral HRU inflow plus any gains.
-          currin = Seg_lateral_inflow(iorder)
+          currin = Seg_lateral_inflow(iorder) !note, this routes to inlet and mizuroute routes to outlet
           IF ( Obsin_segment(iorder)>0 ) Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
           currin = currin + Seg_upstream_inflow(iorder)
           Seg_inflow(iorder) = Seg_inflow(iorder) + currin
@@ -377,6 +358,11 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
+      IF ( Glacier_flag==1 ) THEN
+        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
+        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
+        Basin_gl_cfs = Basin_gl_top_melt*area_fac
+      ENDIF
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac

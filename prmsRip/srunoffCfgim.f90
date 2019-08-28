@@ -22,7 +22,7 @@
       REAL, SAVE, ALLOCATABLE :: Carea_dif(:), Imperv_stor_ante(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_stor_ante(:)
       REAL, SAVE :: Srp, Sri, Perv_frac, Imperv_frac, Hruarea_imperv, Hruarea
-      DOUBLE PRECISION, SAVE :: Hruarea_dble, Basin_apply_sroff, Basin_cfgi_sroff
+      DOUBLE PRECISION, SAVE :: Hruarea_dble, Basin_apply_sroff
       INTEGER, SAVE :: Use_sroff_transfer, Isglacier
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_sroff_down, Basin_sroff_upslope
@@ -41,9 +41,12 @@
       REAL, SAVE, ALLOCATABLE :: Carea_min(:), Carea_max(:)
 !   Declared Parameters for Frozen Ground
       REAL, SAVE :: Cfgi_thrshld, Cfgi_decay
+      REAL, SAVE, ALLOCATABLE :: Soil_depth(:), Soil_den(:), Porosity_hru(:)
 !   Declared Variables for Frozen Ground
-      REAL, SAVE, ALLOCATABLE :: Cfgi(:), Cfgi_prev(:)
-      INTEGER, SAVE, ALLOCATABLE :: Frozen(:)
+      REAL, SAVE, ALLOCATABLE :: Cfgi(:), Cfgi_prev(:), Frz_depth(:), Thaw_depth(:), Soil_water(:)
+      REAL, SAVE, ALLOCATABLE :: Soil_moist_prev(:)
+      INTEGER, SAVE, ALLOCATABLE :: Frozen(:), Frozen_prev(:)
+      DOUBLE PRECISION, SAVE :: Basin_cfgi_sroff, Basin_frz_depth, Basin_thaw_depth
 !   Declared Parameters for Depression Storage
       REAL, SAVE, ALLOCATABLE :: Op_flow_thres(:), Sro_to_dprst_perv(:)
       REAL, SAVE, ALLOCATABLE :: Va_clos_exp(:), Va_open_exp(:)
@@ -89,7 +92,7 @@
 !   Declared Parameters
 !     smidx_coef, smidx_exp, carea_max, imperv_stor_max, snowinfil_max
 !     hru_area, soil_moist_max, soil_rechr_max, carea_min
-!     cfgi_thrshld, cfgi_decay
+!     cfgi_thrshld, cfgi_decay, soil_depth, soil_den, porosity_hru
 !***********************************************************************
       INTEGER FUNCTION srunoffdecl()
       USE PRMS_SRUNOFF
@@ -299,13 +302,18 @@
       IF ( Frozen_flag==1 .OR. Model==99 ) THEN
         ALLOCATE ( Frozen(Nhru) )
         IF ( declvar(MODNAME, 'frozen', 'nhru', Nhru, 'integer', &
-     &       'Flag for frozen ground (0=no; 1=yes)', &
+     &       'Flag for frozen ground (0=no; 1=soil at surface; 2=soil below surf; 3=below soil)', &
      &       'dimensionless', Frozen)/=0 ) CALL read_error(3, 'frozen')
 
         ALLOCATE ( Cfgi(Nhru) )
         IF ( declvar(MODNAME, 'cfgi', 'nhru', Nhru, 'real', &
      &       'Continuous Frozen Ground Index', &
      &       'index', Cfgi)/=0 ) CALL read_error(3, 'cfgi')
+
+        ALLOCATE ( Soil_water(Nhru) )
+        IF ( declvar(MODNAME, 'soil_water', 'nhru', Nhru, 'real', &
+     &       'Based off soil_moist, measuring water in soil even if frozen', &
+     &       'inches', Soil_water)/=0 ) CALL read_error(3, 'soil_water')
 
         ALLOCATE ( Cfgi_prev(Nhru) )
         IF ( declvar(MODNAME, 'cfgi_prev', 'nhru', Nhru, 'real', &
@@ -319,10 +327,51 @@
      &       'decimal fraction')/=0 ) CALL read_error(1, 'cfgi_decay')
 
         IF ( declparam(MODNAME, 'cfgi_thrshld', 'one', 'real', &
-     &       '52.55', '5.0', '83.0', &
-     &       'CFGI threshold value indicating frozen soil', &
-     &       'CFGI threshold value indicating frozen soil', &
+     &       '5.0', '5.0', '83.0', &
+     &       'CFGImod threshold value indicating frozen soil', &
+     &       'CFGImod threshold value indicating frozen soil', &
      &       'index')/=0 ) CALL read_error(1, 'cfgi_thrshld')
+
+        ALLOCATE ( Frz_depth(Nhru) )
+        IF ( declvar(MODNAME, 'frz_depth', 'nhru', Nhru, 'real', &
+     &       'Maximum depth soil is frozen, may be thawed above', &
+     &       'inches', Frz_depth)/=0 ) CALL read_error(1, 'frz_depth')
+
+        ALLOCATE ( Thaw_depth(Nhru) )
+        IF ( declvar(MODNAME, 'thaw_depth', 'nhru', Nhru, 'real', &
+     &       'Depth soil is thawed from surface', &
+     &       'inches', Thaw_depth)/=0 ) CALL read_error(1, 'thaw_depth')
+
+        IF ( declvar(MODNAME, 'basin_frz_depth', 'one', 1, 'double', &
+     &       'Basin average maximum depth soil is frozen', &
+     &       'inches', Basin_frz_depth)/=0 ) CALL read_error(1, 'basin_frz_depth')
+
+        IF ( declvar(MODNAME, 'basin_thaw_depth', 'one', 1,  'double', &
+     &       'Basin average depth soil is thawed from surface', &
+     &       'inches', Basin_thaw_depth)/=0 ) CALL read_error(1, 'basin_thaw_depth')
+
+        ALLOCATE ( Soil_depth(Nhru) )
+        IF ( declparam(MODNAME, 'soil_depth', 'nhru', 'real', &
+     &       '19.685', '0.0', '60.0', &
+     &       'Depth of soil that could freeze', &
+     &       'Depth of soil that could freeze', &
+     &       'inches')/=0 ) CALL read_error(1, 'soil_depth')
+
+        ALLOCATE ( Soil_den(Nhru) )
+        IF ( declparam(MODNAME, 'soil_den', 'nhru', 'real', &
+     &       '1.3', '0.1', '2.0', &
+     &       'Density of soil that could freeze', &
+     &       'Density of soil that could freeze, limits based on Alaska UNASM map', &
+     &       'gm/cm3')/=0 ) CALL read_error(1, 'soil_den')
+
+        ALLOCATE ( Porosity_hru(Nhru) )
+        IF ( declparam(MODNAME, 'porosity_hru', 'nhru', 'real', &
+     &       '0.4', '0.15', '0.75', &
+     &       'Porosity of soil for frozen ground calculations', &
+     &       'Porosity of soil for frozen ground calculations', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'porosity_hru')
+
+        ALLOCATE( Soil_moist_prev(Nhru), Frozen_prev(Nhru) )
       ENDIF
 
 ! Declare parameters
@@ -482,7 +531,7 @@
      &    Init_vars_from_file, Call_cascade, Water_use_flag, &
      &    Frozen_flag!, Parameter_check_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-!      USE PRMS_FLOWVARS, ONLY: Soil_moist_max
+      USE PRMS_FLOWVARS, ONLY: Soil_moist !, Soil_moist_max
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -531,8 +580,14 @@
         Sri = 0.0
         IF ( Frozen_flag==1 ) THEN
           Frozen = 0
+          Frozen_prev = Frozen
           Cfgi = 0.0
           Cfgi_prev = 0.0
+          Frz_depth = 0.0
+          Thaw_depth = 0.0
+          Soil_moist_prev = Soil_moist
+          Basin_frz_depth = 0.0D0
+          Basin_thaw_depth = 0.0D0
         ENDIF
       ENDIF
 
@@ -590,7 +645,14 @@
       IF ( Frozen_flag==1 ) THEN
         IF ( getparam(MODNAME, 'cfgi_thrshld', 1, 'real', Cfgi_thrshld)/=0 ) CALL read_error(2, 'cfgi_thrshld')
         IF ( getparam(MODNAME, 'cfgi_decay', 1, 'real', Cfgi_decay)/=0 ) CALL read_error(2, 'cfgi_decay')
+        IF ( getparam(MODNAME, 'soil_depth', Nhru, 'real', Soil_depth)/=0 ) CALL read_error(2, 'soil_depth')
+        IF ( getparam(MODNAME, 'soil_den', Nhru, 'real', Soil_den)/=0 ) CALL read_error(2, 'soil_den')
+        IF ( getparam(MODNAME, 'porosity_hru', Nhru, 'real', Porosity_hru)/=0 ) CALL read_error(2, 'porosity_hru')
+        IF ( Init_vars_from_file==0 ) THEN
+          Soil_water = 0.3*Soil_depth !if starts at 0, divide by 0 later so start at general value
+        ENDIF
       ENDIF
+
 
 ! Depression Storage parameters and variables:
       IF ( Dprst_flag==1 ) CALL dprst_init()
@@ -607,13 +669,14 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
-     &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
+     &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble, Cov_type, INCH2M
       USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
-     &    Imperv_stor_max, Snowinfil_max, Glacier_frac
+     &    Imperv_stor_max, Snowinfil_max, Glacier_frac, Soil_moist
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover
-      USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt
+      USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt, &
+     &    Tcalin_snow, Tcalin_nosnow, Glacrcov_area, Prev_ann_tempc
       IMPLICIT NONE
       INTRINSIC SNGL, DBLE
       EXTERNAL imperv_et, compute_infil, run_cascade_sroff, dprst_comp, perv_comp
@@ -621,8 +684,12 @@
       INTEGER :: i, k, dprst_chk, frzen, active_glacier
       REAL :: srunoff, avail_et, hperv, sra, availh2o
       DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff, cfgi_sroff
-      REAL :: cfgi_k, depth_cm !frozen ground
+      REAL :: cfgi_k, depth_cm, nosnow_area, depthg_cm, trad, emiss, emisl ! frozen ground
+      REAL :: cfgi_kg, soil_cond, latent_soil, nice, ice_cond, beta, thaw_frac ! frozen ground
+      REAL :: water_cond, sat_cond, mean_cond, lambda, omega, l5, l6, l8 ! frozen ground
+      REAL :: volumetric_soil, thermal_ratio_alp, fusion_param_mu, frz_height ! frozen ground
       REAL :: glcrmltb, temp, temp2 ! glaciers
+      REAL, PARAMETER :: Freezepoint = 0.0 !deg C freezing point of soil moisture, could be below 0 in fine grained soil
 !***********************************************************************
       srunoffrun = 0
 
@@ -655,6 +722,11 @@
         Basin_dprst_seep = 0.0D0
         Basin_dprst_volop = 0.0D0
         Basin_dprst_volcl = 0.0D0
+      ENDIF
+
+      IF ( Frozen_flag==1 ) THEN
+        Basin_frz_depth = 0.0D0
+        Basin_thaw_depth = 0.0D0
       ENDIF
 
       dprst_chk = 0
@@ -711,37 +783,124 @@
         avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
 
         frzen = 0
+        thaw_frac = 1.0
+
         IF ( Frozen_flag==1 ) THEN
-          IF ( Tavgc(i)>0.0 ) THEN
+
+          IF ( Frozen(i)/=1 .AND. Frozen_prev(i)/=1 ) Soil_water(i) =  Soil_water(i)+ Soil_moist(i) - Soil_moist_prev(i) !is Soil_moist correct? Soil_moist_tot?
+          IF ( Frozen(i)/=1 .AND. Frozen_prev(i)/=1 ) Soil_moist_prev(i) =  Soil_moist(i)
+          ! modCFGI, following Follum et al 2018
+          ! set emissivity, which is the fraction of perfect black-body
+          ! emission that is actually applied
+          ! Stefan Boltzmann/2 = (11.71E-8) = 2.0*0.585E-7 because add for day and night
+          ! energy available to snowpack proxy temperature is based on Tcalin
+          emiss = 0.97 ! [fraction of radiation] snow
+          emisl = 0.95 ! [fraction of radiation] land based on Jin and Liang 2006
+          nosnow_area = 1.0-Snowcov_area(i)
+          IF (Glacier_flag==1) nosnow_area = nosnow_area-Glacrcov_area(i) !there will only be permafrost if glacierettes
+          !energy that is available to heat land under snow and without snow
+          trad = Snowcov_area(i)*( (Tcalin_snow(i)  /(emiss*2.0*0.585E-7))**0.25 - 273.15 ) &
+      &            + nosnow_area*( (Tcalin_nosnow(i)/(emisl*2.0*0.585E-7))**0.25 - 273.15 )
+          cfgi_kg = 1.0 !From Follum et al 2018, could be a bit high
+          IF ( Tavgc(i)>0.0 ) THEN ![cal/cm^2] or [Langleys]
             cfgi_k = 0.5
           ELSE
             cfgi_k = 0.08
           ENDIF
-          depth_cm = SNGL(Pk_depth(i))*2.54 !depth of snow cover averaged over HRU
-          Cfgi(i) = Cfgi_decay*Cfgi_prev(i) - Tavgc(i)*( 2.71828**(-0.4*cfgi_k*depth_cm) )
+          ! depth over only snow covered area, so real depth of pack because considering land heat too now
+          depth_cm = 0.0
+          IF ( Snowcov_area(i)>0.0 ) depth_cm = SNGL(Pk_depth(i)/Snowcov_area(i))*2.54
+          ! depth ground cover only, from Follum et al, 2018, but was in Vermont
+          depthg_cm = 0.0 !Cov_type =0 bare soil (rock, may be mostly impervious already)
+          IF (Cov_type(i)==1) depthg_cm = 4.0 !grasses (boreal grass, tundra)
+          IF (Cov_type(i)==2) depthg_cm = 3.0 !shrub (tundra)
+          IF (Cov_type(i)>=3) depthg_cm = 6.0 !trees
+          IF (Cov_type(i)==4) depthg_cm = 2.0 !coniferous
+
+! Continuous frozen ground index
+          Cfgi(i) = Cfgi_decay*Cfgi_prev(i) - trad*( 2.71828**(-0.4*(cfgi_k*depth_cm+cfgi_kg*depthg_cm)) )
           IF ( active_glacier==1 ) THEN
             Cfgi(i) = 0.0 !if glacier over, want ground completely unfrozen, or below threshold, infiltration
             IF ( Glacier_frac(i)<1.0 ) Cfgi(i) = Cfgi_thrshld ! glacier with some open fraction
           ENDIF
           IF ( Cfgi(i)<0.0 ) Cfgi(i) = 0.0
-          Cfgi_prev(i) = Cfgi(i)
+! If above the threshold to be frozen
           IF ( Cfgi(i)>=Cfgi_thrshld ) THEN
-            frzen = 1
-            ! depression storage states are not changed if frozen
+            ! Use modified Berggren formula to get a depth of frozen
+            ! soil water content % of dry weight is water vol*density / (soil vol*density)
+            omega = Soil_water(i) / (Soil_depth(i)*Soil_den(i))
+            IF ( omega>1.0 ) omega = 1.0
+            IF ( omega<0.1 ) omega = 0.1
+            ! volumetric heat of fusion of the soil
+            volumetric_soil = Soil_den(i)*(4.187*0.17 + 0.75*omega)*1.e6 ! J/m^3/K, specific heat of rock, water, ice =0.17, 1, 0.5 *4.187 J/g/K , density in g/cm3
+            ! latent heat of fusion of the soil
+            latent_soil = 334.0*Soil_den(i)*omega*1.e6 ! J/m^3, latent heat of fusion of water =  334 J/g , density in g/cm3
+            thermal_ratio_alp = (Prev_ann_tempc(i) - Freezepoint)/(Cfgi(i) - Cfgi_thrshld) !degree K/ index Ti/Ts
+            IF ( thermal_ratio_alp<0.0 ) thermal_ratio_alp = 0.0
+            fusion_param_mu =(Cfgi(i) - Cfgi_thrshld)*volumetric_soil/latent_soil !index/degree K    St12
+            ! lambda corrects the Stefan formula for the effects of volumetric heat which it neglected
+            beta = 1.0 !ranges between 0.95 and 1.3 depending on soil type and soil moisture
+            lambda = 1.0 !Graph in Aldrich 1956, says in Alaska this is usually 1 but if less northern, can be as low as 0.3
+            l5 = 1.0 -0.16*fusion_param_mu +0.038*(fusion_param_mu**2.0) !Kurylyk and Hayashi 2016, Ti = 0
+            l6 = ( 1.0 + 0.147*fusion_param_mu*((beta*thermal_ratio_alp)**2.0)+ 0.535*(fusion_param_mu**0.5)*beta*thermal_ratio_alp )*l5 ! Kurylyk and Hayashi 2016, Ti < 0
+            l8 = ( 1.0 + 0.061*(fusion_param_mu**0.88)*((thermal_ratio_alp/beta)**1.65)- 0.43*(fusion_param_mu**0.44)*((thermal_ratio_alp/beta)**0.825) )*l5 ! Kurylyk and Hayashi 2016, Ti > 0
+            IF ( Cfgi(i)>Cfgi_prev(i) ) lambda = l8 !freezing
+            IF ( Cfgi(i)<Cfgi_prev(i) ) lambda = l6 !thawing
+            IF ( Cfgi(i)==Cfgi_prev(i) ) lambda = l5
+
+            ! dry soil thermal conductivity
+            soil_cond = ( 486.0*Soil_den(i) + 233.0 )/( 2.7 - 0.947*Soil_den(i) ) !equation Johansen 1975,J/m/hr/K
+            !from last time step frozen depth
+            nice = Porosity_hru(i)* Frz_depth(i)/Soil_depth(i)
+            ! soil saturated conductivity is geometric mean of the conductivities of the materials within the soil profile
+            ice_cond = (-0.0176*Tavgc(i) + 2.0526)*3600.0 !Bonales 2017, J/s/m/K to hr
+            water_cond = 0.5918 *3600.0 !J/s/m/K to hr
+            sat_cond =( soil_cond**(1.0-Porosity_hru(i)) )*( ice_cond**(nice) )*( water_cond**(Porosity_hru(i)-nice) )
+            ! mean thermal conductivity of the frozen and unfrozen soil equation of dry and saturated conductivities
+            mean_cond = (sat_cond - soil_cond)*omega + soil_cond !J/m/hr/K
+            ! this is height of frozen soil. Freezes downward from surface. When thaw, also thaw downward from surface so will be thawed area above here
+            ! So soil frozen should be from frz_depth up to frz_depth- frz_height
+            frz_height = lambda*( (48.0*( Cfgi(i) - Cfgi_thrshld )*mean_cond/latent_soil)**0.5 )/INCH2M
+            IF ( frz_height>Frz_depth(i) ) Frz_depth(i) = frz_height
+            IF ( frz_height==0.0 ) Frz_depth(i) = 0.0 ! everything thawed
+            Thaw_depth(i) = Frz_depth(i) - frz_height ! active layer is between Frz_depth and Thaw_depth
+
+           ! Can frz_depth be greater than soil_depth?
+            IF (frz_height>0.0) THEN
+              IF ( Thaw_depth(i)==0.0) THEN
+                frzen = 1 !soil frozen at top
+                thaw_frac = 0.0
+              ELSEIF ( Thaw_depth(i)<Soil_depth(i) ) THEN
+                frzen = 2 !soil frozen below top
+                thaw_frac = Thaw_depth(i)/Soil_depth(i)
+              ELSEIF ( Frz_depth(i)>=Soil_depth(i) ) THEN ! Thaw_depth(i)>=Soil_depth(i))
+                frzen = 3 !soil not frozen but below is, thaw_frac = 1.0
+              ENDIF
+            ENDIF
+          ENDIF
+
+          IF (frzen>0) THEN
+            ! depression storage states are not changed for frozen parts of soil
             IF ( Cascade_flag>0 ) THEN
-              cfgi_sroff = (Snowmelt(i) + Net_rain(i) + Upslope_hortonian(i) + glcrmltb)*Hruarea
+              cfgi_sroff = (1.0-thaw_frac)*(Snowmelt(i) + Net_rain(i) + Upslope_hortonian(i) + glcrmltb)*Hruarea
             ELSE
-              cfgi_sroff = (Snowmelt(i) + Net_rain(i) + glcrmltb)*Hruarea
+              cfgi_sroff = (1.0-thaw_frac)*(Snowmelt(i) + Net_rain(i) + glcrmltb)*Hruarea
             ENDIF
             IF ( Use_sroff_transfer==1 ) cfgi_sroff = cfgi_sroff + Net_apply(i)*Hruarea
             runoff = runoff + cfgi_sroff
-            Basin_cfgi_sroff = Basin_cfgi_sroff + cfgi_sroff
+            Basin_cfgi_sroff = Basin_cfgi_sroff + cfgi_sroff !might want to put this in cfs and make plotable variable
+          ELSE !not frozen
+            Frz_depth(i) = 0.0
+            Thaw_depth(i) = 0.0
           ENDIF
+          Frozen_prev(i) = Frozen(i)
           Frozen(i) = frzen
+          Cfgi_prev(i) = Cfgi(i)
+          Basin_frz_depth = Basin_frz_depth + Frz_depth(i)*Hruarea_dble
+          Basin_thaw_depth = Basin_thaw_depth + Thaw_depth(i)*Hruarea_dble
         ENDIF
-
-!******Compute runoff for pervious, impervious, and depression storage area, only if not frozen ground
-        IF ( frzen==0 ) THEN
+!******Compute runoff for pervious, impervious, and depression storage area, only if not totally frozen ground
+        IF ( frzen/=1 ) THEN
 ! DO IRRIGATION APPLICATION, ONLY DONE HERE, ASSUMES NO SNOW and
 ! only for pervious areas (just like infiltration)
           IF ( Use_sroff_transfer==1 ) THEN
@@ -749,7 +908,7 @@
               sra = 0.0
               Infil(i) = Infil(i) + Net_apply(i)
               IF ( Hru_type(i)==1 ) THEN
-                CALL perv_comp(Net_apply(i), Net_apply(i), Infil(i), sra)
+                CALL perv_comp(Net_apply(i), Net_apply(i), Infil(i), sra, thaw_frac)
 ! ** ADD in water from irrigation application and water-use transfer for pervious portion - sra (if any)
                 apply_sroff = DBLE( sra*hperv )
                 Basin_apply_sroff = Basin_apply_sroff + apply_sroff
@@ -763,10 +922,10 @@
             temp = Snowmelt(i) + glcrmltb !Snowmelt or 0.0
             temp2 = availh2o*(1.0-Glacier_frac(i))
             CALL compute_infil(temp2, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), temp, &
-     &                       Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i))
+     &                       Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), thaw_frac)
           ELSE
             CALL compute_infil(availh2o, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
-     &                       Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i))
+     &                       Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), thaw_frac)
           ENDIF
 
         ENDIF
@@ -778,11 +937,11 @@
             dprst_chk = 1
 !           ******Compute the depression storage component
 !           only call if total depression surface area for each HRU is > 0.0
-            IF ( frzen==0 ) THEN
+            IF ( frzen/=1 ) THEN
               CALL dprst_comp(Dprst_vol_clos(i), Dprst_area_clos_max(i), Dprst_area_clos(i), &
      &                      Dprst_vol_open_max(i), Dprst_vol_open(i), Dprst_area_open_max(i), Dprst_area_open(i), &
      &                      Dprst_sroff_hru(i), Dprst_seep_hru(i), Sro_to_dprst_perv(i), Sro_to_dprst_imperv(i), &
-     &                      Dprst_evap_hru(i), avail_et, availh2o, Dprst_in(i))
+     &                      Dprst_evap_hru(i), avail_et, availh2o, Dprst_in(i), thaw_frac)
               runoff = runoff + Dprst_sroff_hru(i)*Hruarea_dble
             ENDIF
           ENDIF
@@ -817,7 +976,7 @@
         Basin_contrib_fraction = Basin_contrib_fraction + DBLE( Contrib_fraction(i)*hperv )
 
 !******Compute evaporation from impervious area
-        IF ( frzen==0 ) THEN
+        !IF ( frzen/=1 ) THEN  !Should we care that it's frozen if it's impervious? AVB
           IF ( Hruarea_imperv>0.0 ) THEN
             IF ( Imperv_stor(i)>0.0 ) THEN
               CALL imperv_et(Imperv_stor(i), Potet(i), Imperv_evap(i), Snowcov_area(i), avail_et)
@@ -840,7 +999,7 @@
             Hru_sroffi(i) = Sri*Imperv_frac
             Basin_sroffi = Basin_sroffi + DBLE( Sri*Hruarea_imperv )
           ENDIF
-        ENDIF
+        !ENDIF
 
         IF ( dprst_chk==1 ) Dprst_stor_hru(i) = (Dprst_vol_open(i)+Dprst_vol_clos(i))/Hruarea_dble
 
@@ -865,6 +1024,11 @@
         Basin_hortonian_lakes = Basin_hortonian_lakes*Basin_area_inv
         Basin_sroff_down = Basin_sroff_down*Basin_area_inv
         Basin_sroff_upslope = Basin_sroff_upslope*Basin_area_inv
+      ENDIF
+
+      IF ( Frozen_flag==1 ) THEN
+        Basin_frz_depth = Basin_frz_depth*Basin_area_inv
+        Basin_thaw_depth = Basin_thaw_depth*Basin_area_inv
       ENDIF
 
       IF ( Dprst_flag==1 ) THEN
@@ -909,7 +1073,7 @@
 !     Compute infiltration
 !***********************************************************************
       SUBROUTINE compute_infil(Net_rain, Net_ppt, Imperv_stor, Imperv_stor_max, Snowmelt, &
-     &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type)
+     &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type, Thaw_frac)
       USE PRMS_SRUNOFF, ONLY: Sri, Hruarea_imperv, Upslope_hortonian, Ihru, Srp, Isglacier
       USE PRMS_SNOW, ONLY: Pptmix_nopack
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
@@ -917,7 +1081,7 @@
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Hru_type
-      REAL, INTENT(IN) :: Net_rain, Net_ppt, Imperv_stor_max
+      REAL, INTENT(IN) :: Net_rain, Net_ppt, Imperv_stor_max, Thaw_frac
       REAL, INTENT(IN) :: Snowmelt, Snowinfil_max, Net_snow
       DOUBLE PRECISION, INTENT(IN) :: Pkwater_equiv
       REAL, INTENT(INOUT) :: Imperv_stor, Infil
@@ -935,7 +1099,7 @@
         avail_water = SNGL( Upslope_hortonian(Ihru) )
         IF ( avail_water>0.0 ) THEN
           Infil = avail_water
-          IF ( hru_flag==1 ) CALL perv_comp(avail_water, avail_water, Infil, Srp)
+          IF ( hru_flag==1 ) CALL perv_comp(avail_water, avail_water, Infil, Srp, Thaw_frac)
         ENDIF
       ELSE
         avail_water = 0.0
@@ -948,7 +1112,7 @@
       IF ( Pptmix_nopack(Ihru)==1 ) THEN
         avail_water = avail_water + Net_rain
         Infil = Infil + Net_rain
-        IF ( hru_flag==1 ) CALL perv_comp(Net_rain, Net_rain, Infil, Srp)
+        IF ( hru_flag==1 ) CALL perv_comp(Net_rain, Net_rain, Infil, Srp, Thaw_frac)
       ENDIF
 
 !******If precipitation on snowpack, all water available to the surface is
@@ -966,7 +1130,7 @@
             CALL check_capacity(Snowinfil_max, Infil)
 !******Snowmelt occurred and depleted the snowpack
           ELSE
-            CALL perv_comp(Snowmelt, Net_ppt, Infil, Srp)
+            CALL perv_comp(Snowmelt, Net_ppt, Infil, Srp, Thaw_frac)
           ENDIF
         ENDIF
 
@@ -982,7 +1146,7 @@
 ! no snow, some rain
           avail_water = avail_water + Net_rain
           Infil = Infil + Net_rain
-          IF ( hru_flag==1 ) CALL perv_comp(Net_rain, Net_rain, Infil, Srp)
+          IF ( hru_flag==1 ) CALL perv_comp(Net_rain, Net_rain, Infil, Srp, Thaw_frac)
         ENDIF
 
 !***** Snowpack exists, check to see if infil exceeds maximum daily
@@ -1007,7 +1171,7 @@
       END SUBROUTINE compute_infil
 
 !***********************************************************************
-      SUBROUTINE perv_comp(Pptp, Ptc, Infil, Srp)
+      SUBROUTINE perv_comp(Pptp, Ptc, Infil, Srp, Thaw_frac)
       USE PRMS_SRUNOFF, ONLY: Ihru, Smidx_coef, Smidx_exp, &
      &    Carea_max, Carea_min, Carea_dif, Contrib_fraction
       USE PRMS_MODULE, ONLY: Sroff_flag
@@ -1015,7 +1179,7 @@
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Soil_rechr_max
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Pptp, Ptc
+      REAL, INTENT(IN) :: Pptp, Ptc, Thaw_frac
       REAL, INTENT(INOUT) :: Infil, Srp
 ! Local Variables
       REAL :: smidx, srpp, ca_fraction
@@ -1027,7 +1191,7 @@
         ca_fraction = Smidx_coef(Ihru)*10.0**(Smidx_exp(Ihru)*smidx)
       ELSE
         ! antecedent soil_rechr
-        ca_fraction = Carea_min(Ihru) + Carea_dif(Ihru)*(Soil_rechr(Ihru)/Soil_rechr_max(Ihru))
+        ca_fraction = Carea_min(Ihru) + Carea_dif(Ihru)*(Soil_rechr(Ihru)/(Thaw_frac*Soil_rechr_max(Ihru)))
       ENDIF
       IF ( ca_fraction>Carea_max(Ihru) ) ca_fraction = Carea_max(Ihru)
       srpp = ca_fraction*Pptp
@@ -1262,7 +1426,7 @@
       SUBROUTINE dprst_comp(Dprst_vol_clos, Dprst_area_clos_max, Dprst_area_clos, &
      &           Dprst_vol_open_max, Dprst_vol_open, Dprst_area_open_max, Dprst_area_open, &
      &           Dprst_sroff_hru, Dprst_seep_hru, Sro_to_dprst_perv, Sro_to_dprst_imperv, Dprst_evap_hru, &
-     &           Avail_et, Net_rain, Dprst_in)
+     &           Avail_et, Net_rain, Dprst_in, Thaw_frac)
       USE PRMS_SRUNOFF, ONLY: Srp, Sri, Ihru, Perv_frac, Imperv_frac, Hruarea, Dprst_et_coef, &
      &    Dprst_seep_rate_open, Dprst_seep_rate_clos, Va_clos_exp, Va_open_exp, Dprst_flow_coef, &
      &    Dprst_vol_thres_open, Dprst_vol_clos_max, Dprst_insroff_hru, Upslope_hortonian, &
@@ -1277,7 +1441,7 @@
       IMPLICIT NONE
       INTRINSIC EXP, LOG, MAX, DBLE, SNGL
 ! Arguments
-      REAL, INTENT(IN) :: Dprst_area_open_max, Dprst_area_clos_max, Net_rain
+      REAL, INTENT(IN) :: Dprst_area_open_max, Dprst_area_clos_max, Net_rain, Thaw_frac
       REAL, INTENT(IN) :: Sro_to_dprst_perv, Sro_to_dprst_imperv
       DOUBLE PRECISION, INTENT(IN) :: Dprst_vol_open_max
       DOUBLE PRECISION, INTENT(INOUT) :: Dprst_vol_open, Dprst_vol_clos, Dprst_in
@@ -1321,11 +1485,11 @@
 
       Dprst_in = 0.0D0
       IF ( Dprst_area_open_max>0.0 ) THEN
-        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! inch-acres
+        Dprst_in = DBLE( inflow*Dprst_area_open_max*Thaw_frac ) ! inch-acres
         Dprst_vol_open = Dprst_vol_open + Dprst_in
       ENDIF
       IF ( Dprst_area_clos_max>0.0 ) THEN
-        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! inch-acres
+        tmp1 = DBLE( inflow*Dprst_area_clos_max*Thaw_frac ) ! inch-acres
         Dprst_vol_clos = Dprst_vol_clos + tmp1
         Dprst_in = Dprst_in + tmp1
       ENDIF
@@ -1379,7 +1543,7 @@
 !     Open depression surface area for each HRU:
       Dprst_area_open = 0.0
       IF ( Dprst_vol_open>0.0D0 ) THEN
-        open_vol_r = SNGL( Dprst_vol_open/Dprst_vol_open_max )
+        open_vol_r = SNGL( Dprst_vol_open/(Dprst_vol_open_max*Thaw_frac) )
         IF ( open_vol_r<NEARZERO ) THEN
           frac_op_ar = 0.0
         ELSEIF ( open_vol_r>1.0 ) THEN
@@ -1387,8 +1551,8 @@
         ELSE
           frac_op_ar = EXP(Va_open_exp(Ihru)*LOG(open_vol_r))
         ENDIF
-        Dprst_area_open = Dprst_area_open_max*frac_op_ar
-        IF ( Dprst_area_open>Dprst_area_open_max ) Dprst_area_open = Dprst_area_open_max
+        Dprst_area_open = Dprst_area_open_max*Thaw_frac*frac_op_ar
+        IF ( Dprst_area_open>Dprst_area_open_max*Thaw_frac ) Dprst_area_open = Dprst_area_open_max*Thaw_frac
 !        IF ( Dprst_area_open<NEARZERO ) Dprst_area_open = 0.0
       ENDIF
 
@@ -1396,7 +1560,7 @@
       IF ( Dprst_area_clos_max>0.0 ) THEN
         Dprst_area_clos = 0.0
         IF ( Dprst_vol_clos>0.0D0 ) THEN
-          clos_vol_r = SNGL( Dprst_vol_clos/Dprst_vol_clos_max(Ihru) )
+          clos_vol_r = SNGL( Dprst_vol_clos/(Dprst_vol_clos_max(Ihru)*Thaw_frac) )
           IF ( clos_vol_r<NEARZERO ) THEN
             frac_cl_ar = 0.0
           ELSEIF ( clos_vol_r>1.0 ) THEN
@@ -1404,8 +1568,8 @@
           ELSE
             frac_cl_ar = EXP(Va_clos_exp(Ihru)*LOG(clos_vol_r))
           ENDIF
-          Dprst_area_clos = Dprst_area_clos_max*frac_cl_ar
-          IF ( Dprst_area_clos>Dprst_area_clos_max ) Dprst_area_clos = Dprst_area_clos_max
+          Dprst_area_clos = Dprst_area_clos_max*Thaw_frac*frac_cl_ar
+          IF ( Dprst_area_clos>Dprst_area_clos_max*Thaw_frac ) Dprst_area_clos = Dprst_area_clos_max*Thaw_frac
 !          IF ( Dprst_area_clos<NEARZERO ) Dprst_area_clos = 0.0
         ENDIF
       ENDIF
@@ -1467,7 +1631,7 @@
       ! compute open surface runoff
       Dprst_sroff_hru = 0.0D0
       IF ( Dprst_vol_open>0.0D0 ) THEN
-        Dprst_sroff_hru = MAX( 0.0D0, Dprst_vol_open-Dprst_vol_open_max )
+        Dprst_sroff_hru = MAX( 0.0D0, Dprst_vol_open-Dprst_vol_open_max*Thaw_frac )
         Dprst_sroff_hru = Dprst_sroff_hru + &
      &                    MAX( 0.0D0, (Dprst_vol_open-Dprst_sroff_hru-Dprst_vol_thres_open(Ihru))*DBLE(Dprst_flow_coef(Ihru)) )
         Dprst_vol_open = Dprst_vol_open - Dprst_sroff_hru
@@ -1502,9 +1666,9 @@
       Basin_dprst_seep = Basin_dprst_seep + Dprst_seep_hru*Hruarea_dble
       Basin_dprst_sroff = Basin_dprst_sroff + Dprst_sroff_hru*Hruarea_dble
       Avail_et = Avail_et - Dprst_evap_hru
-      IF ( Dprst_vol_open_max>0.0 ) Dprst_vol_open_frac(Ihru) = SNGL( Dprst_vol_open/Dprst_vol_open_max )
-      IF ( Dprst_vol_clos_max(Ihru)>0.0 ) Dprst_vol_clos_frac(Ihru) = SNGL( Dprst_vol_clos/Dprst_vol_clos_max(Ihru) )
-      Dprst_vol_frac(Ihru) = SNGL( (Dprst_vol_open+Dprst_vol_clos)/(Dprst_vol_open_max+Dprst_vol_clos_max(Ihru)) )
+      IF ( Dprst_vol_open_max>0.0 ) Dprst_vol_open_frac(Ihru) = SNGL( Dprst_vol_open/(Dprst_vol_open_max*Thaw_frac) )
+      IF ( Dprst_vol_clos_max(Ihru)>0.0 ) Dprst_vol_clos_frac(Ihru) = SNGL( Dprst_vol_clos/(Dprst_vol_clos_max(Ihru)*Thaw_frac) )
+      Dprst_vol_frac(Ihru) = SNGL( (Dprst_vol_open+Dprst_vol_clos)/((Dprst_vol_open_max+Dprst_vol_clos_max(Ihru))*Thaw_frac) )
       Dprst_stor_hru(Ihru) = (Dprst_vol_open+Dprst_vol_clos)/Hruarea_dble
 
       END SUBROUTINE dprst_comp
@@ -1540,6 +1704,8 @@
           WRITE ( Restart_outunit ) Frozen
           WRITE ( Restart_outunit ) Cfgi
           WRITE ( Restart_outunit ) Cfgi_prev
+          WRITE ( Restart_outunit ) Frz_depth, Thaw_depth, Soil_water
+          WRITE ( Restart_outunit ) Basin_frz_depth, Basin_thaw_depth
         ENDIF
       ELSE
         READ ( Restart_inunit ) module_name
@@ -1559,6 +1725,8 @@
           READ ( Restart_inunit ) Frozen
           READ ( Restart_inunit ) Cfgi
           READ ( Restart_inunit ) Cfgi_prev
+          READ ( Restart_inunit ) Frz_depth, Thaw_depth, Soil_water
+          READ ( Restart_inunit ) Basin_frz_depth, Basin_thaw_depth
         ENDIF
       ENDIF
       END SUBROUTINE srunoff_restart

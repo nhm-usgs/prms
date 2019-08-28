@@ -78,7 +78,7 @@
 !***********************************************************************
       t2dist2decl = 0
 
-      Version_temp = 'temp_dist2.f90 2019-08-15 10:43:00Z'
+      Version_temp = 'temp_dist2.f90 2017-09-27 14:04:00Z'
       CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
       MODNAME = 'temp_dist2'
 
@@ -362,7 +362,7 @@
       DO j = 1, Ntemp - 1
 
 ! check for missing or bad temps based on min and max daily values
-! observed for each month. 
+! observed for each month.
 
 ! the value of  -9999 = missing in HDB, and rdb
 
@@ -419,7 +419,6 @@
 
         DO kk = 1, N_tsta(j)
           k = Nuse_tsta(kk, j)
-
           IF ( Hru_type(j)==4 .AND. Glacier_flag==1 ) Elfac(j, k) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
 
 ! check for missing or bad temps

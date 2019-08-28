@@ -29,6 +29,8 @@
       REAL, SAVE, ALLOCATABLE :: Dprst_area_max(:)
       REAL, SAVE, ALLOCATABLE :: Hru_perv(:), Hru_imperv(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_open_max(:), Dprst_area_clos_max(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_elev_ts(:)
+      DOUBLE PRECISION, SAVE :: Basin_gl_cfs, Basin_gl_ice_cfs
 !   Declared Parameters
       INTEGER, SAVE :: Elev_units
       INTEGER, SAVE, ALLOCATABLE :: Hru_type(:), Cov_type(:)
@@ -67,7 +69,8 @@
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
       USE PRMS_MODULE, ONLY: Model, Nhru, Dprst_flag, Lake_route_flag, &
-     &    Et_flag, Precip_flag, Nlake, Cascadegw_flag, Stream_temp_flag, PRMS4_flag
+     &    Et_flag, Precip_flag, Nlake, Cascadegw_flag, Stream_temp_flag, &
+     &    PRMS4_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -80,6 +83,21 @@
       MODNAME = 'basin'
 
 ! Declared Variables
+      ALLOCATE ( Hru_elev_ts(Nhru) )
+      IF ( Glacier_flag==1 .OR. Model==99 ) THEN
+        IF ( declvar(MODNAME, 'hru_elev_ts', 'nhru', Nhru, 'real', &
+     &       'HRU elevation for timestep, which can change for glaciers', &
+     &       'elev_units', Hru_elev_ts)/=0 ) CALL read_error(3, 'hru_elev_ts')
+
+        IF ( declvar(MODNAME, 'basin_gl_ice_cfs', 'one', 1, 'double', &
+     &       'Basin glacier ice (firn) melt leaving the basin through the stream network', &
+     &       'cfs', Basin_gl_ice_cfs)/=0 ) CALL read_error(3, 'basin_gl_ice_cfs')
+
+        IF ( declvar(MODNAME, 'basin_gl_cfs', 'one', 1, 'double', &
+     &       'Basin glacier surface melt (rain, snow, ice) leaving the basin through the stream network', &
+     &       'cfs', Basin_gl_cfs)/=0 ) CALL read_error(3, 'basin_gl_cfs')
+      ENDIF
+
       ALLOCATE ( Hru_imperv(Nhru) )
       IF ( declvar(MODNAME, 'hru_imperv', 'nhru', Nhru, 'real', &
      &     'Area of HRU that is impervious', &
@@ -148,9 +166,9 @@
 ! when GSFLOW can run in multi-mode will need these arrays
       IF ( Model/=0 .OR. Cascadegw_flag>0 ) ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
       ! potet_pm, potet_pm_sta, or potet_pt
-      IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) ALLOCATE ( Hru_elev_feet(Nhru) )
+      IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Glacier_flag==1 ) ALLOCATE ( Hru_elev_feet(Nhru) )
       ! ide_dist, potet_pm, potet_pm_sta, potet_pt, or stream_temp
-      IF ( Precip_flag==5 .OR. Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Stream_temp_flag==1 ) &
+      IF ( Precip_flag==5 .OR. Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
      &     ALLOCATE ( Hru_elev_meters(Nhru) )
 
       ! Declared Parameters
@@ -186,8 +204,8 @@
 
       ALLOCATE ( Hru_type(Nhru) )
       IF ( declparam(MODNAME, 'hru_type', 'nhru', 'integer', &
-     &     '1', '0', '3', &
-     &     'HRU type', 'Type of each HRU (0=inactive; 1=land; 2=lake; 3=swale)', &
+     &     '1', '0', '4', &
+     &     'HRU type', 'Type of each HRU (0=inactive; 1=land; 2=lake; 3=swale; 4=glacier)', &
      &     'none')/=0 ) CALL read_error(1, 'hru_type')
 
       ALLOCATE ( Cov_type(Nhru) )
@@ -246,7 +264,8 @@
       USE PRMS_BASIN
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Dprst_flag, PRMS4_flag, &
      &    Print_debug, Model, PRMS_VERSION, Starttime, Endtime, &
-     &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, Stream_temp_flag
+     &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &
+     &    Stream_temp_flag, Frozen_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -262,6 +281,7 @@
 
       IF ( getparam(MODNAME, 'hru_area', Nhru, 'real', Hru_area)/=0 ) CALL read_error(2, 'hru_area')
       IF ( getparam(MODNAME, 'hru_elev', Nhru, 'real', Hru_elev)/=0 ) CALL read_error(2, 'hru_elev')
+      Hru_elev_ts = Hru_elev
       IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
       IF ( getparam(MODNAME, 'hru_type', Nhru, 'integer', Hru_type)/=0 ) CALL read_error(2, 'hru_type')
       IF ( getparam(MODNAME, 'cov_type', Nhru, 'integer', Cov_type)/=0 ) CALL read_error(2, 'cov_type')
@@ -308,6 +328,8 @@
         Lake_hru_id = 0
       ENDIF
 
+      Basin_gl_cfs = 0.0D0
+      Basin_gl_ice_cfs = 0.0D0
       IF ( Dprst_flag==1 ) THEN
         Dprst_frac_clos = 0.0
         Dprst_area_open_max = 0.0
@@ -354,21 +376,29 @@
           Hru_imperv(i) = 0.0
           Hru_perv(i) = harea
         ELSE
-          Land_area = Land_area + harea_dble ! swale or land
+          Land_area = Land_area + harea_dble ! swale or land or glacier
           IF ( Lake_hru_id(i)>0 ) THEN
             PRINT *, 'ERROR, HRU:', i, ' specifed to be a lake by lake_hru_id but hru_type not equal 2'
             basinit = 1
             CYCLE
           ENDIF
+          IF ( Frozen_flag==1 ) THEN
+            IF ( Hru_type(i)==3 ) THEN
+              PRINT *, 'ERROR, a swale HRU cannot be frozen for CFGI, HRU:', i
+              basinit = 1
+              CYCLE
+            ENDIF
+          ENDIF
+
         ENDIF
 
         Basin_lat = Basin_lat + DBLE( Hru_lat(i)*harea )
         IF ( Elev_units==0 ) THEN
           IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) Hru_elev_feet(i) = Hru_elev(i)
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 ) &
+          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
      &         Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
         ELSE
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 ) &
+          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
      &         Hru_elev_meters(i) = Hru_elev(i)
           IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
         ENDIF
