@@ -51,4 +51,4 @@ clean:
 	cd $(MIZUDIR); $(MAKE) clean;
 	cd $(PRMSDIR); $(MAKE) clean;
 	cd $(PRMSRDIR); $(MAKE) clean;
-	$(RM) $(BINDIR)/prms*~
+	$(RM) $(BINDIR)/prms*
