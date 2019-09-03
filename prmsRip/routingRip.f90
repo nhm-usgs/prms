@@ -277,7 +277,7 @@
         IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
      &     '1000.0', '0.001', '200000.0', &
      &     'Length of each segment', &
-     &     'Length of each segment, bounds based on CONUS', &
+     &     'Length of each segment including vertical drop', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
       ENDIF
 
@@ -285,8 +285,8 @@
         ALLOCATE ( Seg_width(Nsegment) )
         IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
      &       '15.0', '0.18', '40000.0', &
-     &       'Segment river width', &
-     &       'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
+     &       'Segment bankfull river width', &
+     &       'Segment bankfull river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
      &       'meters')/=0 ) CALL read_error(1, 'seg_width')
       ENDIF
 

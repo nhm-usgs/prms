@@ -344,7 +344,6 @@
         DO i = 1, Nsegment
           Basin_bankst_seep_rate = Basin_bankst_seep_rate + Bankst_seep_rate(i) &
      &                        *Seg_length(i)/SUM(Seg_length) !m2/day per stream ft length
-          !print*, Seg_outflow(i)+Seg_bankflow(i),Seg_outflow(i),Seg_bankflow(i), i
           Seg_outflow(i) = Seg_outflow(i)+Seg_bankflow(i)
           IF (Seg_bankflow(i) < 0.0) THEN ! only could go negative because of bankflow if is negative
             IF (Seg_outflow(i) < 0.0) THEN ! took out more than streamflow, this could also be a water_use problem
