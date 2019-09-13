@@ -367,7 +367,7 @@
           ALLOCATE ( Ripst_frac_init(Nhru) )
           IF ( declparam(MODNAME, 'ripst_frac_init', 'nhru', 'real', &
      &         '0.5', '0.0', '1.0', &
-     &         'Fraction of maximum storage that contains water at the start of a simulation', &
+     &         'Fraction of maximum storage volume that contains water at the start of a simulation', &
      &         'Fraction of maximum riparian overbank flow storage that'// &
      &         ' contains water at the start of a simulation', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'ripst_frac_init')
@@ -385,7 +385,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'ripst_areafr_max')
 
         IF ( declparam(MODNAME, 'bank_height_fac', 'one', 'real', &
-     &         '20.0', '1.0', '100.0', &
+     &         '20.0', '1.0', '1000.0', &
      &         'Factor multiplied to Seg_depth to give maximum height of banks', &
      &         'Factor multiplied to Seg_depth to give maximum height of banks for riparian overbank storage', &
      &         'none')/=0 ) CALL read_error(1, 'bank_height_fac')
@@ -1343,6 +1343,7 @@
       DOUBLE PRECISION :: head_step, head_step_grad, seep_sum, head_sum
 !***********************************************************************
       area  = Ripst_areafr_max(Ihru)*Hru_area(Ihru) !acres
+      IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) area = area/2.0 !only take half of area if hru contains all of stream not just one side
       trans = Transmiss_seg(Hru_segment(Ihru))
 !aquifer diffusivity, ratio of the transmissivity/storativity of the aquifer
       a = trans/Specyield_seg(Hru_segment(Ihru))

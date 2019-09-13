@@ -54,7 +54,7 @@
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
       ! Nhrugl - Number of at least partially glacierized hrus at initiation
 !#of cells=Nhrugl,#of streams=Ntp,#of cells/stream<=Ntp, #of glaciers<=Nhru
-      INTEGER, SAVE :: Nglres, Ngl, Ntp, Nhrugl, MbInit_flag, Output_unit, Fraw_unit, All_unit
+      INTEGER, SAVE :: Nglres, Ngl, Ntp, Nhrugl, Mbinit_flag, Output_unit, Fraw_unit, All_unit
       INTEGER, SAVE :: Seven, Four, Glac_HRUnum_down
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_inch2(:)
       REAL, PARAMETER :: Gravity = 9.8 ! m/s2
@@ -85,7 +85,7 @@
       REAL, SAVE :: Max_gldepth
       REAL, SAVE, ALLOCATABLE :: Glacrva_coef(:), Glacrva_exp(:), Hru_length(:), Hru_width(:)
       REAL, SAVE, ALLOCATABLE :: Stor_ice(:,:), Stor_snow(:,:), Stor_firn(:,:)
-      REAL, SAVE, ALLOCATABLE :: Hru_slope(:), Abl_elev_range(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_slope(:), Abl_elev_range(:), Basal_elev_set(:), Basal_slope_set(:)
 
       END MODULE PRMS_GLACR
 
@@ -119,7 +119,7 @@
 !     glacrsetdims - declares glacier module specific dimensions
 !***********************************************************************
       INTEGER FUNCTION glacrsetdims()
-      USE PRMS_GLACR, ONLY: Nglres, Seven, Four, MbInit_flag
+      USE PRMS_GLACR, ONLY: Nglres, Seven, Four, Mbinit_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declfix, control_integer
@@ -134,7 +134,8 @@
       IF ( declfix('four',4, 4, 'Need for keeping glacier variable integer array')/=0 ) CALL read_error(7, 'four')
       Four = 4
 
-      IF ( control_integer(MbInit_flag, 'mbInit_flag')/=0 ) MbInit_flag = 0
+      IF ( control_integer(Mbinit_flag, 'mbinit_flag')/=0 ) Mbinit_flag = 0
+      print*,Mbinit_flag
 
       END FUNCTION glacrsetdims
 
@@ -434,7 +435,23 @@
            'Average HRU snowfield ablation zones elevation range or ~ median-min elev', &
            'elev_units')/=0 ) CALL read_error(1, 'abl_elev_range')
 
-       END FUNCTION glacrdecl
+      IF (Mbinit_flag==1) THEN
+        ALLOCATE ( Basal_elev_set(Nhru) )
+        IF ( declparam(MODNAME, 'basal_elev_set', 'nhru', 'real', &
+             '0.0', '-1000.0', '30000.0', &
+             'Glacier basal elevation mean over HRU inputted from outside information',  &
+             'Glacier basal elevation mean over HRU inputted from outside information',  &
+             'elev_units')/=0 ) CALL read_error(1, 'basal_elev_set')
+
+        ALLOCATE ( Basal_slope_set(Nhru) )
+        IF ( declparam(MODNAME, 'basal_slope_set', 'nhru', 'real', &
+             '0.0', '0.0', '10.0', &
+             'Glacier basal slope down flowline mean over HRU inputted from outside information', &
+             'Glacier basal slope down flowline mean over HRU inputted from outside information', &
+             'decimal fraction')/=0) CALL read_error(1, 'basal_slope_set')
+      ENDIF
+
+      END FUNCTION glacrdecl
 
 !***********************************************************************
 !     glacrinit - Initialize glacr module - get parameter values
@@ -498,8 +515,15 @@
         Gl_mb_cumul = 0.0D0
         Gl_mbc_yrend = 0.0D0
         Hru_slope_ts = Hru_slope
-        Basal_elev = Hru_elev_ts ! Hru_elev_ts always set in basin, need in case of restart
-        Basal_slope = Hru_slope_ts
+        IF (Mbinit_flag/=1) THEN
+          Basal_elev = Hru_elev_ts ! Hru_elev_ts always set in basin, need in case of restart
+          Basal_slope = Hru_slope_ts
+        ELSE !get from parameters
+          IF ( getparam(MODNAME, 'basal_elev_set', Nhru, 'real', Basal_elev_set)/=0 ) CALL read_error(2, 'basal_elev_set')
+          Basal_elev = Basal_elev_set
+          IF ( getparam(MODNAME, 'basal_slope_set', Nhru, 'real', Basal_slope_set)/=0 ) CALL read_error(2, 'basal_slope_set')
+          Basal_slope = Basal_slope_set
+        ENDIF
         Av_basal_slope = 0.0
         Glacr_elev_init = Hru_elev_ts
         Glacr_slope_init = Hru_slope_ts
@@ -903,9 +927,12 @@
       INTEGER, INTENT(IN) :: glacr_exist, glrette_exist
 !***********************************************************************
       comp_glsurf = 1
-      dobot = 1 ! 1 calls bottom calcs, 0 doesn't: Set to 0 for calibrating, then run one extra step with it on
-      ! Should change so that saves the basal elevations (or reads in as parameter) and then recalibrating does not change
+      dobot = 1 ! Should change so that saves the basal elevations (or reads in as parameter) and then recalibrating does not change
       botwrite = 0 ! 1 writes bottom calcs, 0 doesn't: Set to 0 for calibrating
+      IF (Mbinit_flag<2) THEN ! know the bottom, read as parameter
+        dobot = 0
+        botwrite = 0
+      ENDIF
 ! initialize
       ela_elevt = 0.0
       gt = 0
@@ -950,7 +977,7 @@
             ENDIF
           ENDDO
 ! ELA calculations
-          IF ( MBinit_flag==2 ) THEN
+          IF ( MBinit_flag==3 ) THEN
             doela = compute_ela_aar() !want steady state ELA estimation for fraw calc
             DO j = 1, Ntp
               ela_elevt(j)=Hru_elev(Ela(j)) !will scale inside subroutine, want initial one without _ts
@@ -1919,9 +1946,9 @@
 !     subroutine bottom - calculates bottom topo using Salamatin and Mazo
 ! equations (1985) without optimization for steady state, instead
 ! needs a proxy for steady state mass balance. Can do this from mass
-! balance calculation with climate data first year (MbInit_flag=1)
+! balance calculation with climate data first year (Mbinit_flag=2)
 ! or use max and min balance above and below Ela, respectively and assume
-! constant mass balance gradient above and below Ela; e.g. Farinotti (MbInit_flag=2)
+! constant mass balance gradient above and below Ela; e.g. Farinotti (Mbinit_flag=3)
 ! All mass balances are adjust to put glacier in steady state.
 !
 ! The method of Salamatin and Mazo is from conservation of mass,
@@ -2061,7 +2088,7 @@
         ! then add(x)=-int(f(z(x))*area(z(x)))dz/int(area(z(x)))dz
         ! if add is constant in z, then constant in x because no matter what z is, same add
         !If only one Hru on glacier, fraw will all be 0 to be in steady state
-        ! add would be zero if did the full integral with Mbinit_flag==2, but wrong at the moment
+        ! add would be zero if did the full integral with Mbinit_flag==3, but wrong at the moment
         hf(1) = hrawe(1)*frawe(1)
         DO i = 2, len_str_true+1
           hf(i) = hraw(i-1)*fraw(i-1)
