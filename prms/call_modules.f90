@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 06/20/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 RC'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
@@ -20,7 +20,7 @@
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
       INTEGER, SAVE :: Lake_route_flag, Nratetbl, Strmflow_flag, Stream_order_flag
       INTEGER, SAVE :: Temp_flag, Precip_flag, Climate_hru_flag, Climate_swrad_flag
-      INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
+      INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
       INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, PRMS4_flag
@@ -48,7 +48,6 @@
       INTEGER, SAVE :: Dyn_snareathresh_flag, Dyn_transp_on_flag
       INTEGER, SAVE :: Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Dyn_fallfrost_flag, Dyn_springfrost_flag
       INTEGER, SAVE :: Gwr_transferON_OFF, External_transferON_OFF, Segment_transferON_OFF, Lake_transferON_OFF
-      INTEGER, SAVE :: Frozen_flag, Glacier_flag
       END MODULE PRMS_MODULE
 
 !***********************************************************************
@@ -68,7 +67,7 @@
       INTEGER, EXTERNAL :: ddsolrad, ccsolrad
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow
-      INTEGER, EXTERNAL :: srunoff, soilzone, mizuroute
+      INTEGER, EXTERNAL :: srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
@@ -76,7 +75,6 @@
       EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
-      INTEGER, EXTERNAL :: glacr
 ! Local Variables
       INTEGER :: i, iret, nc
 !***********************************************************************
@@ -94,7 +92,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-06-20 15:33:00Z'
+        PRMS_versn = 'call_modules.f90 2019-06-12:14:50Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -118,12 +116,12 @@
      &        '      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,', /, &
      &        '                    potet_hs, potet_pt, potet_pm, potet_pm_sta', /, &
      &        '      Interception: intcp', /, &
-     &        'Snow & Glacr Dynam: snowcomp, glacr', /, &
+     &        '     Snow Dynamics: snowcomp', /, &
      &        '    Surface Runoff: srunoff_smidx, srunoff_carea', /, &
      &        '         Soil Zone: soilzone', /, &
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
-     &        '                    muskingum_lake, muskingum_mann, mizuroute,', /, &
+     &        '                    muskingum_lake', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
@@ -328,11 +326,6 @@
       call_modules = snowcomp()
       IF ( call_modules/=0 ) CALL module_error('snowcomp', Arg, call_modules)
 
-      IF ( Glacier_flag==1 ) THEN
-        call_modules = glacr()
-        IF ( call_modules/=0 ) CALL module_error('glacr', Arg, call_modules)
-      ENDIF
-
       call_modules = srunoff()
       IF ( call_modules/=0 ) CALL module_error(Srunoff_module, Arg, call_modules)
 
@@ -349,12 +342,10 @@
 
       IF ( Strmflow_flag==1 ) THEN
         call_modules = strmflow()
-      ELSEIF ( Muskingum_flag==1 ) THEN ! muskingum = 4; muskingum_mann = 7
+      ELSEIF ( Strmflow_flag==4 ) THEN
         call_modules = muskingum()
       ELSEIF ( Strmflow_flag==5 ) THEN
         call_modules = strmflow_in_out()
-      ELSEIF ( Strmflow_flag==6 ) THEN
-        call_modules = mizuroute()
       ELSEIF ( Strmflow_flag==3 ) THEN
         call_modules = muskingum_lake()
       ENDIF
@@ -683,7 +674,6 @@
      &     Climate_swrad_flag==1 .OR. Climate_transp_flag==1 .OR. &
      &     Humidity_cbh_flag==1 .OR. Windspeed_cbh_flag==1 ) Climate_hru_flag = 1
 
-      Muskingum_flag = 0
       IF ( Strmflow_module(:15)=='strmflow_in_out' ) THEN
         Strmflow_flag = 5
       ELSEIF ( Strmflow_module(:14)=='muskingum_lake' ) THEN
@@ -693,14 +683,8 @@
         Inputerror_flag = 1
       ELSEIF ( Strmflow_module(:8)=='strmflow' ) THEN
         Strmflow_flag = 1
-      ELSEIF ( Strmflow_module(:14)=='muskingum_mann' ) THEN
-        Strmflow_flag = 7
-        Muskingum_flag = 1
       ELSEIF ( Strmflow_module(:9)=='muskingum' ) THEN
         Strmflow_flag = 4
-        Muskingum_flag = 1
-      ELSEIF ( Strmflow_module(:9)=='mizuroute' ) THEN
-        Strmflow_flag = 6
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid strmflow_module value: ', Strmflow_module
         Inputerror_flag = 1
@@ -720,7 +704,6 @@
       IF ( decldim('nsub', 0, MAXDIM, 'Number of internal subbasins')/=0 ) CALL read_error(7, 'nsub')
 
       IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = 0
-      ! 0 = off, 1 = on, 2 = lauren version
       IF ( control_integer(CsvON_OFF, 'csvON_OFF')/=0 ) CsvON_OFF = 0
 
 ! map results dimensions
@@ -733,8 +716,6 @@
       IF ( decldim('ngwcell', 0, MAXDIM, &
      &     'Number of spatial units in the target map for mapped results')/=0 ) CALL read_error(7, 'ngwcell')
 
-      IF ( control_integer(Glacier_flag, 'glacier_flag')/=0 ) Glacier_flag = 0
-      IF ( control_integer(Frozen_flag, 'frozen_flag')/=0 ) Frozen_flag = 0
       IF ( control_integer(Dyn_imperv_flag, 'dyn_imperv_flag')/=0 ) Dyn_imperv_flag = 0
       IF ( control_integer(Dyn_intcp_flag, 'dyn_intcp_flag')/=0 ) Dyn_intcp_flag = 0
       IF ( control_integer(Dyn_covden_flag, 'dyn_covden_flag')/=0 ) Dyn_covden_flag = 0
@@ -954,7 +935,7 @@
 
       Stream_order_flag = 0
       IF ( Nsegment>0 .AND. Strmflow_flag>1 .AND. Model/=0 ) THEN
-        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann, mizuroute
+        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake
       ENDIF
 
       IF ( Nsegment<1 .AND. Model/=99 ) THEN
@@ -1055,13 +1036,12 @@
       INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist
       INTEGER, EXTERNAL :: ddsolrad, ccsolrad
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
-      INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone, mizuroute
+      INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta
-      INTEGER, EXTERNAL :: glacr
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1097,14 +1077,12 @@
       test = intcp()
       test = snowcomp()
       test = srunoff()
-      test = glacr()
       test = soilzone()
       test = gwflow()
       test = routing()
       test = strmflow()
       test = strmflow_in_out()
       test = muskingum()
-      test = mizuroute()
       test = muskingum_lake()
       test = stream_temp()
       test = basin_sum()
