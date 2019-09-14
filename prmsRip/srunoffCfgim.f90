@@ -439,13 +439,6 @@
      &       ' maximum open storage capacity spills as surface runoff', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'op_flow_thres')
 
-        ALLOCATE ( Dprst_et_coef(Nhru) )
-        IF ( declparam(MODNAME, 'dprst_et_coef', 'nhru', 'real', &
-     &       '1.0', '0.5', '1.5', &
-     &       'Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage', &
-     &       'Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'dprst_et_coef')
-
         IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
           ALLOCATE ( Dprst_frac_init(Nhru) )
           IF ( declparam(MODNAME, 'dprst_frac_init', 'nhru', 'real', &
