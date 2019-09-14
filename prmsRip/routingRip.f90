@@ -33,6 +33,7 @@
       REAL, SAVE :: Bank_height_fac
 !   Declared Parameters for Overbank Storage
       REAL, SAVE, ALLOCATABLE :: Tr_ratio(:), Porosity_seg(:), Ripst_et_coef(:), Ripst_frac_init(:)
+      REAL, SAVE, ALLOCATABLE :: Sro_to_ripst_perv(:), Sro_to_ripst_imperv(:)
 !   Declared Variables for Overbank Storage
       DOUBLE PRECISION, SAVE :: Basin_ripst_evap, Basin_ripst_contrib, Basin_ripst_vol, Basin_ripst_area
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ripst_stor_hru(:), Ripst_vol(:), Seg_ripflow(:)
@@ -390,6 +391,21 @@
      &         'Factor multiplied to Seg_depth to give maximum height of banks for riparian overbank storage', &
      &         'none')/=0 ) CALL read_error(1, 'bank_height_fac')
 
+        ALLOCATE ( Sro_to_ripst_imperv(Nhru) )
+        IF ( declparam(MODNAME, 'sro_to_ripst_imperv', 'nhru', 'real', &
+     &       '0.2', '0.0', '1.0', &
+     &       'Fraction of impervious surface runoff that flows into riparian storage', &
+     &       'Fraction of impervious surface runoff that flows into riparian storage', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_ripst_imperv')
+
+        ALLOCATE ( Sro_to_ripst_perv(Nhru) )
+        IF ( declparam(MODNAME, 'sro_to_ripst_perv', 'nhru', 'real', &
+     &       '0.2', '0.0', '1.0', &
+     &       'Fraction of pervious surface runoff that flows into riparian storage', &
+     &       'Fraction of pervious surface runoff that flows into riparian storage', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_ripst_perv')
+
+
         ALLOCATE ( Porosity_seg(Nsegment) )
         IF ( declparam(MODNAME, 'porosity_seg', 'nsegment', 'real', &
      &       '0.4', '0.15', '0.75', &
@@ -712,6 +728,8 @@
         IF ( getparam(MODNAME, 'transmiss_seg', Nsegment, 'real', Transmiss_seg)/=0 ) CALL read_error(2, 'transmiss_seg')
         IF ( getparam(MODNAME, 'specyield_seg', Nsegment, 'real', Specyield_seg)/=0 ) CALL read_error(2, 'specyield_seg')
         IF ( getparam(MODNAME, 'porosity_seg', Nsegment, 'real', Porosity_seg)/=0 ) CALL read_error(2, 'porosity_seg')
+        IF ( getparam(MODNAME, 'sro_to_ripst_imperv', Nhru, 'real', Sro_to_ripst_imperv)/=0 ) CALL read_error(2, 'sro_to_ripst_imperv')
+        IF ( getparam(MODNAME, 'sro_to_ripst_perv', Nhru, 'real', Sro_to_ripst_perv)/=0 ) CALL read_error(2, 'sro_to_ripst_perv')
         Seg_hru_num = 0
         DO i = 1, Active_hrus
           IF ( Hru_segment(i)>0) THEN
@@ -1141,17 +1159,18 @@
      &    Tr_ratio, Ripst_vol_max, Ripst_et_coef, Ripst_evap_hru, Seg_length, &
      &    Basin_ripst_vol, Basin_ripst_evap, Basin_ripst_contrib, Ripst_stor_hru, &
      &    Ripst_frac, Ripst_vol, Ripst_area_max, Ripst_area, Seg_slope, &
-     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area, Bank_height_fac !, Transmiss_seg
-      USE PRMS_MODULE, ONLY: Frozen_flag
+     &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area, Bank_height_fac, &
+     &    Ripst_areafr_max, Sro_to_ripst_imperv, Sro_to_ripst_perv !, Transmiss_seg
+      USE PRMS_MODULE, ONLY: Cascade_flag, Frozen_flag
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Hru_area, Hru_area_dble, FEET2METERS, &
      &    FT2_PER_ACRE, CFS2CMS_CONV
-      USE PRMS_FLOWVARS, ONLY: Seg_outflow
+      USE PRMS_FLOWVARS, ONLY: Seg_outflow, Pkwater_equiv
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Frozen, Thaw_depth, Soil_depth, &
-    &     Dprst_seep_rate_open
-      USE PRMS_INTCP, ONLY: Hru_intcpevap
-      USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
+    &     Dprst_seep_rate_open, Upslope_hortonian, Srp, Sri, Imperv_frac, Perv_frac
+      USE PRMS_INTCP, ONLY: Hru_intcpevap, Net_rain, Net_snow
+      USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snowcov_area, Snow_evap
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, LOG, MIN, DBLE, SNGL
@@ -1159,7 +1178,7 @@
       INTEGER, INTENT(IN) :: Ihru
 ! Local Variables
       REAL :: ripst_avail_et, unsatisfied_et, ripst_evap, ripst_wid, thaw_frac
-      REAL :: inflow, inflow_in, max_depth
+      REAL :: inflow, inflow_in, tmp, ripst_sri, ripst_srp, max_depth
       DOUBLE PRECISION :: seep, ripst_grnd, poss, seep_in, ripst_contrib_hru
 !***********************************************************************
       thaw_frac = 1.0
@@ -1170,26 +1189,98 @@
           thaw_frac = Thaw_depth(Ihru)/Soil_depth(Ihru)
         ENDIF
       ENDIF
+
+!     add the hortonian flow to the riparian storage volumes:
+      IF ( Cascade_flag>0 ) THEN
+        inflow = SNGL( Upslope_hortonian(Ihru) )
+      ELSE
+        inflow = 0.0
+      ENDIF
+      inflow_in = 0.0
+
+      IF ( Pptmix_nopack(Ihru)==1 ) inflow = inflow + Net_rain(Ihru)
+
+!******If precipitation on snowpack all water available to the surface is considered to be snowmelt
+!******If there is no snowpack and no precip,then check for melt from last of snowpack.
+!******If rain/snow mix with no antecedent snowpack, compute snowmelt portion of runoff.
+
+      IF ( Snowmelt(Ihru)>0.0 ) THEN
+        inflow = inflow + Snowmelt(Ihru)
+
+!******There was no snowmelt but a snowpack may exist.  If there is
+!******no snowpack then check for rain on a snowfree HRU.
+      ELSEIF ( Pkwater_equiv(Ihru)<DNEARZERO ) THEN
+
+!      If no snowmelt and no snowpack but there was net snow then
+!      snowpack was small and was lost to sublimation.
+        IF ( Net_snow(Ihru)<NEARZERO .AND. Net_rain(Ihru)>0.0 ) THEN
+          inflow = inflow + Net_rain(Ihru)
+        ENDIF
+      ENDIF
+
+      ! add any pervious surface runoff fraction to riparian areas
+      ripst_srp = 0.0
+      ripst_sri = 0.0
+      IF ( Srp>0.0 ) THEN
+        tmp = Srp*Perv_frac*Sro_to_ripst_perv(Ihru)*Hru_area(Ihru)
+        ripst_srp = tmp*Ripst_areafr_max(Ihru) ! acre-inches
+      ENDIF
+      IF ( Sri>0.0 ) THEN
+        tmp = Sri*Imperv_frac*Sro_to_ripst_imperv(Ihru)*Hru_area(Ihru)
+        ripst_sri = tmp*Ripst_areafr_max(Ihru) ! acre-inches
+      ENDIF
+
 !It won't get deeper than this depth, should be close to Seg_depth but not accurate or Seg_width and other terms not accurate
       max_depth = Seg_depth(Hru_segment(Ihru))*Bank_height_fac
 ! amount possible in cfs given a river depth
       poss = Seg_width(Hru_segment(Ihru))*SQRT(Seg_slope(Hru_segment(Ihru)))* &
-     &            max_depth**(3./5.)/ ( CFS2CMS_CONV*Mann_n(Hru_segment(Ihru)) )
+     &            max_depth**(5./3.)/ ( CFS2CMS_CONV*Mann_n(Hru_segment(Ihru)) )
 !inflow is water over bank, remove from Seg_outflow(Hru_segment(Ihru)) and give half to
 ! each side of bank, in acre inches
-      inflow  = 0.0
-      inflow_in = 0.0
+
 ! in cfs, amount over amount possible, no inflow if everything frozen, and then no outflow either
+      Ripst_vol(Ihru) = 0.0
+      Ripst_frac(Ihru) =0.0
       IF (thaw_frac>0.0) THEN
-        IF ( poss < Seg_outflow(Hru_segment(Ihru))) inflow = SNGL(Seg_outflow(Hru_segment(Ihru)) - poss)
+        IF ( poss < Seg_outflow(Hru_segment(Ihru))) inflow_in = SNGL(Seg_outflow(Hru_segment(Ihru)) - poss)
 ! give it equally to each HRU surrounding it
-        inflow = inflow/REAL(Seg_hru_num(Hru_segment(Ihru)))
+        inflow_in = inflow_in/REAL(Seg_hru_num(Hru_segment(Ihru)))
 !negative flow is out of stream into riparian
-        Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow
-        inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0)) !inch acre
-        Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow_in
-        Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/(Ripst_vol_max(Ihru)*thaw_frac))
-        IF (Ripst_frac(Ihru)>1.0) Ripst_frac(Ihru) = 1.0
+! add this in and add Hortonian and Dunnian flow
+!
+        IF (Ripst_frac(Ihru)<1.0) THEN
+          Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow_in
+          inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0)) !inch acre
+          Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow*Ripst_areafr_max(Ihru) + inflow_in
+          IF ( Ripst_vol(Ihru) > (Ripst_vol_max(Ihru)*thaw_frac) ) THEN
+             Ripst_vol(Ihru) = Ripst_vol_max(Ihru)*thaw_frac
+          ELSE
+            Ripst_vol(Ihru) = Ripst_vol(Ihru) + ripst_srp + ripst_sri
+            IF ( Ripst_vol(Ihru) > (Ripst_vol_max(Ihru)*thaw_frac) ) THEN
+              ripst_srp = SNGL((Ripst_vol(Ihru) - (Ripst_vol_max(Ihru)*thaw_frac))*ripst_srp/(ripst_srp + ripst_sri))
+              ripst_sri = SNGL((Ripst_vol(Ihru) - (Ripst_vol_max(Ihru)*thaw_frac))*ripst_sri/(ripst_srp + ripst_sri))
+              Ripst_vol(Ihru) = Ripst_vol_max(Ihru)*thaw_frac
+            ENDIF
+            IF ( Srp>0.0 ) THEN
+              Srp = Srp - ripst_srp/Perv_frac/Hru_area(Ihru)
+              IF ( Srp<0.0 ) THEN
+                IF ( Srp<-NEARZERO ) PRINT *, 'ripst srp<0.0', Srp, ripst_srp
+                ! may need to adjust ripst_srp and volumes
+                Srp = 0.0
+              ENDIF
+            ENDIF
+            IF ( Sri>0.0 ) THEN
+              Sri = Sri - ripst_sri/Imperv_frac/Hru_area(Ihru)
+              IF ( Sri<0.0 ) THEN
+                IF ( Srp<-NEARZERO ) PRINT *, 'ripst sri<0.0', Sri, ripst_sri
+                ! may need to adjust ripst_sri and volumes
+                Sri = 0.0
+              ENDIF
+            ENDIF
+          ENDIF
+          Ripst_frac(Ihru)= SNGL(Ripst_vol(Ihru)/(Ripst_vol_max(Ihru)*thaw_frac))
+        ENDIF
+
 ! Filled riparian storage surface area for each HRU:
 !  Fills outward from the river with one edge on river and with same depth and same side shape
 !  this works out to keeping fraction same for area and volume filled

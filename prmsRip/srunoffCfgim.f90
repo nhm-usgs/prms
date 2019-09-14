@@ -1484,12 +1484,13 @@
       ENDIF
 
       Dprst_in = 0.0D0
+
       IF ( Dprst_area_open_max>0.0 ) THEN
-        Dprst_in = DBLE( inflow*Dprst_area_open_max*Thaw_frac ) ! inch-acres
+        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! inch-acres
         Dprst_vol_open = Dprst_vol_open + Dprst_in
       ENDIF
       IF ( Dprst_area_clos_max>0.0 ) THEN
-        tmp1 = DBLE( inflow*Dprst_area_clos_max*Thaw_frac ) ! inch-acres
+        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! inch-acres
         Dprst_vol_clos = Dprst_vol_clos + tmp1
         Dprst_in = Dprst_in + tmp1
       ENDIF
@@ -1543,6 +1544,7 @@
 !     Open depression surface area for each HRU:
       Dprst_area_open = 0.0
       IF ( Dprst_vol_open>0.0D0 ) THEN
+! Thaw_frac reduces the volume the new water can add to, so the new water will spill
         open_vol_r = SNGL( Dprst_vol_open/(Dprst_vol_open_max*Thaw_frac) )
         IF ( open_vol_r<NEARZERO ) THEN
           frac_op_ar = 0.0
@@ -1551,8 +1553,8 @@
         ELSE
           frac_op_ar = EXP(Va_open_exp(Ihru)*LOG(open_vol_r))
         ENDIF
-        Dprst_area_open = Dprst_area_open_max*Thaw_frac*frac_op_ar
-        IF ( Dprst_area_open>Dprst_area_open_max*Thaw_frac ) Dprst_area_open = Dprst_area_open_max*Thaw_frac
+        Dprst_area_open = Dprst_area_open_max*frac_op_ar
+        IF ( Dprst_area_open>Dprst_area_open_max ) Dprst_area_open = Dprst_area_open_max
 !        IF ( Dprst_area_open<NEARZERO ) Dprst_area_open = 0.0
       ENDIF
 
@@ -1568,8 +1570,8 @@
           ELSE
             frac_cl_ar = EXP(Va_clos_exp(Ihru)*LOG(clos_vol_r))
           ENDIF
-          Dprst_area_clos = Dprst_area_clos_max*Thaw_frac*frac_cl_ar
-          IF ( Dprst_area_clos>Dprst_area_clos_max*Thaw_frac ) Dprst_area_clos = Dprst_area_clos_max*Thaw_frac
+          Dprst_area_clos = Dprst_area_clos_max*frac_cl_ar
+          IF ( Dprst_area_clos>Dprst_area_clos_max) Dprst_area_clos = Dprst_area_clos_max
 !          IF ( Dprst_area_clos<NEARZERO ) Dprst_area_clos = 0.0
         ENDIF
       ENDIF
