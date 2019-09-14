@@ -32,8 +32,7 @@
       REAL, SAVE, ALLOCATABLE :: Transmiss_seg(:), Ripst_areafr_max(:)
       REAL, SAVE :: Bank_height_fac
 !   Declared Parameters for Overbank Storage
-      REAL, SAVE, ALLOCATABLE :: Tr_ratio(:), Porosity_seg(:), Ripst_et_coef(:), Ripst_frac_init(:)
-      REAL, SAVE, ALLOCATABLE :: Sro_to_ripst_perv(:), Sro_to_ripst_imperv(:)
+      REAL, SAVE, ALLOCATABLE :: Tr_ratio(:), Porosity_seg(:), Ripst_frac_init(:)
 !   Declared Variables for Overbank Storage
       DOUBLE PRECISION, SAVE :: Basin_ripst_evap, Basin_ripst_contrib, Basin_ripst_vol, Basin_ripst_area
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ripst_stor_hru(:), Ripst_vol(:), Seg_ripflow(:)
@@ -391,34 +390,12 @@
      &         'Factor multiplied to Seg_depth to give maximum height of banks for riparian overbank storage', &
      &         'none')/=0 ) CALL read_error(1, 'bank_height_fac')
 
-        ALLOCATE ( Sro_to_ripst_imperv(Nhru) )
-        IF ( declparam(MODNAME, 'sro_to_ripst_imperv', 'nhru', 'real', &
-     &       '0.2', '0.0', '1.0', &
-     &       'Fraction of impervious surface runoff that flows into riparian storage', &
-     &       'Fraction of impervious surface runoff that flows into riparian storage', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_ripst_imperv')
-
-        ALLOCATE ( Sro_to_ripst_perv(Nhru) )
-        IF ( declparam(MODNAME, 'sro_to_ripst_perv', 'nhru', 'real', &
-     &       '0.2', '0.0', '1.0', &
-     &       'Fraction of pervious surface runoff that flows into riparian storage', &
-     &       'Fraction of pervious surface runoff that flows into riparian storage', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_ripst_perv')
-
-
         ALLOCATE ( Porosity_seg(Nsegment) )
         IF ( declparam(MODNAME, 'porosity_seg', 'nsegment', 'real', &
      &       '0.4', '0.15', '0.75', &
      &       'Porosity of soil of riparian overbank flow storage', &
      &       'Porosity of soil around segment involved in riparian overbank flow storage', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'porosity_seg')
-
-        ALLOCATE ( Ripst_et_coef(Nhru) )
-        IF ( declparam(MODNAME, 'ripst_et_coef', 'nhru', 'real', &
-     &       '1.0', '0.0', '1.0', &
-     &       'Fraction of unsatisfied potential evapotranspiration to apply to riparian overbank flow storage', &
-     &       'Fraction of unsatisfied potential evapotranspiration to apply to riparian overbank flow storage', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'ripst_et_coef')
 
         ALLOCATE ( Tr_ratio(Nhru) )
         IF ( declparam(MODNAME, 'tr_ratio', 'nhru', 'real', &
@@ -558,11 +535,12 @@
       USE PRMS_ROUTING
       USE PRMS_MODULE, ONLY: Nsegment, Nhru, Init_vars_from_file, Strmflow_flag, &
      &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag , &
-     &    Ripst_flag, Stream_temp_flag !, Print_debug
+     &    Ripst_flag, Stream_temp_flag, PRMS4_flag, Dprst_flag !, Print_debug
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: FT2_PER_ACRE, DNEARZERO, Active_hrus, Hru_route_order, Hru_area_dble, NEARZERO, &
-     &    Hru_area, FEET2METERS, CFS2CMS_CONV !, Active_area
+     &    Hru_area, FEET2METERS, CFS2CMS_CONV, Dprst_open_flag !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
+      USE PRMS_SRUNOFF, ONLY: Dprst_seep_rate_open, Sro_to_dprst_imperv, Sro_to_dprst_perv, Dprst_et_coef
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD, DBLE
@@ -721,15 +699,26 @@
       IF ( Ripst_flag==1 ) THEN
         IF ( getparam(MODNAME, 'ripst_areafr_max', Nhru, 'real', Ripst_areafr_max)/=0 ) CALL read_error(2, 'ripst_areafr_max')
         IF ( getparam(MODNAME, 'bank_height_fac', 1, 'real', Bank_height_fac)/=0 ) CALL read_error(2, 'bank_height_fac')
-        IF ( getparam(MODNAME, 'ripst_et_coef', Nhru, 'real', Ripst_et_coef)/=0 ) CALL read_error(2, 'ripst_et_coef')
         IF ( getparam(MODNAME, 'tr_ratio', Nhru, 'real', Tr_ratio)/=0 ) CALL read_error(2, 'tr_ratio')
         IF ( getparam(MODNAME, 'bankfinite_hru', Nhru, 'integer', Bankfinite_hru)/=0 ) CALL read_error(2, 'bankfinite_hru')
         ! might be able to calculate if want bankfinite_hru = 1 or 0 based on ripst_areafr_max and transmiss_seg
         IF ( getparam(MODNAME, 'transmiss_seg', Nsegment, 'real', Transmiss_seg)/=0 ) CALL read_error(2, 'transmiss_seg')
         IF ( getparam(MODNAME, 'specyield_seg', Nsegment, 'real', Specyield_seg)/=0 ) CALL read_error(2, 'specyield_seg')
         IF ( getparam(MODNAME, 'porosity_seg', Nsegment, 'real', Porosity_seg)/=0 ) CALL read_error(2, 'porosity_seg')
-        IF ( getparam(MODNAME, 'sro_to_ripst_imperv', Nhru, 'real', Sro_to_ripst_imperv)/=0 ) CALL read_error(2, 'sro_to_ripst_imperv')
-        IF ( getparam(MODNAME, 'sro_to_ripst_perv', Nhru, 'real', Sro_to_ripst_perv)/=0 ) CALL read_error(2, 'sro_to_ripst_perv')
+
+        IF (Dprst_flag/=1) THEN !didn't call these already then
+          IF ( PRMS4_flag==1 ) THEN
+            IF ( getparam(MODNAME, 'sro_to_dprst', Nhru, 'real', Sro_to_dprst_perv)/=0 ) CALL read_error(2, 'sro_to_dprst')
+          ELSE
+            IF ( getparam(MODNAME, 'sro_to_dprst_perv', Nhru, 'real', Sro_to_dprst_perv)/=0 ) CALL read_error(2, 'sro_to_dprst_perv')
+          ENDIF
+          IF ( getparam(MODNAME, 'sro_to_dprst_imperv', Nhru, 'real', Sro_to_dprst_imperv)/=0 ) CALL read_error(2, 'sro_to_dprst_imperv')
+          IF ( getparam(MODNAME, 'dprst_et_coef', Nhru, 'real', Dprst_et_coef)/=0 ) CALL read_error(2, 'dprst_et_coef')
+        ENDIF
+        IF (Dprst_open_flag/=1 .OR. Dprst_flag/=1) THEN
+          IF ( getparam(MODNAME, 'dprst_seep_rate_open', Nhru, 'real', Dprst_seep_rate_open)/=0 )  &
+     &       CALL read_error(2, 'dprst_seep_rate_open')
+        ENDIF
         Seg_hru_num = 0
         DO i = 1, Active_hrus
           IF ( Hru_segment(i)>0) THEN
@@ -1156,11 +1145,11 @@
 !***********************************************************************
       SUBROUTINE drain_the_swamp(Ihru)
       USE PRMS_ROUTING, ONLY: Seg_width, Seg_depth, Seg_width, Hru_segment, Mann_n, &
-     &    Tr_ratio, Ripst_vol_max, Ripst_et_coef, Ripst_evap_hru, Seg_length, &
+     &    Tr_ratio, Ripst_vol_max, Ripst_evap_hru, Seg_length, &
      &    Basin_ripst_vol, Basin_ripst_evap, Basin_ripst_contrib, Ripst_stor_hru, &
      &    Ripst_frac, Ripst_vol, Ripst_area_max, Ripst_area, Seg_slope, &
      &    Seg_hru_num, Seg_ripflow, Ripst_depth, Basin_ripst_area, Bank_height_fac, &
-     &    Ripst_areafr_max, Sro_to_ripst_imperv, Sro_to_ripst_perv !, Transmiss_seg
+     &    Ripst_areafr_max !, Transmiss_seg
       USE PRMS_MODULE, ONLY: Cascade_flag, Frozen_flag
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Hru_area, Hru_area_dble, FEET2METERS, &
      &    FT2_PER_ACRE, CFS2CMS_CONV
@@ -1168,7 +1157,8 @@
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Frozen, Thaw_depth, Soil_depth, &
-    &     Dprst_seep_rate_open, Upslope_hortonian, Srp, Sri, Imperv_frac, Perv_frac
+    &     Dprst_seep_rate_open, Upslope_hortonian, Srp, Sri, Imperv_frac, Perv_frac, &
+    &     Sro_to_dprst_imperv, Sro_to_dprst_perv, Dprst_et_coef
       USE PRMS_INTCP, ONLY: Hru_intcpevap, Net_rain, Net_snow
       USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snowcov_area, Snow_evap
       IMPLICIT NONE
@@ -1218,15 +1208,15 @@
         ENDIF
       ENDIF
 
-      ! add any pervious surface runoff fraction to riparian areas
+      ! add any pervious surface runoff fraction to riparian areas, use depression storage factor
       ripst_srp = 0.0
       ripst_sri = 0.0
       IF ( Srp>0.0 ) THEN
-        tmp = Srp*Perv_frac*Sro_to_ripst_perv(Ihru)*Hru_area(Ihru)
+        tmp = Srp*Perv_frac*Sro_to_dprst_perv(Ihru)*Hru_area(Ihru)
         ripst_srp = tmp*Ripst_areafr_max(Ihru) ! acre-inches
       ENDIF
       IF ( Sri>0.0 ) THEN
-        tmp = Sri*Imperv_frac*Sro_to_ripst_imperv(Ihru)*Hru_area(Ihru)
+        tmp = Sri*Imperv_frac*Sro_to_dprst_imperv(Ihru)*Hru_area(Ihru)
         ripst_sri = tmp*Ripst_areafr_max(Ihru) ! acre-inches
       ENDIF
 
@@ -1291,7 +1281,7 @@
         unsatisfied_et = Potet(Ihru) - Snow_evap(Ihru) - Hru_intcpevap(Ihru) &
     &                 - Hru_impervevap(Ihru) - Dprst_evap_hru(Ihru)
         ripst_avail_et = 0.0
-        ripst_avail_et = Potet(Ihru)*(1.0-Snowcov_area(Ihru))*Ripst_et_coef(Ihru)
+        ripst_avail_et = Potet(Ihru)*(1.0-Snowcov_area(Ihru))*Dprst_et_coef(Ihru)
         Ripst_evap_hru(Ihru) = 0.0
         IF ( ripst_avail_et>0.0 ) THEN
           ripst_evap = 0.0

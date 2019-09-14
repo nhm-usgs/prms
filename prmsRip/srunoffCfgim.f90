@@ -98,7 +98,7 @@
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru, Nsegment, Print_debug, &
      &    Cascade_flag, Sroff_flag, Nlake, Init_vars_from_file, Call_cascade, PRMS4_flag, &
-     &    Frozen_flag
+     &    Frozen_flag, Ripst_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
@@ -422,14 +422,6 @@
      &       'Coefficient in linear flow routing equation for open surface depressions for each HRU', &
      &       'fraction/day')/=0 ) CALL read_error(1, 'dprst_flow_coef')
 
-        ALLOCATE ( Dprst_seep_rate_open(Nhru) )
-        IF ( declparam(MODNAME, 'dprst_seep_rate_open', 'nhru', 'real', &
-     &       '0.02', '0.0', '0.2', &
-     &       'Coefficient used in linear seepage flow equation for open surface depressions', &
-     &       'Coefficient used in linear seepage flow equation for'// &
-     &       ' open surface depressions for each HRU', &
-     &       'fraction/day')/=0 ) CALL read_error(1, 'dprst_seep_rate_open')
-
         ALLOCATE ( Dprst_seep_rate_clos(Nhru) )
         IF ( declparam(MODNAME, 'dprst_seep_rate_clos', 'nhru', 'real', &
      &       '0.02', '0.0', '0.2', &
@@ -446,34 +438,6 @@
      &       ' which surface runoff occurs; any water above'// &
      &       ' maximum open storage capacity spills as surface runoff', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'op_flow_thres')
-
-        ALLOCATE ( Sro_to_dprst_perv(Nhru) )
-        IF ( PRMS4_flag==1 ) THEN
-          IF ( declparam(MODNAME, 'sro_to_dprst', 'nhru', 'real', &
-     &         '0.2', '0.0', '1.0', &
-     &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
-     &         'Fraction of pervious surface runoff that'// &
-     &         ' flows into surface-depression storage; the remainder'// &
-     &         ' flows to a stream network for each HRU', &
-     &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst')
-        ELSE
-          IF ( declparam(MODNAME, 'sro_to_dprst_perv', 'nhru', 'real', &
-     &         '0.2', '0.0', '1.0', &
-     &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
-     &         'Fraction of pervious surface runoff that'// &
-     &         ' flows into surface-depression storage; the remainder'// &
-     &         ' flows to a stream network for each HRU', &
-     &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_perv')
-        ENDIF
-
-        ALLOCATE ( Sro_to_dprst_imperv(Nhru) )
-        IF ( declparam(MODNAME, 'sro_to_dprst_imperv', 'nhru', 'real', &
-     &       '0.2', '0.0', '1.0', &
-     &       'Fraction of impervious surface runoff that flows into surface-depression storage', &
-     &       'Fraction of impervious surface runoff that'// &
-     &       ' flows into surface-depression storage; the remainder'// &
-     &       ' flows to a stream network for each HRU', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_imperv')
 
         ALLOCATE ( Dprst_et_coef(Nhru) )
         IF ( declparam(MODNAME, 'dprst_et_coef', 'nhru', 'real', &
@@ -513,6 +477,51 @@
      &       ' depressions are full to compute current surface area for each HRU;'// &
      &       ' 0.001 is an approximate cylinder; 1.0 is a cone', &
      &       'none')/=0 ) CALL read_error(1, 'va_clos_exp')
+      ENDIF
+
+      IF ( Dprst_flag==1 .OR. Model==99 .OR. Ripst_flag==1) THEN
+        ALLOCATE ( Sro_to_dprst_perv(Nhru) )
+        IF ( PRMS4_flag==1 ) THEN
+          IF ( declparam(MODNAME, 'sro_to_dprst', 'nhru', 'real', &
+     &         '0.2', '0.0', '1.0', &
+     &         'Fraction of pervious surface runoff that flows into surface-depression or riparian storage', &
+     &         'Fraction of pervious surface runoff that'// &
+     &         ' flows into surface-depression or riparian storage; the remainder'// &
+     &         ' flows to a stream network for each HRU', &
+     &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst')
+        ELSE
+          IF ( declparam(MODNAME, 'sro_to_dprst_perv', 'nhru', 'real', &
+     &         '0.2', '0.0', '1.0', &
+     &         'Fraction of pervious surface runoff that flows into surface-depression or riparian storage', &
+     &         'Fraction of pervious surface runoff that'// &
+     &         ' flows into surface-depression or riparian storage; the remainder'// &
+     &         ' flows to a stream network for each HRU', &
+     &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_perv')
+        ENDIF
+
+        ALLOCATE ( Sro_to_dprst_imperv(Nhru) )
+        IF ( declparam(MODNAME, 'sro_to_dprst_imperv', 'nhru', 'real', &
+     &       '0.2', '0.0', '1.0', &
+     &       'Fraction of impervious surface runoff that flows into surface-depression or riparian storage', &
+     &       'Fraction of impervious surface runoff that'// &
+     &       ' flows into surface-depression or riparian storage; the remainder'// &
+     &       ' flows to a stream network for each HRU', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_imperv')
+
+        ALLOCATE ( Dprst_seep_rate_open(Nhru) )
+        IF ( declparam(MODNAME, 'dprst_seep_rate_open', 'nhru', 'real', &
+     &       '0.02', '0.0', '0.2', &
+     &       'Coefficient used in linear seepage flow equation for open surface depressions or riparian storage', &
+     &       'Coefficient used in linear seepage flow equation for'// &
+     &       ' open surface depressions or riparian storage for each HRU', &
+     &       'fraction/day')/=0 ) CALL read_error(1, 'dprst_seep_rate_open')
+
+        ALLOCATE ( Dprst_et_coef(Nhru) )
+        IF ( declparam(MODNAME, 'dprst_et_coef', 'nhru', 'real', &
+     &       '1.0', '0.5', '1.5', &
+     &       'Fraction of unsatisfied potential evapotranspiration to apply to surface-depression or riparian storage', &
+     &       'Fraction of unsatisfied potential evapotranspiration to apply to surface-depression or riparian storage', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'dprst_et_coef')
       ENDIF
 
       IF ( Print_debug==1 ) THEN
