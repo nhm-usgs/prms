@@ -8,8 +8,8 @@ module PRMS_FILE_IO_NETCDF
   public :: FileIO_netcdf
 
   type, extends(FileIO) :: FileIO_netcdf
-    character(len=:), allocatable :: override_dir
-    type(list) :: override_list
+    ! character(len=:), allocatable :: override_dir
+    ! type(list) :: override_list
 
 
     contains
@@ -18,6 +18,7 @@ module PRMS_FILE_IO_NETCDF
       procedure, public, pass(this) :: dim_exists
       generic, public :: get_variable => get_variable_i32_scalar, &
                                          get_variable_i32_1d, get_variable_i32_2d, &
+                                         get_variable_i64_2d, &
                                          get_variable_r32_scalar, &
                                          get_variable_r32_1d, get_variable_r32_2d, &
                                          get_variable_r64_1d, get_variable_r64_2d
@@ -28,6 +29,7 @@ module PRMS_FILE_IO_NETCDF
       procedure, private :: get_variable_i32_scalar
       procedure, private :: get_variable_i32_1d
       procedure, private :: get_variable_i32_2d
+      procedure, private :: get_variable_i64_2d
       procedure, private :: get_variable_r32_scalar
       procedure, private :: get_variable_r32_1d
       procedure, private :: get_variable_r32_2d
@@ -59,6 +61,12 @@ module PRMS_FILE_IO_NETCDF
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
       integer(i32), allocatable, intent(inout) :: var_data(:, :)
+    end subroutine
+
+    module subroutine get_variable_i64_2d(this, name, var_data)
+      class(FileIO_netcdf), intent(in) :: this
+      character(len=*), intent(in) :: name
+      integer(i64), allocatable, intent(inout) :: var_data(:, :)
     end subroutine
 
     module subroutine get_variable_r32_scalar(this, name, var_data)
