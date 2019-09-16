@@ -7,7 +7,6 @@ program prms6
   ! use, intrinsic :: iso_c_binding, only: c_sizeof
   use, intrinsic :: iso_fortran_env, only: output_unit
   use Control_class, only: Control
-  ! use Parameters_class, only: Parameters
   use Simulation_class, only: Simulation
   ! use ieee_arithmetic
   ! use ieee_features
@@ -19,7 +18,7 @@ program prms6
     !! Class of control file related parameters
   ! type(Parameters) :: Parameter_data
     !! Class of input parameters
-  type(Simulation) :: model_simulation
+  type(Simulation), target :: model_simulation
     !! PRMS model simulation class
 
   integer(i64) :: start_rtc
@@ -39,6 +38,7 @@ program prms6
   real(r64) :: dummy_r64
   real(r32) :: dummy_r32
   ! real(r32) :: arr_dummy_r32(109951,13505)
+
 
   ! ---------------------------------------------------------------------------
   ! call ieee_set_halting_mode(ieee_overflow, .false.)
@@ -64,7 +64,8 @@ program prms6
   write(output_unit, fmt='(a)') repeat('=', 72)
   call get_control_filename(control_filename)
 
-  Control_data = Control(control_filename)
+  ! Control_data = Control(control_filename)
+  call Control_data%init(control_filename)
 
   ! write(*, *) 'Traversing output variables'
   ! call Control_data%output_variables%traverse(print_outvar_key)
@@ -83,9 +84,12 @@ program prms6
 
 
   ! Initialize the simulation object
-  model_simulation = Simulation(Control_data)
+  call model_simulation%init(Control_data)
+  ! model_simulation = Simulation(Control_data)
 
-  write(output_unit, fmt='(a)') repeat('=', 72)
+  ! 2019-08-08 PAN: This is rather kludgy...
+  ! Close the parameter file
+  call Control_data%param_file_hdl%close()
 
   ! Run the simulation
   call model_simulation%run(Control_data)
