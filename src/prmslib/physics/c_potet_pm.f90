@@ -10,7 +10,6 @@
 module PRMS_POTET_PM
   use variableKind
   use Control_class, only: Control
-  use Parameters_class, only: Parameters
   use PRMS_SET_TIME, only: Time_t
   use PRMS_BASIN, only: Basin
   use PRMS_POTET, only: Potential_ET

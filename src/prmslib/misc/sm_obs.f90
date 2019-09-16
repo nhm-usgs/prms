@@ -256,8 +256,6 @@ contains
   !***********************************************************************
   ! subroutine check_data_variables(Varname, Numvalues, Values, Iflag, Iret)
   !     use prms_constants, only: CFS2CMS_CONV
-  !     use PRMS_MODULE, only: ntemp, nrain, nobs
-  !     use PRMS_OBS, only: Tmin, Tmax, Precip, this%runoff, this%streamflow_cfs, this%streamflow_cms, runoff_units
   !     implicit none
   !
   !     ! Arguments
