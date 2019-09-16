@@ -3,13 +3,23 @@ submodule (Control_class) sm_control
 contains
 
   !====================================================================!
-  module function constructor_Control(control_filename) result(this)
+  module subroutine init_Control(this, control_filename)
     use iso_fortran_env
     use UTILS_PRMS, only: print_module_info
     implicit none
 
-    type(Control) :: this
+    class(Control), intent(inout) :: this
+      !! Control Class
     character(len=*), intent(in) :: control_filename
+      !! File name to read the control parameters from.
+
+  ! module function constructor_Control(control_filename) result(this)
+  !   use iso_fortran_env
+  !   use UTILS_PRMS, only: print_module_info
+  !   implicit none
+
+  !   type(Control) :: this
+  !   character(len=*), intent(in) :: control_filename
 
     ! Local variables
     integer(i32) :: numfiles
@@ -66,7 +76,7 @@ contains
     !       if print_debug > -1 output control file to stdout
     !                           output var_init_file to stdout (if used)
     !                           output var_save_file to stdout (if used)
-  end function
+  end subroutine
   !====================================================================!
 
   !====================================================================!
@@ -79,9 +89,9 @@ contains
 
     class(Control), intent(inout) :: this
 
-    integer(i32) :: istat
+    integer(i32) :: istat = 0
       !! Contains the IOSTAT result from a read command
-    integer(i32) :: iUnit
+    integer(i32) :: iUnit = 0
       !! Unit of the opened control file
     integer(i32) :: line
       !! Tracks the number of the last line read in the file
@@ -96,7 +106,7 @@ contains
 
     go = .true.
 
-    iUnit = 1
+    ! iUnit = 1
     !call openFile(this%control_filename, iUnit, 'old', istat)
     open(unit=iUnit, file=this%control_filename, status='old', iostat=istat)
     call fErr(istat, this%control_filename, IO_OPEN)
