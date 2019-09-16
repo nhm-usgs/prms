@@ -178,20 +178,31 @@ module Control_class
       !! Parameter file handle to opened file
 
     contains
+      procedure, public :: init => init_Control
       procedure, public :: read => read_Control
       procedure, private :: load_output_variables
       procedure, private :: open_model_output_file
       procedure, private :: open_var_save_file
   end type
 
-  interface Control
+  ! interface Control
+  !   !! Overloaded interface to instantiate the class.
+  !   module function constructor_Control(control_filename) result(this)
+  !     type(Control) :: this
+  !       !! Control Class
+  !     character(len=*), intent(in) :: control_filename
+  !       !! File name to read the control parameters from.
+  !   end function
+  ! end interface
+
+  interface
     !! Overloaded interface to instantiate the class.
-    module function constructor_Control(control_filename) result(this)
-      type(Control) :: this
+    module subroutine init_Control(this, control_filename)
+      class(Control), intent(inout) :: this
         !! Control Class
       character(len=*), intent(in) :: control_filename
         !! File name to read the control parameters from.
-    end function
+    end subroutine
   end interface
 
   interface
