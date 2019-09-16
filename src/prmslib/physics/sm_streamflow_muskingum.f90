@@ -326,11 +326,12 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
               this%inflow_ts(iorder) = 0.0_dp
             endif
 
-            if (allocated(this%obsout_segment)) then
-              if (this%obsout_segment(iorder) > 0) then
-                this%outflow_ts(iorder) = streamflow_cfs(this%obsout_segment(iorder))
-              endif
-            end if
+            ! TODO: still needes to be hooked up correctly
+            ! if (allocated(this%obsout_segment)) then
+            !   if (this%obsout_segment(iorder) > 0) then
+            !     this%outflow_ts(iorder) = streamflow_cfs(this%obsout_segment(iorder))
+            !   endif
+            ! end if
 
             ! Water-use removed/added in routing module
             ! Check for negative flow
