@@ -3,11 +3,11 @@ submodule (Simulation_class) sm_simulation
   contains
     !***********************************************************************
     ! Simulation constructor
-    module subroutine init_Simulation(this, ctl_data)
+    module function constructor_Simulation(ctl_data) result(this)
       use iso_fortran_env, only: output_unit
       implicit none
 
-      class(Simulation), intent(inout) :: this
+      type(Simulation) :: this
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
@@ -83,7 +83,7 @@ submodule (Simulation_class) sm_simulation
       if (ctl_data%print_debug%value == 1) then
         this%model_waterbal = WaterBalance(ctl_data, this%model_basin, this%groundwater)
       endif
-    end subroutine
+    end function
 
     module subroutine run_Simulation(this, ctl_data)
       use iso_fortran_env, only: output_unit
