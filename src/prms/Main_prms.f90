@@ -84,8 +84,8 @@ program prms6
 
 
   ! Initialize the simulation object
-  call model_simulation%init(Control_data)
-  ! model_simulation = Simulation(Control_data)
+  ! call model_simulation%init(Control_data)
+  model_simulation = Simulation(Control_data)
 
   ! 2019-08-08 PAN: This is rather kludgy...
   ! Close the parameter file
