@@ -302,8 +302,8 @@
       IF ( Frozen_flag==1 .OR. Model==99 ) THEN
         ALLOCATE ( Frozen(Nhru) )
         IF ( declvar(MODNAME, 'frozen', 'nhru', Nhru, 'integer', &
-     &       'Flag for frozen ground (0=no; 1=soil at surface; 2=soil below surf; 3=below soil)', &
-     &       'dimensionless', Frozen)/=0 ) CALL read_error(3, 'frozen')
+     &       'Marker for frozen ground (0=no; 1=soil at surface; 2=soil below surf; 3=below soil)', &
+     &       'none', Frozen)/=0 ) CALL read_error(3, 'frozen')
 
         ALLOCATE ( Cfgi(Nhru) )
         IF ( declvar(MODNAME, 'cfgi', 'nhru', Nhru, 'real', &
@@ -816,7 +816,7 @@
           depthg_cm = 0.0 !Cov_type =0 bare soil (rock, may be mostly impervious already)
           IF (Cov_type(i)==1) depthg_cm = 4.0 !grasses (boreal grass, tundra)
           IF (Cov_type(i)==2) depthg_cm = 3.0 !shrub (tundra)
-          IF (Cov_type(i)>=3) depthg_cm = 6.0 !trees
+          IF (Cov_type(i)==3) depthg_cm = 6.0 !trees
           IF (Cov_type(i)==4) depthg_cm = 2.0 !coniferous
 
 ! Continuous frozen ground index
@@ -828,13 +828,19 @@
           IF ( Cfgi(i)<0.0 ) Cfgi(i) = 0.0
 ! If above the threshold to be frozen
           IF ( Cfgi(i)>=Cfgi_thrshld ) THEN
+            thaw_frac = 1.0 !use previous frozen state
+            IF ( Frozen(i)==1 ) THEN
+              thaw_frac = 0.0
+            ELSEIF ( Frozen(i)==2) THEN
+              thaw_frac = Thaw_depth(i)/Soil_depth(i)
+            ENDIF
             ! Use modified Berggren formula to get a depth of frozen
             ! soil water content % of dry weight is water vol*density / (soil vol*density)
             omega = Soil_water(i) / (Soil_depth(i)*Soil_den(i))
             IF ( omega>1.0 ) omega = 1.0
             IF ( omega<0.1 ) omega = 0.1
             ! volumetric heat of fusion of the soil
-            volumetric_soil = Soil_den(i)*(4.187*0.17 + 0.75*omega)*1.e6 ! J/m^3/K, specific heat of rock, water, ice =0.17, 1, 0.5 *4.187 J/g/K , density in g/cm3
+            volumetric_soil = Soil_den(i)*(0.71179 + 4.186*(0.5*thaw_frac + 0.5)*omega)*1.e6 ! J/m^3/K, specific heat of rock, water, ice =4.186*0.17,4.186, 0.5 *4.187 J/g/K , density in g/cm3
             ! latent heat of fusion of the soil
             latent_soil = 334.0*Soil_den(i)*omega*1.e6 ! J/m^3, latent heat of fusion of water =  334 J/g , density in g/cm3
             thermal_ratio_alp = (Prev_ann_tempc(i) - Freezepoint)/(Cfgi(i) - Cfgi_thrshld) !degree K/ index Ti/Ts

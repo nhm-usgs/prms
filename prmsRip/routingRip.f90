@@ -29,6 +29,7 @@
       REAL, SAVE, ALLOCATABLE :: Seg_depth(:), K_coef(:), X_coef(:), Mann_n(:), Seg_width(:), Segment_flow_init(:)
       REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
 !   Declared Parameters for Overbank and bank Storage
+      INTEGER, SAVE :: Two
       REAL, SAVE, ALLOCATABLE :: Transmiss_seg(:), Ripst_areafr_max(:)
       REAL, SAVE :: Bank_height_fac
 !   Declared Parameters for Overbank Storage
@@ -44,7 +45,7 @@
       DOUBLE PRECISION, SAVE :: Basin_bankst_head, Basin_bankst_seep_rate
       DOUBLE PRECISION, SAVE :: Basin_bankst_seep, Basin_bankst_vol, Basin_bankst_area
       REAL, SAVE, ALLOCATABLE :: Bankst_head(:), Bankst_seep_rate(:), Bankst_seep_hru(:)
-      REAL, SAVE, ALLOCATABLE :: Bankst_stor_hru(:), Bankst_head_pts(:)
+      REAL, SAVE, ALLOCATABLE :: Bankst_stor_hru(:), Bankst_head_pts(:,:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Stage_ante(:), Stage_ts(:), Seg_bankflow(:)
       END MODULE PRMS_ROUTING
 
@@ -82,7 +83,7 @@
      &    Ripst_flag, Stream_temp_flag, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: declparam, declvar
+      INTEGER, EXTERNAL :: declparam, declvar, declfix
       EXTERNAL read_error, print_module
 !***********************************************************************
       routingdecl = 0
@@ -148,6 +149,10 @@
       ! 100 = user normal; 101 - 108 = not used; 109 sink (tosegment used by Lumen)
 
       IF ( Ripst_flag==1 .OR. Model==99 ) THEN
+
+        IF ( declfix('two', 2, 2, 'Need for keeping bank storage head points')/=0 ) CALL read_error(7, 'two')
+        Two = 2
+
 ! Overbank storage variables
         IF ( declvar(MODNAME, 'basin_ripst_evap', 'one', 1, 'double', &
      &       'Basin area-weighted average evaporation from riparian overbank flow storage', &
@@ -221,12 +226,12 @@
 
         ALLOCATE ( Seg_bankflow(Nsegment) )
         IF ( declvar(MODNAME, 'seg_bankflow', 'nsegment', Nsegment, 'double', &
-     &       'Bank storage area contribution to streamflow can be negative if steam losing water', &
+     &       'Bank storage area contribution to streamflow, negative if steam losing water', &
      &       'cfs', Seg_bankflow)/=0 ) CALL read_error(3, 'seg_bankflow')
 
-        ALLOCATE ( Bankst_head_pts(Nhru) )
-        IF ( declvar(MODNAME, 'bankst_head_pts', 'nhru', Nhru, 'real', &
-     &       'Head of bank storage above groundwater head: at half width away', &
+        ALLOCATE ( Bankst_head_pts(Nhru,Two) )
+        IF ( declvar(MODNAME, 'bankst_head_pts', 'nhru,two', Nhru*Two, 'real', &
+     &       'Head of bank storage above groundwater head: at quarter width away and edge of riparian area', &
      &       'meters', Bankst_head_pts)/=0 ) CALL read_error(3, 'bankst_head_pts')
 
         ALLOCATE ( Stage_ante(Nsegment) )
@@ -241,12 +246,12 @@
 
         ALLOCATE ( Bankst_seep_hru(Nhru) )
         IF ( declvar(MODNAME, 'bankst_seep_hru', 'nhru', Nhru, 'real', &
-     &       'HRU average seepage from bank storage to associated stream_segment for each HRU', &
+     &       'HRU average seepage from bank storage to associated stream segment for each HRU', &
      &       'inches', Bankst_seep_hru)/=0 ) CALL read_error(3, 'bankst_seep_hru')
 
         ALLOCATE ( Bankst_stor_hru(Nhru) )
         IF ( declvar(MODNAME, 'bankst_stor_hru', 'nhru', Nhru, 'real', &
-     &       'HRU average bank storage for each HRU', &
+     &       'Average bank storage for each HRU', &
      &       'inches', Bankst_stor_hru)/=0 ) CALL read_error(3, 'bankst_stor_hru')
 
         ALLOCATE ( Bankst_seep_rate(Nsegment) )
@@ -664,7 +669,7 @@
           Seg_outflow(i) = Segment_flow_init(i)
           IF ( Ripst_flag==1 ) THEN
             flow = Seg_outflow(i)*CFS2CMS_CONV
-            Stage_ts(i) = (Mann_n(i)*flow/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(5./3.)
+            Stage_ante(i) = (Mann_n(i)*flow/( Seg_width(i)*SQRT(Seg_slope(i)) ))**(3./5.)
           ENDIF
         ENDDO
         DEALLOCATE ( Segment_flow_init )
@@ -1167,6 +1172,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
 ! Local Variables
+      INTEGER :: seep_surface
       REAL :: ripst_avail_et, unsatisfied_et, ripst_evap, ripst_wid, thaw_frac
       REAL :: inflow, inflow_in, tmp, ripst_sri, ripst_srp, max_depth
       DOUBLE PRECISION :: seep, ripst_grnd, poss, seep_in, ripst_contrib_hru
@@ -1240,8 +1246,8 @@
 !
         IF (Ripst_frac(Ihru)<1.0) THEN
           Seg_ripflow(Hru_segment(Ihru)) = Seg_ripflow(Hru_segment(Ihru)) - inflow_in
-          inflow_in = SNGL(inflow*Timestep_seconds/(FT2_PER_ACRE*12.0)) !inch acre
-          Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow*Ripst_areafr_max(Ihru) + inflow_in
+          inflow_in = SNGL(inflow_in*Timestep_seconds/(FT2_PER_ACRE*12.0)) !inch acre
+          Ripst_vol(Ihru) = Ripst_vol(Ihru) + inflow*Ripst_areafr_max(Ihru) + inflow_in !inch acre
           IF ( Ripst_vol(Ihru) > (Ripst_vol_max(Ihru)*thaw_frac) ) THEN
              Ripst_vol(Ihru) = Ripst_vol_max(Ihru)*thaw_frac
           ELSE
@@ -1274,10 +1280,10 @@
 ! Filled riparian storage surface area for each HRU:
 !  Fills outward from the river with one edge on river and with same depth and same side shape
 !  this works out to keeping fraction same for area and volume filled
-        Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru)
+        Ripst_area(Ihru) = Ripst_area_max(Ihru)*Ripst_frac(Ihru) !acres
 
         ! evaporate water from riparian area based on snowcov_area
-        ! ripst_evap_open & ripst_evap_clos = inches-acres on the HRU
+        ! ripst_evap = inches-acres on the HRU
         unsatisfied_et = Potet(Ihru) - Snow_evap(Ihru) - Hru_intcpevap(Ihru) &
     &                 - Hru_impervevap(Ihru) - Dprst_evap_hru(Ihru)
         ripst_avail_et = 0.0
@@ -1305,29 +1311,33 @@
         ! compute seepage
         seep = 0.0
         seep_in = 0.0
+        seep_surface = 0 !0 if just using same as depression storage
         IF ( Ripst_vol(Ihru)>NEARZERO) THEN
-          ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
-!assumed it was a one sided stream, here a headwater with both sides in one HRU
-          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
-! Stream ground area is stream side area (flat wall) and other side area (fraction of triangle (1) to rectangle (0))
-          ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
+          IF (seep_surface==1) THEN !say the seep coefficient has something to do with surface area
+            ripst_wid =  SNGL(Ripst_area(Ihru)*FT2_PER_ACRE*(FEET2METERS**2.0)/Seg_length(Hru_segment(Ihru))) !meters
+            !assumed it was a one sided stream, here a headwater with both sides in one HRU
+            IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_wid = ripst_wid/2.0
+            ! Stream ground area is stream side area (flat wall) and other side area (fraction of triangle (1) to rectangle (0))
+            ripst_grnd = DBLE( Seg_length(Hru_segment(Ihru))*( ripst_wid*(1.0-Tr_ratio(Ihru))  + & !rectangle
      &              (SQRT( ripst_wid**2.0 + (Ripst_depth(Ihru)*thaw_frac)**2.0 )- Ripst_depth(Ihru)*thaw_frac)*Tr_ratio(Ihru) + & !triangle
-     &              2.0*Ripst_depth(Ihru)*thaw_frac ) ) !stream and other side
-!assumed it was a one sided stream, here a headwater with both sides in one HRU
-          IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
-!seep in a day through ground surface area of riparian, m^3 into ft^3 to acre_in
-!Transmissivity way too big
-          !seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0) !acre_in
-!ground area to total surface area is 5/6, then use depression seep coeff but reduce because surface area smaller
-          seep = ripst_grnd/(ripst_grnd+Ripst_area(Ihru)*FT2_PER_ACRE/ FEET2METERS**2.0 )/(5.0/6.0) &
-     &         *Ripst_vol(Ihru)*Dprst_seep_rate_open(Ihru)/FT2_PER_ACRE/12.0
+     &              2.0*Ripst_depth(Ihru)*thaw_frac ) ) !stream and other side m^2
+            !assumed it was a one sided stream, here a headwater with both sides in one HRU
+            IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) ripst_grnd = ripst_grnd*2.0
+            !seep in a day through ground surface area of riparian, m^3 into ft^3 to acre_in
+            !Transmissivity way too big
+            !seep = ripst_grnd*DBLE( Transmiss_seg(Hru_segment(Ihru)) )/(FEET2METERS**3.0) !ft^3
+            !ground area to total surface area is 5/6, then use depression seep coeff but reduce because surface area smaller
+            seep = ripst_grnd/(ripst_grnd+Ripst_area(Ihru)*FT2_PER_ACRE/ FEET2METERS**2.0 )/(5.0/6.0) &
+     &           *Ripst_vol(Ihru)*Dprst_seep_rate_open(Ihru)*FT2_PER_ACRE/12.0 !ft^3
+          ELSE !assume it is just a volume thing
+            seep = Ripst_vol(Ihru)*Dprst_seep_rate_open(Ihru)*FT2_PER_ACRE/12.0 !ft^3
+          ENDIF
           !seep = 0.0 !if want to turn off seep
-          seep_in = seep*FT2_PER_ACRE*12.0 ! inch acres
+          seep_in = seep*12.0/FT2_PER_ACRE ! inch acres
           Ripst_vol(Ihru) = Ripst_vol(Ihru) - seep_in
           IF ( Ripst_vol(Ihru)<0.0D0 ) THEN
             !IF ( Ripst_vol(Ihru)<-DNEARZERO ) PRINT *, 'issue, ripst_vol<0.0', Ihru, Ripst_vol(Ihru)
-            seep_in = seep_in + Ripst_vol(Ihru)
-            seep = seep_in/FT2_PER_ACRE/12.0 !ft^3
+            seep_in = seep_in + Ripst_vol(Ihru) !inch acre
             Ripst_vol(Ihru) = 0.0D0
           ENDIF
         ENDIF
@@ -1358,9 +1368,8 @@
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv, Hru_area_dble, Active_hrus, &
      &    FT2_PER_ACRE, FEET2METERS, CFS2CMS_CONV
       USE PRMS_ROUTING, ONLY: Basin_bankst_head, Bankst_head_init, Basin_bankst_area, &
-     &    Basin_bankst_vol, Bankst_head, Hru_segment, Seg_width, Seg_length, &
-     &    Bankst_stor_hru, Bankst_head_pts, Ripst_areafr_max, Bankfinite_hru
-      USE PRMS_FLOWVARS, ONLY: Seg_outflow
+     &    Basin_bankst_vol, Bankst_head, Stage_ante, Bankst_stor_hru, Bankst_head_pts, &
+     &    Ripst_areafr_max, Bankfinite_hru, Hru_segment
       IMPLICIT NONE
 ! Functions
       INTRINSIC SNGL
@@ -1370,8 +1379,9 @@
       DO i = 1, Active_hrus
         IF ( Hru_segment(i)>0) THEN
           Bankst_head(i) = Bankst_head_init(i)
-          Bankst_head_pts(i) =SNGL(Seg_outflow(Hru_segment(i))*CFS2CMS_CONV)*60.*60.*24. &
-     &              /Seg_width(Hru_segment(i))/Seg_length(Hru_segment(i))
+          Bankst_head_pts(i,1) =( 8.0*Bankst_head(i)-SNGL(Stage_ante(Hru_segment(i))) )/4.0
+          IF (Bankst_head_pts(i,1)<0.0) Bankst_head_pts(i,1) = 0.0
+          Bankst_head_pts(i,1) = 0.0
           IF (Bankfinite_hru(i)==1) THEN
             Bankst_stor_hru(i) = Ripst_areafr_max(i)*12.0*Bankst_head(i)/FEET2METERS !in inches
             Basin_bankst_head = Basin_bankst_head + Ripst_areafr_max(i)*Bankst_head(i)*Hru_area_dble(i) ! in meters
@@ -1417,11 +1427,12 @@
       INTEGER :: h, t0
       INTEGER, PARAMETER :: nbankd = 2
       REAL, PARAMETER :: PI = 3.14159
-      REAL :: area, str_wid, tot_wid, bank_wid, trans, a, xd, t, td
-      REAL :: delt, delta_input(nbankd), delta_diff(nbankd), head(nbankd), seep(nbankd)
+      REAL :: area, str_wid, tot_wid, bank_wid, trans, a, xd, t, td, xd2
+      REAL :: delt, delta_input(nbankd), delta_diff(nbankd), head(nbankd,2), seep(nbankd)
       REAL :: bank(nbankd), bankv(nbankd), ripfrac
       DOUBLE PRECISION :: input_net(nbankd), diff_net(nbankd), recharge(nbankd), stage(nbankd)
       DOUBLE PRECISION :: head_step, head_step_grad, seep_sum, head_sum
+      DOUBLE PRECISION :: head_step2, head_step_grad2, head_sum2
 !***********************************************************************
       area  = Ripst_areafr_max(Ihru)*Hru_area(Ihru) !acres
       IF ( Seg_hru_num(Hru_segment(Ihru))==1 ) area = area/2.0 !only take half of area if hru contains all of stream not just one side
@@ -1453,29 +1464,38 @@
         delta_diff(h-1) = SNGL((diff_net(h)-diff_net(h-1))/delt )
       ENDDO
       Bankst_seep_hru(Ihru) = 0.0
-      xd = 1.0+ bank_wid/2.0 ! at x = 1.0 is stage  which already know, calc at middle of bank storage area
-      head=Bankst_head_pts(Ihru) !set at last height for initial
+      xd = 1.0+ bank_wid/4.0 ! at x = 1.0 is stage  which already know, calc at 1/4 of bank storage area
+      DO h = 1, nbankd
+        head(h,1)=Bankst_head_pts(Ihru,1) !set at last height for initial
+        head(h,2)=Bankst_head_pts(Ihru,2) !set at last height for initial
+      ENDDO
 ! Calculate heads, seepage, and bank storage using convolution
       ripfrac = Ripst_areafr_max(Ihru)
       IF (Bankfinite_hru(Ihru)==0) ripfrac = 1.0
       DO h = 1, (nbankd-1)
         head_sum = 0.0
+        head_sum2 = 0.0
         seep_sum = 0.0
         DO t0 = 1,h
           t = t0*delt
           td = t*a/(str_wid**2.0) !dimensionless
-          IF (Bankfinite_hru(Ihru)==1) then !finite solution if transmissivity high, COMPUTATIONALLY EXPENSIVE, might eliminate
+          IF (Bankfinite_hru(Ihru)==1) then !finite solution if transmissivity high, COMPUTATIONALLY EXPENSIVE
+            xd2 = bank_wid+1.0
             CALL LTST1(td, xd, tot_wid, bank_wid, head_step, head_step_grad)
+            CALL LTST1(td, xd2, tot_wid, bank_wid, head_step2, head_step_grad2)
           ELSE IF (Bankfinite_hru(Ihru)==0) then !semi-infinite solution
             head_step = ERFC( (xd - 1.0)/SQRT((4.0*td)) )
             head_step_grad = -( 1.0/SQRT((PI*td)) )
           ENDIF
           !head is a function of xd
           head_sum = delta_input(h-t0+1)*head_step + head_sum
+          IF (Bankfinite_hru(Ihru)==1) head_sum2 = delta_input(h-t0+1)*head_step2 + head_sum2
           !seep is per unit segment length rate goes out, not a function of xd
           seep_sum = delta_diff(h-t0+1)*head_step_grad + seep_sum
         ENDDO
-        head(h+1)=head(h+1) + SNGL(head_sum*delt)
+        head(h+1,1)=head(h+1,1) + SNGL(head_sum*delt)
+        head(h+1,2)=0.0  ! Bankst_head_pts at infinite edge of bank storage area is 0 (xd = 1, so head_step = 0)
+        IF (Bankfinite_hru(Ihru)==1) head(h+1,2)=head(h+1,2) + SNGL(head_sum2*delt)
         seep(h+1)=SNGL((trans/str_wid)*seep_sum*delt)
         bank(h+1)=bank(h) - seep(h+1)*delt
         bankv(h+1)=bank(h+1)*Seg_length(Hru_segment(Ihru))
@@ -1487,12 +1507,11 @@
         bank = bank*2.0
         bankv = bankv*2.0
       ENDIF
-      Bankst_head_pts(Ihru) = head(nbankd) ! meters
+      Bankst_head_pts(Ihru,1) = head(nbankd,1) ! meters
+      Bankst_head_pts(Ihru,2) = head(nbankd,2) ! meters
       !linear interpolation for total average head over bank storage area, meters
-      Bankst_head(Ihru) = 0.5*(SNGL(stage(nbankd))+Bankst_head_pts(Ihru))
-      ! Bankst_head_pts at finite edge of bank storage area is 0 (xd = 1, so head_step = 0)
-      !  is only saved at the end of the timestep
-      Bankst_head(Ihru) = Bankst_head(Ihru) + 0.5*Bankst_head_pts(Ihru)
+      Bankst_head(Ihru) = ( SNGL(stage(nbankd))+4.0*Bankst_head_pts(Ihru,1) &
+     &                   + 3.0*Bankst_head_pts(Ihru,2) )/8.0
       ! m2 per 24 hr per stream segment for both sides of stream
       ! seep hru is inch over hru seeping out per day
 
