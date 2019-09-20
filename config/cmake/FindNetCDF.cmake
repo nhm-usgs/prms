@@ -80,6 +80,17 @@ if (NETCDF_ROOT)
     list(APPEND NETCDF_INCLUDE_DIRS ${_fflags_answer})
     # set(NETCDF_LIBRARIES "${_flibs_answer}")
     # set(NETCDF_INCLUDE_DIRS ${_fflags_answer})
+
+    # Handle netcdf-c and and netcdf-fortran built separately
+    find_library(netcdf_fortran netcdff)
+    if (netcdf_fortran AND (NOT DEFINED ${_flibs_answer}))
+      execute_process(COMMAND "${netcdf_config}" "--libs"
+        RESULT_VARIABLE _ret_code
+        OUTPUT_VARIABLE _stdout
+        ERROR_VARIABLE _stderr)
+      string(REGEX REPLACE "[\n\r]" "" _libs_answer ${_stdout})
+      set(NETCDF_LIBRARIES "${_libs_answer} -lnetcdff")
+    endif()
   endif()
 
   mark_as_advanced(NETCDF_LIBRARIES)
