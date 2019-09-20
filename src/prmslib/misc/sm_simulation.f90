@@ -47,46 +47,36 @@ submodule (Simulation_class) sm_simulation
       call this%model_precip%init(ctl_data, this%model_basin, this%model_temp, this%model_summary)
       ! this%model_precip = Precipitation_hru(ctl_data, this%model_basin, this%model_temp, this%model_summary)
 
-      allocate(Climateflow::this%climate)
       call this%climate%init(ctl_data, this%model_basin, this%model_summary)
       ! this%climate = Climateflow(ctl_data, this%model_basin, this%model_summary)
 
       ! TODO: PAN - add logic for other solar radiation modules
-      allocate(Solrad_degday::this%solrad)
       call this%solrad%init(ctl_data, this%model_basin, this%model_summary)
       ! this%solrad = Solrad_degday(ctl_data, this%model_basin, this%model_summary)
 
       ! TODO: PAN - add logic for other transpiration modules
-      allocate(Transp_tindex::this%transpiration)
       call this%transpiration%init(ctl_data, this%model_basin, this%model_temp)
       ! this%transpiration = Transp_tindex(ctl_data, this%model_basin, this%model_temp)
 
       ! TODO: PAN - add logic for other potential ET modules
-      allocate(Potet_jh::this%potet)
       call this%potet%init(ctl_data, this%model_basin, this%model_summary)
       ! this%potet = Potet_jh(ctl_data, this%model_basin, this%model_summary)
 
-      allocate(Interception::this%intcp)
       call this%intcp%init(ctl_data, this%model_basin, this%transpiration, this%model_summary)
       ! this%intcp = Interception(ctl_data, this%model_basin, this%transpiration, this%model_summary)
 
-      allocate(Snowcomp::this%snow)
       call this%snow%init(ctl_data, this%model_basin, this%climate, this%model_summary)
       ! this%snow = Snowcomp(ctl_data, this%model_basin, this%climate, this%model_summary)
 
-      allocate(Srunoff::this%runoff)
       call this%runoff%init(ctl_data, this%model_basin, this%model_summary)
       ! this%runoff = Srunoff(ctl_data, this%model_basin, this%model_summary)
 
-      allocate(Soilzone::this%soil)
       call this%soil%init(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
       ! this%soil = Soilzone(ctl_data, this%model_basin, this%climate, this%snow, this%runoff, this%model_summary)
 
-      allocate(Gwflow::this%groundwater)
       call this%groundwater%init(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
       ! this%groundwater = Gwflow(ctl_data, this%model_basin, this%climate, this%intcp, this%soil, this%runoff, this%model_summary)
 
-      allocate(Muskingum::this%model_streamflow)
       call this%model_streamflow%init(ctl_data, this%model_basin, this%model_time, this%model_summary)
       ! this%model_muskingum = Muskingum(ctl_data, this%model_basin, this%model_time, this%model_summary)
 
