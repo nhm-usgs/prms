@@ -43,7 +43,7 @@ module Simulation_class
       type(Soilzone) :: soil
       type(Gwflow) :: groundwater
       ! ! type(Routing) :: model_route
-      type(Muskingum) :: model_muskingum
+      type(Muskingum) :: model_streamflow
       type(Summary) :: model_summary
       type(WaterBalance) :: model_waterbal
     contains
