@@ -678,7 +678,6 @@
         IF ( getparam(MODNAME, 'albedo_ice', Nhru, 'real', Albedo_ice)/=0 ) CALL read_error(2, 'albedo_ice')
         IF ( getparam(MODNAME, 'albedo_coef', Nhru, 'real', Albedo_coef)/=0 ) CALL read_error(2, 'albedo_coef')
         IF ( getparam(MODNAME, 'glacr_layer', Nhru, 'real', Glacr_layer)/=0 ) CALL read_error(2, 'glacr_layer')
-
       ENDIF
 
       IF ( getparam(MODNAME, 'den_init', 1, 'real', Den_init)/=0 ) CALL read_error(2, 'den_init')
@@ -944,7 +943,6 @@
           Mso(i) = 1 ! [flag]
           Lso(i) = 0 ! [counter]
 
-
           IF ( Active_glacier>=1 ) CALL glacr_states_to_zero(i,1) !all snow on glacier becomes firn, reset active layer thickness
           IF ( Active_glacier==1 ) THEN
 ! If Active_glacier>=1 we are zeroing out snowpack if have glacierettes even though possibly a lot of HRU is not glacierized.
@@ -1125,7 +1123,7 @@
           ! is no precipitation
           emis = Emis_noppt(i) ! [fraction of radiation]
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
-          !emis = ((temp+273.15)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
+          !emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
           ! If there is any precipitation in the HRU, reset the
           ! emissivity to 1
           IF ( Hru_ppt(i)>0.0 ) emis = 1.0 ! [fraction of radiation]
@@ -1436,7 +1434,6 @@
         Basin_glacrb_melt = Basin_glacrb_melt*Basin_area_inv
         Basin_glacrevap = Basin_glacrevap*Basin_area_inv
       ENDIF
-
 
       IF ( Print_debug==9 ) THEN
         PRINT 9001, Jday, (Net_rain(i), i=1, Nhru)
@@ -2236,7 +2233,7 @@
       ! Calculate the potential long wave energy from air based on
       ! temperature (assuming perfect black-body emission)
       ! Stefan Boltzmann/2 = (11.71E-8)/2 = 0.585E-7 because add for day and night
-      air = 0.585E-7*((Temp+273.15)**4.0) ! [cal/cm^2] or [Langleys]
+      air = 0.585E-7*((Temp+273.16)**4.0) ! [cal/cm^2] or [Langleys]
       ! set emissivity, which is the fraction of perfect black-body
       ! emission that is actually applied
       emis = Esv ! [fraction of radiation]
@@ -2462,7 +2459,7 @@
 !      Subroutine to compute evaporation from snowpack
 !***********************************************************************
       SUBROUTINE snowevap(Potet_sublim, Potet, Snowcov_area, Snow_evap, &
-     &                    Pkwater_equiv, Pk_ice, Freeh2o, Pk_def, Pk_temp, Hru_intcpevap)
+     &                    Pkwater_equiv, Pk_ice, Pk_def, Freeh2o, Pk_temp, Hru_intcpevap)
       USE PRMS_SNOW, ONLY: Active_glacier
       USE PRMS_BASIN, ONLY: CLOSEZERO, DNEARZERO
       USE PRMS_MODULE, ONLY: Print_debug

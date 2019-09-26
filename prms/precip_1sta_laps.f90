@@ -117,7 +117,7 @@
 ! Declare parameters
         ALLOCATE ( Hru_psta(Nhru) )
         IF ( declparam(MODNAME, 'hru_psta', 'nhru', 'integer', &
-     &       '1', 'bounded', 'nrain', &
+     &       '0', 'bounded', 'nrain', &
      &       'Index of base precipitation station for HRU', &
      &       'Index of the base precipitation station used for lapse'// &
      &       ' rate calculations for each HRU', &

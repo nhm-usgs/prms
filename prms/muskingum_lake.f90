@@ -1,3 +1,5 @@
+! need to add lake shape and changing area in same manner as depression storage
+
 !***********************************************************************
 ! Routes water between segments and lakes in the stream network;
 ! using Muskingum routing for stream segments and 5 lake routing methods
@@ -631,6 +633,8 @@
 !***********************************************************************
       muskingum_lake_init = 0
 
+      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
+
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
@@ -1197,7 +1201,7 @@
         lake_storage = s2o2 - q2*0.5D0
         Lake_sto(Lakeid) = lake_storage
 
-!   Compute outflow using linear reservoir method
+!   Compute outflow using linear reservoir method, ?? need to fix for hourly loop
       ELSEIF ( Laketype==2 ) THEN
         !rsr, why half of current in and last in???
         avin = (Lake_inflow(Lakeid)+Din1(Lakeid)-Lake_outflow(Lakeid))*0.5D0

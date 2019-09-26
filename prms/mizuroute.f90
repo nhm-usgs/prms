@@ -32,8 +32,8 @@
       integer,allocatable    :: REACHIDGV(:)
       integer,allocatable    :: RCHIXLIST(:)
       integer                :: nTotal              ! total number of upstream segments for all stream segments
-      integer                :: iRchStart
-      integer                :: iRchStart1
+      integer(kind=8)                :: iRchStart
+      integer(kind=8)                :: iRchStart1
       integer,target         :: nRchCount
       integer                :: nRchCount1
       integer                :: iUpRchStart
@@ -133,14 +133,19 @@
       EXTERNAL :: read_error
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
-      INTEGER :: i, j, k, jj, toseg, iorder, reachStart(Nsegment), reachCount(Nsegment)
-      INTEGER :: upReachStart(Nsegment), upReachCount(Nsegment),reachListMat(Nsegment,Nsegment)
-      INTEGER :: reachList(Nsegment*Nsegment),upReachIndex(Nsegment*Nsegment), seg_id(Nsegment)
-      INTEGER :: upReachIndMat(Nsegment,Nsegment), ilake
+      INTEGER :: i, k, jj, toseg, iorder, reachStart(Nsegment), reachCount(Nsegment)
+      INTEGER :: upReachStart(Nsegment), upReachCount(Nsegment)
+      INTEGER :: seg_id(Nsegment)
+      INTEGER :: ilake
+      INTEGER(kind=8) :: j, ns2
       DOUBLE PRECISION :: totalArea(Nsegment)
+      integer, allocatable :: reachList(:), upReachIndex(:), upReachIndMat(:,:), reachListMat(:,:)
 !***********************************************************************
       mizuroute_init = 0
-
+      ns2 = Nsegment
+      ns2 = ns2 * Nsegment
+      allocate ( reachList(ns2), upReachIndex(ns2) )
+      allocate ( upReachIndMat(Nsegment,Nsegment), reachListMat(Nsegment,Nsegment) )
       !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
@@ -421,6 +426,8 @@
       ENDIF
       ! initialize the routed elements
       RCHFLX(:,:)%BASIN_QR(1) = 0.D0
+      deallocate ( reachList, upReachIndex )
+      deallocate ( upReachIndMat, reachListMat )
 
       END FUNCTION mizuroute_init
 

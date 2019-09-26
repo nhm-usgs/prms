@@ -305,7 +305,7 @@
      &              Hru_impervstor(i), Hru_impervevap(i), Net_ppt(i), &
      &              Pkwater_equiv(i), Snow_evap(i), Net_snow(i), Net_rain(i), Hru_sroffp(i), Hru_sroffi(i), gmelt, harea
           ELSE
-            WRITE ( BALUNT,'(3I3,F10.6,16F10.4)' ) Nowmonth, Nowday, Pptmix_nopack(i), &
+            WRITE ( BALUNT,'(3I3,F10.6,16F10.4,F10.3)' ) Nowmonth, Nowday, Pptmix_nopack(i), &
      &              robal, Snowmelt(i), Imperv_stor_ante(i), Infil(i), &
      &              Hortonian_flow(i), Hru_impervstor(i), Hru_impervevap(i), Hru_percent_imperv(i), Net_ppt(i), &
      &              Pkwater_equiv(i), Snow_evap(i), Net_snow(i), Net_rain(i), Hru_sroffp(i), Hru_sroffi(i), gmelt, harea

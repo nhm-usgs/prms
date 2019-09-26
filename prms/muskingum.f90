@@ -150,7 +150,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -165,6 +165,8 @@
       muskingum_init = 0
 
       !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
+      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
+
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
         Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)

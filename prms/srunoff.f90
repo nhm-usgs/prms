@@ -3,10 +3,18 @@
 ! non-linear (smidx) and linear (carea) variable-source-area method
 ! Combinded smidx and carea modules 3/12/2013
 !
+!     version: 2.1 combined with srunoff_cfgi.f from M.C.Mastin
+!          includes glacr_melt for HRU's w/ glaciers,IE: hru_type(HRU#)=4
+!          modified 6/98 by JJ Vaccaro
+!      MODIFIED 5/00 by JJ Vaccaro to account for irrigation application
+!      MODIFIED 9/04 by M.C.Mastin to include a Continuous Frozen Ground
+!         Index (cfgi) that shuts off infiltration once the index reaches
+!         a threshold value (parameter cfgi_thrshld). A daily decay of
+!         the index is defined by cfgi_decay parameter.
 !     version: 2.2 added cascading flow for infiltration and runoff
 !
 ! includes glacrb_melt for HRUs with glaciers and frozen ground under glaciers 12/2014
-!
+! rsr, 10/1/2008 added Vaccaro code
 ! rsr, 10/21/2008 added frozen ground code
 ! rsr, 10/30/2008 added depression storage code
 ! rsr, 04/11/2011 changed so dprst_area to be a parameter (does not change)
@@ -105,7 +113,7 @@
 !***********************************************************************
       srunoffdecl = 0
 
-      Version_srunoff = 'srunoff.f90 2019-05-24 14:50:00Z'
+      Version_srunoff = 'srunoff.f90 2019-09-26 16:18:00Z'
       IF ( Sroff_flag==1 ) THEN
         MODNAME = 'srunoff_smidx'
       ELSE
@@ -319,7 +327,7 @@
      &       'decimal fraction')/=0 ) CALL read_error(1, 'cfgi_decay')
 
         IF ( declparam(MODNAME, 'cfgi_thrshld', 'one', 'real', &
-     &       '52.55', '5.0', '83.0', &
+     &       '52.55', '1.0', '500.0', &
      &       'CFGI threshold value indicating frozen soil', &
      &       'CFGI threshold value indicating frozen soil', &
      &       'index')/=0 ) CALL read_error(1, 'cfgi_thrshld')
@@ -479,8 +487,7 @@
       INTEGER FUNCTION srunoffinit()
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Dprst_flag, Nhru, Nlake, Cascade_flag, Sroff_flag, &
-     &    Init_vars_from_file, Call_cascade, Water_use_flag, &
-     &    Frozen_flag!, Parameter_check_flag
+     &    Init_vars_from_file, Call_cascade, Water_use_flag, Frozen_flag !, Parameter_check_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
 !      USE PRMS_FLOWVARS, ONLY: Soil_moist_max
       IMPLICIT NONE
@@ -529,6 +536,7 @@
         Basin_contrib_fraction = 0.0D0
         Srp = 0.0
         Sri = 0.0
+
         IF ( Frozen_flag==1 ) THEN
           Frozen = 0
           Cfgi = 0.0
@@ -707,7 +715,7 @@
         Hru_sroffi(i) = 0.0
         Imperv_evap(i) = 0.0
         Hru_impervevap(i) = 0.0
-
+        availh2o = Intcp_changeover(i) + Net_rain(i)
         avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
 
         frzen = 0
@@ -729,9 +737,9 @@
             frzen = 1
             ! depression storage states are not changed if frozen
             IF ( Cascade_flag>0 ) THEN
-              cfgi_sroff = (Snowmelt(i) + Net_rain(i) + Upslope_hortonian(i) + glcrmltb)*Hruarea
+              cfgi_sroff = (Snowmelt(i) + availh2o + Upslope_hortonian(i) + glcrmltb)*Hruarea
             ELSE
-              cfgi_sroff = (Snowmelt(i) + Net_rain(i) + glcrmltb)*Hruarea
+              cfgi_sroff = (Snowmelt(i) + availh2o + glcrmltb)*Hruarea
             ENDIF
             IF ( Use_sroff_transfer==1 ) cfgi_sroff = cfgi_sroff + Net_apply(i)*Hruarea
             runoff = runoff + cfgi_sroff
@@ -758,7 +766,6 @@
             ENDIF
           ENDIF
 
-          availh2o = Intcp_changeover(i) + Net_rain(i)
           IF ( Isglacier==1 ) THEN ! glacier
             temp = Snowmelt(i) + glcrmltb !Snowmelt or 0.0
             temp2 = availh2o*(1.0-Glacier_frac(i))
@@ -1513,8 +1520,7 @@
 !     srunoff_restart - write or read srunoff restart file
 !***********************************************************************
       SUBROUTINE srunoff_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Dprst_flag, &
-     &    Frozen_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Dprst_flag, Frozen_flag
       USE PRMS_SRUNOFF
       IMPLICIT NONE
       ! Argument

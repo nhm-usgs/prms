@@ -187,7 +187,7 @@
           ALLOCATE ( Tcrn(Nhru), Tcrx(Nhru) )
           ALLOCATE ( Tmax_lapse(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmax_lapse', 'nhru,nmonths', 'real', &
-     &         '17.64', '-20.0', '20.0', &
+     &         '3.0', '-20.0', '20.0', &
      &         'Monthly maximum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in maximum air temperature per 1000 elev_units of'// &
      &         ' elevation change for each HRU', &
@@ -196,7 +196,7 @@
 
           ALLOCATE ( Tmin_lapse(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmin_lapse', 'nhru,nmonths', 'real', &
-     &         '17.64', '-20.0', '20.0', &
+     &         '3.0', '-20.0', '20.0', &
      &         'Monthly minimum temperature lapse rate for each HRU', &
      &         'Monthly (January to December) values representing the change in minimum air temperture per 1000 elev_units of'// &
      &         ' elevation change for each HRU', &

@@ -157,7 +157,7 @@
 ! declare parameters
       ALLOCATE ( Adjust_snow(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.75', '3.0',
+     +     '-0.4', '-0.5', '3.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -166,7 +166,7 @@
 
       ALLOCATE ( Adjust_rain(Nrain,12) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
-     +     '-0.4', '-0.75', '3.0',
+     +     '-0.4', '-0.5', '3.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
      +     ' factor for each precipitation measurement station',
      +     'Monthly (January to December) rain downscaling adjustment'//

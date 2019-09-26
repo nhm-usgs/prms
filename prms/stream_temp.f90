@@ -28,6 +28,7 @@
       REAL, SAVE, ALLOCATABLE :: Seg_tave_air(:), Seg_melt(:), Seg_rain(:)
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 !   Segment Parameters
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
       REAL, SAVE, ALLOCATABLE :: Width_values(:, :)
       REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:)
       INTEGER, SAVE:: Width_dim, Maxiter_sntemp
@@ -96,7 +97,7 @@
 !***********************************************************************
       stream_temp_decl = 0
 
-      Version_stream_temp = 'stream_temp.f90 2018-04-18 16:18:00Z'
+      Version_stream_temp = 'stream_temp.f90 2019-09-25 16:03:00Z'
       CALL print_module(Version_stream_temp, 'Stream Temperature          ', 90)
       MODNAME = 'stream_temp'
 
@@ -199,6 +200,20 @@
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'lat_temp_adj')
+
+      ALLOCATE ( Seg_length(Nsegment) )
+      IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
+     &     '1000.0', '1.0', '100000.0', &
+     &     'Length of each segment', &
+     &     'Length of each segment', &
+     &     'meters')/=0 ) CALL read_error(1, 'seg_length')
+
+      ALLOCATE ( Seg_slope(Nsegment) )
+      IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
+     &     '0.015', '0.0001', '2.0', &
+     &     'Bed slope of each segment', &
+     &     'Bed slope of each segment', &
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'seg_slope')
 
       ALLOCATE (width_alpha(Nsegment) )
       IF ( declparam( MODNAME, 'width_alpha', 'nsegment', 'real', &
@@ -385,7 +400,7 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Inputerror_flag, Strmtemp_humidity_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, NEARZERO
       USE PRMS_OBS, ONLY: Nhumid
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
@@ -403,6 +418,7 @@
 
       IF ( getparam( MODNAME, 'albedo_str', 1, 'real', Albedo_str)/=0 ) CALL read_error(2, 'albedo_str')
       IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*12, 'real', lat_temp_adj)/=0 ) CALL read_error(2, 'lat_temp_adj')
+      IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
 
       IF (getparam(MODNAME, 'seg_lat', Nsegment, 'real', Seg_lat)/=0 ) CALL read_error(2, 'seg_lat')
 !     Convert latitude from degrees to radians
@@ -410,6 +426,7 @@
 
       IF (getparam(MODNAME, 'seg_elev', Nsegment, 'real', Seg_elev)/=0 ) CALL read_error(2, 'seg_elev')
 
+      IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
       IF ( getparam( MODNAME, 'width_alpha', Nsegment, 'real', width_alpha)/=0 ) CALL read_error(2, 'width_alpha')
       IF ( getparam( MODNAME, 'width_m', Nsegment, 'real', width_m)/=0 ) CALL read_error(2, 'width_m')
 
@@ -492,6 +509,20 @@
          IF ( i==0 ) CYCLE
          Seg_hru_count(i) = Seg_hru_count(i) + 1
       ENDDO
+
+! find segments that are too short and print them out as they are found
+      DO i = 1, Nsegment
+         IF ( Seg_length(i)<NEARZERO ) THEN
+            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+            ierr = 1
+         ENDIF
+      ENDDO
+
+! exit if there are any segments that are too short
+      IF ( ierr==1 ) THEN
+         Inputerror_flag = ierr
+         RETURN
+      ENDIF
 
       Seg_close = Segment_up ! assign upstream values
       DO j = 1, Nsegment ! set values based on routing order for segments without associated HRUs
@@ -642,7 +673,7 @@
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
-      USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Seginc_swrad, Seg_length
+      USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
@@ -1098,10 +1129,10 @@
 !        2. DETERMINE THE MAXIMUM DAILY EQUILIBRIUM WATER TEMPERATURE PARAMETERS
 
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Seg_width_flow, Seg_humid, Press, MPS_CONVERT, &
-     &    Seg_ccov, Seg_potet, Albedo_str, seg_tave_gw
+     &    Seg_ccov, Seg_slope, Seg_potet, Albedo_str, seg_tave_gw
       USE PRMS_BASIN, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
-      USE PRMS_ROUTING, ONLY: Seginc_swrad, Seg_slope
+      USE PRMS_ROUTING, ONLY: Seginc_swrad
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, SQRT, ABS, SNGL, DBLE

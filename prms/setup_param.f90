@@ -34,7 +34,7 @@
 !***********************************************************************
       setupdecl = 0
 
-      Version_setup = 'setup_param.f90 2016-11-28 09:44:00Z'
+      Version_setup = 'setup_param.f90 2019-09-26 10:24:00Z'
       CALL print_module(Version_setup, 'Parameter Setup             ', 90)
       MODNAME = 'setup'
 
@@ -64,6 +64,11 @@
      &     'Segment index for each POI gage', &
      &     'none')/=0 ) CALL read_error(1, 'poi_gage_segment')
 
+      ! Type code for each point-of-interest (POI) gage (1=USGS streamgage; 2=NWS River Forecast Center Node 
+      ! (http://water.weather.gov/ahps/download.php); 3=USGS SPARROW node (https://water.usgs.gov/nawqa/sparrow/);
+      ! 4=outlet from or inlet to NHD-defined waterbody; 5=confluence of NHDPlus flowlines exceeding a Strahler stream order (Strahler, 1952, 1957) of four;
+      ! 6=connectivity segment not in NHDPlus; 7=split segment from NHDPlus flowline because of travel time > 24 hours;
+      ! 8=split segment from NHMPlus flowline because of change in elevation > 500 meters)
       IF ( declparam(MODNAME, 'poi_type', 'npoigages', 'integer', &
      &     '1', '1', '1', &
      &     'Type code for each POI gage', 'Type code for each POI gage', &

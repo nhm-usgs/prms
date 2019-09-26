@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 06/20/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 10/01/2019'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
@@ -94,7 +94,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-06-20 15:33:00Z'
+        PRMS_versn = 'call_modules.f90 2019-09-26 18:30:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -109,9 +109,10 @@
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
      &        '   Potet Solar Rad: soltab', /, &
-     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru', /, &
-     &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
+     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, temp_grid', /, &
      &        '                    climate_hru', /, &
+     &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
+     &        '                    precip_grid, climate_hru', /, &
      &        'Temp & Precip Dist: xyz_dist, ide_dist', /, &
      &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru', /, &
      &        'Transpiration Dist: transp_tindex, climate_hru, transp_frost', /, &
@@ -1062,6 +1063,7 @@
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta
       INTEGER, EXTERNAL :: glacr
+      EXTERNAL :: precip_temp_grid
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1078,6 +1080,7 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
+      test = CALL precip_temp_grid()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
