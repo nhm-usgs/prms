@@ -94,7 +94,7 @@
 !***********************************************************************
       srunoffdecl = 0
 
-      Version_srunoff = 'srunoff.f90 2019-05-24 14:50:00Z'
+      Version_srunoff = 'srunoff.f90 2019-09-26 16:18:00Z'
       IF ( Sroff_flag==1 ) THEN
         MODNAME = 'srunoff_smidx'
       ELSE
@@ -410,7 +410,7 @@
      &       'Coefficient in the exponential equation relating'// &
      &       ' maximum surface area to the fraction that open'// &
      &       ' depressions are full to compute current surface area for each HRU;'// &
-     &       ' 0.001 is an approximate rectangle; 1.0 is a triangle', &
+     &       ' 0.001 is an approximate cylinder; 1.0 is a cone', &
      &       'none')/=0 ) CALL read_error(1, 'va_open_exp')
 
         ALLOCATE ( Va_clos_exp(Nhru) )
@@ -421,7 +421,7 @@
      &       'Coefficient in the exponential equation relating'// &
      &       ' maximum surface area to the fraction that closed'// &
      &       ' depressions are full to compute current surface area for each HRU;'// &
-     &       ' 0.001 is an approximate rectangle; 1.0 is a triangle', &
+     &       ' 0.001 is an approximate cylinder; 1.0 is a cone', &
      &       'none')/=0 ) CALL read_error(1, 'va_clos_exp')
       ENDIF
 
@@ -637,6 +637,7 @@
         Hru_impervevap(i) = 0.0
 
         avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
+        availh2o = Intcp_changeover(i) + Net_rain(i)
 
 !******Compute runoff for pervious, impervious, and depression storage area
 ! DO IRRIGATION APPLICATION, ONLY DONE HERE, ASSUMES NO SNOW and
@@ -655,7 +656,6 @@
           ENDIF
         ENDIF
 
-        availh2o = Intcp_changeover(i) + Net_rain(i)
         CALL compute_infil(availh2o, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
      &                     Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i))
 

@@ -82,7 +82,7 @@
 !***********************************************************************
       cascdecl = 0
 
-      Version_cascade = 'cascade.f90 2018-05-25 15:11:00Z'
+      Version_cascade = 'cascade.f90 2019-09-25 12:31:00Z'
       CALL print_module(Version_cascade, 'Cascading Flow              ', 90)
       MODNAME = 'cascade'
 
@@ -202,7 +202,7 @@
       INTEGER, EXTERNAL :: getparam
       EXTERNAL read_error, init_cascade, initgw_cascade
 ! Local Variables
-      INTEGER :: i, j, k, ii, iret
+      INTEGER :: i, j, k, ii, iret, itest
 !***********************************************************************
       cascinit = 0
 
@@ -216,7 +216,7 @@
         IF ( getparam(MODNAME, 'circle_switch', 1, 'integer', Circle_switch)/=0 ) CALL read_error(2, 'circle_switch')
       ENDIF
 
-      IF ( Cascade_flag>0 ) CALL init_cascade(cascinit)
+      IF ( Cascade_flag>0 ) CALL init_cascade(itest)
 
       iret = 0
       IF ( Cascadegw_flag>0 ) THEN
@@ -248,7 +248,7 @@
           ENDDO
         ENDIF
       ENDIF
-      IF ( cascinit/=0 .OR. iret/=0 ) STOP
+      IF ( itest/=0 .OR. iret/=0 ) STOP
 
       IF ( Print_debug==13 ) THEN
         IF ( Cascade_flag>0 ) THEN
@@ -757,7 +757,7 @@
       REAL :: carea, frac
       REAL, ALLOCATABLE :: gwr_frac(:)
 !***********************************************************************
-     Iret = 0
+      Iret = 0
 
       ALLOCATE ( gwr_frac(Ngw) )
       DO i = 1, Ngw

@@ -232,7 +232,7 @@ ide_dist.o: ide_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_cli
 xyz_dist.o: xyz_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) xyz_dist.f
 
-stream_temp.o: stream_temp.f90 prms_module.mod
+stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_soltab.mod prms_snow.mod prms_climate_hru.mod
 	$(FC) -c $(FFLAGS) stream_temp.f90
 
 prms_climatevars.mod: climateflow.o

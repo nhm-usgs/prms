@@ -59,7 +59,7 @@
       REAL, SAVE, ALLOCATABLE :: Pref_flow_infil(:), Pref_flow_in(:)
       REAL, SAVE, ALLOCATABLE :: Hru_sz_cascadeflow(:), Swale_actet(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_max(:), Snow_free(:)
-      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:) 
+      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
       REAL, SAVE, ALLOCATABLE :: Unused_potet(:)
 !      REAL, SAVE, ALLOCATABLE :: Cascade_interflow(:), Cascade_dunnianflow(:), Interflow_max(:)
@@ -125,7 +125,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2019-03-05 11:11:00Z'
+      Version_soilzone = 'soilzone.f90 2019-09-26 16:32:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -511,7 +511,7 @@
       IF ( Nlake>0 ) THEN
         ALLOCATE ( Lake_evap_adj(12,Nlake) )
         IF ( declparam(MODNAME, 'lake_evap_adj', 'nmonths,nlake', &
-     &       'real', '1.0', '0.5', '1.0', &
+     &       'real', '1.0', '0.5', '1.5', &
      &       'Monthly potet factor to adjust potet on lakes', &
      &       'Monthly (January to December) adjustment factor for potential ET for each lake', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'lake_evap_adj')
@@ -961,9 +961,7 @@
           IF ( Hru_actet(i)>Potet(i) ) THEN
             PRINT *, 'WARNING, lake evap > potet, for HRU:', i, ' potential ET increased to adjusted lake ET'
             PRINT *, Hru_actet(i), Potet(i), Hru_actet(i) - Potet(i)
-            Basin_potet = Basin_potet - DBLE( Potet(i)*harea )
             Potet(i) = Hru_actet(i) ! this could be a problem when it happens
-            Basin_potet = Basin_potet + DBLE( Potet(i)*harea )
             update_potet = 1
           ENDIF
           Unused_potet(i) = Potet(i) - Hru_actet(i)
@@ -1051,7 +1049,7 @@
         Cap_waterin(i) = capwater_maxin
 
         ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
-        IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
+          IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
           CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
      &         Soil_rechr_max(i), Soil2gw_max(i), gvr_maxin, &
      &         Soil_moist(i), Soil_rechr(i), Soil_to_gw(i), Soil2gw(i), perv_frac)
@@ -1291,7 +1289,6 @@
       Basin_soil_rechr = Basin_soil_rechr*Basin_area_inv
       Basin_soil_to_gw = Basin_soil_to_gw*Basin_area_inv
       Basin_soil_moist = Basin_soil_moist*Basin_area_inv
-      IF ( update_potet==1 ) Basin_potet = Basin_potet*Basin_area_inv
       Basin_soil_moist_tot = Basin_soil_moist_tot*Basin_area_inv
       IF ( Nlake>0 ) THEN
         Basin_lakeevap = Basin_lakeevap*Basin_area_inv
@@ -1333,6 +1330,14 @@
       Basin_sz_stor_frac = Basin_sz_stor_frac*Basin_area_inv
       Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac*Basin_area_inv
       Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac*Basin_area_inv
+      IF ( update_potet==1 ) THEN
+        Basin_potet = 0.0D0
+        DO k = 1, Active_hrus
+          i = Hru_route_order(k)
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
+        ENDDO
+        Basin_potet = Basin_potet*Basin_area_inv
+      ENDIF
 
       END FUNCTION szrun
 
