@@ -73,7 +73,7 @@
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = 'soltab.f90 2016-09-09 12:53:00Z'
+      Version_soltab = 'soltab.f90 2016-09-27 11:00:00Z'
       CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
       MODNAME = 'soltab'
 
@@ -113,7 +113,7 @@
 !***********************************************************************
       INTEGER FUNCTION sthinit()
       USE PRMS_SOLTAB
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
       IMPLICIT NONE
 ! Functions
@@ -221,7 +221,8 @@
 !     data jday/356,10,23,38,51,66,80,94,109,123,138,152,173/
       ENDIF
 
-!      DEALLOCATE ( Hru_slope, Hru_aspect ) !can't deallocate if have glaciers because call after init
+      DEALLOCATE ( Hru_slope )
+      IF ( Glacier_flag/=1 ) DEALLOCATE ( Hru_aspect )
 
       END FUNCTION sthinit
 

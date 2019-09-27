@@ -225,8 +225,8 @@
      &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
       ENDIF
 
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 ) ALLOCATE ( K_coef(Nsegment) )
       IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Model==99 ) THEN
-        ALLOCATE ( K_coef(Nsegment) )
         IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
      &       '1.0', '0.01', '24.0', &
      &       'Muskingum storage coefficient', &
@@ -542,7 +542,10 @@
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
         ENDIF
 
-        IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) K_coef(i) = 24.0 !K_coef must be specified = 24.0 for lake segments'
+        IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) THEN
+          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments'
+          K_coef(i) = 24.0
+        ENDIF
         IF ( K_coef(i)<0.01 ) K_coef(i) = 0.01 !make compliant with old version of K_coef
         IF ( K_coef(i)>24.0 ) K_coef(i) = 24.0
         k = K_coef(i)

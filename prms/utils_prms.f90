@@ -739,6 +739,7 @@
       IF ( Ftype==0 ) THEN
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios )
       ELSE
+        !USE UNFORMATTED for UNIX
         !OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios ) ! for linux
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', FORM='BINARY', IOSTAT=ios ) ! for windows
       ENDIF
@@ -771,6 +772,7 @@
       IF ( Ftype==0 ) THEN
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios )
       ELSE
+        !USE UNFORMATTED for UNIX
         !OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='UNFORMATTED' ) ! for linux
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios, FORM='BINARY' ) ! for windows
       ENDIF

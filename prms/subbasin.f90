@@ -70,7 +70,7 @@
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = 'subbasin.f90 2018-04-25 15:27:00Z'
+      Version_subbasin = 'subbasin.f90 2019-09-26 17:25:00Z'
       CALL print_module(Version_subbasin, 'Output Summary              ', 90)
       MODNAME = 'subbasin'
 

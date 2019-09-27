@@ -131,7 +131,7 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2019-06-05 17:18:00Z'
+      Version_muskingum = 'muskingum.f90 2019-09-26 17:18:00Z'
       IF ( Strmflow_flag==4 ) THEN
         MODNAME = 'muskingum'
       ELSE

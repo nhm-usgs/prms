@@ -5,10 +5,11 @@
       IMPLICIT NONE
       INTEGER, PARAMETER :: MAXFILE_LENGTH = 256, MAXCONTROL_LENGTH = 32
       INTEGER, PARAMETER :: MAXDIM = 500
+      INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2, DOCUMENTATION = 99
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.0.1 10/01/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.2.0 10/01/2019'
       CHARACTER(LEN=8), SAVE :: Process
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
@@ -76,7 +77,7 @@
       EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
-      INTEGER, EXTERNAL :: glacr
+      INTEGER, EXTERNAL :: glacr, precip_temp_grid
 ! Local Variables
       INTEGER :: i, iret, nc
 !***********************************************************************
@@ -94,7 +95,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-09-26 18:30:00Z'
+        PRMS_versn = 'call_modules.f90 2019-09-27 11:23:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -188,7 +189,7 @@
         ENDIF
       ENDIF
 
-      IF ( Model==99 ) THEN
+      IF ( Model==DOCUMENTATION ) THEN
         IF ( Process_flag==4 .OR. Process_flag<2 ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
@@ -247,8 +248,10 @@
           call_modules = xyz_dist()
         ELSEIF ( Temp_flag==3 ) THEN
           call_modules = temp_dist2()
-        ELSE !IF ( Temp_flag==5 ) THEN
+        ELSEIF ( Temp_flag==5 ) THEN
           call_modules = ide_dist()
+        ELSE !IF ( Temp_flag==9 ) THEN ! may be a problem, temp needs to be first ??? rsr
+          CALL precip_temp_grid()
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
@@ -494,7 +497,7 @@
       ELSEIF ( Model_mode(:7)=='CONVERT' ) THEN ! can be CONVERT4 or CONVERT5 or CONVERT (=CONVERT5)
         Model = 10
       ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
-        Model = 99
+        Model = DOCUMENTATION
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
         STOP
@@ -582,6 +585,8 @@
         Climate_precip_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' ) THEN
         Precip_flag = 6
+      ELSEIF ( Precip_module(:15)=='precip_temp_grid' ) THEN
+        Precip_flag = 9
       ELSE
         PRINT '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
         Inputerror_flag = 1
@@ -604,6 +609,8 @@
         Temp_flag = 6
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
         Temp_flag = 8
+      ELSEIF ( Temp_module(:15)=='precip_temp_grid' ) THEN
+        Temp_flag = 9
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
@@ -882,7 +889,7 @@
       ENDIF
       IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
       IF ( Ncascade==0 ) Cascade_flag = 0
-      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==2 ) Cascadegw_flag = 0
+      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==MODFLOW ) Cascadegw_flag = 0
       IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=10 ) THEN ! don't call if model_mode = CONVERT
         Call_cascade = 1
       ELSE
@@ -958,7 +965,7 @@
         Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann, mizuroute
       ENDIF
 
-      IF ( Nsegment<1 .AND. Model/=99 ) THEN
+      IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
         IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
           STOP
@@ -966,14 +973,14 @@
       ENDIF
 
       Lake_route_flag = 0
-      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. Model/=0 ) Lake_route_flag = 1 ! muskingum_lake
+      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. GSFLOW_flag==0 ) Lake_route_flag = 1 ! muskingum_lake
 
       IF ( NsubOutON_OFF==1 .AND. Nsub==0 ) THEN
         NsubOutON_OFF = 0
         IF ( Print_debug>-1 ) PRINT *, 'WARNING, nsubOutON_OFF = 1 and nsub = 0, thus nsub_summary not used'
       ENDIF
 
-      IF ( Model==99 .OR. Parameter_check_flag>0 ) CALL check_dimens()
+      IF ( Model==DOCUMENTATION .OR. Parameter_check_flag>0 ) CALL check_dimens()
 
       check_dims = Inputerror_flag
       END FUNCTION check_dims
@@ -1006,7 +1013,7 @@
 
       IF ( ierr==1 ) STOP
 
-      IF ( Model==99 ) THEN
+      IF ( Model==DOCUMENTATION ) THEN
         IF ( Ntemp==0 ) Ntemp = 1
         IF ( Nrain==0 ) Nrain = 1
         IF ( Nlake==0 ) Nlake = 1
@@ -1080,7 +1087,7 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
-      test = CALL precip_temp_grid()
+      CALL precip_temp_grid()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()

@@ -384,13 +384,15 @@
      &     'Basin area-weighted average snow-covered area', &
      &     'decimal fraction', Basin_snowcov)/=0 ) CALL read_error(3, 'basin_snowcov')
 
-      IF ( declvar(MODNAME, 'basin_glacrb_melt', 'one', 1, 'double', &
-     &     'Basin area-weighted average basal melt of glacier, goes to soil', &
-     &     'inches', Basin_glacrb_melt)/=0 ) CALL read_error(3, 'basin_glacrb_melt')
+      IF ( Glacier_flag==1 .OR. Model==99 ) THEN
+        IF ( declvar(MODNAME, 'basin_glacrb_melt', 'one', 1, 'double', &
+     &       'Basin area-weighted average basal melt of glacier, goes to soil', &
+     &       'inches', Basin_glacrb_melt)/=0 ) CALL read_error(3, 'basin_glacrb_melt')
 
-      IF ( declvar(MODNAME, 'basin_glacrevap', 'one', 1, 'double', &
-     &     'Basin area-weighted average glacier ice evaporation and sublimation', &
-     &     'inches', Basin_glacrevap)/=0 ) CALL read_error(3, 'basin_glacrevap')
+        IF ( declvar(MODNAME, 'basin_glacrevap', 'one', 1, 'double', &
+     &       'Basin area-weighted average glacier ice evaporation and sublimation', &
+     &       'inches', Basin_glacrevap)/=0 ) CALL read_error(3, 'basin_glacrevap')
+      ENDIF
 
       !rpayn commented
       ALLOCATE ( Pptmix_nopack(Nhru) )
@@ -1123,12 +1125,20 @@
           ! is no precipitation
           emis = Emis_noppt(i) ! [fraction of radiation]
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
+          ! temparature is halfway between the minimum and average temperature for the day
+          !temp = (Tminc(i)+Tavgc(i))*0.5
           !emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
           ! If there is any precipitation in the HRU, reset the
           ! emissivity to 1
           IF ( Hru_ppt(i)>0.0 ) emis = 1.0 ! [fraction of radiation]
           ! Save the current value of emissivity
           esv = emis ! [fraction of radiation]
+          ! The incoming shortwave radiation is the HRU radiation
+          ! adjusted by the albedo (some is reflected back into the
+          ! atmoshphere) and the transmission coefficient (some is
+          ! intercepted by the winter vegetative canopy)
+          swn = Swrad(i)*(1.0-Albedo(i))*Rad_trncf(i) ! [cal/cm^2]
+                                                      ! or [Langleys]
           ! Set the convection-condensation for a half-day interval
           cec = Cecn_coef(i, Nowmonth)*0.5 ! [cal/(cm^2 degC)]
                                            ! or [Langleys / degC]
@@ -1179,17 +1189,13 @@
           ! niteda is a flag indicating nighttime (1) or daytime (2)
           ! set the flag indicating night time
           niteda = 1 ! [flag]
+          ! no shortwave (solar) radiation at night
+          sw = 0.0 ! [cal / cm^2] or [Langleys]
           ! temparature is halfway between the minimum and average temperature
           ! for the day
           temp = (Tminc(i)+Tavgc(i))*0.5
 
           IF ( Pkwater_equiv(i)>0.0D0 ) THEN
-            ! The incoming shortwave radiation is the HRU radiation
-            ! adjusted by the albedo (some is reflected back into the
-            ! atmoshphere) and the transmission coefficient (some is
-            ! intercepted by the winter vegetative canopy)
-            swn = Swrad(i)*(1.0-Albedo(i))*Rad_trncf(i) ! [cal/cm^2]
-                                                      ! or [Langleys]
             ! Calculate the new snow depth (Riley et al. 1973)
             ! RSR: the following 3 lines of code were developed by Rob Payn, 7/10/2013
             ! The snow depth depends on the previous snow pack water
@@ -1231,9 +1237,6 @@
             cst = Pk_den(i)*(SQRT(effk*13751.0)) ! [cal/(cm^2 degC)]
                                                  ! or [Langleys / degC]
 
-
-            ! no shortwave (solar) radiation at night
-            sw = 0.0 ! [cal / cm^2] or [Langleys]
             ! calculate the night time energy balance
             CALL snowbal(niteda, Tstorm_mo(i,Nowmonth), Iasw(i), &
      &                   temp, esv, Hru_ppt(i), trd, Emis_noppt(i), &

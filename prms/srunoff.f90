@@ -715,8 +715,9 @@
         Hru_sroffi(i) = 0.0
         Imperv_evap(i) = 0.0
         Hru_impervevap(i) = 0.0
-        availh2o = Intcp_changeover(i) + Net_rain(i)
+
         avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
+        availh2o = Intcp_changeover(i) + Net_rain(i)
 
         frzen = 0
         IF ( Frozen_flag==1 ) THEN
