@@ -176,7 +176,7 @@
      &     'inches', Basin_gl_top_gain)/=0 ) CALL read_error(3, 'basin_gl_top_gain')
 
       IF ( declvar(MODNAME, 'basin_gl_ice_melt', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and glrettes', &
+     &     'Basin area-weighted glacier ice (no snow) melt coming out of termini of all glaciers and glrettes', &
      &     'inches', Basin_gl_ice_melt)/=0 ) CALL read_error(3, 'basin_gl_ice_melt')
 
       ALLOCATE ( Gl_mb_yrcumul(Nhru) )
