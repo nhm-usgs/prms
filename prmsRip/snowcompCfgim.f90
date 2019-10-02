@@ -254,7 +254,7 @@
 
         ALLOCATE ( Glacrcov_area(Nhru) )
         IF ( declvar(MODNAME, 'glacrcov_area', 'nhru', Nhru, 'real', &
-     &       'Ice-covered area on each glacier HRU or HRU with glacierette at start of step', &
+     &       'Ice-covered area (no snowpack) on each glacier HRU or HRU with glacierette at start of step', &
      &       'decimal fraction', Glacrcov_area)/=0 ) CALL read_error(3, 'glacrcov_area')
 
         ALLOCATE ( Glacr_pk_ice(Nhru) )

@@ -51,9 +51,8 @@
       !   Local Variables
 
       ! Ngl - Number of glaciers counted by termini
-      ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
-      ! Nhrugl - Number of at least partially glacierized hrus at initiation
-!#of cells=Nhrugl,#of streams=Ntp,#of cells/stream<=Ntp, #of glaciers<=Nhru
+      ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in too
+      ! Nhrugl - Number of at glacier-capable hrus
       INTEGER, SAVE :: Nglres, Ngl, Ntp, Nhrugl, Mbinit_flag, Output_unit, Fraw_unit, All_unit
       INTEGER, SAVE :: Seven, Four, Glac_HRUnum_down
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_inch2(:)
@@ -206,7 +205,7 @@
 
       ALLOCATE ( Glacr_flow(Nhru) )
       IF ( declvar(MODNAME, 'glacr_flow', 'nhru', Nhru, 'real',         &
-     &     'Glacier melt and rain from HRU to stream network, only nonzero at termini HRUs and snowfield HRUs',  &
+     &     'Glacier melt and rain from HRU to stream network, only nonzero at termini HRUs and glacierette HRUs',  &
      &     'inches cubed', Glacr_flow)/=0 ) CALL read_error(3, 'glacr_flow')
 
       ALLOCATE ( Delta_volyr(Nhru) )
@@ -309,15 +308,7 @@
      &     'Glacier basal elevation mean over HRU',                     &
      &     'elev_units', Basal_elev)/=0 ) CALL read_error(3, 'basal_elev')
 
-      ALLOCATE ( Keep_gl(Nhru,Seven) )
-      IF ( declvar(MODNAME, 'keep_gl', 'nhru,seven', Nhru*Seven, 'real', &
-     &     'Glacier real variables keeping from first year', &
-     &     'none', Keep_gl)/=0 ) CALL read_error(3, 'keep_gl')
-
-      ALLOCATE ( Ikeep_gl(Nhru,Four) )
-      IF ( declvar(MODNAME, 'ikeep_gl', 'nhru,four', Nhru*Four, 'real', &
-     &     'Glacier integer variables keeping from first year', &
-     &     'none', Ikeep_gl)/=0 ) CALL read_error(3, 'ikeep_gl')
+      ALLOCATE ( Keep_gl(Nhru,Seven), Ikeep_gl(Nhru,Four) )
 
       ALLOCATE ( Basal_slope(Nhru) )
       IF ( declvar(MODNAME, 'basal_slope', 'nhru', Nhru, 'real',        &
@@ -336,7 +327,6 @@
       IF ( declvar(MODNAME, 'basin_gl_storstart', 'one', 1, 'double', &
      &     'Basin area-weighted average storage estimated start in glacier reservoirs', &
      &     'inches', Basin_gl_storstart)/=0 ) CALL read_error(3, 'basin_gl_storstart')
-
 
       IF ( declvar(MODNAME, 'basin_gl_storvol', 'one', 1, 'double', &
      &     'Basin storage volume in glacier storage reservoirs', &
@@ -417,22 +407,22 @@
       ALLOCATE ( Hru_length(Nhru) )
       IF ( declparam(MODNAME, 'hru_length', 'nhru', 'real', &
            '0.0', '0.0', '10000.0', &
-           'Length of segment covering all of glacier-possible HRU', &
-           'Length of segment covering all of glacier-possible HRU', &
+           'Length of segment covering all of glacier-capable HRU', &
+           'Length of segment covering all of glacier-capable HRU', &
            'km')/=0 ) CALL read_error(1, 'hru_length')
 
       ALLOCATE ( Hru_width(Nhru) )
       IF ( declparam(MODNAME, 'hru_width', 'nhru', 'real', &
            '0.0', '0.0', '10000.0', &
-           'Width of glacier-possible HRU', &
-           'Width of glacier-possible HRU', &
+           'Width of glacier-capable HRU', &
+           'Width of glacier-capable HRU', &
            'km')/=0 ) CALL read_error(1, 'hru_width')
 
       ALLOCATE ( Abl_elev_range(Nhru) )
       IF ( declparam(MODNAME, 'abl_elev_range', 'nhru', 'real', &
            '1000.0', '0.0', '17000.0', &
-           'Average HRU snowfield ablation zones elevation range',  &
-           'Average HRU snowfield ablation zones elevation range or ~ median-min elev', &
+           'Average HRU glacierette ablation zones elevation range',  &
+           'Average HRU glacierette ablation zones elevation range or ~ median-min elev', &
            'elev_units')/=0 ) CALL read_error(1, 'abl_elev_range')
 
       IF (Mbinit_flag==1) THEN
@@ -837,7 +827,7 @@
         i = Hru_route_order(j)
         IF ( Hru_type(i)==1 ) THEN
           IF (Glrette_frac(j)>NEARZERO) THEN
-            count=1 !has at least one snowfield
+            count=1 !has at least one glacierette
             EXIT
           ENDIF
         ENDIF
@@ -862,7 +852,7 @@
         dosol = recompute_soltab() ! change soltab tables for Hru_slope_ts
         IF (count==0) THEN
           Glacr_flow = 0.0
-          Basin_gl_area = 0.D0 !no snowfields either
+          Basin_gl_area = 0.D0 !no glacierettes either
           Basin_gl_top_melt = 0.0D0
           Basin_gl_top_gain = 0.0D0
           Basin_gl_ice_melt = 0.0D0
@@ -1382,9 +1372,9 @@
             ENDIF
           ENDDO
         ENDIF
-!Snowfield area change uses Baumann and Winkler 2010 to change area every 10 years;
-! technically each snowfield should have own ablation elevation range.
-        IF (glrette_exist==1) THEN !have snowfields,
+!Glacierette area change uses Baumann and Winkler 2010 to change area every 10 years;
+! technically each glacierette should have own ablation elevation range.
+        IF (glrette_exist==1) THEN !have glacierettes,
           IF ( MOD(Nowyear-Starttime(1),10)==0 ) THEN !change them
             DO i = 1, Active_hrus
               j = Hru_route_order(i)

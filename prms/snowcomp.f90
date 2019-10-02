@@ -276,38 +276,6 @@
      &     'Basin area-weighted average snow and glacier and glrette covered area', &
      &     'decimal fraction', Basin_snowicecov)/=0 ) CALL read_error(3, 'basin_snowicecov')
 
-        ALLOCATE ( Glacr_freeh2o_cap(Nhru) )
-        IF ( declparam(MODNAME, 'glacr_freeh2o_cap', 'nhru', 'real', &
-     &       '0.002', '0.0', '0.01', &
-     &       'Free-water holding capacity of glacier ice', &
-     &       'Free-water holding capacity of glacier ice expressed as a' // &
-     &       ' decimal fraction of the frozen water content of the glacier ice (glacr_pk_ice)',  &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'glacr_freeh2o_cap')
-
-        ALLOCATE ( Glacr_layer(Nhru) )
-        IF ( declparam(MODNAME, 'glacr_layer', 'nhru', 'real', &
-     &       '3.94', '0.0', '590.6', &
-     &       'Active layer on glacier', &
-     &       'Active layer is 0 to 15 m (590.6 inches) thick at start of year, when' // &
-     &       ' melts will set daily glacr_pk_temp to 0',  &
-     &       'inches')/=0 ) CALL read_error(1, 'glacr_layer')
-
-        IF ( Init_vars_from_file==0 ) THEN
-          ALLOCATE ( Glacier_frac_init(Nhru) )
-          IF ( declparam(MODNAME, 'glacier_frac_init', 'nhru', 'real', &
-     &       '0.0', '0.0', '1.0', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'glacier_frac_init')
-
-          ALLOCATE ( Glrette_frac_init(Nhru) )
-          IF ( declparam(MODNAME, 'glrette_frac_init', 'nhru', 'real', &
-     &       '0.0', '0.0', '1.0', &
-     &       'Initial fraction of glacierette (too small for glacier dynamics)', &
-     &       'Initial fraction of glacierette  (too small for glacier dynamics)', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'glrette_frac_init')
-
-        ENDIF
       ENDIF
 
       IF ( declvar(MODNAME, 'basin_snowdepth', 'one', 1, 'double', &
@@ -506,6 +474,39 @@
      &       'Ice albedo 300 meters below ELA', &
      &       'Ice albedo 300 meters below ELA', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'albedo_ice')
+
+        ALLOCATE ( Glacr_freeh2o_cap(Nhru) )
+        IF ( declparam(MODNAME, 'glacr_freeh2o_cap', 'nhru', 'real', &
+     &       '0.002', '0.0', '0.01', &
+     &       'Free-water holding capacity of glacier ice', &
+     &       'Free-water holding capacity of glacier ice expressed as a' // &
+     &       ' decimal fraction of the frozen water content of the glacier ice (glacr_pk_ice)',  &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'glacr_freeh2o_cap')
+
+        ALLOCATE ( Glacr_layer(Nhru) )
+        IF ( declparam(MODNAME, 'glacr_layer', 'nhru', 'real', &
+     &       '3.94', '0.0', '590.6', &
+     &       'Active layer on glacier', &
+     &       'Active layer is 0 to 15 m (590.6 inches) thick at start of year, when' // &
+     &       ' melts will set daily glacr_pk_temp to 0',  &
+     &       'inches')/=0 ) CALL read_error(1, 'glacr_layer')
+
+        IF ( Init_vars_from_file==0 ) THEN
+          ALLOCATE ( Glacier_frac_init(Nhru) )
+          IF ( declparam(MODNAME, 'glacier_frac_init', 'nhru', 'real', &
+     &       '0.0', '0.0', '1.0', &
+     &       'Inital fraction of glaciation (0=none; 1=100%)', &
+     &       'Inital fraction of glaciation (0=none; 1=100%)', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'glacier_frac_init')
+
+          ALLOCATE ( Glrette_frac_init(Nhru) )
+          IF ( declparam(MODNAME, 'glrette_frac_init', 'nhru', 'real', &
+     &       '0.0', '0.0', '1.0', &
+     &       'Initial fraction of glacierette (too small for glacier dynamics)', &
+     &       'Initial fraction of glacierette  (too small for glacier dynamics)', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'glrette_frac_init')
+
+        ENDIF
       ENDIF
 
       IF ( declparam(MODNAME, 'den_init', 'one', 'real', &

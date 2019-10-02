@@ -547,12 +547,12 @@
 
         ALLOCATE ( Glrette_frac(Nhru) )
           IF ( declvar(MODNAME, 'glrette_frac', 'nhru', Nhru, 'real',     &
-             'Fraction of snow field (too small for glacier dynamics)',   &
+             'Fraction of glacierette (too small for glacier dynamics)',   &
              'decimal fraction', Glrette_frac)/=0 )  CALL read_error(3, 'glrette_frac')
 
         ALLOCATE ( Alt_above_ela(Nhru) )
         IF ( declvar(MODNAME, 'alt_above_ela', 'nhru', Nhru, 'real',      &
-             'Altitude above equilibrium line altitude (ELA)',            &
+             'Altitude HRU is above equilibrium line altitude (ELA), negative value indicates HRU below ELA',            &
              'elev_units', Alt_above_ela)/=0 ) CALL read_error(3, 'alt_above_ela')
       ENDIF
 
