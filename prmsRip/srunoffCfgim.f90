@@ -302,7 +302,7 @@
       IF ( Frozen_flag==1 .OR. Model==99 ) THEN
         ALLOCATE ( Frozen(Nhru) )
         IF ( declvar(MODNAME, 'frozen', 'nhru', Nhru, 'integer', &
-     &       'Marker for frozen ground (0=no; 1=soil at surface; 2=soil below surf; 3=below soil)', &
+     &       'Marker for frozen ground layer top (0=none; 1=at surface; 2=in soil below surface; 3=below soil)', &
      &       'none', Frozen)/=0 ) CALL read_error(3, 'frozen')
 
         ALLOCATE ( Cfgi(Nhru) )
@@ -687,7 +687,7 @@
       REAL :: srunoff, avail_et, hperv, sra, availh2o
       DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff, cfgi_sroff
       REAL :: cfgi_k, depth_cm, nosnow_area, depthg_cm, trad, emiss, emisl ! frozen ground
-      REAL :: cfgi_kg, soil_cond, latent_soil, nice, ice_cond, beta, thaw_frac ! frozen ground
+      REAL :: cfgi_kg, soil_cond, latent_soil, nwat, ice_cond, beta, thaw_frac ! frozen ground
       REAL :: water_cond, sat_cond, mean_cond, lambda, omega, l5, l6, l8 ! frozen ground
       REAL :: volumetric_soil, thermal_ratio_alp, fusion_param_mu, frz_height ! frozen ground
       REAL :: glcrmltb, temp, temp2 ! glaciers
@@ -845,7 +845,7 @@
             latent_soil = 334.0*Soil_den(i)*omega*1.e6 ! J/m^3, latent heat of fusion of water =  334 J/g , density in g/cm3
             thermal_ratio_alp = (Prev_ann_tempc(i) - Freezepoint)/(Cfgi(i) - Cfgi_thrshld) !degree K/ index Ti/Ts
             IF ( thermal_ratio_alp<0.0 ) thermal_ratio_alp = 0.0
-            fusion_param_mu =(Cfgi(i) - Cfgi_thrshld)*volumetric_soil/latent_soil !index/degree K    St12
+            fusion_param_mu =(Cfgi(i) - Cfgi_thrshld)*volumetric_soil/latent_soil !index/degree K
             ! lambda corrects the Stefan formula for the effects of volumetric heat which it neglected
             beta = 1.0 !ranges between 0.95 and 1.3 depending on soil type and soil moisture
             lambda = 1.0 !Graph in Aldrich 1956, says in Alaska this is usually 1 but if less northern, can be as low as 0.3
@@ -857,13 +857,13 @@
             IF ( Cfgi(i)==Cfgi_prev(i) ) lambda = l5
 
             ! dry soil thermal conductivity
-            soil_cond = ( 486.0*Soil_den(i) + 233.0 )/( 2.7 - 0.947*Soil_den(i) ) !equation Johansen 1975,J/m/hr/K
-            !from last time step frozen depth
-            nice = Porosity_hru(i)* Frz_depth(i)/Soil_depth(i)
+            soil_cond = ( 486.0*Soil_den(i) + 233.0 )/( 2.7 - 0.947*Soil_den(i) ) !Via Fox 1992, equation Johansen 1975,J/m/hr/K, 1000 kg/m3 =	1 g/cm3
+            !from last time step thaw_frac
+            nwat = Porosity_hru(i)* thaw_frac
             ! soil saturated conductivity is geometric mean of the conductivities of the materials within the soil profile
             ice_cond = (-0.0176*Tavgc(i) + 2.0526)*3600.0 !Bonales 2017, J/s/m/K to hr
             water_cond = 0.5918 *3600.0 !J/s/m/K to hr
-            sat_cond =( soil_cond**(1.0-Porosity_hru(i)) )*( ice_cond**(nice) )*( water_cond**(Porosity_hru(i)-nice) )
+            sat_cond =( soil_cond**(1.0-Porosity_hru(i)) )*( water_cond**(nwat) )*( ice_cond**(Porosity_hru(i)-nwat) )
             ! mean thermal conductivity of the frozen and unfrozen soil equation of dry and saturated conductivities
             mean_cond = (sat_cond - soil_cond)*omega + soil_cond !J/m/hr/K
             ! this is height of frozen soil. Freezes downward from surface. When thaw, also thaw downward from surface so will be thawed area above here
@@ -882,7 +882,8 @@
                 frzen = 2 !soil frozen below top
                 thaw_frac = Thaw_depth(i)/Soil_depth(i)
               ELSEIF ( Frz_depth(i)>=Soil_depth(i) ) THEN ! Thaw_depth(i)>=Soil_depth(i))
-                frzen = 3 !soil not frozen but below is, thaw_frac = 1.0
+                frzen = 3 !soil not frozen but below is
+                thaw_frac = 1.0
               ENDIF
             ENDIF
           ENDIF

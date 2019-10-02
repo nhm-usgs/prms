@@ -178,7 +178,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Ripst_flag, Glacier_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Ripst_flag, Glacier_flag, Frozen_flag
       USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Active_hrus, Hru_route_order, &
      &    Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
@@ -196,7 +196,7 @@
      &    Hru_segment, Seg_length, Basin_ripst_area, Basin_ripst_contrib, Basin_ripst_evap, &
      &    Basin_ripst_vol, Bankst_seep_rate
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
-      USE PRMS_SRUNOFF, ONLY: Basin_sroff
+      USE PRMS_SRUNOFF, ONLY: Basin_sroff, Frozen
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
@@ -333,10 +333,17 @@
         ENDDO
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
-          IF  ( Hru_segment(i)>0 .AND. (Bankfinite_hru(i)==0 .OR. Ripst_areafr_max(i)>0.0)) &
-     &      CALL comp_bank_storage(i)
+          IF  ( Hru_segment(i)>0 .AND. (Bankfinite_hru(i)==0 .OR. Ripst_areafr_max(i)>0.0)) THEN
+            IF (Frozen_flag==1) THEN
+              IF ( Frozen(i).ne.1 ) THEN
+                CALL comp_bank_storage(i)
+              ENDIF
+            ELSE
+              CALL comp_bank_storage(i)
+            ENDIF
 !           ******Compute the bank storage component
 !           transfers water between separate bank storage and stream depending on seepage
+          ENDIF
         ENDDO
         Basin_bankst_seep = Basin_bankst_seep*Basin_area_inv
         Basin_bankst_head = Basin_bankst_head*Basin_area_inv

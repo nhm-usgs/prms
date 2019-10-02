@@ -44,7 +44,7 @@ FC		= gfortran
 # Define the C compile flags
 # -D_UF defines UNIX naming conventions for mixed language compilation.
 ##########################################################
-CFLAGS		= $(OPTLEVEL) -D$(ARC) -D_UF
+CFLAGS		= $(OPTLEVEL) -D$(ARC) -D_UF -I /usr/include
 #for gfortran
 CC		= gcc
 #for ifort
@@ -55,7 +55,7 @@ CC		= gcc
 ##########################################################
 #for gfortran
 MATHLIB		= -lm
-GCLIB           = -L/opt/local/lib -lgfortran -lgcc_s.1
+GCLIB           = -L/opt/local/lib -lgfortran -lgcc_s.1 -L/usr/lib
 #for ifort
 #GCLIB		= -lgfortran -lgcc $(MATHLIB)
 FLIBS    = $(GCLIB)
