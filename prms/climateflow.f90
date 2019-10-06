@@ -542,7 +542,7 @@
       IF ( Glacier_flag==1 .OR. Model==99 ) THEN
         ALLOCATE ( Glacier_frac(Nhru) )
         IF ( declvar(MODNAME, 'glacier_frac', 'nhru', Nhru, 'real',       &
-             'Fraction of glaciation (0=none; 1=100%)',                   &
+             'Fraction of glaciation (0=none; 1=100%) in glacier-capable HRU',                   &
              'decimal fraction', Glacier_frac)/=0 ) CALL read_error(3, 'glacier_frac')
 
         ALLOCATE ( Glrette_frac(Nhru) )

@@ -823,7 +823,7 @@
           Cfgi(i) = Cfgi_decay*Cfgi_prev(i) - trad*( 2.71828**(-0.4*(cfgi_k*depth_cm+cfgi_kg*depthg_cm)) )
           IF ( active_glacier==1 ) THEN
             Cfgi(i) = 0.0 !if glacier over, want ground completely unfrozen, or below threshold, infiltration
-            IF ( Glacier_frac(i)<1.0 ) Cfgi(i) = Cfgi_thrshld ! glacier with some open fraction
+            IF ( Glacier_frac(i)<1.0 ) Cfgi(i) = Cfgi_thrshld ! glacier with some open fraction is frozen tongue
           ENDIF
           IF ( Cfgi(i)<0.0 ) Cfgi(i) = 0.0
 ! If above the threshold to be frozen

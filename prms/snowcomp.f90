@@ -273,7 +273,7 @@
      &       'inches', Glacr_pst)/=0 ) CALL read_error(3, 'glacr_pst')
 
       IF ( declvar(MODNAME, 'basin_snowicecov', 'one', 1, 'double', &
-     &     'Basin area-weighted average snow and glacier and glacierette covered area', &
+     &     'Basin area-weighted average snow and glacier and glacierette covered area for calibration to satellites', &
      &     'decimal fraction', Basin_snowicecov)/=0 ) CALL read_error(3, 'basin_snowicecov')
 
       ENDIF
@@ -495,8 +495,8 @@
           ALLOCATE ( Glacier_frac_init(Nhru) )
           IF ( declparam(MODNAME, 'glacier_frac_init', 'nhru', 'real', &
      &       '0.0', '0.0', '1.0', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
+     &       'Inital fraction of glaciation (0=none; 1=100%) in glacier-capable HRU', &
+     &       'Inital fraction of glaciation (0=none; 1=100%) in glacier-capable HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'glacier_frac_init')
 
           ALLOCATE ( Glrette_frac_init(Nhru) )

@@ -27,7 +27,7 @@
 ! HRUs with glaciers must have parameter glacier_frac(i)=1, unless they
 ! are at the terminus of the glacier (in which case they can have
 ! glacier_frac(i)<1). Hru numbering goes from largest HRU ID at top of glacier to
-! smallest at ID at bottom (the way Weasel delineation was designed). The parameter
+! smallest ID at bottom (the way Weasel delineation was designed). The parameter
 ! Glac_HRUnum_down = 1 then in the init function. If the opposite direction,
 ! then set Glac_HRUnum_down = 0. IDs need to be stacked.
 !
@@ -54,7 +54,7 @@
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in too
       ! Nhrugl - Number of at glacier-capable hrus
       INTEGER, SAVE :: Nglres, Ngl, Ntp, Nhrugl, Mbinit_flag, Output_unit, Fraw_unit, All_unit
-      INTEGER, SAVE :: Seven, Four, Glac_HRUnum_down
+      INTEGER, SAVE :: Seven, Four, Glac_hrunum_down
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_inch2(:)
       REAL, PARAMETER :: Gravity = 9.8 ! m/s2
       REAL, PARAMETER :: Aflow = 1.e-25 ! Pa^-3/s, Farinotti 2009 could be 2.4e-24, could be 1e-26 see Patterson 2010
@@ -69,11 +69,12 @@
       REAL, SAVE, ALLOCATABLE :: Basal_elev(:), Basal_slope(:), Keep_gl(:,:), Prev_outi(:, :), Prev_out(:, :)
       REAL, SAVE, ALLOCATABLE :: Ode_glacrva_coef(:), Av_basal_slope(:), Av_fgrad(:), Hru_slope_ts(:)
       REAL, SAVE, ALLOCATABLE :: Hru_mb_yrend(:), Glacr_flow(:), Glacr_slope_init(:), Gl_top_melt(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_glthick(:)
       INTEGER, SAVE, ALLOCATABLE :: Top(:), Term(:), Top_tag(:), Ela(:), Order_flowline(:)
       INTEGER, SAVE, ALLOCATABLE :: Glacr_tag(:), Ikeep_gl(:,:), Tohru(:)
       DOUBLE PRECISION, SAVE :: Basin_gl_ice_melt, Basin_gl_area, Basin_gl_top_melt
       DOUBLE PRECISION, SAVE :: Basin_gl_top_gain, Basin_gl_storvol, Basin_gl_storage
-      DOUBLE PRECISION, SAVE :: Basin_gl_storstart
+      DOUBLE PRECISION, SAVE :: Basin_gl_storstart, Basin_glthick
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_mb_yrcumul(:), Delta_volyr(:), Prev_vol(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Prev_area(:), Gl_mb_yrcumul(:), Gl_area(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gl_mb_cumul(:), Glnet_ar_delta(:), Gl_mbc_yrend(:)
@@ -167,16 +168,25 @@
      &     'HRU slope for timestep, which can change for glaciers', &
      &     'decimal fraction', Hru_slope_ts)/=0 ) CALL read_error(3, 'hru_slope_ts')
 
+      ALLOCATE ( Hru_glthick(Nhru) )
+      IF ( declvar(MODNAME, 'hru_glthick', 'nhru', Nhru, 'real', &
+     &     'HRU thickness for glacier, changes through time', &
+     &     'elev_units', Hru_glthick)/=0 ) CALL read_error(3, 'hru_glthick')
+
+      IF ( declvar(MODNAME, 'basin_glthick', 'one', 1, 'double', &
+     &     'Basin average thickness of glaciers (glacierettes not included)', &
+     &     'elev_units', Basin_glthick)/=0 ) CALL read_error(3, 'basin_glthick')
+
       IF ( declvar(MODNAME, 'basin_gl_top_melt', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glrettes', &
+     &     'Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glacierettes', &
      &     'inches', Basin_gl_top_melt)/=0 ) CALL read_error(3, 'basin_gl_top_melt')
 
       IF ( declvar(MODNAME, 'basin_gl_top_gain', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier surface gain (snow and rain minus evap) for all glaciers and glrettes', &
+     &     'Basin area-weighted glacier surface gain (snow and rain minus evap) for all glaciers and glacierettes', &
      &     'inches', Basin_gl_top_gain)/=0 ) CALL read_error(3, 'basin_gl_top_gain')
 
       IF ( declvar(MODNAME, 'basin_gl_ice_melt', 'one', 1, 'double',    &
-     &     'Basin area-weighted glacier ice (no snow) melt coming out of termini of all glaciers and glrettes', &
+     &     'Basin area-weighted glacier ice (no snow) melt coming out of termini of all glaciers and glacierettes', &
      &     'inches', Basin_gl_ice_melt)/=0 ) CALL read_error(3, 'basin_gl_ice_melt')
 
       ALLOCATE ( Gl_mb_yrcumul(Nhru) )
@@ -190,7 +200,7 @@
      &     'inches', Gl_mb_cumul)/=0 ) CALL read_error(3, 'gl_mb_cumul')
 
       IF ( declvar(MODNAME, 'basin_gl_area', 'one', 1, 'double',          &
-     &     'Basin area-weighted average glacier-covered area', &
+     &     'Basin area-weighted average glacier and glacierette-covered area', &
      &     'decimal fraction', Basin_gl_area)/=0 ) CALL read_error(3, 'basin_gl_area')
 
       ALLOCATE ( Gl_area(Nhru) )
@@ -300,7 +310,7 @@
 
       ALLOCATE ( Gl_ice_melt(Nhru) )
       IF ( declvar(MODNAME, 'gl_ice_melt', 'nhru', Nhru, 'real',        &
-     &     'Amount of glacier ice (firn) melt coming out of terminus of glacier, indexed by Glacr_tag', &
+     &     'Amount of glacier ice (no snow) melt coming out of terminus of glacier, indexed by Glacr_tag', &
      &     'inches', Gl_ice_melt)/=0 ) CALL read_error(3, 'gl_ice_melt')
 
       ALLOCATE ( Basal_elev(Nhru) )
@@ -321,15 +331,15 @@
      &     'decimal fraction', Av_basal_slope)/=0 ) CALL read_error(3, 'av_basal_slope')
 
       IF ( declvar(MODNAME, 'basin_gl_storage', 'one', 1, 'double', &
-     &     'Basin area-weighted average storage change in glacier reservoirs', &
+     &     'Basin area-weighted average storage change in glacier and glacierette reservoirs', &
      &     'inches', Basin_gl_storage)/=0 ) CALL read_error(3, 'basin_gl_storage')
 
       IF ( declvar(MODNAME, 'basin_gl_storstart', 'one', 1, 'double', &
-     &     'Basin area-weighted average storage estimated start in glacier reservoirs', &
+     &     'Basin area-weighted average storage estimated start in glacier and glacierette reservoirs', &
      &     'inches', Basin_gl_storstart)/=0 ) CALL read_error(3, 'basin_gl_storstart')
 
       IF ( declvar(MODNAME, 'basin_gl_storvol', 'one', 1, 'double', &
-     &     'Basin storage volume in glacier storage reservoirs', &
+     &     'Basin storage volume in glacier and glacierette storage reservoirs', &
      &     'acre-inches', Basin_gl_storvol)/=0 ) CALL read_error(3, 'basin_gl_storvol')
 
       IF ( Init_vars_from_file==0 ) THEN
@@ -425,6 +435,12 @@
            'Average HRU glacierette ablation zones elevation range or ~ median-min elev', &
            'elev_units')/=0 ) CALL read_error(1, 'abl_elev_range')
 
+      IF ( declparam(MODNAME, 'glac_hrunum_down', 'one', 'integer', &
+           '1', '0', '1', &
+           '1 is Glacier HRU numbering from largest HRU ID at glacier top to smallest ID at terminus, O opposite, IDs stacked',  &
+           '1 is Glacier HRU numbering from largest HRU ID at glacier top to smallest ID at terminus, O opposite, IDs stacked', &
+           'none')/=0 ) CALL read_error(1, 'glac_hrunum_down')
+
       IF (Mbinit_flag==1) THEN
         ALLOCATE ( Basal_elev_set(Nhru) )
         IF ( declparam(MODNAME, 'basal_elev_set', 'nhru', 'real', &
@@ -484,6 +500,7 @@
       IF ( getparam(MODNAME, 'abl_elev_range', Nhru, 'real', Abl_elev_range)/=0 ) CALL read_error(2, 'abl_elev_range')
       IF ( getparam(MODNAME, 'tohru', Nhru, 'integer', Tohru)/=0 ) CALL read_error(2, 'tohru')
       IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
+      IF ( getparam(MODNAME, 'glac_hrunum_down', 1, 'one', Glac_hrunum_down)/=0 ) CALL read_error(2, 'glac_hrunum_down')
       IF ( Init_vars_from_file==0 ) THEN
         Alt_above_ela = 0.0
         Prev_out = 0.0
@@ -514,8 +531,14 @@
           IF ( getparam(MODNAME, 'basal_slope_set', Nhru, 'real', Basal_slope_set)/=0 ) CALL read_error(2, 'basal_slope_set')
           Basal_slope = Basal_slope_set
         ENDIF
+        Basin_glthick = 0.0D0
+        DO jj = 1, Active_hrus
+          j = Hru_route_order(jj)
+          Hru_glthick(j) =  Hru_elev_ts(j) - Basal_elev(j)
+          Basin_glthick = Basin_glthick + Hru_glthick(j)*Hru_area(j)*Acre_inch2
+        ENDDO
         Av_basal_slope = 0.0
-        Glacr_elev_init = Hru_elev_ts
+        Glacr_elev_init = Hru_elev_ts !if Mbinit_flag>=2, this will change
         Glacr_slope_init = Hru_slope_ts
         Av_fgrad = 0.0
         Basin_gl_top_melt = 0.0D0
@@ -528,10 +551,6 @@
         Basin_gl_storstart = 0.0D0
         Basin_gl_storvol = 0.0D0
       ENDIF
-
-      Glac_HRUnum_down = 1 ! 1 is the way Weasel delineation was designed
-      ! 1 is terminus is smallest ID and top is largest. IDs are stacked.
-      ! 0 is terminus is smallest ID and top is largest. IDs are stacked.
 
       hru_flowline = 0
       toflowline = 0
@@ -556,9 +575,9 @@
           count = 1 !has at least one glacier
           glacier_frac_use(j) = 1.0
           !should be end of extensions or branches-- will fail if don't set up with indices stacked
-          IF ( Glac_HRUnum_down==1) THEN
+          IF ( Glac_hrunum_down==1) THEN
             IF (Tohru(j)/=j-1 ) glacier_frac_use(j) = 0.999
-          ELSEIF ( Glac_HRUnum_down==0) THEN
+          ELSEIF ( Glac_hrunum_down==0) THEN
             IF (Tohru(j)/=j+1 ) glacier_frac_use(j) = 0.999
           ENDIF
         ENDIF
@@ -722,9 +741,9 @@
             glacier_frac_use(j)= Glacier_frac(j)
             !should be end of extensions or branches-- will fail if don't set up with indices stacked
             ! making it so has no connected branches because branching bottom calculations don't work
-            IF ( Glac_HRUnum_down==1) THEN
+            IF ( Glac_hrunum_down==1) THEN
               IF (Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
-            ELSEIF ( Glac_HRUnum_down==0) THEN
+            ELSEIF ( Glac_hrunum_down==0) THEN
               IF (Tohru(j)/=j+1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
             ENDIF
           ENDIF
@@ -782,6 +801,8 @@
           Gl_area(p) = curr_area(Term(o))/Acre_inch2
           !print*, 'Glacr_tag', p, ', area acres branches=', Gl_area(p), ', terminus HRU=', Term(o)
         ENDDO
+!average thickness over glaciers only so take area early
+        Basin_glthick = Basin_glthick/Basin_gl_area!top and bottom /Acre_inch2*Basin_area_inv to give real thing, cancel
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
           IF ( Hru_type(j)==1 ) Basin_gl_area = Basin_gl_area + DBLE(Glrette_frac(j))*Hru_area_inch2(j)
@@ -797,9 +818,8 @@
           ENDDO
         ENDDO
   !******Compute basin weighted averages
-  ! Basin_area_inv is in 1/acres, Basin_gl_area in inches squared
+  ! Basin_area_inv is in 1/acres, Basin_gl_area in inches squared, put in fraction
         Basin_gl_area = (Basin_gl_area/Acre_inch2)*Basin_area_inv
-        !print*, 'Basin area acres=', 1.0/Basin_area_inv
       ENDIF ! skip all if no glaciers
 !
 
@@ -847,6 +867,7 @@
         Gl_mbc_yrend = 0.0D0
         Av_basal_slope = 0.0
         Av_fgrad = 0.0
+        Basin_glthick = 0.0D0
         Hru_slope_ts = Basal_slope
         Alt_above_ela = 0.0 ! doesn't matter if no glaciers
         dosol = recompute_soltab() ! change soltab tables for Hru_slope_ts
@@ -967,7 +988,7 @@
             ENDIF
           ENDDO
 ! ELA calculations
-          IF ( MBinit_flag==3 ) THEN
+          IF ( Mbinit_flag==3 ) THEN
             doela = compute_ela_aar() !want steady state ELA estimation for fraw calc
             DO j = 1, Ntp
               ela_elevt(j)=Hru_elev(Ela(j)) !will scale inside subroutine, want initial one without _ts
@@ -993,9 +1014,9 @@
                 glacier_frac_use(j)= Glacier_frac(j)
                 !should be end of extensions or branches-- will fail if don't set up with indices stacked
                 ! making it so has no connected branches because branching bottom calculations don't work
-                IF ( Glac_HRUnum_down==1) THEN
+                IF ( Glac_hrunum_down==1) THEN
                   IF (Tohru(j)/=j-1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
-                ELSEIF ( Glac_HRUnum_down==0) THEN
+                ELSEIF ( Glac_hrunum_down==0) THEN
                   IF (Tohru(j)/=j+1 .AND. glacier_frac_use(j)==1.0 ) glacier_frac_use(j) = 0.999
                 ENDIF
               ENDIF
@@ -1061,8 +1082,9 @@
                 aream(cell_id(i)) = 0.0  !indexed by terminus HRU
               ENDDO
             ENDIF
+! Need to do this so that Hru_elev_ts is actually the same as Hru_elev before melt in terminus, won't matter if hru_elev = basal_elev
+! Do for all dobot cases, all Mbinit_flag choices
             DO i = 1, Nhrugl
-! Need to do this so that Hru_elev_ts is actually the same as Hru_elev before melt in terminus
               IF ( Glacier_frac(cell_id(i))>NEARZERO) THEN !only effects terminus
                 Glacr_elev_init(cell_id(i)) = (Hru_elev(cell_id(i)) - (1.0-Glacier_frac(cell_id(i))) &
      &                                 *Basal_elev((cell_id(i))))/Glacier_frac(cell_id(i))
@@ -1318,11 +1340,17 @@
               ENDIF
             ENDDO
           ENDDO
+          Basin_glthick = 0.0D0
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
             IF ( Hru_type(j)==4 ) THEN
               curr_area(j) = curr_area(j) + add_area(j)
               curr_areap(j) = curr_areap(j) + add_areap(j)
+! have bottom, compute Hru_elev_ts related stuff
+              Hru_elev_ts(j) = Glacier_frac(j)*Glacr_elev_init(j) + (1.0-Glacier_frac(j))*Basal_elev(j)
+              Hru_slope_ts(j) = Glacier_frac(j)*Glacr_slope_init(j) + (1.0-Glacier_frac(j))*Basal_slope(j)
+              Hru_glthick(j) =  Hru_elev_ts(j) - Basal_elev(j)
+              Basin_glthick = Basin_glthick + Hru_glthick(j)*Hru_area_inch2(j)
             ENDIF
           ENDDO
           Gl_area = 0.D0
@@ -1334,14 +1362,14 @@
             Basin_gl_area = Basin_gl_area + curr_area(Term(o))
             !print*, 'Glacr_tag', p, ', area acres', Nowyear,' =', Gl_area(p), ', terminus HRU=', Term(o)
           ENDDO
-! have bottom, compute Hru_elev_ts related stuff
+!average thickness over glaciers only so take area early
+          Basin_glthick = Basin_glthick/Basin_gl_area!top and bottom /Acre_inch2*Basin_area_inv to give real thing, cancel
+
           DO ii = 1, Ntp
             DO i = 1, Active_hrus
               j = Hru_route_order(i)
               IF ( Hru_type(j)==4 ) THEN
                 IF ( Top_tag(j)==Top_tag(Top(ii)) ) Alt_above_ela(j) = Hru_elev_ts(j)- Hru_elev_ts(Ela(ii))
-                Hru_elev_ts(j) = Glacier_frac(j)*Glacr_elev_init(j) + (1.0-Glacier_frac(j))*Basal_elev(j)
-                Hru_slope_ts(j) = Glacier_frac(j)*Glacr_slope_init(j) + (1.0-Glacier_frac(j))*Basal_slope(j)
               ENDIF
             ENDDO
           ENDDO
@@ -1396,10 +1424,9 @@
 
 !
 !******Compute basin weighted averages (to units of fraction area)
-! Basin_area_inv is in 1/acres, Basin_area_inv is in 1/acres, Basin_gl_area in inches squared
+! Basin_area_inv is in 1/acres, Basin_gl_area in inches squared, put in fraction
         Basin_gl_area = (Basin_gl_area/Acre_inch2)*Basin_area_inv
       ENDIF !get out of start-of-year computations
-
 !
 ! Melt runoff calculations, every day
       DO i = 1, Active_hrus
@@ -1431,6 +1458,7 @@
             gl_snow = Glrette_frac(j)*(Net_rain(j)+Net_Snow(j)) !Pk_precip is zero if no snow, so don't use
             gl_evap = Glrette_frac(j)*(Snow_evap(j) + Glacr_evap(j)/Glrette_frac(j))
             gl_gain(j) = DBLE(gl_snow - gl_evap)
+            Basin_gl_top_gain = Basin_gl_top_gain + gl_gain(j)*Hru_area_inch2(j)
           ENDIF
         ENDIF
       ENDDO
@@ -2409,7 +2437,7 @@
       ela_i = 0
       ela_x = 0.0
       fd = 0.0
-      IF (Mbinit_flag==1) THEN !use climate data for mass balance
+      IF (Mbinit_flag==2) THEN !use climate data for mass balance
         IF (len_str>1) THEN
           frawe(1) = fraw(1)- (fraw(2)-fraw(1))/hvec(2)*hvec(1)
           frawe(2) = fraw(len_str) + (fraw(len_str)-fraw(len_str-1))/hvec(len_str)*(1-xraw(len_str))
@@ -2417,7 +2445,7 @@
           frawe(1) = fraw(1)
           frawe(2) = fraw(1)
         ENDIF
-      ELSEIF (Mbinit_flag==2) THEN !Farinotti method, using ela_x
+      ELSEIF (Mbinit_flag==3) THEN !Farinotti method, using ela_x
         DO i = 1, len_str
           IF (ela_elev-uraw(i)<0.0001) THEN !has rounding errors
             ela_x=xraw(i)
@@ -3055,7 +3083,7 @@
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
         WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
-        WRITE ( Restart_outunit ) Basin_gl_top_gain
+        WRITE ( Restart_outunit ) Basin_gl_top_gain, Basin_glthick
         WRITE ( Restart_outunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
         WRITE ( Restart_outunit ) Hru_glres_melt, Basin_gl_storstart
         WRITE ( Restart_outunit ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
@@ -3078,13 +3106,13 @@
         WRITE ( Restart_outunit ) Glacr_tag
         WRITE ( Restart_outunit ) Delta_volyr
         WRITE ( Restart_outunit ) Hru_mb_yrcumul
-        WRITE ( Restart_outunit ) Hru_slope_ts
+        WRITE ( Restart_outunit ) Hru_slope_ts, Hru_glthick
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
         READ ( Restart_inunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
-        READ ( Restart_inunit ) Basin_gl_top_gain
+        READ ( Restart_inunit ) Basin_gl_top_gain, Basin_glthick
         READ ( Restart_inunit ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
         READ ( Restart_inunit ) Hru_glres_melt, Basin_gl_storstart
         READ ( Restart_inunit ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
@@ -3107,6 +3135,6 @@
         READ ( Restart_inunit ) Glacr_tag
         READ ( Restart_inunit ) Delta_volyr
         READ ( Restart_inunit ) Hru_mb_yrcumul
-        READ ( Restart_inunit ) Hru_slope_ts
+        READ ( Restart_inunit ) Hru_slope_ts, Hru_glthick
       ENDIF
       END SUBROUTINE glacr_restart
