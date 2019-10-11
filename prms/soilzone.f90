@@ -1049,7 +1049,7 @@
         Cap_waterin(i) = capwater_maxin
 
         ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
-          IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
+        IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
           CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
      &         Soil_rechr_max(i), Soil2gw_max(i), gvr_maxin, &
      &         Soil_moist(i), Soil_rechr(i), Soil_to_gw(i), Soil2gw(i), perv_frac)

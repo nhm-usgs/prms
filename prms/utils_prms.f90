@@ -106,7 +106,7 @@
       CHARACTER(LEN=4) :: dum
       CHARACTER(LEN=80) :: dum2
 !***********************************************************************
-      Iunit = get_ftnunit(777)
+      Iunit = get_ftnunit(7777)
       IF ( Cbh_binary_flag==0 ) THEN
         OPEN ( Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios )
       ELSE
@@ -187,6 +187,7 @@
       DO WHILE ( i==0 )
         READ ( Iunit, '(A)', iostat=ios ) dum
         IF ( ios/=0 ) RETURN
+        IF ( dum(:4)=='####' ) CYCLE
         IF ( dum(:2)/='//' ) i = 1
       ENDDO
       READ ( dum, *, iostat=ios ) Next_yr, Next_mo, Next_day
@@ -734,7 +735,7 @@
       INTEGER :: ios, nchars
 !***********************************************************************
       Iret = 0
-      Iunit = get_ftnunit(777)
+      Iunit = get_ftnunit(7777)
       nchars = numchars(Fname)
       IF ( Ftype==0 ) THEN
         OPEN ( Iunit, FILE=Fname(:nchars), STATUS='OLD', IOSTAT=ios )
@@ -766,7 +767,7 @@
       INTEGER :: ios, nchars
 !***********************************************************************
       Iret = 0
-      Iunit = get_ftnunit(888)
+      Iunit = get_ftnunit(8888)
       nchars = numchars(Fname)
 
       IF ( Ftype==0 ) THEN
@@ -799,7 +800,7 @@
 ! Local Variables
       INTEGER :: ios, nchars
 !***********************************************************************
-      Iunit = get_ftnunit(888)
+      Iunit = get_ftnunit(8888)
       nchars = numchars(Fname)
       OPEN ( Iunit, FILE=Fname(:nchars), STATUS='REPLACE', IOSTAT=ios )
       IF ( ios/=0 ) THEN
