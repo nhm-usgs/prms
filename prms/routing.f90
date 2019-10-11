@@ -67,7 +67,7 @@
 !***********************************************************************
       routingdecl = 0
 
-      Version_routing = 'routing.f90 2019-09-26 16:04:00Z'
+      Version_routing = 'routing.f90 2019-09-27 15:54:00Z'
       CALL print_module(Version_routing, 'Routing Initialization      ', 90)
       MODNAME = 'routing'
 
@@ -309,7 +309,7 @@
      &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag !, Print_debug
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: FT2_PER_ACRE, DNEARZERO, Active_hrus, Hru_route_order, Hru_area_dble, NEARZERO !, Active_area
-      USE PRMS_FLOWVARS, ONLY: Seg_outflow
+      USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
@@ -378,9 +378,7 @@
            Inputerror_flag = ierr
            RETURN
         ENDIF
-        IF ( Strmflow_flag==7 ) THEN
-          IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
-        ENDIF
+        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
@@ -400,6 +398,7 @@
      &       CALL read_error(2,'segment_flow_init')
         DO i = 1, Nsegment
           Seg_outflow(i) = Segment_flow_init(i)
+          Seg_inflow(tosegment(i)) = Seg_outflow(i)
         ENDDO
         DEALLOCATE ( Segment_flow_init )
       ENDIF
