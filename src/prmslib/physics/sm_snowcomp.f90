@@ -234,6 +234,8 @@ contains
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
+            case('albedo')
+              call model_summary%set_summary_var(jj, this%albedo)
             case('basin_pk_precip')
               call model_summary%set_summary_var(jj, this%basin_pk_precip)
             case('basin_pweqv')
@@ -252,8 +254,14 @@ contains
               call model_summary%set_summary_var(jj, this%freeh2o)
             case('pk_def')
               call model_summary%set_summary_var(jj, this%pk_def)
+            case('pk_depth')
+              call model_summary%set_summary_var(jj, this%pk_depth)
             case('pk_ice')
               call model_summary%set_summary_var(jj, this%pk_ice)
+            case('pk_precip')
+              call model_summary%set_summary_var(jj, this%pk_precip)
+            case('pk_temp')
+              call model_summary%set_summary_var(jj, this%pk_temp)
             case('snow_evap')
               call model_summary%set_summary_var(jj, this%snow_evap)
             case('snowcov_area')

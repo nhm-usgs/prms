@@ -139,22 +139,16 @@ contains
               call model_summary%set_summary_var(jj, this%basin_snow)
             case('hru_ppt')
               this%has_hru_summary_vars = .true.
-              exit
             case('hru_rain')
               this%has_hru_summary_vars = .true.
-              exit
             case('hru_snow')
               this%has_hru_summary_vars = .true.
-              exit
             case('prmx')
-              this%has_hru_summary_vars = .true.
-              exit
+              call model_summary%set_summary_var(jj, this%prmx)
             case('newsnow')
-              this%has_hru_summary_vars = .true.
-              exit
+              call model_summary%set_summary_var(jj, this%newsnow)
             case('pptmix')
-              this%has_hru_summary_vars = .true.
-              exit
+              call model_summary%set_summary_var(jj, this%pptmix)
             case default
               ! pass
           end select
@@ -306,8 +300,8 @@ contains
             call model_summary%set_summary_var(jj, this%hru_rain)
           case('hru_snow')
             call model_summary%set_summary_var(jj, this%hru_snow)
-          case('prmx')
-            call model_summary%set_summary_var(jj, this%prmx)
+          ! case('prmx')
+          !   call model_summary%set_summary_var(jj, this%prmx)
           ! case('newsnow')
           !   call nhru_summary%set_nhru_var(jj, this%newsnow)
           ! case('pptmix')

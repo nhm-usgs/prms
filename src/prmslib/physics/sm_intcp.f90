@@ -152,6 +152,8 @@ contains
               call model_summary%set_summary_var(jj, this%basin_net_snow)
             case('intcp_form')
               call model_summary%set_summary_var(jj, this%intcp_form)
+            case('intcp_on')
+              call model_summary%set_summary_var(jj, this%intcp_on)
             case('hru_intcpevap')
               call model_summary%set_summary_var(jj, this%hru_intcpevap)
             case('hru_intcpstor')

@@ -187,6 +187,8 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 call model_summary%set_summary_var(jj, this%gwres_flow)
               case('gwres_in')
                 call model_summary%set_summary_var(jj, this%gwres_in)
+              case('gwres_stor')
+                call model_summary%set_summary_var(jj, this%gwres_stor)
               case('hru_lateral_flow')
                 call model_summary%set_summary_var(jj, this%hru_lateral_flow)
               case('hru_storage')
