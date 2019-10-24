@@ -24,6 +24,7 @@ type :: var_ptrs
   real(r64), pointer, dimension(:) :: ptr_r64 => null()
   real(r32), pointer, dimension(:) :: ptr_r32 => null()
   integer(i32), pointer, dimension(:) :: ptr_i32 => null()
+  logical, pointer, dimension(:) :: ptr_logical => null()
   real(r64), pointer :: scalar_r64 => null()
 end type
 
@@ -55,12 +56,14 @@ type, extends(ModelBase) :: Summary
     procedure, private :: set_summary_var_r32
     procedure, private :: set_summary_var_r64
     procedure, private :: set_summary_var_i32
-    procedure, private :: set_summary_var_r64_0D
+    procedure, private :: set_summary_var_r64_0d
+    procedure, private :: set_summary_var_logical_1d
     procedure, public :: cleanup => cleanup_Summary
     procedure, public :: run => run_Summary
     generic, public :: set_summary_var => set_summary_var_r32, set_summary_var_r64, &
                                        set_summary_var_i32, &
-                                       set_summary_var_r64_0D
+                                       set_summary_var_r64_0d, &
+                                       set_summary_var_logical_1d
 
     procedure, private :: create_netcdf
     procedure, nopass, private :: err_check
@@ -153,10 +156,16 @@ interface set_summary_var
     integer(i32), target, intent(in) :: var(:)
   end subroutine
 
-  module subroutine set_summary_var_r64_0D(this, idx, var)
+  module subroutine set_summary_var_r64_0d(this, idx, var)
     class(Summary), intent(inout) :: this
     integer(i32), intent(in) :: idx
     real(r64), target, intent(in) :: var
+  end subroutine
+
+  module subroutine set_summary_var_logical_1d(this, idx, var)
+    class(Summary), intent(inout) :: this
+    integer(i32), intent(in) :: idx
+    logical, target, intent(in) :: var(:)
   end subroutine
 end interface
 
