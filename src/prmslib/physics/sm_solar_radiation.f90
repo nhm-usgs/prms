@@ -256,7 +256,7 @@ contains
 
     ! Constants
     real(r64), parameter :: r0 = 2.0_dp
-      !! minute solar constant cal/cm2/min (r0 could also be 1.95 (Drummond, et al 1968))
+      !! solar constant cal/cm2/min (r0 could also be 1.95 (Drummond, et al 1968))
 
     ! Local Variables
     real(r64) :: a
@@ -316,17 +316,17 @@ contains
     x0_sin = sin(x0)
     x0_cos = cos(x0)
 
-    ! x1 latitude of equivalent slope
+    ! x1 - latitude of equivalent slope
     ! This is equation 13 from Lee, 1963
     ! x1 = ASIN(Cossl * SIN(x0) + SIN(sl) * COS(x0) * COS(a))
     x1 = ASIN(Cossl * x0_sin + sl_sin * x0_cos * a_cos)
 
-    ! d1 is the denominator of equation 12, Lee, 1963
+    ! d1 - the denominator of equation 12, Lee, 1963
     ! d1 = Cossl * COS(x0) - SIN(sl) * SIN(x0) * COS(a)
     d1 = Cossl * x0_cos - sl_sin * x0_sin * a_cos
     if (ABS(d1) < DNEARZERO) d1 = DNEARZERO
 
-    ! x2 is the difference in longitude between the location of
+    ! x2 - the difference in longitude between the location of
     ! the HRU and the equivalent horizontal surface expressed in angle hour
     ! This is equation 12 from Lee, 1963
     ! x2 = ATAN(SIN(sl) * SIN(a) / d1)
@@ -403,43 +403,42 @@ contains
 
   !***********************************************************************
   !***********************************************************************
-  pure elemental module function compute_t(Lat, Solar_declination) result(T)
+  pure elemental module function compute_t(lat, solar_declination) result(res)
     implicit none
 
     INTRINSIC TAN, ACOS
 
     ! Arguments
-    real(r64) :: T
+    real(r64) :: res
       !! Angle hour from the local meridian (local solar noon) to the sunrise(negative) or sunset(positive).
-    real(r64), intent(in) :: Lat
+    real(r64), intent(in) :: lat
       !! Latitude
-    real(r64), intent(in) :: Solar_declination
+    real(r64), intent(in) :: solar_declination
       !! Declination of the sun on a day.
-
 
     ! Local Variables
     real(r64) :: tx
     !***********************************************************************
 
     ! This is the sunrise equation
-    ! Lat is the latitude
-    ! Solar_declination is the declination of the sun on a day
-    ! T is the angle hour from the local meridian (local solar noon) to the
-    ! sunrise (negative) or sunset (positive).  The Earth rotates at the angular
-    ! speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore, T/15 degress (T*24/pi
-    ! in radians) gives the time of sunrise as the number of hours before the local
-    ! noon, or the time of sunset as the number of hours after the local noon.
-    ! Here the term local noon indicates the local time when the sun is exactly to
-    ! the south or north or exactly overhead.
-    tx = -TAN(Lat) * TAN(Solar_declination)
+    !  lat - the latitude
+    !  solar_declination - the declination of the sun on a day
+    !  res - the angle hour from the local meridian (local solar noon) to the
+    !        sunrise (negative) or sunset (positive).  The Earth rotates at the angular
+    !        speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore,
+    !        res/15 degrees (res*24/pi in radians) gives the time of sunrise as the number
+    !        of hours before the local noon, or the time of sunset as the number of
+    !        hours after the local noon. Here the term local noon indicates the local
+    !        time when the sun is exactly to the south or north or exactly overhead.
+    tx = -TAN(lat) * TAN(solar_declination)
 
     if (tx < -1.0D0) then
-      T = PI
+      res = PI
       !rsr bug fix, old code would set t=acos(0.0) for tx>1 12/05
     elseif (tx > 1.0D0) then
-      T = 0.0D0
+      res = 0.0D0
     else
-      T = ACOS(tx)
+      res = ACOS(tx)
     endif
   end function
 
@@ -448,30 +447,29 @@ contains
   ! This is the radian angle version of FUNC3 (eqn 6) from Swift, 1976
   ! or Lee, 1963 equation 5.
   ! func3 (R4) is potential solar radiation on the surface cal/cm2/day
-  pure elemental module function func3(V, W, X, Y, R1, Solar_declination) result(res)
+  pure elemental module function func3(v, w, x, y, r1, solar_declination) result(res)
     implicit none
 
     INTRINSIC SIN, COS
 
     ! Arguments
     real(r64) :: res
-    real(r64), intent(in) :: V
+    real(r64), intent(in) :: v
       !! Latitude angle hour offset between actual and equivalent slope
-    real(r64), intent(in) :: W
+    real(r64), intent(in) :: w
       !! Latitude of the equivalent slope
-    real(r64), intent(in) :: X
+    real(r64), intent(in) :: x
       !! Hour angle of sunset on equivalent slope
-    real(r64), intent(in) :: Y
+    real(r64), intent(in) :: y
       !! Hour angle of sunrise on equivalent slope
-    real(r64), intent(in) :: R1
+    real(r64), intent(in) :: r1
       !! Solar constant for 60 minutes
-    real(r64), intent(in) :: Solar_declination
+    real(r64), intent(in) :: solar_declination
       !! Declination of sun
 
     !***********************************************************************
-    res = R1 * PI_12 * (SIN(Solar_declination) * SIN(W) * (X - Y) + &
-                        COS(Solar_declination) * COS(W) * (SIN(X + V) - &
-                        SIN(Y + V)))
+    res = r1 * PI_12 * (SIN(solar_declination) * SIN(w) * (x - y) + &
+                        COS(solar_declination) * COS(w) * (SIN(x + v) - SIN(y + v)))
   end function
 
 end submodule
