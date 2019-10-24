@@ -92,7 +92,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-09-26 18:30:00Z'
+        PRMS_versn = 'call_modules.f90 2019-10-23 15:57:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -178,8 +178,7 @@
         Process_flag = 3
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==1 ) THEN
-          nc = numchars(Var_save_file)
-          CALL PRMS_open_output_file(Restart_outunit, Var_save_file(:nc), 'var_save_file', 1, iret)
+          CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
           IF ( iret/=0 ) STOP
           CALL call_modules_restart(0)
         ENDIF
