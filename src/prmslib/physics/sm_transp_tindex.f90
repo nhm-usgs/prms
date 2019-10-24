@@ -2,7 +2,7 @@ submodule (PRMS_TRANSP_TINDEX) sm_transp_tindex
 contains
   !***********************************************************************
   ! Transp_tindex constructor
-  module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp)
+  module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp, model_summary)
     use prms_constants, only: CELSIUS
     use conversions_mod, only: f_to_c_diff
     use UTILS_PRMS, only: print_module_info
@@ -12,6 +12,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
+    type(Summary), intent(inout) :: model_summary
 
     ! Local variables
     ! character(LEN=11) :: modname_rst
@@ -31,7 +32,7 @@ contains
     ! temp_units, transp_beg, transp_end, transp_tmax,
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    call this%Transpiration%init(ctl_data, model_basin, model_temp)
+    call this%Transpiration%init(ctl_data, model_basin, model_temp, model_summary)
     ! this%Transpiration = Transpiration(ctl_data, model_basin)
 
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &

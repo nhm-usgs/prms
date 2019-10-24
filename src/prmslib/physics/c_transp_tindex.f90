@@ -10,6 +10,7 @@ MODULE PRMS_TRANSP_TINDEX
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -49,7 +50,7 @@ MODULE PRMS_TRANSP_TINDEX
 
   interface
     !! Transp_tindex constructor
-    module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp)
+    module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp, model_summary)
       class(Transp_tindex), intent(inout) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
@@ -57,6 +58,7 @@ MODULE PRMS_TRANSP_TINDEX
       type(Basin), intent(in) :: model_basin
         !! Model basin information
       class(Temperature), intent(in) :: model_temp
+      type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
 
