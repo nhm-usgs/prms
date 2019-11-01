@@ -153,6 +153,11 @@ module PRMS_SNOW
     real(r32), allocatable :: tcal(:)
       !! Net snowpack energy balance on each HRU
 
+    ! NOTE: 2019-10-31 PAN: moved from precipition
+    integer(i32), allocatable :: newsnow(:)
+      !! Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
+    integer(i32), allocatable :: pptmix(:)
+      !! Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)
 
 
     ! Other variables
