@@ -49,7 +49,7 @@ module PRMS_CLIMATEVARS
       !! Modified by soilzone and muskingum_lake
 
     ! snow variables
-    real(r64), allocatable :: pkwater_equiv(:)
+    real(r64), pointer :: pkwater_equiv(:)
       !! Snowpack water equivalent on each HRU [inches]
 
     ! TODO: what are these two used for?
