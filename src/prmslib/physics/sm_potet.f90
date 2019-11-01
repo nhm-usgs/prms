@@ -42,8 +42,9 @@ contains
         call this%print_module_info()
       endif
 
-      allocate(this%epan_coef(nhru, nmonths))
-      call param_hdl%get_variable('epan_coef', this%epan_coef)
+      ! TODO: This belongs in the potet_pan module not potet parent
+      ! allocate(this%epan_coef(nhru, nmonths))
+      ! call param_hdl%get_variable('epan_coef', this%epan_coef)
 
       allocate(this%potet_sublim(nhru))
       call param_hdl%get_variable('potet_sublim', this%potet_sublim)
