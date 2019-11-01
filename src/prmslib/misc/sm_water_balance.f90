@@ -197,10 +197,12 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 hru_ppt => model_precip%hru_ppt, &
                 hru_rain => model_precip%hru_rain, &
                 hru_snow => model_precip%hru_snow, &
-                newsnow => model_precip%newsnow, &
-                pptmix => model_precip%pptmix, &
+                ! newsnow => model_precip%newsnow, &
+                ! pptmix => model_precip%pptmix, &
 
+                newsnow => model_snow%newsnow, &
                 pkwater_ante => model_snow%pkwater_ante, &
+                pptmix => model_snow%pptmix, &
                 pptmix_nopack => model_snow%pptmix_nopack, &
                 snowmelt => model_snow%snowmelt, &
                 snow_evap => model_snow%snow_evap, &
