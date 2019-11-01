@@ -34,6 +34,7 @@ module PRMS_POTET_JH
     contains
       procedure, public :: init => init_Potet_jh
       procedure, public :: run => run_Potet_jh
+      procedure, nopass, private :: calc_potet
   end type
 
   interface
@@ -56,7 +57,17 @@ module PRMS_POTET_JH
       type(Time_t), intent(in) :: model_time
       class(SolarRadiation), intent(in) :: model_solrad
       class(Temperature), intent(in) :: model_temp
-
     end subroutine
+  end interface
+
+  interface
+    pure elemental module function calc_potet(tavg_c, tavg_f, jh_coef, jh_coef_hru, swrad) result(res)
+      real(r32) :: res
+      real(r32), intent(in) :: tavg_c
+      real(r32), intent(in) :: tavg_f
+      real(r32), intent(in) :: jh_coef
+      real(r32), intent(in) :: jh_coef_hru
+      real(r32), intent(in) :: swrad
+    end function
   end interface
 end module
