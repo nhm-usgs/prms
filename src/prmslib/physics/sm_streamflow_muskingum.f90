@@ -186,10 +186,11 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
         this%basin_segment_storage = sum(this%seg_outflow) * basin_area_inv / cfs_conv
 
-        write(output_unit, *) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
-        write(output_unit, *) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
-        write(output_unit, *) '  Muskingum coefficient (min(c2), max(c2)): ', minval(this%c2), maxval(this%c2)
-        write(output_unit, *) '  Muskingum coefficient (min(ts), max(ts)): ', minval(this%ts), maxval(this%ts)
+        write(output_unit, 9002) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
+        write(output_unit, 9002) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
+        write(output_unit, 9002) '  Muskingum coefficient (min(c2), max(c2)): ', minval(this%c2), maxval(this%c2)
+        write(output_unit, 9002) '  Muskingum coefficient (min(ts), max(ts)): ', minval(this%ts), maxval(this%ts)
+        9002 format (A, 2F11.7)
       end associate
     end subroutine
 
