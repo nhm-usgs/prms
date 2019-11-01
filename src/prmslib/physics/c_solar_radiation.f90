@@ -18,11 +18,32 @@ module SOLAR_RADIATION
   character(len=*), parameter :: MODNAME = 'soltab'
   character(len=*), parameter :: MODVERSION = '2018-10-10 16:20:00Z'
 
-  integer(r32), parameter :: DAYS_PER_YEAR = 366.0_sp
+  integer(i32), parameter :: DAYS_PER_YEAR = 366
   real(r64), parameter :: PI = 3.1415926535898_dp
   real(r64), parameter :: RADIANS = PI / 180.0_dp   ! RADIANS ~ 0.017453292519943
   real(r64), parameter :: TWOPI = 2.0_dp * PI       ! TWOPI ~ 6.2831853071786
   real(r64), parameter :: PI_12 = 12.0_dp / PI      ! PI_12 ~ 3.8197186342055
+
+  real(r64), parameter :: ECCENTRICY = 0.01671_dp
+  real(r64), parameter :: DAYSYR = 365.242_dp
+  real(r64), parameter :: DEGDAY = 360.0_dp / DAYSYR
+  real(r64), parameter :: DEGDAYRAD = DEGDAY * RADIANS ! about 0.00143356672
+
+  integer(i32) :: i
+  real(r64), parameter :: JD(DAYS_PER_YEAR) = [(dble(i), i=1,DAYS_PER_YEAR)]
+  real(r64), parameter :: Y(DAYS_PER_YEAR) = (JD - 1.0_dp) * DEGDAYRAD
+  real(r64), parameter :: JD3(DAYS_PER_YEAR) = (JD - 3.0_dp) * DEGDAYRAD
+  real(r64), parameter :: Y2(DAYS_PER_YEAR) = Y * 2.0_dp
+  real(r64), parameter :: Y3(DAYS_PER_YEAR) = Y * 3.0_dp
+  real(r64), parameter :: OBLIQUITY(DAYS_PER_YEAR) = 1.0_dp - (ECCENTRICY * cos(JD3))
+  real(r64), parameter :: SOLAR_DECLINATION(DAYS_PER_YEAR) = 0.006918_dp - &
+                                                   0.399912_dp * COS(Y) + 0.070257_dp * SIN(Y) - &
+                                                   0.006758_dp * COS(Y2) + 0.000907_dp * SIN(Y2) - &
+                                                   0.002697_dp * COS(Y3) + 0.00148_dp * SIN(Y3)
+  real(r64), parameter :: R0 = 2.0_dp
+    !! solar constant cal/cm2/min (r0 could also be 1.95 (Drummond, et al 1968))
+  real(r64), parameter :: R1(DAYS_PER_YEAR) = (60.0_dp * R0) / (OBLIQUITY**2)
+    !! Solar constant for 60 minutes
 
   type, extends(ModelBase) :: SolarRadiation
     ! Dimensions
@@ -67,8 +88,8 @@ module SOLAR_RADIATION
     real(r32), allocatable :: tmax_f(:)
     real(r32), allocatable :: tmin_f(:)
 
-    real(r64) :: solar_declination(366)
-    real(r64) :: soltab_basinpotsw(366)
+    ! real(r64) :: solar_declination(366)
+    real(r64) :: soltab_basinpotsw(DAYS_PER_YEAR)
     real(r64), allocatable :: hru_cossl(:)
     real(r64), allocatable :: soltab_sunhrs(:, :)
 
