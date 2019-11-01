@@ -105,8 +105,8 @@ contains
         read(this%precip_funit, *, IOSTAT=ios) datetime, this%hru_ppt
       endif
 
-      this%pptmix = 0
-      this%newsnow = 0
+      ! this%pptmix = 0
+      ! this%newsnow = 0
       this%prmx = 0.0
       this%hru_rain = 0.0
       this%hru_snow = 0.0
