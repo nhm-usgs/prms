@@ -41,7 +41,6 @@ contains
         call this%print_module_info()
       endif
 
-
       ! Parameters
       allocate(this%covden_sum(nhru))
       call param_hdl%get_variable('covden_sum', this%covden_sum)
@@ -275,7 +274,7 @@ contains
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Potential_ET), intent(in) :: model_potet
-    class(Precipitation), intent(inout) :: model_precip
+    class(Precipitation), intent(in) :: model_precip
     class(Transpiration), intent(in) :: model_transp
     type(Climateflow), intent(in) :: model_climate
       !! Climate variables
@@ -283,12 +282,11 @@ contains
 
     ! NOTE: model_precip must be intent(inout) because newsnow and pptmix are
     !       modified in this subroutine.
+    !       2019-11-01 PAN: moved newsnow and pptmix entirely to snowcomp
 
     ! Local Variables
     integer(i32) :: chru
     integer(i32) :: j
-    ! integer(i32) :: idx1D
-      !! Used for conversion of 2D index to 1D index
 
     real(r32) :: changeover
     real(r32) :: d
@@ -296,7 +294,7 @@ contains
     real(r32) :: evrn
     real(r32) :: evsn
     real(r32) :: extra_water
-      !! used when cov_type transitions to bare soil and intcpstor > 0.0
+      !! used when dynamic cov_type transitions to bare soil and intcpstor > 0.0
     real(r32) :: intcpevap
     real(r32) :: intcpstor
     real(r32) :: last
@@ -328,15 +326,15 @@ contains
               hru_route_order => model_basin%hru_route_order, &
               hru_type => model_basin%hru_type, &
 
-              epan_coef => model_potet%epan_coef, &
+              ! epan_coef => model_potet%epan_coef, &
               potet => model_potet%potet, &
               potet_sublim => model_potet%potet_sublim, &
 
               hru_ppt => model_precip%hru_ppt, &
               hru_rain => model_precip%hru_rain, &
               hru_snow => model_precip%hru_snow, &
-              newsnow => model_precip%newsnow, &
-              pptmix => model_precip%pptmix, &
+              ! newsnow => model_precip%newsnow, &
+              ! pptmix => model_precip%pptmix, &
 
               pkwater_equiv => model_climate%pkwater_equiv, &
 
@@ -383,9 +381,6 @@ contains
 
         ! TODO: why is this intcp_stor instead of hru_intcpstor
         intcpstor = this%intcp_stor(chru)
-
-        ! 2D index to 1D
-        ! idx1D = (Nowmonth - 1) * nhru + chru
 
         if (hru_type(chru) == LAKE .or. cov_type(chru) == BARESOIL) then
           ! Lake or bare ground HRUs
@@ -531,8 +526,8 @@ contains
                 if (netsnow < NEARZERO) then   !rsr, added 3/9/2006
                   netrain = netrain + netsnow
                   netsnow = 0.0
-                  newsnow(chru) = 0
-                  pptmix(chru) = 0   ! reset to be sure it is zero
+                  ! newsnow(chru) = 0
+                  ! pptmix(chru) = 0   ! reset to be sure it is zero
                 endif
               endif
             endif
@@ -543,8 +538,10 @@ contains
         if (intcpstor > 0.0) then
           ! If precipitation assume no evaporation or sublimation
           if (hru_ppt(chru) < NEARZERO) then
-            ! evrn = potet(chru) / epan_coef(idx1D)
-            evrn = potet(chru) / epan_coef(chru, Nowmonth)
+            ! NOTE: This differs from PRMS5, epan_coef is only used with
+            !       the potet_pan module
+            evrn = potet(chru)
+            ! evrn = potet(chru) / epan_coef(chru, Nowmonth)
             evsn = potet_sublim(chru) * potet(chru)
 
             ! TODO: Uncomment when potet_pan module is added
@@ -601,19 +598,14 @@ contains
         this%net_snow(chru) = netsnow
         this%net_ppt(chru) = netrain + netsnow
 
-        !rsr, question about depression storage for basin_net_ppt???
-        !     My assumption is that cover density is for the whole HRU
-        ! this%basin_net_ppt = this%basin_net_ppt + dble(this%net_ppt(chru) * hru_area(chru))
-        ! this%basin_net_snow = this%basin_net_snow + dble(this%net_snow(chru) * hru_area(chru))
-        ! this%basin_net_rain = this%basin_net_rain + dble(this%net_rain(chru) * hru_area(chru))
-        ! this%basin_intcp_stor = this%basin_intcp_stor + dble(intcpstor * this%canopy_covden(chru) * hru_area(chru))
-        ! this%basin_intcp_evap = this%basin_intcp_evap + dble(intcpevap * this%canopy_covden(chru) * hru_area(chru))
         this%basin_changeover = this%basin_changeover + dble(changeover * hru_area(chru))
 
         if (changeover > 0.0 .and. print_debug > -1) then
           write(output_unit, *) 'Change over storage:', changeover, '; HRU:', chru
         endif
       enddo
+
+      this%basin_changeover = this%basin_changeover * basin_area_inv
 
       !rsr, question about depression storage for basin_net_ppt???
       !     My assumption is that cover density is for the whole HRU
@@ -623,18 +615,9 @@ contains
       this%basin_intcp_stor = sum(dble(this%hru_intcpstor * hru_area), mask=active_mask) * basin_area_inv
       this%basin_intcp_evap = sum(dble(this%hru_intcpevap * hru_area), mask=active_mask) * basin_area_inv
 
-      ! this%basin_net_ppt = this%basin_net_ppt * basin_area_inv
-      ! this%basin_net_snow = this%basin_net_snow * basin_area_inv
-      ! this%basin_net_rain = this%basin_net_rain * basin_area_inv
-      ! this%basin_intcp_stor = this%basin_intcp_stor * basin_area_inv
-      ! this%basin_intcp_evap = this%basin_intcp_evap * basin_area_inv
-      this%basin_changeover = this%basin_changeover * basin_area_inv
-
       if (this%use_transfer_intcp) then
         this%basin_net_apply = sum(dble(this%gain_inches * hru_area), mask=active_mask) * basin_area_inv
         this%basin_hru_apply = sum(dble(this%net_apply * hru_area), mask=active_mask) * basin_area_inv
-        ! this%basin_net_apply = this%basin_net_apply * basin_area_inv
-        ! this%basin_hru_apply = this%basin_hru_apply * basin_area_inv
       endif
     end associate
   end subroutine

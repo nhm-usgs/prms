@@ -56,28 +56,46 @@ module PRMS_INTCP
 
     ! Output variables
     real(r64), allocatable :: basin_hru_apply
+      !! Basin area-weighted average canopy_gain, in inches (**water_use**)
     real(r64), allocatable :: basin_intcp_evap
+      !! Basin area-weighted evaporation from the canopy, in inches
     real(r64), allocatable :: basin_intcp_stor
+      !! Basin area-weighted average interception storage, in inches
     real(r64), allocatable :: basin_net_apply
+      !! Basin area-weighted average net_apply, in inches (**water_use**)
     real(r64), allocatable :: basin_net_ppt
+      !! Basin area-weighted average throughfall, in inches
     real(r64), allocatable :: basin_net_rain
+      !! Basin area-weighted average rain throughfall, in inches
     real(r64), allocatable :: basin_net_snow
+      !! Basin area-weighted average snow throughfall, in inches
 
     real(r32), allocatable :: canopy_covden(:)
+      !! Canopy cover density for each HRU (decimal fraction)
     real(r32), allocatable :: hru_intcpevap(:)
+      !! Evaporation from the canopy for each HRU, in inches
     real(r32), allocatable :: hru_intcpstor(:)
+      !! Interception storage in the canopy for each HRU, in inches
     real(r32), allocatable :: intcp_evap(:)
+      !! Evaporation from the canopy for each HRU, in inches (** same as hru_intcpevap **)
     real(r32), allocatable :: intcp_stor(:)
+      !! Interception storage in canopy for cover density for each HRU, in inches
     real(r32), allocatable :: net_apply(:)
+      !! canopy_gain minus interception, in inches
     real(r32), allocatable :: net_ppt(:)
+      !! Precipitation (rain and/or snow) that falls through the canopy for nhru each HRU, in inches
     real(r32), allocatable :: net_rain(:)
+      !! Rain that falls through canopy for each HRU, in inches
     real(r32), allocatable :: net_snow(:)
+      !! Snow that falls through canopy for each HRU, in inches
 
 
     ! Local variables
     integer(i32), allocatable, private :: intcp_form(:)
+      !! Form (rain or snow) of interception for each HRU (0=rain; 1=snow)
 
     logical, allocatable, private :: intcp_on(:)
+      !! Flag indicating interception storage for each HRU (0=no; 1=yes)
     logical, allocatable, private :: intcp_transp_on(:)
 
     ! integer(i32), allocatable, private :: intcp_on(:)
@@ -110,7 +128,6 @@ module PRMS_INTCP
     integer(i32), private :: next_dyn_wrain_intcp_date(3)
     real(r32), private, allocatable :: wrain_intcp_chgs(:)
 
-
     ! integer(i32), private :: imperv_frac_unit
     ! integer(i32) :: next_dyn_imperv_frac_date(3)
     ! real(r32), allocatable :: imperv_frac_chgs(:)
@@ -125,19 +142,6 @@ module PRMS_INTCP
       procedure, public :: run => run_Interception
       procedure, public :: cleanup => cleanup_Interception
   end type
-
-  ! interface Interception
-  !   !! Intercept constructor
-  !   module function constructor_Interception(ctl_data, model_basin, model_transp, model_summary) result(this)
-  !     type(Interception) :: this
-  !       !! Interception class
-  !     type(Control), intent(in) :: ctl_data
-  !       !! Control file parameters
-  !     type(Basin), intent(in) :: model_basin
-  !     class(Transpiration), intent(in) :: model_transp
-  !     type(Summary), intent(inout) :: model_summary
-  !   end function
-  ! end interface
 
   interface
     !! Intercept constructor
@@ -162,7 +166,7 @@ module PRMS_INTCP
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Potential_ET), intent(in) :: model_potet
-      class(Precipitation), intent(inout) :: model_precip
+      class(Precipitation), intent(in) :: model_precip
       class(Transpiration), intent(in) :: model_transp
       type(Climateflow), intent(in) :: model_climate
         !! Climate variables
