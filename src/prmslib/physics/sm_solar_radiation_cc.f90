@@ -121,6 +121,7 @@ contains
 
               active_hrus => model_basin%active_hrus, &
               basin_area_inv => model_basin%basin_area_inv, &
+              hru_area => model_basin%hru_area, &
               hru_route_order => model_basin%hru_route_order, &
 
               hru_ppt => model_precip%hru_ppt, &
@@ -129,16 +130,18 @@ contains
 
               solrad => model_obs%solrad, &
 
+              ! The following 4 are specific to solrad_cc
               ccov_slope => param_data%ccov_slope%values, &
               ccov_intcp => param_data%ccov_intcp%values, &
               crad_coef => param_data%crad_coef%values, &
               crad_exp => param_data%crad_exp%values, &
-              hru_area => param_data%hru_area%values, &
-              hru_solsta => param_data%hru_solsta%values, &
-              ppt_rad_adj => param_data%ppt_rad_adj%values, &
-              radj_sppt => param_data%radj_sppt%values, &
-              radj_wppt => param_data%radj_wppt%values, &
-              radmax => param_data%radmax%values, &
+
+              ! hru_area => param_data%hru_area%values, &
+              ! hru_solsta => param_data%hru_solsta%values, &
+              ! ppt_rad_adj => param_data%ppt_rad_adj%values, &
+              ! radj_sppt => param_data%radj_sppt%values, &
+              ! radj_wppt => param_data%radj_wppt%values, &
+              ! radmax => param_data%radmax%values, &
 
               ! tmax => model_temp%tmax, &
               ! tmin => model_temp%tmin, &
