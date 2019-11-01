@@ -24,17 +24,27 @@ module PRMS_PRECIPITATION
 
     ! Output variables
     real(r64), allocatable :: basin_obs_ppt
+      !! Basin area-weighted measured average precipitation, in inches
     real(r64), allocatable :: basin_ppt
+      !! Basin area-weighted average precipitation, in inches
     real(r64), allocatable :: basin_rain
+      !! Basin area-weighted average rainfall, in inches
     real(r64), allocatable :: basin_snow
+      !! Basin area-weighted average snowfall, in inches
 
     real(r32), allocatable :: hru_ppt(:)
+      !! Precipitation distributed to each HRU, in inches
     real(r32), allocatable :: hru_rain(:)
+      !! Rain distributed to each HRU, in inches
     real(r32), allocatable :: hru_snow(:)
+      !! Snow distributed to each HRU, in inches
     real(r32), allocatable :: prmx(:)
+      !! Fraction of rain in a mixed precipitation event for each HRU
 
-    integer(i32), allocatable :: newsnow(:)
-    integer(i32), allocatable :: pptmix(:)
+    ! integer(i32), allocatable :: newsnow(:)
+    !   !! Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
+    ! integer(i32), allocatable :: pptmix(:)
+    !   !! Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)
 
     ! Local variables
     real(r32), allocatable, private :: tmax_allrain(:, :)
