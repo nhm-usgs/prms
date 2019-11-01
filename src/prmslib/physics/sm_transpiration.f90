@@ -1,12 +1,15 @@
 submodule(PRMS_TRANSPIRATION) sm_transpiration
 contains
   module subroutine init_Transpiration(this, ctl_data, model_basin, model_temp, model_summary)
+    implicit none
+
     class(Transpiration), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
     type(Summary), intent(inout) :: model_summary
 
+    integer(i32) :: jj
     ! --------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               nhru => model_basin%nhru, &
@@ -38,6 +41,8 @@ contains
   end subroutine
 
   module subroutine run_Transpiration(this, ctl_data, model_time, model_basin, model_temp)
+    implicit none
+
     class(Transpiration), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
     type(Time_t), intent(in) :: model_time
