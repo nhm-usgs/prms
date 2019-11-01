@@ -4,7 +4,7 @@ contains
   ! Transp_tindex constructor
   module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp, model_summary)
     use prms_constants, only: CELSIUS
-    use conversions_mod, only: f_to_c_diff
+    use conversions_mod, only: f_to_c
     use UTILS_PRMS, only: print_module_info
     implicit none
 
@@ -22,14 +22,6 @@ contains
     integer(i32) :: chru
       !! Current HRU
 
-    ! Control
-    ! nhru, init_vars_from_file, print_debug, rst_unit, st_month, st_day
-
-    ! Basin
-    ! active_hrus, hru_route_order,
-
-    ! Parameters
-    ! temp_units, transp_beg, transp_end, transp_tmax,
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%Transpiration%init(ctl_data, model_basin, model_temp, model_summary)
@@ -38,7 +30,7 @@ contains
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
-              rst_unit => ctl_data%restart_output_unit, &
+              ! rst_unit => ctl_data%restart_output_unit, &
               st_month => ctl_data%start_time%values(MONTH), &
               st_day => ctl_data%start_time%values(DAY), &
 
@@ -68,15 +60,23 @@ contains
       ! Other variables
       allocate(this%tmax_sum(nhru))
       allocate(this%transp_check(nhru))
-      allocate(this%transp_tmax_c(nhru))
+
+      this%tmax_sum = 0.0
+      this%transp_check = .false.
+      this%basin_transp_on = .false.
 
       ! NOTE: changed to use Celsius units by default
-      ! NOTE: this will be unnecessary once parameter file is standardized
-      if (temp_units == CELSIUS) then
-        this%transp_tmax_c = this%transp_tmax(:)
-      else
-        this%transp_tmax_c = f_to_c_diff(this%transp_tmax)
-      endif
+      ! NOTE: this will be unnecessary once parameter file units are standardized
+      ! NOTE: 2019-11-01 PAN: There is no simple way to convert transp_tmax
+      !                       from F to C because it represents a running total
+      !                       of temperature. So if a transp_tmax in F is converted
+      !                       to celsius then timing of transpiration turning
+      !                       on will be incorrect.
+      ! if (temp_units == CELSIUS) then
+      !   this%transp_tmax_c = this%transp_tmax(:)
+      ! else
+      !   this%transp_tmax_c = f_to_c(this%transp_tmax)
+      ! endif
 
       if (init_vars_from_file == 1) then
         ! TODO: Incorporate the load from restart file stuff
@@ -94,49 +94,9 @@ contains
         ! read(rst_unit) Transp_tmax_restart
       endif
 
-      this%tmax_sum = 0.0
-      ! this%transp_check = 0
-      this%transp_check = .false.
-      this%basin_transp_on = .false.
-
-      do ii=1, active_hrus
-        chru = hru_route_order(ii)
-
-        if (st_month == this%transp_beg(chru)) then
-          if (st_day > 10) then
-            ! print *, 'transp_on = 1 (st_day > 10)'
-            this%transp_on(chru) = .true.
-          else
-            ! print *, 'transp_check = 1 (st_day <= 10 && st_month == transp_beg)'
-            ! this%transp_check(chru) = 1
-            this%transp_check(chru) = .true.
-          endif
-        elseif (this%transp_end(chru) > this%transp_beg(chru)) then
-          if (st_month > this%transp_beg(chru) .and. st_month < this%transp_end(chru)) then
-            ! print *, 'transp_on = 1 (st_month > transp_beg && st_month < transp_end)'
-            this%transp_on(chru) = .true.
-          endif
-        else
-          if (st_month > this%transp_beg(chru) .or. (st_month + 12) < (this%transp_end(chru) + 12)) then
-            ! TODO: shouldn't the 2nd line of the conditional just be:
-            !       st_month < transp_end(chr)
-            ! print *, 'transp_on = 1 (st_month > trans_beg || st_mo+12 < transp_end+12)'
-            this%transp_on(chru) = .true.
-          endif
-        endif
-
-        ! if (this%basin_transp_on == 0) then
-        !   if (this%transp_on(chru) == 1) then
-        !     this%basin_transp_on = 1
-        !   endif
-        ! endif
-      enddo
-
+      this%transp_on = init_transp_on(this%transp_beg, this%transp_end, st_month, st_day)
+      this%transp_check = init_transp_check(this%transp_beg, st_month, st_day)
       this%basin_transp_on = any(this%transp_on)
-
-      ! print *, this%transp_on
-      ! print *, this%transp_check
-      ! print *, this%transp_tmax_c
     end associate
   end subroutine
 
@@ -163,6 +123,7 @@ contains
 
 
   module subroutine run_Transp_tindex(this, ctl_data, model_time, model_basin, model_temp)
+    use prms_constants, only: CELSIUS
     implicit none
 
     class(Transp_tindex), intent(inout) :: this
@@ -177,17 +138,6 @@ contains
     integer(i32) :: j
       !! Counter
 
-    ! Control
-
-    ! Basin
-    ! active_hrus, hru_route_order
-
-    ! Parameters
-    ! transp_beg, transp_end,
-
-    ! Time_t
-    ! curr_month (Nowmonth), curr_day (Nowday),
-
     ! --------------------------------------------------------------------------
     ! Call parent run_Transpiration() procedure if needed
     ! call this%run_Transpiration(ctl_data)
@@ -195,59 +145,138 @@ contains
     associate(active_hrus => model_basin%active_hrus, &
               hru_route_order => model_basin%hru_route_order, &
 
+              temp_units => model_temp%temp_units, &
               tmax => model_temp%tmax, &
+              tmax_f => model_temp%tmax_f, &
 
               curr_month => model_time%Nowmonth, &
               curr_day => model_time%Nowday)
 
-      ! Set switch for active transpiration period
-      this%basin_transp_on = .false.
-
-      do j = 1, active_hrus
-        chru = hru_route_order(j)
-
-        ! ****** Check for month to turn transp_check switch on or
-        ! ****** transpiration switch off (transp_on)
-        if (curr_day == 1) then
-          if (curr_month == this%transp_end(chru)) then
-            ! At the end of the current transpiration period
-            this%transp_on(chru) = .true.
-            this%transp_check(chru) = .false.
-            this%tmax_sum(chru) = 0.0
-          endif
-
-          !******check for month to turn transpiration switch (transp_check) on or off
-          if (curr_month == this%transp_beg(chru)) then
-            this%transp_check(chru) = .true.
-            this%tmax_sum(chru) = 0.0
-          endif
-        endif
-
-        ! ****** If in checking period, then for each day sum the maximum
-        ! ****** temperature until it's greater than temperature index parameter,
-        ! ****** at which time, turn transpiration switch on, check switch off.
-        ! ****** Freezing temperature assumed to be 0 Celsius.
-        ! if (this%transp_check(chru) == 1) then
-        if (this%transp_check(chru)) then
-          if (tmax(chru) > 0.0) then
-            ! tmax is greater than 0 Celsius
-            this%tmax_sum(chru) = this%tmax_sum(chru) + (tmax(chru))
-          endif
-
-          if (this%tmax_sum(chru) > this%transp_tmax_c(chru)) then
-            this%transp_on(chru) = .true.
-            this%transp_check(chru) = .false.
-            this%tmax_sum(chru) = 0.0
-          endif
-        endif
-
-        ! if (this%basin_transp_on == 0) then
-        !   if (this%transp_on(chru) == 1) this%basin_transp_on = 1
-        ! endif
-      enddo
+      if (temp_units == CELSIUS) then
+        call update_transpiration(this%transp_on, this%transp_check, this%tmax_sum, &
+                                  this%transp_beg, this%transp_end, this%transp_tmax, &
+                                  tmax, 0.0, curr_month, curr_day)
+      else
+        call update_transpiration(this%transp_on, this%transp_check, this%tmax_sum, &
+                                  this%transp_beg, this%transp_end, this%transp_tmax, &
+                                  tmax_f, 32.0, curr_month, curr_day)
+      end if
 
       this%basin_transp_on = any(this%transp_on)
+
+      ! write(*, 9008) '===========', curr_month, curr_day, '============================'
+      ! write(*, 9010) this%transp_on
+      ! write(*,*) '======================================='
+      ! write(*, 9010) this%transp_check
+      ! write(*,*) '======================================='
+      ! write(*, 9009) this%tmax_sum
+      ! write(*,*) '======================================='
+      ! write(*, 9009) this%transp_tmax
+      ! write(*,*) '======================================='
+      ! write(*, 9009) tmax
+      ! write(*,*) '======================================='
+      ! write(*, 9009) tmax_f
+      ! write(*,*) '+++++++++++++++++++++++++++++++++++++++'
+
+      ! 9008 format(A, 2('-', I2.2), A)
+      ! 9009 format(14F7.2)
+      ! 9010 format(14L2)
     end associate
   end subroutine
 
+  pure elemental module function init_transp_check(tr_beg, month, day) result(res)
+    implicit none
+
+    logical :: res
+    integer, intent(in) :: tr_beg
+    integer, intent(in) :: month
+    integer, intent(in) :: day
+
+    res = .false.
+
+    if (month == tr_beg .and. day <= 10) then
+      res = .true.
+    end if
+  end function
+
+
+  pure elemental module function init_transp_on(tr_beg, tr_end, month, day) result(res)
+    implicit none
+
+    logical :: res
+    integer, intent(in) :: tr_beg
+    integer, intent(in) :: tr_end
+    integer, intent(in) :: month
+    integer, intent(in) :: day
+
+    res = .false.
+    if (month == tr_beg) then
+      if (day > 10) then
+        ! print *, 'transp_on = 1 (st_day > 10)'
+        res = .true.
+      endif
+    elseif (tr_end > tr_beg) then
+      if (month > tr_beg .and. month < tr_end) then
+        ! print *, 'transp_on = 1 (st_month > transp_beg && st_month < transp_end)'
+        res = .true.
+      endif
+    else
+      if (month > tr_beg .or. (month + 12) < (tr_end + 12)) then
+        ! TODO: shouldn't the 2nd line of the conditional just be:
+        !       st_month < transp_end(chr)
+        ! print *, 'transp_on = 1 (st_month > trans_beg || st_mo+12 < transp_end+12)'
+        res = .true.
+      endif
+    endif
+  end function
+
+  pure elemental module subroutine update_transpiration(tr_on, tr_check, tmax_sum, &
+                                                        tr_beg, tr_end, tr_tmax, tmax, &
+                                                        tmax_threshold, month, day)
+    implicit none
+
+    logical, intent(inout) :: tr_on
+    logical, intent(inout) :: tr_check
+    real(r32), intent(inout) :: tmax_sum
+    integer(i32), intent(in) :: tr_beg
+    integer(i32), intent(in) :: tr_end
+    real(r32), intent(in) :: tr_tmax
+    real(r32), intent(in) :: tmax
+    real(r32), intent(in) :: tmax_threshold
+    integer(i32), intent(in) :: month
+    integer(i32), intent(in) :: day
+
+    ! ****** Check for month to turn transp_check switch on or off
+    ! ****** transpiration switch off (transp_on)
+    if (day == 1) then
+      if (month == tr_end) then
+        ! At the end of the current transpiration period
+        tr_on = .false.
+        tr_check = .false.
+        tmax_sum = 0.0
+      endif
+
+      !******check for month to turn transpiration switch (transp_check) on or off
+      if (month == tr_beg) then
+        tr_check = .true.
+        tmax_sum = 0.0
+      endif
+    endif
+
+    ! ****** If in checking period, then for each day sum the maximum
+    ! ****** temperature until it's greater than temperature index parameter,
+    ! ****** at which time, turn transpiration switch on, check switch off.
+    ! ****** Freezing temperature assumed to be 0 Celsius or 32 Fahrenheit.
+    if (tr_check) then
+      if (tmax > tmax_threshold) then
+        tmax_sum = tmax_sum + tmax
+      end if
+
+      if (tmax_sum > tr_tmax) then
+        tr_on = .true.
+        tr_check = .false.
+        tmax_sum = 0.0
+      endif
+    endif
+  end subroutine
 end submodule
