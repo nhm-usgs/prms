@@ -1,4 +1,3 @@
-
 project(prmslib VERSION 0.1 LANGUAGES Fortran)
 cmake_minimum_required(VERSION 3.8)
 
@@ -12,17 +11,17 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
 find_package(coretran REQUIRED CONFIG)
 target_link_libraries(${PROJECT_NAME} PUBLIC coretran)
 
-# find_package(NetCDF REQUIRED COMPONENTS "F90")
-find_package(NetCDF REQUIRED COMPONENTS)
+find_package(NetCDF REQUIRED COMPONENTS "F90")
 
-# if (NOT BUILD_SHARED_LIBS)
-#   # Linking fails for static build with absolute paths on OSX
-#   target_link_libraries(${PROJECT_NAME} PUBLIC netcdff netcdf)
-# else ()
-#   target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_F90_LIBRARIES})
-# endif ()
-target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${NETCDF_INCLUDE_DIRS})
+if (NOT BUILD_SHARED_LIBS)
+  # Linking fails for static build with absolute paths on OSX
+  target_link_libraries(${PROJECT_NAME} PUBLIC netcdff netcdf)
+else ()
+  #target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_F90_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PUBLIC netcdff netcdf)
+endif ()
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${NETCDF_INCLUDE_DIRS})
 
 # # Link in the library
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
