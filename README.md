@@ -203,9 +203,9 @@ cmake ../src -DCMAKE_INSTALL_PREFIX="B:\BuildNetcdf\install"^
 ##### Build in Visual Studio 2017
 * Open the prms_project.sln in your ___build__ directory*
 * Make the following changes to the Properties dialog of both the __prms__ and __prmslib__ projects
-** In the Fortran | Command Line tab in the Additions Options box remove the -g
-** For the PRMS Property In the Linker | Command Line tab in hte Additional Options make sure there is /machine:x64
-** For the PRMSLIB Property In the Librarian | Command Line tab in hte Additional Options make sure there is /machine:x64)
-** For PRMSLIB Property, add to the Linker | General - Additional Library Directories: add the lib directories as follows "B:\BuildNetcdf\install\lib;B:\BuildNetcdf\install\1.10.5\lib"
-** For PRMSLIB Property, add to the Linker | Input - Additional Dependencies: add libhdf5.lib libhdf5_hl.lib libszip.lib libzlib.lib to the end of the exiting entries
+* In the Fortran | Command Line tab in the Additions Options box remove the -g
+* For the PRMS Property In the Linker | Command Line tab in hte Additional Options make sure there is /machine:x64
+* For the PRMSLIB Property In the Librarian | Command Line tab in hte Additional Options make sure there is /machine:x64)
+* For PRMSLIB Property, add to the Linker | General - Additional Library Directories: add the lib directories as follows "B:\BuildNetcdf\install\lib;B:\BuildNetcdf\install\1.10.5\lib"
+* For PRMSLIB Property, add to the Linker | Input - Additional Dependencies: add libhdf5.lib libhdf5_hl.lib libszip.lib libzlib.lib to the end of the exiting entries
 
