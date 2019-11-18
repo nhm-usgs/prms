@@ -31,7 +31,7 @@ surdo make install
 ```
 
  ## HDF
-1) Download HDF from [HDF5® Source Code - The HDF Group](https://www.hdfgroup.org/downloads/hdf5/source-code/)
+1) Download HDF from [HDF5Â® Source Code - The HDF Group](https://www.hdfgroup.org/downloads/hdf5/source-code/)
 2) Enter the following commands
 ``` bash
 cd hdf5-1.10.5/
@@ -111,7 +111,7 @@ cmake -DBUILD_SHARED_LIBS=ON^
 ```  
 
 #### Build with Visual Studio
-1. Open solution coretran.sln in VS, select the Debug mode and for the projects coretran; cortranScale and coretranTest open the property page by right-clicking on the project in the �Solution Explorer� and selecting Property. In the Fortran|command line property page remove the -g option.
+1. Open solution coretran.sln in VS, select the Debug mode and for the projects coretran; cortranScale and coretranTest open the property page by right-clicking on the project in the “Solution Explorer” and selecting Property. In the Fortran|command line property page remove the -g option.
 
 2. Right click on ALL_BUILD and from the drop-down menu select build
 3. When build is completed right click on INSTALL and from the drop-down menu select build
@@ -121,13 +121,13 @@ cmake -DBUILD_SHARED_LIBS=ON^
 ### Build HDF
 
 #### Configure with cmake
-* HDF source code downloads are available from here: [HDF5� Source Code - The HDF Group](https://www.hdfgroup.org/downloads/hdf5/source-code/) 
+* HDF source code downloads are available from here: [HDF5® Source Code - The HDF Group](https://www.hdfgroup.org/downloads/hdf5/source-code/) 
 * Download this cmake version:   [ Download the HDF5](https://www.hdfgroup.org/package/source-cmake-windows-4/?wpdmdl=13052&refresh=5be48acc203951541704396) and uncompress into same root folder.
 
 * Again continue using the VS command prompt as before
 * cd to CMake-hdf-1.10.5 folder and type the following command and take a break.
     *build-VS2017-64.bat
-* In the CMake-hdf-1.10.5 folder the file __HDF5-1.10.4-win64.zip__ is created, unzip the contents of this file into the __install__ folder*
+* In the CMake-hdf-1.10.5 folder the file __HDF5-1.10.5-win64.exe__ is created, Run the .exe and install into the __install__ folder*
     
 ### Build Netcdf-c
 #### Configure with cmake
