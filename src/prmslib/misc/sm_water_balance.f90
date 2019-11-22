@@ -1111,4 +1111,43 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       9003 format (I4, 2('/', I2.2), A, es11.3e3)
       ! 9003 format (A, I5, 2('/', I2.2), F12.5)
     end subroutine
+    
+    module subroutine cleanup_WaterBalance(this)
+      class(WaterBalance) :: this
+        !! Srunoff class
+
+      logical :: is_opened
+
+       inquire(UNIT=this%bal_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%bal_unit)
+       end if
+       
+      inquire(UNIT=this%gw_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%gw_unit)
+       end if
+
+      inquire(UNIT=this%intcp_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%intcp_unit)
+       end if
+
+      inquire(UNIT=this%snow_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%snow_unit)
+       end if
+
+      inquire(UNIT=this%sro_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%sro_unit)
+       end if
+
+      inquire(UNIT=this%sz_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%sz_unit)
+       end if
+
+    end subroutine
+
 end submodule

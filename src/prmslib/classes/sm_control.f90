@@ -214,6 +214,18 @@ contains
 
       open_var_save_file = iunit
     endif
-  end function
+    end function
+
+    module subroutine cleanup_control(this)
+      class(Control) :: this
+        !! Srunoff class
+
+      logical :: is_opened
+
+       inquire(UNIT=this%model_output_unit, OPENED=is_opened)
+       if (is_opened) then
+         close(this%model_output_unit)
+       end if
+    end subroutine
 
 end submodule

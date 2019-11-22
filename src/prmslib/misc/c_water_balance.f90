@@ -56,6 +56,7 @@ module PRMS_WATER_BALANCE
       procedure, private :: basin_wb_snow
       procedure, private :: basin_wb_soilzone
       procedure, private :: basin_wb_srunoff
+      procedure, public :: cleanup => cleanup_WaterBalance
   end type
 
   interface WaterBalance
@@ -140,6 +141,12 @@ end interface
       type(Time_t), intent(in) :: model_time
       real(r64), intent(in) :: basin_robal
     end subroutine
-  end interface
+    end interface
 
+  interface
+    module subroutine cleanup_WaterBalance(this)
+      class(WaterBalance) :: this
+        !! Srunoff class
+    end subroutine
+  end interface
 end module

@@ -2,6 +2,7 @@ bin/
 build/
 _build2/
 include/
+output/
 lib/
 old/
 .idea/

@@ -197,5 +197,9 @@ submodule (Simulation_class) sm_simulation
       !   call this%model_obs%cleanup(ctl_data)
       !   call this%transpiration%cleanup(ctl_data)
       ! endif
+      call this%model_waterbal%cleanup()
+      
+      call ctl_data%cleanup()
+
     end subroutine
 end submodule
