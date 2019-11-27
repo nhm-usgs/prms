@@ -52,7 +52,8 @@ contains
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Open netcdf or ascii-base cbh files
-      if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
+      ! if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
+      if (tmax_day%s(scan(trim(tmax_day%s),".", BACK= .true.)+1:) == 'nc') then
         ! Read a netcdf file
         call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
                                   tmax_day%s, 'tmax', start_time, end_time, nhru)
@@ -70,7 +71,8 @@ contains
         this%has_netcdf_tmax = .false.
       endif
 
-      if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
+      ! if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
+      if (tmin_day%s(scan(trim(tmin_day%s),".", BACK= .true.)+1:) == 'nc') then
         call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
                                   tmin_day%s, 'tmin', start_time, end_time, nhru)
         this%has_netcdf_tmin = .true.
