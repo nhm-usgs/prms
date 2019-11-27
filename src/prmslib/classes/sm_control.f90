@@ -22,7 +22,8 @@ contains
   !   character(len=*), intent(in) :: control_filename
 
     ! Local variables
-    integer(i32) :: numfiles
+    character(len=2) :: fileext
+    integer(i32) :: numfiles, ppos
       !! Number of parameter filenames in the control file
 
     ! --------------------------------------------------------------------------
@@ -56,7 +57,10 @@ contains
 
     ! Example for checking file suffix
     ! write(*, *) this%param_file%values(1)%s
-    if (this%param_file%values(1)%s(index(this%param_file%values(1)%s, '.')+1:) == 'nc') then
+    ppos = scan(trim(this%param_file%values(1)%s),".", BACK= .true.)
+    fileext = this%param_file%values(1)%s(ppos+1:)
+    if(this%param_file%values(1)%s(scan(trim(this%param_file%values(1)%s),".", BACK= .true.)+1:) == 'nc') then
+    !if (fileext == 'nc') then
       ! write(*, *) 'Parameter netcdf file'
       ! The parameter file is in netCDF format
       ! allocate(Temperature_hru::this%model_temp)
