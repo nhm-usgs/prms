@@ -71,7 +71,7 @@ contains
 
         this%has_netcdf_tmax = .false.
       endif
-      if (tmax_day%s(scan(trim(tmin_day%s),".", BACK= .true.)+1:) == 'nc') then
+      if (tmin_day%s(scan(trim(tmin_day%s),".", BACK= .true.)+1:) == 'nc') then
       !if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
         call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
                                   tmin_day%s, 'tmin', start_time, end_time, nhru)
