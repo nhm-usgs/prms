@@ -125,7 +125,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2019-09-26 16:32:00Z'
+      Version_soilzone = 'soilzone.f90 2019-12-05 13:57:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -1139,8 +1139,8 @@
         pervactet = 0.0
         IF ( Soil_moist(i)>0.0 ) THEN
           CALL compute_szactet(Soil_moist_max(i), Soil_rechr_max(i), Transp_on(i), Cov_type(i), &
-     &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, &
-     &                         avail_potet, Snow_free(i), Potet_rechr(i), Potet_lower(i))
+     &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, avail_potet, &
+     &                         Snow_free(i), Potet_rechr(i), Potet_lower(i), Potet(i), perv_frac)
           ! sanity check
 !          IF ( pervactet>avail_potet ) THEN
 !            Soil_moist(i) = Soil_moist(i) + pervactet - avail_potet
@@ -1393,25 +1393,31 @@
       SUBROUTINE compute_szactet(Soil_moist_max, Soil_rechr_max, &
      &           Transp_on, Cov_type, Soil_type, &
      &           Soil_moist, Soil_rechr, Perv_actet, Avail_potet, &
-     &           Snow_free, Potet_rechr, Potet_lower)
+     &           Snow_free, Potet_rechr, Potet_lower, Potet, Perv_frac)
+      USE PRMS_MODULE, ONLY: Soilzone_aet_flag
       USE PRMS_SOILZONE, ONLY: Et_type
       USE PRMS_BASIN, ONLY: NEARZERO
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Transp_on, Cov_type, Soil_type
-      REAL, INTENT(IN) :: Soil_moist_max, Soil_rechr_max, Snow_free
+      REAL, INTENT(IN) :: Soil_moist_max, Soil_rechr_max, Snow_free, Potet, Perv_frac
       REAL, INTENT(INOUT) :: Soil_moist, Soil_rechr, Avail_potet, Potet_rechr, Potet_lower
       REAL, INTENT(OUT) :: Perv_actet
 ! Local Variables
       REAL, PARAMETER :: ONETHIRD = 1.0/3.0, TWOTHIRDS = 2.0/3.0
-      REAL :: et, pcts, pctr
+      REAL :: et, pcts, pctr, pet
 !***********************************************************************
 !******Determine if evaporation(Et_type = 2) or transpiration plus
 !******evaporation(Et_type = 3) are active.  if not, Et_type = 1
 
+      IF ( Soilzone_aet_flag==1 ) THEN
+        pet = Potet
+      ELSE
+        pet = Avail_potet
+      ENDIF
       IF ( Avail_potet<NEARZERO ) THEN
         Et_type = 1
-        Avail_potet = 0.0
+        pet = 0.0
       ELSEIF ( Transp_on==0 ) THEN
         IF ( Snow_free<0.01 ) THEN
           Et_type = 1
@@ -1429,33 +1435,48 @@
       IF ( Et_type>1 ) THEN
         pcts = Soil_moist/Soil_moist_max
         pctr = Soil_rechr/Soil_rechr_max
-        Potet_lower = Avail_potet
-        Potet_rechr = Avail_potet
+        Potet_lower = pet
+        Potet_rechr = pet
 
 !******sandy soil
         IF ( Soil_type==1 ) THEN
-          IF ( pcts<0.25 ) Potet_lower = 0.5*pcts*Avail_potet
-          IF ( pctr<0.25 ) Potet_rechr = 0.5*pctr*Avail_potet
+          IF ( pcts<0.25 ) Potet_lower = 0.5*pcts*pet
+          IF ( pctr<0.25 ) Potet_rechr = 0.5*pctr*pet
 !******loam soil
         ELSEIF ( Soil_type==2 ) THEN
-          IF ( pcts<0.5 ) Potet_lower = pcts*Avail_potet
-          IF ( pctr<0.5 ) Potet_rechr = pctr*Avail_potet
+          IF ( pcts<0.5 ) Potet_lower = pcts*pet
+          IF ( pctr<0.5 ) Potet_rechr = pctr*pet
 !******clay soil
         ELSEIF ( Soil_type==3 ) THEN
           IF ( pcts<TWOTHIRDS .AND. pcts>ONETHIRD ) THEN
-            Potet_lower = pcts*Avail_potet
+            Potet_lower = pcts*pet
           ELSEIF ( pcts<=ONETHIRD ) THEN
-            Potet_lower = 0.5*pcts*Avail_potet
+            Potet_lower = 0.5*pcts*pet
           ENDIF
           IF ( pctr<TWOTHIRDS .AND. pctr>ONETHIRD ) THEN
-            Potet_rechr = pctr*Avail_potet
+            Potet_rechr = pctr*pet
           ELSEIF ( pctr<=ONETHIRD ) THEN
-            Potet_rechr = 0.5*pctr*Avail_potet
+            Potet_rechr = 0.5*pctr*pet
           ENDIF
         ENDIF
 
 !******Soil moisture accounting
         IF ( Et_type==2 ) Potet_rechr = Potet_rechr*Snow_free
+
+!!!! need to limit Potet_rechr and Potet_lower (pervious area) by Avail_potet (whole HRU)
+        IF ( Potet_rechr*Perv_frac > Avail_potet ) THEN
+!          print *, 'reducing potet_rechr in cap reservoir', perv_frac, pet
+!          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
+          Potet_rechr = Avail_potet / Perv_frac
+!          print *, 'Potet_rechr', Potet_rechr
+        ENDIF
+        IF ( Potet_lower*Perv_frac > Avail_potet ) THEN
+!          print *, 'reducing potet_lower in cap reservoir', perv_frac, pet
+!          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
+          Potet_lower = Avail_potet / Perv_frac
+!          print *, 'potet_lower', potet_lower
+        ENDIF
+
         IF ( Potet_rechr>Soil_rechr ) THEN
           Potet_rechr = Soil_rechr
           Soil_rechr = 0.0
@@ -1483,11 +1504,14 @@
       ENDIF
       Perv_actet = et
       ! sanity check
-!      IF ( Perv_actet>Avail_potet ) THEN
-!        PRINT *, 'perv_et problem', Perv_actet, Avail_potet
+      IF ( Perv_actet*Perv_frac-Avail_potet > NEARZERO ) THEN
+        PRINT *, 'perv_et problem', Perv_actet*Perv_frac, Avail_potet, Perv_frac
 !        Soil_moist = Soil_moist + Perv_actet - Avail_potet
 !        Perv_actet = Avail_potet
-!      ENDIF
+      ENDIF
+      IF ( Perv_actet>Potet ) THEN
+        PRINT *, 'perv_et PET problem', Perv_actet*Perv_frac, Avail_potet, Perv_frac, Potet
+      ENDIF
 
       END SUBROUTINE compute_szactet
 
