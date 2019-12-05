@@ -8,8 +8,11 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 RC'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 12/05/2019'
       CHARACTER(LEN=8), SAVE :: Process
+      !     Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
+      INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
+      INTEGER, PARAMETER :: DOCUMENTATION = 99
       CHARACTER(LEN=80), SAVE :: PRMS_versn
       INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
@@ -92,7 +95,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-10-23 15:57:00Z'
+        PRMS_versn = 'call_modules.f90 2019-12-04 11:11:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -121,7 +124,7 @@
      &        '         Soil Zone: soilzone', /, &
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
-     &        '                    muskingum_lake, muskingum_mann,', /, &
+     &        '                    muskingum_lake, muskingum_mann', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
@@ -184,7 +187,7 @@
         ENDIF
       ENDIF
 
-      IF ( Model==99 ) THEN
+      IF ( Model==DOCUMENTATION ) THEN
         IF ( Process_flag==4 .OR. Process_flag<2 ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
@@ -258,12 +261,12 @@
         IF ( call_modules/=0 ) CALL module_error(Precip_module, Arg, call_modules)
       ENDIF
 
-      IF ( Model==6 ) THEN
+      IF ( Model==26 ) THEN
         IF ( Process_flag==0 ) RETURN
       ENDIF
 
 ! frost_date is a pre-process module
-      IF ( Model==9 ) THEN
+      IF ( Model==29 ) THEN
         call_modules = frost_date()
         IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
         IF ( Process_flag==0 ) RETURN
@@ -286,7 +289,7 @@
       ENDIF
       IF ( call_modules/=0 ) CALL module_error(Transp_module, Arg, call_modules)
 
-      IF ( Model==8 ) THEN
+      IF ( Model==28 ) THEN
         IF ( Process_flag==0 ) RETURN
       ENDIF
 
@@ -309,13 +312,13 @@
         IF ( call_modules/=0 ) CALL module_error(Et_module, Arg, call_modules)
       ENDIF
 
-      IF ( Model==4 ) THEN
+      IF ( Model==24 ) THEN
         call_modules = write_climate_hru()
         IF ( call_modules/=0 ) CALL module_error('write_climate_hru', Arg, call_modules)
         IF ( Process_flag==0 ) RETURN
       ENDIF
 
-      IF ( Model==7 ) THEN
+      IF ( Model==27 ) THEN
         IF ( Process_flag==0 ) RETURN
       ENDIF
 
@@ -404,7 +407,7 @@
           PRINT '(A)', EQULS
           WRITE ( PRMS_output_unit, '(A)' ) EQULS
         ENDIF
-        IF ( Model==10 ) CALL convert_params()
+        IF ( Model==25 ) CALL convert_params()
       ELSEIF ( Process_flag==2 ) THEN
         IF ( Inputerror_flag==1 ) THEN
           PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
@@ -418,7 +421,7 @@
      &          'parameters have valid and compatible values.'
         ENDIF
         IF ( Parameter_check_flag==2 .OR. Inputerror_flag==1 ) STOP
-        IF ( Model==10 ) THEN
+        IF ( Model==25 ) THEN
           CALL convert_params()
           STOP
         ENDIF
@@ -471,19 +474,19 @@
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='    ' .OR. Model_mode(:5)=='DAILY' ) THEN
         Model = 1
       ELSEIF ( Model_mode(:5)=='FROST' ) THEN
-        Model = 9
+        Model = 29
       ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
-        Model = 4
+        Model = 24
       ELSEIF ( Model_mode(:7)=='CLIMATE' ) THEN
-        Model = 6
+        Model = 26
       ELSEIF ( Model_mode(:5)=='POTET' ) THEN
-        Model = 7
+        Model = 27
       ELSEIF ( Model_mode(:9)=='TRANSPIRE' ) THEN
-        Model = 8
+        Model = 28
       ELSEIF ( Model_mode(:7)=='CONVERT' ) THEN ! can be CONVERT4 or CONVERT5 or CONVERT (=CONVERT5)
-        Model = 10
+        Model = 25
       ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
-        Model = 99
+        Model = DOCUMENTATION
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
         STOP
@@ -867,8 +870,8 @@
       ENDIF
       IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
       IF ( Ncascade==0 ) Cascade_flag = 0
-      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==2 ) Cascadegw_flag = 0
-      IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=10 ) THEN ! don't call if model_mode = CONVERT
+      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==MODFLOW ) Cascadegw_flag = 0
+      IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=25 ) THEN ! don't call if model_mode = CONVERT
         Call_cascade = 1
       ELSE
         Call_cascade = 0
@@ -943,7 +946,7 @@
         Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann
       ENDIF
 
-      IF ( Nsegment<1 .AND. Model/=99 ) THEN
+      IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
         IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
           STOP
@@ -951,14 +954,25 @@
       ENDIF
 
       Lake_route_flag = 0
-      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. Model/=0 ) Lake_route_flag = 1 ! muskingum_lake
+      IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = 1 ! muskingum_lake
+
+      IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
+        PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'
+        PRINT *, '       must be set to strmflow_in_out, muskingum, muskingum_mann, or muskingum_lake'
+        STOP
+      ENDIF
 
       IF ( NsubOutON_OFF==1 .AND. Nsub==0 ) THEN
         NsubOutON_OFF = 0
         IF ( Print_debug>-1 ) PRINT *, 'WARNING, nsubOutON_OFF = 1 and nsub = 0, thus nsub_summary not used'
       ENDIF
 
-      IF ( Model==99 .OR. Parameter_check_flag>0 ) CALL check_dimens()
+      IF ( NsegmentOutON_OFF==1 .AND. Nsegment==0 ) THEN
+        NsegmentOutON_OFF = 0
+        IF ( Print_debug>-1 ) PRINT *, 'WARNING, nsegmentOutON_OFF = 1 and nsegment = 0, thus nsegment_summary not used'
+      ENDIF
+
+      IF ( Model==DOCUMENTATION .OR. Parameter_check_flag>0 ) CALL check_dimens()
 
       check_dims = Inputerror_flag
       END FUNCTION check_dims
@@ -991,7 +1005,7 @@
 
       IF ( ierr==1 ) STOP
 
-      IF ( Model==99 ) THEN
+      IF ( Model==DOCUMENTATION ) THEN
         IF ( Ntemp==0 ) Ntemp = 1
         IF ( Nrain==0 ) Nrain = 1
         IF ( Nlake==0 ) Nlake = 1

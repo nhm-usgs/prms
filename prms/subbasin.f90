@@ -60,7 +60,7 @@
 !***********************************************************************
       INTEGER FUNCTION subdecl()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, GSFLOW_flag
+      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, GSFLOW_flag, DOCUMENTATION
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -70,12 +70,12 @@
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = 'subbasin.f90 2019-09-26 17:25:00Z'
+      Version_subbasin = 'subbasin.f90 2019-12-02 16:10:00Z'
       CALL print_module(Version_subbasin, 'Output Summary              ', 90)
       MODNAME = 'subbasin'
 
       IF ( Nsub==0 ) THEN
-        IF ( Model/=99 ) STOP 'ERROR, nsub=0 when subbasin module called'
+        IF ( Model/=DOCUMENTATION ) STOP 'ERROR, nsub=0 when subbasin module called'
         Nsub = 1
       ENDIF
 
@@ -86,7 +86,7 @@
      &     ' associated HRUs and from upstream subbasins', &
      &     'cfs', Sub_interflow)/=0 ) CALL read_error(3, 'sub_interflow')
 
-      IF ( GSFLOW_flag==0 .OR. Model==99 ) THEN
+      IF ( GSFLOW_flag==0 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Sub_gwflow(Nsub) )
         IF ( declvar(MODNAME, 'sub_gwflow', 'nsub', Nsub, 'double', &
      &       'Area-weighted average groundwater discharge from'// &

@@ -32,7 +32,7 @@
 !   Segment Parameters
       REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
       REAL, SAVE, ALLOCATABLE :: Seg_slope(:), Width_values(:, :)
-      REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:)
+      REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:), Stream_tave_init(:)
       INTEGER, SAVE:: Width_dim, Maxiter_sntemp
       REAL, SAVE, ALLOCATABLE :: Seg_humidity(:, :)
       REAL, SAVE, ALLOCATABLE :: lat_temp_adj(:, :)
@@ -88,7 +88,7 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_decl()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, Model
+      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, Model, Init_vars_from_file, DOCUMENTATION
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
@@ -99,7 +99,7 @@
 !***********************************************************************
       stream_temp_decl = 0
 
-      Version_stream_temp = 'stream_temp.f90 2018-04-18 16:18:00Z'
+      Version_stream_temp = 'stream_temp.f90 2019-11-18 12:36:00Z'
       CALL print_module(Version_stream_temp, 'Stream Temperature          ', 90)
       MODNAME = 'stream_temp'
 
@@ -231,7 +231,7 @@
      &     'M value in power function for width calculation', &
      &     'unknown')/=0 ) CALL read_error(1, 'width_m')
 
-      IF ( Stream_temp_shade_flag==0 .OR. Model==99 ) THEN
+      IF ( Stream_temp_shade_flag==0 .OR. Model==DOCUMENTATION ) THEN
          ALLOCATE ( Azrh(Nsegment) )
          IF ( declparam( MODNAME, 'azrh', 'nsegment', 'real', &
      &       '0.0', '-1.5708', '1.5708', &
@@ -324,7 +324,7 @@
      &       'meters')/=0 ) CALL read_error(1, 'vow')
       ENDIF
 
-      IF ( Stream_temp_shade_flag==1 .OR. Model==99 ) THEN
+      IF ( Stream_temp_shade_flag==1 .OR. Model==DOCUMENTATION ) THEN
          ALLOCATE ( Segshade_sum(Nsegment) )
          IF ( declparam( MODNAME, 'segshade_sum', 'nsegment', 'real', &
      &       '0.0', '0.0', '1.0.', &
@@ -366,14 +366,14 @@
      &     'Maximum number of Newton-Raphson iterations to compute stream temperature', &
      &     'none')/=0 ) CALL read_error(1, 'maxiter_sntemp')
 
-      IF ( Strmtemp_humidity_flag==1 .OR. Model==99 ) THEN  ! specified constant
+      IF ( Strmtemp_humidity_flag==1 .OR. Model==DOCUMENTATION ) THEN  ! specified constant
          ALLOCATE ( Seg_humidity(Nsegment, 12) )
          IF ( declparam( MODNAME, 'seg_humidity', 'nsegment,nmonths', 'real', &
      &       '0.7', '0.0', '1.0', &
      &       'Mean monthly humidity for each segment', &
      &       'Mean monthly humidity for each segment, used when values not input in CBH File', &
      &       'decimal fraction')/=0 )  CALL read_error(1, 'seg_humidity')
-      ELSEIF ( Strmtemp_humidity_flag==2 .OR. Model==99 ) THEN  ! use station data
+      ELSEIF ( Strmtemp_humidity_flag==2 .OR. Model==DOCUMENTATION ) THEN  ! use station data
          ALLOCATE ( Seg_humidity_sta(Nsegment) )
          IF ( declparam(MODNAME, 'seg_humidity_sta', 'nsegment', 'integer', &
      &       '0', 'bounded', 'nhumid', &
@@ -394,6 +394,15 @@
      &     '0.0', '-1000.0', '30000.0', &
      &     'Segment elevation at midpoint', 'Segment elevation at midpoint', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_elev')
+
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==8 ) THEN
+        ALLOCATE ( Stream_tave_init(Nsegment) )
+        IF ( declparam(MODNAME, 'stream_tave_init', 'nsegment', 'real', &
+     &       '0.0', '-10.0', '100.0', &
+     &       'Initial average stream temperature in each segment', &
+     &       'Initial average stream temperature in each segment at the beginning of a simulation', &
+     &       'degrees Celsius')/=0 ) CALL read_error(1, 'stream_tave_init')
+      ENDIF
 
       END FUNCTION stream_temp_decl
 
@@ -482,8 +491,11 @@
       seg_tave_ss = 0.0
       seg_tave_sroff = 0.0
 
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==8 ) THEN
+        IF ( getparam(MODNAME, 'stream_tave_init', Nsegment, 'real', Stream_tave_init)/=0 ) CALL read_error(2, 'stream_tave_init')
+        Seg_tave_water = Stream_tave_init
+      ENDIF
       IF ( Init_vars_from_file == 0 ) THEN
-         Seg_tave_water = 0.0
          gw_silo =  0.0
          ss_silo =  0.0
          gw_sum = 0.0
@@ -641,7 +653,6 @@
 !     This code is similar to the code above that computes latitude and elevation, but is different because it
 !     must always look upstream because the downstream computations will not have been done when the current
 !     segment is being calculated.
-      Seg_tave_water = 0.0
       do j = 1, nsegment
          this_seg = segment_order(j)
 
