@@ -62,6 +62,7 @@
       REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
       REAL, SAVE, ALLOCATABLE :: Unused_potet(:)
+      INTEGER, SAVE, ALLOCATABLE :: Soil_saturated(:)
 !      REAL, SAVE, ALLOCATABLE :: Cascade_interflow(:), Cascade_dunnianflow(:), Interflow_max(:)
 !      REAL, SAVE, ALLOCATABLE :: Cpr_stor_frac(:), Pfr_stor_frac(:), Gvr_stor_frac(:), Soil_moist_frac(:)
 !      REAL, SAVE, ALLOCATABLE :: Soil_rechr_ratio(:), Snowevap_aet_frac(:), Perv_avail_et(:), Cap_upflow_max(:)
@@ -125,7 +126,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2019-12-05 13:57:00Z'
+      Version_soilzone = 'soilzone.f90 2020-01-10 17:04:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -445,6 +446,11 @@
       IF ( declvar(MODNAME, 'unused_potet', 'nhru', Nhru, 'real', &
      &     'Unsatisfied potential evapotranspiration', &
      &     'inches', Unused_potet)/=0 ) CALL read_error(3, 'unused_potet')
+
+      ALLOCATE ( Soil_saturated(Nhru) )
+      IF ( declvar(MODNAME, 'soil_saturated', 'nhru', Nhru, 'integer', &
+     &     'Flag set if infiltration saturates capillary reservoir (0=no, 1=yes)', &
+     &     'none', Soil_saturated)/=0 ) CALL read_error(3, 'soil_saturated')
 
 !      ALLOCATE ( Snowevap_aet_frac(Nhru) )
 !      IF ( declvar(MODNAME, 'snowevap_aet_frac', 'nhru', Nhru, 'double', &
@@ -779,6 +785,7 @@
       Potet_lower = 0.0
       Potet_rechr = 0.0
       Unused_potet = 0.0 ! dimension nhru
+      Soil_saturated = 0
 !      Interflow_max = 0.0
 !      Snowevap_aet_frac = 0.0
 
@@ -844,7 +851,7 @@
 !***********************************************************************
       INTEGER FUNCTION szrun()
       USE PRMS_SOILZONE
-      USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, &
+      USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, Soilzone_aet_flag, &
      &    GSFLOW_flag, Nlake, Cascade_flag, Dprst_flag
       USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_frac_perv, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
@@ -871,7 +878,7 @@
       INTEGER :: i, k, update_potet
       REAL :: dunnianflw, interflow, perv_area, harea
       REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet
-      REAL :: gvr_maxin, topfr !, tmp
+      REAL :: gvr_maxin, topfr, excess !, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capacity, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow
@@ -1048,6 +1055,7 @@
         gvr_maxin = 0.0
         Cap_waterin(i) = capwater_maxin
 
+        Soil_saturated(i) = 0
         ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
         IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
           CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
@@ -1076,8 +1084,14 @@
             Soil_moist(i) = Soil_moist(i) + Gvr2sm(i)/perv_frac
 !            IF ( Soil_moist(i)>Soil_moist_max(i) ) &
 !     &           PRINT *, 'sm>max', Soil_moist(i), Soil_moist_max(i), i
-            Soil_rechr(i) = Soil_rechr(i) + Gvr2sm(i)/perv_frac*Replenish_frac(i)
-            Soil_rechr(i) = MIN( Soil_rechr_max(i), Soil_rechr(i) )
+            IF ( Soilzone_aet_flag==1 ) THEN
+              Soil_lower(i) = Soil_lower(i) + Gvr2sm(i)/perv_frac
+              excess = Soil_lower(i) - Soil_lower_stor_max(i)
+              Soil_rechr(i) = MIN( Soil_rechr_max(i), (Soil_rechr(i) + MAX (0.0, excess)))
+            ELSE
+              Soil_rechr(i) = Soil_rechr(i) + Gvr2sm(i)/perv_frac*Replenish_frac(i)
+              Soil_rechr(i) = MIN( Soil_rechr_max(i), Soil_rechr(i) )
+            ENDIF
             Basin_gvr2sm = Basin_gvr2sm + DBLE( Gvr2sm(i)*harea )
 !          ELSEIF ( Gvr2sm(i)<-NEARZERO ) THEN
 !            PRINT *, 'negative gvr2sm, HRU:', i, Gvr2sm(i)
@@ -1140,7 +1154,7 @@
         IF ( Soil_moist(i)>0.0 ) THEN
           CALL compute_szactet(Soil_moist_max(i), Soil_rechr_max(i), Transp_on(i), Cov_type(i), &
      &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, avail_potet, &
-     &                         Snow_free(i), Potet_rechr(i), Potet_lower(i), Potet(i), perv_frac)
+     &                         Snow_free(i), Potet_rechr(i), Potet_lower(i), Potet(i), perv_frac, Soil_saturated(i))
           ! sanity check
 !          IF ( pervactet>avail_potet ) THEN
 !            Soil_moist(i) = Soil_moist(i) + pervactet - avail_potet
@@ -1393,13 +1407,14 @@
       SUBROUTINE compute_szactet(Soil_moist_max, Soil_rechr_max, &
      &           Transp_on, Cov_type, Soil_type, &
      &           Soil_moist, Soil_rechr, Perv_actet, Avail_potet, &
-     &           Snow_free, Potet_rechr, Potet_lower, Potet, Perv_frac)
+     &           Snow_free, Potet_rechr, Potet_lower, Potet, Perv_frac, Soil_saturated)
       USE PRMS_MODULE, ONLY: Soilzone_aet_flag
       USE PRMS_SOILZONE, ONLY: Et_type
       USE PRMS_BASIN, ONLY: NEARZERO
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Transp_on, Cov_type, Soil_type
+      INTEGER, INTENT(INOUT) :: Soil_saturated
       REAL, INTENT(IN) :: Soil_moist_max, Soil_rechr_max, Snow_free, Potet, Perv_frac
       REAL, INTENT(INOUT) :: Soil_moist, Soil_rechr, Avail_potet, Potet_rechr, Potet_lower
       REAL, INTENT(OUT) :: Perv_actet
@@ -1434,6 +1449,7 @@
 
       IF ( Et_type>1 ) THEN
         pcts = Soil_moist/Soil_moist_max
+        IF ( pcts>0.9999 ) Soil_saturated = 1
         pctr = Soil_rechr/Soil_rechr_max
         Potet_lower = pet
         Potet_rechr = pet

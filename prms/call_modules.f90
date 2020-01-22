@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 12/05/2019'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 01/30/2020'
       CHARACTER(LEN=8), SAVE :: Process
       !     Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
       INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
@@ -32,6 +32,7 @@
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Nwateruse, Nexternal, Nconsumed, Npoigages, Prms_warmup
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
+      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
       INTEGER, SAVE :: Kkiter
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
@@ -95,7 +96,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2019-12-04 11:11:00Z'
+        PRMS_versn = 'call_modules.f90 2020-01-22 12:54:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
@@ -467,7 +468,7 @@
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
       PRMS4_flag = 1
-      IF ( Model_mode(:5)=='PRMS5' ) PRMS4_flag = 0
+      IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = 0
       PRMS_flag = 1
       GSFLOW_flag = 0
       ! Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
@@ -641,6 +642,9 @@
       IF ( control_integer(Stream_temp_flag, 'stream_temp_flag')/=0 ) Stream_temp_flag = 0
       ! 0 = CBH File; 1 = specified constant; 2 = Stations
       IF ( control_integer(Strmtemp_humidity_flag, 'strmtemp_humidity_flag')/=0 ) Strmtemp_humidity_flag = 0
+
+      IF ( control_integer(Snarea_curve_flag, 'snarea_curve_flag')/=0 ) Snarea_curve_flag = 0
+      IF ( control_integer(Soilzone_aet_flag, 'soilzone_aet_flag')/=0 ) Soilzone_aet_flag = 0
 
       Humidity_cbh_flag = 0
       Windspeed_cbh_flag = 0
