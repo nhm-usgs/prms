@@ -23,9 +23,13 @@ module PRMS_POTET_JH
 
   type, extends(Potential_ET) :: Potet_jh
     ! Parameters
-    real(r32), allocatable, private :: jh_coef(:, :)
+    !real(r32), allocatable, private :: jh_coef(:, :)
+    real(r32), allocatable :: jh_coef(:, :) !rmcd changed to add access to bmi setter functions
+
       !! Monthly (January to December) air temperature coefficient used in Jensen-Haise potential ET computations for each HRU
-    real(r32), allocatable, private :: jh_coef_hru(:)
+    !real(r32), allocatable, private :: jh_coef_hru(:)
+    real(r32), allocatable :: jh_coef_hru(:) !rmcd changed to add access to bmi setter functions
+
       !! Air temperature coefficient used in Jensen-Haise potential ET computations for each HRU
 
     ! WARNING: tavg_f will be removed once temp_unit is standardized to Celsius.

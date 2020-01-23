@@ -28,9 +28,9 @@ module PRMS_SOILZONE
       !! (?should be in map_results?)
 
     ! Parameters
-    real(r32), allocatable, private :: fastcoef_lin(:)
+    real(r32), allocatable :: fastcoef_lin(:)
       !! Linear coefficient in equation to route preferential-flow storage down slope for each HRU
-    real(r32), allocatable, private :: fastcoef_sq(:)
+    real(r32), allocatable :: fastcoef_sq(:)
       !! Non-linear coefficient in equation to route preferential-flow storage down slope for each HRU
     integer(i32), allocatable, private :: gvr_hru_id(:)
       !! (?should be in map_results?) Index of the HRU associated with each gravity reservoir
@@ -38,21 +38,21 @@ module PRMS_SOILZONE
       !!
     real(r32), allocatable, public :: pref_flow_den(:)
       !! Fraction of the soil zone in which preferential flow occurs for each HRU
-    real(r32), allocatable, private :: sat_threshold(:)
+    real(r32), allocatable :: sat_threshold(:)
       !! Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and total soil saturation for each HRU
-    real(r32), allocatable, private :: slowcoef_lin(:)
+    real(r32), allocatable :: slowcoef_lin(:)
       !! Linear coefficient in equation to route gravity-reservoir storage down slope for each HRU
-    real(r32), allocatable, private :: slowcoef_sq(:)
+    real(r32), allocatable :: slowcoef_sq(:)
       !! Non-linear coefficient in equation to route gravity- reservoir storage down slope for each HRU
     integer(i32), allocatable, private :: soil_type(:)
       !! Soil type of each HRU (1=sand; 2=loam; 3=clay)
       ! NOTE: PAN - manual shows this as part of ET, but I only see it used in soilzone.
-    real(r32), allocatable, private :: soil2gw_max(:)
+    real(r32), allocatable :: soil2gw_max(:)
       !! Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
-    real(r32), allocatable, private :: ssr2gw_exp(:)
+    real(r32), allocatable :: ssr2gw_exp(:)
       !! Non-linear coefficient in equation used to route water from the gravity reservoirs to the GWR for each HRU
       ! NOTE: ?should be nssr?
-    real(r32), allocatable, private :: ssr2gw_rate(:)
+    real(r32), allocatable :: ssr2gw_rate(:)
       !! Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
       ! NOTE: ?should be nssr?
     real(r32), allocatable, private :: ssstor_init_frac(:)
