@@ -32,7 +32,7 @@ module PRMS_SOILZONE
       !! Linear coefficient in equation to route preferential-flow storage down slope for each HRU
     real(r32), pointer :: fastcoef_sq(:)
       !! Non-linear coefficient in equation to route preferential-flow storage down slope for each HRU
-    integer(i32), allocatable, private :: gvr_hru_id(:)
+    integer(i32), pointer, private :: gvr_hru_id(:)
       !! (?should be in map_results?) Index of the HRU associated with each gravity reservoir
     ! real(r32), allocatable :: lake_evap_adj(:)
       !!
@@ -52,7 +52,7 @@ module PRMS_SOILZONE
     real(r32), pointer, private :: slowcoef_sq(:)
 >>>>>>> Modify get_variable_r32_1d and all type components that use it
       !! Non-linear coefficient in equation to route gravity- reservoir storage down slope for each HRU
-    integer(i32), allocatable, private :: soil_type(:)
+    integer(i32), pointer, private :: soil_type(:)
       !! Soil type of each HRU (1=sand; 2=loam; 3=clay)
       ! NOTE: PAN - manual shows this as part of ET, but I only see it used in soilzone.
 <<<<<<< HEAD

@@ -35,7 +35,7 @@ module PRMS_BASIN
       !! TODO: does this belong here?
 
     ! Parameters
-    integer(i32), allocatable :: cov_type(:)
+    integer(i32), pointer :: cov_type(:)
       !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
     ! real(r32), allocatable :: dprst_frac(:)
     !   !! Fraction of each HRU area that has surface depressions
@@ -47,14 +47,14 @@ module PRMS_BASIN
     ! real(r32), allocatable :: hru_percent_imperv(:)
       ! TODO: move hru_percent_imperv to srunoff.f90
     real(r32), pointer :: hru_slope(:)
-    integer(i32), allocatable :: hru_type(:)
+    integer(i32), pointer :: hru_type(:)
     real(r32), allocatable :: hru_x(:)
     real(r32), allocatable :: hru_y(:)
     integer(i32), allocatable :: lake_hru_id(:)
     integer(i32), allocatable :: lake_type(:)
-    integer(i32), allocatable :: nhm_id(:)
+    integer(i32), pointer :: nhm_id(:)
       !! NHM identification number for each HRU
-    integer(i32), allocatable :: nhm_seg(:)
+    integer(i32), pointer :: nhm_seg(:)
       !! NHM segment identification
 
 

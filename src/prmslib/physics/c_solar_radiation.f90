@@ -54,7 +54,7 @@ module SOLAR_RADIATION
     integer(i32) :: basin_solsta
     integer(i32) :: rad_conv
       !! Conversion factor to langleys for measured solar radiation
-    integer(i32), allocatable :: hru_solsta(:)
+    integer(i32), pointer :: hru_solsta(:)
     real(r32), pointer :: ppt_rad_adj(:, :)
       !! Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is multiplied by radj_sppt or radj_wppt precipitation adjustment factor
     real(r32), pointer :: radj_sppt(:)
