@@ -19,8 +19,8 @@ module PRMS_PRECIPITATION
   type, extends(ModelBase) :: Precipitation
     ! Parameters for precipitation
     integer(i32) :: precip_units
-    real(r32), allocatable :: tmax_allsnow(:, :)
-    real(r32), allocatable :: tmax_allrain_offset(:, :)
+    real(r32), pointer :: tmax_allsnow(:, :)
+    real(r32), pointer :: tmax_allrain_offset(:, :)
 
     ! Output variables
     real(r64), allocatable :: basin_obs_ppt

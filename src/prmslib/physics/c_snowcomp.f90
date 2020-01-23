@@ -72,8 +72,8 @@ module PRMS_SNOW
     real(r32), pointer, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
-    !real(r32), allocatable, private :: cecn_coef(:, :)
-    real(r32), allocatable :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: cecn_coef(:, :)
+    real(r32), pointer :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
     integer(i32), allocatable, private :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
