@@ -72,33 +72,33 @@ module PRMS_INTCP
     real(r64), allocatable :: basin_net_snow
       !! Basin area-weighted average snow throughfall, in inches
 
-    real(r32), allocatable :: canopy_covden(:)
+    real(r32), pointer :: canopy_covden(:)
       !! Canopy cover density for each HRU (decimal fraction)
-    real(r32), allocatable :: hru_intcpevap(:)
+    real(r32), pointer :: hru_intcpevap(:)
       !! Evaporation from the canopy for each HRU, in inches
-    real(r32), allocatable :: hru_intcpstor(:)
+    real(r32), pointer :: hru_intcpstor(:)
       !! Interception storage in the canopy for each HRU, in inches
-    real(r32), allocatable :: intcp_evap(:)
+    real(r32), pointer :: intcp_evap(:)
       !! Evaporation from the canopy for each HRU, in inches (** same as hru_intcpevap **)
-    real(r32), allocatable :: intcp_stor(:)
+    real(r32), pointer :: intcp_stor(:)
       !! Interception storage in canopy for cover density for each HRU, in inches
-    real(r32), allocatable :: net_apply(:)
+    real(r32), pointer :: net_apply(:)
       !! canopy_gain minus interception, in inches
-    real(r32), allocatable :: net_ppt(:)
+    real(r32), pointer :: net_ppt(:)
       !! Precipitation (rain and/or snow) that falls through the canopy for nhru each HRU, in inches
-    real(r32), allocatable :: net_rain(:)
+    real(r32), pointer :: net_rain(:)
       !! Rain that falls through canopy for each HRU, in inches
-    real(r32), allocatable :: net_snow(:)
+    real(r32), pointer :: net_snow(:)
       !! Snow that falls through canopy for each HRU, in inches
 
 
     ! Local variables
-    integer(i32), allocatable, private :: intcp_form(:)
+    integer(i32), pointer, private :: intcp_form(:)
       !! Form (rain or snow) of interception for each HRU (0=rain; 1=snow)
 
-    logical, allocatable, private :: intcp_on(:)
+    logical, pointer, private :: intcp_on(:)
       !! Flag indicating interception storage for each HRU (0=no; 1=yes)
-    logical, allocatable, private :: intcp_transp_on(:)
+    logical, pointer, private :: intcp_transp_on(:)
 
     ! integer(i32), allocatable, private :: intcp_on(:)
     ! integer(i32), allocatable, private :: intcp_transp_on(:)

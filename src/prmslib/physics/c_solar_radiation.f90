@@ -63,7 +63,7 @@ module SOLAR_RADIATION
       !! Monthly (January to December maximum fraction of the potential solar radiation that may reach the ground due to haze, dust, smog, and so forth, for each HRU
 
     ! Time-series input variables
-    real(r32), allocatable :: solrad(:)
+    real(r32), pointer :: solrad(:)
       !! Solar radiation at each measurement station
 
     ! Output variables
@@ -72,8 +72,8 @@ module SOLAR_RADIATION
     real(r64), allocatable :: basin_potsw
     real(r64), allocatable :: basin_swrad
     real(r32) :: orad
-    real(r32), allocatable :: orad_hru(:)
-    real(r32), allocatable :: swrad(:)
+    real(r32), pointer :: orad_hru(:)
+    real(r32), pointer :: swrad(:)
 
     ! Other variables
     logical :: has_basin_obs_station
@@ -85,18 +85,18 @@ module SOLAR_RADIATION
 
     ! WARNING: tmax_f and tmin_f will be removed once ccov_slope and ccov_intcp
     !          are converted to match Celsius temp_unit.
-    real(r32), allocatable :: tmax_f(:)
-    real(r32), allocatable :: tmin_f(:)
+    real(r32), pointer :: tmax_f(:)
+    real(r32), pointer :: tmin_f(:)
 
     ! real(r64) :: solar_declination(366)
     real(r64) :: soltab_basinpotsw(DAYS_PER_YEAR)
-    real(r64), allocatable :: hru_cossl(:)
-    real(r64), allocatable :: soltab_sunhrs(:, :)
+    real(r64), pointer :: hru_cossl(:)
+    real(r64), pointer :: soltab_sunhrs(:, :)
 
     ! Declared Variables
     ! real(r32), allocatable :: orad_hru(:)
-    real(r64), allocatable :: soltab_potsw(:, :)
-    real(r64), allocatable :: soltab_horad_potsw(:, :)
+    real(r64), pointer :: soltab_potsw(:, :)
+    real(r64), pointer :: soltab_horad_potsw(:, :)
 
     contains
       procedure, public :: init => init_SolarRadiation

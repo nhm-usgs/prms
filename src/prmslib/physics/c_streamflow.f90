@@ -45,10 +45,10 @@ module PRMS_STREAMFLOW
 
       real(r64) :: flow_out
         !! Total flow out of model domain
-      real(r64), allocatable :: hru_outflow(:)
-      real(r64), allocatable :: seg_gwflow(:)
-      real(r64), allocatable :: seg_sroff(:)
-      real(r64), allocatable :: seg_ssflow(:)
+      real(r64), pointer :: hru_outflow(:)
+      real(r64), pointer :: seg_gwflow(:)
+      real(r64), pointer :: seg_sroff(:)
+      real(r64), pointer :: seg_ssflow(:)
       real(r64), private, allocatable :: seginc_potet(:)
       real(r64), private, allocatable :: segment_hruarea(:)
 
@@ -59,20 +59,20 @@ module PRMS_STREAMFLOW
       ! real(r64), public :: cfs2acft
         !! used by muskingum_lake
 
-      integer(i32), public, allocatable :: segment_order(:)
+      integer(i32), public, pointer :: segment_order(:)
         !! used by muskingum, muskingum_lake, stream_temp, strmflow_in_out
-      integer(i32), public, allocatable :: segment_up(:)
+      integer(i32), public, pointer :: segment_up(:)
         !! used by stream_temp
 
       ! NOTE: Specific to muskingum, muskingum_lake, and strmflow_in_out.
       !       It is required by stream_temp. Used in parent streamflow class.
-      real(r64), public, allocatable :: seg_lateral_inflow(:)
+      real(r64), public, pointer :: seg_lateral_inflow(:)
         !! Lateral inflow entering lateral inflow entering a segment
-      real(r64), allocatable :: seg_inflow(:)
+      real(r64), pointer :: seg_inflow(:)
         !! Total flow entering a segment
-      real(r64), allocatable :: seg_outflow(:)
+      real(r64), pointer :: seg_outflow(:)
         !! Streamflow leaving a segment
-      real(r64), allocatable :: seg_upstream_inflow(:)
+      real(r64), pointer :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
 
       real(r64), allocatable :: basin_cfs
@@ -115,15 +115,15 @@ module PRMS_STREAMFLOW
       real(r64), public :: flow_to_ocean
         !! muskingum, muskingum_lake, strmflow_in_out
 
-      real(r64), public, allocatable :: seginc_gwflow(:)
+      real(r64), public, pointer :: seginc_gwflow(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_sroff(:)
+      real(r64), public, pointer :: seginc_sroff(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_ssflow(:)
+      real(r64), public, pointer :: seginc_ssflow(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_swrad(:)
+      real(r64), public, pointer :: seginc_swrad(:)
         !! stream_temp
-      real(r64), public, allocatable :: segment_delta_flow(:)
+      real(r64), public, pointer :: segment_delta_flow(:)
         !! muskingum, muskingum_lake
 
     contains

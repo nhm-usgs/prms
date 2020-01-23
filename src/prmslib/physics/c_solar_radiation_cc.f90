@@ -31,8 +31,8 @@ module SOLAR_RADIATION_CC
     ! Declared Variables
     real(r64), allocatable :: basin_radadj
     real(r64), allocatable :: basin_cloud_cover
-    real(r32), allocatable :: cloud_radadj(:)
-    real(r32), allocatable :: cloud_cover_hru(:)
+    real(r32), pointer :: cloud_radadj(:)
+    real(r32), pointer :: cloud_cover_hru(:)
 
     contains
       procedure, public :: init => init_Solrad_cc

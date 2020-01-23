@@ -63,36 +63,36 @@ module PRMS_GWFLOW
     real(r64), allocatable :: basin_lake_seep
 
     real(r32), allocatable, private :: elevlake(:)
-    real(r32), allocatable :: gwres_flow(:)
-    real(r32), allocatable :: gwres_sink(:)
-    real(r32), allocatable :: hru_gw_cascadeflow(:)
+    real(r32), pointer :: gwres_flow(:)
+    real(r32), pointer :: gwres_sink(:)
+    real(r32), pointer :: hru_gw_cascadeflow(:)
 
-    real(r64), allocatable, private :: gw_in_soil(:)
+    real(r64), pointer, private :: gw_in_soil(:)
       ! r64 is correct
-    real(r64), allocatable, private :: gw_in_ssr(:)
+    real(r64), pointer, private :: gw_in_ssr(:)
       ! r64 is correct
-    real(r64), allocatable, private :: gw_seep_lakein(:)
+    real(r64), pointer, private :: gw_seep_lakein(:)
       ! r64 is correct
-    real(r64), allocatable :: gw_upslope(:)
+    real(r64), pointer :: gw_upslope(:)
       ! r64 is correct
-    real(r64), allocatable :: gwres_in(:)
+    real(r64), pointer :: gwres_in(:)
       ! r64 is correct
-    real(r64), allocatable :: gwres_stor(:)
+    real(r64), pointer :: gwres_stor(:)
       !! (moved from flowvars) Storage in each GWR
       ! r64 is correct
-    real(r64), allocatable :: gwstor_minarea_wb(:)
+    real(r64), pointer :: gwstor_minarea_wb(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_lateral_flow(:)
+    real(r64), pointer :: hru_lateral_flow(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_storage(:)
+    real(r64), pointer :: hru_storage(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_streamflow_out(:)
+    real(r64), pointer :: hru_streamflow_out(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_seepage(:)
+    real(r64), pointer :: lake_seepage(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_seepage_gwr(:)
+    real(r64), pointer :: lake_seepage_gwr(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_vol(:)
+    real(r64), pointer :: lake_vol(:)
       !! (moved from flowvars) Storage in each lake using broad-crested weir or gate opening routing
       ! r64 is correct
 
