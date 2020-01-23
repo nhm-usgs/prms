@@ -32,13 +32,13 @@ module PRMS_PRECIPITATION
     real(r64), allocatable :: basin_snow
       !! Basin area-weighted average snowfall, in inches
 
-    real(r32), allocatable :: hru_ppt(:)
+    real(r32), pointer :: hru_ppt(:)
       !! Precipitation distributed to each HRU, in inches
-    real(r32), allocatable :: hru_rain(:)
+    real(r32), pointer :: hru_rain(:)
       !! Rain distributed to each HRU, in inches
-    real(r32), allocatable :: hru_snow(:)
+    real(r32), pointer :: hru_snow(:)
       !! Snow distributed to each HRU, in inches
-    real(r32), allocatable :: prmx(:)
+    real(r32), pointer :: prmx(:)
       !! Fraction of rain in a mixed precipitation event for each HRU
 
     ! integer(i32), allocatable :: newsnow(:)

@@ -29,8 +29,8 @@ module PRMS_TEMPERATURE
     !       The additional precision is needed when fahrenheit temperatures are
     !       converted to Celsius.
     real(r32), allocatable :: tavg(:)
-    real(r32), allocatable :: tmax(:)
-    real(r32), allocatable :: tmin(:)
+    real(r32), pointer :: tmax(:)
+    real(r32), pointer :: tmin(:)
 
     ! NOTE: Only used by potet_jh; remove once temperature units are standardized
     real(r32), allocatable :: tavg_f(:)
