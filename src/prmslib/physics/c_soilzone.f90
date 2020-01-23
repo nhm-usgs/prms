@@ -28,34 +28,51 @@ module PRMS_SOILZONE
       !! (?should be in map_results?)
 
     ! Parameters
-    real(r32), allocatable :: fastcoef_lin(:)
+    real(r32), pointer :: fastcoef_lin(:)
       !! Linear coefficient in equation to route preferential-flow storage down slope for each HRU
-    real(r32), allocatable :: fastcoef_sq(:)
+    real(r32), pointer :: fastcoef_sq(:)
       !! Non-linear coefficient in equation to route preferential-flow storage down slope for each HRU
     integer(i32), allocatable, private :: gvr_hru_id(:)
       !! (?should be in map_results?) Index of the HRU associated with each gravity reservoir
     ! real(r32), allocatable :: lake_evap_adj(:)
       !!
-    real(r32), allocatable, public :: pref_flow_den(:)
+    real(r32), pointer, public :: pref_flow_den(:)
       !! Fraction of the soil zone in which preferential flow occurs for each HRU
+<<<<<<< HEAD
     real(r32), allocatable :: sat_threshold(:)
       !! Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and total soil saturation for each HRU
     real(r32), allocatable :: slowcoef_lin(:)
       !! Linear coefficient in equation to route gravity-reservoir storage down slope for each HRU
     real(r32), allocatable :: slowcoef_sq(:)
+=======
+    real(r32), pointer, private :: sat_threshold(:)
+      !! Water holding capacity of the gravity and preferential-flow reservoirs; difference between field capacity and total soil saturation for each HRU
+    real(r32), pointer, private :: slowcoef_lin(:)
+      !! Linear coefficient in equation to route gravity-reservoir storage down slope for each HRU
+    real(r32), pointer, private :: slowcoef_sq(:)
+>>>>>>> Modify get_variable_r32_1d and all type components that use it
       !! Non-linear coefficient in equation to route gravity- reservoir storage down slope for each HRU
     integer(i32), allocatable, private :: soil_type(:)
       !! Soil type of each HRU (1=sand; 2=loam; 3=clay)
       ! NOTE: PAN - manual shows this as part of ET, but I only see it used in soilzone.
+<<<<<<< HEAD
     real(r32), allocatable :: soil2gw_max(:)
       !! Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
     real(r32), allocatable :: ssr2gw_exp(:)
       !! Non-linear coefficient in equation used to route water from the gravity reservoirs to the GWR for each HRU
       ! NOTE: ?should be nssr?
     real(r32), allocatable :: ssr2gw_rate(:)
+=======
+    real(r32), pointer, private :: soil2gw_max(:)
+      !! Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
+    real(r32), pointer, private :: ssr2gw_exp(:)
+      !! Non-linear coefficient in equation used to route water from the gravity reservoirs to the GWR for each HRU
+      ! NOTE: ?should be nssr?
+    real(r32), pointer, private :: ssr2gw_rate(:)
+>>>>>>> Modify get_variable_r32_1d and all type components that use it
       !! Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
       ! NOTE: ?should be nssr?
-    real(r32), allocatable, private :: ssstor_init_frac(:)
+    real(r32), pointer, private :: ssstor_init_frac(:)
       !! Initial fraction of available water in the gravity plus preferential-flow reservoirs (fraction of sat_threshold) for each HRU
       ! NOTE: ?should be nssr?
 

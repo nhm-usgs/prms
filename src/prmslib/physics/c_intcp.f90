@@ -30,19 +30,17 @@ module PRMS_INTCP
     ! Dimensions
 
     ! Parameters
-    !real(r32), allocatable, private :: covden_sum(:)
-    real(r32), allocatable :: covden_sum(:) !rmcd changed to allow setter access in bmi
-
+    !real(r32), pointer, private :: covden_sum(:)
+    real(r32), pointer :: covden_sum(:) !rmcd changed to allow setter access in bmi
       !! Summer vegetation cover density for the major vegetation type in each HRU
-    !real(r32), allocatable, private :: covden_win(:)
-    real(r32), allocatable :: covden_win(:) !rmcd changed to allow setter access in bmi
-
+    !real(r32), pointer, private :: covden_win(:)
+    real(r32), pointer :: covden_win(:) !rmcd changed to allow setter access in bmi
       !! Winter vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable :: snow_intcp(:)
+    real(r32), pointer :: snow_intcp(:)
       !! Snow interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: srain_intcp(:)
+    real(r32), pointer :: srain_intcp(:)
       !! Summer rain interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: wrain_intcp(:)
+    real(r32), pointer :: wrain_intcp(:)
       !! Winter rain interception storage capacity for the major vegetation type in each HRU
 
     ! Local Variables

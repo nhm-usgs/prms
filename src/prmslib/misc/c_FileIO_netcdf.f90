@@ -78,7 +78,7 @@ module PRMS_FILE_IO_NETCDF
     module subroutine get_variable_r32_1d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:)
+      real(r32), pointer, intent(inout) :: var_data(:)
     end subroutine
 
     module subroutine get_variable_r32_2d(this, name, var_data)

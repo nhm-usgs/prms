@@ -240,7 +240,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:)
+      real(r32), pointer, intent(inout) :: var_data(:)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file

@@ -57,8 +57,8 @@ module SOLAR_RADIATION
     integer(i32), allocatable :: hru_solsta(:)
     real(r32), allocatable :: ppt_rad_adj(:, :)
       !! Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is multiplied by radj_sppt or radj_wppt precipitation adjustment factor
-    real(r32), allocatable :: radj_sppt(:)
-    real(r32), allocatable :: radj_wppt(:)
+    real(r32), pointer :: radj_sppt(:)
+    real(r32), pointer :: radj_wppt(:)
     real(r32), allocatable :: radmax(:, :)
       !! Monthly (January to December maximum fraction of the potential solar radiation that may reach the ground due to haze, dust, smog, and so forth, for each HRU
 

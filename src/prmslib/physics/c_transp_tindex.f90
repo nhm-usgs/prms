@@ -26,7 +26,7 @@ MODULE PRMS_TRANSP_TINDEX
       !! Month to begin summing maximum air temperature for each HRU; when sum is greater than or equal to transp_tmax, transpiration begins
     integer(i32), allocatable, private :: transp_end(:)
       !! Month to stop transpiration computations; transpiration is computed thru end of previous month
-    real(r32), allocatable, private :: transp_tmax(:)
+    real(r32), pointer, private :: transp_tmax(:)
       !! Temperature index to determine the specific date of the start of the transpiration period;’ the maximum air temperature for each HRU is summed starting with the first day of month transp_beg; when the sum exceeds this index, transpiration begins
 
 

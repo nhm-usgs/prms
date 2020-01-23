@@ -23,7 +23,7 @@ module PRMS_POTET
     ! NOTE: epan_coef is always used by intcp even though it is only required by the potet_pan module
     real(r32), allocatable :: epan_coef(:, :)
       !! Monthly (January to December) evaporation pan coefficient for each HRU
-    real(r32), allocatable :: potet_sublim(:)
+    real(r32), pointer :: potet_sublim(:)
       !! Fraction of potential ET that is sublimated from snow in the canopy and snowpack for each HRU
 
 

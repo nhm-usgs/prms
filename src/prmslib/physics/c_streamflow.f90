@@ -31,7 +31,7 @@ module PRMS_STREAMFLOW
         !! Index of measured streamflow station that replaces inflow to a segment
       integer(i32), allocatable :: obsout_segment(:)
         !! Index of measured streamflow station that replaces outflow from a segment
-      real(r32), allocatable :: segment_flow_init(:)
+      real(r32), pointer :: segment_flow_init(:)
         !! Initial flow in each stream segment
       integer(i32), allocatable :: segment_type(:)
         !! Segment type (0=segment; 1= headwater; 2=lake; 3=replace inflow; 4=inbound to NHM; 5=outbound from NHM; 6=inbound to region; 7=outbound from region; 8=drains to ocean; 9=sink; 10=inbound from Great Lakes; 11=outbound to Great Lakes)

@@ -50,9 +50,9 @@ module PRMS_SNOW
     real(r32), private :: settle_const
       !! Snowpack settlement time constant
 
-    real(r32), allocatable, private :: emis_noppt(:)
+    real(r32), pointer, private :: emis_noppt(:)
       !! Average emissivity of air on days without precipitation for each HRU
-    real(r32), allocatable, private :: freeh2o_cap(:)
+    real(r32), pointer, private :: freeh2o_cap(:)
       !! Free-water holding capacity of snowpack expressed as a decimal fraction of the frozen water content of the snowpack (pk_ice) for each HRU
     integer(i32), allocatable, private :: hru_deplcrv(:)
       !! Index number for the snowpack areal depletion curve associated with each HRU
@@ -60,17 +60,16 @@ module PRMS_SNOW
       !! Julian date to force snowpack to spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
     integer(i32), allocatable, private :: melt_look(:)
       !! Julian date to start looking for spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    !real(r32), allocatable, private :: rad_trncf(:)
-    real(r32), allocatable :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
-
+    !real(r32), pointer, private :: rad_trncf(:)
+    real(r32), pointer :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
       !! Transmission coefficient for short-wave radiation through the winter vegetation canopy
-    !real(r32), allocatable, private :: snarea_curve(:)
-    real(r32), allocatable :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: snarea_curve(:)
+    real(r32), pointer :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
       !! Snow area depletion curve values, 11 values for each curve (0.0 to 1.0 in 0.1 increments)
-    !real(r32), allocatable, private :: snarea_thresh(:)
-    real(r32), allocatable :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: snarea_thresh(:)
+    real(r32), pointer :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
       !! Maximum threshold snowpack water equivalent below which the snow-covered-area curve is applied
-    real(r32), allocatable, private :: snowpack_init(:)
+    real(r32), pointer, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
     !real(r32), allocatable, private :: cecn_coef(:, :)

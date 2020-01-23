@@ -21,48 +21,48 @@ module PRMS_SRUNOFF
 
   type, extends(ModelBase) :: Srunoff
     ! Parameters
-    real(r32), allocatable :: carea_max(:)
+    real(r32), pointer :: carea_max(:)
       !! Maximum possible area contributing to surface runoff expressed as a portion of the HRU area
-    real(r32), allocatable :: carea_min(:)
+    real(r32), pointer :: carea_min(:)
       !! Minimum possible area contributing to surface runoff expressed as a portion of the area for each HRU
-    real(r32), allocatable :: hru_percent_imperv(:)
+    real(r32), pointer :: hru_percent_imperv(:)
       !! Fraction of each HRU area that is impervious
-    real(r32), allocatable :: imperv_stor_max(:)
+    real(r32), pointer :: imperv_stor_max(:)
       !! Maximum impervious area retention storage for each HRU
-    real(r32), allocatable :: smidx_coef(:)
+    real(r32), pointer :: smidx_coef(:)
       !! Coefficient in non-linear contributing area algorithm for each HRU
-    real(r32), allocatable :: smidx_exp(:)
+    real(r32), pointer :: smidx_exp(:)
       !! Exponent in non-linear contributing area algorithm for each HRU
-    real(r32), allocatable :: snowinfil_max(:)
+    real(r32), pointer :: snowinfil_max(:)
       !! Maximum snow infiltration per day for each HRU
 
     ! NOTE: The following dprst_* parameters are only needed when dprst_flag = 1
 
-    real(r32), allocatable :: dprst_depth_avg(:)
+    real(r32), pointer :: dprst_depth_avg(:)
       !! Average depth of storage depressions at maximum storage capacity
-    real(r32), allocatable :: dprst_et_coef(:)
+    real(r32), pointer :: dprst_et_coef(:)
       !! Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage
-    real(r32), allocatable :: dprst_flow_coef(:)
+    real(r32), pointer :: dprst_flow_coef(:)
       !! Coefficient in linear flow routing equation for open surface depressions for each HRU
-    real(r32), allocatable :: dprst_frac(:)
+    real(r32), pointer :: dprst_frac(:)
       !! Fraction of each HRU area that has surface depressions
-    real(r32), allocatable :: dprst_frac_init(:)
+    real(r32), pointer :: dprst_frac_init(:)
       !! Fraction of maximum surface-depression storage that contains water at the start of a simulation
-    real(r32), allocatable :: dprst_frac_open(:)
+    real(r32), pointer :: dprst_frac_open(:)
       !! Fraction of open surface-depression storage area within an HRU that can generate surface runoff as a function of storage volume
-    real(r32), allocatable :: dprst_seep_rate_clos(:)
+    real(r32), pointer :: dprst_seep_rate_clos(:)
       !! Coefficient used in linear seepage flow equation for closed surface depressions for each HRU
-    real(r32), allocatable :: dprst_seep_rate_open(:)
+    real(r32), pointer :: dprst_seep_rate_open(:)
       !! Coefficient used in linear seepage flow equation for open surface depressions for each HRU
-    real(r32), allocatable :: op_flow_thres(:)
+    real(r32), pointer :: op_flow_thres(:)
       !! Fraction of open depression storage above which surface runoff occurs; any water above maximum open storage capacity spills as surface runoff
-    real(r32), allocatable :: sro_to_dprst_imperv(:)
+    real(r32), pointer :: sro_to_dprst_imperv(:)
       !! Fraction of impervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
-    real(r32), allocatable :: sro_to_dprst_perv(:)
+    real(r32), pointer :: sro_to_dprst_perv(:)
       !! Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
-    real(r32), allocatable :: va_clos_exp(:)
+    real(r32), pointer :: va_clos_exp(:)
       !! Coefficient in the exponential equation relating maximum surface area to the fraction that closed depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
-    real(r32), allocatable :: va_open_exp(:)
+    real(r32), pointer :: va_open_exp(:)
       !! Coefficient in the exponential equation relating maximum surface area to the fraction that open depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
 
 

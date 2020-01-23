@@ -39,14 +39,14 @@ module PRMS_BASIN
       !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
     ! real(r32), allocatable :: dprst_frac(:)
     !   !! Fraction of each HRU area that has surface depressions
-    real(r32), allocatable :: hru_area(:)
-    real(r32), allocatable :: hru_aspect(:)
+    real(r32), pointer :: hru_area(:)
+    real(r32), pointer :: hru_aspect(:)
     real(r32), allocatable :: hru_elev(:)
-    real(r32), allocatable :: hru_lat(:)
+    real(r32), pointer :: hru_lat(:)
     real(r32), allocatable :: hru_lon(:)
     ! real(r32), allocatable :: hru_percent_imperv(:)
       ! TODO: move hru_percent_imperv to srunoff.f90
-    real(r32), allocatable :: hru_slope(:)
+    real(r32), pointer :: hru_slope(:)
     integer(i32), allocatable :: hru_type(:)
     real(r32), allocatable :: hru_x(:)
     real(r32), allocatable :: hru_y(:)

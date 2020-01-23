@@ -26,18 +26,18 @@ module PRMS_GWFLOW
       !! Number of groundwater reservoirs
 
     ! Parameters
-    real(r32), allocatable :: gwflow_coef(:)
-    real(r32), allocatable :: gwsink_coef(:)
-    real(r32), allocatable, private :: gwstor_init(:)
-    real(r32), allocatable, private :: gwstor_min(:)
+    real(r32), pointer :: gwflow_coef(:)
+    real(r32), pointer :: gwsink_coef(:)
+    real(r32), pointer, private :: gwstor_init(:)
+    real(r32), pointer, private :: gwstor_min(:)
 
     ! NOTE: manual says the following is part of muskingum_lake but only gwflow uses
     !       them when weir_gate_flag == 1 (set in Basin module)
-    real(r32), allocatable, private :: elevlake_init(:)
+    real(r32), pointer, private :: elevlake_init(:)
       !! Initial lake surface elevation for each lake using broad-crested weir routing or gate opening routing
-    real(r32), allocatable, private :: gw_seep_coef(:)
+    real(r32), pointer, private :: gw_seep_coef(:)
       !! Linear coefficient in equation to compute lakebed seepage to the GWR and groundwater discharge to each lake using broad-crested weir routing or gate opening routing
-    real(r32), allocatable, private :: lake_seep_elev(:)
+    real(r32), pointer, private :: lake_seep_elev(:)
       !! Elevation over which lakebed seepage to the GWR occurs for lake HRUs using broad-crested weir routing or gate opening routing
 
 
