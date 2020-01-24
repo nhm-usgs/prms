@@ -30,9 +30,13 @@ module PRMS_INTCP
     ! Dimensions
 
     ! Parameters
-    real(r32), allocatable, private :: covden_sum(:)
+    !real(r32), allocatable, private :: covden_sum(:)
+    real(r32), allocatable :: covden_sum(:) !rmcd changed to allow setter access in bmi
+
       !! Summer vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable, private :: covden_win(:)
+    !real(r32), allocatable, private :: covden_win(:)
+    real(r32), allocatable :: covden_win(:) !rmcd changed to allow setter access in bmi
+
       !! Winter vegetation cover density for the major vegetation type in each HRU
     real(r32), allocatable :: snow_intcp(:)
       !! Snow interception storage capacity for the major vegetation type in each HRU

@@ -26,8 +26,8 @@ module PRMS_GWFLOW
       !! Number of groundwater reservoirs
 
     ! Parameters
-    real(r32), allocatable, private :: gwflow_coef(:)
-    real(r32), allocatable, private :: gwsink_coef(:)
+    real(r32), allocatable :: gwflow_coef(:)
+    real(r32), allocatable :: gwsink_coef(:)
     real(r32), allocatable, private :: gwstor_init(:)
     real(r32), allocatable, private :: gwstor_min(:)
 
