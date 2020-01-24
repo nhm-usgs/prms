@@ -1,5 +1,5 @@
 bin/
-build/
+_build/
 _build2/
 include/
 output/
