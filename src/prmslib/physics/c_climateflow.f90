@@ -21,13 +21,13 @@ module PRMS_CLIMATEVARS
     ! Parameters
     ! These are parameters that have conflicts that prevent them from being
     ! placed in their correct module.
-    real(r32), allocatable :: soil_moist_init_frac(:)
+    real(r32), pointer :: soil_moist_init_frac(:)
       !! Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max for each HRU
-    real(r32), allocatable :: soil_moist_max(:)
+    real(r32), pointer :: soil_moist_max(:)
       !! Maximum available water holding capacity of capillary reservoir from land surface to rooting depth of the major vegetation type of each HRU
-    real(r32), allocatable :: soil_rechr_init_frac(:)
+    real(r32), pointer :: soil_rechr_init_frac(:)
       !! Initial fraction of available water in the capillary reservoir where losses occur as both evaporation and transpiration (upper zone of capillary reservoir) for each HRU
-    real(r32), allocatable :: soil_rechr_max_frac(:)
+    real(r32), pointer :: soil_rechr_max_frac(:)
       !! Fraction of the capillary reservoir water-holding capacity (soil_moist_max) where losses occur as both evaporation and transpiration (upper zone of capillary reservoir) for each HRU
 
 
@@ -37,11 +37,11 @@ module PRMS_CLIMATEVARS
     ! WARNING: soil_moist, soil_rechr, soil_rechr_max are depended on
     !          by BOTH Srunoff and Soilzone.
     !          soil_moist and soil_rechr supply antecedent conditions to Srunoff.
-    real(r32), allocatable :: soil_moist(:)
+    real(r32), pointer :: soil_moist(:)
       !! Storage of capillary reservoir for each HRU
-    real(r32), allocatable :: soil_rechr(:)
+    real(r32), pointer :: soil_rechr(:)
       !! Storage for recharge zone (upper portion) of the capillary reservoir that is available for both evaporation and transpiration
-    real(r32), allocatable :: soil_rechr_max(:)
+    real(r32), pointer :: soil_rechr_max(:)
       !! Maximum storage for soil recharge zone (upper portion of capillary reservoir where losses occur as both evporation and transpiration)
 
     ! lakes variables

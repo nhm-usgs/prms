@@ -30,19 +30,17 @@ module PRMS_INTCP
     ! Dimensions
 
     ! Parameters
-    !real(r32), allocatable, private :: covden_sum(:)
-    real(r32), allocatable :: covden_sum(:) !rmcd changed to allow setter access in bmi
-
+    !real(r32), pointer, private :: covden_sum(:)
+    real(r32), pointer :: covden_sum(:) !rmcd changed to allow setter access in bmi
       !! Summer vegetation cover density for the major vegetation type in each HRU
-    !real(r32), allocatable, private :: covden_win(:)
-    real(r32), allocatable :: covden_win(:) !rmcd changed to allow setter access in bmi
-
+    !real(r32), pointer, private :: covden_win(:)
+    real(r32), pointer :: covden_win(:) !rmcd changed to allow setter access in bmi
       !! Winter vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable :: snow_intcp(:)
+    real(r32), pointer :: snow_intcp(:)
       !! Snow interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: srain_intcp(:)
+    real(r32), pointer :: srain_intcp(:)
       !! Summer rain interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: wrain_intcp(:)
+    real(r32), pointer :: wrain_intcp(:)
       !! Winter rain interception storage capacity for the major vegetation type in each HRU
 
     ! Local Variables
@@ -59,48 +57,48 @@ module PRMS_INTCP
     real(r64), allocatable :: basin_changeover
 
     ! Output variables
-    real(r64), allocatable :: basin_hru_apply
+    real(r64), pointer :: basin_hru_apply
       !! Basin area-weighted average canopy_gain, in inches (**water_use**)
-    real(r64), allocatable :: basin_intcp_evap
+    real(r64), pointer :: basin_intcp_evap
       !! Basin area-weighted evaporation from the canopy, in inches
-    real(r64), allocatable :: basin_intcp_stor
+    real(r64), pointer :: basin_intcp_stor
       !! Basin area-weighted average interception storage, in inches
-    real(r64), allocatable :: basin_net_apply
+    real(r64), pointer :: basin_net_apply
       !! Basin area-weighted average net_apply, in inches (**water_use**)
-    real(r64), allocatable :: basin_net_ppt
+    real(r64), pointer :: basin_net_ppt
       !! Basin area-weighted average throughfall, in inches
-    real(r64), allocatable :: basin_net_rain
+    real(r64), pointer :: basin_net_rain
       !! Basin area-weighted average rain throughfall, in inches
-    real(r64), allocatable :: basin_net_snow
+    real(r64), pointer :: basin_net_snow
       !! Basin area-weighted average snow throughfall, in inches
 
-    real(r32), allocatable :: canopy_covden(:)
+    real(r32), pointer :: canopy_covden(:)
       !! Canopy cover density for each HRU (decimal fraction)
-    real(r32), allocatable :: hru_intcpevap(:)
+    real(r32), pointer :: hru_intcpevap(:)
       !! Evaporation from the canopy for each HRU, in inches
-    real(r32), allocatable :: hru_intcpstor(:)
+    real(r32), pointer :: hru_intcpstor(:)
       !! Interception storage in the canopy for each HRU, in inches
-    real(r32), allocatable :: intcp_evap(:)
+    real(r32), pointer :: intcp_evap(:)
       !! Evaporation from the canopy for each HRU, in inches (** same as hru_intcpevap **)
-    real(r32), allocatable :: intcp_stor(:)
+    real(r32), pointer :: intcp_stor(:)
       !! Interception storage in canopy for cover density for each HRU, in inches
-    real(r32), allocatable :: net_apply(:)
+    real(r32), pointer :: net_apply(:)
       !! canopy_gain minus interception, in inches
-    real(r32), allocatable :: net_ppt(:)
+    real(r32), pointer :: net_ppt(:)
       !! Precipitation (rain and/or snow) that falls through the canopy for nhru each HRU, in inches
-    real(r32), allocatable :: net_rain(:)
+    real(r32), pointer :: net_rain(:)
       !! Rain that falls through canopy for each HRU, in inches
-    real(r32), allocatable :: net_snow(:)
+    real(r32), pointer :: net_snow(:)
       !! Snow that falls through canopy for each HRU, in inches
 
 
     ! Local variables
-    integer(i32), allocatable, private :: intcp_form(:)
+    integer(i32), pointer, private :: intcp_form(:)
       !! Form (rain or snow) of interception for each HRU (0=rain; 1=snow)
 
-    logical, allocatable, private :: intcp_on(:)
+    logical, pointer, private :: intcp_on(:)
       !! Flag indicating interception storage for each HRU (0=no; 1=yes)
-    logical, allocatable, private :: intcp_transp_on(:)
+    logical, pointer, private :: intcp_transp_on(:)
 
     ! integer(i32), allocatable, private :: intcp_on(:)
     ! integer(i32), allocatable, private :: intcp_transp_on(:)

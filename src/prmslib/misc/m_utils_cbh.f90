@@ -296,7 +296,7 @@ module UTILS_CBH
         !! Current timestep of the model
       integer(i32), intent(in) :: nhru
         !! Number of HRUs in model
-      real(r32), allocatable, intent(inout) :: thedata(:)
+      real(r32), pointer, intent(inout) :: thedata(:)
 
       ! ------------------------------------------------------------------------
       ! Read a single day of data

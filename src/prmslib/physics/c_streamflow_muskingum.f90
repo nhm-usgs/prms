@@ -22,9 +22,9 @@ module PRMS_MUSKINGUM
 
   type, extends(Streamflow) :: Muskingum
     ! Parameters
-    real(r32), allocatable, private :: x_coef(:)
+    real(r32), pointer, private :: x_coef(:)
       !! The amount of attenuation of the flow wave, called the Muskingum routing weighting factor; enter 0.0 for reservoirs, diversions, and segment(s) flowing out of the basin
-    real(r32), allocatable, private :: K_coef(:)
+    real(r32), pointer, private :: K_coef(:)
       !! Travel time of flood wave from one segment to the next downstream segment, called the Muskingum storage coefficient; enter 1.0 for reservoirs, diversions, and segment(s) flowing out of the basin
 
     ! Local Variables

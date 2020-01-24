@@ -25,17 +25,17 @@ module PRMS_STREAMFLOW
 
   type, extends(ModelBase) :: Streamflow
       ! Parameters
-      integer(i32), allocatable :: hru_segment(:)
+      integer(i32), pointer :: hru_segment(:)
         !! Segment index to which an HRU contributes lateral flows (surface runoff, interflow, and groundwater discharge)
-      integer(i32), allocatable :: obsin_segment(:)
+      integer(i32), pointer :: obsin_segment(:)
         !! Index of measured streamflow station that replaces inflow to a segment
-      integer(i32), allocatable :: obsout_segment(:)
+      integer(i32), pointer :: obsout_segment(:)
         !! Index of measured streamflow station that replaces outflow from a segment
-      real(r32), allocatable :: segment_flow_init(:)
+      real(r32), pointer :: segment_flow_init(:)
         !! Initial flow in each stream segment
-      integer(i32), allocatable :: segment_type(:)
+      integer(i32), pointer :: segment_type(:)
         !! Segment type (0=segment; 1= headwater; 2=lake; 3=replace inflow; 4=inbound to NHM; 5=outbound from NHM; 6=inbound to region; 7=outbound from region; 8=drains to ocean; 9=sink; 10=inbound from Great Lakes; 11=outbound to Great Lakes)
-      integer(i32), allocatable :: tosegment(:)
+      integer(i32), pointer :: tosegment(:)
         !! Index of downstream segment to which the segment streamflow flows; for segments that do not flow to another segment enter 0
 
 
@@ -45,10 +45,10 @@ module PRMS_STREAMFLOW
 
       real(r64) :: flow_out
         !! Total flow out of model domain
-      real(r64), allocatable :: hru_outflow(:)
-      real(r64), allocatable :: seg_gwflow(:)
-      real(r64), allocatable :: seg_sroff(:)
-      real(r64), allocatable :: seg_ssflow(:)
+      real(r64), pointer :: hru_outflow(:)
+      real(r64), pointer :: seg_gwflow(:)
+      real(r64), pointer :: seg_sroff(:)
+      real(r64), pointer :: seg_ssflow(:)
       real(r64), private, allocatable :: seginc_potet(:)
       real(r64), private, allocatable :: segment_hruarea(:)
 
@@ -59,36 +59,36 @@ module PRMS_STREAMFLOW
       ! real(r64), public :: cfs2acft
         !! used by muskingum_lake
 
-      integer(i32), public, allocatable :: segment_order(:)
+      integer(i32), public, pointer :: segment_order(:)
         !! used by muskingum, muskingum_lake, stream_temp, strmflow_in_out
-      integer(i32), public, allocatable :: segment_up(:)
+      integer(i32), public, pointer :: segment_up(:)
         !! used by stream_temp
 
       ! NOTE: Specific to muskingum, muskingum_lake, and strmflow_in_out.
       !       It is required by stream_temp. Used in parent streamflow class.
-      real(r64), public, allocatable :: seg_lateral_inflow(:)
+      real(r64), public, pointer :: seg_lateral_inflow(:)
         !! Lateral inflow entering lateral inflow entering a segment
-      real(r64), allocatable :: seg_inflow(:)
+      real(r64), pointer :: seg_inflow(:)
         !! Total flow entering a segment
-      real(r64), allocatable :: seg_outflow(:)
+      real(r64), pointer :: seg_outflow(:)
         !! Streamflow leaving a segment
-      real(r64), allocatable :: seg_upstream_inflow(:)
+      real(r64), pointer :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
 
-      real(r64), allocatable :: basin_cfs
+      real(r64), pointer :: basin_cfs
         !! Streamflow leaving the basin through the stream network (cfs)
-      real(r64), allocatable :: basin_cms
+      real(r64), pointer :: basin_cms
         !! Streamflow leaving the basin through the stream network (cms)
-      real(r64), public, allocatable :: basin_segment_storage
-      real(r64), allocatable :: basin_gwflow_cfs
+      real(r64), public, pointer :: basin_segment_storage
+      real(r64), pointer :: basin_gwflow_cfs
         !! Basin area-weighted average of groundwater flow to the stream network
-      real(r64), allocatable :: basin_sroff_cfs
+      real(r64), pointer :: basin_sroff_cfs
         !! Basin area-weighted average surface runoff to the stream network
-      real(r64), allocatable :: basin_ssflow_cfs
+      real(r64), pointer :: basin_ssflow_cfs
         !! Interflow leaving the basin through the stream network
-      real(r64), allocatable :: basin_stflow_in
+      real(r64), pointer :: basin_stflow_in
         !! Basin area-weighted average lateral flow entering the stream network
-      real(r64), allocatable :: basin_stflow_out
+      real(r64), pointer :: basin_stflow_out
         !! Basin area-weighted average streamflow leaving through the stream network
         !! basin_sum, muskingum, muskingum_lake
 
@@ -115,15 +115,15 @@ module PRMS_STREAMFLOW
       real(r64), public :: flow_to_ocean
         !! muskingum, muskingum_lake, strmflow_in_out
 
-      real(r64), public, allocatable :: seginc_gwflow(:)
+      real(r64), public, pointer :: seginc_gwflow(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_sroff(:)
+      real(r64), public, pointer :: seginc_sroff(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_ssflow(:)
+      real(r64), public, pointer :: seginc_ssflow(:)
         !! stream_temp
-      real(r64), public, allocatable :: seginc_swrad(:)
+      real(r64), public, pointer :: seginc_swrad(:)
         !! stream_temp
-      real(r64), public, allocatable :: segment_delta_flow(:)
+      real(r64), public, pointer :: segment_delta_flow(:)
         !! muskingum, muskingum_lake
 
     contains
