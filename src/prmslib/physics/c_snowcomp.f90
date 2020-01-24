@@ -60,16 +60,21 @@ module PRMS_SNOW
       !! Julian date to force snowpack to spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
     integer(i32), allocatable, private :: melt_look(:)
       !! Julian date to start looking for spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    real(r32), allocatable, private :: rad_trncf(:)
+    !real(r32), allocatable, private :: rad_trncf(:)
+    real(r32), allocatable :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
+
       !! Transmission coefficient for short-wave radiation through the winter vegetation canopy
-    real(r32), allocatable, private :: snarea_curve(:)
+    !real(r32), allocatable, private :: snarea_curve(:)
+    real(r32), allocatable :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
       !! Snow area depletion curve values, 11 values for each curve (0.0 to 1.0 in 0.1 increments)
-    real(r32), allocatable, private :: snarea_thresh(:)
+    !real(r32), allocatable, private :: snarea_thresh(:)
+    real(r32), allocatable :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
       !! Maximum threshold snowpack water equivalent below which the snow-covered-area curve is applied
     real(r32), allocatable, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
-    real(r32), allocatable, private :: cecn_coef(:, :)
+    !real(r32), allocatable, private :: cecn_coef(:, :)
+    real(r32), allocatable :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
     integer(i32), allocatable, private :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
@@ -153,6 +158,11 @@ module PRMS_SNOW
     real(r32), allocatable :: tcal(:)
       !! Net snowpack energy balance on each HRU
 
+    ! NOTE: 2019-10-31 PAN: moved from precipition
+    integer(i32), allocatable :: newsnow(:)
+      !! Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
+    integer(i32), allocatable :: pptmix(:)
+      !! Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)
 
 
     ! Other variables

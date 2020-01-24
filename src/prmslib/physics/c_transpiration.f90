@@ -7,6 +7,7 @@ module PRMS_TRANSPIRATION
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TEMPERATURE, only: Temperature
   use prms_constants, only: dp
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -30,7 +31,7 @@ module PRMS_TRANSPIRATION
 
   interface
     !! Transpiration constructor
-    module subroutine init_Transpiration(this, ctl_data, model_basin, model_temp)
+    module subroutine init_Transpiration(this, ctl_data, model_basin, model_temp, model_summary)
       class(Transpiration), intent(inout) :: this
         !! Transpiration class
       type(Control), intent(in) :: ctl_data
@@ -38,6 +39,8 @@ module PRMS_TRANSPIRATION
       type(Basin), intent(in) :: model_basin
         !! Model basin information
       class(Temperature), intent(in) :: model_temp
+      type(Summary), intent(inout) :: model_summary
+        !! Summary by HRU module
     end subroutine
   end interface
 

@@ -1,11 +1,14 @@
 bin/
-build/
 _build/
+_build2/
 include/
+output/
 lib/
 old/
 .idea/
 .vscode/
+_build/
+*.zip
 *.mod
 *.swp
 *.o

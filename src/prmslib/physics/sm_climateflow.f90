@@ -5,7 +5,6 @@ contains
   ! Climateflow constructor
   module subroutine init_Climateflow(this, ctl_data, model_basin, model_summary)
     use iso_fortran_env, only: output_unit, error_unit
-    ! use UTILS_PRMS, only: check_restart
     use prms_constants, only: INACTIVE, LAKE
     implicit none
 
@@ -20,7 +19,7 @@ contains
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
-              rst_unit => ctl_data%restart_output_unit, &
+              ! rst_unit => ctl_data%restart_output_unit, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
 
@@ -46,7 +45,6 @@ contains
 
       allocate(this%soil_rechr_max_frac(nhru))
       call param_hdl%get_variable('soil_rechr_max_frac', this%soil_rechr_max_frac)
-
 
       ! Other variables
 
@@ -81,7 +79,8 @@ contains
 
         if (this%soil_rechr(jj) > this%soil_moist(jj)) then
           ! NOTE: PRMS5 has 'soil_rechr_init > soil_moist_init'
-          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_moist_init_frac (HRU=', jj, ')'
+          ! DEBUG: PAN - re-add output
+          ! write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_moist_init_frac (HRU=', jj, ')'
           this%soil_rechr(jj) = this%soil_moist(jj)
         end if
       end do

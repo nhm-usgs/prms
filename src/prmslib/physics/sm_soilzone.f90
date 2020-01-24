@@ -357,6 +357,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 call model_summary%set_summary_var(jj, this%basin_sz_stor_frac)
               case('basin_sz2gw')
                 call model_summary%set_summary_var(jj, this%basin_sz2gw)
+              case('cap_waterin')
+                call model_summary%set_summary_var(jj, this%cap_waterin)
+              case('dunnian_flow')
+                call model_summary%set_summary_var(jj, this%dunnian_flow)
               case('hru_actet')
                 call model_summary%set_summary_var(jj, this%hru_actet)
               case('perv_actet')
@@ -369,10 +373,14 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 call model_summary%set_summary_var(jj, this%pref_flow_infil)
               case('pref_flow_stor')
                 call model_summary%set_summary_var(jj, this%pref_flow_stor)
+              case('recharge')
+                call model_summary%set_summary_var(jj, this%recharge)
               case('slow_flow')
                 call model_summary%set_summary_var(jj, this%slow_flow)
               case('slow_stor')
                 call model_summary%set_summary_var(jj, this%slow_stor)
+              case('snow_free')
+                call model_summary%set_summary_var(jj, this%snow_free)
               case('soil_lower')
                 call model_summary%set_summary_var(jj, this%soil_lower)
               case('soil_moist_tot')
@@ -381,6 +389,16 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 call model_summary%set_summary_var(jj, this%soil_to_gw)
               case('soil_to_ssr')
                 call model_summary%set_summary_var(jj, this%soil_to_ssr)
+              case('ssres_flow')
+                call model_summary%set_summary_var(jj, this%ssres_flow)
+              case('ssres_in')
+                call model_summary%set_summary_var(jj, this%ssres_in)
+              case('ssres_stor')
+                call model_summary%set_summary_var(jj, this%ssres_stor)
+              case('ssr_to_gw')
+                call model_summary%set_summary_var(jj, this%ssr_to_gw)
+              case('unused_potet')
+                call model_summary%set_summary_var(jj, this%unused_potet)
               case default
                 ! pass
             end select
@@ -416,106 +434,124 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! ssstor_init_frac no longer needed at this point
         deallocate(this%ssstor_init_frac)
 
-        ! soil_moist = 0.0 ! WARNING: Overrides init in climateflow
-        ! soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
-        !
-        ! where (hru_type == SWALE)
-        !   this%swale_limit = 3.0 * sat_threshold
-        !   this%pref_flow_thrsh = sat_threshold
-        !   ! pref_flow_den = 0.0  ! WARNING: parameters are read-only
-        ! end where
-        !
-        ! where (hru_type == LAND)
-        !   this%pref_flow_thrsh = sat_threshold * (1.0 - pref_flow_den)
-        !   this%pref_flow_max = sat_threshold - this%pref_flow_thrsh
-        ! end where
-        !
-        ! if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
-        !   where (hru_type == LAND .or. hru_type == SWALE)
-        !     this%slow_stor = min(this%ssres_stor, this%pref_flow_thrsh)
-        !     this%pref_flow_stor = this%ssres_stor - this%slow_stor
-        !   end where
-        ! endif
-        !
-        ! where (soil2gw_max > 0.)
-        !   this%soil2gw_flag = .true.
-        ! end where
-        !
+
+          ! this%snow_free(chru) = 1.0 - snowcov_area(chru)
+
+          ! if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
+          !   ! inactive or lake
+          !   ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
+          !   ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
+          !   this%ssres_stor(chru) = 0.0
+          !   soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
+          !   soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
+          !   cycle
+          ! endif
+
+        soil_moist = 0.0 ! WARNING: Overrides init in climateflow
+        soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
+
+        where (hru_type == SWALE)
+          this%swale_limit = 3.0 * this%sat_threshold
+          this%pref_flow_thrsh = this%sat_threshold
+          ! this%pref_flow_max = 0.0  ! NOTE: already initialized to zero
+          ! pref_flow_den = 0.0  ! WARNING: parameters are read-only
+        end where
+
+        where (hru_type == LAND)
+          this%pref_flow_thrsh = this%sat_threshold * (1.0 - this%pref_flow_den)
+          this%pref_flow_max = this%sat_threshold - this%pref_flow_thrsh
+
+          where (this%pref_flow_den > 0.0)
+            this%pref_flow_flag = .true.
+          end where
+        end where
+
+        if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
+          where (hru_type == LAND .or. hru_type == SWALE)
+            this%slow_stor = min(this%ssres_stor, this%pref_flow_thrsh)
+            this%pref_flow_stor = this%ssres_stor - this%slow_stor
+          end where
+        endif
+
+        where (this%soil2gw_max > 0.0)
+          this%soil2gw_flag = .true.
+        end where
+
         ! where (hru_type == LAND .and. pref_flow_den > 0.0)
         !   this%pref_flow_flag = .true.
         ! end where
-        !
-        ! this%pref_flag = any(this%pref_flow_flag)
-        !
-        ! this%soil_zone_max = sat_threshold + soil_moist_max * hru_frac_perv
-        ! this%soil_moist_tot = this%ssres_stor + sngl(soil_moist) * hru_frac_perv
-        !
-        ! this%soil_lower = soil_moist - soil_rechr
-        ! this%soil_lower_stor_max = soil_moist_max - soil_rechr_max
-        !
-        ! where (this%soil_lower_stor_max > 0.0)
-        !   this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
-        ! end where
 
-        do chru = 1, nhru
-          this%snow_free(chru) = 1.0 - snowcov_area(chru)
+        this%pref_flag = any(this%pref_flow_flag)
 
-          if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
-            ! inactive or lake
-            ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-            this%pref_flow_max(chru) = 0.0
-            this%pref_flow_stor(chru) = 0.0
-            ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
-            this%slow_stor(chru) = 0.0
-            this%soil_lower(chru) = 0.0
-            this%soil_lower_stor_max(chru) = 0.0
-            this%soil_moist_tot(chru) = 0.0
-            this%soil_zone_max(chru) = 0.0
-            this%ssres_stor(chru) = 0.0
+        this%soil_zone_max = this%sat_threshold + soil_moist_max * hru_frac_perv
+        this%soil_moist_tot = this%ssres_stor + soil_moist * hru_frac_perv
 
-            soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
-            soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
-            cycle
-          endif
+        this%soil_lower = soil_moist - soil_rechr
+        this%soil_lower_stor_max = soil_moist_max - soil_rechr_max
 
-          if (hru_type(chru) == SWALE) then
-            ! swale
-            this%swale_limit(chru) = 3.0 * this%sat_threshold(chru)
-            ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-            this%pref_flow_thrsh(chru) = this%sat_threshold(chru)
-            this%pref_flow_max(chru) = 0.0
-          else
-            ! land
-            this%pref_flow_thrsh(chru) = this%sat_threshold(chru) * (1.0 - this%pref_flow_den(chru))
-            this%pref_flow_max(chru) = this%sat_threshold(chru) - this%pref_flow_thrsh(chru)
+        where (this%soil_lower_stor_max > 0.0)
+          this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
+        end where
 
-            ! Interflow coefficient values don't matter except for land HRU
-            if (this%pref_flow_den(chru) > 0.0) then
-              this%pref_flow_flag(chru) = .true.
-              this%pref_flag = .true.
-            endif
-          endif
+        ! do chru = 1, nhru
+        !   this%snow_free(chru) = 1.0 - snowcov_area(chru)
 
-          ! hru_type = LAND or SWALE
-          if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
-            this%slow_stor(chru) = min(this%ssres_stor(chru), this%pref_flow_thrsh(chru))
-            this%pref_flow_stor(chru) = this%ssres_stor(chru) - this%slow_stor(chru)
-          endif
+        !   if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
+        !     ! inactive or lake
+        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
+        !     this%pref_flow_max(chru) = 0.0
+        !     this%pref_flow_stor(chru) = 0.0
+        !     ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
+        !     this%slow_stor(chru) = 0.0
+        !     this%soil_lower(chru) = 0.0
+        !     this%soil_lower_stor_max(chru) = 0.0
+        !     this%soil_moist_tot(chru) = 0.0
+        !     this%soil_zone_max(chru) = 0.0
+        !     this%ssres_stor(chru) = 0.0
 
-          if (this%soil2gw_max(chru) > 0.0) then
-            this%soil2gw_flag(chru) = .true.
-          endif
+        !     soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
+        !     soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
+        !     cycle
+        !   endif
 
-          this%soil_zone_max(chru) = this%sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
-          this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
+        !   if (hru_type(chru) == SWALE) then
+        !     ! swale
+        !     this%swale_limit(chru) = 3.0 * this%sat_threshold(chru)
+        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
+        !     this%pref_flow_thrsh(chru) = this%sat_threshold(chru)
+        !     this%pref_flow_max(chru) = 0.0
+        !   else
+        !     ! land
+        !     this%pref_flow_thrsh(chru) = this%sat_threshold(chru) * (1.0 - this%pref_flow_den(chru))
+        !     this%pref_flow_max(chru) = this%sat_threshold(chru) - this%pref_flow_thrsh(chru)
 
-          this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
-          this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
+        !     ! Interflow coefficient values don't matter except for land HRU
+        !     if (this%pref_flow_den(chru) > 0.0) then
+        !       this%pref_flow_flag(chru) = .true.
+        !       this%pref_flag = .true.
+        !     endif
+        !   endif
 
-          if (this%soil_lower_stor_max(chru) > 0.0) then
-            this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
-          endif
-        enddo
+        !   ! hru_type = LAND or SWALE
+        !   if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
+        !     this%slow_stor(chru) = min(this%ssres_stor(chru), this%pref_flow_thrsh(chru))
+        !     this%pref_flow_stor(chru) = this%ssres_stor(chru) - this%slow_stor(chru)
+        !   endif
+
+        !   if (this%soil2gw_max(chru) > 0.0) then
+        !     this%soil2gw_flag(chru) = .true.
+        !   endif
+
+        !   this%soil_zone_max(chru) = this%sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
+        !   this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
+
+        !   this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
+        !   this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
+
+        !   if (this%soil_lower_stor_max(chru) > 0.0) then
+        !     this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
+        !   endif
+        ! enddo
 
         this%basin_gvr_stor_frac = sum(dble(this%slow_stor / this%pref_flow_thrsh * hru_area), mask=(this%pref_flow_thrsh > 0.0)) * basin_area_inv
         this%basin_pfr_stor_frac = sum(dble(this%pref_flow_stor / this%pref_flow_max * hru_area), mask=(this%pref_flow_flag)) * basin_area_inv
@@ -686,41 +722,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
       ! real(r32) :: dndunn
       ! real(r32) :: dnpreflow
       ! real(r32) :: dnslowflow
-
-      ! Control
-      ! nlake, cascade_flag, dprst_flag, model_mode, print_debug,
-
-      ! Basin
-      ! active_hrus, hru_route_order, basin_area_inv, hru_area_perv, hru_frac_perv,
-      ! numlake_hrus
-
-      ! Time
-      ! Nowtime
-
-      ! Parameters
-      ! cov_type, fastcoef_lin, fastcoef_sq, hru_area, hru_type,
-      ! lake_evap_adj(2D), pref_flow_den, sat_threshold,
-      ! soil_moist_max, soil_type,
-      ! soil2gw_max, slowcoef_lin, slowcoef_sq, ssr2gw_exp, ssr2gw_rate,
-
-      ! Srunoff
-      ! dprst_evap_hru, dprst_seep_hru, hru_impervevap, sroff(RW),
-      ! strm_seg_in(RW), infil, basin_sroff(RW)
-
-      ! Precipitation
-      ! hru_ppt
-
-      ! Climateflow
-      ! soil_rechr(RW), soil_rechr_max, soil_moist(RW),
-
-      ! Interception
-      ! hru_intcpevap,
-
-      ! Potential_ET
-      ! basin_potet, potet(RW)
-
-      ! Snow
-      ! snow_evap, snowcov_area,
 
       !***********************************************************************
       associate(cascade_flag => ctl_data%cascade_flag%value, &
@@ -938,7 +939,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           !   capwater_maxin = 0.0_dp
           ! endif
 
-          9005 format(A, A, es12.4e2)
+          ! 9005 format(A, A, es12.4e2)
 
           ! Compute preferential flow and storage, and any dunnian flow
           prefflow = 0.0
@@ -1009,7 +1010,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
           !   soil_rechr(chru) = 0.0
           ! endif
 
-          9008 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
+          ! 9008 format(A, A, I0.1, A, es11.3e3, A, I4, 2('/', I2.2))
 
           ! soil_to_ssr for whole HRU
           ! this%soil_to_ssr(chru) = gvr_maxin
@@ -1302,7 +1303,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! this%basin_sz_stor_frac = sum(this%soil_moist_tot / dble(this%soil_zone_max) * dble(hru_area)) * basin_area_inv
         this%basin_sz_stor_frac = sum(dble(this%soil_moist_tot / this%soil_zone_max * hru_area)) * basin_area_inv
 
-
         ! TODO: PAN Is it correct to use basin_area_inv with hru_area_perv??
         this%basin_cpr_stor_frac = sum(dble(soil_moist / soil_moist_max * hru_area_perv), mask=active_mask) * basin_area_inv
         this%basin_perv_et = sum(dble(this%perv_actet * hru_area_perv), mask=active_mask) * basin_area_inv
@@ -1310,7 +1310,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         this%basin_soil_moist = sum(dble(soil_moist * hru_area_perv), mask=active_mask) * basin_area_inv
         this%basin_soil_rechr = sum(dble(soil_rechr * hru_area_perv), mask=active_mask) * basin_area_inv
         this%basin_soil_rechr_stor_frac = sum(dble(soil_rechr / (soil_rechr_max * hru_area_perv)), mask=active_mask) * basin_area_inv
-
 
         ! this%basin_actet = this%basin_actet * basin_area_inv
         this%basin_cap_up_max = this%basin_cap_up_max * basin_area_inv
@@ -1340,7 +1339,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !   this%basin_lakeinsz = this%basin_lakeinsz * basin_area_inv
         !   Basin_lake_stor = Basin_lake_stor + this%basin_lakeprecip - Basin_lakeevap
         ! endif
-
       end associate
     end subroutine
 

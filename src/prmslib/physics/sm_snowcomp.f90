@@ -126,6 +126,11 @@ contains
       allocate(this%snsv(nhru))
       allocate(this%tcal(nhru))
 
+      ! NOTE: 2019-10-31 PAN: moved from precipitation
+      allocate(this%newsnow(nhru))
+      allocate(this%pptmix(nhru))
+      this%pptmix = 0
+      this%newsnow = 0
 
       ! FIXME: This may not get the correct 2D index because of how the
       !        snarea_curve is stored.
@@ -190,31 +195,50 @@ contains
         allocate(this%snarea_curve_2d(11, nhru))
         this%snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
 
-        do j=1, active_hrus
+        pkwater_equiv = dble(this%snowpack_init)
+
+        where (pkwater_equiv > 0.0_dp)
+          this%pk_depth = pkwater_equiv * this%deninv
+          this%pk_den = sngl(pkwater_equiv / this%pk_depth)
+          this%pk_ice = sngl(pkwater_equiv)
+          this%freeh2o = this%pk_ice * this%freeh2o_cap
+          this%ai = pkwater_equiv ! [inches]
+
+          where (this%ai > this%snarea_thresh)
+            this%ai = dble(this%snarea_thresh)
+          end where
+
+          this%frac_swe = sngl(pkwater_equiv / this%ai)
+        end where
+
+        do concurrent (j = 1:active_hrus)
           chru = hru_route_order(j)
-          pkwater_equiv(chru) = dble(this%snowpack_init(chru))
-
           if (pkwater_equiv(chru) > 0.0_dp) then
-            this%pk_depth(chru) = pkwater_equiv(chru) * this%deninv
-            this%pk_den(chru) = sngl(pkwater_equiv(chru) / this%pk_depth(chru))
-            this%pk_ice(chru) = sngl(pkwater_equiv(chru))
-            this%freeh2o(chru) = this%pk_ice(chru) * this%freeh2o_cap(chru)
-            this%ai(chru) = pkwater_equiv(chru) ! [inches]
+            this%snowcov_area(chru) = this%sca_deplcrv(this%snarea_curve_2d(1:11, this%hru_deplcrv(chru)), &
+                                                       this%frac_swe(chru))
+          end if
+        end do
 
-            if (this%ai(chru) > this%snarea_thresh(chru)) then
-              this%ai(chru) = dble(this%snarea_thresh(chru)) ! [inches]
-            endif
+        ! do j=1, active_hrus
+        !   chru = hru_route_order(j)
+        !   ! pkwater_equiv(chru) = dble(this%snowpack_init(chru))
 
-            this%frac_swe(chru) = sngl(pkwater_equiv(chru) / this%ai(chru)) ! [fraction]
+        !   if (pkwater_equiv(chru) > 0.0_dp) then
+        !     this%pk_depth(chru) = pkwater_equiv(chru) * this%deninv
+        !     this%pk_den(chru) = sngl(pkwater_equiv(chru) / this%pk_depth(chru))
+        !     this%pk_ice(chru) = sngl(pkwater_equiv(chru))
+        !     this%freeh2o(chru) = this%pk_ice(chru) * this%freeh2o_cap(chru)
+        !     this%ai(chru) = pkwater_equiv(chru) ! [inches]
 
-            ! nhru, nmonths
-            ! 11, nhru
-            ! idx1D = (hru_deplcrv(chru) - 1) * 11 + jj
-            ! SHAPE(RESHAPE(snarea_curve, (/11, nhru/)))
-            this%snowcov_area(chru) = this%sca_deplcrv(this%snarea_curve_2d(1:11, this%hru_deplcrv(chru)), this%frac_swe(chru))
-            ! call sca_deplcrv(this%snowcov_area(chru), snarea_curve(11, hru_deplcrv(chru)), this%frac_swe(chru))
-          endif
-        enddo
+        !     if (this%ai(chru) > this%snarea_thresh(chru)) then
+        !       this%ai(chru) = dble(this%snarea_thresh(chru)) ! [inches]
+        !     endif
+
+        !     this%frac_swe(chru) = sngl(pkwater_equiv(chru) / this%ai(chru)) ! [fraction]
+
+        !     this%snowcov_area(chru) = this%sca_deplcrv(this%snarea_curve_2d(1:11, this%hru_deplcrv(chru)), this%frac_swe(chru))
+        !   endif
+        ! enddo
 
         this%basin_pweqv = sum(pkwater_equiv * hru_area_dble, mask=active_mask) * basin_area_inv
         this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
@@ -234,6 +258,8 @@ contains
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
+            case('albedo')
+              call model_summary%set_summary_var(jj, this%albedo)
             case('basin_pk_precip')
               call model_summary%set_summary_var(jj, this%basin_pk_precip)
             case('basin_pweqv')
@@ -252,14 +278,24 @@ contains
               call model_summary%set_summary_var(jj, this%freeh2o)
             case('pk_def')
               call model_summary%set_summary_var(jj, this%pk_def)
+            case('pk_depth')
+              call model_summary%set_summary_var(jj, this%pk_depth)
             case('pk_ice')
               call model_summary%set_summary_var(jj, this%pk_ice)
+            case('pk_precip')
+              call model_summary%set_summary_var(jj, this%pk_precip)
+            case('pk_temp')
+              call model_summary%set_summary_var(jj, this%pk_temp)
             case('snow_evap')
               call model_summary%set_summary_var(jj, this%snow_evap)
             case('snowcov_area')
               call model_summary%set_summary_var(jj, this%snowcov_area)
             case('snowmelt')
               call model_summary%set_summary_var(jj, this%snowmelt)
+            case('pptmix')    ! from precipitation
+              call model_summary%set_summary_var(jj, this%pptmix)
+            case('newsnow')   ! from precipitation
+              call model_summary%set_summary_var(jj, this%newsnow)
             case default
               ! pass
           end select
@@ -342,9 +378,9 @@ contains
               pkwater_equiv => model_climate%pkwater_equiv, &
 
               hru_ppt => model_precip%hru_ppt, &
-              newsnow => model_precip%newsnow, &
+              ! newsnow => model_precip%newsnow, &
               prmx => model_precip%prmx, &
-              pptmix => model_precip%pptmix, &
+              ! pptmix => model_precip%pptmix, &
 
               tavg => model_temp%tavg, &
               tmax => model_temp%tmax, &
@@ -379,6 +415,17 @@ contains
       ! this%frac_swe = 0.0
       ! this%ai = 0.0_dp
       ! this%tcal = 0.0
+
+      this%newsnow = 0
+      this%pptmix = 0
+
+      where (net_snow > 0.0)
+        this%newsnow = 1
+      end where
+
+      where (net_rain > 0.0 .and. net_snow > 0.0)
+        this%pptmix = 1
+      end where
 
       ! By default, there has not been a mixed event without a snowpack
       ! this%pptmix_nopack = 0  ! [flag]
@@ -446,12 +493,12 @@ contains
 
         if (pkwater_equiv(chru) < DNEARZERO) then
           ! No existing snowpack
-          if (newsnow(chru) == 0) then
+          if (this%newsnow(chru) == 0) then
             ! Skip the HRU if there is no snowpack and no new snow
             ! Reset to be sure it is zero if snowpack melted on last timestep.
             this%snowcov_area(chru) = 0.0
             cycle
-          elseif (newsnow(chru) == 1) then
+          elseif (this%newsnow(chru) == 1) then
             ! We have new snow; the initial snow-covered area is complete (1)
             this%snowcov_area(chru) = 1.0  ! [fraction of area]
           endif
@@ -1092,7 +1139,7 @@ contains
     !***********************************************************************
     associate(pkwater_equiv => model_climate%pkwater_equiv, &
 
-              pptmix => model_precip%pptmix, &
+              ! pptmix => model_precip%pptmix, &
               tmax_allsnow => model_precip%tmax_allsnow_c, &
 
               net_rain => intcp%net_rain, &
@@ -1117,7 +1164,7 @@ contains
       ! If there is any snow, the snow temperature is the average temperature.
       tsnow = tavg(chru)  ! [degrees C]
 
-      if (pptmix(chru) == 1) then
+      if (this%pptmix(chru) == 1) then
         ! (1) If precipitation is mixed...
 
         ! If there is any rain, the rain temperature is halfway between the maximum
@@ -1393,9 +1440,9 @@ contains
     ! this
     ! albedo(RW), int_alb(RW), iso, lst(RW), slst(RW), snsv(RW),
     !***********************************************************************
-    associate(newsnow => model_precip%newsnow(chru), &
-              pptmix => model_precip%pptmix(chru), &
-              prmx => model_precip%prmx(chru), &
+    associate(prmx => model_precip%prmx(chru), &
+              ! newsnow => model_precip%newsnow(chru), &
+              ! pptmix => model_precip%pptmix(chru), &
 
               net_snow => intcp%net_snow(chru), &
 
@@ -1419,7 +1466,7 @@ contains
       ! is new snow during melt season.
 
       ! 3 options below (if-then, elseif, else)
-      if (newsnow == 0) then
+      if (this%newsnow(chru) == 0) then
         ! (1) There is no new snow
 
         ! If no new snow, check if there was previous new snow that
@@ -1527,7 +1574,7 @@ contains
         ! The change in albedo depends on if the precipitation is a mix, if the
         ! rain is above a threshold,  or if the snow is above a threshold.
         ! 4 options below (if-then, elseif, elseif, else)
-        if (pptmix < 1) then
+        if (this%pptmix(chru) < 1) then
           ! (3.1) This is not a mixed event...
           ! During the accumulation season, the threshold for resetting the
           ! albedo does not apply if there is a snow-only event. Therefore, no
@@ -1984,7 +2031,7 @@ contains
 
               net_snow => intcp%net_snow(chru), &
 
-              newsnow => model_precip%newsnow(chru), &
+              ! newsnow => model_precip%newsnow(chru), &
 
               pkwater_equiv => model_climate%pkwater_equiv(chru), &
 
@@ -2045,7 +2092,7 @@ contains
         ! curve (condition B above) or being interpolated between the previous
         ! place on the curve and 100% (condition C above).
         ! 2 options below (if-then, elseif)
-        if (newsnow /= 0) then
+        if (this%newsnow(chru) /= 0) then
           ! (2.1) There was new snow...
 
           ! New snow will always reset the snow cover to 100%. However, different

@@ -53,49 +53,24 @@ contains
     class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
-    integer(i32) :: chru
+    ! integer(i32) :: chru
       ! Current HRU
-    integer(i32) :: j
+    ! integer(i32) :: j
       !! Loop variable
-    ! integer(i32) :: idx1D
-      !! 1D index from 2D
-    real(r32) :: elh
+    ! real(r32) :: elh
       !! Latent heat of vaporization
-    ! real(r32), pointer, contiguous :: jh_coef_2d(:,:)
 
     ! ***********************************************************************
     ! 597.3 cal/gm at 0 C is the energy required to change the state of
     ! water to vapor
     ! elh is the latent heat of vaporization (not including the *2.54)
 
-    ! Control
-    !
-
-    ! Time_t
-    ! curr_month
-
-    ! Basin
-    ! nhru, nmonths, active_mask, basin_area_inv
-
-    ! Parameters
-    ! jh_coef_hru, hru_area,
-
-    ! Temperature
-    ! tavgc, tavgf
-
-    ! SolarRadiation
-    ! swrad
-
     ! --------------------------------------------------------------------------
     associate(curr_month => model_time%Nowmonth, &
 
-              nhru => model_basin%nhru, &
-              nmonths => model_basin%nhru, &
-              active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
               basin_area_inv => model_basin%basin_area_inv, &
               hru_area => model_basin%hru_area, &
-              hru_route_order => model_basin%hru_route_order, &
 
               swrad => model_solrad%swrad, &
 
@@ -104,31 +79,41 @@ contains
 
       ! this%tavg_f = c_to_f(model_temp%tavg)
 
-      ! jh_coef_2d => get_array(param_data%jh_coef%values, (/nhru, nmonths/))
-      ! climate%basin_potet = 0.0
-
-      ! WARNING: This is confusing because tavgc and tavgf are used
+      ! WARNING: This is confusing because both tavgc and tavgf are used
       ! this%potet = jh_coef_2d(:, curr_month) * (tavgf - jh_coef_hru) * &
       !              swrad / ((597.3 - (0.5653 * tavgc)) * 2.54)
       ! where (this%potet < 0.0) this%potet = 0.0
 
-      do j=1, active_hrus
-        chru = hru_route_order(j)
-        ! idx1D = (curr_month - 1) * nhru + chru
+      ! do j=1, active_hrus
+      !   chru = hru_route_order(j)
+      !   ! WARNING: Use of tavgf will be removed once temp_unit is standardized
+      !   !          to Celsius and jh_coef, jh_coef_hru are re-computed for Celsius.
+      !   ! elh = (597.3 - (0.5653 * sngl(tavg(chru)))) * 2.54
+      !   elh = (597.3 - (0.5653 * tavg(chru))) * 2.54
+      !   this%potet(chru) = this%jh_coef(chru, curr_month) * (tavg_f(chru) - this%jh_coef_hru(chru)) * swrad(chru) / elh
 
-        ! WARNING: Use of tavgf will be removed once temp_unit is standardized
-        !          to Celsius and jh_coef, jh_coef_hru are re-computed for Celsius.
-        ! elh = (597.3 - (0.5653 * sngl(tavg(chru)))) * 2.54
-        elh = (597.3 - (0.5653 * tavg(chru))) * 2.54
-        ! this%potet(chru) = jh_coef_2d(chru, curr_month) * (tavg_f(chru) - &
-        ! this%potet(chru) = jh_coef(idx1D) * (tavg_f(chru) - jh_coef_hru(chru)) * swrad(chru) / elh
-        this%potet(chru) = this%jh_coef(chru, curr_month) * (tavg_f(chru) - this%jh_coef_hru(chru)) * swrad(chru) / elh
+      !   if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
+      ! enddo
 
-        if (this%potet(chru) < 0.0) this%potet(chru) = 0.0
-      enddo
-
+      this%potet = calc_potet(tavg, tavg_f, this%jh_coef(:, curr_month), this%jh_coef_hru, swrad)
       this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
     end associate
   end subroutine
 
+  pure elemental module function calc_potet(tavg_c, tavg_f, jh_coef, jh_coef_hru, swrad) result(res)
+    implicit none
+
+    real(r32) :: res
+    real(r32), intent(in) :: tavg_c
+    real(r32), intent(in) :: tavg_f
+    real(r32), intent(in) :: jh_coef
+    real(r32), intent(in) :: jh_coef_hru
+    real(r32), intent(in) :: swrad
+
+    real(r32) :: elh
+      !! Latent heat of vaporization
+
+    elh = (597.3 - (0.5653 * tavg_c)) * 2.54
+    res = max(0.0, jh_coef * (tavg_f - jh_coef_hru) * swrad / elh)
+  end function
 end submodule

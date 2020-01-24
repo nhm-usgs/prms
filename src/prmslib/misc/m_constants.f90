@@ -72,7 +72,7 @@ module prms_constants
 
     ! Temperature units
     enum, bind(C)
-      enumerator :: FAHRENHEIT, CELSIUS
+      enumerator :: FAHRENHEIT=0, CELSIUS=1
     end enum
 
     ! Precipitation units

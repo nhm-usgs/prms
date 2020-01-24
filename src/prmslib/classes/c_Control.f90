@@ -183,6 +183,8 @@ module Control_class
       procedure, private :: load_output_variables
       procedure, private :: open_model_output_file
       procedure, private :: open_var_save_file
+      procedure, public :: cleanup => cleanup_control
+
   end type
 
   ! interface Control
@@ -233,6 +235,13 @@ module Control_class
       class(Control), intent(inout) :: this
         !! Control class
     end function
+    end interface
+
+  interface
+    module subroutine cleanup_control(this)
+      class(Control) :: this
+        !! Srunoff class
+    end subroutine
   end interface
 
 end module

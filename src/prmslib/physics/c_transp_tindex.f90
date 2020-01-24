@@ -10,6 +10,7 @@ MODULE PRMS_TRANSP_TINDEX
   use PRMS_SET_TIME, only: Time_t
   use PRMS_TRANSPIRATION, only: Transpiration
   use PRMS_TEMPERATURE, only: Temperature
+  use PRMS_SUMMARY, only: Summary
   implicit none
 
   private
@@ -37,19 +38,21 @@ MODULE PRMS_TRANSP_TINDEX
     integer(i32), allocatable, private :: transp_end_restart(:)
 
     real(r32), allocatable, private :: tmax_sum(:)
-    real(r32), allocatable, private :: transp_tmax_c(:)
+    ! real(r32), allocatable, private :: transp_tmax_c(:)
     real(r32), allocatable, private :: transp_tmax_restart(:)
 
     contains
       procedure, public :: init => init_Transp_tindex
       procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, public :: run => run_Transp_tindex
-
+      procedure, nopass, private :: init_transp_on
+      procedure, nopass, private :: init_transp_check
+      procedure, nopass, private :: update_transpiration
   end type
 
   interface
     !! Transp_tindex constructor
-    module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp)
+    module subroutine init_Transp_tindex(this, ctl_data, model_basin, model_temp, model_summary)
       class(Transp_tindex), intent(inout) :: this
         !! Transp_tindex class
       type(Control), intent(in) :: ctl_data
@@ -57,6 +60,7 @@ MODULE PRMS_TRANSP_TINDEX
       type(Basin), intent(in) :: model_basin
         !! Model basin information
       class(Temperature), intent(in) :: model_temp
+      type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
 
@@ -77,4 +81,39 @@ MODULE PRMS_TRANSP_TINDEX
     end subroutine
   end interface
 
+  interface
+    pure elemental module function init_transp_on(tr_beg, tr_end, month, day) result(res)
+      logical :: res
+      integer, intent(in) :: tr_beg
+      integer, intent(in) :: tr_end
+      integer, intent(in) :: month
+      integer, intent(in) :: day
+    end function
+  end interface
+
+  interface
+    pure elemental module function init_transp_check(tr_beg, month, day) result(res)
+      logical :: res
+      integer, intent(in) :: tr_beg
+      integer, intent(in) :: month
+      integer, intent(in) :: day
+    end function
+  end interface
+
+  interface
+    pure elemental module subroutine update_transpiration(tr_on, tr_check, tmax_sum, &
+                                                          tr_beg, tr_end, tr_tmax, tmax, &
+                                                          tmax_threshold, month, day)
+    logical, intent(inout) :: tr_on
+    logical, intent(inout) :: tr_check
+    real(r32), intent(inout) :: tmax_sum
+    integer(i32), intent(in) :: tr_beg
+    integer(i32), intent(in) :: tr_end
+    real(r32), intent(in) :: tr_tmax
+    real(r32), intent(in) :: tmax
+    real(r32), intent(in) :: tmax_threshold
+    integer(i32), intent(in) :: month
+    integer(i32), intent(in) :: day
+    end subroutine
+  end interface
 end MODULE

@@ -123,19 +123,8 @@ contains
               ! radj_sppt => param_data%radj_sppt%values, &
               ! radj_wppt => param_data%radj_wppt%values)
 
-
       ! NOTE: Once units are standardized this can go away
       ! this%tmax_f = c_to_f(model_temp%tmax)
-
-      ! tmax_index_2d => get_array(param_data%tmax_index%values, (/nhru, nmonths/))
-      !
-      ! ! WARNING: Get pointers to 2D-indexed versions of 1D parameter arrays
-      ! dday_intcp_2d => get_array(param_data%dday_intcp%values, (/nhru, nmonths/))
-      ! dday_slope_2d => get_array(param_data%dday_slope%values, (/nhru, nmonths/))
-      ! ppt_rad_adj_2d => get_array(param_data%ppt_rad_adj%values, (/nhru, nmonths/))
-      ! radmax_2d => get_array(param_data%radmax%values, (/nhru, nmonths/))
-      ! radadj_intcp_2d => get_array(param_data%radadj_intcp%values, (/nhru, nmonths/))
-      ! radadj_slope_2d => get_array(param_data%radadj_slope%values, (/nhru, nmonths/))
 
       !rsr using julian day as the soltab arrays are filled by julian day
       this%basin_horad = this%soltab_basinpotsw(day_of_year)

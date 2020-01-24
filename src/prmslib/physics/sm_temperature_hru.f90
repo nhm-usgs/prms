@@ -52,7 +52,9 @@ contains
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Open netcdf or ascii-base cbh files
-      if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
+      !scan(trim(tmax_day%s),".", BACK= .true.)
+      if (tmax_day%s(scan(trim(tmax_day%s),".", BACK= .true.)+1:) == 'nc') then
+      !if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
         ! Read a netcdf file
         call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
                                   tmax_day%s, 'tmax', start_time, end_time, nhru)
@@ -69,8 +71,8 @@ contains
 
         this%has_netcdf_tmax = .false.
       endif
-
-      if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
+      if (tmin_day%s(scan(trim(tmin_day%s),".", BACK= .true.)+1:) == 'nc') then
+      !if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
         call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
                                   tmin_day%s, 'tmin', start_time, end_time, nhru)
         this%has_netcdf_tmin = .true.
@@ -104,33 +106,14 @@ contains
     type(Summary), intent(inout) :: model_summary
 
     ! Local variables
-    ! integer(i32) :: chru
-    ! integer(i32) :: idx1D
     integer(i32) :: ios
-    integer(i32) :: jj
     integer(i32) :: datetime(6)
-
-    ! Control
-    ! nhru, nmonths,
-
-    ! Basin
-    ! basin_area_inv
-
-    ! Parameters
-    ! hru_area,
-    ! not associated: tmin_cbh_adj, tmax_cbh_adj
-
-    ! Time_t
-    ! curr_month (Nowmonth),
 
     ! --------------------------------------------------------------------------
     associate(basin_area_inv => model_basin%basin_area_inv, &
               nhru => model_basin%nhru, &
-              nmonths => model_basin%nmonths, &
+              ! nmonths => model_basin%nmonths, &
               hru_area => model_basin%hru_area, &
-
-              ! tmax_cbh_adj => param_data%tmax_cbh_adj%values, &
-              ! tmin_cbh_adj => param_data%tmin_cbh_adj%values, &
 
               curr_month => model_time%Nowmonth, &
               timestep => model_time%Timestep)
@@ -149,13 +132,12 @@ contains
         read(this%tmin_funit, *, IOSTAT=ios) datetime, this%tmin
       endif
 
-      do jj=1, nhru
-        this%tmax(jj) = this%tmax(jj) + this%tmax_cbh_adj(jj, curr_month)
-        this%tmin(jj) = this%tmin(jj) + this%tmin_cbh_adj(jj, curr_month)
-        ! idx1D = (curr_month - 1) * nhru + jj
-        ! this%tmax(jj) = this%tmax(jj) + tmax_cbh_adj(idx1D)
-        ! this%tmin(jj) = this%tmin(jj) + tmin_cbh_adj(idx1D)
-      end do
+      this%tmax= this%tmax + this%tmax_cbh_adj(:, curr_month)
+      this%tmin = this%tmin + this%tmin_cbh_adj(:, curr_month)
+      ! do jj=1, nhru
+      !   this%tmax(jj) = this%tmax(jj) + this%tmax_cbh_adj(jj, curr_month)
+      !   this%tmin(jj) = this%tmin(jj) + this%tmin_cbh_adj(jj, curr_month)
+      ! end do
 
       ! NOTE: Only used by solar_radiation_degday; remove once temperature units
       !       are standardized.

@@ -58,7 +58,7 @@ submodule (Simulation_class) sm_simulation
 
       ! TODO: PAN - add logic for other transpiration modules
       allocate(Transp_tindex::this%transpiration)
-      call this%transpiration%init(ctl_data, this%model_basin, this%model_temp)
+      call this%transpiration%init(ctl_data, this%model_basin, this%model_temp, this%model_summary)
       ! this%transpiration = Transp_tindex(ctl_data, this%model_basin, this%model_temp)
 
       ! TODO: PAN - add logic for other potential ET modules
@@ -107,8 +107,8 @@ submodule (Simulation_class) sm_simulation
         if (.not. this%model_time%next(ctl_data)) exit
         ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
 
-        write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
-        9008 format(A, I4, 2('/', I2.2))
+        ! write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
+        ! 9008 format(A, I4, 2('/', I2.2))
 
         call this%model_basin%run(ctl_data, this%model_time)
 
@@ -197,5 +197,9 @@ submodule (Simulation_class) sm_simulation
       !   call this%model_obs%cleanup(ctl_data)
       !   call this%transpiration%cleanup(ctl_data)
       ! endif
+      call this%model_waterbal%cleanup()
+      
+      call ctl_data%cleanup()
+
     end subroutine
 end submodule

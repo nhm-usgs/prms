@@ -14,22 +14,6 @@ contains
 
     ! --------------------------------------------------------------------------
     ! Local Variables
-    real(r64), parameter :: ECCENTRICY = 0.01671_dp
-    real(r64), parameter :: DAYSYR = 365.242_dp
-    ! 0.016723401  daily change -1.115E-09, eccen = 0.016723401 + (julhour-julhour(1966,1,0,18))+dmin/60)/24*-1.115E-09
-    ! julday(1966,1,0.75 UT) = 2439126.25
-    ! eccen = 0.01675104-0.00004180*T-0.000000126*T^2  T is julian centuries (days time from epoch, is GMT from Jan 0.0
-    real(r64), parameter :: DEGDAY = 360.0_dp / DAYSYR
-    real(r64), parameter :: DEGDAYRAD = DEGDAY * RADIANS ! about 0.00143356672
-
-    integer(i32) :: i
-    real(dp), parameter :: JD(366) = [(dble(i), i=1,366)]
-    real(dp), parameter :: Y(366) = (JD - 1.0_dp) * DEGDAYRAD
-    real(dp), parameter :: JD3(366) = (JD - 3.0_dp) * DEGDAYRAD
-    real(dp), parameter :: Y2(366) = Y * 2.0_dp
-    real(dp), parameter :: Y3(366) = Y * 3.0_dp
-    real(dp), parameter :: obliquity(366) = 1.0_dp - (ECCENTRICY * cos(JD3))
-
     character(len=12) :: output_path
     integer(i32) :: j
     integer(i32) :: jj
@@ -37,15 +21,13 @@ contains
     integer(i32) :: file_unit
     integer(i32) :: nn
     real(r64) :: basin_cossl
-    real(r64) :: basin_sunhrs(366)
+    real(r64) :: basin_sunhrs(DAYS_PER_YEAR)
 
     ! ------------------------------------------------------------------------
     associate(outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
-              solrad_module => ctl_data%solrad_module%values(1), &
-              stream_temp_flag => ctl_data%stream_temp_flag%value, &
 
               nhru => model_basin%nhru, &
               nmonths => model_basin%nmonths, &
@@ -85,9 +67,9 @@ contains
       this%swrad = 0.0
 
       allocate(this%hru_cossl(nhru))
-      allocate(this%soltab_sunhrs(366, nhru))
-      allocate(this%soltab_potsw(366, nhru))
-      allocate(this%soltab_horad_potsw(366, nhru))
+      allocate(this%soltab_sunhrs(DAYS_PER_YEAR, nhru))
+      allocate(this%soltab_potsw(DAYS_PER_YEAR, nhru))
+      allocate(this%soltab_horad_potsw(DAYS_PER_YEAR, nhru))
 
       allocate(this%orad_hru(nhru))
       this%orad_hru = 0.0
@@ -129,28 +111,23 @@ contains
       this%soltab_potsw = 0.0
       this%soltab_horad_potsw = 0.0
 
-      this%solar_declination = 0.006918_dp - &
-                               0.399912_dp * COS(Y) + 0.070257_dp * SIN(Y) - &
-                               0.006758_dp * COS(Y2) + 0.000907_dp * SIN(Y2) - &
-                               0.002697_dp * COS(Y3) + 0.00148_dp * SIN(Y3)
-
       do nn=1, active_hrus
         chru = hru_route_order(nn)
 
         call this%compute_soltab(this%hru_cossl(chru), this%soltab_horad_potsw(:, chru), &
-                                 this%soltab_sunhrs(:, chru), obliquity, &
-                                 this%solar_declination, 0.0, 0.0, &
+                                 this%soltab_sunhrs(:, chru), OBLIQUITY, &
+                                 SOLAR_DECLINATION, 0.0, 0.0, &
                                  hru_lat(chru), hru_type(chru), chru)
 
         call this%compute_soltab(this%hru_cossl(chru), this%soltab_potsw(:, chru), &
-                                 this%soltab_sunhrs(:, chru), obliquity, &
-                                 this%solar_declination, &
+                                 this%soltab_sunhrs(:, chru), OBLIQUITY, &
+                                 SOLAR_DECLINATION, &
                                  hru_slope(chru), hru_aspect(chru), &
                                  hru_lat(chru), hru_type(chru), chru)
       enddo
 
       call this%compute_soltab(basin_cossl, this%soltab_basinpotsw, basin_sunhrs, &
-                               obliquity, this%solar_declination, 0.0, 0.0, &
+                               OBLIQUITY, SOLAR_DECLINATION, 0.0, 0.0, &
                                sngl(basin_lat), 0, 0)
 
       if (ctl_data%print_debug%value == 5) then
@@ -162,33 +139,30 @@ contains
         do chru=1, nhru
           write(file_unit, *) 'HRU:', chru
           write(file_unit, *) '***Soltab_sunhrs***'
-          write(file_unit, '(13F8.3)') (this%soltab_sunhrs(j, chru), j=1, 366)
+          write(file_unit, '(13F8.3)') (this%soltab_sunhrs(j, chru), j=1, DAYS_PER_YEAR)
           write(file_unit, *) '***Soltab_potsw***'
-          write(file_unit, '(13F8.3)') (this%soltab_potsw(j, chru), j=1, 366)
+          write(file_unit, '(12F9.3)') (this%soltab_potsw(j, chru), j=1, DAYS_PER_YEAR)
         enddo
 
         !       write ( file_unit, * ) obliquity, Solar_declination
-        write(file_unit, *) 2.0_dp / (obliquity(356) * obliquity(356)), 2.0_dp / (obliquity(10) * obliquity(10)), &
-                            2.0_dp / (obliquity(23) * obliquity(23)), 2.0_dp / (obliquity(38) * obliquity(38)), &
-                            2.0_dp / (obliquity(51) * obliquity(51)), 2.0_dp / (obliquity(66) * obliquity(66)), &
-                            2.0_dp / (obliquity(80) * obliquity(80)), 2.0_dp / (obliquity(94) * obliquity(94)), &
-                            2.0_dp / (obliquity(109) * obliquity(109)), 2.0_dp / (obliquity(123) * obliquity(123)), &
-                            2.0_dp / (obliquity(138) * obliquity(138)), 2.0_dp / (obliquity(152) * obliquity(152)), &
-                            2.0_dp / (obliquity(173) * obliquity(173))
-        write(file_unit, *) this%solar_declination(356), this%solar_declination(10), this%solar_declination(23), &
-                            this%solar_declination(38), this%solar_declination(51), this%solar_declination(66), &
-                            this%solar_declination(80), this%solar_declination(94), this%solar_declination(109), &
-                            this%solar_declination(123), this%solar_declination(138), this%solar_declination(152), &
-                            this%solar_declination(173)
+        write(file_unit, *) '*** Obliquity ***'
+        write(file_unit, '(13F18.14)') 2.0_dp / (OBLIQUITY(356) * OBLIQUITY(356)), 2.0_dp / (OBLIQUITY(10) * OBLIQUITY(10)), &
+                            2.0_dp / (OBLIQUITY(23) * OBLIQUITY(23)), 2.0_dp / (OBLIQUITY(38) * OBLIQUITY(38)), &
+                            2.0_dp / (OBLIQUITY(51) * OBLIQUITY(51)), 2.0_dp / (OBLIQUITY(66) * OBLIQUITY(66)), &
+                            2.0_dp / (OBLIQUITY(80) * OBLIQUITY(80)), 2.0_dp / (OBLIQUITY(94) * OBLIQUITY(94)), &
+                            2.0_dp / (OBLIQUITY(109) * OBLIQUITY(109)), 2.0_dp / (OBLIQUITY(123) * OBLIQUITY(123)), &
+                            2.0_dp / (OBLIQUITY(138) * OBLIQUITY(138)), 2.0_dp / (OBLIQUITY(152) * OBLIQUITY(152)), &
+                            2.0_dp / (OBLIQUITY(173) * OBLIQUITY(173))
+        write(file_unit, *) '*** Solar Declination ***'
+        write(file_unit, '(13F18.14)') SOLAR_DECLINATION(356), SOLAR_DECLINATION(10), SOLAR_DECLINATION(23), &
+                            SOLAR_DECLINATION(38), SOLAR_DECLINATION(51), SOLAR_DECLINATION(66), &
+                            SOLAR_DECLINATION(80), SOLAR_DECLINATION(94), SOLAR_DECLINATION(109), &
+                            SOLAR_DECLINATION(123), SOLAR_DECLINATION(138), SOLAR_DECLINATION(152), &
+                            SOLAR_DECLINATION(173)
         close(file_unit)
       endif
       ! deallocate (Hru_slope, Hru_aspect)
 
-
-      ! if (solrad_module%s == 'ccsolrad' .or. solrad_module%s == 'ddsolrad') then
-      !   allocate(this%orad_hru(nhru))
-      !   this%orad_hru = 0.0
-      ! endif
       allocate(this%basin_horad)
       allocate(this%basin_orad)
       allocate(this%basin_potsw)
@@ -254,10 +228,6 @@ contains
     integer(i32), intent(in) :: Hru_type
     integer(i32), intent(in) :: Id
 
-    ! Constants
-    real(r64), parameter :: r0 = 2.0_dp
-      !! minute solar constant cal/cm2/min (r0 could also be 1.95 (Drummond, et al 1968))
-
     ! Local Variables
     real(r64) :: a
       !! Aspect in radians
@@ -267,12 +237,12 @@ contains
       !! Latitude of equivalent slope
     real(r64) :: x2
       !! The difference in longitude between the location of the HRU and the equivalent horizontal surface expressed in angle hour
-    real(r64), dimension(DAYS_PER_YEAR) :: r1
+    ! real(r64), dimension(DAYS_PER_YEAR) :: r1
       !! The hour solar constant cal/cm2/hour
     real(r64) :: d1
       !! The denominator of equation 12 (Lee, 1963)
     real(r64), dimension(DAYS_PER_YEAR) :: t
-      !! The angle hour from the local meridian (local solar noon) to the sunrise (negative) or sunset (positive)
+      !! The hour angle from the local meridian (local solar noon) to the sunrise (negative) or sunset (positive)
     real(r64), dimension(DAYS_PER_YEAR) :: sunh
       !! Number of hours of direct sunlight (sunset minus sunrise)
     real(r64), dimension(DAYS_PER_YEAR) :: solt
@@ -297,9 +267,10 @@ contains
     real(r64) :: sl_sin, sl_cos, x0_sin, x0_cos, a_sin, a_cos
     !***********************************************************************
     ! from SWIFT (1976)
-    ! x0, x1, x2 = l0, l1, l2
-    ! sl = i
+    ! x0, x1, x2 = L0, L1, L2
+    ! sl = I
 
+    ! Slope should be inclination of slope, degrees above horizontal
     sl = ATAN(Slope)
     sl_sin = sin(sl)
     sl_cos = cos(sl)
@@ -311,29 +282,30 @@ contains
     a_sin = sin(a)
     a_cos = cos(a)
 
-    ! x0 latitude of HRU
+    ! x0 - latitude of HRU
     x0 = Latitude * RADIANS
     x0_sin = sin(x0)
     x0_cos = cos(x0)
 
-    ! x1 latitude of equivalent slope
+    ! x1 - latitude of equivalent slope
     ! This is equation 13 from Lee, 1963
     ! x1 = ASIN(Cossl * SIN(x0) + SIN(sl) * COS(x0) * COS(a))
-    x1 = ASIN(Cossl * x0_sin + sl_sin * x0_cos * a_cos)
+    x1 = ASIN(sl_cos * x0_sin + sl_sin * x0_cos * a_cos)
 
-    ! d1 is the denominator of equation 12, Lee, 1963
+    ! d1 - the denominator of equation 12, Lee, 1963
     ! d1 = Cossl * COS(x0) - SIN(sl) * SIN(x0) * COS(a)
     d1 = Cossl * x0_cos - sl_sin * x0_sin * a_cos
     if (ABS(d1) < DNEARZERO) d1 = DNEARZERO
 
-    ! x2 is the difference in longitude between the location of
+    ! x2 - the difference in longitude between the location of
     ! the HRU and the equivalent horizontal surface expressed in angle hour
     ! This is equation 12 from Lee, 1963
     ! x2 = ATAN(SIN(sl) * SIN(a) / d1)
     x2 = ATAN(sl_sin * a_sin / d1)
     if (d1 < 0.0_dp) x2 = x2 + PI
 
-    r1 = (60.0_dp * r0) / (Obliquity**2)
+    ! ! Solar constant for 60 minutes
+    ! r1 = (60.0_dp * r0) / (Obliquity**2)
 
     t = compute_t(x1, Solar_declination)
     t7 = t - x2
@@ -356,7 +328,7 @@ contains
     end where
 
     if (abs(sl) < DNEARZERO) then
-      solt = func3(0.0_dp, x0, t1, t0, r1, Solar_declination)
+      solt = func3(0.0_dp, x0, t1, t0, R1, SOLAR_DECLINATION)
       sunh = (t1 - t0) * PI_12
     else
       where (t3 < t2)
@@ -366,16 +338,16 @@ contains
       t6 = t6 + TWOPI
 
       where (t6 < t1)
-        solt = func3(x2, x1, t3, t2, r1, Solar_declination) + func3(x2, x1, t1, t6, r1, Solar_declination)
+        solt = func3(x2, x1, t3, t2, R1, SOLAR_DECLINATION) + func3(x2, x1, t1, t6, R1, SOLAR_DECLINATION)
         sunh = (t3 - t2 + t1 - t6) * PI_12
       else where
         t7 = t7 - TWOPI
 
         where (t7 > t0)
-          solt = func3(x2, x1, t3, t2, r1, Solar_declination) + func3(x2, x1, t7, t0, r1, Solar_declination)
+          solt = func3(x2, x1, t3, t2, R1, SOLAR_DECLINATION) + func3(x2, x1, t7, t0, R1, SOLAR_DECLINATION)
           sunh = (t3 - t2 + t7 - t0) * PI_12
         else where
-          solt = func3(x2, x1, t3, t2, r1, Solar_declination)
+          solt = func3(x2, x1, t3, t2, R1, SOLAR_DECLINATION)
           sunh = (t3 - t2) * PI_12
         end where
       end where
@@ -403,43 +375,42 @@ contains
 
   !***********************************************************************
   !***********************************************************************
-  pure elemental module function compute_t(Lat, Solar_declination) result(T)
+  pure elemental module function compute_t(lat, solar_declination) result(res)
     implicit none
 
     INTRINSIC TAN, ACOS
 
     ! Arguments
-    real(r64) :: T
+    real(r64) :: res
       !! Angle hour from the local meridian (local solar noon) to the sunrise(negative) or sunset(positive).
-    real(r64), intent(in) :: Lat
+    real(r64), intent(in) :: lat
       !! Latitude
-    real(r64), intent(in) :: Solar_declination
+    real(r64), intent(in) :: solar_declination
       !! Declination of the sun on a day.
-
 
     ! Local Variables
     real(r64) :: tx
     !***********************************************************************
 
     ! This is the sunrise equation
-    ! Lat is the latitude
-    ! Solar_declination is the declination of the sun on a day
-    ! T is the angle hour from the local meridian (local solar noon) to the
-    ! sunrise (negative) or sunset (positive).  The Earth rotates at the angular
-    ! speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore, T/15 degress (T*24/pi
-    ! in radians) gives the time of sunrise as the number of hours before the local
-    ! noon, or the time of sunset as the number of hours after the local noon.
-    ! Here the term local noon indicates the local time when the sun is exactly to
-    ! the south or north or exactly overhead.
-    tx = -TAN(Lat) * TAN(Solar_declination)
+    !  lat - the latitude
+    !  solar_declination - the declination of the sun on a day
+    !  res - the angle hour from the local meridian (local solar noon) to the
+    !        sunrise (negative) or sunset (positive).  The Earth rotates at the angular
+    !        speed of 15 degrees/hour (2 pi / 24 hour in radians) and, therefore,
+    !        res/15 degrees (res*24/pi in radians) gives the time of sunrise as the number
+    !        of hours before the local noon, or the time of sunset as the number of
+    !        hours after the local noon. Here the term local noon indicates the local
+    !        time when the sun is exactly to the south or north or exactly overhead.
+    tx = -TAN(lat) * TAN(solar_declination)
 
     if (tx < -1.0D0) then
-      T = PI
+      res = PI
       !rsr bug fix, old code would set t=acos(0.0) for tx>1 12/05
     elseif (tx > 1.0D0) then
-      T = 0.0D0
+      res = 0.0D0
     else
-      T = ACOS(tx)
+      res = ACOS(tx)
     endif
   end function
 
@@ -448,30 +419,29 @@ contains
   ! This is the radian angle version of FUNC3 (eqn 6) from Swift, 1976
   ! or Lee, 1963 equation 5.
   ! func3 (R4) is potential solar radiation on the surface cal/cm2/day
-  pure elemental module function func3(V, W, X, Y, R1, Solar_declination) result(res)
+  pure elemental module function func3(v, w, x, y, r1, solar_declination) result(res)
     implicit none
 
     INTRINSIC SIN, COS
 
     ! Arguments
     real(r64) :: res
-    real(r64), intent(in) :: V
+    real(r64), intent(in) :: v
       !! Latitude angle hour offset between actual and equivalent slope
-    real(r64), intent(in) :: W
+    real(r64), intent(in) :: w
       !! Latitude of the equivalent slope
-    real(r64), intent(in) :: X
+    real(r64), intent(in) :: x
       !! Hour angle of sunset on equivalent slope
-    real(r64), intent(in) :: Y
+    real(r64), intent(in) :: y
       !! Hour angle of sunrise on equivalent slope
-    real(r64), intent(in) :: R1
+    real(r64), intent(in) :: r1
       !! Solar constant for 60 minutes
-    real(r64), intent(in) :: Solar_declination
+    real(r64), intent(in) :: solar_declination
       !! Declination of sun
 
     !***********************************************************************
-    res = R1 * PI_12 * (SIN(Solar_declination) * SIN(W) * (X - Y) + &
-                        COS(Solar_declination) * COS(W) * (SIN(X + V) - &
-                        SIN(Y + V)))
+    res = r1 * PI_12 * (SIN(solar_declination) * SIN(w) * (x - y) + &
+                        COS(solar_declination) * COS(w) * (SIN(x + v) - SIN(y + v)))
   end function
 
 end submodule

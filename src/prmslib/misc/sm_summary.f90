@@ -161,7 +161,9 @@ contains
     integer(i32) :: res(2)
     integer(i32), intent(in) :: dims(2)
     integer(i32), intent(in) :: val_size
+      !! Size of each data value, in bytes
     integer(i32), intent(in) :: chunk_size
+      !! Maximum chunksize desired, in bytes
 
     integer(i32) :: starting_chunk(2)
     integer(i32) :: starting_size
@@ -222,6 +224,10 @@ contains
     integer(i32) :: ov_dimid
       !! dimid for current output variable being created
 
+    integer(i32) :: cnk_per_domain
+    integer(i32) :: var_cache_size
+    integer(i32) :: var_cache_slots
+
     integer(i32) :: jj
     character(len=:), allocatable :: outvar_dimensions
     integer(i32) :: outvar_datatype
@@ -257,8 +263,12 @@ contains
       !       still smaller than ASCII files).
       !       NF90_64BIT_OFFSET
       ! write(*, *) 'Create output netcdf'
-      call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl, &
-                          cache_size=33554432))
+      call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl))
+      ! call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl, &
+      !                     cache_size=8388608, cache_nelems=2111))
+      ! call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl, &
+      !                     cache_nelems=2048, &
+      !                     cache_size=134217728))
       ! call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%file_hdl))
 
       ! Define the dimensions. NetCDF will hand back an ID for each.
@@ -313,7 +323,8 @@ contains
       ! Define the output variables
       do jj = 1, noutvars
         outvar_name = outVar_names%values(jj)%s
-        print *, 'CREATE OUTVAR: ', outvar_name
+        ! DEBUG: PAN
+        ! print *, 'CREATE OUTVAR: ', outvar_name
 
         ! Pull variable information from control class
         call output_variables%get(outvar_name, &
@@ -344,17 +355,54 @@ contains
           call this%err_check(nf90_inquire_dimension(this%file_hdl, ov_dimid, &
                                                      len=this%outvar_size(jj)))
 
-          print *, '---- ', this%outvar_size(jj), days_in_model
+          ! DEBUG: PAN
+          ! print *, '---- ', this%outvar_size(jj), days_in_model
           ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
           !                                  outvar_datatype, dimids, this%outvar_id(jj)))
 
-          cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=32768)
-          write(output_unit, *) 'cnk_sizes: ', cnk_sizes
+          if (outvar_datatype == 4 .or. outvar_datatype == 5) then
+            ! NC_INT or NC_FLOAT (4 byte)
+            cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=4, chunk_size=1048576)
+            cnk_per_domain = ceiling(real(nhru) / real(cnk_sizes(1)))
+
+            ! Compute initial cache size
+            var_cache_size = 2**exponent(real(cnk_per_domain * product(cnk_sizes) * 4))
+          else if (outvar_datatype == 6) then
+            ! NC_DOUBLE (8 byte)
+            cnk_sizes = chunk_shape_2d((/this%outvar_size(jj), days_in_model/), val_size=8, chunk_size=1048576)
+
+            cnk_per_domain = ceiling(real(nhru) / real(cnk_sizes(1)))
+
+            ! Compute initial cache size
+            var_cache_size = 2**exponent(real(cnk_per_domain * product(cnk_sizes) * 8))
+          else
+            write(output_unit, *) 'ERROR: Unsupported output variable type'
+          end if
+
+          ! TODO: the number of slots should be a prime number to minimize hash table collisions
+          var_cache_slots = cnk_per_domain * 10
+          ! DEBUG: PAN
+          ! write(output_unit, *) 'cnk_sizes: ', cnk_sizes, '  cnk_per_domain: ', cnk_per_domain, &
+          !                       ' var_cache_size: ', var_cache_size, ' var_cache_slots: ', var_cache_slots
           call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
                                            outvar_datatype, dimids, this%outvar_id(jj), &
                                            shuffle=.true., &
                                            deflate_level=1, &
-                                           chunksizes=cnk_sizes))
+                                           chunksizes=cnk_sizes, &
+                                           cache_size=var_cache_size, &
+                                           cache_nelems=var_cache_slots))
+
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                                  outvar_datatype, dimids, this%outvar_id(jj), &
+          !                                  shuffle=.true., &
+          !                                  deflate_level=1, &
+          !                                  chunksizes=[517, 15], &
+          !                                  cache_size=8388608, cache_nelems=2130))
+
+          ! call this%err_check(nf90_def_var(this%file_hdl, outvar_name, &
+          !                     outvar_datatype, dimids, this%outvar_id(jj), &
+          !                     shuffle=.true., &
+          !                     deflate_level=1))
         end if
 
         ! Add attributes for each variable
@@ -435,7 +483,7 @@ contains
     this%var_daily(idx)%ptr_i32 => var
   end subroutine
 
-  module subroutine set_summary_var_r64_0D(this, idx, var)
+  module subroutine set_summary_var_r64_0d(this, idx, var)
     implicit none
 
     class(Summary), intent(inout) :: this
@@ -444,6 +492,17 @@ contains
 
     ! --------------------------------------------------------------------------
     this%var_daily(idx)%scalar_r64 => var
+  end subroutine
+
+  module subroutine set_summary_var_logical_1d(this, idx, var)
+    implicit none
+
+    class(Summary), intent(inout) :: this
+    integer(i32), intent(in) :: idx
+    logical, target, intent(in) :: var(:)
+
+    ! --------------------------------------------------------------------------
+    this%var_daily(idx)%ptr_logical => var
   end subroutine
 
   module subroutine write_netcdf_i32_0d(this, ncid, varid, data, start, ocount)
@@ -599,6 +658,9 @@ contains
     integer(i32), intent(in) :: start(:)
     integer(i32), optional, intent(in) :: ocount(:)
 
+    integer :: on
+    integer :: off
+    integer, allocatable :: logical_out(:)
     ! --------------------------------------------------------------------------
     ! if (present(ocount)) then
     !   call this%err_check(nf90_put_var(ncid, varid, data, start=start, count=ocount))
@@ -611,6 +673,8 @@ contains
     ! localStart (:         ) = 1
     ! localCount (:numDims  ) = shape(values)
 
+    on = 1
+    off = 0
 
     if (associated(data%ptr_r32)) then
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_r32, start=start, count=ocount))
@@ -618,6 +682,11 @@ contains
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_r64, start=start, count=ocount))
     else if (associated(data%ptr_i32)) then
       call this%err_check(nf90_put_var(ncid, varid, data%ptr_i32, start=start, count=ocount))
+    else if (associated(data%ptr_logical)) then
+      allocate(logical_out(size(data%ptr_logical)))
+      logical_out = merge(on, off, data%ptr_logical)
+      call this%err_check(nf90_put_var(ncid, varid, logical_out, start=start, count=ocount))
+      deallocate(logical_out)
     else if (associated(data%scalar_r64)) then
       call this%err_check(nf90_put_var(ncid, varid, data%scalar_r64, start=start))
     else
