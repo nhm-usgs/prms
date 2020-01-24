@@ -21,48 +21,48 @@ module PRMS_SRUNOFF
 
   type, extends(ModelBase) :: Srunoff
     ! Parameters
-    real(r32), allocatable :: carea_max(:)
+    real(r32), pointer :: carea_max(:)
       !! Maximum possible area contributing to surface runoff expressed as a portion of the HRU area
-    real(r32), allocatable :: carea_min(:)
+    real(r32), pointer :: carea_min(:)
       !! Minimum possible area contributing to surface runoff expressed as a portion of the area for each HRU
-    real(r32), allocatable :: hru_percent_imperv(:)
+    real(r32), pointer :: hru_percent_imperv(:)
       !! Fraction of each HRU area that is impervious
-    real(r32), allocatable :: imperv_stor_max(:)
+    real(r32), pointer :: imperv_stor_max(:)
       !! Maximum impervious area retention storage for each HRU
-    real(r32), allocatable :: smidx_coef(:)
+    real(r32), pointer :: smidx_coef(:)
       !! Coefficient in non-linear contributing area algorithm for each HRU
-    real(r32), allocatable :: smidx_exp(:)
+    real(r32), pointer :: smidx_exp(:)
       !! Exponent in non-linear contributing area algorithm for each HRU
-    real(r32), allocatable :: snowinfil_max(:)
+    real(r32), pointer :: snowinfil_max(:)
       !! Maximum snow infiltration per day for each HRU
 
     ! NOTE: The following dprst_* parameters are only needed when dprst_flag = 1
 
-    real(r32), allocatable :: dprst_depth_avg(:)
+    real(r32), pointer :: dprst_depth_avg(:)
       !! Average depth of storage depressions at maximum storage capacity
-    real(r32), allocatable :: dprst_et_coef(:)
+    real(r32), pointer :: dprst_et_coef(:)
       !! Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage
-    real(r32), allocatable :: dprst_flow_coef(:)
+    real(r32), pointer :: dprst_flow_coef(:)
       !! Coefficient in linear flow routing equation for open surface depressions for each HRU
-    real(r32), allocatable :: dprst_frac(:)
+    real(r32), pointer :: dprst_frac(:)
       !! Fraction of each HRU area that has surface depressions
-    real(r32), allocatable :: dprst_frac_init(:)
+    real(r32), pointer :: dprst_frac_init(:)
       !! Fraction of maximum surface-depression storage that contains water at the start of a simulation
-    real(r32), allocatable :: dprst_frac_open(:)
+    real(r32), pointer :: dprst_frac_open(:)
       !! Fraction of open surface-depression storage area within an HRU that can generate surface runoff as a function of storage volume
-    real(r32), allocatable :: dprst_seep_rate_clos(:)
+    real(r32), pointer :: dprst_seep_rate_clos(:)
       !! Coefficient used in linear seepage flow equation for closed surface depressions for each HRU
-    real(r32), allocatable :: dprst_seep_rate_open(:)
+    real(r32), pointer :: dprst_seep_rate_open(:)
       !! Coefficient used in linear seepage flow equation for open surface depressions for each HRU
-    real(r32), allocatable :: op_flow_thres(:)
+    real(r32), pointer :: op_flow_thres(:)
       !! Fraction of open depression storage above which surface runoff occurs; any water above maximum open storage capacity spills as surface runoff
-    real(r32), allocatable :: sro_to_dprst_imperv(:)
+    real(r32), pointer :: sro_to_dprst_imperv(:)
       !! Fraction of impervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
-    real(r32), allocatable :: sro_to_dprst_perv(:)
+    real(r32), pointer :: sro_to_dprst_perv(:)
       !! Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
-    real(r32), allocatable :: va_clos_exp(:)
+    real(r32), pointer :: va_clos_exp(:)
       !! Coefficient in the exponential equation relating maximum surface area to the fraction that closed depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
-    real(r32), allocatable :: va_open_exp(:)
+    real(r32), pointer :: va_open_exp(:)
       !! Coefficient in the exponential equation relating maximum surface area to the fraction that open depressions are full to compute current surface area for each HRU; 0.001 is an approximate rectangle; 1.0 is a triangle
 
 
@@ -73,8 +73,8 @@ module PRMS_SRUNOFF
     logical :: has_open_dprst
       !! NOTE: replaces dprst_open_flag
 
-    real(r32), allocatable :: carea_dif(:)
-    real(r32), allocatable :: imperv_stor_ante(:)
+    real(r32), pointer :: carea_dif(:)
+    real(r32), pointer :: imperv_stor_ante(:)
 
     ! 2019-05-28 PAN: moved as local to run()
     ! real(r64) :: sri
@@ -83,103 +83,103 @@ module PRMS_SRUNOFF
     logical :: use_sroff_transfer
     ! integer(i32) :: use_sroff_transfer
 
-    real(r64), allocatable :: basin_apply_sroff
-    real(r32), allocatable :: hru_area_imperv(:)
-    real(r32), allocatable :: hru_area_perv(:)
+    real(r64), pointer :: basin_apply_sroff
+    real(r32), pointer :: hru_area_imperv(:)
+    real(r32), pointer :: hru_area_perv(:)
 
 
     ! Output variables
-    real(r64), allocatable :: basin_contrib_fraction
-    real(r64), allocatable :: basin_hortonian
-    real(r64), allocatable :: basin_imperv_evap
-    real(r64), allocatable :: basin_imperv_stor
-    real(r64), allocatable :: basin_infil
-    real(r64), allocatable :: basin_sroff
-    real(r64), allocatable :: basin_sroffi
-    real(r64), allocatable :: basin_sroffp
+    real(r64), pointer :: basin_contrib_fraction
+    real(r64), pointer :: basin_hortonian
+    real(r64), pointer :: basin_imperv_evap
+    real(r64), pointer :: basin_imperv_stor
+    real(r64), pointer :: basin_infil
+    real(r64), pointer :: basin_sroff
+    real(r64), pointer :: basin_sroffi
+    real(r64), pointer :: basin_sroffp
 
-    real(r32), allocatable :: dprst_area_max(:)
-    real(r32), allocatable :: hru_frac_perv(:)
+    real(r32), pointer :: dprst_area_max(:)
+    real(r32), pointer :: hru_frac_perv(:)
 
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
     ! Cascades
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
     ! output variables
-    real(r64), allocatable :: basin_hortonian_lakes
-    real(r64), allocatable :: basin_sroff_down
-    real(r64), allocatable :: basin_sroff_upslope
+    real(r64), pointer :: basin_hortonian_lakes
+    real(r64), pointer :: basin_sroff_down
+    real(r64), pointer :: basin_sroff_upslope
 
-    real(r32), allocatable :: contrib_fraction(:)
-    real(r32), allocatable :: hortonian_flow(:)
-    real(r64), allocatable :: hortonian_lakes(:)
+    real(r32), pointer :: contrib_fraction(:)
+    real(r32), pointer :: hortonian_flow(:)
+    real(r64), pointer :: hortonian_lakes(:)
       !! r64 is correct
-    real(r64), allocatable :: hru_hortn_cascflow(:)
+    real(r64), pointer :: hru_hortn_cascflow(:)
       !! r64 is correct
-    real(r32), allocatable :: hru_impervevap(:)
-    real(r32), allocatable :: hru_impervstor(:)
-    real(r32), allocatable :: hru_sroffi(:)
-    real(r32), allocatable :: hru_sroffp(:)
-    real(r32), allocatable :: imperv_evap(:)
-    real(r32), allocatable :: imperv_stor(:)
+    real(r32), pointer :: hru_impervevap(:)
+    real(r32), pointer :: hru_impervstor(:)
+    real(r32), pointer :: hru_sroffi(:)
+    real(r32), pointer :: hru_sroffp(:)
+    real(r32), pointer :: imperv_evap(:)
+    real(r32), pointer :: imperv_stor(:)
       !! Storage on impervious area for each HRU
-    real(r32), allocatable :: infil(:)
+    real(r32), pointer :: infil(:)
       !! Infiltration to the capillary and preferential-flow reservoirs from each HRU
-    real(r32), allocatable :: sroff(:)
+    real(r32), pointer :: sroff(:)
       !! Surface runoff to the stream network for each HRU
-    real(r64), allocatable :: strm_seg_in(:)
+    real(r64), pointer :: strm_seg_in(:)
       !! r64 is correct
-    real(r64), allocatable :: upslope_hortonian(:)
+    real(r64), pointer :: upslope_hortonian(:)
       !! Used for cascades; r64 is correct
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
     ! Depression storage
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
-    real(r32), allocatable :: dprst_frac_clos(:)
+    real(r32), pointer :: dprst_frac_clos(:)
       !! NOTE: pulled from basin.f90
-    real(r64), allocatable :: dprst_in(:)
-    real(r64), allocatable :: dprst_stor_ante(:)
-    real(r64), allocatable :: dprst_vol_clos_max(:)
-    real(r64), allocatable :: dprst_vol_open_max(:)
-    real(r64), allocatable :: dprst_vol_thres_open(:)
+    real(r64), pointer :: dprst_in(:)
+    real(r64), pointer :: dprst_stor_ante(:)
+    real(r64), pointer :: dprst_vol_clos_max(:)
+    real(r64), pointer :: dprst_vol_open_max(:)
+    real(r64), pointer :: dprst_vol_thres_open(:)
 
     ! Next two variables are only allocated if
     ! imperv_frac_flag == 1 or dprst_frac_flag == 1
-    real(r32), allocatable :: soil_moist_chg(:)
-    real(r32), allocatable :: soil_rechr_chg(:)
+    real(r32), pointer :: soil_moist_chg(:)
+    real(r32), pointer :: soil_rechr_chg(:)
 
     logical :: srunoff_updated_soil
 
     ! Output variables
-    real(r64), allocatable :: basin_dprst_evap
-    real(r64), allocatable :: basin_dprst_seep
-    real(r64), allocatable :: basin_dprst_sroff
-    real(r64), allocatable :: basin_dprst_volcl
-    real(r64), allocatable :: basin_dprst_volop
+    real(r64), pointer :: basin_dprst_evap
+    real(r64), pointer :: basin_dprst_seep
+    real(r64), pointer :: basin_dprst_sroff
+    real(r64), pointer :: basin_dprst_volcl
+    real(r64), pointer :: basin_dprst_volop
 
-    real(r64), allocatable :: dprst_seep_hru(:)
+    real(r64), pointer :: dprst_seep_hru(:)
       !! r64 is correct
-    real(r64), allocatable :: dprst_sroff_hru(:)
+    real(r64), pointer :: dprst_sroff_hru(:)
       !! r64 is correct
-    real(r64), allocatable :: dprst_stor_hru(:)
+    real(r64), pointer :: dprst_stor_hru(:)
       !! r64 is correct
-    real(r64), allocatable :: dprst_vol_clos(:)
+    real(r64), pointer :: dprst_vol_clos(:)
       !! (from flowvars) Storage volume in closed surface depressions for each HRU
       !! r64 is correct
-    real(r64), allocatable :: dprst_vol_open(:)
+    real(r64), pointer :: dprst_vol_open(:)
       !! (from flowvars) Storage volume in open surface depressions for each HRU
       !! r64 is correct
-    real(r32), allocatable :: dprst_area_clos(:)
-    real(r32), allocatable :: dprst_area_clos_max(:)
+    real(r32), pointer :: dprst_area_clos(:)
+    real(r32), pointer :: dprst_area_clos_max(:)
       !! NOTE: pulled from basin.f90
-    real(r32), allocatable :: dprst_area_open(:)
-    real(r32), allocatable :: dprst_area_open_max(:)
+    real(r32), pointer :: dprst_area_open(:)
+    real(r32), pointer :: dprst_area_open_max(:)
       !! NOTE: pulled from basin.f90
-    real(r32), allocatable :: dprst_evap_hru(:)
-    real(r32), allocatable :: dprst_insroff_hru(:)
-    real(r32), allocatable :: dprst_vol_clos_frac(:)
-    real(r32), allocatable :: dprst_vol_frac(:)
-    real(r32), allocatable :: dprst_vol_open_frac(:)
+    real(r32), pointer :: dprst_evap_hru(:)
+    real(r32), pointer :: dprst_insroff_hru(:)
+    real(r32), pointer :: dprst_vol_clos_frac(:)
+    real(r32), pointer :: dprst_vol_frac(:)
+    real(r32), pointer :: dprst_vol_open_frac(:)
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Dynamic parameter variables
@@ -187,19 +187,19 @@ module PRMS_SRUNOFF
       !! File handle to open dynamic parameter log file
     integer(i32), private :: imperv_frac_unit
     integer(i32) :: next_dyn_imperv_frac_date(3)
-    real(r32), allocatable :: imperv_frac_chgs(:)
+    real(r32), pointer :: imperv_frac_chgs(:)
 
     integer(i32), private :: imperv_stor_unit
     integer(i32) :: next_dyn_imperv_stor_date(3)
-    real(r32), allocatable :: imperv_stor_chgs(:)
+    real(r32), pointer :: imperv_stor_chgs(:)
 
     integer(i32), private :: dprst_frac_unit
     integer(i32) :: next_dyn_dprst_frac_date(3)
-    real(r32), allocatable :: dprst_frac_chgs(:)
+    real(r32), pointer :: dprst_frac_chgs(:)
 
     integer(i32), private :: dprst_depth_unit
     integer(i32) :: next_dyn_dprst_depth_date(3)
-    real(r32), allocatable :: dprst_depth_chgs(:)
+    real(r32), pointer :: dprst_depth_chgs(:)
     ! integer(i32) :: dyn_output_unit
 
     contains

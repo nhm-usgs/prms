@@ -50,118 +50,117 @@ module PRMS_SNOW
     real(r32), private :: settle_const
       !! Snowpack settlement time constant
 
-    real(r32), allocatable, private :: emis_noppt(:)
+    real(r32), pointer, private :: emis_noppt(:)
       !! Average emissivity of air on days without precipitation for each HRU
-    real(r32), allocatable, private :: freeh2o_cap(:)
+    real(r32), pointer, private :: freeh2o_cap(:)
       !! Free-water holding capacity of snowpack expressed as a decimal fraction of the frozen water content of the snowpack (pk_ice) for each HRU
-    integer(i32), allocatable, private :: hru_deplcrv(:)
+    integer(i32), pointer, private :: hru_deplcrv(:)
       !! Index number for the snowpack areal depletion curve associated with each HRU
-    integer(i32), allocatable, private :: melt_force(:)
+    integer(i32), pointer, private :: melt_force(:)
       !! Julian date to force snowpack to spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    integer(i32), allocatable, private :: melt_look(:)
+    integer(i32), pointer, private :: melt_look(:)
       !! Julian date to start looking for spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    !real(r32), allocatable, private :: rad_trncf(:)
-    real(r32), allocatable :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
-
+    !real(r32), pointer, private :: rad_trncf(:)
+    real(r32), pointer :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
       !! Transmission coefficient for short-wave radiation through the winter vegetation canopy
-    !real(r32), allocatable, private :: snarea_curve(:)
-    real(r32), allocatable :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: snarea_curve(:)
+    real(r32), pointer :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
       !! Snow area depletion curve values, 11 values for each curve (0.0 to 1.0 in 0.1 increments)
-    !real(r32), allocatable, private :: snarea_thresh(:)
-    real(r32), allocatable :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: snarea_thresh(:)
+    real(r32), pointer :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
       !! Maximum threshold snowpack water equivalent below which the snow-covered-area curve is applied
-    real(r32), allocatable, private :: snowpack_init(:)
+    real(r32), pointer, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
-    !real(r32), allocatable, private :: cecn_coef(:, :)
-    real(r32), allocatable :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
-    integer(i32), allocatable, private :: tstorm_mo(:, :)
+    !real(r32), pointer, private :: cecn_coef(:, :)
+    real(r32), pointer :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
+    integer(i32), pointer, private :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
     real(r32), allocatable, private :: snarea_curve_2d(:, :)
       !! 2D copy of parameter snarea_curve
 
     ! Output variables
-    real(r64), allocatable :: ai(:)
+    real(r64), pointer :: ai(:)
       !! Maximum snowpack for each HRU
-    real(r32), allocatable :: albedo(:)
+    real(r32), pointer :: albedo(:)
       !! Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU [fraction]
-    real(r64), allocatable :: basin_pk_precip
+    real(r64), pointer :: basin_pk_precip
       !! Basin area-weighted average precipitation added to snowpack
-    real(r64), allocatable :: basin_pweqv
+    real(r64), pointer :: basin_pweqv
       !! Basin area-weighted average snowpack water equivalent
-    real(r64), allocatable :: basin_snowcov
+    real(r64), pointer :: basin_snowcov
       !! Basin area-weighted average snow-covered area
-    real(r64), allocatable :: basin_snowdepth
+    real(r64), pointer :: basin_snowdepth
       !! Basin area-weighted average snow depth
-    real(r64), allocatable :: basin_snowevap
+    real(r64), pointer :: basin_snowevap
       !! Basin area-weighted average evaporation and sublimation from snowpack
-    real(r64), allocatable :: basin_snowmelt
+    real(r64), pointer :: basin_snowmelt
       !! Basin area-weighted average snowmelt
-    real(r64), allocatable :: basin_tcal
+    real(r64), pointer :: basin_tcal
       !! Basin area-weighted average net snowpack energy balance
-    real(r32), allocatable :: frac_swe(:)
+    real(r32), pointer :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU
-    real(r32), allocatable :: freeh2o(:)
+    real(r32), pointer :: freeh2o(:)
       !! Storage of free liquid water in the snowpack on each HRU [inches]
-    logical, allocatable :: iasw(:)
+    logical, pointer :: iasw(:)
       !! Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve
-    integer(i32), allocatable :: int_alb(:)
+    integer(i32), pointer :: int_alb(:)
       !! Flag to indicate: 1) accumlation season curve; 2) use of the melt season curve [flag]
-    integer(i32), allocatable :: iso(:)
+    integer(i32), pointer :: iso(:)
       !! Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
-    integer(i32), allocatable :: lso(:)
+    integer(i32), pointer :: lso(:)
       !! Counter for tracking the number of days the snowpack is at or above 0 degrees Celsius
-    logical, allocatable :: lst(:)
+    logical, pointer :: lst(:)
       !! Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1; albset_snm or albset_sna), otherwise (0) [flag]
-    integer(i32), allocatable :: mso(:)
+    integer(i32), pointer :: mso(:)
       !! Flag to indicate if time is before (1) or after (2) the first potnetial day for melt season (melt_look)
-    real(r32), allocatable :: pk_def(:)
+    real(r32), pointer :: pk_def(:)
       !! Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degreees Celsius [cal/cm^2]
-    real(r32), allocatable :: pk_den(:)
+    real(r32), pointer :: pk_den(:)
       !! Density of the snowpack on each HRU [fraction of depth]
-    real(r64), allocatable :: pk_depth(:)
+    real(r64), pointer :: pk_depth(:)
       !! Depth of snowpack on each HRU [inches]
       ! r64 is correct
-    real(r32), allocatable :: pk_ice(:)
+    real(r32), pointer :: pk_ice(:)
       !! Storage of frozen water in the snowpack on each HRU [inches]
-    real(r32), allocatable :: pk_precip(:)
+    real(r32), pointer :: pk_precip(:)
       !! Precipitation added to snowpack for each HRU [inches]
-    real(r32), allocatable :: pk_temp(:)
+    real(r32), pointer :: pk_temp(:)
       !! Temperature of the snowpack on each HRU [degree C]
-    real(r64), allocatable :: pksv(:)
+    real(r64), pointer :: pksv(:)
       !! Snowpack water equivalent when there is new snow and in melt phase [inches]
-    real(r64), allocatable :: pkwater_ante(:)
+    real(r64), pointer :: pkwater_ante(:)
       !! Antecedent snowpack water equivalent on each HRU
-    logical, allocatable :: pptmix_nopack(:)
+    logical, pointer :: pptmix_nopack(:)
       !! Flag indicating that a mixed precipitation event has occurred with no snowpack present on an HRU [flag]
-    real(r64), allocatable :: pss(:)
+    real(r64), pointer :: pss(:)
       !! Previous snowpack water equivalent plus new snow [inches]
-    real(r64), allocatable :: pst(:)
+    real(r64), pointer :: pst(:)
       !! While a snowpack exists, pst tracks the maximum snow water equivalent of that snowpack [inches]
-    real(r32), allocatable :: salb(:)
+    real(r32), pointer :: salb(:)
       !! Days since last new snow to reset albedo for each HRU
-    real(r64), allocatable :: scrv(:)
+    real(r64), pointer :: scrv(:)
       !! Snowpack water equivalent plus a portion of new snow on each HRU
-    real(r32), allocatable :: slst(:)
+    real(r32), pointer :: slst(:)
       !! Days since last new snow for each HRU [days]
-    real(r32), allocatable :: snow_evap(:)
+    real(r32), pointer :: snow_evap(:)
       !! Evaporation and sublimation from snowpack on each HRU
-    real(r32), allocatable :: snowcov_area(:)
+    real(r32), pointer :: snowcov_area(:)
       !! Snow-covered area on each HRU prior to melt and sublimation unless snowpack is depleted [fraction]
-    real(r32), allocatable :: snowcov_areasv(:)
+    real(r32), pointer :: snowcov_areasv(:)
       !! Snow cover fraction when there is new snow and in melt phase [fraction]
-    real(r32), allocatable :: snowmelt(:)
+    real(r32), pointer :: snowmelt(:)
       !! Snowmelt from snowpack on each HRU [inches]
-    real(r32), allocatable :: snsv(:)
+    real(r32), pointer :: snsv(:)
       !! Tracks the cumulative amount of new snow until there is enough to reset the albedo curve (albset_snm or albset_sna) [inches]
-    real(r32), allocatable :: tcal(:)
+    real(r32), pointer :: tcal(:)
       !! Net snowpack energy balance on each HRU
 
     ! NOTE: 2019-10-31 PAN: moved from precipition
-    integer(i32), allocatable :: newsnow(:)
+    integer(i32), pointer :: newsnow(:)
       !! Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
-    integer(i32), allocatable :: pptmix(:)
+    integer(i32), pointer :: pptmix(:)
       !! Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)
 
 

@@ -18,12 +18,12 @@ module PRMS_PRECIPITATION_HRU
 
   type, extends(Precipitation) :: Precipitation_hru
     ! Parameters for precipitation by HRU
-    !real(r32), allocatable, private :: rain_cbh_adj(:, :)
-    !real(r32), allocatable, private :: snow_cbh_adj(:, :)
-    !real(r32), allocatable, private :: adjmix_rain(:, :)
-    real(r32), allocatable :: rain_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
-    real(r32), allocatable :: snow_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
-    real(r32), allocatable :: adjmix_rain(:, :) !rmcd changed to add access to bmi setter functions
+    !real(r32), pointer, private :: rain_cbh_adj(:, :)
+    !real(r32), pointer, private :: snow_cbh_adj(:, :)
+    !real(r32), pointer, private :: adjmix_rain(:, :)
+    real(r32), pointer :: rain_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: snow_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: adjmix_rain(:, :) !rmcd changed to add access to bmi setter functions
 
     ! Other variables
     integer(i32), private :: precip_funit

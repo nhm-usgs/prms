@@ -21,9 +21,9 @@ module PRMS_POTET
     ! Parameters
 
     ! NOTE: epan_coef is always used by intcp even though it is only required by the potet_pan module
-    real(r32), allocatable :: epan_coef(:, :)
+    real(r32), pointer :: epan_coef(:, :)
       !! Monthly (January to December) evaporation pan coefficient for each HRU
-    real(r32), allocatable :: potet_sublim(:)
+    real(r32), pointer :: potet_sublim(:)
       !! Fraction of potential ET that is sublimated from snow in the canopy and snowpack for each HRU
 
 
@@ -32,12 +32,12 @@ module PRMS_POTET
       !! Humidity CBH file unit
 
     ! Output variables
-    real(r64), allocatable :: basin_humidity
-    real(r64), allocatable :: basin_potet
+    real(r64), pointer :: basin_humidity
+    real(r64), pointer :: basin_potet
 
-    real(r32), allocatable :: humidity_hru(:)
+    real(r32), pointer :: humidity_hru(:)
       !! (moved from climate_hru)
-    real(r32), allocatable :: potet(:)
+    real(r32), pointer :: potet(:)
 
     ! For potet_pt, potet_pm, potet_pm_sta
     ! real(r32), allocatable :: tempc_dewpt(:)

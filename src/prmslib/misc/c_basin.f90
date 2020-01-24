@@ -35,26 +35,26 @@ module PRMS_BASIN
       !! TODO: does this belong here?
 
     ! Parameters
-    integer(i32), allocatable :: cov_type(:)
+    integer(i32), pointer :: cov_type(:)
       !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
     ! real(r32), allocatable :: dprst_frac(:)
     !   !! Fraction of each HRU area that has surface depressions
-    real(r32), allocatable :: hru_area(:)
-    real(r32), allocatable :: hru_aspect(:)
-    real(r32), allocatable :: hru_elev(:)
-    real(r32), allocatable :: hru_lat(:)
-    real(r32), allocatable :: hru_lon(:)
+    real(r32), pointer :: hru_area(:)
+    real(r32), pointer :: hru_aspect(:)
+    real(r32), pointer :: hru_elev(:)
+    real(r32), pointer :: hru_lat(:)
+    real(r32), pointer :: hru_lon(:)
     ! real(r32), allocatable :: hru_percent_imperv(:)
       ! TODO: move hru_percent_imperv to srunoff.f90
-    real(r32), allocatable :: hru_slope(:)
-    integer(i32), allocatable :: hru_type(:)
-    real(r32), allocatable :: hru_x(:)
-    real(r32), allocatable :: hru_y(:)
-    integer(i32), allocatable :: lake_hru_id(:)
-    integer(i32), allocatable :: lake_type(:)
-    integer(i32), allocatable :: nhm_id(:)
+    real(r32), pointer :: hru_slope(:)
+    integer(i32), pointer :: hru_type(:)
+    real(r32), pointer :: hru_x(:)
+    real(r32), pointer :: hru_y(:)
+    integer(i32), pointer :: lake_hru_id(:)
+    integer(i32), pointer :: lake_type(:)
+    integer(i32), pointer :: nhm_id(:)
       !! NHM identification number for each HRU
-    integer(i32), allocatable :: nhm_seg(:)
+    integer(i32), pointer :: nhm_seg(:)
       !! NHM segment identification
 
 
@@ -77,28 +77,28 @@ module PRMS_BASIN
     integer(i32) :: puls_lin_flag
     integer(i32) :: weir_gate_flag
 
-    logical, allocatable :: active_mask(:)
+    logical, pointer :: active_mask(:)
       !! Logical mask of HRUs that have hru_type /= INACTIVE
 
-    integer(i32), allocatable :: gwr_route_order(:)
-    integer(i32), allocatable :: gwr_type(:)
-    integer(i32), allocatable :: hru_route_order(:)
+    integer(i32), pointer :: gwr_route_order(:)
+    integer(i32), pointer :: gwr_type(:)
+    integer(i32), pointer :: hru_route_order(:)
 
     ! real(r32), allocatable :: dprst_area_max(:)
     ! real(r32), allocatable :: hru_frac_perv(:)
     ! real(r32), allocatable :: hru_area_imperv(:)
     ! real(r32), allocatable :: hru_area_perv(:)
 
-    real(r64), allocatable :: hru_area_dble(:)
+    real(r64), pointer :: hru_area_dble(:)
 
     ! TODO: 2018-09-11 PAN Possibly move lake_area to muskingum_lake class
-    real(r64), allocatable :: lake_area(:)
+    real(r64), pointer :: lake_area(:)
 
     integer(i32) :: covtype_unit
       !! File handle to dynamic cov_type parameter file
     integer(i32) :: dyn_output_unit
     integer(i32) :: next_dyn_covtype_date(3)
-    integer(i32), allocatable :: covtype_chgs(:)
+    integer(i32), pointer :: covtype_chgs(:)
     contains
       procedure, public :: run => run_Basin
 
