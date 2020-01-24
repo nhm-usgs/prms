@@ -55,12 +55,12 @@ module PRMS_GWFLOW
     real(r64), allocatable :: gwres_stor_ante(:)
 
     ! Output variables
-    real(r64), allocatable :: basin_gwflow
-    real(r64), allocatable :: basin_gwin
-    real(r64), allocatable :: basin_gwsink
-    real(r64), allocatable :: basin_gwstor
-    real(r64), allocatable :: basin_gwstor_minarea_wb
-    real(r64), allocatable :: basin_lake_seep
+    real(r64), pointer :: basin_gwflow
+    real(r64), pointer :: basin_gwin
+    real(r64), pointer :: basin_gwsink
+    real(r64), pointer :: basin_gwstor
+    real(r64), pointer :: basin_gwstor_minarea_wb
+    real(r64), pointer :: basin_lake_seep
 
     real(r32), allocatable, private :: elevlake(:)
     real(r32), pointer :: gwres_flow(:)

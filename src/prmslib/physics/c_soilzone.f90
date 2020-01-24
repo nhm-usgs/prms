@@ -155,55 +155,55 @@ module PRMS_SOILZONE
 
 
     ! Output variables - basin
-    real(r64), allocatable :: basin_actet
+    real(r64), pointer :: basin_actet
       !! (moved from flowvars) Basin area-weighted average actual ET
-    real(r64), allocatable :: basin_cap_infil_tot
-    real(r64), allocatable :: basin_cap_up_max
-    real(r64), allocatable :: basin_capwaterin
-    real(r64), allocatable :: basin_cpr_stor_frac
-    real(r64), allocatable :: basin_dncascadeflow
-    real(r64), allocatable :: basin_dndunnianflow
-    real(r64), allocatable :: basin_dninterflow
-    real(r64), allocatable :: basin_dunnian
-    real(r64), allocatable :: basin_dunnian_gvr
-    real(r64), allocatable :: basin_dunnian_pfr
-    real(r64), allocatable :: basin_gvr2pfr
-    real(r64), allocatable :: basin_gvr2sm
-    real(r64), allocatable :: basin_gvr_stor_frac
-    real(r64), allocatable :: basin_interflow_max
-    real(r64), allocatable :: basin_lakeevap
+    real(r64), pointer :: basin_cap_infil_tot
+    real(r64), pointer :: basin_cap_up_max
+    real(r64), pointer :: basin_capwaterin
+    real(r64), pointer :: basin_cpr_stor_frac
+    real(r64), pointer :: basin_dncascadeflow
+    real(r64), pointer :: basin_dndunnianflow
+    real(r64), pointer :: basin_dninterflow
+    real(r64), pointer :: basin_dunnian
+    real(r64), pointer :: basin_dunnian_gvr
+    real(r64), pointer :: basin_dunnian_pfr
+    real(r64), pointer :: basin_gvr2pfr
+    real(r64), pointer :: basin_gvr2sm
+    real(r64), pointer :: basin_gvr_stor_frac
+    real(r64), pointer :: basin_interflow_max
+    real(r64), pointer :: basin_lakeevap
       !! (moved from flowvars) Basin area-weighted average lake evaporation
-    real(r64), allocatable :: basin_lakeinsz
-    real(r64), allocatable :: basin_lakeprecip
-    real(r64), allocatable :: basin_perv_et
+    real(r64), pointer :: basin_lakeinsz
+    real(r64), pointer :: basin_lakeprecip
+    real(r64), pointer :: basin_perv_et
       !! (moved from flowvars) Basin area-weighted average ET from capillary reservoirs
-    real(r64), allocatable :: basin_pfr_stor_frac
-    real(r64), allocatable :: basin_pref_flow_infil
-    real(r64), allocatable :: basin_pref_stor
-    real(r64), allocatable :: basin_prefflow
-    real(r64), allocatable :: basin_recharge
-    real(r64), allocatable :: basin_slowflow
-    real(r64), allocatable :: basin_slstor
-    real(r64), allocatable :: basin_sm2gvr
-    real(r64), allocatable :: basin_sm2gvr_max  ! this is the same as basin_sm2gvr
-    real(r64), allocatable :: basin_soil_lower_stor_frac
-    real(r64), allocatable :: basin_soil_moist
+    real(r64), pointer :: basin_pfr_stor_frac
+    real(r64), pointer :: basin_pref_flow_infil
+    real(r64), pointer :: basin_pref_stor
+    real(r64), pointer :: basin_prefflow
+    real(r64), pointer :: basin_recharge
+    real(r64), pointer :: basin_slowflow
+    real(r64), pointer :: basin_slstor
+    real(r64), pointer :: basin_sm2gvr
+    real(r64), pointer :: basin_sm2gvr_max  ! this is the same as basin_sm2gvr
+    real(r64), pointer :: basin_soil_lower_stor_frac
+    real(r64), pointer :: basin_soil_moist
       !! (from flowvars) Basin area-weighted average capillary reservoir storage
-    real(r64), allocatable :: basin_soil_moist_tot
-    real(r64), allocatable :: basin_soil_rechr
-    real(r64), allocatable :: basin_soil_rechr_stor_frac
-    real(r64), allocatable :: basin_soil_to_gw
+    real(r64), pointer :: basin_soil_moist_tot
+    real(r64), pointer :: basin_soil_rechr
+    real(r64), pointer :: basin_soil_rechr_stor_frac
+    real(r64), pointer :: basin_soil_to_gw
       !! (moved from flowvars) Basin average excess flow to capillary reservoirs that drain to GWRs
-    real(r64), allocatable :: basin_ssflow
+    real(r64), pointer :: basin_ssflow
       !! (moved from flowvars) Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network
-    real(r64), allocatable :: basin_ssin
-    real(r64), allocatable :: basin_ssstor
+    real(r64), pointer :: basin_ssin
+    real(r64), pointer :: basin_ssstor
       !! (moved from flowvars)
-    real(r64), allocatable :: basin_swale_et
+    real(r64), pointer :: basin_swale_et
       !! (moved from flowvars)
-    real(r64), allocatable :: basin_sz_gwin
-    real(r64), allocatable :: basin_sz_stor_frac
-    real(r64), allocatable :: basin_sz2gw
+    real(r64), pointer :: basin_sz_gwin
+    real(r64), pointer :: basin_sz_stor_frac
+    real(r64), pointer :: basin_sz2gw
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Variables for model_mode == 'GSFLOW'

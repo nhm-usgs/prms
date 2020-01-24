@@ -57,19 +57,19 @@ module PRMS_INTCP
     real(r64), allocatable :: basin_changeover
 
     ! Output variables
-    real(r64), allocatable :: basin_hru_apply
+    real(r64), pointer :: basin_hru_apply
       !! Basin area-weighted average canopy_gain, in inches (**water_use**)
-    real(r64), allocatable :: basin_intcp_evap
+    real(r64), pointer :: basin_intcp_evap
       !! Basin area-weighted evaporation from the canopy, in inches
-    real(r64), allocatable :: basin_intcp_stor
+    real(r64), pointer :: basin_intcp_stor
       !! Basin area-weighted average interception storage, in inches
-    real(r64), allocatable :: basin_net_apply
+    real(r64), pointer :: basin_net_apply
       !! Basin area-weighted average net_apply, in inches (**water_use**)
-    real(r64), allocatable :: basin_net_ppt
+    real(r64), pointer :: basin_net_ppt
       !! Basin area-weighted average throughfall, in inches
-    real(r64), allocatable :: basin_net_rain
+    real(r64), pointer :: basin_net_rain
       !! Basin area-weighted average rain throughfall, in inches
-    real(r64), allocatable :: basin_net_snow
+    real(r64), pointer :: basin_net_snow
       !! Basin area-weighted average snow throughfall, in inches
 
     real(r32), pointer :: canopy_covden(:)

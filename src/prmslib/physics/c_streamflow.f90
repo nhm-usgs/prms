@@ -75,20 +75,20 @@ module PRMS_STREAMFLOW
       real(r64), pointer :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
 
-      real(r64), allocatable :: basin_cfs
+      real(r64), pointer :: basin_cfs
         !! Streamflow leaving the basin through the stream network (cfs)
-      real(r64), allocatable :: basin_cms
+      real(r64), pointer :: basin_cms
         !! Streamflow leaving the basin through the stream network (cms)
-      real(r64), public, allocatable :: basin_segment_storage
-      real(r64), allocatable :: basin_gwflow_cfs
+      real(r64), public, pointer :: basin_segment_storage
+      real(r64), pointer :: basin_gwflow_cfs
         !! Basin area-weighted average of groundwater flow to the stream network
-      real(r64), allocatable :: basin_sroff_cfs
+      real(r64), pointer :: basin_sroff_cfs
         !! Basin area-weighted average surface runoff to the stream network
-      real(r64), allocatable :: basin_ssflow_cfs
+      real(r64), pointer :: basin_ssflow_cfs
         !! Interflow leaving the basin through the stream network
-      real(r64), allocatable :: basin_stflow_in
+      real(r64), pointer :: basin_stflow_in
         !! Basin area-weighted average lateral flow entering the stream network
-      real(r64), allocatable :: basin_stflow_out
+      real(r64), pointer :: basin_stflow_out
         !! Basin area-weighted average streamflow leaving through the stream network
         !! basin_sum, muskingum, muskingum_lake
 

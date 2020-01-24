@@ -67,10 +67,10 @@ module SOLAR_RADIATION
       !! Solar radiation at each measurement station
 
     ! Output variables
-    real(r64), allocatable :: basin_horad
-    real(r64), allocatable :: basin_orad
-    real(r64), allocatable :: basin_potsw
-    real(r64), allocatable :: basin_swrad
+    real(r64), pointer :: basin_horad
+    real(r64), pointer :: basin_orad
+    real(r64), pointer :: basin_potsw
+    real(r64), pointer :: basin_swrad
     real(r32) :: orad
     real(r32), pointer :: orad_hru(:)
     real(r32), pointer :: swrad(:)

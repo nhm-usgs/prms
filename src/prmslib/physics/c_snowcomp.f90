@@ -85,19 +85,19 @@ module PRMS_SNOW
       !! Maximum snowpack for each HRU
     real(r32), pointer :: albedo(:)
       !! Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU [fraction]
-    real(r64), allocatable :: basin_pk_precip
+    real(r64), pointer :: basin_pk_precip
       !! Basin area-weighted average precipitation added to snowpack
-    real(r64), allocatable :: basin_pweqv
+    real(r64), pointer :: basin_pweqv
       !! Basin area-weighted average snowpack water equivalent
-    real(r64), allocatable :: basin_snowcov
+    real(r64), pointer :: basin_snowcov
       !! Basin area-weighted average snow-covered area
-    real(r64), allocatable :: basin_snowdepth
+    real(r64), pointer :: basin_snowdepth
       !! Basin area-weighted average snow depth
-    real(r64), allocatable :: basin_snowevap
+    real(r64), pointer :: basin_snowevap
       !! Basin area-weighted average evaporation and sublimation from snowpack
-    real(r64), allocatable :: basin_snowmelt
+    real(r64), pointer :: basin_snowmelt
       !! Basin area-weighted average snowmelt
-    real(r64), allocatable :: basin_tcal
+    real(r64), pointer :: basin_tcal
       !! Basin area-weighted average net snowpack energy balance
     real(r32), pointer :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU

@@ -23,13 +23,13 @@ module PRMS_PRECIPITATION
     real(r32), pointer :: tmax_allrain_offset(:, :)
 
     ! Output variables
-    real(r64), allocatable :: basin_obs_ppt
+    real(r64), pointer :: basin_obs_ppt
       !! Basin area-weighted measured average precipitation, in inches
-    real(r64), allocatable :: basin_ppt
+    real(r64), pointer :: basin_ppt
       !! Basin area-weighted average precipitation, in inches
-    real(r64), allocatable :: basin_rain
+    real(r64), pointer :: basin_rain
       !! Basin area-weighted average rainfall, in inches
-    real(r64), allocatable :: basin_snow
+    real(r64), pointer :: basin_snow
       !! Basin area-weighted average snowfall, in inches
 
     real(r32), pointer :: hru_ppt(:)

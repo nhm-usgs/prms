@@ -21,9 +21,9 @@ module PRMS_TEMPERATURE
 
     logical :: has_hru_summary_vars
 
-    real(r64), allocatable :: basin_temp
-    real(r64), allocatable :: basin_tmax
-    real(r64), allocatable :: basin_tmin
+    real(r64), pointer :: basin_temp
+    real(r64), pointer :: basin_tmax
+    real(r64), pointer :: basin_tmin
 
     ! NOTE: 2018-07-24 PAN: Changed tavg, tmax, tmin to r64
     !       The additional precision is needed when fahrenheit temperatures are
