@@ -95,6 +95,7 @@ module PRMS_SNOW
       !! Basin area-weighted average snowmelt
     real(r64), allocatable :: basin_tcal
       !! Basin area-weighted average net snowpack energy balance
+
     real(r32), allocatable :: frac_swe(:)
       !! Fraction of maximum snow-water equivalent (snarea_thresh) on each HRU
     real(r32), allocatable :: freeh2o(:)
