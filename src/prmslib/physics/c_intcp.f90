@@ -44,9 +44,9 @@ module PRMS_INTCP
       !! Winter rain interception storage capacity for the major vegetation type in each HRU
 
     ! Local Variables
-    real(r32), allocatable :: gain_inches(:)
-    real(r32), allocatable :: intcp_changeover(:)
-    real(r32), allocatable :: intcp_stor_ante(:)
+    real(r32), pointer :: gain_inches(:)
+    real(r32), pointer :: intcp_changeover(:)
+    real(r32), pointer :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
