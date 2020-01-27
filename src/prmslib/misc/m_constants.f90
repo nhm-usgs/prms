@@ -96,6 +96,11 @@ module prms_constants
       enumerator :: ET_DEFAULT=1, EVAP_ONLY=2, EVAP_PLUS_TRANSP=3
     end enum
 
+    ! irr_type
+    enum, bind(C)
+      enumerator :: IRR_SPRINKLER=0, IRR_FURROW_DRIP=1, IRR_IGNORE=2
+    end enum
+
     ! hru_type
     enum, bind(C)
       enumerator :: INACTIVE=0, LAND=1, LAKE=2, SWALE=3
