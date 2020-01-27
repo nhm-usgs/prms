@@ -40,7 +40,8 @@ module PRMS_STREAMFLOW
 
 
       ! Local Variables
-      integer(i32), private :: noarea_flag
+      logical, private :: noarea_flag
+      ! integer(i32), private :: noarea_flag
       real(r64), private :: segment_area
 
       real(r64) :: flow_out
