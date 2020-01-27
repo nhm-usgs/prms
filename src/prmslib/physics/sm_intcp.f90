@@ -267,7 +267,7 @@ contains
                                      model_precip, model_transp, model_climate, &
                                      model_time)
     use prms_constants, only: BARESOIL, GRASSES, SHRUBS, TREES, CONIFEROUS, LAND, &
-                              LAKE, NEARZERO, DNEARZERO
+                              LAKE, NEARZERO, DNEARZERO, IRR_SPRINKLER, IRR_FURROW_DRIP, IRR_IGNORE
     implicit none
 
     class(Interception) :: this
@@ -487,22 +487,23 @@ contains
 
           ! TODO: The following relies on water_use_read.f90 for this to work
           ! NEXT intercept application of irrigation water, but only if
-          !  irrigation method (irr_type=hrumeth) is =0 for sprinkler method
+          ! irrigation method (irr_type=hrumeth) is == IRR_SPRINKLER (0) for sprinkler method
           ! if (this%use_transfer_intcp) then
           !   this%gain_inches(chru) = 0.0
           !
           !   if (canopy_gain(chru) > 0.0) then
           !     if (this%canopy_covden(chru) > 0.0) then
-          !       if (irr_type(chru) == 2) then
+          !       if (irr_type(chru) == IRR_IGNORE) then
           !         print *, 'WARNING, water-use transfer > 0, but irr_type = 2 (ignore), HRU:', chru, ', transfer:', canopy_gain(chru)
           !         canopy_gain(chru) = 0.0
           !       else
           !         this%gain_inches(chru) = canopy_gain(chru) / sngl(cfs_conv) / this%canopy_covden(chru) / hru_area(chru)
           !
-          !         if (irr_type(chru) == 0) then
+          !         if (irr_type(chru) == IRR_SPRINKLER) then
           !           call this%intercept(this%net_apply(chru), intcpstor, &
           !                               this%canopy_covden(chru), this%gain_inches(chru), stor)
-          !         else ! Hrumeth=1
+          !         else
+          !           ! IRR_FURROW_DRIP
           !           this%net_apply(chru) = this%gain_inches(chru)
           !         endif
           !       endif
@@ -626,17 +627,19 @@ contains
   !***********************************************************************
   ! Subroutine to compute interception of rain or snow
   !***********************************************************************
-  module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
+  pure elemental module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
     implicit none
 
     ! Arguments
     real(r32), intent(out) :: net_precip
     real(r32), intent(inout) :: intcp_stor
+      !! Storage on the canopy (not HRU)
     real(r32), intent(in) :: cov
     real(r32), intent(in) :: precip
     real(r32), intent(in) :: stor_max
 
     !***********************************************************************
+    ! NOTE: This isn't called when cov == 0
     net_precip = precip * (1.0 - cov)
     intcp_stor = intcp_stor + precip
 
