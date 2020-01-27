@@ -12,7 +12,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_FileIO.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_FileIO_netcdf.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_obs.f90"
-    "${CMAKE_CURRENT_LIST_DIR}/c_Simulation.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_simulation.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_summary.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_water_balance.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_outvar_list.f90"
