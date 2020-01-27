@@ -2,15 +2,6 @@ module rArray_class
     !!
     !!
     !!
-    !!
-    !!
-    !!
-    !!
-    !!
-    !!
-    !!
-    !!
-    !!
 
     use iso_fortran_env, only: output_unit
     use prms_constants, only: MAXFILE_LENGTH
