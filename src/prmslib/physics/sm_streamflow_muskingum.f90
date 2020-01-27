@@ -151,14 +151,13 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
             this%c1(cseg) = this%c1(cseg) + this%c0(cseg)
             this%c0(cseg) = 0.0_dp
           endif
-
         enddo
 
         if (ierr == 1) then
           print '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
         endif
-        ! deallocate(K_coef)
-        ! deallocate(x_coef)
+        deallocate(this%K_coef)
+        deallocate(this%x_coef)
 
         allocate(this%currinsum(nsegment))
         allocate(this%inflow_ts(nsegment))
@@ -167,22 +166,13 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         allocate(this%pastout(nsegment))
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2) then
-          do cseg = 1, nsegment
-            this%seg_outflow(cseg) = this%segment_flow_init(cseg)
-          enddo
-
-          ! deallocate (segment_flow_init)
+          this%seg_outflow = this%segment_flow_init
+          deallocate(this%segment_flow_init)
         endif
 
         if (init_vars_from_file==0) then
           this%outflow_ts = 0.0_dp
         endif
-
-        ! this%basin_segment_storage = 0.0_dp
-        ! do cseg = 1, nsegment
-        !   this%basin_segment_storage = this%basin_segment_storage + this%seg_outflow(cseg)
-        ! enddo
-        ! this%basin_segment_storage = this%basin_segment_storage * basin_area_inv / cfs_conv
 
         this%basin_segment_storage = sum(this%seg_outflow) * basin_area_inv / cfs_conv
 
