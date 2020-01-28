@@ -378,9 +378,7 @@ contains
               pkwater_equiv => model_climate%pkwater_equiv, &
 
               hru_ppt => model_precip%hru_ppt, &
-              ! newsnow => model_precip%newsnow, &
               prmx => model_precip%prmx, &
-              ! pptmix => model_precip%pptmix, &
 
               tavg => model_temp%tavg, &
               tmax => model_temp%tmax, &
@@ -428,7 +426,6 @@ contains
       end where
 
       ! By default, there has not been a mixed event without a snowpack
-      ! this%pptmix_nopack = 0  ! [flag]
       this%pptmix_nopack = .false.  ! [flag]
 
       ! Keep track of the pack water equivalent before it is changed
@@ -473,9 +470,6 @@ contains
         this%ai(chru) = 0.0_dp
         this%tcal(chru) = 0.0
 
-        ! ! By default, there has not been a mixed event without a snowpack
-        ! this%pptmix_nopack(chru) = 0  ! [flag]
-
         ! If the day of the water year is beyond the forced melt day indicated by
         ! the parameter, then set the flag indicating melt season
         ! TODO: rsr, need to rethink this at some point
@@ -504,19 +498,6 @@ contains
           endif
         endif
 
-        ! ! Skip the HRU if there is no snowpack and no new snow
-        ! if (pkwater_equiv(chru) < DNEARZERO .and. newsnow(chru) == 0) then
-        !   ! Reset to be sure it is zero if snowpack melted on last timestep.
-        !   this%snowcov_area(chru) = 0.0
-        !   cycle
-        ! endif
-        !
-        ! ! If there is no existing snow pack and there is new snow, the
-        ! ! initial snow covered area is complete (1)
-        ! if (newsnow(chru) == 1 .and. pkwater_equiv(chru) < DNEARZERO) then
-        !   this%snowcov_area(chru) = 1.0  ! [fraction of area]
-        ! endif
-
         ! HRU STEP 1 - DEAL WITH PRECIPITATION AND ITS EFFECT ON THE WATER
         !              CONTENT AND HEAT CONTENT OF SNOW PACK
         !***********************************************************************
@@ -537,13 +518,11 @@ contains
         endif
 
         if (pkwater_equiv(chru) > 0.0_dp) then
-          ! If there is still a snowpack
+          ! There is still a snowpack
 
           ! HRU STEP 2 - CALCULATE THE NEW SNOW COVERED AREA
           !**********************************************************
           ! Compute snow-covered area from depletion curve
-
-          ! Calculate the new snow covered area
           call this%snowcov(chru, ctl_data, model_basin, model_climate, intcp, model_precip)
 
           ! HRU STEP 3 - COMPUTE THE NEW ALBEDO
@@ -554,14 +533,13 @@ contains
           ! HRU STEP 4 - DETERMINE RADIATION FLUXES AND SNOWPACK
           !              STATES NECESSARY FOR ENERGY BALANCE
           !**********************************************************
-          ! Set the emissivity of the air to the emissivity when there
-          ! is no precipitation
+          ! Set the emissivity of the air to the emissivity when there is no precipitation
           emis = this%emis_noppt(chru)  ! [fraction of radiation]
 
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
           ! Temperature is halfway between the minimum and average temperature for the day
-          ! temp = (tminc(chru)+tavgc(chru))*0.5
-          ! emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
+          ! temp = (tminc(chru) + tavgc(chru)) * 0.5
+          ! emis = ((temp + 273.16)**(Emis_coefb - 4.0)) * (10.0**(Emis_coefa + 1.0)) / 5.670373E−8 ! /by Stefan Boltzmann in SI units
 
           ! If there is any precipitation in the HRU, reset the emissivity to 1
           if (hru_ppt(chru) > 0.0) emis = 1.0  ! [fraction of radiation]
@@ -587,7 +565,7 @@ contains
           ! Calculate the new snow depth (Riley et al. 1973)
           ! RSR: the following 3 lines of code were developed by Rob Payn, 7/10/2013
           ! The snow depth depends on the previous snow pack water equivalent plus
-          ! the new net snow.
+          ! the current net snow.
           this%pss(chru) = this%pss(chru) + dble(net_snow(chru))  ! [inches]
           dpt_before_settle = this%pk_depth(chru) + dble(net_snow(chru)) * this%deninv
           dpt1 = dpt_before_settle + dble(this%settle_const) * ((this%pss(chru) * this%denmaxinv) - dpt_before_settle)
@@ -605,7 +583,7 @@ contains
           ! The effective thermal conductivity is approximated (empirically)
           ! as 0.0077 times (snowpack density)^2 [cal / (sec g degC)] Therefore,
           ! the effective conductivity term (inside the square root) in the
-          ! equation for conductive heat exchange can be calculated as follows
+          ! equation for conductive heat exchange can be calculated as follows:
           !   (0.0077 * pk_den^2) / (pk_den * 0.5)
           ! where 0.5 is the specific heat of ice [cal / (g degC)]
           ! this simplifies to the following
@@ -671,7 +649,6 @@ contains
           ! Track total heat flux from both night and day periods
           this%tcal(chru) = cals  ! [cal/cm^2] or [Langleys]
 
-
           ! Compute energy balance for day period (if the snowpack still exists)
           if (pkwater_equiv(chru) > 0.0_dp) then
             ! Set the flag indicating daytime
@@ -704,16 +681,16 @@ contains
             ! if (transp_on(chru) == 0 .or. (transp_on(chru) == 1 .and. cov_type(chru) < 2)) then
             if (.not. transp_on(chru) .or. (transp_on(chru) .and. cov_type(chru) < 2)) then
               call this%snowevap(model_climate, chru, ctl_data, intcp, model_potet)
-            endif
-          elseif (pkwater_equiv(chru) < 0.0_dp) then
+            end if
+          else if (pkwater_equiv(chru) < 0.0_dp) then
             if (print_debug > -1) then
               if (pkwater_equiv(chru) < -DNEARZERO) then
                 print *, 'snowpack issue 3, negative pkwater_equiv, HRU:', chru, ' value:', pkwater_equiv(chru)
-              endif
-            endif
+              end if
+            end if
 
             pkwater_equiv(chru) = 0.0_dp  ! just to be sure negative values are ignored
-          endif
+          end if
 
           !  HRU CLEAN-UP - ADJUST FINAL HRU SNOWPACK STATES AND
           !                 INCREMENT THE BASIN TOTALS
@@ -731,7 +708,7 @@ contains
             else
               this%pk_den(chru) = this%den_max
               this%pk_depth(chru) = pkwater_equiv(chru) * this%denmaxinv
-            endif
+            end if
             this%pss(chru) = pkwater_equiv(chru)
 
             ! If it is during the melt period and snowfall was insufficient to
@@ -740,18 +717,21 @@ contains
             ! if (this%lst(chru) > 0) then
             if (this%lst(chru)) then
               this%snsv(chru) = this%snsv(chru) - this%snowmelt(chru)
-              if (this%snsv(chru) < 0.0) this%snsv(chru) = 0.0
-            endif
-          endif
 
-        endif
+              if (this%snsv(chru) < 0.0) then
+                this%snsv(chru) = 0.0
+              end if
+            end if
+          end if
+        end if
 
         ! LAST check to clear out all arrays if packwater is gone
         if (pkwater_equiv(chru) <= 0.0_dp) then
           if (print_debug > -1) then
-            if (pkwater_equiv(chru) < -DNEARZERO) &
+            if (pkwater_equiv(chru) < -DNEARZERO) then
               print *, 'Snowpack problem, pkwater_equiv negative, HRU:', chru, ' value:', pkwater_equiv(chru)
-          endif
+            end if
+          end if
 
           pkwater_equiv(chru) = 0.0_dp ! just to be sure negative values are ignored
 
@@ -773,15 +753,6 @@ contains
           this%ai(chru) = 0.0_dp
           this%frac_swe(chru) = 0.0
         endif
-
-        ! Sum volumes for basin totals
-        ! this%basin_snowmelt = this%basin_snowmelt + dble(this%snowmelt(chru) * hru_area(chru))
-        ! this%basin_pweqv = this%basin_pweqv + pkwater_equiv(chru) * dble(hru_area(chru))
-        ! this%basin_snowevap = this%basin_snowevap + dble(this%snow_evap(chru) * hru_area(chru))
-        ! this%basin_snowcov = this%basin_snowcov + dble(this%snowcov_area(chru) * hru_area(chru))
-        ! this%basin_pk_precip = this%basin_pk_precip + dble(this%pk_precip(chru) * hru_area(chru))
-        ! this%basin_snowdepth = this%basin_snowdepth + this%pk_depth(chru) * dble(hru_area(chru))
-        ! this%basin_tcal = this%basin_tcal + dble(this%tcal(chru) * hru_area(chru))
       enddo
 
 
@@ -792,15 +763,6 @@ contains
       this%basin_pk_precip = sum(dble(this%pk_precip * hru_area), mask=active_mask) * basin_area_inv
       this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
       this%basin_tcal = sum(dble(this%tcal * hru_area), mask=active_mask) * basin_area_inv
-
-      ! Area normalize basin totals
-      ! this%basin_snowmelt = this%basin_snowmelt * basin_area_inv
-      ! this%basin_pweqv = this%basin_pweqv * basin_area_inv
-      ! this%basin_snowevap = this%basin_snowevap * basin_area_inv
-      ! this%basin_snowcov = this%basin_snowcov * basin_area_inv
-      ! this%basin_pk_precip = this%basin_pk_precip * basin_area_inv
-      ! this%basin_snowdepth = this%basin_snowdepth * basin_area_inv
-      ! this%basin_tcal = this%basin_tcal * basin_area_inv
 
       if (print_debug == 9) then
         print 9001, day_of_year, (transp_on(chru), chru=1, nhru)
@@ -824,7 +786,6 @@ contains
     class(Snowcomp), intent(inout) :: this
     type(Climateflow), intent(inout) :: model_climate
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     real(r32), intent(in) :: cal
     integer(i32), intent(in) :: chru
 
@@ -1096,13 +1057,10 @@ contains
     integer(i32), intent(in) :: month
     integer(i32), intent(in) :: chru
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Interception), intent(in) :: intcp
     class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
-    ! integer(i32) :: idx1D
-      !! 2D index to 1D arrays
     real(r32) :: caln
       !! Liquid to solid state latent heat [cal/(in cm^2)]
     real(r32) :: calpr
@@ -1119,23 +1077,6 @@ contains
     ! this
     ! freeh2o(RW), pk_def(RW), pk_ice(RW), pptmix_nopack(RW), pk_precip(RW), pk_temp(RW),
 
-    ! Control
-    ! nhru,
-
-    ! Climate
-    ! pkwater_equiv(RW),
-
-    ! Precipitation
-    ! pptmix, tmax_allsnow_c,
-
-    ! Interception
-    ! net_rain, net_snow
-
-    ! Parameters
-    ! freeh2o_cap,
-
-    ! Temperature
-    ! tavg, tmax, tmin,
     !***********************************************************************
     associate(pkwater_equiv => model_climate%pkwater_equiv, &
 
@@ -1148,9 +1089,6 @@ contains
               tavg => model_temp%tavg, &
               tmax => model_temp%tmax, &
               tmin => model_temp%tmin)
-
-      ! 2D index to 1D
-      ! idx1D = (month - 1) * nhru + chru
 
       ! Added by PAN 2018-07-16
       caln = 0.0
@@ -1319,7 +1257,6 @@ contains
         ! If this subroutine is called when there is an all-rain day on no
         ! existing snowpack (currently, it will not), then the flag here will be
         ! set inappropriately.
-        ! this%pptmix_nopack(chru) = 1  ! [flag]
         this%pptmix_nopack(chru) = .true.  ! [flag]
       endif
 
@@ -1334,7 +1271,7 @@ contains
         ! The temperature of the new snow will determine its effect on snowpack heat deficit
         ! 2 options below (if-then, else)
         if (tsnow >= 0.0) then
-          ! (1) if the new snow is at 0 degC...
+          ! (1) if the new snow is at least 0 degC...
 
           ! Incoming snow does not change the overall heat content of the snowpack.
           ! However, the temperature will change, because the total heat content
@@ -1427,8 +1364,6 @@ contains
 
     ! Arguments
     class(Snowcomp), intent(inout) :: this
-    ! type(Parameters), intent(in) :: param_data
-    ! type(Climateflow), intent(in) :: model_climate
     type(Interception), intent(in) :: intcp
     class(Precipitation), intent(in) :: model_precip
     integer(i32), intent(in) :: chru
@@ -2005,7 +1940,6 @@ contains
     integer(i32), intent(in) :: chru
     type(Control), intent(in) :: ctl_data
     type(Basin), intent(in) :: model_basin
-    ! type(Parameters), intent(in) :: param_data
     type(Climateflow), intent(in) :: model_climate
     type(Interception), intent(in) :: intcp
     class(Precipitation), intent(in) :: model_precip

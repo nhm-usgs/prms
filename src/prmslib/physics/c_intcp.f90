@@ -44,64 +44,72 @@ module PRMS_INTCP
       !! Winter rain interception storage capacity for the major vegetation type in each HRU
 
     ! Local Variables
-    real(r32), pointer :: gain_inches(:)
     real(r32), pointer :: intcp_changeover(:)
     real(r32), pointer :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
 
-    ! integer(i32) :: use_transfer_intcp
+    logical, pointer, private :: intcp_transp_on(:)
     logical :: use_transfer_intcp
 
     real(r64), allocatable :: basin_changeover
 
     ! Output variables
-    real(r64), pointer :: basin_hru_apply
-      !! Basin area-weighted average canopy_gain, in inches (**water_use**)
     real(r64), pointer :: basin_intcp_evap
-      !! Basin area-weighted evaporation from the canopy, in inches
+      !! Basin area-weighted evaporation from the canopy [inches]
     real(r64), pointer :: basin_intcp_stor
-      !! Basin area-weighted average interception storage, in inches
-    real(r64), pointer :: basin_net_apply
-      !! Basin area-weighted average net_apply, in inches (**water_use**)
+      !! Basin area-weighted average interception storage [inches]
     real(r64), pointer :: basin_net_ppt
-      !! Basin area-weighted average throughfall, in inches
+      !! Basin area-weighted average throughfall [inches]
     real(r64), pointer :: basin_net_rain
-      !! Basin area-weighted average rain throughfall, in inches
+      !! Basin area-weighted average rain throughfall [inches]
     real(r64), pointer :: basin_net_snow
-      !! Basin area-weighted average snow throughfall, in inches
+      !! Basin area-weighted average snow throughfall [inches]
 
     real(r32), pointer :: canopy_covden(:)
-      !! Canopy cover density for each HRU (decimal fraction)
+      !! Canopy cover density for each HRU [decimal fraction]
     real(r32), pointer :: hru_intcpevap(:)
-      !! Evaporation from the canopy for each HRU, in inches
+      !! Evaporation from the canopy for each HRU [inches]
     real(r32), pointer :: hru_intcpstor(:)
-      !! Interception storage in the canopy for each HRU, in inches
+      !! Interception storage in the canopy for each HRU [inches]
     real(r32), pointer :: intcp_evap(:)
-      !! Evaporation from the canopy for each HRU, in inches (** same as hru_intcpevap **)
+      !! Evaporation from the canopy for each HRU [inches] (** same as hru_intcpevap **)
+    integer(i32), pointer, private :: intcp_form(:)
+      !! Form (rain or snow) of interception for each HRU [0=rain; 1=snow]
     real(r32), pointer :: intcp_stor(:)
-      !! Interception storage in canopy for cover density for each HRU, in inches
-    real(r32), pointer :: net_apply(:)
-      !! canopy_gain minus interception, in inches
+      !! Interception storage in canopy for cover density for each HRU [inches]
+    logical, pointer :: intcp_on(:)
+      !! Flag indicating interception storage for each HRU [0=no; 1=yes]
     real(r32), pointer :: net_ppt(:)
-      !! Precipitation (rain and/or snow) that falls through the canopy for nhru each HRU, in inches
+      !! Precipitation (rain and/or snow) that falls through the canopy for each HRU [inches]
     real(r32), pointer :: net_rain(:)
-      !! Rain that falls through canopy for each HRU, in inches
+      !! Rain that falls through canopy for each HRU [inches]
     real(r32), pointer :: net_snow(:)
-      !! Snow that falls through canopy for each HRU, in inches
+      !! Snow that falls through canopy for each HRU [inches]
 
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! WATER USE
+    !   only allocated when water_use_flag == 1
+
+    ! Parameters
+    ! irr_type
+
+    ! Output variables
+    real(r64), pointer :: basin_hru_apply
+      !! Basin area-weighted average canopy_gain [inches]
+    real(r64), pointer :: basin_net_apply
+      !! Basin area-weighted average net_apply [inches]
+    real(r32), pointer :: net_apply(:)
+      !! canopy_gain minus interception [inches]
 
     ! Local variables
-    integer(i32), pointer, private :: intcp_form(:)
-      !! Form (rain or snow) of interception for each HRU (0=rain; 1=snow)
+    real(r32), pointer :: gain_inches(:)
+      !! canopy_gain converted to inches
 
-    logical, pointer, private :: intcp_on(:)
-      !! Flag indicating interception storage for each HRU (0=no; 1=yes)
-    logical, pointer, private :: intcp_transp_on(:)
-
-    ! integer(i32), allocatable, private :: intcp_on(:)
-    ! integer(i32), allocatable, private :: intcp_transp_on(:)
+    ! Additional variables
+    ! canopy_gain
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Dynamic parameter variables
@@ -184,7 +192,7 @@ module PRMS_INTCP
   end interface
 
   interface
-    module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
+    pure elemental module subroutine intercept(net_precip, intcp_stor, cov, precip, stor_max)
       ! logical, intent(out) :: intcp_on
       real(r32), intent(out) :: net_precip
       real(r32), intent(inout) :: intcp_stor

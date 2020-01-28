@@ -9,13 +9,6 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
       type(Basin), intent(in) :: model_basin
       type(Gwflow), intent(in) :: model_gwflow
 
-      ! Control
-      ! nhru, cascade_flag, print_debug
-
-      ! gwflow
-      ! basin_gwstor, gwres_stor, hru_storage
-
-
       ! ------------------------------------------------------------------------
       associate(cascade_flag => ctl_data%cascade_flag%value, &
                 print_debug => ctl_data%print_debug%value, &
@@ -32,9 +25,6 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
           ! Output module and version information
           call this%print_module_info()
         endif
-
-        ! allocate(this%hru_storage_ante(nhru))
-        ! allocate(this%gwstor_ante(nhru))
 
         call PRMS_open_module_file(this%intcp_unit, 'intcp.wbal')
         write(this%intcp_unit, 9003)

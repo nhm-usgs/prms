@@ -24,21 +24,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       integer(i32), allocatable :: x_off(:)
 
       ! character(len=10) :: buffer
-
-      ! Control
-      ! nhru, nsegment
-      ! cascade_flag, init_vars_from_file, segment_transferON_OFF, strmflow_module,
-      !
       ! TODO: water_use_flag,
-
-      ! Parameter
-      ! hru_segment, K_coef, obsin_segment, segment_type, tosegment, x_coef
-
-      ! Basin
-      ! active_hrus, hru_area_dble, hru_route_order,
-
-      ! Time_t
-      ! Timestep_seconds
 
       ! ------------------------------------------------------------------------
       associate(cascade_flag => ctl_data%cascade_flag%value, &
@@ -136,7 +122,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%seg_upstream_inflow = 0.0_dp
         ! endif
 
-
         allocate(this%basin_cfs)
         allocate(this%basin_cms)
         allocate(this%basin_gwflow_cfs)
@@ -182,8 +167,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         ! enddo
 
         ! If cascades are active then ignore hru_segment
-        this%noarea_flag = 0
-
         if (cascade_flag == 0) then
           this%segment_hruarea = 0.0_dp
 
@@ -196,15 +179,8 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             endif
           enddo
 
-          this%segment_area = 0.0_dp
-
-          do j=1, nsegment
-            this%segment_area = this%segment_area + this%segment_hruarea(j)
-
-            if (this%segment_hruarea(j) < DNEARZERO) then
-              this%noarea_flag = 1
-            endif
-          enddo
+          this%segment_area = sum(this%segment_hruarea)
+          this%noarea_flag = any(this%segment_hruarea < DNEARZERO)
         endif
 
         isegerr = 0
@@ -212,7 +188,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         ! Begin the loops for ordering segments
         do j=1, nsegment
-          iseg = this%obsin_segment(j)
           toseg = this%tosegment(j)
 
           if (toseg == j) then
@@ -239,29 +214,30 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         do while (lval < nsegment)
           do i=1, nsegment
             ! If segment "i" has not been crossed out consider it, else continue
-            if (x_off(i) == 1) cycle
+            if (x_off(i) /= 1) then
+              ! Test to see if segment "i" is the to-segment from other segments
+              test = 1
 
-            ! Test to see if segment "i" is the to segment from other segments
-            test = 1
-            do j=1, nsegment
-              if (this%tosegment(j) == i) then
-                ! If segment "i" is a to segment, test to see if the originating
-                ! segment has been crossed off the list.  If all have been, then
-                ! put the segment in as an ordered segment.
-                if (x_off(j) == 0) then
-                  test = 0
-                  exit
-                endif
-              endif
-            enddo
+              do j=1, nsegment
+                if (this%tosegment(j) == i) then
+                  ! If segment "i" is a to-segment, test to see if the originating
+                  ! segment has been crossed off the list.  If all have been, then
+                  ! put the segment in as an ordered segment.
+                  if (x_off(j) == 0) then
+                    test = 0
+                    exit
+                  end if
+                end if
+              end do
 
-            if (test == 1) then
-              lval = lval + 1
-              this%segment_order(lval) = i
-              x_off(i) = 1
-            endif
-          enddo
-        enddo
+              if (test == 1) then
+                lval = lval + 1
+                this%segment_order(lval) = i
+                x_off(i) = 1
+              end if
+            end if
+          end do
+        end do
 
         deallocate(x_off)
 
@@ -449,7 +425,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         if (cascade_flag == 1) return
 
         ! Divide solar radiation and PET by sum of HRU area to get avarage
-        if (this%noarea_flag == 0) then
+        if (this%noarea_flag) then
           do i=1, nsegment
             this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
             this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)

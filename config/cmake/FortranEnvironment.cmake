@@ -2,6 +2,8 @@
 # All source code follows the free-form fortran format
 enable_language(Fortran)
 
+
+
 # This half-assed block is only necessary because CMAKE ignores overriding the
 # *_INIT variables regardless of where they are placed in the scripts.
 if (DEFINED CMAKE_Fortran_FLAGS_RELEASE_INIT AND
@@ -149,9 +151,85 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   if(APPLE)
     # -nostandard-realloc-lhs
     # -standard-semantics
-    set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -mavx -fp-model source -heap-arrays 512")
+    set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -mavx -fp-model source -heap-arrays 512 -qopt-report-phase=vec,loop")
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -stand f08 -diag-disable=5268 -O0 -g -traceback -debug extended -check all,shape,arg_temp_created -init=snan,arrays -fp-stack-check -ftrapuv -gen-interfaces -warn interfaces -warn all,nouncalled,nounused -heap-arrays 512")
   endif()
+
+# ===============================================
+# Cray
+# ===============================================
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
+    # ================================
+    # Set Cray compile flags
+    # ================================
+    message(STATUS "Getting Cray flags")
+
+
+    #  The -W aliasing option is not supported or invalid and will be ignored.
+    #  The -W ampersand option is not supported or invalid and will be ignored.
+    #  The -W conversion option is not supported or invalid and will be ignored.
+    #  The -W surprising option is not supported or invalid and will be ignored.
+    #  The -W c-binding-type option is not supported or invalid and will be ignored.
+    #  The -W intrinsics-std option is not supported or invalid and will be ignored.
+    #  The -W tabs option is not supported or invalid and will be ignored.
+    #  The -W intrinsic-shadow option is not supported or invalid and will be ignored.
+    #  The -W line-truncation option is not supported or invalid and will be ignored.
+    #  The -W target-lifetime option is not supported or invalid and will be ignored.
+    #  The -W real-q-constant option is not supported or invalid and will be ignored.
+    #  The -s option has an invalid argument, "td=f2008ts".
+    #  The -f option has an invalid argument, "free-line-length-none".
+    #  The -f option has an invalid argument, "all-intrinsics".
+    #  The -f option has an invalid argument, "backtrace".
+    #  The -f option has an invalid argument, "bounds-check".
+
+    # Set flags for all build types
+    #set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2008ts -cpp -ffree-line-length-none -fall-intrinsi
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -hfp1 ")
+
+    # ================================
+    # Set Cray flags for a SHARED library
+    # ================================
+    if(BUILD_SHARED_LIBS)
+      # Add any shared library related stuff here
+      #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -fpic")
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -hpic")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -hpic")
+
+      if(LINUX)
+        # Taken from: https://cmake.org/Wiki/CMake_RPATH_handling#Mac_OS_X_and_the_RPATH
+        # use, i.e. don't skip the full RPATH for the build tree
+        set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+        # when building, don't use the install RPATH already
+        # (but later on when installing)
+        set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+                # add the automatically determined parts of the RPATH
+        # which point to directories outside the build tree to the install RPATH
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+        # the RPATH to be used when installing, but only if it's not a system directory
+        list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+        if("${isSystemDir}" STREQUAL "-1")
+          set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+        endif("${isSystemDir}" STREQUAL "-1")
+      endif()
+
+    else()
+        # ================================
+        # Set Cray flags for a STATIC library
+        # ================================
+      # Static build options
+      if(${LINUX})
+        #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgfortran -static-libgcc -lgfortran -lgcc")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgfortran -static-libgcc -lgfortran -lgcc")
+      endif()
+    endif()
+
+  set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -ef -hpic")
+  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ef -Rb -hpic")
 endif()
 
 

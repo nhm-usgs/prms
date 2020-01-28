@@ -12,7 +12,6 @@ contains
     type(Control), intent(in) :: ctl_data
 
     ! Local variables
-    ! real(r64) :: basin_dprst = 0.0
     ! real(r64) :: basin_perv = 0.0
     ! real(r64) :: basin_imperv = 0.0
 
@@ -29,7 +28,6 @@ contains
     ! --------------------------------------------------------------------------
     associate(cascadegw_flag => ctl_data%cascadegw_flag%value, &
               covtype_dynamic => ctl_data%covtype_dynamic%values(1), &
-              dprst_flag => ctl_data%dprst_flag%value, &
               dyn_covtype_flag => ctl_data%dyn_covtype_flag%value, &
               et_module => ctl_data%et_module%values, &
               gsflow_mode => ctl_data%gsflow_mode, &
@@ -58,8 +56,6 @@ contains
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Load parameters
-      ! TODO: move dprst_frac, dprst_frac_open, dprst_area_max, and basin_dprst to srunoff
-
       allocate(this%cov_type(this%nhru))
       call param_hdl%get_variable('cov_type', this%cov_type)
 
@@ -85,11 +81,8 @@ contains
       call param_hdl%get_variable('nhm_seg', this%nhm_seg)
 
       ! TODO: parameters that aren't coded yet
-      ! dprst_frac_open
-      ! hru_aspect
       ! hru_elev
       ! hru_lon
-      ! hru_slope
       ! hru_x
       ! hru_y
       ! lake_hru_id

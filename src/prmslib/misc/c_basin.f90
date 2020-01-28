@@ -32,21 +32,23 @@ module PRMS_BASIN
     integer(i32) :: nsub = 0
       !! Number of internal subbasins
     integer(i32) :: nwateruse = 0
-      !! TODO: does this belong here?
+      !! TODO: does nwateruse belong here?
 
     ! Parameters
     integer(i32), pointer :: cov_type(:)
       !! Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
-    ! real(r32), allocatable :: dprst_frac(:)
-    !   !! Fraction of each HRU area that has surface depressions
     real(r32), pointer :: hru_area(:)
+      !! Area of each HRU [acres]
     real(r32), pointer :: hru_aspect(:)
+      !! Aspect of each HRU [angular degrees]
     real(r32), pointer :: hru_elev(:)
+      !! Mean elevation for each HRU [feet or meters]
     real(r32), pointer :: hru_lat(:)
+      !! Latitude of each HRU [degrees north]
     real(r32), pointer :: hru_lon(:)
-    ! real(r32), allocatable :: hru_percent_imperv(:)
-      ! TODO: move hru_percent_imperv to srunoff.f90
+      !! Longitude of each HRU [degrees east]
     real(r32), pointer :: hru_slope(:)
+      !! Slope of each HRU [decimal fraction]
     integer(i32), pointer :: hru_type(:)
     real(r32), pointer :: hru_x(:)
     real(r32), pointer :: hru_y(:)

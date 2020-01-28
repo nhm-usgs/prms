@@ -78,8 +78,7 @@ module PRMS_GWFLOW
     real(r64), pointer :: gwres_in(:)
       ! r64 is correct
     real(r64), pointer :: gwres_stor(:)
-      !! (moved from flowvars) Storage in each GWR
-      ! r64 is correct
+      ! Storage in each GWR (r64 is correct)
     real(r64), pointer :: gwstor_minarea_wb(:)
       ! r64 is correct
     real(r64), pointer :: hru_lateral_flow(:)
@@ -93,7 +92,7 @@ module PRMS_GWFLOW
     real(r64), pointer :: lake_seepage_gwr(:)
       ! r64 is correct
     real(r64), pointer :: lake_vol(:)
-      !! (moved from flowvars) Storage in each lake using broad-crested weir or gate opening routing
+      ! Storage in each lake using broad-crested weir or gate opening routing
       ! r64 is correct
 
     contains

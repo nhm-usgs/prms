@@ -5,7 +5,7 @@ contains
   ! Climateflow constructor
   module subroutine init_Climateflow(this, ctl_data, model_basin, model_summary)
     use iso_fortran_env, only: output_unit, error_unit
-    use prms_constants, only: INACTIVE, LAKE
+    use prms_constants, only: LAND, SWALE
     implicit none
 
     class(Climateflow), target, intent(inout) :: this
@@ -58,30 +58,31 @@ contains
       this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
 
       do jj=1, nhru
-        if (hru_type(jj) == INACTIVE .or. hru_type(jj) == LAKE) cycle
+        if (any([LAND, SWALE] == hru_type(jj))) then
+        ! if (hru_type(jj) /= INACTIVE .and. hru_type(jj) /= LAKE) then
+          if (this%soil_rechr_max(jj) > this%soil_moist_max(jj)) then
+            write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_max > soil_moist_max (HRU=', jj, ')'
+            this%soil_rechr_max(jj) = this%soil_moist_max(jj)
+          end if
 
-        if (this%soil_rechr_max(jj) > this%soil_moist_max(jj)) then
-          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_max > soil_moist_max (HRU=', jj, ')'
-          this%soil_rechr_max(jj) = this%soil_moist_max(jj)
-        end if
+          if (this%soil_rechr(jj) > this%soil_rechr_max(jj)) then
+            ! NOTE: PRMS5 has 'soil_rechr_init > soil_rechr_max'
+            write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_rechr_max (HRU=', jj, ')'
+            this%soil_rechr(jj) = this%soil_rechr_max(jj)
+          end if
 
-        if (this%soil_rechr(jj) > this%soil_rechr_max(jj)) then
-          ! NOTE: PRMS5 has 'soil_rechr_init > soil_rechr_max'
-          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_rechr_max (HRU=', jj, ')'
-          this%soil_rechr(jj) = this%soil_rechr_max(jj)
-        end if
+          if (this%soil_moist(jj) > this%soil_moist_max(jj)) then
+            ! NOTE: PRMS5 has 'soil_moist_init > soil_moist_max'
+            write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_moist_init_frac > soil_moist_max (HRU=', jj, ')'
+            this%soil_moist(jj) = this%soil_moist_max(jj)
+          end if
 
-        if (this%soil_moist(jj) > this%soil_moist_max(jj)) then
-          ! NOTE: PRMS5 has 'soil_moist_init > soil_moist_max'
-          write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_moist_init_frac > soil_moist_max (HRU=', jj, ')'
-          this%soil_moist(jj) = this%soil_moist_max(jj)
-        end if
-
-        if (this%soil_rechr(jj) > this%soil_moist(jj)) then
-          ! NOTE: PRMS5 has 'soil_rechr_init > soil_moist_init'
-          ! DEBUG: PAN - re-add output
-          ! write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_moist_init_frac (HRU=', jj, ')'
-          this%soil_rechr(jj) = this%soil_moist(jj)
+          if (this%soil_rechr(jj) > this%soil_moist(jj)) then
+            ! NOTE: PRMS5 has 'soil_rechr_init > soil_moist_init'
+            ! DEBUG: PAN - re-add output
+            ! write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_init_frac > soil_moist_init_frac (HRU=', jj, ')'
+            this%soil_rechr(jj) = this%soil_moist(jj)
+          end if
         end if
       end do
 
