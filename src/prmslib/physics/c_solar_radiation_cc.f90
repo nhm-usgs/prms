@@ -29,10 +29,10 @@ module SOLAR_RADIATION_CC
 
   type, extends(SolarRadiation) :: Solrad_cc
     ! Declared Variables
-    real(r64), allocatable :: basin_radadj
-    real(r64), allocatable :: basin_cloud_cover
-    real(r32), allocatable :: cloud_radadj(:)
-    real(r32), allocatable :: cloud_cover_hru(:)
+    real(r64), pointer :: basin_radadj
+    real(r64), pointer :: basin_cloud_cover
+    real(r32), pointer :: cloud_radadj(:)
+    real(r32), pointer :: cloud_cover_hru(:)
 
     contains
       procedure, public :: init => init_Solrad_cc

@@ -54,19 +54,19 @@ module PRMS_FILE_IO_NETCDF
     module subroutine get_variable_i32_1d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i32), allocatable, intent(inout) :: var_data(:)
+      integer(i32), pointer, intent(inout) :: var_data(:)
     end subroutine
 
     module subroutine get_variable_i32_2d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i32), allocatable, intent(inout) :: var_data(:, :)
+      integer(i32), pointer, intent(inout) :: var_data(:, :)
     end subroutine
 
     module subroutine get_variable_i64_2d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i64), allocatable, intent(inout) :: var_data(:, :)
+      integer(i64), pointer, intent(inout) :: var_data(:, :)
     end subroutine
 
     module subroutine get_variable_r32_scalar(this, name, var_data)
@@ -78,25 +78,25 @@ module PRMS_FILE_IO_NETCDF
     module subroutine get_variable_r32_1d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:)
+      real(r32), pointer, intent(inout) :: var_data(:)
     end subroutine
 
     module subroutine get_variable_r32_2d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:, :)
+      real(r32), pointer, intent(inout) :: var_data(:, :)
     end subroutine
 
     module subroutine get_variable_r64_1d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r64), allocatable, intent(inout) :: var_data(:)
+      real(r64), pointer, intent(inout) :: var_data(:)
     end subroutine
 
     module subroutine get_variable_r64_2d(this, name, var_data)
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r64), allocatable, intent(inout) :: var_data(:, :)
+      real(r64), pointer, intent(inout) :: var_data(:, :)
     end subroutine
   end interface
 
