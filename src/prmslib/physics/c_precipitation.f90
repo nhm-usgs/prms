@@ -19,26 +19,26 @@ module PRMS_PRECIPITATION
   type, extends(ModelBase) :: Precipitation
     ! Parameters for precipitation
     integer(i32) :: precip_units
-    real(r32), allocatable :: tmax_allsnow(:, :)
-    real(r32), allocatable :: tmax_allrain_offset(:, :)
+    real(r32), pointer :: tmax_allsnow(:, :)
+    real(r32), pointer :: tmax_allrain_offset(:, :)
 
     ! Output variables
-    real(r64), allocatable :: basin_obs_ppt
+    real(r64), pointer :: basin_obs_ppt
       !! Basin area-weighted measured average precipitation, in inches
-    real(r64), allocatable :: basin_ppt
+    real(r64), pointer :: basin_ppt
       !! Basin area-weighted average precipitation, in inches
-    real(r64), allocatable :: basin_rain
+    real(r64), pointer :: basin_rain
       !! Basin area-weighted average rainfall, in inches
-    real(r64), allocatable :: basin_snow
+    real(r64), pointer :: basin_snow
       !! Basin area-weighted average snowfall, in inches
 
-    real(r32), allocatable :: hru_ppt(:)
+    real(r32), pointer :: hru_ppt(:)
       !! Precipitation distributed to each HRU, in inches
-    real(r32), allocatable :: hru_rain(:)
+    real(r32), pointer :: hru_rain(:)
       !! Rain distributed to each HRU, in inches
-    real(r32), allocatable :: hru_snow(:)
+    real(r32), pointer :: hru_snow(:)
       !! Snow distributed to each HRU, in inches
-    real(r32), allocatable :: prmx(:)
+    real(r32), pointer :: prmx(:)
       !! Fraction of rain in a mixed precipitation event for each HRU
 
     ! integer(i32), allocatable :: newsnow(:)

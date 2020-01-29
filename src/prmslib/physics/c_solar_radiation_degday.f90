@@ -24,15 +24,18 @@ module SOLAR_RADIATION_DEGDAY
 
   type, extends(SolarRadiation) :: Solrad_degday
     ! Parameters
-    real(r32), allocatable, private :: tmax_index(:, :)
+    !real(r32), pointer, private :: tmax_index(:, :)
+    real(r32), pointer :: tmax_index(:, :) !rmcd changed to add access to bmi setter functions
       !! Monthly (January to December) index temperature used to determine precipitation adjustments to solar radiation for each HRU
-    real(r32), allocatable, private :: dday_intcp(:, :)
+    !real(r32), pointer, private :: dday_intcp(:, :)
+    real(r32), pointer :: dday_intcp(:, :) !rmcd changed to add access to bmi setter functions
       !! Monthly (January to December) intercept in degree-day equation for each HRU
-    real(r32), allocatable, private :: dday_slope(:, :)
+    !real(r32), pointer, private :: dday_slope(:, :)
+    real(r32), pointer :: dday_slope(:, :) !rmcd changed to add access to bmi setter functions
       !! Monthly (January to December) slope in degree-day equation for each HRU
-    real(r32), allocatable, private :: radadj_intcp(:, :)
+    real(r32), pointer, private :: radadj_intcp(:, :)
       !! Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU
-    real(r32), allocatable, private :: radadj_slope(:, :)
+    real(r32), pointer, private :: radadj_slope(:, :)
       !! Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU
 
     contains

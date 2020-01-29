@@ -54,26 +54,26 @@ module SOLAR_RADIATION
     integer(i32) :: basin_solsta
     integer(i32) :: rad_conv
       !! Conversion factor to langleys for measured solar radiation
-    integer(i32), allocatable :: hru_solsta(:)
-    real(r32), allocatable :: ppt_rad_adj(:, :)
+    integer(i32), pointer :: hru_solsta(:)
+    real(r32), pointer :: ppt_rad_adj(:, :)
       !! Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is multiplied by radj_sppt or radj_wppt precipitation adjustment factor
-    real(r32), allocatable :: radj_sppt(:)
-    real(r32), allocatable :: radj_wppt(:)
-    real(r32), allocatable :: radmax(:, :)
+    real(r32), pointer :: radj_sppt(:)
+    real(r32), pointer :: radj_wppt(:)
+    real(r32), pointer :: radmax(:, :)
       !! Monthly (January to December maximum fraction of the potential solar radiation that may reach the ground due to haze, dust, smog, and so forth, for each HRU
 
     ! Time-series input variables
-    real(r32), allocatable :: solrad(:)
+    real(r32), pointer :: solrad(:)
       !! Solar radiation at each measurement station
 
     ! Output variables
-    real(r64), allocatable :: basin_horad
-    real(r64), allocatable :: basin_orad
-    real(r64), allocatable :: basin_potsw
-    real(r64), allocatable :: basin_swrad
+    real(r64), pointer :: basin_horad
+    real(r64), pointer :: basin_orad
+    real(r64), pointer :: basin_potsw
+    real(r64), pointer :: basin_swrad
     real(r32) :: orad
-    real(r32), allocatable :: orad_hru(:)
-    real(r32), allocatable :: swrad(:)
+    real(r32), pointer :: orad_hru(:)
+    real(r32), pointer :: swrad(:)
 
     ! Other variables
     logical :: has_basin_obs_station
@@ -85,18 +85,18 @@ module SOLAR_RADIATION
 
     ! WARNING: tmax_f and tmin_f will be removed once ccov_slope and ccov_intcp
     !          are converted to match Celsius temp_unit.
-    real(r32), allocatable :: tmax_f(:)
-    real(r32), allocatable :: tmin_f(:)
+    real(r32), pointer :: tmax_f(:)
+    real(r32), pointer :: tmin_f(:)
 
     ! real(r64) :: solar_declination(366)
     real(r64) :: soltab_basinpotsw(DAYS_PER_YEAR)
-    real(r64), allocatable :: hru_cossl(:)
-    real(r64), allocatable :: soltab_sunhrs(:, :)
+    real(r64), pointer :: hru_cossl(:)
+    real(r64), pointer :: soltab_sunhrs(:, :)
 
     ! Declared Variables
     ! real(r32), allocatable :: orad_hru(:)
-    real(r64), allocatable :: soltab_potsw(:, :)
-    real(r64), allocatable :: soltab_horad_potsw(:, :)
+    real(r64), pointer :: soltab_potsw(:, :)
+    real(r64), pointer :: soltab_horad_potsw(:, :)
 
     contains
       procedure, public :: init => init_SolarRadiation

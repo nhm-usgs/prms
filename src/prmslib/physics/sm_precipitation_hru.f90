@@ -50,7 +50,10 @@ contains
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Open the CBH file
-      if (precip_day%s(index(precip_day%s, '.')+1:) == 'nc') then
+      !scan(trim(precip_day%s),".", BACK= .true.)
+      if (precip_day%s(scan(trim(precip_day%s),".", BACK= .true.)+1:) == 'nc') then
+
+      !if (precip_day%s(index(precip_day%s, '.')+1:) == 'nc') then
         call open_netcdf_cbh_file(this%precip_funit, this%precip_varid, this%precip_idx_offset, &
                                   precip_day%s, 'prcp', start_time, end_time, nhru)
         this%has_netcdf_precip = .true.

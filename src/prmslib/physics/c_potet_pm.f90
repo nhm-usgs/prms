@@ -31,12 +31,12 @@ module PRMS_POTET_PM
 
     real(r64), pointer :: basin_windspeed
 
-    real(r32), allocatable :: tempc_dewpt(:)
-    real(r32), allocatable :: vp_actual(:)
-    real(r32), allocatable :: vp_sat(:)
-    real(r32), allocatable :: vp_slope(:)
-    real(r32), allocatable :: lwrad_net(:)
-    real(r32), allocatable :: windspeed_hru(:)
+    real(r32), pointer :: tempc_dewpt(:)
+    real(r32), pointer :: vp_actual(:)
+    real(r32), pointer :: vp_sat(:)
+    real(r32), pointer :: vp_slope(:)
+    real(r32), pointer :: lwrad_net(:)
+    real(r32), pointer :: windspeed_hru(:)
 
     contains
       procedure, public :: init => init_Potet_pm

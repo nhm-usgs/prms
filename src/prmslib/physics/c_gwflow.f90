@@ -26,18 +26,18 @@ module PRMS_GWFLOW
       !! Number of groundwater reservoirs
 
     ! Parameters
-    real(r32), allocatable, private :: gwflow_coef(:)
-    real(r32), allocatable, private :: gwsink_coef(:)
-    real(r32), allocatable, private :: gwstor_init(:)
-    real(r32), allocatable, private :: gwstor_min(:)
+    real(r32), pointer :: gwflow_coef(:)
+    real(r32), pointer :: gwsink_coef(:)
+    real(r32), pointer, private :: gwstor_init(:)
+    real(r32), pointer, private :: gwstor_min(:)
 
     ! NOTE: manual says the following is part of muskingum_lake but only gwflow uses
     !       them when weir_gate_flag == 1 (set in Basin module)
-    real(r32), allocatable, private :: elevlake_init(:)
+    real(r32), pointer, private :: elevlake_init(:)
       !! Initial lake surface elevation for each lake using broad-crested weir routing or gate opening routing
-    real(r32), allocatable, private :: gw_seep_coef(:)
+    real(r32), pointer, private :: gw_seep_coef(:)
       !! Linear coefficient in equation to compute lakebed seepage to the GWR and groundwater discharge to each lake using broad-crested weir routing or gate opening routing
-    real(r32), allocatable, private :: lake_seep_elev(:)
+    real(r32), pointer, private :: lake_seep_elev(:)
       !! Elevation over which lakebed seepage to the GWR occurs for lake HRUs using broad-crested weir routing or gate opening routing
 
 
@@ -55,43 +55,43 @@ module PRMS_GWFLOW
     real(r64), allocatable :: gwres_stor_ante(:)
 
     ! Output variables
-    real(r64), allocatable :: basin_gwflow
-    real(r64), allocatable :: basin_gwin
-    real(r64), allocatable :: basin_gwsink
-    real(r64), allocatable :: basin_gwstor
-    real(r64), allocatable :: basin_gwstor_minarea_wb
-    real(r64), allocatable :: basin_lake_seep
+    real(r64), pointer :: basin_gwflow
+    real(r64), pointer :: basin_gwin
+    real(r64), pointer :: basin_gwsink
+    real(r64), pointer :: basin_gwstor
+    real(r64), pointer :: basin_gwstor_minarea_wb
+    real(r64), pointer :: basin_lake_seep
 
     real(r32), allocatable, private :: elevlake(:)
-    real(r32), allocatable :: gwres_flow(:)
-    real(r32), allocatable :: gwres_sink(:)
-    real(r32), allocatable :: hru_gw_cascadeflow(:)
+    real(r32), pointer :: gwres_flow(:)
+    real(r32), pointer :: gwres_sink(:)
+    real(r32), pointer :: hru_gw_cascadeflow(:)
 
-    real(r64), allocatable, private :: gw_in_soil(:)
+    real(r64), pointer, private :: gw_in_soil(:)
       ! r64 is correct
-    real(r64), allocatable, private :: gw_in_ssr(:)
+    real(r64), pointer, private :: gw_in_ssr(:)
       ! r64 is correct
-    real(r64), allocatable, private :: gw_seep_lakein(:)
+    real(r64), pointer, private :: gw_seep_lakein(:)
       ! r64 is correct
-    real(r64), allocatable :: gw_upslope(:)
+    real(r64), pointer :: gw_upslope(:)
       ! r64 is correct
-    real(r64), allocatable :: gwres_in(:)
+    real(r64), pointer :: gwres_in(:)
       ! r64 is correct
-    real(r64), allocatable :: gwres_stor(:)
+    real(r64), pointer :: gwres_stor(:)
       ! Storage in each GWR (r64 is correct)
-    real(r64), allocatable :: gwstor_minarea_wb(:)
+    real(r64), pointer :: gwstor_minarea_wb(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_lateral_flow(:)
+    real(r64), pointer :: hru_lateral_flow(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_storage(:)
+    real(r64), pointer :: hru_storage(:)
       ! r64 is correct
-    real(r64), allocatable :: hru_streamflow_out(:)
+    real(r64), pointer :: hru_streamflow_out(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_seepage(:)
+    real(r64), pointer :: lake_seepage(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_seepage_gwr(:)
+    real(r64), pointer :: lake_seepage_gwr(:)
       ! r64 is correct
-    real(r64), allocatable :: lake_vol(:)
+    real(r64), pointer :: lake_vol(:)
       ! Storage in each lake using broad-crested weir or gate opening routing
       ! r64 is correct
 

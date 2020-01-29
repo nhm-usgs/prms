@@ -30,60 +30,62 @@ module PRMS_INTCP
     ! Dimensions
 
     ! Parameters
-    real(r32), allocatable, private :: covden_sum(:)
+    !real(r32), pointer, private :: covden_sum(:)
+    real(r32), pointer :: covden_sum(:) !rmcd changed to allow setter access in bmi
       !! Summer vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable, private :: covden_win(:)
+    !real(r32), pointer, private :: covden_win(:)
+    real(r32), pointer :: covden_win(:) !rmcd changed to allow setter access in bmi
       !! Winter vegetation cover density for the major vegetation type in each HRU
-    real(r32), allocatable :: snow_intcp(:)
+    real(r32), pointer :: snow_intcp(:)
       !! Snow interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: srain_intcp(:)
+    real(r32), pointer :: srain_intcp(:)
       !! Summer rain interception storage capacity for the major vegetation type in each HRU
-    real(r32), allocatable :: wrain_intcp(:)
+    real(r32), pointer :: wrain_intcp(:)
       !! Winter rain interception storage capacity for the major vegetation type in each HRU
 
     ! Local Variables
-    real(r32), allocatable :: intcp_changeover(:)
-    real(r32), allocatable :: intcp_stor_ante(:)
+    real(r32), pointer :: intcp_changeover(:)
+    real(r32), pointer :: intcp_stor_ante(:)
 
     real(r64) :: last_intcp_stor
       !! Set by intcp, used by water_balance
 
-    logical, allocatable, private :: intcp_transp_on(:)
+    logical, pointer, private :: intcp_transp_on(:)
     logical :: use_transfer_intcp
 
     real(r64), allocatable :: basin_changeover
 
     ! Output variables
-    real(r64), allocatable :: basin_intcp_evap
+    real(r64), pointer :: basin_intcp_evap
       !! Basin area-weighted evaporation from the canopy [inches]
-    real(r64), allocatable :: basin_intcp_stor
+    real(r64), pointer :: basin_intcp_stor
       !! Basin area-weighted average interception storage [inches]
-    real(r64), allocatable :: basin_net_ppt
+    real(r64), pointer :: basin_net_ppt
       !! Basin area-weighted average throughfall [inches]
-    real(r64), allocatable :: basin_net_rain
+    real(r64), pointer :: basin_net_rain
       !! Basin area-weighted average rain throughfall [inches]
-    real(r64), allocatable :: basin_net_snow
+    real(r64), pointer :: basin_net_snow
       !! Basin area-weighted average snow throughfall [inches]
 
-    real(r32), allocatable :: canopy_covden(:)
+    real(r32), pointer :: canopy_covden(:)
       !! Canopy cover density for each HRU [decimal fraction]
-    real(r32), allocatable :: hru_intcpevap(:)
+    real(r32), pointer :: hru_intcpevap(:)
       !! Evaporation from the canopy for each HRU [inches]
-    real(r32), allocatable :: hru_intcpstor(:)
+    real(r32), pointer :: hru_intcpstor(:)
       !! Interception storage in the canopy for each HRU [inches]
-    real(r32), allocatable :: intcp_evap(:)
+    real(r32), pointer :: intcp_evap(:)
       !! Evaporation from the canopy for each HRU [inches] (** same as hru_intcpevap **)
-    integer(i32), allocatable, private :: intcp_form(:)
+    integer(i32), pointer, private :: intcp_form(:)
       !! Form (rain or snow) of interception for each HRU [0=rain; 1=snow]
-    real(r32), allocatable :: intcp_stor(:)
+    real(r32), pointer :: intcp_stor(:)
       !! Interception storage in canopy for cover density for each HRU [inches]
-    logical, allocatable :: intcp_on(:)
+    logical, pointer :: intcp_on(:)
       !! Flag indicating interception storage for each HRU [0=no; 1=yes]
-    real(r32), allocatable :: net_ppt(:)
+    real(r32), pointer :: net_ppt(:)
       !! Precipitation (rain and/or snow) that falls through the canopy for each HRU [inches]
-    real(r32), allocatable :: net_rain(:)
+    real(r32), pointer :: net_rain(:)
       !! Rain that falls through canopy for each HRU [inches]
-    real(r32), allocatable :: net_snow(:)
+    real(r32), pointer :: net_snow(:)
       !! Snow that falls through canopy for each HRU [inches]
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,15 +96,15 @@ module PRMS_INTCP
     ! irr_type
 
     ! Output variables
-    real(r64), allocatable :: basin_hru_apply
+    real(r64), pointer :: basin_hru_apply
       !! Basin area-weighted average canopy_gain [inches]
-    real(r64), allocatable :: basin_net_apply
+    real(r64), pointer :: basin_net_apply
       !! Basin area-weighted average net_apply [inches]
-    real(r32), allocatable :: net_apply(:)
+    real(r32), pointer :: net_apply(:)
       !! canopy_gain minus interception [inches]
 
     ! Local variables
-    real(r32), allocatable :: gain_inches(:)
+    real(r32), pointer :: gain_inches(:)
       !! canopy_gain converted to inches
 
     ! Additional variables
