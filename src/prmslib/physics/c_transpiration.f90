@@ -21,7 +21,7 @@ module PRMS_TRANSPIRATION
     ! integer(i32) :: basin_transp_on
     logical :: basin_transp_on
 
-    logical, allocatable :: transp_on(:)
+    logical, pointer :: transp_on(:)
     ! integer(i32), allocatable :: transp_on(:)
 
   contains

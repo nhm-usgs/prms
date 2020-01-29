@@ -159,7 +159,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i32), allocatable, intent(inout) :: var_data(:)
+      integer(i32), pointer, intent(inout) :: var_data(:)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -179,7 +179,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i32), allocatable, intent(inout) :: var_data(:, :)
+      integer(i32), pointer, intent(inout) :: var_data(:, :)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -199,7 +199,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      integer(i64), allocatable, intent(inout) :: var_data(:, :)
+      integer(i64), pointer, intent(inout) :: var_data(:, :)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -240,7 +240,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:)
+      real(r32), pointer, intent(inout) :: var_data(:)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -261,7 +261,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r32), allocatable, intent(inout) :: var_data(:, :)
+      real(r32), pointer, intent(inout) :: var_data(:, :)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -311,7 +311,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r64), allocatable, intent(inout) :: var_data(:)
+      real(r64), pointer, intent(inout) :: var_data(:)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file
@@ -331,7 +331,7 @@ submodule (PRMS_FILE_IO_NETCDF) sm_FileIO_netcdf
 
       class(FileIO_netcdf), intent(in) :: this
       character(len=*), intent(in) :: name
-      real(r64), allocatable, intent(inout) :: var_data(:, :)
+      real(r64), pointer, intent(inout) :: var_data(:, :)
 
       integer(i32) :: varid
         !! Variable ID in the CBH netcdf file

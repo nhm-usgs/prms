@@ -17,8 +17,10 @@ module PRMS_TEMPERATURE_HRU
 
   type, extends(Temperature) :: Temperature_hru
     ! Parameters
-    real(r32), allocatable, private :: tmax_cbh_adj(:, :)
-    real(r32), allocatable, private :: tmin_cbh_adj(:, :)
+    !real(r32), pointer, private :: tmax_cbh_adj(:, :)
+    !real(r32), pointer, private :: tmin_cbh_adj(:, :)
+    real(r32), pointer :: tmax_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: tmin_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
 
     ! Local variables
     integer(i32), private :: tmax_funit
