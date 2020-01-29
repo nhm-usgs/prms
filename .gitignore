@@ -6,8 +6,10 @@ old/
 .idea/
 .vscode/
 *.mod
+*.smod
 *.swp
 *.o
 CMakeFiles
 cmake_install.cmake
 Makefile
+build_gcc/
