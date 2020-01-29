@@ -83,8 +83,8 @@ endif ()
 # else ()
 #   target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_F90_LIBRARIES})
 # endif ()
-target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${NETCDF_INCLUDE_DIRS})
+# target_link_libraries(${PROJECT_NAME} PUBLIC ${NETCDF_LIBRARIES})
+# target_include_directories(${PROJECT_NAME} PRIVATE ${NETCDF_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${NETCDF_INCLUDE_DIRS})
 
 # # Link in the library

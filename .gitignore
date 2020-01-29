@@ -1,13 +1,13 @@
 bin/
+build/
+build_gcc/
 _build/
-_build2/
 include/
 output/
 lib/
 old/
 .idea/
 .vscode/
-_build/
 *.zip
 *.mod
 *.smod
@@ -16,4 +16,3 @@ _build/
 CMakeFiles
 cmake_install.cmake
 Makefile
-build_gcc/
