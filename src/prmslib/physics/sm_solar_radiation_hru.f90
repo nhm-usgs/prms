@@ -16,7 +16,6 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       ! ------------------------------------------------------------------------
       ! Call the parent constructor first
       call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
-      ! this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
 
       associate(nhru => ctl_data%nhru%value, &
                 cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -59,13 +58,7 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
       ! ----------------------------------------------------------------------
       associate(day_of_year => model_time%day_of_year, &
                 nhru => ctl_data%nhru%value, &
-                orad_flag => ctl_data%orad_flag%value, &
-
-                basin_area_inv => model_basin%basin_area_inv, &
-
-                hru_area => param_data%hru_area%values)
-
-        ! basin_horad = soltab_basinpotsw(day_of_year)  ! Calculated in cc/ddsolrad
+                orad_flag => ctl_data%orad_flag%value)
 
         if (orad_flag == 0) then
           read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%swrad(jj), jj=1, nhru)
@@ -74,11 +67,9 @@ submodule(SOLAR_RADIATION_HRU) sm_solar_radiation_hru
           orad = sngl((dble(this%swrad(1)) * this%hru_cossl(1) * this%soltab_basinpotsw(day_of_year)) / this%soltab_potsw(day_of_year, 1))
         else
           ! orad is specified as last column in swrad_day CBH file
+          ! WARNING: PAN With orad removed from solar radiation the next line won't work
           read(this%swrad_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%swrad(jj), jj=1, nhru), this%orad
         endif
-
-        this%basin_swrad = sum(dble(this%swrad * hru_area)) * basin_area_inv
-        this%basin_potsw = this%basin_swrad
       end associate
     end subroutine
 end submodule

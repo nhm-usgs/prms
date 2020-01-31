@@ -11,13 +11,9 @@ contains
     type(Basin), intent(in) :: model_basin
     type(Summary), intent(inout) :: model_summary
 
-    ! Control
-    ! nhru,
-
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
-    ! this%SolarRadiation = SolarRadiation(ctl_data, model_basin, model_summary)
 
     associate(print_debug => ctl_data%print_debug%value, &
               param_hdl => ctl_data%param_file_hdl, &
@@ -63,9 +59,7 @@ contains
 
     class(Solrad_degday), intent(inout) :: this
     type(Control), intent(in) :: ctl_data
-    ! type(Parameters), intent(in) :: param_data
     type(Time_t), intent(in) :: model_time
-    ! type(Obs), intent(in) :: model_obs
     class(Precipitation), intent(in) :: model_precip
     type(Basin), intent(in) :: model_basin
     class(Temperature), intent(in) :: model_temp
@@ -81,20 +75,6 @@ contains
     real(r32) :: dday
     real(r32) :: ddayi
 
-    ! real(r32), pointer :: dday_slope_2d(:,:)
-    ! real(r32), pointer :: dday_intcp_2d(:,:)
-    ! real(r32), pointer :: ppt_rad_adj_2d(:,:)
-    ! real(r32), pointer :: radmax_2d(:,:)
-    ! real(r32), pointer :: radadj_intcp_2d(:,:)
-    ! real(r32), pointer :: radadj_slope_2d(:,:)
-    ! real(r32), pointer :: tmax_index_2d(:,:)
-
-    ! Soltab
-    ! hru_cossl, soltab_basinpotsw, soltab_horad_potsw, soltab_potsw,
-
-    ! Temperature
-    ! tmax, tmax_f
-
     !***********************************************************************
 
     associate(print_debug => ctl_data%print_debug%value, &
@@ -108,26 +88,17 @@ contains
               nmonths => model_basin%nmonths, &
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => model_basin%hru_area, &
               hru_route_order => model_basin%hru_route_order, &
 
               hru_ppt => model_precip%hru_ppt, &
               tmax_allrain => model_precip%tmax_allrain_f, &
-              ! tmaxc => climate%tmaxc, &
-              ! tmax_hru => climate%tmax_hru, &
 
               tmax_f => model_temp%tmax_f)
-
-              ! hru_solsta => param_data%hru_solsta%values, &
-              ! radj_sppt => param_data%radj_sppt%values, &
-              ! radj_wppt => param_data%radj_wppt%values)
 
       ! NOTE: Once units are standardized this can go away
       ! this%tmax_f = c_to_f(model_temp%tmax)
 
       !rsr using julian day as the soltab arrays are filled by julian day
-      this%basin_horad = this%soltab_basinpotsw(day_of_year)
 
       do jj = 1, active_hrus
         chru = hru_route_order(jj)
@@ -180,7 +151,6 @@ contains
         radadj = radadj * pptadj
         if (radadj < 0.2) radadj = 0.2
 
-        ! climate%orad_hru(chru) = radadj * sngl(solt%soltab_horad_potsw(day_of_year, chru))
         this%orad_hru(chru) = radadj * sngl(this%soltab_horad_potsw(day_of_year, chru))
 
         if (this%has_hru_obs_station) then
@@ -192,35 +162,16 @@ contains
                 ! call print_date(1)
               endif
             else
-              ! climate%orad_hru(chru) = radadj * sngl(solt%soltab_horad_potsw(day_of_year, chru))
               this%orad_hru(chru) = radadj * sngl(this%soltab_horad_potsw(day_of_year, chru))
-              ! basin_swrad = basin_swrad + dble(swrad(j) * hru_area(j))
               cycle
             endif
           endif
         endif
 
-        ! climate%swrad(chru) = sngl(solt%soltab_potsw(day_of_year, chru) / solt%soltab_horad_potsw(day_of_year, chru) * &
-        !                            dble(climate%orad_hru(chru)) / solt%hru_cossl(chru))
         this%swrad(chru) = sngl(this%soltab_potsw(day_of_year, chru) / this%soltab_horad_potsw(day_of_year, chru) * &
                                    dble(this%orad_hru(chru)) / this%hru_cossl(chru))
       enddo
 
-      ! climate%basin_orad = sum(dble(climate%orad_hru * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_orad = sum(dble(this%orad_hru * hru_area), mask=active_mask) * basin_area_inv
-
-      if (this%has_basin_obs_station) then
-        ! orad = solrad(param_data%basin_solsta%values(1)) * this%radiation_cv_factor
-        this%orad = this%solrad(this%basin_solsta) * this%radiation_cv_factor
-      else
-        ! orad = sngl(basin_orad)
-        this%orad = sngl(this%basin_orad)
-      endif
-
-      ! climate%basin_swrad = sum(dble(climate%swrad * hru_area), mask=active_mask) * basin_area_inv
-      ! basin_potsw = basin_swrad
-      this%basin_swrad = sum(dble(this%swrad * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_potsw = this%basin_swrad
     end associate
   end subroutine
 

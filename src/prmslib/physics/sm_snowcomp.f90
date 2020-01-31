@@ -34,9 +34,6 @@ contains
               nmonths => model_basin%nmonths, &
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => model_basin%hru_area, &
-              hru_area_dble => model_basin%hru_area_dble, &
               hru_route_order => model_basin%hru_route_order, &
 
               pkwater_equiv => model_climate%pkwater_equiv)
@@ -175,19 +172,6 @@ contains
 
       ! this%settle_const_dble = dble(settle_const)
 
-      allocate(this%basin_pk_precip)
-      allocate(this%basin_pweqv)
-      allocate(this%basin_snowcov)
-      allocate(this%basin_snowdepth)
-      allocate(this%basin_snowevap)
-      allocate(this%basin_snowmelt)
-      allocate(this%basin_tcal)
-
-      this%basin_pk_precip = 0.0_dp
-      this%basin_snowevap = 0.0_dp
-      this%basin_snowmelt = 0.0_dp
-      this%basin_tcal = 0.0_dp
-
       ! TODO: Hookup the read from restart file code
       ! if ( Init_vars_from_file>0 ) call snowcomp_restart(1)
 
@@ -240,10 +224,6 @@ contains
         !   endif
         ! enddo
 
-        this%basin_pweqv = sum(pkwater_equiv * hru_area_dble, mask=active_mask) * basin_area_inv
-        this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
-        this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
-
         ! NOTE: can deallocate parameter snowpack_init at this point
         deallocate(this%snowpack_init)
 
@@ -260,20 +240,6 @@ contains
           select case(outVar_names%values(jj)%s)
             case('albedo')
               call model_summary%set_summary_var(jj, this%albedo)
-            case('basin_pk_precip')
-              call model_summary%set_summary_var(jj, this%basin_pk_precip)
-            case('basin_pweqv')
-              call model_summary%set_summary_var(jj, this%basin_pweqv)
-            case('basin_snowcov')
-              call model_summary%set_summary_var(jj, this%basin_snowcov)
-            case('basin_snowdepth')
-              call model_summary%set_summary_var(jj, this%basin_snowdepth)
-            case('basin_snowevap')
-              call model_summary%set_summary_var(jj, this%basin_snowevap)
-            case('basin_snowmelt')
-              call model_summary%set_summary_var(jj, this%basin_snowmelt)
-            case('basin_tcal')
-              call model_summary%set_summary_var(jj, this%basin_tcal)
             case('freeh2o')
               call model_summary%set_summary_var(jj, this%freeh2o)
             case('pk_def')
@@ -292,6 +258,8 @@ contains
               call model_summary%set_summary_var(jj, this%snowcov_area)
             case('snowmelt')
               call model_summary%set_summary_var(jj, this%snowmelt)
+            case('tcal')
+              call model_summary%set_summary_var(jj, this%tcal)
             case('pptmix')    ! from precipitation
               call model_summary%set_summary_var(jj, this%pptmix)
             case('newsnow')   ! from precipitation
@@ -364,15 +332,12 @@ contains
               nmonths => model_basin%nmonths, &
               active_hrus => model_basin%active_hrus, &
               active_mask => model_basin%active_mask, &
-              basin_area_inv => model_basin%basin_area_inv, &
               cov_type => model_basin%cov_type, &
-              hru_area => model_basin%hru_area, &
-              hru_area_dble => model_basin%hru_area_dble, &
               hru_type => model_basin%hru_type, &
               hru_route_order => model_basin%hru_route_order, &
 
-              basin_horad => model_solrad%basin_horad, &
-              orad => model_solrad%orad, &
+              orad_hru => model_solrad%orad_hru, &
+              soltab_horad_potsw => model_solrad%soltab_horad_potsw, &
               swrad => model_solrad%swrad, &
 
               pkwater_equiv => model_climate%pkwater_equiv, &
@@ -390,20 +355,11 @@ contains
               net_rain => intcp%net_rain, &
               net_snow => intcp%net_snow)
 
-      ! Set the basin totals to 0 (recalculated at the end of the time step)
-      ! this%basin_pk_precip = 0.0_dp
-      ! this%basin_pweqv = 0.0_dp
-      ! this%basin_snowcov = 0.0_dp
-      ! this%basin_snowdepth = 0.0_dp
-      ! this%basin_snowevap = 0.0_dp
-      ! this%basin_snowmelt = 0.0_dp
-      ! this%basin_tcal = 0.0_dp
-
       cals = 0.0  ! initialize
 
       ! Calculate the ratio of measured radiation to potential radiation
       ! (used as a cumulative indicator of cloud cover)
-      trd = orad / sngl(basin_horad)  ! [dimensionless ratio]
+      ! trd = orad / sngl(basin_horad)  ! [dimensionless ratio]
 
       ! By default, the precipitation added to snowpack, snowmelt,
       ! and snow evaporation are 0.
@@ -438,6 +394,8 @@ contains
 
         ! Skip the HRU if it is a lake
         if (hru_type(chru) == LAKE) cycle
+
+        trd = orad_hru(chru) / soltab_horad_potsw(day_of_year, chru)
 
         ! 2D index to 1D
         idx1D = (curr_month - 1) * nhru + chru
@@ -754,15 +712,6 @@ contains
           this%frac_swe(chru) = 0.0
         endif
       enddo
-
-
-      this%basin_snowmelt = sum(dble(this%snowmelt * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_pweqv = sum(pkwater_equiv * hru_area_dble, mask=active_mask) * basin_area_inv
-      this%basin_snowevap = sum(dble(this%snow_evap * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_snowcov = sum(dble(this%snowcov_area * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_pk_precip = sum(dble(this%pk_precip * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_snowdepth = sum(this%pk_depth * hru_area_dble, mask=active_mask) * basin_area_inv
-      this%basin_tcal = sum(dble(this%tcal * hru_area), mask=active_mask) * basin_area_inv
 
       if (print_debug == 9) then
         print 9001, day_of_year, (transp_on(chru), chru=1, nhru)

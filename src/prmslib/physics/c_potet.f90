@@ -32,9 +32,6 @@ module PRMS_POTET
       !! Humidity CBH file unit
 
     ! Output variables
-    real(r64), pointer :: basin_humidity
-    real(r64), pointer :: basin_potet
-
     real(r32), pointer :: humidity_hru(:)
       !! (moved from climate_hru)
     real(r32), pointer :: potet(:)

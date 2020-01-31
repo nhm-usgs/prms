@@ -355,12 +355,12 @@ contains
   !***********************************************************************
   ! Read file to line before data starts in file
   !***********************************************************************
-  module subroutine open_dyn_param_file(nhru, Iunit, Iret, Fname, Paramname)
+  module subroutine open_dyn_param_file(Iunit, Iret, Fname, Paramname)
     use iso_fortran_env, only: output_unit
     implicit none
 
     ! Argument
-    integer(i32), intent(in) :: nhru
+    ! integer(i32), intent(in) :: nhru
       !! Expected number of HRUs in the CBH file
     integer(i32), intent(out) :: Iunit
     integer(i32), intent(out) :: Iret

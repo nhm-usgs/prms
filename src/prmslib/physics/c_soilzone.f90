@@ -83,9 +83,6 @@ module PRMS_SOILZONE
 
     real(r64) :: it0_basin_soil_moist
     real(r64) :: it0_basin_ssstor
-    real(r64) :: last_soil_moist
-    real(r64) :: last_ssstor
-
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Output variables
@@ -136,58 +133,6 @@ module PRMS_SOILZONE
     real(r64), pointer :: upslope_interflow(:)
       !! should be r64
 
-
-    ! Output variables - basin
-    real(r64), pointer :: basin_actet
-      !! (moved from flowvars) Basin area-weighted average actual ET
-    real(r64), pointer :: basin_cap_infil_tot
-    real(r64), pointer :: basin_cap_up_max
-    real(r64), pointer :: basin_capwaterin
-    real(r64), pointer :: basin_cpr_stor_frac
-    real(r64), pointer :: basin_dncascadeflow
-    real(r64), pointer :: basin_dndunnianflow
-    real(r64), pointer :: basin_dninterflow
-    real(r64), pointer :: basin_dunnian
-    real(r64), pointer :: basin_dunnian_gvr
-    real(r64), pointer :: basin_dunnian_pfr
-    real(r64), pointer :: basin_gvr2pfr
-    real(r64), pointer :: basin_gvr2sm
-    real(r64), pointer :: basin_gvr_stor_frac
-    real(r64), pointer :: basin_interflow_max
-    real(r64), pointer :: basin_lakeevap
-      !! (moved from flowvars) Basin area-weighted average lake evaporation
-    real(r64), pointer :: basin_lakeinsz
-    real(r64), pointer :: basin_lakeprecip
-    real(r64), pointer :: basin_perv_et
-      !! (moved from flowvars) Basin area-weighted average ET from capillary reservoirs
-    real(r64), pointer :: basin_pfr_stor_frac
-    real(r64), pointer :: basin_pref_flow_infil
-    real(r64), pointer :: basin_pref_stor
-    real(r64), pointer :: basin_prefflow
-    real(r64), pointer :: basin_recharge
-    real(r64), pointer :: basin_slowflow
-    real(r64), pointer :: basin_slstor
-    real(r64), pointer :: basin_sm2gvr
-    real(r64), pointer :: basin_sm2gvr_max  ! this is the same as basin_sm2gvr
-    real(r64), pointer :: basin_soil_lower_stor_frac
-    real(r64), pointer :: basin_soil_moist
-      !! (from flowvars) Basin area-weighted average capillary reservoir storage
-    real(r64), pointer :: basin_soil_moist_tot
-    real(r64), pointer :: basin_soil_rechr
-    real(r64), pointer :: basin_soil_rechr_stor_frac
-    real(r64), pointer :: basin_soil_to_gw
-      !! (moved from flowvars) Basin average excess flow to capillary reservoirs that drain to GWRs
-    real(r64), pointer :: basin_ssflow
-      !! (moved from flowvars) Basin area-weighted average interflow from gravity and preferential-flow reservoirs to the stream network
-    real(r64), pointer :: basin_ssin
-    real(r64), pointer :: basin_ssstor
-      !! (moved from flowvars)
-    real(r64), pointer :: basin_swale_et
-      !! (moved from flowvars)
-    real(r64), pointer :: basin_sz_gwin
-    real(r64), pointer :: basin_sz_stor_frac
-    real(r64), pointer :: basin_sz2gw
-
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Variables for model_mode == 'GSFLOW'
     integer(i32) :: max_gvrs
@@ -231,7 +176,6 @@ module PRMS_SOILZONE
       procedure, private, nopass :: compute_interflow
       procedure, private, nopass :: compute_soilmoist
       procedure, private :: compute_szactet
-      procedure, private :: reset_basin_vars
 
   end type
 
@@ -364,7 +308,6 @@ module PRMS_SOILZONE
     module subroutine compute_soilmoist(soil2gw_flag, perv_frac, soil_moist_max, &
                                  soil_rechr_max, soil2gw_max, infil, &
                                  soil_moist, soil_rechr, soil_to_gw, soil_to_ssr)
-      ! integer(i32), intent(in) :: soil2gw
       logical, intent(in) :: soil2gw_flag
       real(r32), intent(in) :: perv_frac
       real(r32), intent(in) :: soil_moist_max
@@ -387,7 +330,6 @@ module PRMS_SOILZONE
       class(Soilzone), intent(inout) :: this
         !! Soilzone class
       type(Time_t), intent(in) :: model_time
-      ! integer(i32), intent(in) :: transp_on
       logical, intent(in) :: transp_on
       integer(i32), intent(in) :: cov_type
       integer(i32), intent(in) :: soil_type
@@ -402,13 +344,5 @@ module PRMS_SOILZONE
       real(r32), intent(out) :: perv_actet
     end subroutine
   end interface
-
-  interface
-    module subroutine reset_basin_vars(this)
-      class(Soilzone), intent(inout) :: this
-        !! Soilzone class
-    end subroutine
-  end interface
-
 
 end module

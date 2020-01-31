@@ -17,8 +17,6 @@ module PRMS_TEMPERATURE_HRU
 
   type, extends(Temperature) :: Temperature_hru
     ! Parameters
-    !real(r32), pointer, private :: tmax_cbh_adj(:, :)
-    !real(r32), pointer, private :: tmin_cbh_adj(:, :)
     real(r32), pointer :: tmax_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
     real(r32), pointer :: tmin_cbh_adj(:, :) !rmcd changed to add access to bmi setter functions
 
@@ -38,8 +36,6 @@ module PRMS_TEMPERATURE_HRU
 
     contains
       procedure, public :: init => init_Temperature_hru
-
-      ! generic, public :: init => init_Temperature_hru
       procedure, public :: run => run_Temperature_hru
   end type
 
@@ -54,17 +50,6 @@ module PRMS_TEMPERATURE_HRU
       type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
-  ! interface Temperature_hru
-  !   !! Temperature_hru constructor
-  !   module function constructor_Temperature_hru(ctl_data, model_basin, model_summary) result(this)
-  !     type(Temperature_hru) :: this
-  !       !! Temperature_hru class
-  !     type(Control), intent(in) :: ctl_data
-  !       !! Control file parameters
-  !     type(Basin), intent(in) :: model_basin
-  !     type(Summary), intent(inout) :: model_summary
-  !   end function
-  ! end interface
 
   interface
     module subroutine run_Temperature_hru(this, ctl_data, model_basin, model_time, model_summary)

@@ -10,8 +10,8 @@ contains
     type(Summary), intent(inout) :: model_summary
 
     ! Local variables
-    integer(i32) :: ierr
-    integer(i32) :: istop = 0
+    ! integer(i32) :: ierr
+    ! integer(i32) :: istop = 0
     integer(i32) :: jj
 
     ! Control
@@ -83,19 +83,12 @@ contains
       !   endif
       ! endif
 
-      allocate(this%basin_humidity)
-      allocate(this%basin_potet)
-
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
-            case('basin_humidity')
-              call model_summary%set_summary_var(jj, this%basin_humidity)
-            case('basin_potet')
-              call model_summary%set_summary_var(jj, this%basin_potet)
             case('potet')
               call model_summary%set_summary_var(jj, this%potet)
             case('humidity_hru')
@@ -126,17 +119,13 @@ contains
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
 
-              nhru => model_basin%nhru, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => model_basin%hru_area)
+              nhru => model_basin%nhru)
 
       ! WARNING: PAN - I think this will get moved to child classes
       ! Humidity
       if (et_module%s == 'potet_pt' .or. et_module%s == 'potet_pm' .or. &
           (stream_temp_flag == 1 .and. strmtemp_humidity_flag == 0)) then
         read(this%humidity_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%humidity_hru(jj), jj=1, nhru)
-
-        this%basin_humidity = sum(dble(this%humidity_hru * hru_area)) * basin_area_inv
       endif
     end associate
   end subroutine

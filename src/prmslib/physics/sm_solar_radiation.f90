@@ -84,7 +84,6 @@ contains
         this%solrad = 0.0
 
         if (param_hdl%var_exists('hru_solsta')) then
-        ! if (param_data%hru_solsta%exists()) then
           allocate(this%hru_solsta(this%nsol))
           call param_hdl%get_variable('hru_solsta', this%hru_solsta)
 
@@ -94,13 +93,11 @@ contains
         endif
 
         if (param_hdl%var_exists('basin_solsta')) then
-        ! if (param_data%basin_solsta%exists()) then
           call param_hdl%get_variable('basin_solsta', this%basin_solsta)
           this%has_basin_obs_station = (this%basin_solsta > 0)
         endif
 
         if (param_hdl%var_exists('rad_conv')) then
-        ! if (param_data%rad_conv%exists()) then
           call param_hdl%get_variable('rad_conv', this%rad_conv)
           this%radiation_cv_factor = this%rad_conv
         endif
@@ -114,21 +111,25 @@ contains
       do nn=1, active_hrus
         chru = hru_route_order(nn)
 
+        ! TODO: 2020-01-30 PAN: move the computation of hru_cossl into a separate function?
+        ! Compute potential solar radiation on a horizontal plane for each day and hru
         call this%compute_soltab(this%hru_cossl(chru), this%soltab_horad_potsw(:, chru), &
-                                 this%soltab_sunhrs(:, chru), OBLIQUITY, &
+                                 this%soltab_sunhrs(:, chru), &
                                  SOLAR_DECLINATION, 0.0, 0.0, &
-                                 hru_lat(chru), hru_type(chru), chru)
+                                 hru_lat(chru))
 
+        ! Compute potential solar radiation for each day and hru
         call this%compute_soltab(this%hru_cossl(chru), this%soltab_potsw(:, chru), &
-                                 this%soltab_sunhrs(:, chru), OBLIQUITY, &
+                                 this%soltab_sunhrs(:, chru), &
                                  SOLAR_DECLINATION, &
                                  hru_slope(chru), hru_aspect(chru), &
-                                 hru_lat(chru), hru_type(chru), chru)
+                                 hru_lat(chru))
       enddo
 
+      ! Compute basin average potential solar radiation on a horizontal plane for each day
       call this%compute_soltab(basin_cossl, this%soltab_basinpotsw, basin_sunhrs, &
-                               OBLIQUITY, SOLAR_DECLINATION, 0.0, 0.0, &
-                               sngl(basin_lat), 0, 0)
+                               SOLAR_DECLINATION, 0.0, 0.0, &
+                               sngl(basin_lat))
 
       if (ctl_data%print_debug%value == 5) then
         output_path = 'soltab_debug'
@@ -163,25 +164,12 @@ contains
       endif
       ! deallocate (Hru_slope, Hru_aspect)
 
-      allocate(this%basin_horad)
-      allocate(this%basin_orad)
-      allocate(this%basin_potsw)
-      allocate(this%basin_swrad)
-
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
-            case('basin_horad')
-              call model_summary%set_summary_var(jj, this%basin_horad)
-            case('basin_orad')
-              call model_summary%set_summary_var(jj, this%basin_orad)
-            case('basin_potsw')
-              call model_summary%set_summary_var(jj, this%basin_potsw)
-            case('basin_swrad')
-              call model_summary%set_summary_var(jj, this%basin_swrad)
             case('orad_hru')
               call model_summary%set_summary_var(jj, this%orad_hru)
             case('swrad')
@@ -206,9 +194,8 @@ contains
   end subroutine
 
 
-  module subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, Obliquity, &
-                                   Solar_declination, Slope, Aspect, Latitude, &
-                                   Hru_type, Id)
+  module subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, &
+                                   Solar_declination, Slope, Aspect, Latitude)
     use prms_constants, only: DNEARZERO
     implicit none
 
@@ -219,14 +206,13 @@ contains
     real(r64), intent(out) :: Cossl
     real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Soltab_daily
     real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Sunhrs_daily
-
-    real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Obliquity
+    ! real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Obliquity
     real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Solar_declination
     real(r32), intent(in) :: Slope
     real(r32), intent(in) :: Aspect
     real(r32), intent(in) :: Latitude
-    integer(i32), intent(in) :: Hru_type
-    integer(i32), intent(in) :: Id
+    ! integer(i32), intent(in) :: Hru_type
+    ! integer(i32), intent(in) :: Id
 
     ! Local Variables
     real(r64) :: a

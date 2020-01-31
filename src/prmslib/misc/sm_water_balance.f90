@@ -15,7 +15,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
 
                 nhru => model_basin%nhru, &
 
-                basin_gwstor => model_gwflow%basin_gwstor, &
+                ! basin_gwstor => model_gwflow%basin_gwstor, &
                 gwres_stor => model_gwflow%gwres_stor, &
                 hru_storage => model_gwflow%hru_storage)
 
@@ -59,13 +59,8 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                      '   Perv Sro Imperv Sro  Dprst Sro  Sroffdown  Srofflake')
         9007 format ('    Date     Water Bal  Snowpack    snowmelt   Snowevap  Snowcover' )
 
-        ! this%basin_capillary_wb = 0.0_dp
-        ! this%basin_gravity_wb = 0.0_dp
-        ! this%basin_soilzone_wb = 0.0_dp
         this%basin_dprst_wb = 0.0_dp
-        this%last_basin_gwstor = basin_gwstor
-        ! this%gwstor_ante = gwres_stor
-        ! this%hru_storage_ante = hru_storage
+        ! this%last_basin_gwstor = basin_gwstor
       end associate
     end function
 
@@ -205,8 +200,8 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
                 gvr2pfr => model_soilzone%gvr2pfr, &
                 hru_actet => model_soilzone%hru_actet, &
                 hru_sz_cascadeflow => model_soilzone%hru_sz_cascadeflow, &
-                last_soil_moist => model_soilzone%last_soil_moist, &
-                last_ssstor => model_soilzone%last_ssstor, &
+                ! last_soil_moist => model_soilzone%last_soil_moist, &
+                ! last_ssstor => model_soilzone%last_ssstor, &
                 perv_actet => model_soilzone%perv_actet, &
                 pfr_dunnian_flow => model_soilzone%pfr_dunnian_flow, &
                 pref_flow => model_soilzone%pref_flow, &
@@ -677,28 +672,28 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! intcp
-        call this%basin_wb_intcp(model_intcp, model_srunoff, model_precip, model_time)
+        ! call this%basin_wb_intcp(model_intcp, model_srunoff, model_precip, model_time)
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! snowcomp
-        bsnobal = bsnobal * basin_area_inv
-        call this%basin_wb_snow(model_snow, model_time, bsnobal)
+        ! bsnobal = bsnobal * basin_area_inv
+        ! call this%basin_wb_snow(model_snow, model_time, bsnobal)
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! srunoff
-        basin_robal = sum(robal)
-        call this%basin_wb_srunoff(ctl_data, model_srunoff, model_time, basin_robal)
+        ! basin_robal = sum(robal)
+        ! call this%basin_wb_srunoff(ctl_data, model_srunoff, model_time, basin_robal)
         deallocate(robal)
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! soilzone
-        soil_in = soil_in * basin_area_inv
-        basin_bal = basin_bal * basin_area_inv
-        call this%basin_wb_soilzone(model_soilzone, model_srunoff, model_time, basin_bal, soil_in)
+        ! soil_in = soil_in * basin_area_inv
+        ! basin_bal = basin_bal * basin_area_inv
+        ! call this%basin_wb_soilzone(model_soilzone, model_srunoff, model_time, basin_bal, soil_in)
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! gwflow
-        call this%basin_wb_gwflow(model_gwflow, model_time)
+        ! call this%basin_wb_gwflow(model_gwflow, model_time)
 
         9001 format (I5, 2('/', I2.2), I7, 26F11.5)
         ! 9002 format (I5, 2('/', I2.2), 23F11.5)
@@ -707,401 +702,401 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
     end subroutine
 
 
-    module subroutine basin_wb_gwflow(this, model_gwflow, model_time)
-      implicit none
-
-      class(WaterBalance), intent(inout) :: this
-      type(Gwflow), intent(in) :: model_gwflow
-      type(Time_t), intent(in) :: model_time
-
-      ! Local variables
-      real(r64) :: gwbal
-
-      ! Gwflow
-      ! basin_dnflow, basin_gwflow, basin_gwin, basin_gwsink, basin_gwstor,
-      ! basin_gwstor_minarea_wb, basin_gw_upslope,
-
-      ! Time
-      ! nowday, nowmonth, nowyear,
-
-      ! ------------------------------------------------------------------------
-      associate(basin_dnflow => model_gwflow%basin_dnflow, &
-                basin_gwflow => model_gwflow%basin_gwflow, &
-                basin_gwin => model_gwflow%basin_gwin, &
-                basin_gwsink => model_gwflow%basin_gwsink, &
-                basin_gwstor => model_gwflow%basin_gwstor, &
-                basin_gwstor_minarea_wb => model_gwflow%basin_gwstor_minarea_wb, &
-                basin_gw_upslope => model_gwflow%basin_gw_upslope, &
-
-                nowtime => model_time%nowtime, &
-                nowday => model_time%Nowday, &
-                nowmonth => model_time%Nowmonth, &
-                nowyear => model_time%Nowyear)
-
-        ! Not going to balance because gwstor under lakes is computed each
-        ! time step fix for lakes.
-        ! basin_gwin includes upslope flow, gwin_dprst, soil_to_gw, ssr_to_gw
-        gwbal = basin_gwin + this%last_basin_gwstor - basin_gwstor - basin_gwsink - &
-                basin_gwflow - basin_dnflow + basin_gwstor_minarea_wb
-
-        if (dabs(gwbal) > DSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible GWR basin water balance issue ', gwbal
-        endif
-
-        write (this%gw_unit, 9002) nowyear, nowmonth, nowday, gwbal, this%last_basin_gwstor, &
-                             basin_gwstor, basin_gwin, basin_gwflow, basin_gwsink, &
-                             basin_gw_upslope, basin_gwstor_minarea_wb, basin_dnflow
-        this%last_basin_gwstor = basin_gwstor
-      end associate
-
-      9002 format (I5, 2('/', I2.2), 23F11.5)
-      9003 format(I4, 2('/', I2.2), A, es11.3e3)
-      ! 9003 format (A, I5, 2('/', I2.2), F12.5)
-    end subroutine
-
-
-    module subroutine basin_wb_intcp(this, model_intcp, model_srunoff, model_precip, model_time)
-      implicit none
-
-      class(WaterBalance), intent(inout) :: this
-      type(Interception), intent(in) :: model_intcp
-      type(Srunoff), intent(in) :: model_srunoff
-      class(Precipitation), intent(in) :: model_precip
-      type(Time_t), intent(in) :: model_time
-
-      ! Local variables
-      real(r64) :: delta_stor
-      real(r64) :: pptbal
-
-      ! Intcp
-      ! basin_changeover, basin_hru_apply, basin_intcp_evap, basin_intcp_stor,
-      ! basin_net_apply, basin_net_ppt, last_intcp_stor,
-
-      ! Precipitation
-      ! basin_ppt
-
-      ! Srunoff
-      ! use_sroff_transfer
-
-      ! Time
-      ! nowday, nowmonth, nowyear,
-
-      ! ------------------------------------------------------------------------
-      associate(basin_changeover => model_intcp%basin_changeover, &
-                basin_hru_apply => model_intcp%basin_hru_apply, &
-                basin_intcp_evap => model_intcp%basin_intcp_evap, &
-                basin_intcp_stor => model_intcp%basin_intcp_stor, &
-                basin_net_apply => model_intcp%basin_net_apply, &
-                basin_net_ppt => model_intcp%basin_net_ppt, &
-                last_intcp_stor => model_intcp%last_intcp_stor, &
-
-                basin_ppt => model_precip%basin_ppt, &
-
-                use_sroff_transfer => model_srunoff%use_sroff_transfer, &
-
-                nowtime => model_time%nowtime, &
-                nowday => model_time%Nowday, &
-                nowmonth => model_time%Nowmonth, &
-                nowyear => model_time%Nowyear)
-
-        delta_stor = basin_intcp_stor - last_intcp_stor
-        pptbal = basin_ppt - basin_net_ppt - delta_stor - basin_intcp_evap
-
-        if (use_sroff_transfer) then
-          pptbal = pptbal + basin_net_apply
-        endif
-
-        if (dabs(pptbal) > DSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin interception water balance error ', pptbal
-        elseif (dabs(pptbal) > DTOOSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Interception basin rounding issue ', pptbal
-        endif
-
-        if (use_sroff_transfer) then
-          write(this%intcp_unit, 9002) nowyear, nowmonth, nowday, pptbal, basin_ppt, &
-                                basin_net_ppt, basin_intcp_evap, basin_intcp_stor, &
-                                last_intcp_stor, basin_changeover, basin_net_apply, &
-                                basin_hru_apply
-        else
-          write(this%intcp_unit, 9002) nowyear, nowmonth, nowday, pptbal, basin_ppt, &
-                                basin_net_ppt, basin_intcp_evap, basin_intcp_stor, &
-                                last_intcp_stor, basin_changeover
-        end if
-      end associate
-
-      9002 format (I5, 2('/', I2.2), 23F11.5)
-      9003 format(I4, 2('/', I2.2), A, es11.3e3)
-      ! 9003 format (A, I5, 2('/', I2.2), F12.5)
-    end subroutine
-
-
-    module subroutine basin_wb_snow(this, model_snow, model_time, basin_snowbal)
-      implicit none
-
-      class(WaterBalance), intent(inout) :: this
-      type(Snowcomp), intent(in) :: model_snow
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: basin_snowbal
-
-      ! Snowcomp
-      ! basin_pweqv, basin_snowcov, basin_snowevap, basin_snowmelt,
-
-      ! Time
-      ! Nowday, Nowmonth, Nowyear
-
-      ! ------------------------------------------------------------------------
-      associate(basin_pweqv => model_snow%basin_pweqv, &
-                basin_snowcov => model_snow%basin_snowcov, &
-                basin_snowevap => model_snow%basin_snowevap, &
-                basin_snowmelt => model_snow%basin_snowmelt, &
-
-                nowtime => model_time%nowtime, &
-                nowday => model_time%Nowday, &
-                nowmonth => model_time%Nowmonth, &
-                nowyear => model_time%Nowyear)
-
-        if (dabs(basin_snowbal) > DSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin snow water balance error ', basin_snowbal
-        elseif (dabs(basin_snowbal) > DTOOSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin snow rounding issue ', basin_snowbal
-        endif
-
-        write(this%snow_unit, 9002) nowyear, nowmonth, nowday, basin_snowbal, basin_pweqv, &
-                              basin_snowmelt, basin_snowevap, basin_snowcov
-      end associate
-
-      9002 format (I5, 2('/', I2.2), 23F11.5)
-      ! 9003 format (A, I5, 2('/', I2.2), F12.5)
-      9003 format(I4, 2('/', I2.2), A, es11.3e3)
-    end subroutine
-
-
-    module subroutine basin_wb_soilzone(this, model_soil, model_srunoff, model_time, basin_bal, soil_in)
-      implicit none
-
-      class(WaterBalance), intent(inout) :: this
-      type(Soilzone), intent(in) :: model_soil
-      type(Srunoff), intent(in) :: model_srunoff
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: basin_bal
-      real(r64), intent(in) :: soil_in
-
-      ! Local variables
-      real(r64) :: basin_capillary_wb
-      real(r64) :: basin_gravity_wb
-      real(r64) :: basin_soilzone_wb
-      real(r64) :: bsmbal
-
-
-      ! Soilzone
-      ! basin_capwaterin, basin_cap_infil_tot, basin_dncascadeflow,
-      ! basin_dndunnianflow, basin_dninterflow, basin_dunnian, basin_dunnian_gvr,
-      ! basin_dunnian_pfr, basin_gvr2pfr, basin_lakeevap, basin_lakeinsz,
-      ! basin_perv_et, basin_prefflow, basin_pref_flow_infil, basin_pref_stor,
-      ! basin_slowflow, basin_slstor, basin_sm2gvr, basin_sm2gvr_max,
-      ! basin_soil_moist, basin_soil_to_gw, basin_ssflow, basin_ssin,
-      ! basin_ssstor, basin_swale_et, basin_sz2gw, last_soil_moist, last_ssstor
-
-      ! Srunoff
-      ! basin_infil
-
-      ! Time
-      ! Nowday, Nowmonth, Nowtime, Nowyear
-      ! ------------------------------------------------------------------------
-      associate(basin_capwaterin => model_soil%basin_capwaterin, &
-                basin_cap_infil_tot => model_soil%basin_cap_infil_tot, &
-                basin_dncascadeflow => model_soil%basin_dncascadeflow, &
-                basin_dndunnianflow => model_soil%basin_dndunnianflow, &
-                basin_dninterflow => model_soil%basin_dninterflow, &
-                basin_dunnian => model_soil%basin_dunnian, &
-                basin_dunnian_gvr => model_soil%basin_dunnian_gvr, &
-                basin_dunnian_pfr => model_soil%basin_dunnian_pfr, &
-                basin_gvr2pfr => model_soil%basin_gvr2pfr, &
-                basin_lakeevap => model_soil%basin_lakeevap, &
-                basin_lakeinsz => model_soil%basin_lakeinsz, &
-                basin_perv_et => model_soil%basin_perv_et, &
-                basin_prefflow => model_soil%basin_prefflow, &
-                basin_pref_flow_infil => model_soil%basin_pref_flow_infil, &
-                basin_pref_stor => model_soil%basin_pref_stor, &
-                basin_slowflow => model_soil%basin_slowflow, &
-                basin_slstor => model_soil%basin_slstor, &
-                basin_sm2gvr => model_soil%basin_sm2gvr, &
-                basin_sm2gvr_max => model_soil%basin_sm2gvr_max, &
-                basin_soil_moist => model_soil%basin_soil_moist, &
-                basin_soil_to_gw => model_soil%basin_soil_to_gw, &
-                basin_ssflow => model_soil%basin_ssflow, &
-                basin_ssin => model_soil%basin_ssin, &
-                basin_ssstor => model_soil%basin_ssstor, &
-                basin_swale_et => model_soil%basin_swale_et, &
-                basin_sz2gw => model_soil%basin_sz2gw, &
-                last_soil_moist => model_soil%last_soil_moist, &
-                last_ssstor => model_soil%last_ssstor, &
-
-                basin_infil => model_srunoff%basin_infil, &
-
-                nowday => model_time%Nowday, &
-                nowmonth => model_time%Nowmonth, &
-                nowtime => model_time%Nowtime, &
-                nowyear => model_time%Nowyear)
-
-        basin_capillary_wb = last_soil_moist - basin_soil_moist - basin_perv_et - &
-                             basin_sm2gvr_max + basin_cap_infil_tot - basin_soil_to_gw
-        basin_gravity_wb = last_ssstor - basin_ssstor + basin_sm2gvr - basin_dncascadeflow - &
-                           basin_ssflow - basin_sz2gw - basin_dunnian + basin_dunnian_pfr - &
-                           basin_swale_et + basin_pref_flow_infil
-        basin_soilzone_wb = basin_infil + last_ssstor - basin_ssstor + last_soil_moist - &
-                            basin_soil_moist - basin_perv_et - basin_swale_et - &
-                            basin_sz2gw - basin_soil_to_gw - basin_ssflow - &
-                            basin_dunnian - basin_lakeinsz
-
-        if (dabs(basin_gravity_wb) > DTOOSMALL) then
-          write(this%bal_unit, 9113) nowtime(1:3), ' basin gvrbal issue', basin_gravity_wb, last_ssstor, &
-                           basin_ssstor, basin_sm2gvr, basin_ssflow, basin_sz2gw, &
-                           basin_dunnian, basin_swale_et, basin_pref_flow_infil, &
-                           basin_dninterflow, basin_pref_stor, basin_dunnian_pfr, &
-                           basin_lakeinsz, basin_dncascadeflow, basin_dunnian_gvr, &
-                           basin_slowflow, basin_prefflow, basin_gvr2pfr
-          9113 format(I4, 2('/', I2.2), A, 18es11.3e3)
-        endif
-
-        9111 format(I4, 2('/', I2.2), A, 9es11.3e3)
-
-        if (dabs(basin_capillary_wb) > DTOOSMALL) then
-          write(this%bal_unit, 9111) nowtime(1:3), ' Possible basin capillary balance issue', &
-                           basin_capillary_wb, last_soil_moist, basin_soil_moist, &
-                           basin_perv_et, basin_sm2gvr, basin_cap_infil_tot, &
-                           basin_soil_to_gw, basin_sm2gvr_max, basin_capwaterin
-        endif
-
-        if (dabs(basin_soilzone_wb) > DTOOSMALL) then
-          write(this%bal_unit, 9112) nowtime(1:3), ' Possible basin soil zone rounding issue', &
-                           basin_soilzone_wb, basin_capwaterin, basin_pref_flow_infil, &
-                           basin_infil, last_ssstor, basin_ssstor, last_soil_moist, &
-                           basin_soil_moist, basin_perv_et, basin_swale_et, basin_sz2gw, &
-                           basin_soil_to_gw, basin_ssflow, basin_dunnian, basin_dncascadeflow, &
-                           basin_sm2gvr, basin_lakeinsz, basin_dunnian_pfr
-        endif
-        9112 format(I4, 2('/', I2.2), A, 18es11.3e3)
-
-        bsmbal = last_soil_moist - basin_soil_moist + last_ssstor - basin_ssstor - &
-                 basin_perv_et - basin_sz2gw + soil_in - basin_ssflow - &
-                 basin_soil_to_gw - basin_dunnian - basin_swale_et - basin_lakeinsz
-
-        write(this%sz_unit, 9002) nowyear, nowmonth, nowday, basin_bal, bsmbal, last_soil_moist, &
-                            basin_soil_moist, last_ssstor, basin_ssstor, basin_perv_et, &
-                            basin_sz2gw, basin_ssflow, basin_soil_to_gw, basin_dunnian, &
-                            soil_in, basin_lakeinsz, basin_dncascadeflow, basin_swale_et, &
-                            basin_prefflow, basin_dunnian_pfr, basin_pref_stor, &
-                            basin_slstor, basin_dunnian_gvr, basin_lakeevap
-
-        if (dabs(bsmbal) > 0.05_dp .or. dabs(basin_bal) > 0.001_dp) then
-          write(this%bal_unit, *) '*ERROR, soilzone basin water balance', bsmbal, basin_bal, &
-                           last_soil_moist, basin_soil_moist, last_ssstor, basin_ssstor, &
-                           basin_perv_et, basin_sz2gw, soil_in, basin_ssflow, &
-                           basin_soil_to_gw, basin_dunnian, basin_swale_et, basin_lakeinsz
-          write(this%bal_unit, *) basin_pref_stor, basin_slstor
-        elseif (dabs(bsmbal) > 0.005_dp .or. dabs(basin_bal) > DTOOSMALL) then
-          write(this%bal_unit, *) 'Possible soilzone basin water balance ERROR', bsmbal, &
-                           basin_bal, last_soil_moist, basin_soil_moist, last_ssstor, &
-                           basin_ssstor, basin_perv_et, basin_sz2gw, soil_in, &
-                           basin_ssflow, basin_soil_to_gw, basin_dunnian, &
-                           basin_swale_et, basin_lakeinsz
-          write(this%bal_unit, *) basin_pref_stor, basin_slstor
-        elseif (dabs(bsmbal) > 0.0005_dp .or. dabs(basin_bal) > DTOOSMALL) then
-          write(this%bal_unit, '(A,2F12.7)') 'Basin soilzone rounding issue', bsmbal, basin_bal
-          write(this%bal_unit, *) basin_soilzone_wb, basin_ssin, basin_dninterflow, &
-                           basin_sm2gvr, basin_capwaterin, soil_in, basin_gvr2pfr, &
-                           basin_dndunnianflow, (soil_in - basin_infil)
-        endif
-      end associate
-
-      9002 format (I5, 2('/', I2.2), 23F11.5)
-      ! 9003 format (A, I5, 2('/', I2.2), F12.5)
-    end subroutine
-
-
-    module subroutine basin_wb_srunoff(this, ctl_data, model_srunoff, model_time, basin_robal)
-      implicit none
-
-      class(WaterBalance), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
-      type(Srunoff), intent(in) :: model_srunoff
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: basin_robal
-
-      ! Local variables
-      real(r64) :: brobal
-
-      ! Control
-      ! cascade_flag,
-
-      ! Srunoff
-      ! basin_dprst_evap, basin_dprst_seep, basin_dprst_sroff, basin_imperv_evap,
-      ! basin_imperv_stor, basin_infil, basin_sroff, basin_sroffi, basin_sroffp,
-      ! basin_sroff_down, basin_hortonian_lakes
-
-      ! Time
-      ! Nowday, Nowmonth, Nowyear
-
-      ! ------------------------------------------------------------------------
-      associate(cascade_flag => ctl_data%cascade_flag%value, &
-                dprst_flag => ctl_data%dprst_flag%value, &
-
-                basin_dprst_evap => model_srunoff%basin_dprst_evap, &
-                basin_dprst_seep => model_srunoff%basin_dprst_seep, &
-                basin_dprst_sroff => model_srunoff%basin_dprst_sroff, &
-                basin_imperv_evap => model_srunoff%basin_imperv_evap, &
-                basin_imperv_stor => model_srunoff%basin_imperv_stor, &
-                basin_infil => model_srunoff%basin_infil, &
-                basin_sroff => model_srunoff%basin_sroff, &
-                basin_sroffi => model_srunoff%basin_sroffi, &
-                basin_sroffp => model_srunoff%basin_sroffp, &
-                basin_sroff_down => model_srunoff%basin_sroff_down, &
-                basin_hortonian_lakes => model_srunoff%basin_hortonian_lakes, &
-
-                nowtime => model_time%nowtime, &
-                nowday => model_time%Nowday, &
-                nowmonth => model_time%Nowmonth, &
-                nowyear => model_time%Nowyear)
-
-        brobal = basin_sroff - basin_sroffp - basin_sroffi
-
-        if (dprst_flag == 1) then
-          brobal = brobal - basin_dprst_sroff
-        end if
-
-        if (cascade_flag > 0) then
-          brobal = brobal + basin_sroff_down
-          write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
-                               basin_sroff, basin_infil, basin_imperv_evap, &
-                               basin_imperv_stor, basin_dprst_evap, basin_dprst_seep, &
-                               basin_sroffp, basin_sroffi, basin_dprst_sroff, &
-                               basin_sroff_down, basin_hortonian_lakes
-        else
-          if (dprst_flag == 1) then
-            write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
-                                basin_sroff, basin_infil, basin_imperv_evap, &
-                                basin_imperv_stor, basin_sroffp, basin_sroffi, &
-                                basin_dprst_evap, basin_dprst_seep, basin_dprst_sroff
-          else
-            write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
-                                basin_sroff, basin_infil, basin_imperv_evap, &
-                                basin_imperv_stor, basin_sroffp, basin_sroffi
-          end if
-        endif
-
-        if (dabs(basin_robal) > DSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible srunoff basin water balance ERROR ', basin_robal
-        elseif (dabs(basin_robal) > DTOOSMALL) then
-          write(this%bal_unit, 9003) nowtime(1:3), ' Possible srunoff basin water balance rounding issue ', basin_robal
-        endif
-      end associate
-
-      9002 format (I4, 2('/', I2.2), 2F11.7, 23F11.5)
-      9003 format (I4, 2('/', I2.2), A, es11.3e3)
-      ! 9003 format (A, I5, 2('/', I2.2), F12.5)
-    end subroutine
-    
+    ! module subroutine basin_wb_gwflow(this, model_gwflow, model_time)
+    !   implicit none
+
+    !   class(WaterBalance), intent(inout) :: this
+    !   type(Gwflow), intent(in) :: model_gwflow
+    !   type(Time_t), intent(in) :: model_time
+
+    !   ! Local variables
+    !   real(r64) :: gwbal
+
+    !   ! Gwflow
+    !   ! basin_dnflow, basin_gwflow, basin_gwin, basin_gwsink, basin_gwstor,
+    !   ! basin_gwstor_minarea_wb, basin_gw_upslope,
+
+    !   ! Time
+    !   ! nowday, nowmonth, nowyear,
+
+    !   ! ------------------------------------------------------------------------
+    !   associate(basin_dnflow => model_gwflow%basin_dnflow, &
+    !             basin_gwflow => model_gwflow%basin_gwflow, &
+    !             basin_gwin => model_gwflow%basin_gwin, &
+    !             basin_gwsink => model_gwflow%basin_gwsink, &
+    !             basin_gwstor => model_gwflow%basin_gwstor, &
+    !             basin_gwstor_minarea_wb => model_gwflow%basin_gwstor_minarea_wb, &
+    !             basin_gw_upslope => model_gwflow%basin_gw_upslope, &
+
+    !             nowtime => model_time%nowtime, &
+    !             nowday => model_time%Nowday, &
+    !             nowmonth => model_time%Nowmonth, &
+    !             nowyear => model_time%Nowyear)
+
+    !     ! Not going to balance because gwstor under lakes is computed each
+    !     ! time step fix for lakes.
+    !     ! basin_gwin includes upslope flow, gwin_dprst, soil_to_gw, ssr_to_gw
+    !     gwbal = basin_gwin + this%last_basin_gwstor - basin_gwstor - basin_gwsink - &
+    !             basin_gwflow - basin_dnflow + basin_gwstor_minarea_wb
+
+    !     if (dabs(gwbal) > DSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible GWR basin water balance issue ', gwbal
+    !     endif
+
+    !     write (this%gw_unit, 9002) nowyear, nowmonth, nowday, gwbal, this%last_basin_gwstor, &
+    !                          basin_gwstor, basin_gwin, basin_gwflow, basin_gwsink, &
+    !                          basin_gw_upslope, basin_gwstor_minarea_wb, basin_dnflow
+    !     this%last_basin_gwstor = basin_gwstor
+    !   end associate
+
+    !   9002 format (I5, 2('/', I2.2), 23F11.5)
+    !   9003 format(I4, 2('/', I2.2), A, es11.3e3)
+    !   ! 9003 format (A, I5, 2('/', I2.2), F12.5)
+    ! end subroutine
+
+
+    ! module subroutine basin_wb_intcp(this, model_intcp, model_srunoff, model_precip, model_time)
+    !   implicit none
+
+    !   class(WaterBalance), intent(inout) :: this
+    !   type(Interception), intent(in) :: model_intcp
+    !   type(Srunoff), intent(in) :: model_srunoff
+    !   class(Precipitation), intent(in) :: model_precip
+    !   type(Time_t), intent(in) :: model_time
+
+    !   ! Local variables
+    !   real(r64) :: delta_stor
+    !   real(r64) :: pptbal
+
+    !   ! Intcp
+    !   ! basin_changeover, basin_hru_apply, basin_intcp_evap, basin_intcp_stor,
+    !   ! basin_net_apply, basin_net_ppt, last_intcp_stor,
+
+    !   ! Precipitation
+    !   ! basin_ppt
+
+    !   ! Srunoff
+    !   ! use_sroff_transfer
+
+    !   ! Time
+    !   ! nowday, nowmonth, nowyear,
+
+    !   ! ------------------------------------------------------------------------
+    !   associate(basin_changeover => model_intcp%basin_changeover, &
+    !             basin_hru_apply => model_intcp%basin_hru_apply, &
+    !             basin_intcp_evap => model_intcp%basin_intcp_evap, &
+    !             basin_intcp_stor => model_intcp%basin_intcp_stor, &
+    !             basin_net_apply => model_intcp%basin_net_apply, &
+    !             basin_net_ppt => model_intcp%basin_net_ppt, &
+    !             last_intcp_stor => model_intcp%last_intcp_stor, &
+
+    !             basin_ppt => model_precip%basin_ppt, &
+
+    !             use_sroff_transfer => model_srunoff%use_sroff_transfer, &
+
+    !             nowtime => model_time%nowtime, &
+    !             nowday => model_time%Nowday, &
+    !             nowmonth => model_time%Nowmonth, &
+    !             nowyear => model_time%Nowyear)
+
+    !     delta_stor = basin_intcp_stor - last_intcp_stor
+    !     pptbal = basin_ppt - basin_net_ppt - delta_stor - basin_intcp_evap
+
+    !     if (use_sroff_transfer) then
+    !       pptbal = pptbal + basin_net_apply
+    !     endif
+
+    !     if (dabs(pptbal) > DSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin interception water balance error ', pptbal
+    !     elseif (dabs(pptbal) > DTOOSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Interception basin rounding issue ', pptbal
+    !     endif
+
+    !     if (use_sroff_transfer) then
+    !       write(this%intcp_unit, 9002) nowyear, nowmonth, nowday, pptbal, basin_ppt, &
+    !                             basin_net_ppt, basin_intcp_evap, basin_intcp_stor, &
+    !                             last_intcp_stor, basin_changeover, basin_net_apply, &
+    !                             basin_hru_apply
+    !     else
+    !       write(this%intcp_unit, 9002) nowyear, nowmonth, nowday, pptbal, basin_ppt, &
+    !                             basin_net_ppt, basin_intcp_evap, basin_intcp_stor, &
+    !                             last_intcp_stor, basin_changeover
+    !     end if
+    !   end associate
+
+    !   9002 format (I5, 2('/', I2.2), 23F11.5)
+    !   9003 format(I4, 2('/', I2.2), A, es11.3e3)
+    !   ! 9003 format (A, I5, 2('/', I2.2), F12.5)
+    ! end subroutine
+
+
+    ! module subroutine basin_wb_snow(this, model_snow, model_time, basin_snowbal)
+    !   implicit none
+
+    !   class(WaterBalance), intent(inout) :: this
+    !   type(Snowcomp), intent(in) :: model_snow
+    !   type(Time_t), intent(in) :: model_time
+    !   real(r64), intent(in) :: basin_snowbal
+
+    !   ! Snowcomp
+    !   ! basin_pweqv, basin_snowcov, basin_snowevap, basin_snowmelt,
+
+    !   ! Time
+    !   ! Nowday, Nowmonth, Nowyear
+
+    !   ! ------------------------------------------------------------------------
+    !   associate(basin_pweqv => model_snow%basin_pweqv, &
+    !             basin_snowcov => model_snow%basin_snowcov, &
+    !             basin_snowevap => model_snow%basin_snowevap, &
+    !             basin_snowmelt => model_snow%basin_snowmelt, &
+
+    !             nowtime => model_time%nowtime, &
+    !             nowday => model_time%Nowday, &
+    !             nowmonth => model_time%Nowmonth, &
+    !             nowyear => model_time%Nowyear)
+
+    !     if (dabs(basin_snowbal) > DSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin snow water balance error ', basin_snowbal
+    !     elseif (dabs(basin_snowbal) > DTOOSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible basin snow rounding issue ', basin_snowbal
+    !     endif
+
+    !     write(this%snow_unit, 9002) nowyear, nowmonth, nowday, basin_snowbal, basin_pweqv, &
+    !                           basin_snowmelt, basin_snowevap, basin_snowcov
+    !   end associate
+
+    !   9002 format (I5, 2('/', I2.2), 23F11.5)
+    !   ! 9003 format (A, I5, 2('/', I2.2), F12.5)
+    !   9003 format(I4, 2('/', I2.2), A, es11.3e3)
+    ! end subroutine
+
+
+    ! module subroutine basin_wb_soilzone(this, model_soil, model_srunoff, model_time, basin_bal, soil_in)
+    !   implicit none
+
+    !   class(WaterBalance), intent(inout) :: this
+    !   type(Soilzone), intent(in) :: model_soil
+    !   type(Srunoff), intent(in) :: model_srunoff
+    !   type(Time_t), intent(in) :: model_time
+    !   real(r64), intent(in) :: basin_bal
+    !   real(r64), intent(in) :: soil_in
+
+    !   ! Local variables
+    !   real(r64) :: basin_capillary_wb
+    !   real(r64) :: basin_gravity_wb
+    !   real(r64) :: basin_soilzone_wb
+    !   real(r64) :: bsmbal
+
+
+    !   ! Soilzone
+    !   ! basin_capwaterin, basin_cap_infil_tot, basin_dncascadeflow,
+    !   ! basin_dndunnianflow, basin_dninterflow, basin_dunnian, basin_dunnian_gvr,
+    !   ! basin_dunnian_pfr, basin_gvr2pfr, basin_lakeevap, basin_lakeinsz,
+    !   ! basin_perv_et, basin_prefflow, basin_pref_flow_infil, basin_pref_stor,
+    !   ! basin_slowflow, basin_slstor, basin_sm2gvr, basin_sm2gvr_max,
+    !   ! basin_soil_moist, basin_soil_to_gw, basin_ssflow, basin_ssin,
+    !   ! basin_ssstor, basin_swale_et, basin_sz2gw, last_soil_moist, last_ssstor
+
+    !   ! Srunoff
+    !   ! basin_infil
+
+    !   ! Time
+    !   ! Nowday, Nowmonth, Nowtime, Nowyear
+    !   ! ------------------------------------------------------------------------
+    !   associate(basin_capwaterin => model_soil%basin_capwaterin, &
+    !             basin_cap_infil_tot => model_soil%basin_cap_infil_tot, &
+    !             basin_dncascadeflow => model_soil%basin_dncascadeflow, &
+    !             basin_dndunnianflow => model_soil%basin_dndunnianflow, &
+    !             basin_dninterflow => model_soil%basin_dninterflow, &
+    !             basin_dunnian => model_soil%basin_dunnian, &
+    !             basin_dunnian_gvr => model_soil%basin_dunnian_gvr, &
+    !             basin_dunnian_pfr => model_soil%basin_dunnian_pfr, &
+    !             basin_gvr2pfr => model_soil%basin_gvr2pfr, &
+    !             basin_lakeevap => model_soil%basin_lakeevap, &
+    !             basin_lakeinsz => model_soil%basin_lakeinsz, &
+    !             basin_perv_et => model_soil%basin_perv_et, &
+    !             basin_prefflow => model_soil%basin_prefflow, &
+    !             basin_pref_flow_infil => model_soil%basin_pref_flow_infil, &
+    !             basin_pref_stor => model_soil%basin_pref_stor, &
+    !             basin_slowflow => model_soil%basin_slowflow, &
+    !             basin_slstor => model_soil%basin_slstor, &
+    !             basin_sm2gvr => model_soil%basin_sm2gvr, &
+    !             basin_sm2gvr_max => model_soil%basin_sm2gvr_max, &
+    !             basin_soil_moist => model_soil%basin_soil_moist, &
+    !             basin_soil_to_gw => model_soil%basin_soil_to_gw, &
+    !             basin_ssflow => model_soil%basin_ssflow, &
+    !             basin_ssin => model_soil%basin_ssin, &
+    !             basin_ssstor => model_soil%basin_ssstor, &
+    !             basin_swale_et => model_soil%basin_swale_et, &
+    !             basin_sz2gw => model_soil%basin_sz2gw, &
+    !             last_soil_moist => model_soil%last_soil_moist, &
+    !             last_ssstor => model_soil%last_ssstor, &
+
+    !             basin_infil => model_srunoff%basin_infil, &
+
+    !             nowday => model_time%Nowday, &
+    !             nowmonth => model_time%Nowmonth, &
+    !             nowtime => model_time%Nowtime, &
+    !             nowyear => model_time%Nowyear)
+
+    !     basin_capillary_wb = last_soil_moist - basin_soil_moist - basin_perv_et - &
+    !                          basin_sm2gvr_max + basin_cap_infil_tot - basin_soil_to_gw
+    !     basin_gravity_wb = last_ssstor - basin_ssstor + basin_sm2gvr - basin_dncascadeflow - &
+    !                        basin_ssflow - basin_sz2gw - basin_dunnian + basin_dunnian_pfr - &
+    !                        basin_swale_et + basin_pref_flow_infil
+    !     basin_soilzone_wb = basin_infil + last_ssstor - basin_ssstor + last_soil_moist - &
+    !                         basin_soil_moist - basin_perv_et - basin_swale_et - &
+    !                         basin_sz2gw - basin_soil_to_gw - basin_ssflow - &
+    !                         basin_dunnian - basin_lakeinsz
+
+    !     if (dabs(basin_gravity_wb) > DTOOSMALL) then
+    !       write(this%bal_unit, 9113) nowtime(1:3), ' basin gvrbal issue', basin_gravity_wb, last_ssstor, &
+    !                        basin_ssstor, basin_sm2gvr, basin_ssflow, basin_sz2gw, &
+    !                        basin_dunnian, basin_swale_et, basin_pref_flow_infil, &
+    !                        basin_dninterflow, basin_pref_stor, basin_dunnian_pfr, &
+    !                        basin_lakeinsz, basin_dncascadeflow, basin_dunnian_gvr, &
+    !                        basin_slowflow, basin_prefflow, basin_gvr2pfr
+    !       9113 format(I4, 2('/', I2.2), A, 18es11.3e3)
+    !     endif
+
+    !     9111 format(I4, 2('/', I2.2), A, 9es11.3e3)
+
+    !     if (dabs(basin_capillary_wb) > DTOOSMALL) then
+    !       write(this%bal_unit, 9111) nowtime(1:3), ' Possible basin capillary balance issue', &
+    !                        basin_capillary_wb, last_soil_moist, basin_soil_moist, &
+    !                        basin_perv_et, basin_sm2gvr, basin_cap_infil_tot, &
+    !                        basin_soil_to_gw, basin_sm2gvr_max, basin_capwaterin
+    !     endif
+
+    !     if (dabs(basin_soilzone_wb) > DTOOSMALL) then
+    !       write(this%bal_unit, 9112) nowtime(1:3), ' Possible basin soil zone rounding issue', &
+    !                        basin_soilzone_wb, basin_capwaterin, basin_pref_flow_infil, &
+    !                        basin_infil, last_ssstor, basin_ssstor, last_soil_moist, &
+    !                        basin_soil_moist, basin_perv_et, basin_swale_et, basin_sz2gw, &
+    !                        basin_soil_to_gw, basin_ssflow, basin_dunnian, basin_dncascadeflow, &
+    !                        basin_sm2gvr, basin_lakeinsz, basin_dunnian_pfr
+    !     endif
+    !     9112 format(I4, 2('/', I2.2), A, 18es11.3e3)
+
+    !     bsmbal = last_soil_moist - basin_soil_moist + last_ssstor - basin_ssstor - &
+    !              basin_perv_et - basin_sz2gw + soil_in - basin_ssflow - &
+    !              basin_soil_to_gw - basin_dunnian - basin_swale_et - basin_lakeinsz
+
+    !     write(this%sz_unit, 9002) nowyear, nowmonth, nowday, basin_bal, bsmbal, last_soil_moist, &
+    !                         basin_soil_moist, last_ssstor, basin_ssstor, basin_perv_et, &
+    !                         basin_sz2gw, basin_ssflow, basin_soil_to_gw, basin_dunnian, &
+    !                         soil_in, basin_lakeinsz, basin_dncascadeflow, basin_swale_et, &
+    !                         basin_prefflow, basin_dunnian_pfr, basin_pref_stor, &
+    !                         basin_slstor, basin_dunnian_gvr, basin_lakeevap
+
+    !     if (dabs(bsmbal) > 0.05_dp .or. dabs(basin_bal) > 0.001_dp) then
+    !       write(this%bal_unit, *) '*ERROR, soilzone basin water balance', bsmbal, basin_bal, &
+    !                        last_soil_moist, basin_soil_moist, last_ssstor, basin_ssstor, &
+    !                        basin_perv_et, basin_sz2gw, soil_in, basin_ssflow, &
+    !                        basin_soil_to_gw, basin_dunnian, basin_swale_et, basin_lakeinsz
+    !       write(this%bal_unit, *) basin_pref_stor, basin_slstor
+    !     elseif (dabs(bsmbal) > 0.005_dp .or. dabs(basin_bal) > DTOOSMALL) then
+    !       write(this%bal_unit, *) 'Possible soilzone basin water balance ERROR', bsmbal, &
+    !                        basin_bal, last_soil_moist, basin_soil_moist, last_ssstor, &
+    !                        basin_ssstor, basin_perv_et, basin_sz2gw, soil_in, &
+    !                        basin_ssflow, basin_soil_to_gw, basin_dunnian, &
+    !                        basin_swale_et, basin_lakeinsz
+    !       write(this%bal_unit, *) basin_pref_stor, basin_slstor
+    !     elseif (dabs(bsmbal) > 0.0005_dp .or. dabs(basin_bal) > DTOOSMALL) then
+    !       write(this%bal_unit, '(A,2F12.7)') 'Basin soilzone rounding issue', bsmbal, basin_bal
+    !       write(this%bal_unit, *) basin_soilzone_wb, basin_ssin, basin_dninterflow, &
+    !                        basin_sm2gvr, basin_capwaterin, soil_in, basin_gvr2pfr, &
+    !                        basin_dndunnianflow, (soil_in - basin_infil)
+    !     endif
+    !   end associate
+
+    !   9002 format (I5, 2('/', I2.2), 23F11.5)
+    !   ! 9003 format (A, I5, 2('/', I2.2), F12.5)
+    ! end subroutine
+
+
+    ! module subroutine basin_wb_srunoff(this, ctl_data, model_srunoff, model_time, basin_robal)
+    !   implicit none
+
+    !   class(WaterBalance), intent(inout) :: this
+    !   type(Control), intent(in) :: ctl_data
+    !   type(Srunoff), intent(in) :: model_srunoff
+    !   type(Time_t), intent(in) :: model_time
+    !   real(r64), intent(in) :: basin_robal
+
+    !   ! Local variables
+    !   real(r64) :: brobal
+
+    !   ! Control
+    !   ! cascade_flag,
+
+    !   ! Srunoff
+    !   ! basin_dprst_evap, basin_dprst_seep, basin_dprst_sroff, basin_imperv_evap,
+    !   ! basin_imperv_stor, basin_infil, basin_sroff, basin_sroffi, basin_sroffp,
+    !   ! basin_sroff_down, basin_hortonian_lakes
+
+    !   ! Time
+    !   ! Nowday, Nowmonth, Nowyear
+
+    !   ! ------------------------------------------------------------------------
+    !   associate(cascade_flag => ctl_data%cascade_flag%value, &
+    !             dprst_flag => ctl_data%dprst_flag%value, &
+
+    !             basin_dprst_evap => model_srunoff%basin_dprst_evap, &
+    !             basin_dprst_seep => model_srunoff%basin_dprst_seep, &
+    !             basin_dprst_sroff => model_srunoff%basin_dprst_sroff, &
+    !             basin_imperv_evap => model_srunoff%basin_imperv_evap, &
+    !             basin_imperv_stor => model_srunoff%basin_imperv_stor, &
+    !             basin_infil => model_srunoff%basin_infil, &
+    !             basin_sroff => model_srunoff%basin_sroff, &
+    !             basin_sroffi => model_srunoff%basin_sroffi, &
+    !             basin_sroffp => model_srunoff%basin_sroffp, &
+    !             basin_sroff_down => model_srunoff%basin_sroff_down, &
+    !             basin_hortonian_lakes => model_srunoff%basin_hortonian_lakes, &
+
+    !             nowtime => model_time%nowtime, &
+    !             nowday => model_time%Nowday, &
+    !             nowmonth => model_time%Nowmonth, &
+    !             nowyear => model_time%Nowyear)
+
+    !     brobal = basin_sroff - basin_sroffp - basin_sroffi
+
+    !     if (dprst_flag == 1) then
+    !       brobal = brobal - basin_dprst_sroff
+    !     end if
+
+    !     if (cascade_flag > 0) then
+    !       brobal = brobal + basin_sroff_down
+    !       write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
+    !                            basin_sroff, basin_infil, basin_imperv_evap, &
+    !                            basin_imperv_stor, basin_dprst_evap, basin_dprst_seep, &
+    !                            basin_sroffp, basin_sroffi, basin_dprst_sroff, &
+    !                            basin_sroff_down, basin_hortonian_lakes
+    !     else
+    !       if (dprst_flag == 1) then
+    !         write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
+    !                             basin_sroff, basin_infil, basin_imperv_evap, &
+    !                             basin_imperv_stor, basin_sroffp, basin_sroffi, &
+    !                             basin_dprst_evap, basin_dprst_seep, basin_dprst_sroff
+    !       else
+    !         write(this%sro_unit, 9002) nowtime(1:3), basin_robal, brobal, &
+    !                             basin_sroff, basin_infil, basin_imperv_evap, &
+    !                             basin_imperv_stor, basin_sroffp, basin_sroffi
+    !       end if
+    !     endif
+
+    !     if (dabs(basin_robal) > DSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible srunoff basin water balance ERROR ', basin_robal
+    !     elseif (dabs(basin_robal) > DTOOSMALL) then
+    !       write(this%bal_unit, 9003) nowtime(1:3), ' Possible srunoff basin water balance rounding issue ', basin_robal
+    !     endif
+    !   end associate
+
+    !   9002 format (I4, 2('/', I2.2), 2F11.7, 23F11.5)
+    !   9003 format (I4, 2('/', I2.2), A, es11.3e3)
+    !   ! 9003 format (A, I5, 2('/', I2.2), F12.5)
+    ! end subroutine
+
     module subroutine cleanup_WaterBalance(this)
       class(WaterBalance) :: this
         !! Srunoff class
@@ -1112,7 +1107,7 @@ submodule (PRMS_WATER_BALANCE) sm_water_balance
        if (is_opened) then
          close(this%bal_unit)
        end if
-       
+
       inquire(UNIT=this%gw_unit, OPENED=is_opened)
        if (is_opened) then
          close(this%gw_unit)

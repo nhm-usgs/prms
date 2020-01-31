@@ -24,16 +24,12 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       ! -----------------------------------------------------------------------
       ! Call the parent constructor first
       call this%Streamflow%init(ctl_data, model_basin, model_time, model_summary)
-      ! this%Streamflow = Streamflow(ctl_data, model_basin, model_time, model_summary)
 
       associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
 
-                nsegment => model_basin%nsegment, &
-                basin_area_inv => model_basin%basin_area_inv, &
-
-                cfs_conv => model_time%cfs_conv)
+                nsegment => model_basin%nsegment)
 
         call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -174,8 +170,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           this%outflow_ts = 0.0_dp
         endif
 
-        this%basin_segment_storage = sum(this%seg_outflow) * basin_area_inv / cfs_conv
-
         write(output_unit, 9002) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
         write(output_unit, 9002) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
         write(output_unit, 9002) '  Muskingum coefficient (min(c2), max(c2)): ', minval(this%c2), maxval(this%c2)
@@ -209,7 +203,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       integer(i32) :: j
       integer(i32) :: toseg
 
-      real(r64) :: area_fac
       real(r64) :: currin
 
       ! ------------------------------------------------------------------------
@@ -243,15 +236,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       associate(nsegment => model_basin%nsegment, &
                 basin_area_inv => model_basin%basin_area_inv, &
 
-                basin_gwflow => groundwater%basin_gwflow, &
-
                 streamflow_cfs => model_obs%streamflow_cfs, &
 
-                basin_ssflow => soil%basin_ssflow, &
-
-                basin_sroff => runoff%basin_sroff, &
-
-                cfs_conv => model_time%cfs_conv, &
                 curr_time => model_time%Nowtime)
 
         this%pastin = this%seg_inflow
@@ -368,60 +354,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           enddo  ! segment
         enddo  ! timestep
 
-        ! this%flow_out = 0.0_dp
-        ! this%basin_segment_storage = 0.0_dp
-        ! this%flow_to_lakes = 0.0_dp
-        ! this%flow_to_ocean = 0.0_dp
-        ! this%flow_to_great_lakes = 0.0_dp
-        ! this%flow_out_region = 0.0_dp
-        ! this%flow_out_NHM = 0.0_dp
-        ! this%flow_in_region = 0.0_dp
-        ! this%flow_terminus = 0.0_dp
-        ! this%flow_in_nation = 0.0_dp
-        ! this%flow_headwater = 0.0_dp
-        ! this%flow_in_great_lakes = 0.0_dp
-        ! this%flow_replacement = 0.0_dp
-
-        ! do cseg=1, nsegment
-        !   this%seg_outflow(cseg) = this%seg_outflow(cseg) * ONE_24TH
-        !   this%seg_inflow(cseg) = this%seg_inflow(cseg) * ONE_24TH
-        !   this%seg_upstream_inflow(cseg) = this%currinsum(cseg) * ONE_24TH
-        !
-        !   ! Flow_out is the total flow out of the basin, which allows for multiple
-        !   ! outlets includes closed basins (tosegment=0)
-        !   select case(Segment_type(cseg))
-        !     case(1)
-        !       this%flow_headwater = this%flow_headwater + this%seg_outflow(cseg)
-        !     case(2)
-        !       this%flow_to_lakes = this%flow_to_lakes + this%seg_outflow(cseg)
-        !     case(3)
-        !       this%flow_replacement = this%flow_replacement + this%seg_outflow(cseg)
-        !     case(4)
-        !       this%flow_in_nation = this%flow_in_nation + this%seg_outflow(cseg)
-        !     case(5)
-        !       this%flow_out_NHM = this%flow_out_NHM + this%seg_outflow(cseg)
-        !     case(6)
-        !       this%flow_in_region = this%flow_in_region + this%seg_outflow(cseg)
-        !     case(7)
-        !       this%flow_out_region = this%flow_out_region + this%seg_outflow(cseg)
-        !     case(8)
-        !       this%flow_to_ocean = this%flow_to_ocean + this%seg_outflow(cseg)
-        !     case(9)
-        !       this%flow_terminus = this%flow_terminus + this%seg_outflow(cseg)
-        !     case(10)
-        !       this%flow_in_great_lakes = this%flow_in_great_lakes + this%seg_outflow(cseg)
-        !     case(11)
-        !       this%flow_to_great_lakes = this%flow_to_great_lakes + this%seg_outflow(cseg)
-        !   end select
-        !
-        !   if (tosegment(cseg) == 0) then
-        !     this%flow_out = this%flow_out + this%seg_outflow(cseg)
-        !   endif
-        !
-        !   this%segment_delta_flow(cseg) = this%segment_delta_flow(cseg) + this%seg_inflow(cseg) - this%seg_outflow(cseg)
-        !   this%basin_segment_storage = this%basin_segment_storage + this%segment_delta_flow(cseg)
-        ! enddo
-
         this%seg_outflow = this%seg_outflow * ONE_24TH
         this%seg_inflow = this%seg_inflow * ONE_24TH
         this%seg_upstream_inflow = this%currinsum * ONE_24TH
@@ -438,21 +370,8 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         this%flow_in_great_lakes = sum(this%seg_outflow, mask=(this%segment_type == 10))
         this%flow_to_great_lakes = sum(this%seg_outflow, mask=(this%segment_type == 11))
 
-        area_fac = cfs_conv / basin_area_inv
-
         this%flow_out = sum(this%seg_outflow, mask=(this%tosegment == 0))
         this%segment_delta_flow = sum(this%seg_inflow - this%seg_outflow)
-        this%basin_segment_storage = sum(this%segment_delta_flow) / area_fac
-
-        ! NOTE: Is this block repeated in the other child classes?
-        this%basin_stflow_in = basin_sroff + basin_gwflow + basin_ssflow ! not equal to basin_stflow_out if replacement flows
-        this%basin_cfs = this%flow_out
-        this%basin_stflow_out = this%basin_cfs / area_fac
-        this%basin_cms = this%basin_cfs * CFS2CMS_CONV
-        this%basin_sroff_cfs = basin_sroff * area_fac
-        this%basin_ssflow_cfs = basin_ssflow * area_fac
-        this%basin_gwflow_cfs = basin_gwflow * area_fac
-        ! this%basin_segment_storage = this%basin_segment_storage / area_fac
       end associate
     end subroutine
 

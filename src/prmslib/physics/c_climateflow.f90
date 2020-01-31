@@ -45,8 +45,8 @@ module PRMS_CLIMATEVARS
       !! Maximum storage for soil recharge zone (upper portion of capillary reservoir where losses occur as both evporation and transpiration) [inches]
 
     ! lakes variables
-    real(r64) :: basin_lake_stor
-      !! Modified by soilzone and muskingum_lake
+    ! real(r64) :: basin_lake_stor
+    !   !! Modified by soilzone and muskingum_lake
 
     ! snow variables
     real(r64), pointer :: pkwater_equiv(:)

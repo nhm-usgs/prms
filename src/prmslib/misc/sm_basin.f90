@@ -92,7 +92,7 @@ contains
       ! If requested, open the covtype_dynamic file
       if (dyn_covtype_flag == 1) then
         write(output_unit, *) MODNAME, '%init() INFO: Dynamic cov_type file: ', covtype_dynamic%s
-        call open_dyn_param_file(this%nhru, this%covtype_unit, ierr, covtype_dynamic%s, 'covtype_dynamic')
+        call open_dyn_param_file(this%covtype_unit, ierr, covtype_dynamic%s, 'covtype_dynamic')
         if (ierr /= 0) then
           write(output_unit, *) MODNAME, '%init() ERROR opening dynamic cov_type parameter file.'
           stop

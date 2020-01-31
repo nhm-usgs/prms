@@ -47,21 +47,12 @@ module PRMS_GWFLOW
     real(r64), allocatable, private :: lake_seepage_max(:)
 
     logical :: has_gwstor_minarea
-    ! integer(i32) :: gwminarea_flag
 
-    real(r64), allocatable :: basin_dnflow
-    real(r64), allocatable :: basin_gw_upslope
+    ! Water-balance
     real(r64), allocatable :: hru_storage_ante(:)
     real(r64), allocatable :: gwres_stor_ante(:)
 
     ! Output variables
-    real(r64), pointer :: basin_gwflow
-    real(r64), pointer :: basin_gwin
-    real(r64), pointer :: basin_gwsink
-    real(r64), pointer :: basin_gwstor
-    real(r64), pointer :: basin_gwstor_minarea_wb
-    real(r64), pointer :: basin_lake_seep
-
     real(r32), allocatable, private :: elevlake(:)
     real(r32), pointer :: gwres_flow(:)
     real(r32), pointer :: gwres_sink(:)

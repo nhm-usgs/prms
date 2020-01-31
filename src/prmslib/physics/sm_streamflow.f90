@@ -122,15 +122,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%seg_upstream_inflow = 0.0_dp
         ! endif
 
-        allocate(this%basin_cfs)
-        allocate(this%basin_cms)
-        allocate(this%basin_gwflow_cfs)
-        allocate(this%basin_segment_storage)
-        allocate(this%basin_sroff_cfs)
-        allocate(this%basin_ssflow_cfs)
-        allocate(this%basin_stflow_in)
-        allocate(this%basin_stflow_out)
-
         ! Now initialize everything
 
         ! TODO: Uncomment once water_use_flag is added
@@ -140,7 +131,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         ! endif
 
         if (init_vars_from_file == 0) then
-          this%basin_segment_storage = 0.0_dp
           this%segment_delta_flow = 0.0_dp
         endif
 
@@ -245,20 +235,6 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         if (outVarON_OFF == 1) then
           do jj = 1, outVar_names%size()
             select case(outVar_names%values(jj)%s)
-              case('basin_cfs')
-                call model_summary%set_summary_var(jj, this%basin_cfs)
-              case('basin_cms')
-                call model_summary%set_summary_var(jj, this%basin_cms)
-              case('basin_gwflow_cfs')
-                call model_summary%set_summary_var(jj, this%basin_gwflow_cfs)
-              case('basin_segment_storage')
-                call model_summary%set_summary_var(jj, this%basin_segment_storage)
-              case('basin_sroff_cfs')
-                call model_summary%set_summary_var(jj, this%basin_sroff_cfs)
-              case('basin_stflow_in')
-                call model_summary%set_summary_var(jj, this%basin_stflow_in)
-              case('basin_stflow_out')
-                call model_summary%set_summary_var(jj, this%basin_stflow_out)
               case('hru_outflow')
                 call model_summary%set_summary_var(jj, this%hru_outflow)
               case('seg_gwflow')
@@ -330,7 +306,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
     module subroutine run_Streamflow(this, ctl_data, model_basin, &
                                     model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
-      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, NEARZERO
+      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, DNEARZERO
       implicit none
 
       class(Streamflow), intent(inout) :: this
@@ -427,14 +403,17 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         ! Divide solar radiation and PET by sum of HRU area to get avarage
         if (this%noarea_flag) then
           do i=1, nsegment
-            this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
-            this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+            ! print *, i, ': ', this%seginc_swrad(i), this%seginc_potet(i), this%segment_hruarea(i)
+            if (this%segment_hruarea(i) > DNEARZERO) then
+              this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
+              this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+            end if
           enddo
         else
           ! If there are no HRUs associated with a segment, then figure out some
           ! other way to get the solar radiation, the following is not great.
           do i=1, nsegment
-            if (this%segment_hruarea(i) > NEARZERO) then
+            if (this%segment_hruarea(i) > DNEARZERO) then
               this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
               this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
             elseif (this%tosegment(i) > 0) then

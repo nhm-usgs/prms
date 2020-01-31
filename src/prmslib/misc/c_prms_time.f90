@@ -71,7 +71,7 @@ module PRMS_SET_TIME
 
       procedure, private :: dattim
       procedure, nopass, private :: deltim
-      procedure, private :: ordinal_date
+      procedure, nopass, private :: ordinal_date
       procedure, private :: update_summer_flag
   end type
 
@@ -96,10 +96,10 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function next(this, ctl_data) result(res)
+    module function next(this) result(res)
       logical :: res
       class(Time_t), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
+      ! type(Control), intent(in) :: ctl_data
     end function
   end interface
 
@@ -121,9 +121,9 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function ordinal_date(this, datetime, Year_type, hemisphere) result(res)
+    module function ordinal_date(datetime, Year_type, hemisphere) result(res)
       integer(i32) :: res
-      class(Time_t) :: this
+      ! class(Time_t) :: this
       ! type(Control), intent(in) :: ctl_data
         !! Control file data
       integer(i32), intent(in) :: datetime(6)

@@ -96,8 +96,7 @@ contains
               timestep => model_time%Timestep, &
 
               nhru => model_basin%nhru, &
-              nmonths => model_basin%nmonths, &
-              hru_area => model_basin%hru_area)
+              nmonths => model_basin%nmonths)
 
       ios = 0
 
@@ -108,8 +107,6 @@ contains
         read(this%precip_funit, *, IOSTAT=ios) datetime, this%hru_ppt
       endif
 
-      ! this%pptmix = 0
-      ! this%newsnow = 0
       this%prmx = 0.0
       this%hru_rain = 0.0
       this%hru_snow = 0.0

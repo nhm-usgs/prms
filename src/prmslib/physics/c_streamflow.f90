@@ -41,7 +41,6 @@ module PRMS_STREAMFLOW
 
       ! Local Variables
       logical, private :: noarea_flag
-      ! integer(i32), private :: noarea_flag
       real(r64), private :: segment_area
 
       real(r64) :: flow_out
@@ -75,23 +74,6 @@ module PRMS_STREAMFLOW
         !! Streamflow leaving a segment
       real(r64), pointer :: seg_upstream_inflow(:)
         !! Sum of inflow from upstream segments
-
-      real(r64), pointer :: basin_cfs
-        !! Streamflow leaving the basin through the stream network (cfs)
-      real(r64), pointer :: basin_cms
-        !! Streamflow leaving the basin through the stream network (cms)
-      real(r64), public, pointer :: basin_segment_storage
-      real(r64), pointer :: basin_gwflow_cfs
-        !! Basin area-weighted average of groundwater flow to the stream network
-      real(r64), pointer :: basin_sroff_cfs
-        !! Basin area-weighted average surface runoff to the stream network
-      real(r64), pointer :: basin_ssflow_cfs
-        !! Interflow leaving the basin through the stream network
-      real(r64), pointer :: basin_stflow_in
-        !! Basin area-weighted average lateral flow entering the stream network
-      real(r64), pointer :: basin_stflow_out
-        !! Basin area-weighted average streamflow leaving through the stream network
-        !! basin_sum, muskingum, muskingum_lake
 
       real(r64), public :: flow_headwater
         !! muskingum, muskingum_lake, strmflow_in_out

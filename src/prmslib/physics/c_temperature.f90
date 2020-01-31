@@ -21,10 +21,6 @@ module PRMS_TEMPERATURE
 
     logical :: has_hru_summary_vars
 
-    real(r64), pointer :: basin_temp
-    real(r64), pointer :: basin_tmax
-    real(r64), pointer :: basin_tmin
-
     ! NOTE: 2018-07-24 PAN: Changed tavg, tmax, tmin to r64
     !       The additional precision is needed when fahrenheit temperatures are
     !       converted to Celsius.
@@ -40,8 +36,6 @@ module PRMS_TEMPERATURE
 
     contains
       procedure, public :: init => init_Temperature
-
-      ! generic, public :: init => init_Temperature
       procedure, public :: run => run_Temperature
       procedure, public :: set_nhru_summary_ptrs
   end type
@@ -57,17 +51,6 @@ module PRMS_TEMPERATURE
       type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
-  ! interface Temperature
-  !   !! Temperature constructor
-  !   module function constructor_Temperature(ctl_data, model_basin, model_summary) result(this)
-  !     type(Temperature) :: this
-  !       !! Temperature class
-  !     type(Control), intent(in) :: ctl_data
-  !       !! Control file parameters
-  !     type(Basin), intent(in) :: model_basin
-  !     type(Summary), intent(inout) :: model_summary
-  !   end function
-  ! end interface
 
   interface
     module subroutine run_Temperature(this, ctl_data, model_basin, model_time, model_summary)

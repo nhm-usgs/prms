@@ -15,13 +15,9 @@ contains
 
     integer(i32) :: jj
 
-    ! Control
-    ! nhru, nsol
-
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%SolarRadiation%init(ctl_data, model_basin, model_summary)
-    ! this%SolarRadiation = SolarRadiation(ctl_data, param_data, model_basin, model_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               nsol => ctl_data%nsol%value, &
@@ -46,19 +42,10 @@ contains
       this%tmax_f = (c_to_f(model_temp%tmax))
       this%tmin_f = (c_to_f(model_temp%tmin))
 
-      allocate(this%basin_cloud_cover)
-      allocate(this%basin_radadj)
-      this%basin_cloud_cover = 0.0_dp
-      this%basin_radadj = 0.0_dp
-
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
           select case(outVar_names%values(jj)%s)
-            case('basin_cloud_cover')
-              call model_summary%set_summary_var(jj, this%basin_cloud_cover)
-            case('basin_radadj')
-              call model_summary%set_summary_var(jj, this%basin_radadj)
             case('cloud_radadj')
               call model_summary%set_summary_var(jj, this%cloud_radadj)
             case('cloud_cover_hru')
@@ -92,41 +79,14 @@ contains
     real(r32) :: pptadj
     real(r32) :: radadj
 
-    ! Control
-    ! nhru, print_debug
-
-    ! Basin
-    ! active_hrus, basin_area_inv, hru_route_order,
-
-    ! Climate
-    ! hru_ppt
-
-    ! Obs
-    ! solrad,
-
-    ! Parameters
-    ! basin_solsta(not included in associate), ccov_slope(2D), ccov_intcp(2D),
-    ! crad_coef(2D), crad_exp(2D), hru_area,
-    ! hru_solsta, ppt_rad_adj(2D), radj_sppt, radj_wppt, radmax(2D),
-
-    ! Temperature
-    ! tmax, tmin
-
-    ! Time_t
-    ! day_of_year, Nowmonth, Summer_flag,
-
     ! --------------------------------------------------------------------------
     associate(nhru => ctl_data%nhru%value, &
               print_debug => ctl_data%print_debug%value, &
 
               active_hrus => model_basin%active_hrus, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => model_basin%hru_area, &
               hru_route_order => model_basin%hru_route_order, &
 
               hru_ppt => model_precip%hru_ppt, &
-              ! tmax_hru => climate%tmax_hru, &
-              ! tmin_hru => climate%tmin_hru, &
 
               solrad => model_obs%solrad, &
 
@@ -136,26 +96,11 @@ contains
               crad_coef => param_data%crad_coef%values, &
               crad_exp => param_data%crad_exp%values, &
 
-              ! hru_area => param_data%hru_area%values, &
-              ! hru_solsta => param_data%hru_solsta%values, &
-              ! ppt_rad_adj => param_data%ppt_rad_adj%values, &
-              ! radj_sppt => param_data%radj_sppt%values, &
-              ! radj_wppt => param_data%radj_wppt%values, &
-              ! radmax => param_data%radmax%values, &
-
-              ! tmax => model_temp%tmax, &
-              ! tmin => model_temp%tmin, &
-
               curr_month => model_time%Nowmonth, &
               day_of_year => model_time%day_of_year, &
               Summer_flag => model_time%Summer_flag)
 
       ! rsr using julian day as the soltab arrays are filled by julian day
-      this%basin_horad = this%soltab_basinpotsw(day_of_year)
-      this%basin_swrad = 0.0_dp
-      this%basin_orad = 0.0_dp
-      this%basin_radadj = 0.0_dp
-      this%basin_cloud_cover = 0.0_dp
 
       do jj=1, active_hrus
         chru = hru_route_order(jj)
@@ -188,7 +133,6 @@ contains
         endif
 
         this%cloud_cover_hru(chru) = ccov
-        this%basin_cloud_cover = this%basin_cloud_cover + dble(ccov * hru_area(chru))
 
         ! radadj = crad_coef(chru, curr_month) + (1.0 - crad_coef(chru, curr_month)) * &
         !          ((1.0 - this%cloud_cover_hru(chru))**crad_exp(chru, curr_month))
@@ -198,10 +142,7 @@ contains
         if (radadj > radmax(idx1D)) radadj = radmax(idx1D)
 
         this%cloud_radadj(chru) = radadj * pptadj
-        this%basin_radadj = this%basin_radadj + dble(this%cloud_radadj(chru) * hru_area(chru))
-
         this%orad_hru(chru) = this%cloud_radadj(chru) * sngl(this%soltab_horad_potsw(day_of_year, chru))
-        this%basin_orad = this%basin_orad + dble(this%orad_hru(chru) * hru_area(chru))
 
         if (this%has_hru_obs_station) then
           k = hru_solsta(chru)
@@ -214,18 +155,13 @@ contains
               endif
             else
               this%swrad(chru) = solrad(k) * this%radiation_cv_factor
-              this%basin_swrad = this%basin_swrad + dble(this%swrad(chru) * hru_area(chru))
               cycle
             endif
           endif
         endif
 
         this%swrad(chru) = sngl(this%soltab_potsw(day_of_year, chru) * dble(this%cloud_radadj(chru)) / this%hru_cossl(chru))
-        this%basin_swrad = this%basin_swrad + dble(this%swrad(chru) * hru_area(chru))
       enddo
-
-      this%basin_orad = this%basin_orad * basin_area_inv
-      this%basin_radadj = this%basin_radadj * basin_area_inv
 
       if (this%has_basin_obs_station) then
         this%orad = solrad(param_data%basin_solsta%values(1)) * this%radiation_cv_factor
@@ -233,9 +169,6 @@ contains
         this%orad = sngl(this%basin_orad)
       endif
 
-      this%basin_swrad = this%basin_swrad * basin_area_inv
-      this%basin_potsw = this%basin_swrad
-      this%basin_cloud_cover = this%basin_cloud_cover * basin_area_inv
     end associate
   end subroutine
 

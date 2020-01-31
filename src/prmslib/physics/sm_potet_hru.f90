@@ -101,7 +101,6 @@ contains
         this%potet = this%potet * potet_cbh_adj(idx1D)
       end do
 
-      this%basin_potet = sum(dble(this%potet * hru_area)) * basin_area_inv
     end associate
   end subroutine
 

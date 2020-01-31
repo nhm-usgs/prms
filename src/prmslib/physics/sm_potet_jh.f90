@@ -14,7 +14,6 @@ contains
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%Potential_ET%init(ctl_data, model_basin, model_summary)
-    ! this%Potential_ET = Potential_ET(ctl_data, model_basin, model_summary)
 
     associate(param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
@@ -69,8 +68,6 @@ contains
     associate(curr_month => model_time%Nowmonth, &
 
               active_mask => model_basin%active_mask, &
-              basin_area_inv => model_basin%basin_area_inv, &
-              hru_area => model_basin%hru_area, &
 
               swrad => model_solrad%swrad, &
 
@@ -96,7 +93,6 @@ contains
       ! enddo
 
       this%potet = calc_potet(tavg, tavg_f, this%jh_coef(:, curr_month), this%jh_coef_hru, swrad)
-      this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
     end associate
   end subroutine
 

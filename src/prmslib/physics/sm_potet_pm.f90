@@ -62,14 +62,14 @@ contains
         call find_current_time(ierr, this%windspeed_funit, start_time, (cbh_binary_flag==1))
       endif
 
-      allocate(this%basin_windspeed)
+      ! allocate(this%basin_windspeed)
 
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
           select case(outVar_names%values(jj)%s)
-            case('basin_windspeed')
-              call model_summary%set_summary_var(jj, this%basin_windspeed)
+            ! case('basin_windspeed')
+            !   call model_summary%set_summary_var(jj, this%basin_windspeed)
             case('tempc_dewpt')
               call model_summary%set_summary_var(jj, this%tempc_dewpt)
             case('vp_actual')
@@ -278,8 +278,8 @@ contains
         ! Tavgc_ante(chru) = tavgc(chru)
       enddo
 
-      this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
-      this%basin_windspeed = sum(dble(this%windspeed_hru * hru_area), mask=active_mask) * basin_area_inv
+      ! this%basin_potet = sum(dble(this%potet * hru_area), mask=active_mask) * basin_area_inv
+      ! this%basin_windspeed = sum(dble(this%windspeed_hru * hru_area), mask=active_mask) * basin_area_inv
 
       ! NOTE: basin_humidity is totaled in Potential_ET parent class
       ! this%basin_humidity = sum(dble(this%humidity_hru * hru_area), mask=active_mask) * basin_area_inv

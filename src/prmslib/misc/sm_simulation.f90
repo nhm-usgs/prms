@@ -104,7 +104,7 @@ submodule (Simulation_class) sm_simulation
 
       ! ------------------------------------------------------------------------
       do
-        if (.not. this%model_time%next(ctl_data)) exit
+        if (.not. this%model_time%next()) exit
         ! print *, this%model_time%Nowyear, this%model_time%Nowmonth, this%model_time%Nowday
 
         ! write(output_unit, 9008) 'TIME: ', this%model_time%Nowtime(1:3)
@@ -198,7 +198,7 @@ submodule (Simulation_class) sm_simulation
       !   call this%transpiration%cleanup(ctl_data)
       ! endif
       call this%model_waterbal%cleanup()
-      
+
       call ctl_data%cleanup()
 
     end subroutine

@@ -36,13 +36,6 @@ contains
       allocate(this%tavg_f(nhru))
       allocate(this%tmax_f(nhru))
 
-      allocate(this%basin_temp)
-      allocate(this%basin_tmax)
-      allocate(this%basin_tmin)
-      this%basin_temp = 0.0_dp
-      this%basin_tmax = 0.0_dp
-      this%basin_tmin = 0.0_dp
-
       ! TODO: PAN - these variables don't appear to be used anymore
       ! if (ctl_data%temp_module%values(1)%s /= 'climate_hru' .and. &
       !     ctl_data%temp_module%values(1)%s /= 'temp_sta') then
@@ -75,12 +68,6 @@ contains
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
-            case('basin_temp')
-              call model_summary%set_summary_var(jj, this%basin_temp)
-            case('basin_tmax')
-              call model_summary%set_summary_var(jj, this%basin_tmax)
-            case('basin_tmin')
-              call model_summary%set_summary_var(jj, this%basin_tmin)
             case('tavg')
               this%has_hru_summary_vars = .true.
             case('tmax_hru')

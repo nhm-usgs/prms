@@ -31,7 +31,6 @@ MODULE PRMS_TRANSP_TINDEX
 
 
     ! Local Variables
-    ! integer(i32), allocatable :: transp_check(:)
     logical, allocatable, private :: transp_check(:)
 
     integer(i32), allocatable, private :: transp_beg_restart(:)

@@ -56,15 +56,10 @@ contains
       allocate(this%tmax_allsnow_c(nhru, nmonths))
       allocate(this%tmax_allsnow_f(nhru, nmonths))
 
-      ! allocate(this%newsnow(nhru))
-      ! allocate(this%pptmix(nhru))
-
       this%hru_ppt = 0.0
       this%hru_rain = 0.0
       this%hru_snow = 0.0
       this%prmx = 0.0
-      ! this%pptmix = 0
-      ! this%newsnow = 0
 
       ! TODO: PAN - these variables don't appear to be used anymore
       ! if (ctl_data%precip_module%values(1)%s == 'precip_laps' .or. &
@@ -102,25 +97,12 @@ contains
         this%tmax_allrain_f = c_to_f(this%tmax_allrain)
       endif
 
-      allocate(this%basin_obs_ppt)
-      allocate(this%basin_ppt)
-      allocate(this%basin_rain)
-      allocate(this%basin_snow)
-
       this%has_hru_summary_vars = .false.
 
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
           select case(outVar_names%values(jj)%s)
-            case('basin_obs_ppt')
-              call model_summary%set_summary_var(jj, this%basin_obs_ppt)
-            case('basin_ppt')
-              call model_summary%set_summary_var(jj, this%basin_ppt)
-            case('basin_rain')
-              call model_summary%set_summary_var(jj, this%basin_rain)
-            case('basin_snow')
-              call model_summary%set_summary_var(jj, this%basin_snow)
             case('hru_ppt')
               this%has_hru_summary_vars = .true.
             case('hru_rain')
@@ -129,10 +111,6 @@ contains
               this%has_hru_summary_vars = .true.
             case('prmx')
               call model_summary%set_summary_var(jj, this%prmx)
-            ! case('newsnow')
-            !   call model_summary%set_summary_var(jj, this%newsnow)
-            ! case('pptmix')
-            !   call model_summary%set_summary_var(jj, this%pptmix)
             case default
               ! pass
           end select
@@ -243,10 +221,6 @@ contains
   !         endif
   !       endif
   !     enddo
-
-  !     this%basin_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
-  !     this%basin_rain = sum(dble(this%hru_rain * hru_area)) * basin_area_inv
-  !     this%basin_snow = sum(dble(this%hru_snow * hru_area)) * basin_area_inv
   !   end associate
   ! end subroutine
 
@@ -276,7 +250,6 @@ module subroutine set_precipitation_form(this, ctl_data, model_basin, model_temp
     associate(nhru => model_basin%nhru, &
               hru_area => model_basin%hru_area, &
               active_hrus => model_basin%active_hrus, &
-              basin_area_inv => model_basin%basin_area_inv, &
               hru_route_order => model_basin%hru_route_order, &
 
               tmax => model_temp%tmax, &
@@ -288,9 +261,6 @@ module subroutine set_precipitation_form(this, ctl_data, model_basin, model_temp
               tmax_allsnow => this%tmax_allsnow_c)
 
       ! WARNING: 2019-10-31 PAN: this is not handling the optional parameters correctly
-
-      ! Basin precipitation before any adjustments
-      this%basin_obs_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
 
       ! tdiff = max(tmax(chru) - tmin(chru), 0.0001)
       this%prmx = ((tmax - tmax_allsnow(:, month)) / max(tmax - tmin, 0.0001)) * rainmix_adj(:, month)
@@ -328,10 +298,6 @@ module subroutine set_precipitation_form(this, ctl_data, model_basin, model_temp
           endif
         endif
       enddo
-
-      this%basin_ppt = sum(dble(this%hru_ppt * hru_area)) * basin_area_inv
-      this%basin_rain = sum(dble(this%hru_rain * hru_area)) * basin_area_inv
-      this%basin_snow = sum(dble(this%hru_snow * hru_area)) * basin_area_inv
     end associate
   end subroutine
 
@@ -358,12 +324,6 @@ module subroutine set_precipitation_form(this, ctl_data, model_basin, model_temp
             call model_summary%set_summary_var(jj, this%hru_rain)
           case('hru_snow')
             call model_summary%set_summary_var(jj, this%hru_snow)
-          ! case('prmx')
-          !   call model_summary%set_summary_var(jj, this%prmx)
-          ! case('newsnow')
-          !   call nhru_summary%set_nhru_var(jj, this%newsnow)
-          ! case('pptmix')
-          !   call nhru_summary%set_nhru_var(jj, this%pptmix)
           case default
             ! pass
         end select

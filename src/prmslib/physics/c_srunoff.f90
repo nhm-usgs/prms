@@ -73,15 +73,9 @@ module PRMS_SRUNOFF
     logical, private :: has_open_dprst
       !! NOTE: replaces dprst_open_flag
     logical :: use_sroff_transfer
-    ! NOTE: replaces integer(i32) :: use_sroff_transfer
 
     real(r32), pointer :: carea_dif(:)
     real(r32), pointer :: imperv_stor_ante(:)
-
-
-
-    real(r64), pointer :: basin_apply_sroff
-      !!
 
     real(r32), pointer :: hru_area_imperv(:)
       !! Area of HRU that is impervious [acres]
@@ -90,23 +84,6 @@ module PRMS_SRUNOFF
 
 
     ! Output variables
-    real(r64), pointer :: basin_contrib_fraction
-      !! Basin area-weighted average contributing area of the pervious area of each HRU [decimal fraction]
-    real(r64), pointer :: basin_hortonian
-      !! Basin area-weighted average Hortonian runoff [inches]
-    real(r64), pointer :: basin_imperv_evap
-      !! Basin area-weighted average evaporation from impervious area [inches]
-    real(r64), pointer :: basin_imperv_stor
-      !! Basin area-weighted average storage on impervious area [inches]
-    real(r64), pointer :: basin_infil
-      !! Basin area-weighted average infiltration to the capillary reservoirs [inches]
-    real(r64), pointer :: basin_sroff
-      !! Basin area-weighted average surface runoff to the stream network [inches]
-    real(r64), pointer :: basin_sroffi
-      !! Basin area-weighted average surface runoff from impervious areas [inches]
-    real(r64), pointer :: basin_sroffp
-      !! Basin area-weighted average surface runoff from pervious areas [inches]
-
     real(r32), pointer :: contrib_fraction(:)
       !! Contributing area of each HRU pervious area [decimal fraction]
     real(r32), pointer :: dprst_area_max(:)
@@ -120,14 +97,6 @@ module PRMS_SRUNOFF
     ! Cascades
     ! ~~~~~~~~~~~~~~~~~~~~~~~~
     ! output variables
-    real(r64), pointer :: basin_hortonian_lakes
-      !! Basin area-weighted average Hortonian surface runoff to lakes [inches]
-    real(r64), pointer :: basin_sroff_down
-      !! Basin area-weighted average cascading surface runoff [inches]
-    real(r64), pointer :: basin_sroff_upslope
-      !! Basin area-weighted average cascading surface runoff received from upslope HRUs [inches]
-
-
     real(r32), pointer :: hortonian_flow(:)
       !! Hortonian surface runoff reaching stream network for each HRU [inches]
     real(r32), pointer :: hru_impervevap(:)
@@ -154,7 +123,7 @@ module PRMS_SRUNOFF
     real(r64), pointer :: strm_seg_in(:)
       !!
       !! r64 is correct
-    real(r64), pointer :: upslope_hortonian(:)
+    real(r64), pointer :: upslope_hortonian(:) => null()
       !! Hortonian surface runoff received from upslope HRUs [inches]
       !! r64 is correct
 
@@ -176,17 +145,6 @@ module PRMS_SRUNOFF
     real(r64), pointer :: dprst_vol_clos_max(:)
     real(r64), pointer :: dprst_vol_open_max(:)
     real(r64), pointer :: dprst_vol_thres_open(:)
-
-    ! Output variables
-    real(r64), pointer :: basin_dprst_evap
-    real(r64), pointer :: basin_dprst_seep
-      !! Basin area-weighted average seepage surface-depression storage [inches]
-    real(r64), pointer :: basin_dprst_sroff
-      !! Basin area-weighted average surface runoff from open surface-depression storage [inches]
-    real(r64), pointer :: basin_dprst_volcl
-      !! Basin area-weighted average storage volume in closed surface depressions [inches]
-    real(r64), pointer :: basin_dprst_volop
-      !! Basin area-weighted average storage volume in open surface depressions [inches]
 
     real(r32), pointer :: dprst_area_clos(:)
       !! Surface area of closed surface depressions based on volume for each HRU [acres]
@@ -249,7 +207,7 @@ module PRMS_SRUNOFF
       procedure, public :: cleanup => cleanup_Srunoff
 
       ! procedure, private :: compute_infil
-      procedure, private :: dprst_comp
+      ! procedure, private :: dprst_comp
       procedure, private :: dprst_init
       procedure, private :: perv_comp
       procedure, private :: read_dyn_params
@@ -313,34 +271,33 @@ module PRMS_SRUNOFF
 
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ! Private class procedures
-  interface
-    module subroutine dprst_comp(this, ctl_data, idx, model_basin, model_time, pkwater_equiv, &
-                                 potet, net_rain, net_snow, &
-                                 pptmix_nopack, snowmelt, snowcov_area, &
-                                 avail_et, sri, srp)
-                                !  dprst_insroff_hru, dprst_stor_hru, dprst_vol_clos, &
-                                !  dprst_vol_clos_frac, dprst_vol_frac, dprst_vol_open, &
-                                !  dprst_vol_open_frac, &
-                                !  dprst_area_clos, dprst_area_open, dprst_evap_hru, &
-                                !  dprst_seep_hru, dprst_sroff_hru)
-      !! Compute depression storage area hydrology
-      class(Srunoff), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
-      integer(i32), intent(in) :: idx
-      type(Basin), intent(in) :: model_basin
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: pkwater_equiv
-      real(r32), intent(in) :: potet
-      real(r32), intent(in) :: net_rain
-      real(r32), intent(in) :: net_snow
-      logical, intent(in) :: pptmix_nopack
-      real(r32), intent(in) :: snowmelt
-      real(r32), intent(in) :: snowcov_area
-      real(r32), intent(inout) :: avail_et
-      real(r64), intent(inout) :: sri
-      real(r64), intent(inout) :: srp
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine dprst_comp(this, ctl_data, idx, model_basin, model_time, pkwater_equiv, &
+  !                                potet, net_rain, net_snow, &
+  !                                pptmix_nopack, snowmelt, snowcov_area)
+  !                               !  dprst_insroff_hru, dprst_stor_hru, dprst_vol_clos, &
+  !                               !  dprst_vol_clos_frac, dprst_vol_frac, dprst_vol_open, &
+  !                               !  dprst_vol_open_frac, &
+  !                               !  dprst_area_clos, dprst_area_open, dprst_evap_hru, &
+  !                               !  dprst_seep_hru, dprst_sroff_hru)
+  !     !! Compute depression storage area hydrology
+  !     class(Srunoff), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     integer(i32), intent(in) :: idx
+  !     type(Basin), intent(in) :: model_basin
+  !     type(Time_t), intent(in) :: model_time
+  !     real(r64), intent(in) :: pkwater_equiv
+  !     real(r32), intent(in) :: potet
+  !     real(r32), intent(in) :: net_rain
+  !     real(r32), intent(in) :: net_snow
+  !     logical, intent(in) :: pptmix_nopack
+  !     real(r32), intent(in) :: snowmelt
+  !     real(r32), intent(in) :: snowcov_area
+  !     real(r32), intent(inout) :: avail_et
+  !     real(r64), intent(inout) :: sri
+  !     real(r64), intent(inout) :: srp
+  !   end subroutine
+  ! end interface
 
   interface
     module subroutine dprst_init(this, ctl_data, model_basin)
@@ -406,8 +363,6 @@ module PRMS_SRUNOFF
   interface
     module subroutine close_if_open(unit)
         integer(i32), intent(in) :: unit
-
-        logical :: is_opened
     end subroutine
   end interface
 

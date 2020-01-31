@@ -18,11 +18,7 @@ module PRMS_TRANSPIRATION
   character(len=*), parameter :: MODVERSION = '2018-08-30 13:51:00Z'
 
   type, extends(ModelBase) :: Transpiration
-    ! integer(i32) :: basin_transp_on
-    logical :: basin_transp_on
-
     logical, pointer :: transp_on(:)
-    ! integer(i32), allocatable :: transp_on(:)
 
   contains
     procedure, public :: init => init_Transpiration

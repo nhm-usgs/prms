@@ -17,15 +17,14 @@ contains
     ! Local variables
     ! character(LEN=11) :: modname_rst
       !! Used to verify module name when reading from restart file
-    integer(i32) :: ii
+    ! integer(i32) :: ii
       !! counter
-    integer(i32) :: chru
+    ! integer(i32) :: chru
       !! Current HRU
 
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%Transpiration%init(ctl_data, model_basin, model_temp, model_summary)
-    ! this%Transpiration = Transpiration(ctl_data, model_basin)
 
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               param_hdl => ctl_data%param_file_hdl, &
@@ -63,7 +62,6 @@ contains
 
       this%tmax_sum = 0.0
       this%transp_check = .false.
-      this%basin_transp_on = .false.
 
       ! NOTE: changed to use Celsius units by default
       ! NOTE: this will be unnecessary once parameter file units are standardized
@@ -78,25 +76,24 @@ contains
       !   this%transp_tmax_c = f_to_c(this%transp_tmax)
       ! endif
 
-      if (init_vars_from_file == 1) then
-        ! TODO: Incorporate the load from restart file stuff
-        ! These are only allocated when initializing from restart file
-        ! integer(i32), allocatable :: transp_beg_restart(:)
-        ! integer(i32), allocatable :: transp_end_restart(:)
-        ! real(r32), allocatable :: transp_tmax_restart(:)
+      ! if (init_vars_from_file == 1) then
+      !   ! TODO: Incorporate the load from restart file stuff
+      !   ! These are only allocated when initializing from restart file
+      !   ! integer(i32), allocatable :: transp_beg_restart(:)
+      !   ! integer(i32), allocatable :: transp_end_restart(:)
+      !   ! real(r32), allocatable :: transp_tmax_restart(:)
 
-        ! read(rst_unit) modname_rst
-        ! call check_restart(MODNAME, modname_rst)
-        ! read(rst_unit) this%transp_check
-        ! read(rst_unit) this%tmax_sum
-        ! read(rst_unit) Transp_beg_restart
-        ! read(rst_unit) Transp_end_restart
-        ! read(rst_unit) Transp_tmax_restart
-      endif
+      !   ! read(rst_unit) modname_rst
+      !   ! call check_restart(MODNAME, modname_rst)
+      !   ! read(rst_unit) this%transp_check
+      !   ! read(rst_unit) this%tmax_sum
+      !   ! read(rst_unit) Transp_beg_restart
+      !   ! read(rst_unit) Transp_end_restart
+      !   ! read(rst_unit) Transp_tmax_restart
+      ! endif
 
       this%transp_on = init_transp_on(this%transp_beg, this%transp_end, st_month, st_day)
       this%transp_check = init_transp_check(this%transp_beg, st_month, st_day)
-      this%basin_transp_on = any(this%transp_on)
     end associate
   end subroutine
 
@@ -133,9 +130,9 @@ contains
     class(Temperature), intent(in) :: model_temp
 
     ! Local Variables
-    integer(i32) :: chru
+    ! integer(i32) :: chru
       !! Current HRU
-    integer(i32) :: j
+    ! integer(i32) :: j
       !! Counter
 
     ! --------------------------------------------------------------------------
@@ -161,8 +158,6 @@ contains
                                   this%transp_beg, this%transp_end, this%transp_tmax, &
                                   tmax_f, 32.0, curr_month, curr_day)
       end if
-
-      this%basin_transp_on = any(this%transp_on)
 
       ! write(*, 9008) '===========', curr_month, curr_day, '============================'
       ! write(*, 9010) this%transp_on

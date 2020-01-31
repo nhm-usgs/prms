@@ -67,11 +67,6 @@ module SOLAR_RADIATION
       !! Solar radiation at each measurement station
 
     ! Output variables
-    real(r64), pointer :: basin_horad
-    real(r64), pointer :: basin_orad
-    real(r64), pointer :: basin_potsw
-    real(r64), pointer :: basin_swrad
-    real(r32) :: orad
     real(r32), pointer :: orad_hru(:)
     real(r32), pointer :: swrad(:)
 
@@ -88,7 +83,6 @@ module SOLAR_RADIATION
     real(r32), pointer :: tmax_f(:)
     real(r32), pointer :: tmin_f(:)
 
-    ! real(r64) :: solar_declination(366)
     real(r64) :: soltab_basinpotsw(DAYS_PER_YEAR)
     real(r64), pointer :: hru_cossl(:)
     real(r64), pointer :: soltab_sunhrs(:, :)
@@ -131,20 +125,19 @@ module SOLAR_RADIATION
   end interface
 
   interface
-    module subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, Obliquity, &
-                              Solar_declination, Slope, Aspect, Latitude, &
-                              Hru_type, Id)
+    module subroutine compute_soltab(Cossl, Soltab_daily, Sunhrs_daily, &
+                              Solar_declination, Slope, Aspect, Latitude)
       real(r64), intent(out) :: Cossl
       real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Soltab_daily
       real(r64), intent(inout), dimension(DAYS_PER_YEAR) :: Sunhrs_daily
 
-      real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Obliquity
+      ! real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Obliquity
       real(r64), intent(in), dimension(DAYS_PER_YEAR) :: Solar_declination
       real(r32), intent(in) :: Slope
       real(r32), intent(in) :: Aspect
       real(r32), intent(in) :: Latitude
-      integer(i32), intent(in) :: Hru_type
-      integer(i32), intent(in) :: Id
+      ! integer(i32), intent(in) :: Hru_type
+      ! integer(i32), intent(in) :: Id
     end subroutine
   end interface
 

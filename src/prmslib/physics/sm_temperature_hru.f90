@@ -15,12 +15,8 @@ contains
     integer(i32) :: ierr
     integer(i32) :: istop = 0
 
-    ! Control
-    ! nhru, cbh_binary_flag, print_debug, start_time, tmax_day, tmin_day,
-
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
-    ! this%Temperature = Temperature(ctl_data, model_basin, model_summary)
     call this%Temperature%init(ctl_data, model_basin, model_summary)
 
     associate(cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -52,7 +48,6 @@ contains
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Open netcdf or ascii-base cbh files
-      ! if (tmax_day%s(index(tmax_day%s, '.')+1:) == 'nc') then
       if (tmax_day%s(scan(trim(tmax_day%s),".", BACK= .true.)+1:) == 'nc') then
         ! Read a netcdf file
         call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
@@ -71,7 +66,6 @@ contains
         this%has_netcdf_tmax = .false.
       endif
 
-      ! if (tmin_day%s(index(tmin_day%s, '.')+1:) == 'nc') then
       if (tmin_day%s(scan(trim(tmin_day%s),".", BACK= .true.)+1:) == 'nc') then
         call open_netcdf_cbh_file(this%tmin_funit, this%tmin_varid, this%tmin_idx_offset, &
                                   tmin_day%s, 'tmin', start_time, end_time, nhru)
@@ -110,10 +104,8 @@ contains
     integer(i32) :: datetime(6)
 
     ! --------------------------------------------------------------------------
-    associate(basin_area_inv => model_basin%basin_area_inv, &
-              nhru => model_basin%nhru, &
+    associate(nhru => model_basin%nhru, &
               ! nmonths => model_basin%nmonths, &
-              hru_area => model_basin%hru_area, &
 
               curr_month => model_time%Nowmonth, &
               timestep => model_time%Timestep)
@@ -157,12 +149,6 @@ contains
 
       this%tavg = f_to_c(this%tavg_f)
       ! this%tavg = (this%tmax + this%tmin) * 0.5
-
-      ! NOTE: This may be moved to parent class at some point.
-      ! WARNING: Explicit conversion to Fahrenheit for testing.
-      this%basin_temp = c_to_f(sum(dble(this%tavg * hru_area)) * basin_area_inv)
-      this%basin_tmax = c_to_f(sum(dble(this%tmax * hru_area)) * basin_area_inv)
-      this%basin_tmin = c_to_f(sum(dble(this%tmin * hru_area)) * basin_area_inv)
 
       ! If any temperature output variables are specified then we set pointers
       ! to the arrays for the nhru_summary module.

@@ -16,9 +16,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
       type(Summary), intent(inout) :: model_summary
 
       ! Local Variables
-      integer(i32) :: chru
+      ! integer(i32) :: chru
       integer(i32) :: jj
-      integer(i32) :: jjj
+      ! integer(i32) :: jjj
 
       ! ------------------------------------------------------------------------
       associate(cascadegw_flag => ctl_data%cascadegw_flag%value, &
@@ -38,7 +38,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 nlake => model_basin%nlake, &
                 active_gwrs => model_basin%active_gwrs, &
                 active_mask => model_basin%active_mask, &
-                basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
                 gwr_type => model_basin%gwr_type, &
                 hru_area => model_basin%hru_area, &
@@ -102,7 +101,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         allocate(this%gwres_flow(nhru))
         allocate(this%gwres_in(nhru))
         allocate(this%gwres_sink(nhru))
-        allocate(this%gwres_stor(nhru))   ! moved from flowvars
+        allocate(this%gwres_stor(nhru))
         ! allocate(this%gwstor_minarea(nhru))
         allocate(this%gwstor_minarea_wb(nhru))
         allocate(this%hru_lateral_flow(nhru))
@@ -122,35 +121,10 @@ submodule (PRMS_GWFLOW) sm_gwflow
           allocate(this%elevlake(nlake))
         endif
 
-        allocate(this%basin_dnflow)
-        allocate(this%basin_gw_upslope)
-        allocate(this%basin_gwflow)
-        allocate(this%basin_gwin)
-        allocate(this%basin_gwsink)
-        allocate(this%basin_gwstor)
-        allocate(this%basin_gwstor_minarea_wb)
-        allocate(this%basin_lake_seep)
-
         ! Connect summary variables that need to be output
         if (outVarON_OFF == 1) then
           do jj = 1, outVar_names%size()
             select case(outVar_names%values(jj)%s)
-              case('basin_gwflow')
-                call model_summary%set_summary_var(jj, this%basin_gwflow)
-              case('basin_gwstor')
-                call model_summary%set_summary_var(jj, this%basin_gwstor)
-              case('basin_gwin')
-                call model_summary%set_summary_var(jj, this%basin_gwin)
-              case('basin_gwsink')
-                call model_summary%set_summary_var(jj, this%basin_gwsink)
-              case('basin_gwstor_minarea_wb')
-                call model_summary%set_summary_var(jj, this%basin_gwstor_minarea_wb)
-              case('basin_lake_seep')
-                call model_summary%set_summary_var(jj, this%basin_lake_seep)
-              case('basin_gw_upslope')
-                call model_summary%set_summary_var(jj, this%basin_gw_upslope)
-              case('basin_dnflow')
-                call model_summary%set_summary_var(jj, this%basin_dnflow)
               case('gw_in_soil')
                 call model_summary%set_summary_var(jj, this%gw_in_soil)
               case('gw_in_ssr')
@@ -176,7 +150,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
         ! Initialize
         this%gwres_stor = 0.0_dp  ! moved from flowvars
         this%gwstor_minarea_wb = 0.0_dp
-        this%basin_gwstor_minarea_wb = 0.0_dp
 
         if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 6) then
           this%gwres_stor = dble(this%gwstor_init)
@@ -196,9 +169,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
           this%gwstor_minarea = dble(this%gwstor_min * hru_area)
         endif
 
-        ! this%basin_ssstor = sum(dble(this%ssres_stor * hru_area), mask=active_mask) * basin_area_inv
-        this%basin_gwstor = sum(this%gwres_stor * dble(hru_area), mask=active_mask) * basin_area_inv
-
         this%hru_storage = dble(soil_moist_tot + hru_intcpstor + hru_impervstor) + &
                                 this%gwres_stor + pkwater_equiv
 
@@ -212,7 +182,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
         ! do jj = 1, active_gwrs
         !   chru = gwr_route_order(jj)
-        !   this%basin_gwstor = this%basin_gwstor + this%gwres_stor(chru) * dble(hru_area(chru))
 
         !   if (this%gwflow_coef(chru) > 1.0) then
         !     if (print_debug > -1) print *, 'WARNING, gwflow_coef value > 1.0 for GWR:', chru, this%gwflow_coef(chru)
@@ -249,8 +218,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
         allocate(this%gwres_stor_ante(nhru))
         this%gwres_stor_ante = this%gwres_stor
 
-        ! this%basin_gwstor = this%basin_gwstor * basin_area_inv
-
         if (dprst_flag == 1) then
           this%gwin_dprst = 0.0_dp
         endif
@@ -281,15 +248,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !     endif
           !   endif
           ! enddo
-        endif
-
-        if (init_vars_from_file == 0) then
-           this%basin_gwflow = 0.0_dp
-           this%basin_gwsink = 0.0_dp
-           this%basin_gwin = 0.0_dp
-           this%basin_gw_upslope = 0.0_dp
-           this%basin_dnflow = 0.0_dp
-           this%basin_lake_seep = 0.0_dp
         endif
 
         ! Do only once, so restart uses saved values
@@ -357,7 +315,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 print_debug => ctl_data%print_debug%value, &
 
                 active_gwrs => model_basin%active_gwrs, &
-                basin_area_inv => model_basin%basin_area_inv, &
                 gwr_route_order => model_basin%gwr_route_order, &
                 hru_area => model_basin%hru_area, &
                 hru_area_dble => model_basin%hru_area_dble, &
@@ -389,15 +346,12 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
         if (cascadegw_flag > 0) then
           this%gw_upslope = 0.0_dp
-          this%basin_dnflow = 0.0_dp
-          this%basin_gw_upslope = 0.0_dp
         endif
 
         if (weir_gate_flag == 1) then
           ! elevlake from last timestep
           this%lake_seepage = 0.0_dp
           this%gw_seep_lakein = 0.0_dp
-          this%basin_lake_seep = 0.0_dp
 
           do jj=1, active_gwrs
             j = gwr_route_order(jj)
@@ -452,7 +406,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !         endif
           !
           !         this%lake_seepage(jjj) = this%lake_seepage(jjj) + seepage * inch2acre_feet  ! units, acre-feet
-          !         this%basin_lake_seep = this%basin_lake_seep + seepage * hru_area_dble(j)  ! units, acre-inches
           !       endif
           !
           !       this%gwres_stor(j) = this%gwres_stor(j) + seepage
@@ -461,12 +414,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !     endif
           !   endif
           ! enddo
-
-          this%basin_lake_seep = this%basin_lake_seep * basin_area_inv
         endif
-
-        this%basin_gwstor_minarea_wb = 0.0_dp
-        this%basin_gwsink = 0.0_dp
 
         ! =====================================================================
         ! vectorized statements
@@ -475,9 +423,9 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%gw_in_soil = soil_to_gw * hru_area
         this%gw_in_ssr = ssr_to_gw * hru_area
 
-        if (cascadegw_flag > 0) then
-          this%basin_gw_upslope = sum(this%gw_upslope)
-        end if
+        ! if (cascadegw_flag > 0) then
+        !   this%basin_gw_upslope = sum(this%gw_upslope)
+        ! end if
 
         if (dprst_flag == 1) then
           ! TODO: rsr, need basin variable for WB
@@ -525,7 +473,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
 
               !rsr, keep track of change in storage for WB
               this%gwstor_minarea_wb(chru) = gwstor - gwstor_last
-              this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb + this%gwstor_minarea_wb(chru)
+              ! this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb + this%gwstor_minarea_wb(chru)
               this%gwstor_minarea_wb(chru) = this%gwstor_minarea_wb(chru) / hru_area_dble(chru)
 
               if (print_debug > -1) then
@@ -595,7 +543,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
           !     call rungw_cascade(runoff, model_time, chru, ncascade_gwr(chru), this%gwres_flow(chru), dnflow)
           !
           !     this%hru_gw_cascadeflow(chru) = dnflow
-          !     this%basin_dnflow = this%basin_dnflow + dnflow * hru_area_dble(chru)
           !   endif
           ! endif
 
@@ -611,19 +558,6 @@ submodule (PRMS_GWFLOW) sm_gwflow
         if (dprst_flag == 1) then
           this%hru_storage = this%hru_storage + dprst_stor_hru
         endif
-
-        ! TODO: Mask by active gwr
-        this%basin_gwflow = sum(dble(this%gwres_flow * hru_area)) * basin_area_inv
-        this%basin_gwstor = sum(this%gwres_stor * hru_area_dble) * basin_area_inv
-        this%basin_gwin = sum(this%gwres_in) * basin_area_inv
-        this%basin_gwsink = sum(dble(this%gwres_sink * hru_area)) * basin_area_inv
-        ! this%basin_gwsink = this%basin_gwsink * basin_area_inv
-        this%basin_gwstor_minarea_wb = this%basin_gwstor_minarea_wb * basin_area_inv
-        this%basin_dnflow = this%basin_dnflow * basin_area_inv
-
-        if (cascadegw_flag > 0) then
-          this%basin_gw_upslope = this%basin_gw_upslope * basin_area_inv
-        end if
       end associate
     end subroutine
 

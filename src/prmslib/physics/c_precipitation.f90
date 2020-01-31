@@ -23,15 +23,6 @@ module PRMS_PRECIPITATION
     real(r32), pointer :: tmax_allrain_offset(:, :)
 
     ! Output variables
-    real(r64), pointer :: basin_obs_ppt
-      !! Basin area-weighted measured average precipitation, in inches
-    real(r64), pointer :: basin_ppt
-      !! Basin area-weighted average precipitation, in inches
-    real(r64), pointer :: basin_rain
-      !! Basin area-weighted average rainfall, in inches
-    real(r64), pointer :: basin_snow
-      !! Basin area-weighted average snowfall, in inches
-
     real(r32), pointer :: hru_ppt(:)
       !! Precipitation distributed to each HRU, in inches
     real(r32), pointer :: hru_rain(:)
@@ -40,11 +31,6 @@ module PRMS_PRECIPITATION
       !! Snow distributed to each HRU, in inches
     real(r32), pointer :: prmx(:)
       !! Fraction of rain in a mixed precipitation event for each HRU
-
-    ! integer(i32), allocatable :: newsnow(:)
-    !   !! Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
-    ! integer(i32), allocatable :: pptmix(:)
-    !   !! Flag to indicate if precipitation is a mixture of rain and snow for each HRU (0=no; 1=yes)
 
     ! Local variables
     real(r32), allocatable, private :: tmax_allrain(:, :)

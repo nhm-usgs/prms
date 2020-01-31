@@ -86,8 +86,8 @@ module UTILS_PRMS
   end interface
 
   interface
-    module subroutine open_dyn_param_file(nhru, Iunit, Iret, Fname, Paramname)
-      integer(i32), intent(in) :: nhru
+    module subroutine open_dyn_param_file(Iunit, Iret, Fname, Paramname)
+      ! integer(i32), intent(in) :: nhru
         !! Expected number of HRUs in the CBH file
       integer(i32), intent(out) :: Iunit
       integer(i32), intent(out) :: Iret

@@ -117,13 +117,13 @@ contains
     endif
   end subroutine
 
-  module function next(this, ctl_data) result(res)
+  module function next(this) result(res)
     use prms_constants, only: FT2_PER_ACRE, SECS_PER_DAY, SECS_PER_HOUR, &
                               HOUR_PER_DAY, MIN_PER_HOUR, dp
 
     logical :: res
     class(Time_t), intent(inout) :: this
-    type(Control), intent(in) :: ctl_data
+    ! type(Control), intent(in) :: ctl_data
 
     real(r64) :: dt
 
@@ -245,13 +245,13 @@ contains
   !
   ! 2017-10-30 PAN: moved here from utils_prms.f90
   !***********************************************************************
-  module function ordinal_date(this, datetime, Year_type, hemisphere) result(res)
+  module function ordinal_date(datetime, Year_type, hemisphere) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
     implicit none
 
     ! Arguments
     integer(i32) :: res
-    class(Time_t) :: this
+    ! class(Time_t) :: this
     integer(i32), intent(in) :: datetime(6)
     character(len=*), intent(in) :: Year_type
       !! One of: "calendar", "solar", "water", "absolute"

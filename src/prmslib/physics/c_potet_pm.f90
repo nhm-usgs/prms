@@ -29,8 +29,6 @@ module PRMS_POTET_PM
     integer(i32), private :: windspeed_funit
       !! Windspeed CBH file unit
 
-    real(r64), pointer :: basin_windspeed
-
     real(r32), pointer :: tempc_dewpt(:)
     real(r32), pointer :: vp_actual(:)
     real(r32), pointer :: vp_sat(:)

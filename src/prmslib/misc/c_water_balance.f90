@@ -51,11 +51,11 @@ module PRMS_WATER_BALANCE
 
     contains
       procedure, public :: run => run_WaterBalance
-      procedure, private :: basin_wb_gwflow
-      procedure, private :: basin_wb_intcp
-      procedure, private :: basin_wb_snow
-      procedure, private :: basin_wb_soilzone
-      procedure, private :: basin_wb_srunoff
+      ! procedure, private :: basin_wb_gwflow
+      ! procedure, private :: basin_wb_intcp
+      ! procedure, private :: basin_wb_snow
+      ! procedure, private :: basin_wb_soilzone
+      ! procedure, private :: basin_wb_srunoff
       procedure, public :: cleanup => cleanup_WaterBalance
   end type
 
@@ -95,53 +95,53 @@ module PRMS_WATER_BALANCE
     end subroutine
   end interface
 
-  interface
-    module subroutine basin_wb_gwflow(this, model_gwflow, model_time)
-      class(WaterBalance), intent(inout) :: this
-      type(Gwflow), intent(in) :: model_gwflow
-      type(Time_t), intent(in) :: model_time
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine basin_wb_gwflow(this, model_gwflow, model_time)
+  !     class(WaterBalance), intent(inout) :: this
+  !     type(Gwflow), intent(in) :: model_gwflow
+  !     type(Time_t), intent(in) :: model_time
+  !   end subroutine
+  ! end interface
 
-  interface
-    module subroutine basin_wb_intcp(this, model_intcp, model_srunoff, model_precip, model_time)
-      class(WaterBalance), intent(inout) :: this
-      type(Interception), intent(in) :: model_intcp
-      type(Srunoff), intent(in) :: model_srunoff
-      class(Precipitation), intent(in) :: model_precip
-      type(Time_t), intent(in) :: model_time
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine basin_wb_intcp(this, model_intcp, model_srunoff, model_precip, model_time)
+  !     class(WaterBalance), intent(inout) :: this
+  !     type(Interception), intent(in) :: model_intcp
+  !     type(Srunoff), intent(in) :: model_srunoff
+  !     class(Precipitation), intent(in) :: model_precip
+  !     type(Time_t), intent(in) :: model_time
+  !   end subroutine
+  ! end interface
 
-  interface
-    module subroutine basin_wb_snow(this, model_snow, model_time, basin_snowbal)
-      class(WaterBalance), intent(inout) :: this
-      type(Snowcomp), intent(in) :: model_snow
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: basin_snowbal
-    end subroutine
-  end interface
+  ! interface
+  !   module subroutine basin_wb_snow(this, model_snow, model_time, basin_snowbal)
+  !     class(WaterBalance), intent(inout) :: this
+  !     type(Snowcomp), intent(in) :: model_snow
+  !     type(Time_t), intent(in) :: model_time
+  !     real(r64), intent(in) :: basin_snowbal
+  !   end subroutine
+  ! end interface
 
-interface
-  module subroutine basin_wb_soilzone(this, model_soil, model_srunoff, model_time, basin_bal, soil_in)
-    class(WaterBalance), intent(inout) :: this
-    type(Soilzone), intent(in) :: model_soil
-    type(Srunoff), intent(in) :: model_srunoff
-    type(Time_t), intent(in) :: model_time
-    real(r64), intent(in) :: basin_bal
-    real(r64), intent(in) :: soil_in
-  end subroutine
-end interface
+  ! interface
+  !   module subroutine basin_wb_soilzone(this, model_soil, model_srunoff, model_time, basin_bal, soil_in)
+  !     class(WaterBalance), intent(inout) :: this
+  !     type(Soilzone), intent(in) :: model_soil
+  !     type(Srunoff), intent(in) :: model_srunoff
+  !     type(Time_t), intent(in) :: model_time
+  !     real(r64), intent(in) :: basin_bal
+  !     real(r64), intent(in) :: soil_in
+  !   end subroutine
+  ! end interface
 
-  interface
-    module subroutine basin_wb_srunoff(this, ctl_data, model_srunoff, model_time, basin_robal)
-      class(WaterBalance), intent(inout) :: this
-      type(Control), intent(in) :: ctl_data
-      type(Srunoff), intent(in) :: model_srunoff
-      type(Time_t), intent(in) :: model_time
-      real(r64), intent(in) :: basin_robal
-    end subroutine
-    end interface
+  ! interface
+  !   module subroutine basin_wb_srunoff(this, ctl_data, model_srunoff, model_time, basin_robal)
+  !     class(WaterBalance), intent(inout) :: this
+  !     type(Control), intent(in) :: ctl_data
+  !     type(Srunoff), intent(in) :: model_srunoff
+  !     type(Time_t), intent(in) :: model_time
+  !     real(r64), intent(in) :: basin_robal
+  !   end subroutine
+  ! end interface
 
   interface
     module subroutine cleanup_WaterBalance(this)

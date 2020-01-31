@@ -13,12 +13,9 @@ contains
     integer(i32) :: ierr
     integer(i32) :: istop = 0
 
-    ! Control
-    ! nhru, cbh_binary_flag, start_time, transp_day,
-
     ! --------------------------------------------------------------------------
     ! Call the parent constructor first
-    this%Transpiration = Transpiration(ctl_data)
+    call this%Transpiration%init(ctl_data, model_basin, model_temp, model_summary)
 
     associate(nhru => ctl_data%nhru%value, &
               cbh_binary_flag => ctl_data%cbh_binary_flag%value, &
@@ -65,12 +62,7 @@ contains
 
       read(this%transp_funit, *, IOSTAT=ios) yr, mo, dy, hr, mn, sec, (this%transp_on(jj), jj=1, nhru)
 
-      this%basin_transp_on = any(this%transp_on)
-      ! if (any(this%transp_on==1)) then
-      !   this%basin_transp_on = 1
-      ! else
-      !   this%basin_transp_on = 0
-      ! endif
+      ! this%basin_transp_on = any(this%transp_on)
     end associate
   end subroutine
 
