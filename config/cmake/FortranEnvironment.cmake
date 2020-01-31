@@ -152,7 +152,8 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     # -nostandard-realloc-lhs
     # -standard-semantics
     set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 -axCORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSSE3 -mavx -fp-model source -heap-arrays 512 -qopt-report-phase=vec,loop")
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -stand f08 -diag-disable=5268 -O0 -g -traceback -debug extended -check all,shape,arg_temp_created -init=snan,arrays -fp-stack-check -ftrapuv -gen-interfaces -warn interfaces -warn all,nouncalled,nounused -heap-arrays 512")
+    # -check all,shape,arg_temp_created  -ftrapuv -warn all,nouncalled,nounused
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -stand f08 -diag-disable=5268 -O0 -g -traceback -debug extended -check shape,arg_temp_created -init=snan,arrays -fp-stack-check -gen-interfaces -warn interfaces -warn all,nouncalled,nounused -heap-arrays 512")
   endif()
 
 # ===============================================
