@@ -41,20 +41,22 @@ submodule (Simulation_class) sm_simulation
 
       allocate(Temperature_hru::this%model_temp)
       call this%model_temp%init(ctl_data, this%model_basin, this%model_summary)
-      ! this%model_temp = Temperature_hru(ctl_data, this%model_basin, this%model_summary)
 
       allocate(Precipitation_hru::this%model_precip)
       call this%model_precip%init(ctl_data, this%model_basin, this%model_temp, this%model_summary)
-      ! this%model_precip = Precipitation_hru(ctl_data, this%model_basin, this%model_temp, this%model_summary)
 
       allocate(Climateflow::this%climate)
       call this%climate%init(ctl_data, this%model_basin, this%model_summary)
-      ! this%climate = Climateflow(ctl_data, this%model_basin, this%model_summary)
 
       ! TODO: PAN - add logic for other solar radiation modules
       allocate(Solrad_degday::this%solrad)
       call this%solrad%init(ctl_data, this%model_basin, this%model_summary)
-      ! this%solrad = Solrad_degday(ctl_data, this%model_basin, this%model_summary)
+
+      ! Example of accessing a variable in the instantiated class
+      ! select type(solrad => this%solrad)
+      !   type is (Solrad_degday)
+      !     print *, sizeof(solrad%dday_intcp)
+      ! end select
 
       ! TODO: PAN - add logic for other transpiration modules
       allocate(Transp_tindex::this%transpiration)
