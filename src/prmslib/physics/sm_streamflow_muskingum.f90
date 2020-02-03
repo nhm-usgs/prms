@@ -371,7 +371,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         this%flow_to_great_lakes = sum(this%seg_outflow, mask=(this%segment_type == 11))
 
         this%flow_out = sum(this%seg_outflow, mask=(this%tosegment == 0))
-        this%segment_delta_flow = sum(this%seg_inflow - this%seg_outflow)
+        this%segment_delta_flow = this%segment_delta_flow + sum(this%seg_inflow - this%seg_outflow)
       end associate
     end subroutine
 
