@@ -60,20 +60,16 @@ module PRMS_SNOW
       !! Julian date to force snowpack to spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
     integer(i32), pointer, private :: melt_look(:)
       !! Julian date to start looking for spring snowmelt stage; varies with region depending on length of time that permanent snowpack exists for each HRU
-    !real(r32), pointer, private :: rad_trncf(:)
-    real(r32), pointer :: rad_trncf(:) !rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: rad_trncf(:)  !rmcd changed to add access to bmi setter functions
       !! Transmission coefficient for short-wave radiation through the winter vegetation canopy
-    !real(r32), pointer, private :: snarea_curve(:)
-    real(r32), pointer :: snarea_curve(:) !rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: snarea_curve(:)  !rmcd changed to add access to bmi setter functions
       !! Snow area depletion curve values, 11 values for each curve (0.0 to 1.0 in 0.1 increments)
-    !real(r32), pointer, private :: snarea_thresh(:)
     real(r32), pointer :: snarea_thresh(:) !rmcd changed to add access to bmi setter functions
       !! Maximum threshold snowpack water equivalent below which the snow-covered-area curve is applied
     real(r32), pointer, private :: snowpack_init(:)
       !! Storage of snowpack in each HRU at the beginning of a simulation
 
-    !real(r32), pointer, private :: cecn_coef(:, :)
-    real(r32), pointer :: cecn_coef(:, :)!rmcd changed to add access to bmi setter functions
+    real(r32), pointer :: cecn_coef(:, :)  !rmcd changed to add access to bmi setter functions
     integer(i32), pointer, private :: tstorm_mo(:, :)
       !! Monthly indicator for prevalent storm type (0=frontal storms; 1=convective storms) for each HRU
 
