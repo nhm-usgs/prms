@@ -63,11 +63,7 @@ module PRMS_SOILZONE
     ! Local Variables
     integer(i32), private :: DBGUNT
     integer(i32), private :: et_type
-    ! integer(i32) :: pref_flag
-    logical, private :: pref_flag
-      !! NOTE: PAN - What is this used for?
 
-    ! integer(i32), allocatable :: pref_flow_flag(:)
     logical, allocatable, private :: pref_flow_flag(:)
 
     ! integer(i32), allocatable :: soil2gw(:)

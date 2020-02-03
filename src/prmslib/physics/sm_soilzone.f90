@@ -275,7 +275,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         this%hru_actet = 0.0
         this%grav_dunnian_flow = 0.0_dp
         this%pfr_dunnian_flow = 0.0_dp
-        this%pref_flag = .false.
         this%pref_flow_flag = .false.
         this%pref_flow_thrsh = 0.0
         this%slow_flow = 0.0
@@ -334,8 +333,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         ! where (hru_type == LAND .and. pref_flow_den > 0.0)
         !   this%pref_flow_flag = .true.
         ! end where
-
-        this%pref_flag = any(this%pref_flow_flag)
 
         this%soil_zone_max = this%sat_threshold + soil_moist_max * hru_frac_perv
         this%soil_moist_tot = this%ssres_stor + soil_moist * hru_frac_perv
