@@ -263,9 +263,10 @@ module PRMS_SRUNOFF
   end interface
 
   interface
-    module subroutine cleanup_Srunoff(this)
-      class(Srunoff) :: this
+    module subroutine cleanup_Srunoff(this, ctl_data)
+      class(Srunoff), intent(in) :: this
         !! Srunoff class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 

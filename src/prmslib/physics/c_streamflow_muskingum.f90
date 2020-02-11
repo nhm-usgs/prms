@@ -100,9 +100,10 @@ module PRMS_MUSKINGUM
   end interface
 
   interface
-    module subroutine cleanup_Muskingum(this)
-      class(Muskingum), intent(inout) :: this
+    module subroutine cleanup_Muskingum(this, ctl_data)
+      class(Muskingum), intent(in) :: this
         !! Muskingum class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 end module

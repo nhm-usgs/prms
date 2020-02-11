@@ -150,9 +150,10 @@ module PRMS_STREAMFLOW
   end interface
 
   interface
-    module subroutine cleanup_Streamflow(this)
-      class(Streamflow), intent(inout) :: this
+    module subroutine cleanup_Streamflow(this, ctl_data)
+      class(Streamflow), intent(in) :: this
         !! Streamflow class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 end module
