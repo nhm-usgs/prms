@@ -158,6 +158,7 @@ module PRMS_SNOW
     contains
       procedure, public :: init => init_Snowcomp
       procedure, public :: run => run_Snowcomp
+      procedure, public :: cleanup => cleanup_Snowcomp
 
       procedure, private :: calin
       procedure, private :: caloss
@@ -205,6 +206,14 @@ module PRMS_SNOW
         class(Potential_ET), intent(in) :: model_potet
         class(Transpiration), intent(in) :: model_transp
       end subroutine
+  end interface
+
+  interface
+    module subroutine cleanup_Snowcomp(this, ctl_data)
+      class(Snowcomp) :: this
+        !! Snowcomp class
+      type(Control), intent(in) :: ctl_data
+    end subroutine
   end interface
 
   interface

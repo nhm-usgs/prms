@@ -59,6 +59,7 @@ module PRMS_SET_TIME
     real(r64) :: Timestep_seconds
 
     contains
+      procedure, public :: cleanup => cleanup_Time
       procedure, public :: last_day_of_month
       procedure, public :: next
         !! Advance to next timestep
@@ -85,6 +86,13 @@ module PRMS_SET_TIME
       integer(i32), optional, intent(in) :: hemisphere
         !! Which hemisphere is the model in (0=NORTHERN, 1=SOUTHERN)
     end function
+  end interface
+
+  interface
+    module subroutine cleanup_Time(this, ctl_data)
+      class(Time_t), intent(in) :: this
+      type(Control), intent(in) :: ctl_data
+    end subroutine
   end interface
 
   interface

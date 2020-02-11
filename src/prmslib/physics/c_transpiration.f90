@@ -23,6 +23,7 @@ module PRMS_TRANSPIRATION
   contains
     procedure, public :: init => init_Transpiration
     procedure, public :: run => run_Transpiration
+    procedure, public :: cleanup => cleanup_Transpiration
   end type
 
   interface
@@ -50,4 +51,11 @@ module PRMS_TRANSPIRATION
     end subroutine
   end interface
 
+  interface
+    module subroutine cleanup_Transpiration(this, ctl_data)
+      class(Transpiration), intent(in) :: this
+        !! Transpiration class
+      type(Control), intent(in) :: ctl_data
+    end subroutine
+  end interface
 end module
