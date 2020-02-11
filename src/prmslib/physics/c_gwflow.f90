@@ -133,9 +133,10 @@ module PRMS_GWFLOW
   end interface
 
   interface
-    module subroutine cleanup_Gwflow(this)
-      class(Gwflow) :: this
+    module subroutine cleanup_Gwflow(this, ctl_data)
+      class(Gwflow), intent(in) :: this
         !! Gwflow class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 
