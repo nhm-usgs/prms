@@ -103,6 +103,7 @@ module PRMS_BASIN
     integer(i32), pointer :: covtype_chgs(:)
     contains
       procedure, public :: run => run_Basin
+      procedure, public :: cleanup => cleanup_Basin
 
   end type
 
@@ -123,6 +124,13 @@ module PRMS_BASIN
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Time_t), intent(in) :: model_time
+    end subroutine
+  end interface
+
+  interface
+    module subroutine cleanup_Basin(this, ctl_data)
+      class(Basin), intent(in) :: this
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 end module
