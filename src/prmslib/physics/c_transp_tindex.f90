@@ -42,8 +42,8 @@ MODULE PRMS_TRANSP_TINDEX
 
     contains
       procedure, public :: init => init_Transp_tindex
-      procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, public :: run => run_Transp_tindex
+      procedure, public :: cleanup => cleanup_Transp_tindex
       procedure, nopass, private :: init_transp_on
       procedure, nopass, private :: init_transp_check
       procedure, nopass, private :: update_transpiration
