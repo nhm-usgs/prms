@@ -77,6 +77,16 @@ module UTILS_PRMS
     end function
   end interface
 
+  ! interface
+  !   module function get_first_time(iunit, datetime) result(res)
+  !     integer(i32) :: res(3)
+  !       !! Return a date array (YY, MM, DD)
+  !     integer(i32), intent(in) :: iunit
+  !     integer(i32), intent(in) :: datetime(3)
+  !       !! Datetime to search for
+  !   end function
+  ! end interface
+
   interface
     module function get_first_time(iunit, datetime) result(res)
       integer(i32) :: res(3)

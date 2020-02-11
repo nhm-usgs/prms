@@ -534,7 +534,7 @@ contains
   ! compute_julday
   ! computes the Julian Day given a Gregorian calendar date
   !***********************************************************************
-  module function compute_julday(year, month, day) result(julian_day)
+  pure module function compute_julday(year, month, day) result(julian_day)
     implicit none
 
     ! Arguments

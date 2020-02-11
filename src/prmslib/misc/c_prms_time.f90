@@ -181,7 +181,7 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    module function compute_julday(year, month, day) result(julian_day)
+    pure module function compute_julday(year, month, day) result(julian_day)
       integer(i32) :: julian_day
       integer(i32), intent(in) :: year
       integer(i32), intent(in) :: month

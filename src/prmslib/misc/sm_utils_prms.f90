@@ -235,19 +235,119 @@ contains
 
 
   pure module function yr_mo_eq_dy_le(lh_date, rh_date) result(res)
+    use prms_constants, only: YEAR, MONTH, DAY
+    use PRMS_SET_TIME, only: compute_julday
+    implicit none
+
     logical :: res
     integer(i32), intent(in) :: lh_date(3)
     integer(i32), intent(in) :: rh_date(3)
 
-    res = .false.
-    if (all(lh_date == rh_date) .or. &
-        (all(lh_date(1:2) == rh_date(1:2)) .and. lh_date(3) < rh_date(3))) then
-      res = .true.
-    end if
+    res = (compute_julday(lh_date(YEAR), lh_date(MONTH), lh_date(DAY)) <= compute_julday(rh_date(YEAR), rh_date(MONTH), rh_date(DAY)))
   end function
+
+
+  ! module function get_first_time(iunit, datetime) result(res)
+  !   use prms_constants, only: YEAR, MONTH, DAY
+  !   implicit none
+
+  !   ! Argument
+  !   integer(i32) :: res(3)
+  !     !! Return a date array (YY, MM, DD)
+  !   integer(i32), intent(in) :: iunit
+  !   integer(i32), intent(in) :: datetime(3)
+  !     !! Datetime to search for
+
+  !   ! Local variables
+  !   logical :: found
+  !   integer(i32) :: dy
+  !     ! Date day read from file
+  !   integer(i32) :: iret
+  !   integer(i32) :: mo
+  !     ! Date month read from file
+  !   integer(i32) :: yr
+  !     ! Date year read from file
+
+  !   ! ---------------------------------------------------------------------
+  !   read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !   if (iret /= 0) then
+  !     res = 0
+  !     return
+  !   end if
+
+  !   if (yr < datetime(YEAR)) then
+  !     found = .false.
+
+  !     do while (.not. found)
+  !       read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !       if (iret /= 0) then
+  !         res = 0
+  !         return
+  !       end if
+
+  !       if (yr >= datetime(YEAR)) found = .true.
+  !     end do
+  !   end if
+
+  !   if (yr == datetime(YEAR)) then
+  !     if (mo < datetime(MONTH)) then
+  !       found = .false.
+
+  !       do while (.not. found)
+  !         read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !         if (iret /= 0) then
+  !           res = 0
+  !           return
+  !         end if
+
+  !         if (mo >=datetime(MONTH) .or. yr /= datetime(YEAR)) found = .true.
+  !       end do
+  !     end if
+
+  !     if (yr == datetime(YEAR) .and. mo == datetime(MONTH)) then
+  !       if (dy < datetime(DAY)) then
+  !         found = .false.
+
+  !         do while (.not. found)
+  !           read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !           if (iret /= 0) then
+  !             res = 0
+  !             return
+  !           end if
+
+  !           if (dy >= datetime(DAY)) found = .true.
+  !           if (yr > datetime(YEAR) .or. mo > datetime(MONTH)) then
+  !             ! This can happen when the starting date is one or more days after the
+  !             ! date in the dynamic parameter file AND the dynamic parameter file has
+  !             ! non-continuous dates (e.g. monthly or yearly) landing on a day that is
+  !             ! before the start day (but in the same year and month).
+  !             found = .true.
+  !             backspace iunit
+  !             backspace iunit
+  !             read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !           end if
+  !         end do
+  !       end if
+  !     else if (yr > datetime(YEAR)) then
+  !       backspace iunit
+  !       backspace iunit
+  !       read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !     end if
+  !   else if (yr > datetime(YEAR)) then
+  !     ! This can happen when the dynamic param file has multi-year gaps in rows
+  !     ! and the start time lands in between two entries.
+  !     backspace iunit
+  !     backspace iunit
+  !     read(iunit, *, IOSTAT=iret) yr, mo, dy
+  !   end if
+
+  !   backspace iunit
+  !   res = (/yr, mo, dy/)
+  ! end function
 
   module function get_first_time(iunit, datetime) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
+    use PRMS_SET_TIME, only: compute_julday
     implicit none
 
     ! Argument
@@ -266,6 +366,8 @@ contains
       ! Date month read from file
     integer(i32) :: yr
       ! Date year read from file
+    integer(i32) :: julday_file
+    integer(i32) :: julday_model
 
     ! ---------------------------------------------------------------------
     read(iunit, *, IOSTAT=iret) yr, mo, dy
@@ -274,7 +376,10 @@ contains
       return
     end if
 
-    if (yr < datetime(YEAR)) then
+    julday_file = compute_julday(yr, mo, dy)
+    julday_model = compute_julday(datetime(YEAR), datetime(MONTH), datetime(DAY))
+
+    if (julday_file < julday_model) then
       found = .false.
 
       do while (.not. found)
@@ -284,51 +389,19 @@ contains
           return
         end if
 
-        if (yr >= datetime(YEAR)) found = .true.
+        julday_file = compute_julday(yr, mo, dy)
+        if (julday_file >= julday_model) then
+          found = .true.
+        end if
       end do
     end if
 
-    if (yr == datetime(YEAR)) then
-      if (mo < datetime(MONTH)) then
-        found = .false.
-
-        do while (.not. found)
-          read(iunit, *, IOSTAT=iret) yr, mo, dy
-          if (iret /= 0) then
-            res = 0
-            return
-          end if
-
-          if (mo >=datetime(MONTH) .or. yr /= datetime(YEAR)) found = .true.
-        end do
-      end if
-
-      if (yr == datetime(YEAR) .and. mo == datetime(MONTH)) then
-        if (dy < datetime(DAY)) then
-          found = .false.
-
-          do while (.not. found)
-            read(iunit, *, IOSTAT=iret) yr, mo, dy
-            if (iret /= 0) then
-              res = 0
-              return
-            end if
-
-            if (dy >= datetime(DAY)) found = .true.
-            if (yr > datetime(YEAR) .or. mo > datetime(MONTH)) then
-              ! This can happen when the starting date is one or more days after the
-              ! date in the dynamic parameter file AND the dynamic parameter file has
-              ! non-continuous dates (e.g. monthly or yearly) landing on a day that is
-              ! before the start day (but in the same year and month).
-              found = .true.
-              backspace iunit
-              backspace iunit
-              read(iunit, *, IOSTAT=iret) yr, mo, dy
-            end if
-          end do
-        end if
-      end if
+    if (julday_file > julday_model) then
+      backspace iunit
+      backspace iunit
+      read(iunit, *, IOSTAT=iret) yr, mo, dy
     end if
+
     backspace iunit
     res = (/yr, mo, dy/)
   end function
