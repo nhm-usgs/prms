@@ -166,9 +166,10 @@ module PRMS_INTCP
   end interface
 
   interface
-    module subroutine cleanup_Interception(this)
-      class(Interception) :: this
+    module subroutine cleanup_Interception(this, ctl_data)
+      class(Interception), intent(in) :: this
         !! Interception class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 
