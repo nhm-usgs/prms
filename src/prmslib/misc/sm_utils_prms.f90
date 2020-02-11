@@ -234,6 +234,18 @@ contains
   end function
 
 
+  pure module function yr_mo_eq_dy_le(lh_date, rh_date) result(res)
+    logical :: res
+    integer(i32), intent(in) :: lh_date(3)
+    integer(i32), intent(in) :: rh_date(3)
+
+    res = .false.
+    if (all(lh_date == rh_date) .or. &
+        (all(lh_date(1:2) == rh_date(1:2)) .and. lh_date(3) < rh_date(3))) then
+      res = .true.
+    end if
+  end function
+
   module function get_first_time(iunit, datetime) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
     implicit none
@@ -303,6 +315,16 @@ contains
             end if
 
             if (dy >= datetime(DAY)) found = .true.
+            if (yr > datetime(YEAR) .or. mo > datetime(MONTH)) then
+              ! This can happen when the starting date is one or more days after the
+              ! date in the dynamic parameter file AND the dynamic parameter file has
+              ! non-continuous dates (e.g. monthly or yearly) landing on a day that is
+              ! before the start day (but in the same year and month).
+              found = .true.
+              backspace iunit
+              backspace iunit
+              read(iunit, *, IOSTAT=iret) yr, mo, dy
+            end if
           end do
         end if
       end if

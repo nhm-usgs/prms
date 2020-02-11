@@ -68,6 +68,16 @@ module UTILS_PRMS
   end interface
 
   interface
+    pure module function yr_mo_eq_dy_le(lh_date, rh_date) result(res)
+      !! Return true if left-hand year and month are equal to right-hand year and month
+      !! and the left-hand day is less than or equal to the right-hand day
+      logical :: res
+      integer(i32), intent(in) :: lh_date(3)
+      integer(i32), intent(in) :: rh_date(3)
+    end function
+  end interface
+
+  interface
     module function get_first_time(iunit, datetime) result(res)
       integer(i32) :: res(3)
         !! Return a date array (YY, MM, DD)
