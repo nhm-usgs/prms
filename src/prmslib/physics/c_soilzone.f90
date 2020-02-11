@@ -184,9 +184,9 @@ module PRMS_SOILZONE
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
       type(Basin), intent(in) :: model_basin
-      type(Climateflow), intent(inout) :: model_climate
+      type(Climateflow), intent(in) :: model_climate
       type(Snowcomp), intent(in) :: snow
-      type(Srunoff), intent(inout) :: model_runoff
+      type(Srunoff), intent(in) :: model_runoff
       type(Summary), intent(inout) :: model_summary
     end subroutine
   end interface
@@ -213,9 +213,10 @@ module PRMS_SOILZONE
   end interface
 
   interface
-    module subroutine cleanup_Soilzone(this)
+    module subroutine cleanup_Soilzone(this, ctl_data)
       class(Soilzone) :: this
         !! Soilzone class
+      type(Control), intent(in) :: ctl_data
     end subroutine
   end interface
 
