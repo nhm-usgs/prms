@@ -25,6 +25,7 @@ contains
               outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
               snow_intcp_dynamic => ctl_data%snow_intcp_dynamic%values(1), &
               srain_intcp_dynamic => ctl_data%srain_intcp_dynamic%values(1), &
               start_time => ctl_data%start_time%values, &
@@ -71,6 +72,7 @@ contains
       !   this%net_apply = 0.0
       ! endif
 
+      ! NOTE: PAN - intcp_on is not used for anything except as an output variable
       allocate(this%canopy_covden(nhru))
       allocate(this%hru_intcpevap(nhru))
       allocate(this%hru_intcpstor(nhru))
@@ -110,6 +112,14 @@ contains
       ! if (init_vars_from_file == 1) then
       !   ! TODO: hook up reading restart file
       ! endif
+
+      if (save_vars_to_file == 1) then
+        ! Create restart variables
+        call ctl_data%add_variable('hru_intcpstor', this%hru_intcpstor, 'nhru', 'inches')
+        call ctl_data%add_variable('intcp_on', this%intcp_on, 'nhru', 'none')
+        call ctl_data%add_variable('intcp_stor', this%intcp_stor, 'nhru', 'inches')
+        call ctl_data%add_variable('intcp_transp_on', this%intcp_transp_on, 'nhru', 'none')
+      end if
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       ! Connect summary variables that need to be output
@@ -218,18 +228,6 @@ contains
   end subroutine
 
 
-  module subroutine cleanup_Interception(this)
-    class(Interception) :: this
-      !! Interception class
-
-      if (this%has_dynamic_params) then
-        close(this%dyn_output_unit)
-      end if
-
-    ! TODO: Add write restart file stuff
-  end subroutine
-
-
   module subroutine run_Interception(this, ctl_data, model_basin, model_potet, &
                                      model_precip, model_transp, model_climate, &
                                      model_time)
@@ -314,8 +312,6 @@ contains
       if (this%use_transfer_intcp) then
         this%net_apply = 0.0
       endif
-
-      this%intcp_on = .false.
 
       this%intcp_form = 0
       where (hru_snow > 0.0)
@@ -543,7 +539,11 @@ contains
         this%intcp_evap(chru) = intcpevap
         this%hru_intcpevap(chru) = intcpevap * this%canopy_covden(chru)
         this%intcp_stor(chru) = intcpstor
-        this%intcp_on(chru) = intcpstor > 0.0
+
+        if (intcpstor > 0.0) then
+          this%intcp_on(chru) = .true.
+        end if
+
         this%hru_intcpstor(chru) = intcpstor * this%canopy_covden(chru)
         this%intcp_changeover(chru) = changeover + extra_water
 
@@ -555,6 +555,27 @@ contains
           write(output_unit, *) 'Change over storage:', changeover, '; HRU:', chru
         endif
       enddo
+    end associate
+  end subroutine
+
+
+  module subroutine cleanup_Interception(this, ctl_data)
+    class(Interception), intent(in) :: this
+      !! Interception class
+    type(Control), intent(in) :: ctl_data
+
+    associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+      if (this%has_dynamic_params) then
+        close(this%dyn_output_unit)
+      end if
+
+      if (save_vars_to_file == 1) then
+        ! Write out this module's restart variables
+        call ctl_data%write_restart_variable('hru_intcpstor', this%hru_intcpstor)
+        call ctl_data%write_restart_variable('intcp_on', this%intcp_on)
+        call ctl_data%write_restart_variable('intcp_stor', this%intcp_stor)
+        call ctl_data%write_restart_variable('intcp_transp_on', this%intcp_transp_on)
+      end if
     end associate
   end subroutine
 
@@ -586,7 +607,7 @@ contains
 
 
   module subroutine read_dyn_params(this, ctl_data, model_basin, model_time)
-    use UTILS_PRMS, only: get_next_time, update_parameter
+    use UTILS_PRMS, only: get_next_time, update_parameter, yr_mo_eq_dy_le
     implicit none
 
     class(Interception), intent(inout) :: this
@@ -609,7 +630,8 @@ contains
     ! 4=file snow_intcp_dynamic; additive combinations
     if (any([1, 3, 5, 7]==dyn_intcp_flag)) then
       ! Updates of wrain_intcp
-      if (all(this%next_dyn_wrain_intcp_date == curr_time(1:3))) then
+      if (yr_mo_eq_dy_le(this%next_dyn_wrain_intcp_date, curr_time(1:3))) then
+      ! if (all(this%next_dyn_wrain_intcp_date == curr_time(1:3))) then
         read(this%wrain_intcp_unit, *) this%next_dyn_wrain_intcp_date, this%wrain_intcp_chgs
         write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: wrain_intcp was updated. ', this%next_dyn_wrain_intcp_date
 
@@ -621,7 +643,8 @@ contains
 
     if (any([2, 3, 6, 7]==dyn_intcp_flag)) then
       ! Updates of srain_intcp
-      if (all(this%next_dyn_srain_intcp_date == curr_time(1:3))) then
+      if (yr_mo_eq_dy_le(this%next_dyn_srain_intcp_date, curr_time(1:3))) then
+      ! if (all(this%next_dyn_srain_intcp_date == curr_time(1:3))) then
         read(this%srain_intcp_unit, *) this%next_dyn_srain_intcp_date, this%srain_intcp_chgs
         write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: srain_intcp was updated. ', this%next_dyn_srain_intcp_date
 
@@ -633,7 +656,8 @@ contains
 
     if (any([4, 5, 6, 7]==dyn_intcp_flag)) then
       ! Updates of snow_intcp
-      if (all(this%next_dyn_snow_intcp_date == curr_time(1:3))) then
+      if (yr_mo_eq_dy_le(this%next_dyn_snow_intcp_date, curr_time(1:3))) then
+      ! if (all(this%next_dyn_snow_intcp_date == curr_time(1:3))) then
         read(this%snow_intcp_unit, *) this%next_dyn_snow_intcp_date, this%snow_intcp_chgs
         write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: snow_intcp was updated. ', this%next_dyn_snow_intcp_date
 
@@ -645,7 +669,8 @@ contains
 
     if (any([1, 3]==dyn_covden_flag)) then
       ! Updates of covden_sum
-      if (all(this%next_dyn_covden_sum_date == curr_time(1:3))) then
+      if (yr_mo_eq_dy_le(this%next_dyn_covden_sum_date, curr_time(1:3))) then
+      ! if (all(this%next_dyn_covden_sum_date == curr_time(1:3))) then
         read(this%covden_sum_unit, *) this%next_dyn_covden_sum_date, this%covden_sum_chgs
         write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: covden_sum was updated. ', this%next_dyn_covden_sum_date
 
@@ -657,7 +682,8 @@ contains
 
     if (any([2, 3]==dyn_covden_flag)) then
       ! Updates of covden_win
-      if (all(this%next_dyn_covden_win_date == curr_time(1:3))) then
+      if (yr_mo_eq_dy_le(this%next_dyn_covden_win_date, curr_time(1:3))) then
+      ! if (all(this%next_dyn_covden_win_date == curr_time(1:3))) then
         read(this%covden_win_unit, *) this%next_dyn_covden_win_date, this%covden_win_chgs
         write(output_unit, 9008) MODNAME, '%read_dyn_params() INFO: covden_win was updated. ', this%next_dyn_covden_win_date
 
