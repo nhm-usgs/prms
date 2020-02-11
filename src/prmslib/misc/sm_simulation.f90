@@ -24,16 +24,6 @@ submodule (Simulation_class) sm_simulation
         this%model_summary = Summary(ctl_data, this%model_basin, this%model_time)
       end if
 
-      ! if (ctl_data%basinOutON_OFF%value == 1) then
-      !   this%summary_by_basin = Basin_summary_ptr(ctl_data)
-      ! endif
-
-      ! if (ctl_data%nhruOutON_OFF%value > 0) then
-      !   this%summary_by_hru = Nhru_summary_ptr(ctl_data, this%model_basin, this%model_time)
-      ! endif
-
-      ! this%summary_crap = Summary(ctl_data, this%model_basin, this%model_time)
-
       ! TODO: Only used by streamflow_muskingum currently. Needs streamflow_cfs when using
       !       replacement flow (obsin_segment). The Obs stuff is not completed so replacement
       !       flows will crash the model.
@@ -183,22 +173,22 @@ submodule (Simulation_class) sm_simulation
       type(Control), intent(in) :: ctl_data
 
       ! ------------------------------------------------------------------------
+
       if (ctl_data%outVarON_OFF%value == 1) then
         call this%model_summary%cleanup()
       end if
 
-      call this%runoff%cleanup()
-      ! if (ctl_data%save_vars_to_file%value == 1) then
-      !   ! Write the important model information to the restart file
-      !   write(ctl_data%restart_output_unit) this%model_time%timestep, &
-      !                                       ctl_data%nhru%value, &
-      !                                       ctl_data%temp_module%values(1)%s, &
-      !                                       ctl_data%model_mode%values(1)%s
-      !
-      !   call this%climate%cleanup(ctl_data)
-      !   call this%model_obs%cleanup(ctl_data)
-      !   call this%transpiration%cleanup(ctl_data)
-      ! endif
+      call this%model_time%cleanup(ctl_data)
+      call this%model_basin%cleanup(ctl_data)
+      call this%climate%cleanup(ctl_data)
+      call this%transpiration%cleanup(ctl_data)
+      call this%intcp%cleanup(ctl_data)
+      call this%runoff%cleanup(ctl_data)
+      call this%soil%cleanup(ctl_data)
+      call this%snow%cleanup(ctl_data)
+
+      call this%model_streamflow%cleanup(ctl_data)
+
       call this%model_waterbal%cleanup()
 
       call ctl_data%cleanup()
