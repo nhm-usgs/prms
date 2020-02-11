@@ -28,6 +28,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
+                save_vars_to_file => ctl_data%save_vars_to_file%value, &
 
                 nsegment => model_basin%nsegment)
 
@@ -169,6 +170,11 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         if (init_vars_from_file==0) then
           this%outflow_ts = 0.0_dp
         endif
+
+        if (save_vars_to_file == 1) then
+          ! Create restart variables
+          call ctl_data%add_variable('outflow_ts', this%outflow_ts, 'nsegment', 'cfs')
+        end if
 
         write(output_unit, 9002) '  Muskingum coefficient (min(c0), max(c0)): ', minval(this%c0), maxval(this%c0)
         write(output_unit, 9002) '  Muskingum coefficient (min(c1), max(c1)): ', minval(this%c1), maxval(this%c1)
@@ -375,8 +381,19 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
       end associate
     end subroutine
 
-    module subroutine cleanup_Muskingum(this)
-      class(Muskingum), intent(inout) :: this
+    module subroutine cleanup_Muskingum(this, ctl_data)
+      class(Muskingum), intent(in) :: this
         !! Muskingum class
+      type(Control), intent(in) :: ctl_data
+
+      associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+        if (save_vars_to_file == 1) then
+          call ctl_data%write_restart_variable('outflow_ts', this%outflow_ts)
+        end if
+      end associate
+
+      ! Call the parent cleanup
+      call this%Streamflow%cleanup(ctl_data)
+
     end subroutine
 end submodule

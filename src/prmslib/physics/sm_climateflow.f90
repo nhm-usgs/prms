@@ -5,7 +5,7 @@ contains
   ! Climateflow constructor
   module subroutine init_Climateflow(this, ctl_data, model_basin, model_summary)
     use iso_fortran_env, only: output_unit, error_unit
-    use prms_constants, only: LAND, SWALE
+    use prms_constants, only: LAND, INACTIVE, LAKE, SWALE
     implicit none
 
     class(Climateflow), target, intent(inout) :: this
@@ -22,6 +22,7 @@ contains
               ! rst_unit => ctl_data%restart_output_unit, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
 
               nhru => model_basin%nhru, &
               hru_type => model_basin%hru_type)
@@ -56,6 +57,11 @@ contains
       this%soil_moist = this%soil_moist_init_frac * this%soil_moist_max
       this%soil_rechr_max = this%soil_rechr_max_frac * this%soil_moist_max
       this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
+
+      where (hru_type == INACTIVE .or. hru_type == LAKE)
+        this%soil_moist = 0.0
+        this%soil_rechr = 0.0
+      end where
 
       do jj=1, nhru
         if (any([LAND, SWALE] == hru_type(jj))) then
@@ -92,6 +98,14 @@ contains
       allocate(this%pkwater_equiv(nhru))
       this%pkwater_equiv = 0.0_dp
 
+      if (save_vars_to_file == 1) then
+        ! Create restart variables
+        call ctl_data%add_variable('pkwater_equiv', this%pkwater_equiv, 'nhru', 'inches')
+        call ctl_data%add_variable('soil_moist', this%soil_moist, 'nhru', 'inches')
+        call ctl_data%add_variable('soil_rechr', this%soil_rechr, 'nhru', 'inches')
+      end if
+
+
       ! Connect any nhru_summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj=1, outVar_names%size()
@@ -110,39 +124,6 @@ contains
 
       ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
       !       and ssstor_init_frac
-
-      ! if (init_vars_from_file == 1) then
-      !   ! read(rst_unit) modname_rst
-      !   ! call check_restart(MODNAME, modname_rst)
-      !   ! read(rst_unit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-      !   !                this%basin_obs_ppt, this%basin_temp, &
-      !   !                this%basin_orad, this%basin_tmax, this%basin_tmin, &
-      !   !                this%solrad_tmax, this%solrad_tmin, &
-      !   !                this%basin_transp_on, this%basin_potet, &
-      !   !                this%basin_horad, this%basin_swrad
-      !   ! read(rst_unit) this%tmax_hru
-      !   ! read(rst_unit) this%tmin_hru
-      !   ! read(rst_unit) this%newsnow
-      !   ! read(rst_unit) this%pptmix
-      !   ! read(rst_unit) this%hru_ppt
-      !   ! read(rst_unit) this%hru_rain
-      !   ! read(rst_unit) this%hru_snow
-      !   ! read(rst_unit) this%prmx
-      !   ! read(rst_unit) this%tmaxf
-      !   ! read(rst_unit) this%tminf
-      !   ! read(rst_unit) this%tavgf
-      !   ! read(rst_unit) this%tmaxc
-      !   ! read(rst_unit) this%tminc
-      !   ! read(rst_unit) this%tavgc
-      !   ! read(rst_unit) this%transp_on
-      !   ! read(rst_unit) this%potet
-      !   ! read(rst_unit) this%swrad
-      !   !
-      !   ! ! if (ANY(['ddsolrad', 'ccsolrad']==Solrad_module)) read(rst_unit) this%orad_hru
-      ! else
-      !   this%solrad_tmax = 0.0
-      !   this%solrad_tmin = 0.0
-      ! endif
     end associate
   end subroutine
 
@@ -156,36 +137,14 @@ contains
 
     ! ------------------------------------------------------------------------
     ! TODO: Update to reflect the full PRMS codebase
-    associate(rst_unit => ctl_data%restart_output_unit, &
-              solrad_module => ctl_data%solrad_module%values(1))
+    associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
 
-      ! write(rst_unit) MODNAME
-      ! write(rst_unit) this%basin_ppt, this%basin_rain, this%basin_snow, &
-      !                 this%basin_obs_ppt, this%basin_temp, this%basin_orad, &
-      !                 this%basin_tmax, this%basin_tmin, this%solrad_tmax, &
-      !                 this%solrad_tmin, this%basin_transp_on, this%basin_potet, &
-      !                 this%basin_horad, this%basin_swrad
-      ! write(rst_unit) this%tmax_hru
-      ! write(rst_unit) this%tmin_hru
-      ! write(rst_unit) this%newsnow
-      ! write(rst_unit) this%pptmix
-      ! write(rst_unit) this%hru_ppt
-      ! write(rst_unit) this%hru_rain
-      ! write(rst_unit) this%hru_snow
-      ! write(rst_unit) this%prmx
-      ! write(rst_unit) this%tmaxf
-      ! write(rst_unit) this%tminf
-      ! write(rst_unit) this%tavgf
-      ! write(rst_unit) this%tmaxc
-      ! write(rst_unit) this%tminc
-      ! write(rst_unit) this%tavgc
-      ! write(rst_unit) this%transp_on
-      ! write(rst_unit) this%potet
-      ! write(rst_unit) this%swrad
-      !
-      ! if (solrad_module%s == 'ddsolrad' .or. solrad_module%s == 'ccsolrad') then
-      !   write(rst_unit) this%orad_hru
-      ! endif
+      if (save_vars_to_file == 1) then
+        ! Write out this module's restart variables
+        call ctl_data%write_restart_variable('pkwater_equiv', this%pkwater_equiv)
+        call ctl_data%write_restart_variable('soil_moist', this%soil_moist)
+        call ctl_data%write_restart_variable('soil_rechr', this%soil_rechr)
+      end if
     end associate
   end subroutine
 

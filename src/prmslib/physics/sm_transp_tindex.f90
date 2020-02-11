@@ -14,14 +14,6 @@ contains
     class(Temperature), intent(in) :: model_temp
     type(Summary), intent(inout) :: model_summary
 
-    ! Local variables
-    ! character(LEN=11) :: modname_rst
-      !! Used to verify module name when reading from restart file
-    ! integer(i32) :: ii
-      !! counter
-    ! integer(i32) :: chru
-      !! Current HRU
-
     ! ------------------------------------------------------------------------
     ! Call the parent constructor first
     call this%Transpiration%init(ctl_data, model_basin, model_temp, model_summary)
@@ -29,7 +21,7 @@ contains
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
-              ! rst_unit => ctl_data%restart_output_unit, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
               st_month => ctl_data%start_time%values(MONTH), &
               st_day => ctl_data%start_time%values(DAY), &
 
@@ -62,6 +54,15 @@ contains
 
       this%tmax_sum = 0.0
       this%transp_check = .false.
+
+      if (save_vars_to_file == 1) then
+        ! Create restart variables
+        call ctl_data%add_variable('tmax_sum', this%tmax_sum, 'nhru', 'none')
+        call ctl_data%add_variable('transp_beg', this%transp_beg, 'nhru', 'month')
+        call ctl_data%add_variable('transp_end', this%transp_end, 'nhru', 'month')
+        call ctl_data%add_variable('transp_check', this%transp_check, 'nhru', 'none')
+        call ctl_data%add_variable('transp_tmax', this%transp_tmax, 'nhru', 'temp_units')
+      end if
 
       ! NOTE: changed to use Celsius units by default
       ! NOTE: this will be unnecessary once parameter file units are standardized
@@ -96,27 +97,6 @@ contains
       this%transp_check = init_transp_check(this%transp_beg, st_month, st_day)
     end associate
   end subroutine
-
-
-  module subroutine cleanup_Transp_tindex(this, ctl_data)
-    implicit none
-    class(Transp_tindex), intent(in) :: this
-    type(Control), intent(in) :: ctl_data
-
-    ! --------------------------------------------------------------------------
-    associate(rst_unit => ctl_data%restart_output_unit)
-
-      write(rst_unit) MODNAME
-      write(rst_unit) this%transp_check
-      write(rst_unit) this%tmax_sum
-
-      ! NOTE: Why save the following? It's already in the parameter file.
-      ! write(rst_unit) transp_beg
-      ! write(rst_unit) transp_end
-      ! write(rst_unit) transp_tmax
-    end associate
-  end subroutine
-
 
 
   module subroutine run_Transp_tindex(this, ctl_data, model_time, model_basin, model_temp)
@@ -176,6 +156,28 @@ contains
       ! 9008 format(A, 2('-', I2.2), A)
       ! 9009 format(14F7.2)
       ! 9010 format(14L2)
+    end associate
+  end subroutine
+
+  module subroutine cleanup_Transp_tindex(this, ctl_data)
+    implicit none
+    class(Transp_tindex), intent(in) :: this
+    type(Control), intent(in) :: ctl_data
+
+    ! --------------------------------------------------------------------------
+    ! Call parent cleanup first
+    call this%Transpiration%cleanup(ctl_data)
+
+    ! --------------------------------------------------------------------------
+    associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+      if (save_vars_to_file == 1) then
+        ! Write out this module's restart variables
+        call ctl_data%write_restart_variable('tmax_sum', this%tmax_sum)
+        call ctl_data%write_restart_variable('transp_beg', this%transp_beg)
+        call ctl_data%write_restart_variable('transp_check', this%transp_check)
+        call ctl_data%write_restart_variable('transp_end', this%transp_end)
+        call ctl_data%write_restart_variable('transp_tmax', this%transp_tmax)
+      end if
     end associate
   end subroutine
 

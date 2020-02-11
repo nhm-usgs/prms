@@ -7,9 +7,9 @@ submodule (PRMS_SOILZONE) sm_soilzone
       class(Soilzone), intent(inout) :: this
       type(Control), intent(in) :: ctl_data
       type(Basin), intent(in) :: model_basin
-      type(Climateflow), intent(inout) :: model_climate
+      type(Climateflow), intent(in) :: model_climate
       type(Snowcomp), intent(in) :: snow
-      type(Srunoff), intent(inout) :: model_runoff
+      type(Srunoff), intent(in) :: model_runoff
       type(Summary), intent(inout) :: model_summary
 
       ! Local variables
@@ -32,6 +32,7 @@ submodule (PRMS_SOILZONE) sm_soilzone
                 outVar_names => ctl_data%outVar_names, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
+                save_vars_to_file => ctl_data%save_vars_to_file%value, &
 
                 nhru => model_basin%nhru, &
                 nlake => model_basin%nlake, &
@@ -208,6 +209,15 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !   this%gw2sm_grav = 0.0
         ! endif
 
+        if (save_vars_to_file == 1) then
+          ! Create restart variables
+          ! call ctl_data%add_variable('et_type', this%et_type, 'nhru', 'none')
+          ! call ctl_data%add_variable('gravity_stor_res', this%gravity_stor_res, 'nhru', 'none')
+          call ctl_data%add_variable('pref_flow_stor', this%pref_flow_stor, 'nhru', 'inches')
+          call ctl_data%add_variable('slow_stor', this%slow_stor, 'nhru', 'inches')
+          call ctl_data%add_variable('ssres_stor', this%ssres_stor, 'nhru', 'inches')
+        end if
+
         ! Connect summary variables that need to be output
         if (outVarON_OFF == 1) then
           do jj = 1, outVar_names%size()
@@ -263,51 +273,42 @@ submodule (PRMS_SOILZONE) sm_soilzone
         endif
 
         ! Initialize
-        this%snow_free = 1.0 - snowcov_area
+        this%grav_dunnian_flow = 0.0_dp
+        this%hru_actet = 0.0
+        this%pfr_dunnian_flow = 0.0_dp
+        this%pref_flow_flag = .false.
         this%pref_flow_max = 0.0
         this%pref_flow_stor = 0.0
+        this%pref_flow_thrsh = 0.0
+        this%slow_flow = 0.0
         this%slow_stor = 0.0
+        this%snow_free = 1.0 - snowcov_area
+        this%soil2gw_flag = .false.
         this%soil_lower = 0.0
+        this%soil_lower_ratio = 0.0
         this%soil_lower_stor_max = 0.0
         this%soil_moist_tot = 0.0
         this%soil_zone_max = 0.0
-
-        this%hru_actet = 0.0
-        this%grav_dunnian_flow = 0.0_dp
-        this%pfr_dunnian_flow = 0.0_dp
-        this%pref_flow_flag = .false.
-        this%pref_flow_thrsh = 0.0
-        this%slow_flow = 0.0
-        this%soil2gw_flag = .false.
-        this%soil_lower_ratio = 0.0
         this%ssres_flow = 0.0
-        this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
         this%swale_limit = 0.0
+
+        where (hru_type == INACTIVE .or. hru_type == LAKE)
+          this%ssres_stor = 0.0
+          this%sat_threshold = 0.0  ! WARNING: parameters should be read-only
+        else where
+          this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
+        end where
 
         ! ssstor_init_frac no longer needed at this point
         deallocate(this%ssstor_init_frac)
 
-
-          ! this%snow_free(chru) = 1.0 - snowcov_area(chru)
-
-          ! if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
-          !   ! inactive or lake
-          !   ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-          !   ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
-          !   this%ssres_stor(chru) = 0.0
-          !   soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
-          !   soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
-          !   cycle
-          ! endif
-
-        soil_moist = 0.0 ! WARNING: Overrides init in climateflow
-        soil_rechr = 0.0 ! WARNING: Overrides init in climateflow
+        where (hru_type /= LAND)
+            this%pref_flow_den = 0.0  ! WARNING: parameters should be read-only
+        end where
 
         where (hru_type == SWALE)
           this%swale_limit = 3.0 * this%sat_threshold
           this%pref_flow_thrsh = this%sat_threshold
-          ! this%pref_flow_max = 0.0  ! NOTE: already initialized to zero
-          ! pref_flow_den = 0.0  ! WARNING: parameters are read-only
         end where
 
         where (hru_type == LAND)
@@ -330,10 +331,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%soil2gw_flag = .true.
         end where
 
-        ! where (hru_type == LAND .and. pref_flow_den > 0.0)
-        !   this%pref_flow_flag = .true.
-        ! end where
-
         this%soil_zone_max = this%sat_threshold + soil_moist_max * hru_frac_perv
         this%soil_moist_tot = this%ssres_stor + soil_moist * hru_frac_perv
 
@@ -344,68 +341,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
           this%soil_lower_ratio = this%soil_lower / this%soil_lower_stor_max
         end where
 
-        ! do chru = 1, nhru
-        !   this%snow_free(chru) = 1.0 - snowcov_area(chru)
-
-        !   if (hru_type(chru) == INACTIVE .or. hru_type(chru) == LAKE) then
-        !     ! inactive or lake
-        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%pref_flow_max(chru) = 0.0
-        !     this%pref_flow_stor(chru) = 0.0
-        !     ! sat_threshold(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%slow_stor(chru) = 0.0
-        !     this%soil_lower(chru) = 0.0
-        !     this%soil_lower_stor_max(chru) = 0.0
-        !     this%soil_moist_tot(chru) = 0.0
-        !     this%soil_zone_max(chru) = 0.0
-        !     this%ssres_stor(chru) = 0.0
-
-        !     soil_moist(chru) = 0.0 ! WARNING: Overrides init in climateflow
-        !     soil_rechr(chru) = 0.0 ! WARNING: Overrides init in climateflow
-        !     cycle
-        !   endif
-
-        !   if (hru_type(chru) == SWALE) then
-        !     ! swale
-        !     this%swale_limit(chru) = 3.0 * this%sat_threshold(chru)
-        !     ! pref_flow_den(chru) = 0.0  ! WARNING: parameters are read-only
-        !     this%pref_flow_thrsh(chru) = this%sat_threshold(chru)
-        !     this%pref_flow_max(chru) = 0.0
-        !   else
-        !     ! land
-        !     this%pref_flow_thrsh(chru) = this%sat_threshold(chru) * (1.0 - this%pref_flow_den(chru))
-        !     this%pref_flow_max(chru) = this%sat_threshold(chru) - this%pref_flow_thrsh(chru)
-
-        !     ! Interflow coefficient values don't matter except for land HRU
-        !     if (this%pref_flow_den(chru) > 0.0) then
-        !       this%pref_flow_flag(chru) = .true.
-        !       this%pref_flag = .true.
-        !     endif
-        !   endif
-
-        !   ! hru_type = LAND or SWALE
-        !   if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
-        !     this%slow_stor(chru) = min(this%ssres_stor(chru), this%pref_flow_thrsh(chru))
-        !     this%pref_flow_stor(chru) = this%ssres_stor(chru) - this%slow_stor(chru)
-        !   endif
-
-        !   if (this%soil2gw_max(chru) > 0.0) then
-        !     this%soil2gw_flag(chru) = .true.
-        !   endif
-
-        !   this%soil_zone_max(chru) = this%sat_threshold(chru) + soil_moist_max(chru) * hru_frac_perv(chru)
-        !   this%soil_moist_tot(chru) = this%ssres_stor(chru) + soil_moist(chru) * hru_frac_perv(chru)
-
-        !   this%soil_lower(chru) = soil_moist(chru) - soil_rechr(chru)
-        !   this%soil_lower_stor_max(chru) = soil_moist_max(chru) - soil_rechr_max(chru)
-
-        !   if (this%soil_lower_stor_max(chru) > 0.0) then
-        !     this%soil_lower_ratio(chru) = this%soil_lower(chru) / this%soil_lower_stor_max(chru)
-        !   endif
-        ! enddo
-
-        ! this%last_soil_moist = this%basin_soil_moist
-        ! this%last_ssstor = this%basin_ssstor
         this%dunnian_flow = 0.0
 
         ! initialize arrays (dimensioned nhru)
@@ -1083,9 +1018,22 @@ submodule (PRMS_SOILZONE) sm_soilzone
     end subroutine
 
 
-    module subroutine cleanup_Soilzone(this)
+    module subroutine cleanup_Soilzone(this, ctl_data)
       class(Soilzone) :: this
         !! Soilzone class
+      type(Control), intent(in) :: ctl_data
+
+      ! --------------------------------------------------------------------------
+      associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+        if (save_vars_to_file == 1) then
+          ! Write out this module's restart variables
+          ! call ctl_data%write_restart_variable('et_type', this%et_type)
+          ! ! call ctl_data%write_restart_variable('gravity_stor_res', this%gravity_stor_res)
+          call ctl_data%write_restart_variable('pref_flow_stor', this%pref_flow_stor)
+          call ctl_data%write_restart_variable('slow_stor', this%slow_stor)
+          call ctl_data%write_restart_variable('ssres_stor', this%ssres_stor)
+        end if
+      end associate
     end subroutine
 
 

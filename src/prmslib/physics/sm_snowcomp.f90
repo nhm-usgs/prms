@@ -28,7 +28,8 @@ contains
               outVar_names => ctl_data%outVar_names, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
-              rst_unit => ctl_data%restart_output_unit, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
+              ! rst_unit => ctl_data%restart_output_unit, &
 
               nhru => model_basin%nhru, &
               nmonths => model_basin%nmonths, &
@@ -232,6 +233,35 @@ contains
         this%pst = pkwater_equiv
       endif
 
+      if (save_vars_to_file == 1) then
+        ! Create restart variables
+        ! call ctl_data%add_variable('deninv', this%et_type, 'nhru', 'none')
+        ! call ctl_data%add_variable('denmaxinv', this%gravity_stor_res, 'nhru', 'none')
+        call ctl_data%add_variable('albedo', this%albedo, 'nhru', 'decimal fraction')
+        call ctl_data%add_variable('freeh2o', this%freeh2o, 'nhru', 'inches')
+        call ctl_data%add_variable('iasw', this%iasw, 'nhru', 'none')
+        call ctl_data%add_variable('int_alb', this%int_alb, 'nhru', 'none')
+        call ctl_data%add_variable('iso', this%iso, 'nhru', 'none')
+        call ctl_data%add_variable('lso', this%lso, 'nhru', 'number of iterations')
+        call ctl_data%add_variable('lst', this%lst, 'nhru', 'none')
+        call ctl_data%add_variable('mso', this%mso, 'nhru', 'none')
+        call ctl_data%add_variable('pk_def', this%pk_def, 'nhru', 'Langleys')
+        call ctl_data%add_variable('pk_den', this%pk_den, 'nhru', 'gm/cm3')
+        call ctl_data%add_variable('pk_depth', this%pk_depth, 'nhru', 'inches')
+        call ctl_data%add_variable('pk_ice', this%pk_ice, 'nhru', 'inches')
+        call ctl_data%add_variable('pk_temp', this%pk_temp, 'nhru', 'degreeC')
+        call ctl_data%add_variable('pksv', this%pksv, 'nhru', 'inches')
+        call ctl_data%add_variable('pkwater_ante', this%pkwater_ante, 'nhru', 'inches')
+        call ctl_data%add_variable('pss', this%pss, 'nhru', 'inches')
+        call ctl_data%add_variable('pst', this%pst, 'nhru', 'inches')
+        call ctl_data%add_variable('salb', this%salb, 'nhru', 'days')
+        call ctl_data%add_variable('scrv', this%scrv, 'nhru', '')
+        call ctl_data%add_variable('slst', this%slst, 'nhru', 'days')
+        call ctl_data%add_variable('snowcov_area', this%snowcov_area, 'nhru', 'decimal fraction')
+        call ctl_data%add_variable('snowcov_areasv', this%snowcov_areasv, 'nhru', 'decimal fraction')
+        call ctl_data%add_variable('snsv', this%snsv, 'nhru', 'inches')
+      end if
+
       ! Connect summary variables that need to be output
       if (outVarON_OFF == 1) then
         do jj = 1, outVar_names%size()
@@ -415,12 +445,13 @@ contains
 
         ! HRU SET-UP - SET DEFAULT VALUES AND/OR BASE CONDITIONS FOR THIS TIME PERIOD
         !**************************************************************
-        ! ! Keep track of the pack water equivalent before it is changed
-        ! ! by precipitation during this time step.
+        ! Keep track of the pack water equivalent before it is changed
+        ! by precipitation during this time step.
+        ! TODO: PAN: Why can't this be set outside of the loop?
         this%pkwater_ante(chru) = pkwater_equiv(chru)
 
-        ! ! By default, the precipitation added to snowpack, snowmelt,
-        ! ! and snow evaporation are 0.
+        ! By default, the precipitation added to snowpack, snowmelt,
+        ! and snow evaporation are 0.
         this%pk_precip(chru) = 0.0  ! [inches]
         this%snowmelt(chru) = 0.0  ! [inches]
         this%snow_evap(chru) = 0.0  ! [inches]
@@ -723,6 +754,42 @@ contains
     end associate
   end subroutine
 
+
+  module subroutine cleanup_Snowcomp(this, ctl_data)
+    class(Snowcomp) :: this
+      !! Snowcomp class
+    type(Control), intent(in) :: ctl_data
+
+    ! --------------------------------------------------------------------------
+    associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+      if (save_vars_to_file == 1) then
+        ! Write out this module's restart variables
+        call ctl_data%write_restart_variable('albedo', this%albedo)
+        call ctl_data%write_restart_variable('freeh2o', this%freeh2o)
+        call ctl_data%write_restart_variable('iasw', this%iasw)
+        call ctl_data%write_restart_variable('int_alb', this%int_alb)
+        call ctl_data%write_restart_variable('iso', this%iso)
+        call ctl_data%write_restart_variable('lso', this%lso)
+        call ctl_data%write_restart_variable('lst', this%lst)
+        call ctl_data%write_restart_variable('mso', this%mso)
+        call ctl_data%write_restart_variable('pk_def', this%pk_def)
+        call ctl_data%write_restart_variable('pk_den', this%pk_den)
+        call ctl_data%write_restart_variable('pk_depth', this%pk_depth)
+        call ctl_data%write_restart_variable('pk_ice', this%pk_ice)
+        call ctl_data%write_restart_variable('pk_temp', this%pk_temp)
+        call ctl_data%write_restart_variable('pksv', this%pksv)
+        call ctl_data%write_restart_variable('pkwater_ante', this%pkwater_ante)
+        call ctl_data%write_restart_variable('pss', this%pss)
+        call ctl_data%write_restart_variable('pst', this%pst)
+        call ctl_data%write_restart_variable('salb', this%salb)
+        call ctl_data%write_restart_variable('scrv', this%scrv)
+        call ctl_data%write_restart_variable('slst', this%slst)
+        call ctl_data%write_restart_variable('snowcov_area', this%snowcov_area)
+        call ctl_data%write_restart_variable('snowcov_areasv', this%snowcov_areasv)
+        call ctl_data%write_restart_variable('snsv', this%snsv)
+      end if
+    end associate
+  end subroutine
 
   !***********************************************************************
   !      Subroutine to compute changes in snowpack when a net gain in

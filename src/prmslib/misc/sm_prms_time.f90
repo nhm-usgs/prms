@@ -22,11 +22,13 @@ contains
     integer(i32) :: endday
       !! Julian day of model end_time
     real(r64) :: dt
+    character(len=:), allocatable :: days_since
 
     ! ------------------------------------------------------------------------
     associate(print_debug => ctl_data%print_debug%value, &
               model_start => ctl_data%start_time%values, &
-              model_end => ctl_data%end_time%values)
+              model_end => ctl_data%end_time%values, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -98,8 +100,33 @@ contains
         print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
         STOP
       endif
+
+      if (save_vars_to_file == 1) then
+        days_since = 'days since ' // this%start_string // ' 00:00:00'
+        call ctl_data%add_time_dimension(dim_name='time', dim_size=1, dim_var_name='time', &
+                                         units=days_since, calendar='standard')
+      end if
+
     end associate
   end function
+
+
+  module subroutine cleanup_Time(this, ctl_data)
+    implicit none
+
+    class(Time_t), intent(in) :: this
+    type(Control), intent(in) :: ctl_data
+
+    ! ------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
+    if (ctl_data%save_vars_to_file%value == 1) then
+      ! Write out this module's restart variables
+      call ctl_data%write_restart_variable('time', this%days_since_start)
+      ! call ctl_data%write_restart_variable('nhm_id', this%nhm_id)
+      ! call ctl_data%write_restart_variable('nhm_seg', this%nhm_seg)
+    end if
+
+  end subroutine
 
   module subroutine update_summer_flag(this)
     class(Time_t), intent(inout) :: this

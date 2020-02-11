@@ -32,6 +32,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
                 ! model_mode => ctl_data%model_mode%values, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
+                save_vars_to_file => ctl_data%save_vars_to_file%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
 
                 nhru => model_basin%nhru, &
@@ -120,6 +121,14 @@ submodule (PRMS_GWFLOW) sm_gwflow
           allocate(this%lake_seepage_gwr(nhru))
           allocate(this%elevlake(nlake))
         endif
+
+        if (save_vars_to_file == 1) then
+          ! Create restart variables
+          ! TODO: nlake and ngw are no currently added to the restart file
+          ! call ctl_data%add_variable('elevlake', this%elevlake, 'nlake', 'feet')
+          ! call ctl_data%add_variable('gwres_stor', this%gwres_stor, 'ngw', 'inches')
+          ! call ctl_data%add_variable('lake_vol', this%lake_vol, 'nlake', 'acre-feet')
+        end if
 
         ! Connect summary variables that need to be output
         if (outVarON_OFF == 1) then
@@ -561,9 +570,20 @@ submodule (PRMS_GWFLOW) sm_gwflow
       end associate
     end subroutine
 
-    module subroutine cleanup_Gwflow(this)
-      class(Gwflow) :: this
+    module subroutine cleanup_Gwflow(this, ctl_data)
+      class(Gwflow), intent(in) :: this
         !! Gwflow class
+      type(Control), intent(in) :: ctl_data
+
+      ! --------------------------------------------------------------------------
+      associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+        if (save_vars_to_file == 1) then
+          ! Write out this module's restart variables
+          ! call ctl_data%write_restart_variable('elevlake', this%elevlake)
+          ! call ctl_data%write_restart_variable('gwres_stor', this%gwres_stor)
+          ! call ctl_data%write_restart_variable('lake_vol', this%lake_vol)
+        end if
+      end associate
     end subroutine
 
 

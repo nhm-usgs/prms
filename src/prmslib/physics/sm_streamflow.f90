@@ -33,6 +33,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
                 outVar_names => ctl_data%outVar_names, &
                 param_hdl => ctl_data%param_file_hdl, &
                 print_debug => ctl_data%print_debug%value, &
+                save_vars_to_file => ctl_data%save_vars_to_file%value, &
                 segment_transferON_OFF => ctl_data%segment_transferON_OFF%value, &
                 strmflow_module => ctl_data%strmflow_module%values, &
 
@@ -230,6 +231,14 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         end do
 
         deallocate(x_off)
+
+        if (save_vars_to_file == 1) then
+          ! Create restart variables
+          ! call ctl_data%add_variable('flow_out', this%flow_out, 'one', 'cfs')
+          call ctl_data%add_variable('seg_inflow', this%seg_inflow, 'nsegment', 'cfs')
+          call ctl_data%add_variable('seg_outflow', this%seg_outflow, 'nsegment', 'cfs')
+          call ctl_data%add_variable('segment_delta_flow', this%segment_delta_flow, 'nsegment', 'cfs')
+        end if
 
         ! Connect summary variables that need to be output
         if (outVarON_OFF == 1) then
@@ -433,8 +442,19 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       end associate
     end subroutine
 
-    module subroutine cleanup_Streamflow(this)
-      class(Streamflow), intent(inout) :: this
+    module subroutine cleanup_Streamflow(this, ctl_data)
+      class(Streamflow), intent(in) :: this
         !! Streamflow class
+      type(Control), intent(in) :: ctl_data
+
+      associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+        if (save_vars_to_file == 1) then
+          ! Write out this module's restart variables
+          ! call ctl_data%write_restart_variable('flow_out', this%flow_out)
+          call ctl_data%write_restart_variable('seg_inflow', this%seg_inflow)
+          call ctl_data%write_restart_variable('seg_outflow', this%seg_outflow)
+          call ctl_data%write_restart_variable('segment_delta_flow', this%segment_delta_flow)
+        end if
+      end associate
     end subroutine
 end submodule
