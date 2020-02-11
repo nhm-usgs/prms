@@ -35,6 +35,7 @@ contains
               print_debug => ctl_data%print_debug%value, &
               ! model_mode => ctl_data%model_mode%values, &
               model_output_unit => ctl_data%model_output_unit, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
               start_time => ctl_data%start_time%values, &
               stream_temp_flag => ctl_data%stream_temp_flag%value, &
               strmflow_module => ctl_data%strmflow_module%values, &
@@ -223,6 +224,14 @@ contains
         this%hemisphere = SOUTHERN
       endif
 
+      if (save_vars_to_file == 1) then
+        call ctl_data%add_dimension(dim_name='nhru', dim_size=this%nhru, &
+                                    dim_var_name='nhm_id', dim_var_longname='NHM ID', &
+                                    datatype=4, units='none')
+        call ctl_data%add_dimension(dim_name='nsegment', dim_size=this%nsegment, &
+                                    dim_var_name='nhm_seg', dim_var_longname='NHM segment ID', &
+                                    datatype=4, units='none')
+      end if
 
       if (print_debug == 2) then
         write(output_unit, *) ' HRU     Area'
@@ -252,7 +261,7 @@ contains
   end function
 
   module subroutine run_Basin(this, ctl_data, model_time)
-    use UTILS_PRMS, only: get_next_time, update_parameter
+    use UTILS_PRMS, only: get_next_time, update_parameter, yr_mo_eq_dy_le
     implicit none
 
     class(Basin), intent(inout) :: this
@@ -266,7 +275,7 @@ contains
               curr_time => model_time%Nowtime)
 
       if (dyn_covtype_flag == 1) then
-        if (all(this%next_dyn_covtype_date == curr_time(1:3))) then
+        if (yr_mo_eq_dy_le(this%next_dyn_covtype_date, curr_time(1:3))) then
           read(this%covtype_unit, *) this%next_dyn_covtype_date, this%covtype_chgs
           ! write(output_unit, 9008) MODNAME, '%run() INFO: covtype was updated. ', this%next_dyn_covtype_date
           ! TODO: some work
@@ -279,4 +288,20 @@ contains
       end if
     end associate
   end subroutine
+
+  module subroutine cleanup_Basin(this, ctl_data)
+    class(Basin), intent(in) :: this
+    type(Control), intent(in) :: ctl_data
+
+    ! --------------------------------------------------------------------------
+    associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
+      if (save_vars_to_file == 1) then
+        ! Write out this module's restart variables
+        call ctl_data%write_restart_variable('nhm_id', this%nhm_id)
+        call ctl_data%write_restart_variable('nhm_seg', this%nhm_seg)
+      end if
+    end associate
+
+  end subroutine
+
 end submodule
