@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 01/30/2020'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 03/04/2020'
       CHARACTER(LEN=8), SAVE :: Process
       !     Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
       INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
@@ -96,7 +96,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2020-01-22 12:54:00Z'
+        PRMS_versn = 'call_modules.f90 2020-03-04 12:54:00Z'
 
         IF ( check_dims()/=0 ) STOP
 
