@@ -5,7 +5,8 @@
       IMPLICIT NONE
 !   Local Variables
       CHARACTER(LEN=11), SAVE :: MODNAME
-      INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
+      INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:)
+!      INTEGER, SAVE, ALLOCATABLE :: Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
 
@@ -26,16 +27,20 @@
 ! markstro
       REAL, SAVE, ALLOCATABLE :: seg_inflow_loc(:), tave_gw(:), tave_ss(:)
       REAL, SAVE, ALLOCATABLE :: seg_swrad(:)
-      INTEGER, SAVE, ALLOCATABLE ::  gw_index(:), ss_index(:)
+      INTEGER, SAVE, ALLOCATABLE ::  gw_index(:), ss_index(:), segment_donor(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_loc(:)
+      INTEGER, SAVE, ALLOCATABLE ::  loc_id(:)
+      INTEGER, SAVE, ALLOCATABLE ::  nhm_id(:)
 
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Seg_tave_water(:), seg_tave_upstream(:), Seg_daylight(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_humid(:), Seg_width(:), Seg_ccov(:), seg_shade(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_humid(:), Seg_width(:), Seg_ccov(:)
+      REAL, SAVE, ALLOCATABLE :: seg_veg_shade(:), seg_top_shade(:)
       REAL, SAVE, ALLOCATABLE :: Seg_tave_air(:), Seg_melt(:), Seg_rain(:)
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 
       REAL, SAVE, ALLOCATABLE :: Seg_tave_init(:), seg_tave_equilib(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_windspeed(:)
 
 !   Segment Parameters
       REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
@@ -97,6 +102,7 @@
       INTEGER FUNCTION stream_temp_decl()
       USE PRMS_STRMTEMP
       USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, Model
+      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
@@ -112,7 +118,8 @@
       MODNAME = 'stream_temp'
 
       ! 0 = compute shade; 1 = specified constant
-      IF ( control_integer(Stream_temp_shade_flag, 'stream_temp_shade_flag')/=0 ) Stream_temp_shade_flag = 0
+!      IF ( control_integer(Stream_temp_shade_flag, 'stream_temp_shade_flag')/=0 ) Stream_temp_shade_flag = 0
+      Stream_temp_shade_flag = 0
 
 ! Declared Variables
       ALLOCATE ( Seg_width(Nsegment) )
@@ -145,6 +152,11 @@
      &     'Area-weighted average relative humidity for each segment from HRUs contributing flow to the segment', &
      &     'decimal fraction', Seg_humid)/=0 ) CALL read_error(3,'seg_humid')
 
+      ALLOCATE (seg_windspeed(Nsegment) )
+      IF ( declvar( MODNAME, 'seg_windspeed', 'nsegment', Nsegment, 'real', &
+     &     'Area-weighted average windspeed for each segment from HRUs contributing flow to the segment', &
+     &     'decimal fraction', seg_windspeed)/=0 ) CALL read_error(3,'seg_windspeed')
+
       ALLOCATE ( Seg_melt(Nsegment) )
       IF ( declvar( MODNAME, 'seg_melt', 'nsegment', Nsegment, 'real', &
      &     'Area-weighted average snowmelt for each segment from HRUs contributing flow to the segment', &
@@ -165,15 +177,21 @@
      &     'HRU area-weighted average potential ET for each segment', &
      &     'inches', Seg_potet)/=0 ) CALL read_error(3, 'seg_potet')
 
+      ALLOCATE(seg_veg_shade(Nsegment))
+      IF(declvar(MODNAME, 'seg_veg_shade', 'nsegment', Nsegment, 'real', &
+     &     'Riparian vegetative shade for each segment from HRUs contributing flow to the segment', &
+     &     'decimal fraction', seg_veg_shade )/=0 ) CALL read_error(3, 'seg_veg_shade')
+      
+      ALLOCATE(seg_top_shade(Nsegment))
+      IF(declvar(MODNAME, 'seg_top_shade', 'nsegment', Nsegment, 'real', &
+     &     'Riparian topographic shade for each segment from HRUs contributing flow to the segment', &
+     &     'decimal fraction', seg_top_shade )/=0 ) CALL read_error(3, 'seg_top_shade')
+      
       ALLOCATE ( Seg_ccov(Nsegment) )
       IF ( declvar( MODNAME, 'seg_ccov', 'nsegment', Nsegment, 'real', &
      &     'Area-weighted average cloud cover fraction for each segment from HRUs contributing flow to the segment', &
      &     'decimal fraction', Seg_ccov )/=0 ) CALL read_error(3, 'seg_ccov')
       
-      ALLOCATE(Seg_shade(Nsegment))
-      IF (declvar(MODNAME, 'seg_shade', 'nsegment', Nsegment, 'real', &
-     &     'Area-weighted average shade fraction for each segment', &
-     &     'decimal fraction', seg_shade)/=0 ) CALL read_error(3, 'seg_shade')
 
       ALLOCATE ( Seg_daylight(Nsegment) )
       IF ( declvar( MODNAME, 'seg_daylight', 'nsegment', Nsegment, 'real', &
@@ -203,7 +221,7 @@
       ALLOCATE (Press(Nsegment) )
       ALLOCATE ( Seg_hru_count(Nsegment) )
       ALLOCATE (Seg_carea_inv(Nsegment) )
-      ALLOCATE ( Seg_close(Nsegment) )
+!      ALLOCATE ( Seg_close(Nsegment) )
       ALLOCATE (gw_sum(Nsegment), ss_sum(Nsegment))
       ALLOCATE (gw_silo(nsegment,365), ss_silo(nsegment,365))
       ALLOCATE (hru_area_sum(nsegment))
@@ -216,7 +234,23 @@
       ALLOCATE (gw_index(nsegment))
       ALLOCATE (ss_index(nsegment))
       ALLOCATE (seg_tave_loc(nsegment))
+      ALLOCATE (segment_donor(nsegment))
+      ALLOCATE (loc_id(nhru))
 
+
+      ALLOCATE ( Nhm_id(Nhru) )
+      IF ( declparam(MODNAME, 'nhm_id', 'nhru', 'integer', &
+     &       '1', '1', '9999999', &
+     &       'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
+     &       'none') /= 0 ) CALL read_error(1, 'nhm_id')
+
+
+      IF ( declparam( MODNAME, 'segment_donor', 'nsegment', 'integer', &
+     &     '0', 'bounded', 'nsegment', &
+     &     'index of segment to use for weather info when current seg has no HRUs', &
+     &     'index of segment to use for weather info when current seg has no HRUs', &
+     &     'array index')/=0 ) CALL read_error(1, 'segment_donor')
+      
       IF ( declparam( MODNAME, 'albedo', 'one', 'real', &
      &     '0.10', '0.0', '1.0', &
      &     'Short-wave solar radiation reflected by streams', &
@@ -430,6 +464,7 @@
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_STRMTEMP
       USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Inputerror_flag, Strmtemp_humidity_flag
+      USE PRMS_MODULE, ONLY: nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, NEARZERO
       USE PRMS_OBS, ONLY: Nhumid
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
@@ -441,11 +476,16 @@
       REAL, EXTERNAL :: solalt
       EXTERNAL :: read_error, checkdim_param_limits
 ! Local Variables
-      INTEGER :: i, j, k, iseg, ierr, ii, this_seg
+      INTEGER :: i, j, k, iseg, ierr, ii, this_seg, ih
       REAL :: tan_d, tano, sinhro, temp, decl, cos_d, tanod, alrs
 !***********************************************************************
       stream_temp_init = 0
 
+
+      IF ( getparam(MODNAME, 'nhm_id', Nhru, 'integer', Nhm_id)/=0 ) CALL read_error(2, 'nhm_id')
+
+
+      IF ( getparam( MODNAME, 'segment_donor', nsegment, 'integer', segment_donor)/=0 ) CALL read_error(2, 'segment_donor')
       IF ( getparam( MODNAME, 'albedo', 1, 'real', Albedo)/=0 ) CALL read_error(2, 'albedo')
       IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*12, 'real', lat_temp_adj)/=0 ) CALL read_error(2, 'lat_temp_adj')
       IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
@@ -503,12 +543,15 @@
       seg_tave_upstream = 0.0
       Seg_potet = 0.0D0
       Seg_humid = 0.0
+      Seg_windspeed = 0.0
       Seg_width = 0.0
       Seg_ccov = 0.0
       Seg_tave_air = 0.0
       seg_tave_gw = 0.0
       seg_tave_ss = 0.0
       seg_tave_sroff = 0.0
+      seg_veg_shade = 0.0
+      seg_top_shade = 0.0
 
       IF ( Init_vars_from_file == 0 ) THEN
          Seg_tave_water = 0.0
@@ -520,6 +563,10 @@
          gw_index = 0
          ss_index = 0
       ENDIF
+
+      DO k = 1, nhru
+        loc_id(nhm_id(k)) = k
+      enddo
 
       Seg_daylight = 12.0
       IF ( Stream_temp_shade_flag==0 ) THEN
@@ -538,6 +585,7 @@
       Seg_hru_count = 0
       DO k = 1, Active_hrus
          j = Hru_route_order(k)
+!         ih = loc_id(j)
          i = Hru_segment(j)
          IF ( i==0 ) CYCLE
          Seg_hru_count(i) = Seg_hru_count(i) + 1
@@ -557,7 +605,7 @@
          RETURN
       ENDIF
 
-      Seg_close = Segment_up ! assign upstream values
+!      Seg_close = Segment_up ! assign upstream values
       DO j = 1, Nsegment ! set values based on routing order for segments without associated HRUs
          i = Segment_order(j)
 
@@ -568,39 +616,43 @@
       !
       ! This does work for NHM network (most comprehensive test).
       !
-         IF ( Seg_hru_count(i)==0 ) THEN
-            IF ( Segment_up(i)==0 ) THEN 
-               IF ( Tosegment(i)>0 ) THEN ! assign downstream values
-                  Seg_close(i) = Tosegment(i) ! don't have a value yet, need to fix
-               ELSE ! no upstream or downstream segment
-                  IF ( j>1 ) THEN
-                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
-                  ELSE
-                     Seg_close(i) = Segment_order(j+1) ! assume at least 2 segments
-                  ENDIF
-               ENDIF
-            ENDIF
-            IF ( Seg_elev(Seg_close(i))==30000.0 ) THEN ! need different segment
-               iseg = -1
-               DO k = j+1, Nsegment ! find first segment with valid values
-                  ii = Segment_order(k)
-                  IF ( Seg_hru_count(ii)>0 ) THEN
-                     Seg_close(i) = ii
-                     EXIT
-                  ENDIF
-               ENDDO
-               IF ( iseg==-1 ) THEN
-                  IF ( j>1 ) THEN
-                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
-                  ELSE ! this is a problem, shouldn't happen
-                     STOP 'ERROR, segments do not have associated HRUs'
-                    ! Seg_close(i) = Segment_order(1) ! set to first segment id
-                  ENDIF
-               ENDIF
-            ENDIF
-         ENDIF
+!         IF ( Seg_hru_count(i)==0 ) THEN
+!            IF ( Segment_up(i)==0 ) THEN 
+!               IF ( Tosegment(i)>0 ) THEN ! assign downstream values
+!                  Seg_close(i) = Tosegment(i) ! don't have a value yet, need to fix
+!               ELSE ! no upstream or downstream segment
+!                  IF ( j>1 ) THEN
+!                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
+!                  ELSE
+!                     Seg_close(i) = Segment_order(j+1) ! assume at least 2 segments
+!                  ENDIF
+!               ENDIF
+!            ENDIF
+!            IF ( Seg_elev(Seg_close(i))==30000.0 ) THEN ! need different segment
+!               iseg = -1
+!               DO k = j+1, Nsegment ! find first segment with valid values
+!                  ii = Segment_order(k)
+!                  IF ( Seg_hru_count(ii)>0 ) THEN
+!                     Seg_close(i) = ii
+!                     EXIT
+!                  ENDIF
+!               ENDDO
+!               IF ( iseg==-1 ) THEN
+!                  IF ( j>1 ) THEN
+!                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
+!                  ELSE ! this is a problem, shouldn't happen
+!                     STOP 'ERROR, segments do not have associated HRUs'
+!                    ! Seg_close(i) = Segment_order(1) ! set to first segment id
+!                  ENDIF
+!               ENDIF
+!            ENDIF
+!         ENDIF
+!
+!         print *, i, " closest segment is ", Seg_close(i), Seg_hru_count(i)
 
          ! Compute atmospheric pressure based on segment elevation.
+         ! Seg_elev is in meters
+         ! 1013 mb is the atmospheric pressure at mean sea level
          Press(i) = 1013.0 - (0.1055 * Seg_elev(i))
 
          IF ( Stream_temp_shade_flag==0 ) THEN
@@ -670,27 +722,27 @@
 !     must always look upstream because the downstream computations will not have been done when the current
 !     segment is being calculated.
       Seg_tave_water = 0.0
-      do j = 1, nsegment
-         this_seg = segment_order(j)
-
+!      do j = 1, nsegment
+!         this_seg = segment_order(j)
+!
 !         Check if this segment has any HRUs, keep moving up stream if not.
-         do
-            if (seg_hru_count(this_seg) .eq. 0) then
-               ! Hit the headwater segment without finding any HRUs (i.e. sources of streamflow)
-               ! Set the stream temp to -99.9 for this segment because there will never be any flow in this segment
-               if (segment_up(this_seg) .eq. 0) then
-                  Seg_tave_water(segment_order(j)) = -99.9
-                  exit
-               endif
-
-               ! There is an upstream segment, check that segment for HRUs
-               this_seg = segment_up(this_seg)
-            else
-               ! This segment has HRUs so there will be no streamflow
-               exit
-            endif
-         enddo
-      enddo
+!         do
+!            if (seg_hru_count(this_seg) .eq. 0) then
+!               ! Hit the headwater segment without finding any HRUs (i.e. sources of streamflow)
+!               ! Set the stream temp to -99.9 for this segment because there will never be any flow in this segment
+!               if (segment_up(this_seg) .eq. 0) then
+!                  Seg_tave_water(segment_order(j)) = -99.9
+!                  exit
+!               endif
+!
+!               ! There is an upstream segment, check that segment for HRUs
+!               this_seg = segment_up(this_seg)
+!            else
+!               ! This segment has HRUs so there will be no streamflow
+!               exit
+!            endif
+!         enddo
+!      enddo
 
 ! For each segment, figure out how many upstream segments.
 !      ALLOCATE(upstream_count(Nsegment))
@@ -717,11 +769,11 @@
 !      end do
 
 ! Compute the amount of contributing area to each segment
-      DO k = 1, Active_hrus
-         j = Hru_route_order(k)
-         i = Hru_segment(j)
-         IF ( i==0 ) CYCLE
-         hru_area_sum(i) = hru_area_sum(i) + Hru_area(j)
+      DO i = 1, Active_hrus
+         j = Hru_segment(i)
+         ih = loc_id(i)
+         IF ( j==0 ) CYCLE
+         hru_area_sum(j) = hru_area_sum(j) + Hru_area(ih)
       ENDDO
 
 !      do i = 1, nsegment
@@ -776,12 +828,11 @@
       EXTERNAL :: equilb, shday
 ! Local Variables
       REAL :: svi, fs
-      INTEGER :: kk
       REAL :: te, ak1, ak2, ccov
 !      DOUBLE PRECISION :: qlat
       REAL :: t_o
 
-      INTEGER :: ii, jj
+      INTEGER :: ih, is, isd, ii
       REAL :: lat_flow, lat_temp, tocfs
       REAL :: term1, term2, term3
       REAL :: foo
@@ -800,232 +851,314 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Humidity info come from parameter file when Strmtemp_humidity_flag==1
-! Otherwise it comes as daily values per HRU from CBH. Code for this is
+! Otherwise it comes as daily values per HRU from CBH when Strmtemp_humidity_flag==0
 ! down in the HRU loop.
       Seg_humid = -999.0
 
 ! Compute segment humidity if info is specified in CBH as timeseries by HRU
       IF (Strmtemp_humidity_flag == 0) then
-         DO jj = 1, Nhru
-            ii = Hru_segment(jj)
-            if (Seg_humid(ii) > -998.0) then
-               Seg_humid(ii) = Seg_humid(ii) + Humidity_hru(jj)*hru_area(jj)
+!        Loop over the HRUs and assign the humidity from the HRUs to the segment that HRU is connected to.
+         DO ii = 1, Nhru
+            ih = loc_id(ii)
+            is = Hru_segment(ii)
+
+            if (Seg_humid(is) > -998.0) then
+               Seg_humid(is) = Seg_humid(is) + Humidity_hru(ih)*hru_area(ih)
             else
-               Seg_humid(ii) = Humidity_hru(jj)*hru_area(jj)
+               Seg_humid(is) = Humidity_hru(ih)*hru_area(ih)
             endif
          ENDDO
-         DO ii = 1, Nsegment
-            if (Seg_humid(ii) > -998.0) then
-               Seg_humid(ii) = Seg_humid(ii) / hru_area_sum(ii)
+         DO is = 1, Nsegment
+            if (Seg_humid(is) > -998.0) then
+               Seg_humid(is) = Seg_humid(is) / hru_area_sum(is)
             endif
          ENDDO
-         DO ii = 1, Nsegment
-            if (Seg_humid(ii) < -998.0) then
-               Seg_humid(ii) = Seg_humid(Seg_close(ii))
+
+! Check the segments to see that they all have humidity values. If a segment doesn't, get the humidity value
+! from the donor segment as identified by parameter "segment_donor".
+         DO is = 1, Nsegment
+            if (Seg_humid(is) < -998.0) then
+               if (segment_donor(is) < -998.0) then
+                  print *, "segment ", is, " with donor ", segment_donor(is), " needs a new donor."
+               endif
             endif
          ENDDO
+
 ! DANGER potential hack here: Should CBH humidity data be converted to decimal fraction in
 ! the CBH file? Probably so. For now, convert it here.
 ! Humidity coming from CBH is in percent, not decimal fraction
-         DO ii = 1, Nsegment
-            Seg_humid(ii) = Seg_humid(ii) * 0.01
+         DO is = 1, Nsegment
+            Seg_humid(is) = Seg_humid(is) * 0.01
          ENDDO
 
 ! Segment humidity comes from parameter
       ELSEIF ( Strmtemp_humidity_flag==1 ) THEN
-         DO ii = 1, Nsegment
-            Seg_humid(ii) = Seg_humidity(ii, Nowmonth)
+         DO is = 1, Nsegment
+            Seg_humid(is) = Seg_humidity(is, Nowmonth)
          ENDDO
 
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
-         DO ii = 1, Nsegment
-            Seg_humid(ii) = Humidity(Seg_humidity_sta(ii))
+         DO is = 1, Nsegment
+            Seg_humid(is) = Humidity(Seg_humidity_sta(is))
          ENDDO
       ENDIF
 
+! Compute segment windspeed
+! DANGER Just set the windspeed to 1 m/s until I can get the data
+      Seg_windspeed = 1.0
+!      IF (windspeed_cbh_flag == 0) then
+!         DO jj = 1, Nhru
+!            ii = Hru_segment(jj)
+!            if (Seg_windspeed(ii) > -998.0) then
+!               Seg_windspeed(ii) = Seg_windspeed(ii) + Windspeed_hru(jj)*hru_area(jj)
+!            else
+!               Seg_windspeed(ii) = Seg_windspeed(jj)*hru_area(jj)
+!            endif
+!         ENDDO
+!         DO ii = 1, Nsegment
+!            if (Seg_windspeed(ii) > -998.0) then
+!               Seg_windspeed(ii) = Seg_windspeed(ii) / hru_area_sum(ii)
+!            endif
+!         ENDDO
+!         DO ii = 1, Nsegment
+!            if (Seg_windspeed(ii) < -998.0) then
+!               Seg_windspeed(ii) = Seg_windspeed(Seg_close(ii))
+!            endif
+!         ENDDO
+!
+!! Segment windspeed comes from parameter
+!      ELSEIF ( Strmtemp_windspeed_flag==1 ) THEN
+!         DO ii = 1, Nsegment
+!            Seg_windspeed(ii) = Seg_wind(ii, Nowmonth)
+!         ENDDO
+!
+!      ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
+!         DO ii = 1, Nsegment
+!            Seg_windspeed(ii) = wind(Seg_wind_sta(ii))
+!         ENDDO
+!      ENDIF
+
 ! Air temperature on each segment is the area weighted average of the connected HRUs
       Seg_tave_air = -999.0
-      DO jj = 1, Nhru
-         ii = Hru_segment(jj)
-         if (ii > 0) then
-            if (Seg_tave_air(ii) > -998.0) then
-               Seg_tave_air(ii) = Seg_tave_air(ii) + Tavgc(jj)*hru_area(jj)
+      DO ii = 1, Nhru
+         ih = loc_id(ii)
+         is = Hru_segment(ii)
+
+         if (is > 0) then
+            if (Seg_tave_air(is) > -998.0) then
+               Seg_tave_air(is) = Seg_tave_air(is) + Tavgc(ih)*hru_area(ih)
             else 
-               Seg_tave_air(ii) = Tavgc(jj)*hru_area(jj)
+               Seg_tave_air(is) = Tavgc(ih)*hru_area(ih)
             endif
          endif
       ENDDO
-      DO ii = 1, Nsegment
-         Seg_tave_air(ii) = Seg_tave_air(ii) / hru_area_sum(ii)
+      print *, "tavgc 52411 52652 52442 52438 ", tavgc(52411), tavgc(52652), tavgc(52442), tavgc(52438)
+      
+      DO is = 1, Nsegment
+         if (hru_area_sum(is) > NEARZERO) then
+            Seg_tave_air(is) = Seg_tave_air(is) / hru_area_sum(is)
+         else
+            Seg_tave_air(is) = -999.0
+         endif
       ENDDO
-      DO ii = 1, Nsegment
-         if (Seg_tave_air(ii) < -998.0) then
-            Seg_tave_air(ii) = Seg_tave_air(Seg_close(ii))
+
+      DO is = 1, Nsegment
+         if (Seg_tave_air(is) < -998.0) then
+! seg_close needs to be switched to segment_donor
+            Seg_tave_air(is) = Seg_tave_air(segment_donor(is))
+            if (Seg_tave_air(segment_donor(is)) < -998.0) then
+               print *, "   segment ", is," needs a new donor because value ", segment_donor(is), " is bad"
+            endif
          endif
       ENDDO
 
 ! Potet on each segment is the area weighted average of the connected HRUs
       Seg_potet = -999.0
-      DO jj = 1, Nhru
-         ii = Hru_segment(jj)
-         if (ii > 0) then
-            if (Seg_potet(ii) > -998.0) then
-               Seg_potet(ii) = Seg_potet(ii) + Potet(jj)*hru_area(jj)
+      DO ii = 1, Nhru
+         ih = loc_id(ii)
+         is = Hru_segment(ii)
+ 
+         if (is > 0) then
+            if (Seg_potet(is) > -998.0) then
+               Seg_potet(is) = Seg_potet(is) + Potet(ih)*hru_area(ih)
             else 
-               Seg_potet(ii) = Potet(jj)*hru_area(jj)
+               Seg_potet(is) = Potet(ih)*hru_area(ih)
             endif
          endif
       ENDDO
-      DO ii = 1, Nsegment
-         Seg_potet(ii) = Seg_potet(ii) / hru_area_sum(ii)
+      DO is = 1, Nsegment
+         if (hru_area_sum(is) > NEARZERO) then
+            Seg_potet(is) = Seg_potet(is) / hru_area_sum(is)
+         else
+            Seg_potet(is) = -999.0
+         endif
       ENDDO
-      DO ii = 1, Nsegment
-         if (Seg_potet(ii) < -998.0) then
-            Seg_potet(ii) = Seg_potet(Seg_close(ii))
+
+      DO is = 1, Nsegment
+         if (Seg_potet(is) < -998.0) then
+            Seg_potet(is) = Seg_potet(segment_donor(is))
+            if (Seg_potet(segment_donor(is)) < -998.0) then
+               print *, "   segment ", is," needs a new donor because value ", segment_donor(is), " is bad"
+            endif
+         endif
+      ENDDO
+
+! Solar radiation on each segment is the area weighted average of the connected HRUs
+      seg_swrad = -999.0
+      DO ii = 1, Nhru
+         ih = loc_id(ii)
+         is = Hru_segment(ii)
+
+         if (is > 0) then
+            if (seg_swrad(is) > -998.0) then
+               seg_swrad(is) = seg_swrad(is) + swrad(ih)*hru_area(ih)
+            else
+               seg_swrad(is) = swrad(ih)*hru_area(ih)
+            endif
+         endif
+      ENDDO
+
+      print *, "swrad 52411 52652 52442 52438 ", swrad(52411), swrad(52652), swrad(52442), swrad(52438)
+
+      DO is = 1, Nsegment
+         if (hru_area_sum(is) > NEARZERO) then
+            seg_swrad(is) = seg_swrad(is) / hru_area_sum(is)
+         else
+            seg_swrad(is) = -999.0
+         endif
+      ENDDO
+
+      DO is = 1, Nsegment
+         if (seg_swrad(is) < -998.0) then
+            seg_swrad(is) = seg_swrad(segment_donor(is))
+            if (seg_swrad(segment_donor(is)) < -998.0) then
+               print *, "   segment ", is," needs a new donor because value ", segment_donor(is), " is bad"
+            endif
          endif
       ENDDO
 
 ! Cloud cover on each segment is the area weighted average of the connected HRUs
       Seg_ccov = -999.0
-      DO jj = 1, Nhru
-         ii = Hru_segment(jj)
-         if (ii > 0) then
-            ccov = 1.0 - (Swrad(jj) / sngl(Soltab_potsw(jday, jj)) * sngl(Hru_cossl(jj)))
+      DO ii = 1, Nhru
+         ih = loc_id(ii)
+         is = Hru_segment(ii)
+
+         if (is > 0) then
+            ccov = 1.0 - (Swrad(ih) / sngl(Soltab_potsw(jday, ih)) * sngl(Hru_cossl(ih)))
             IF (ccov <NEARZERO ) THEN
                ccov = 0.0
             ELSEIF (ccov > 1.0 ) THEN
                ccov = 1.0
             ENDIF
 
-            if (Seg_potet(ii) > -998.0) then
-               Seg_ccov(ii) = Seg_ccov(ii) + ccov*hru_area(jj)
+            if (Seg_ccov(is) > -998.0) then
+               Seg_ccov(is) = Seg_ccov(is) + ccov*hru_area(ih)
             else
-               Seg_ccov(ii) = ccov*hru_area(jj)
+               Seg_ccov(is) = ccov*hru_area(ih)
             endif 
          endif
       ENDDO
 
-      DO ii = 1, Nsegment
-         Seg_ccov(ii) = Seg_ccov(ii) / hru_area_sum(ii)
-      ENDDO
-
-      DO ii = 1, Nsegment
-         if (Seg_potet(ii) < -998.0) then
-            Seg_potet(ii) = Seg_potet(Seg_close(ii))
+      DO is = 1, Nsegment
+         if (hru_area_sum(is) > NEARZERO) then
+            Seg_ccov(is) = Seg_ccov(is) / hru_area_sum(is)
+         else
+            Seg_ccov(is) = -999.0
          endif
       ENDDO
 
-! Solar radiation on each segment is the area weighted average of the connected HRUs
-      seg_swrad = -999.0
-      DO jj = 1, Nhru
-         ii = Hru_segment(jj)
-         if (ii > 0) then
-            if (seg_swrad(ii) > -998.0) then
-               seg_swrad(ii) = seg_swrad(ii) + swrad(jj)*hru_area(jj)
-            else
-               seg_swrad(ii) = swrad(jj)*hru_area(jj)
+      DO is = 1, Nsegment
+        if (seg_ccov(is) < -998.0) then
+            seg_ccov(is) = seg_ccov(segment_donor(is))
+            if (seg_ccov(segment_donor(is)) < -998.0) then
+               print *, "   segment ", is," needs a new donor because value ", segment_donor(is), " is bad"
             endif
-         endif
-      ENDDO
-      DO ii = 1, Nsegment
-         seg_swrad(ii) = seg_swrad(ii) / hru_area_sum(ii)
-      ENDDO
-      DO ii = 1, Nsegment
-         if (seg_swrad(ii) < -1000.0) then
-            seg_swrad(ii) = seg_swrad(Seg_close(ii))
-         endif
+        endif
       ENDDO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute the channel width based on outflow
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
+      DO is = 1, Nsegment
          ! Compute flow-dependent water-in-segment width value
-         if (seg_outflow(ii) > NEARZERO) then
-            Seg_width(ii) = width_alpha(ii) * sngl(Seg_outflow(ii)) ** width_m(ii)
+         if (seg_outflow(is) > NEARZERO) then
+            Seg_width(is) = width_alpha(is) * sngl(Seg_outflow(is)) ** width_m(is)
          else
-            Seg_width(ii) = 0.0             
+            Seg_width(is) = 0.0             
          endif
       ENDDO
+      print *, "seg outflow 27447 27448 ", Seg_outflow(27447), Seg_outflow(27448)
+      print *, "seg width 27447 27448 ", seg_width(27447), seg_width(27448)
      
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute the topographic and vegetative shade
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
-         ! Compute the shade on the segment. Either set by value in the parameter file or computed
-         IF ( Stream_temp_shade_flag==1 ) THEN
-            IF ( Summer_flag==0 ) THEN
-               seg_shade(ii) = Segshade_win(ii)
-            ELSE
-               seg_shade(ii) = Segshade_sum(ii)
-            ENDIF
-            
-           ! Svi    = RIPARIAN VEGETATION SHADE
-            svi = 0.0
-         ELSE
-            CALL shday(ii, seg_shade(ii), svi)
-         ENDIF
+      DO is = 1, Nsegment
+         CALL shday(is, foo, svi)
+         seg_veg_shade(is) = svi
+         seg_top_shade(is) = foo - svi
       ENDDO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! For each segment, route water and temperature downstream
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       seg_inflow_loc = 0.0
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
-         kk = tosegment(ii)
-         if (kk .ne. 0) then
-            if (seg_outflow(ii) > MINFLOW) then
-               if (seg_inflow_loc(kk) > MINFLOW) then
-                     seg_inflow_loc(kk) =  seg_inflow_loc(kk) + sngl(Seg_outflow(ii))
-                     seg_tave_loc(kk) = seg_tave_loc(kk) + (sngl(Seg_tave_water(ii)) * sngl(Seg_outflow(ii)))
+      DO is = 1, Nsegment
+         isd = tosegment(is)
+         if (isd .ne. 0) then
+            if (seg_outflow(is) > MINFLOW) then
+               if (seg_inflow_loc(isd) > MINFLOW) then
+                     seg_inflow_loc(isd) =  seg_inflow_loc(isd) + sngl(Seg_outflow(is))
+                     seg_tave_loc(isd) = seg_tave_loc(isd) + (sngl(Seg_tave_water(is)) * sngl(Seg_outflow(is)))
                else 
-                     seg_inflow_loc(kk) = sngl(Seg_outflow(ii))
-                     seg_tave_loc(kk) = sngl(Seg_tave_water(ii)) * sngl(Seg_outflow(ii))
+                     seg_inflow_loc(isd) = sngl(Seg_outflow(is))
+                     seg_tave_loc(isd) = sngl(Seg_tave_water(is)) * sngl(Seg_outflow(is))
                endif
             endif
          endif
       ENDDO
-      DO jj = 1, Nsegment
-         if (seg_tave_upstream(jj) > -98.0) then
-            seg_tave_loc(jj) = seg_tave_loc(jj) / seg_inflow_loc(jj)
+      DO is = 1, Nsegment
+! DANGER this could be the bug
+!         if (seg_tave_upstream(is) > -98.0) then
+         if (seg_tave_loc(is) > -98.0) then
+            seg_tave_loc(is) = seg_tave_loc(is) / seg_inflow_loc(is)
          endif
       ENDDO
+      print *, "seg_tave_loc  27447 27448", seg_tave_loc(27447), seg_tave_loc(27448)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute the running averages for groundwater and subsurface temperatures.
 ! These are temperatures by HRUs.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
-         if (gw_index(ii) >= gw_tau(ii)) then
-            gw_index(ii) = 1
+      DO is = 1, Nsegment
+         if (gw_index(is) >= gw_tau(is)) then
+            gw_index(is) = 1
          else
-            gw_index(ii) = gw_index(ii) + 1
+            gw_index(is) = gw_index(is) + 1
          endif
 
-         if (ss_index(ii) >= ss_tau(ii)) then
-            ss_index(ii) = 1
+         if (ss_index(is) >= ss_tau(is)) then
+            ss_index(is) = 1
          else
-            ss_index(ii) = ss_index(ii) + 1
+            ss_index(is) = ss_index(is) + 1
          endif
       ENDDO
 
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
+      DO is = 1, Nsegment
+         gw_sum(is) = gw_sum(is) - gw_silo(is, gw_index(is))
+         gw_silo(is, gw_index(is)) = seg_tave_air(is)
+         gw_sum(is) = gw_sum(is) + seg_tave_air(is)
+         tave_gw(is) = gw_sum(is) / gw_tau(is)
 
-         gw_sum(ii) = gw_sum(ii) - gw_silo(ii, gw_index(ii))
-         gw_silo(ii, gw_index(ii)) = seg_tave_air(ii)
-         gw_sum(ii) = gw_sum(ii) + seg_tave_air(ii)
-         tave_gw(ii) = gw_sum(ii) / gw_tau(ii)
-
-         ss_sum(ii) = ss_sum(ii) - ss_silo(ii, ss_index(ii))
-         ss_silo(ii, ss_index(ii)) = seg_tave_air(ii)
-         ss_sum(ii) = ss_sum(ii) + seg_tave_air(ii)
-         tave_ss(ii) = ss_sum(ii) / ss_tau(ii)
+         ss_sum(is) = ss_sum(is) - ss_silo(is, ss_index(is))
+         ss_silo(is, ss_index(is)) = seg_tave_air(is)
+         ss_sum(is) = ss_sum(is) + seg_tave_air(is)
+         tave_ss(is) = ss_sum(is) / ss_tau(is)
       ENDDO
+
+      print *, "tave_gw 27447 27448 ", tave_gw(27447), tave_gw(27448)
+      print *, "tave_ss 27447 27448 ", tave_ss(27447), tave_ss(27448)
+      print *, "seg_tave_air 27447 27448 ", seg_tave_air(27447), seg_tave_air(27448)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute the lateral inflows and temperatures from each HRU and put them in the associated stream
@@ -1033,22 +1166,24 @@
       Seg_lateral_inflow = -98.0
       seg_tave_lat = -98.0
 
-      DO jj = 1, Nhru
-         ii = Hru_segment(jj)
+      DO ii = 1, Nhru
+         ih = loc_id(ii)
+         is = Hru_segment(ii)
+
          lat_temp = -98.0
          lat_flow = -98.0
 
-         if (ii > 0) then
-            lat_flow = ssres_flow(jj) + gwres_flow(jj) + sroff(jj)
+         if (is > 0) then
+            lat_flow = ssres_flow(ih) + gwres_flow(ih) + sroff(ih)
 
             snow_sro = 0.0
             non_snow_sro = 0.0
             if (lat_flow > MINDEPTH) then
 ! figure out how much of the surface runoff is snowmelt vs. rain.
-               if ((snowmelt(jj) + hru_rain(jj)) > NEARZERO) then
-                  snow_ro_frac = snowmelt(jj) / (snowmelt(jj) + hru_rain(jj))
-                  snow_sro = sroff(jj) * snow_ro_frac
-                  non_snow_sro = sroff(jj) - snow_sro
+               if ((snowmelt(ih) + hru_rain(ih)) > NEARZERO) then
+                  snow_ro_frac = snowmelt(ih) / (snowmelt(ih) + hru_rain(ih))
+                  snow_sro = sroff(ih) * snow_ro_frac
+                  non_snow_sro = sroff(ih) - snow_sro
                   if (non_snow_sro < 0.0) then
                      non_snow_sro = 0.0
                   endif
@@ -1057,83 +1192,67 @@
                   endif
                endif
 
-               lat_temp = ((ssres_flow(jj) * tave_ss(ii)) + (gwres_flow(jj) * tave_gw(ii)) &
-      &                 + (non_snow_sro * seg_tave_air(ii)) &
+               lat_temp = ((ssres_flow(ih) * tave_ss(is)) + (gwres_flow(ih) * tave_gw(is)) &
+      &                 + (non_snow_sro * seg_tave_air(is)) &
       &                 + (snow_sro * melt_temp)) / lat_flow
             endif
 
             if (lat_flow > MINDEPTH) then
-               tocfs = sngl(Hru_area(jj)) * sngl(Cfs_conv)
+               tocfs = sngl(Hru_area(ih)) * sngl(Cfs_conv)
                lat_flow = lat_flow * tocfs
 
-               if (Seg_lateral_inflow(ii) > -97.0) then
-                  Seg_lateral_inflow(ii) = Seg_lateral_inflow(ii) + lat_flow
-                  seg_tave_lat(ii) = seg_tave_lat(ii) + (lat_flow * lat_temp)
+               if (Seg_lateral_inflow(is) > -97.0) then
+                  Seg_lateral_inflow(is) = Seg_lateral_inflow(is) + lat_flow
+                  seg_tave_lat(is) = seg_tave_lat(is) + (lat_flow * lat_temp)
                else
-                  Seg_lateral_inflow(ii) = lat_flow
-                  seg_tave_lat(ii) = lat_flow * lat_temp
+                  Seg_lateral_inflow(is) = lat_flow
+                  seg_tave_lat(is) = lat_flow * lat_temp
                endif
             endif
          endif
       ENDDO
 
-      DO ii = 1, Nsegment
-         if (Seg_lateral_inflow(ii) < MINFLOW) then
-            seg_tave_lat(ii) = -98.0
-            seg_lateral_inflow(ii) = -98.0
+      DO is = 1, Nsegment
+         if (Seg_lateral_inflow(is) < MINFLOW) then
+            seg_tave_lat(is) = -98.0
+            seg_lateral_inflow(is) = -98.0
          else
-            foo = seg_tave_lat(ii)
-            seg_tave_lat(ii) = seg_tave_lat(ii) / sngl(Seg_lateral_inflow(ii))
+            seg_tave_lat(is) = seg_tave_lat(is) / sngl(Seg_lateral_inflow(is))
 
             ! This code does not handle thermodynamics of ice, so temperatures below 0 are not allowed.
             ! The question is when to set temperatures below 0 to 0. If, after computing the running
             ! averages and mixing the different sources of lateral flow, the temperature is less than
             ! 0, set the lateral flow temperature to 0 here.
-            if (seg_tave_lat(ii) .lt. NEARZERO) then
-               seg_tave_lat(ii) = 0.0
+            if (seg_tave_lat(is) .lt. NEARZERO) then
+               seg_tave_lat(is) = 0.0
             endif
          endif
       ENDDO
+      print *, "seg_lateral_inflow 27447 27448 ", Seg_lateral_inflow(27447), Seg_lateral_inflow(27448)
+      print *, "seg_tave_lat 27447 27448 ", seg_tave_lat(27447), Seg_lateral_inflow(27448)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute t_o
 ! t_o is the temperature of the water at the beginning of the time step (this is To in equation 32). These values are in Seg_tave_init,
 ! the job here is to mix all of the inflows and temps
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
+      DO is = 1, Nsegment
+         if (seg_lateral_inflow(is) > MINFLOW .and. seg_inflow_loc(is) > MINFLOW) then
+            term1 = seg_tave_upstream(is) * seg_inflow_loc(is)
+            term2 = sngl(seg_lateral_inflow(is)) * (sngl(seg_tave_lat(is)) + sngl(lat_temp_adj(is,Nowmonth)))
+            term3 = sngl(seg_inflow_loc(is)) + sngl(seg_lateral_inflow(is))
+            Seg_tave_init(is) = (term1 + term2) / term3
 
-         if (seg_lateral_inflow(ii) > MINFLOW .and. seg_inflow_loc(ii) > MINFLOW) then
-            term1 = seg_tave_upstream(ii) * seg_inflow_loc(ii)
-            term2 = sngl(seg_lateral_inflow(ii)) * (sngl(seg_tave_lat(ii)) + sngl(lat_temp_adj(ii,Nowmonth)))
-            term3 = sngl(seg_inflow_loc(ii)) + sngl(seg_lateral_inflow(ii))
-            Seg_tave_init(ii) = (term1 + term2) / term3
+         elseif (seg_lateral_inflow(is) > MINFLOW) then
+            Seg_tave_init(is) = sngl(seg_tave_lat(is)) + lat_temp_adj(is,Nowmonth)
 
-         elseif (seg_lateral_inflow(ii) > MINFLOW) then
-            Seg_tave_init(ii) = sngl(seg_tave_lat(ii)) + lat_temp_adj(ii,Nowmonth)
-
-         elseif (seg_inflow_loc(ii) > MINFLOW) then
-            Seg_tave_init(ii) = sngl(seg_tave_upstream(ii))
+         elseif (seg_inflow_loc(is) > MINFLOW) then
+            Seg_tave_init(is) = sngl(seg_tave_upstream(is))
 
          else
-            Seg_tave_init(ii) = -98.0
+            Seg_tave_init(is) = -98.0
 
          endif
-
-! debug
-         if (Seg_tave_init(ii) .ne. Seg_tave_init(ii)) then
-             write(*,*) "t_o is Nan, ii = ", ii
-             print *, "   seg_inflow_loc(ii) = ", seg_inflow_loc(ii)
-             print *, "   seg_lateral_inflow(ii) = ", seg_lateral_inflow(ii)
-             print *, Nowyear, Nowmonth, Nowday, Jday
-             continue
-         endif
-
-         if (Seg_tave_init(ii) .gt. 38.0) then
-             write(*,*) "t_o is > 38, ii = ", ii, Seg_tave_init(ii)
-             print *, Nowyear, Nowmonth, Nowday, Jday
-             continue
-          endif
 
 !         if (Seg_tave_init(ii) < 0.0) then
 !             write(*,*) "t_o is < 0.0, ii = ", ii, Seg_tave_init(ii)
@@ -1143,60 +1262,51 @@
 ! debug
       enddo
 
+      print *, "seg_tave_init 27447 27448 ", Seg_tave_init(27447), Seg_tave_init(27448)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Loop through the segments and change the missing value flags to values that work for the
 ! SNTemp functions.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
-
-         if (seg_inflow_loc(ii) < 0.0) then
-            seg_inflow_loc(ii) = 0.0
+      DO is = 1, Nsegment
+         if (seg_inflow_loc(is) < 0.0) then
+            seg_inflow_loc(is) = 0.0
          endif
 
-         if (seg_lateral_inflow(ii) < 0.0) then
-            seg_lateral_inflow(ii) = 0.0
+         if (seg_lateral_inflow(is) < 0.0) then
+            seg_lateral_inflow(is) = 0.0
          endif
  
-         if (Seg_tave_init(ii) < 0.0) then
-            Seg_tave_init(ii) = 0.0
+         if (Seg_tave_init(is) < 0.0) then
+            Seg_tave_init(is) = 0.0
          endif
 
-         if (seg_tave_lat(ii) < 0.0) then
-            seg_tave_lat(ii) = 0.0
+         if (seg_tave_lat(is) < 0.0) then
+            seg_tave_lat(is) = 0.0
          endif
       enddo
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Call the SNTemp functions for energy balance.
 ! SNTemp functions.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      DO jj = 1, Nsegment
-         ii = Segment_order(jj)
+      DO is = 1, Nsegment
 
-         if (Seg_tave_init(ii) .gt. -98.0) then
+         if (Seg_tave_init(is) .gt. -98.0) then
 !           Compute the equilibrium temperature
 !           Out: te, ak1, ak2
-!           In: seg_shade, svi, i, Seg_tave_init(ii)
+!           In: seg_ccov, svi, i, Seg_tave_init(ii)
 
-            if (ii == 40001) then
-               print *, 'seg_id, seg_tave_init', 40001, Seg_tave_init(40001)
-               print *, 'seg_id, seg_tave_init', 40000 , Seg_tave_init(40000)
-               print *, 'seg_id, seg_tave_init', 39999, Seg_tave_init(39999)
-            endif
-
-            CALL equilb(seg_tave_equilib(ii), ak1, ak2, seg_shade(ii), svi, ii, Seg_tave_init(ii))
+            CALL equilb(seg_tave_equilib(is), ak1, ak2, seg_ccov(is), svi, is, Seg_tave_init(is))
 
 !           Compute the daily mean water temperature
-!           In: Seg_tave_init(ii), qlat, seg_tave_lat(ii), seg_tave_equilib(ii), ak1, ak2, ii, seg_width, seg_length
+!           In: Seg_tave_init(is), qlat, seg_tave_lat(is), seg_tave_equilib(is), ak1, ak2, is, seg_width, seg_length
 
-            Seg_tave_water(ii) = twavg(fs, Seg_tave_init(ii), seg_lateral_inflow(ii), &
-      &            seg_tave_lat(ii), seg_tave_equilib(ii), ak1, ak2, seg_width(ii), seg_length(ii))
+            Seg_tave_water(is) = twavg(fs, Seg_tave_init(is), seg_lateral_inflow(is), &
+      &            seg_tave_lat(is), seg_tave_equilib(is), ak1, ak2, seg_width(is), seg_length(is))
 
           else
               ! bad t_o value
-              Seg_tave_water(ii) = -98.9
+              Seg_tave_water(is) = -98.9
               print *, "no call to sntemp"
           endif
       ENDDO
@@ -1359,10 +1469,11 @@
 !        2. DETERMINE THE MAXIMUM DAILY EQUILIBRIUM WATER TEMPERATURE PARAMETERS
 
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Seg_width, Seg_humid, Press, MPS_CONVERT, &
-     &    Seg_ccov, Seg_slope, Seg_potet, Albedo, seg_tave_gw, seg_tave_air
+     &    Seg_ccov, Seg_slope, Seg_potet, Albedo, seg_tave_gw, seg_tave_air, seg_windspeed
       USE PRMS_BASIN, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
       USE PRMS_ROUTING, ONLY: Seginc_swrad
+
       IMPLICIT NONE
 ! Functions
       INTRINSIC EXP, SQRT, ABS, SNGL, DBLE
@@ -1378,24 +1489,30 @@
       DOUBLE PRECISION :: ha, hv, taabs
       REAL :: hf, hs, b, c, d, delt, del_ht, ltnt_ht, bow_coeff
       REAL :: hnet, vp_sat, sw_power, evap, q_init
-      REAL, PARAMETER :: AKZ = 1.65, A = 5.40E-8, RAD_CONVERT = 41840.0/86400.0
-      REAL :: foo
+      REAL :: AKZ, a
+      REAL, PARAMETER :: RAD_CONVERT = 41840.0/86400.0
+      REAL :: foo, emis, pv, hw, he, crfctr
+      REAL :: evfctr, EFA, EFB, EFC
 ! *******************************************************************************
       taabs = Seg_tave_air(seg_id) + ZERO_C
+
+!     see equation 6 of Murray, F.W., 1966, On the Computation of Saturation Vapor Pressure,
+!         Journal of Applied Meterology and Climatology,
+!         https://doi.org/10.1175/1520-0450(1967)006<0203:OTCOSV>2.0.CO;2
+!     This is saturation vapor pressure over water in mb
+
       vp_sat = 6.108 * EXP(17.26939 * Seg_tave_air(seg_id)/(Seg_tave_air(seg_id) + 237.3))
 
 ! 
 !  Convert units and set up parameters
       q_init = SNGL(Seg_inflow(Seg_id) * CFS2CMS_CONV)
-      IF ( q_init < NEARZERO ) q_init = 0.0
-      
-      ! sw_power should be in watts / m2
-      ! seginc_swrad is in langly / day
-      ! Used to use RAD_CONVERT, the conversion I'm using now is a slightly different number.
+      IF (q_init < NEARZERO) q_init = 0.0
+
+!     sw_power should be in watts / m2
+!     seginc_swrad is in langley / day
+!     see "Solar radiation unit conversions"
+!     https://www/wcc/nrcs.usda.gov/ftpref/wntsc/H&H/GEM/SolarRadConversion.pdf
       sw_power = 11.63 / 24.0 * sngl(seginc_swrad(seg_id))
-      if (seg_id == 400001) then
-         print *, "seg_id, seginc_swrad, sw_power", seg_id, seginc_swrad, sw_power
-      endif
 
       del_ht = 2.36E06   ! could multiple by 10E6 for this and other terms later to reduce round-off
       ltnt_ht = 2495.0E06
@@ -1408,42 +1525,101 @@
       endif
       
       bow_coeff = (0.00061 * Press(Seg_id))/(vp_sat * (1.0 - foo))
-      evap = SNGL( Seg_potet(Seg_id) * MPS_CONVERT )
 
-      if (seg_id == 400001) then
-         print *, "bow_coef, evap", bow_coeff, evap
-      endif
+! Convert the segment potential et rate from inches per day to meters per second
+      evap = sngl(Seg_potet(Seg_id)) * 0.0254 / 86400.0
 
 !
 ! HEAT FLUX COMPONENTS
-      ! document - ha = (1-rl)(1-sh)(1+0.17Cl**2)(0.61+0.05*SQRT(vp_sat)*stefan(Ta+273.16)**4
 
-      ha = ( (3.354939D-8 + 2.74995D-9 * DBLE(SQRT(Seg_humid(Seg_id) * vp_sat))) * DBLE((1.0 - Sh) &
-     &     * (1.0 + (0.17*(Seg_ccov(Seg_id)**2)))) ) * (taabs**4)
+! ha is the atmospheric longwave radiation term (eqn. 2 in users' manual)
+!     document - ha = (1-rl)(1-sh)(1+0.17Cl**2)(0.61+0.05*SQRT(vp_sat)*stefan(Ta+273.16)**4
+!     rl is longwave reflection fraction (assumed to be 0.0)
+
+! vapor pressure of air (Tetens equation) in kPa
+      pv = 0.61078 * exp(17.27 * Seg_tave_air(seg_id) / (Seg_tave_air(seg_id) + 237.3)) 
+
+! vapor pressure of air in millbar
+      pv = pv * 10.0
+
+! emissivity of air (eqn. 3 in users' manual)
+      emis = 0.61 + (0.05 * sqrt(pv))
+
+      ha = (1.0) * (1.0 - Seg_ccov(Seg_id)) * (1.0 + (0.17 * Seg_ccov(Seg_id) ** 2.0)) * emis * 5.670373e-08 &
+     &      * ((Seg_tave_air(seg_id) + 273.16) ** 4.0)
+
+! This is the "old" way of computing ha. It gives a different answer than the version immediately above
+!      ha = ( (3.354939D-8 + 2.74995D-9 * DBLE(SQRT(Seg_humid(Seg_id) * vp_sat))) * DBLE((1.0 - Sh) &
+!     &     * (1.0 + (0.17*(Seg_ccov(Seg_id)**2)))) ) * (taabs**4)
 
 ! hf is heat from stream friction. See eqn. 14.  q_init is in CMS
-      hf = 9805.0 * (q_init/Seg_width(Seg_id)) * Seg_slope(Seg_id)
+      if (q_init > NEARZERO) then
+          hf = 9805.0 * (q_init/Seg_width(Seg_id)) * Seg_slope(Seg_id)
+      else
+          hf = 0.0
+      endif
+ 
+! hs is shorwage solar radiation. sw_power is sw rad for the segment converted to watts/m2. eqn 6 in users' manual.
       hs = (1.0 - sh) * sw_power * (1.0 - Albedo)
-      hv = 5.24D-8 * DBLE(Svi) * (taabs**4)
+
+! hv is riparian long wave rad. Eqn. 4
+      hv = 0.9526 * 5.670373e-08 * svi * ((Seg_tave_air(seg_id) + 273.16) ** 4.0)
 
 ! Stefan-Boltzmann constant = 5.670373D-08; emissivity of water = 0.9526, times each other: 5.4016D-08
 ! hw = water-emitted longwave radiation
-! hw = 5.4016D-08 * (taabs**4)  hw is include in other computations
+      hw = 0.9526 * 5.670373e-08 * ((t_o + 273.16) ** 4.0)
+
+!  he is heat of vaporization
+      he = (40.0 + (15.0 * seg_windspeed(seg_id))) * &
+     &         (Seg_humid(seg_id) * (1.0640 ** Seg_tave_air(seg_id)) - (1.0640 ** t_o))
+
+
 !
 ! DETERMINE EQUILIBIRIUM COEFFICIENTS
-      b = bow_coeff * evap * (ltnt_ht + (del_ht * t_o)) + AKZ - (del_ht * evap)
-      c = bow_coeff * del_ht * evap
-      d = (SNGL(ha + hv) + hf + hs) + (ltnt_ht * evap * ((bow_coeff * t_o) - 1.0) + (seg_tave_gw(Seg_id) * AKZ))
+! page II-42 of Theurer, Voos, and Miller, 1984, Instream water temperature model.
+! These equations come from line 3309 of SNTemp code trnspt.f
+! see line 3276 for defninition of variables in SNTemp code
+
+!
+! Determine "a" coefficent
+      a = 5.40E-8
+
+! Determine "b" coefficent
+!     AKZ is the streambed thermal gradient (see II-41 of Theurer, Voos, and Miller, 1984)
+      AKZ = 1.65
+
+!     crfctr defined on page II-42 as "Bowen Factor" divided by 6.60 
+      crfctr =  bow_coeff / 6.60
+
+!     These "wind function coefficients are set in block data in the original SNTEMP code. These values can
+!     be overwritten by setting values in the SNTEMP input files, but no examples show this and the documentation
+!     doesn't describe this. See line 161 of SNTemp file trnspt.f
+      efa = 40.0
+      efb = 15.0
+      efc = 0.0
+      evfctr = EFA + (EFB * seg_windspeed(seg_id)) + (EFC * SQRT(seg_windspeed(seg_id)))
+
+! press is air pressure in mb
+  
+      B = (CRFCTR * EVFCTR * press(seg_id)) + AKZ
+
+      c = EVFCTR
+      d = (sngl(ha) + hf + hs + sngl(hv)) + (CRFCTR * EVFCTR * press(seg_id) * press(seg_id) * Seg_tave_air(seg_id)) &
+     &          + (EVFCTR * Seg_humid(Seg_id) * pv) + (seg_tave_gw(seg_id) * AKZ)
 
 !
 ! DETERMINE EQUILIBRIUM TEMPERATURE & 1ST ORDER THERMAL EXCHANGE COEF.
-      Ted = t_o
+      Ted = seg_tave_air(seg_id)
 
-      CALL teak1(A, b, c, d, Ted, Ak1d)
+! Compute Te (equilb temp) and 1st order thermal exchange coefficient
+! In: a,b,c,d,ted (set to t_o upon input)
+! InOut: ted
+! Out: ak1d
+      CALL teak1(A, b, c, d, Ted, Ak1d, seg_id)
       
 !
 ! DETERMINE 2ND ORDER THERMAL EXCHANGE COEFFICIENT
-      hnet = (A * ((t_o + ZERO_C)**4)) + (b * t_o) - (c * (t_o**2.0)) - d
+      hnet = (A * ((t_o + 273.16)**4)) + (b * t_o) - (c * (t_o**2.0)) - d
       delt = t_o - Ted
 
       IF ( ABS(delt) < NEARZERO) THEN
@@ -1458,7 +1634,7 @@
 !**********************************************************************************
 !    "teak1"
 !**********************************************************************************
-      SUBROUTINE teak1(A, B, C, D, Teq, Ak1c)
+      SUBROUTINE teak1(A, B, C, D, Teq, Ak1c, seg_id)
 !     PURPOSE:  
 !        1. TO DETERMINE THE EQUILIBRIUM WATER TEMPERATURE FROM THE ENERGY BALANCE
 !           EQUATION BY ITERATING NEWTON'S METHOD
@@ -1472,30 +1648,45 @@
       REAL, INTENT(IN) ::  A, B, C, D
       REAL, INTENT(INOUT) :: Teq
       REAL, INTENT(OUT) :: Ak1c
+      Integer, INTENT(IN) :: seg_id
 ! Local variables
-      REAL :: teabs, fte, fpte, delte
+      REAL :: teabs, fte, fpte, delte, ALVPRS, clog, vprste
       INTEGER :: kount
 ! Parameters
       ! SOLUTION CONVERGENCE TOLERANCE
       REAL, PARAMETER :: TOLRN = 1.0E-4
+! WATER VAPOR PRESSURE POWER FUNCTION PARAMETER: line 171 of trnspt.f
+      REAL, PARAMETER :: vaprs = 1.0640
 !**********************************************************************************
       fte = 99999.0 ! rsr, fte was not set
       delte = 99999.0 ! rsr, delte was not set
       kount = 0
 
+! BASE 'E' LOG OF THE VAPOR PRESSURE POWER FUNCTION
+      ALVPRS = ALOG(vaprs)
+      clog = C * alvprs
+
 ! BEGIN NEWTON ITERATION SOLUTION FOR TE
       DO kount = 1, Maxiter_sntemp
-         IF ( ABS(fte) < TOLRN ) EXIT
-         IF ( ABS(delte) < TOLRN ) EXIT
          teabs  = Teq + ZERO_C
+         vprste = vaprs ** Teq
+
          fte    = (A * (teabs**4.0)) + (B * Teq) - (C * (Teq**2.0)) - D
+!         fte    = (A * (teabs**4.0)) + (B * Teq) - (C * vprste) - D
+
+!         fpte   = (4.0 * A * (teabs**3.0)) + B - (clog * vprste)
          fpte   = (4.0 * A * (teabs**3.0)) + B - (2.0 * C * Teq)
+
          delte  = fte / fpte
          Teq    = Teq - delte
+
+         IF ( ABS(fte) < TOLRN ) EXIT
+         IF ( ABS(delte) < TOLRN ) EXIT
+
       ENDDO
       
 ! DETERMINE 1ST THERMAL EXCHANGE COEFFICIENT
-      Ak1c = (4.0 * A * ((Teq + ZERO_C)**3.0)) + B - (2.0 * C * Teq)
+      Ak1c = (4.0 * A * ((Teq + ZERO_C)**3.0)) + B - (clog * (vaprs**Teq))
 !
 ! RETURN TO 'EQUILB' SUBROUTINE
       END SUBROUTINE teak1
