@@ -479,8 +479,10 @@
      &     'cfs', Basin_gwflow_cfs)/=0 ) CALL read_error(3, 'basin_gwflow_cfs')
 
       IF ( Call_cascade==1 .OR. Stream_order_flag==1 ) THEN
-        IF ( Nsegment==0 .AND. Model/=DOCUMENTATION ) &
-     &       STOP 'ERROR, nsegment=0, must be > 0 for selected module options'
+        IF ( Nsegment==0 .AND. Model/=DOCUMENTATION ) THEN
+          PRINT *, 'ERROR, nsegment=0, must be > 0 for selected module options'
+          ERROR STOP -1
+        ENDIF
       ENDIF
 
       IF ( Stream_order_flag==1 ) THEN
@@ -1227,7 +1229,6 @@
 !***********************************************************************
       SUBROUTINE temp_set(Ihru, Tmax, Tmin, Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, Hru_area)
       USE PRMS_CLIMATEVARS, ONLY: Basin_temp, Basin_tmax, Basin_tmin, Temp_units, Tmax_hru, Tmin_hru
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_BASIN, ONLY: MINTEMP, MAXTEMP
       IMPLICIT NONE
 ! Arguments
@@ -1237,6 +1238,7 @@
 ! Functions
       INTRINSIC DBLE
       REAL, EXTERNAL :: c_to_f, f_to_c
+      EXTERNAL :: print_date
 !***********************************************************************
       IF ( Temp_units==0 ) THEN
 !       degrees Fahrenheit
@@ -1259,8 +1261,9 @@
       ENDIF
 
       IF ( Tminf<MINTEMP .OR. Tmaxf>MAXTEMP ) THEN
-        PRINT *, 'ERROR, invalid temperature value for HRU:', Ihru, Tminf, Tmaxf, ' Date:', Nowyear, Nowmonth, Nowday
-        STOP
+        PRINT '(A,I0,1X,F0.4,1X,F0.4,/)', ' ERROR, invalid temperature value for HRU: ', Ihru, Tminf, Tmaxf
+        CALL print_date(1)
+        ERROR STOP -3
       ENDIF
       Tmax_hru(Ihru) = Tmax ! in units temp_units
       Tmin_hru(Ihru) = Tmin ! in units temp_units

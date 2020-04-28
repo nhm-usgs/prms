@@ -131,7 +131,7 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2019-09-26 17:18:00Z'
+      Version_muskingum = 'muskingum.f90 2020-04-27 19:02:00Z'
       IF ( Strmflow_flag==4 ) THEN
         MODNAME = 'muskingum'
       ELSE
@@ -196,6 +196,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
+      EXTERNAL error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -283,7 +284,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            STOP
+            CALL error_stop('in muskingum')
           ENDIF
 
           ! Seg_outflow (the mean daily flow rate for each segment) will be the average of the hourly values.

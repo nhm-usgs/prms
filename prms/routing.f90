@@ -497,7 +497,7 @@
         ENDDO
         IF ( ierr==1 ) THEN
           PRINT *, 'ERROR, circular segments involving', iseg, 'and', eseg
-          STOP
+          ERROR STOP -3
         ENDIF
       ENDDO
 !      IF ( Print_debug==20 ) THEN

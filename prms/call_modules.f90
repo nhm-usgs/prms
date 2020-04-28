@@ -8,7 +8,7 @@
       CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
       CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 03/04/2020'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 05/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
       !     Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
       INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
@@ -96,9 +96,9 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2020-03-04 12:54:00Z'
+        PRMS_versn = 'call_modules.f90 2020-05-01 10:10:00Z'
 
-        IF ( check_dims()/=0 ) STOP
+        IF ( check_dims()/=0 ) ERROR STOP -1
 
         IF ( Print_debug>-2 ) THEN
           PRINT 10, PRMS_VERSION
@@ -183,7 +183,7 @@
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==1 ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
-          IF ( iret/=0 ) STOP
+          IF ( iret/=0 ) ERROR STOP -1
           CALL call_modules_restart(0)
         ENDIF
       ENDIF
@@ -195,7 +195,7 @@
           call_modules = 0
           RETURN
         ELSE
-          STOP
+          STOP 0
         ENDIF
       ENDIF
 
@@ -271,7 +271,7 @@
         call_modules = frost_date()
         IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
         IF ( Process_flag==0 ) RETURN
-        IF ( Process_flag==3 ) STOP
+        IF ( Process_flag==3 ) STOP 0
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
@@ -421,10 +421,11 @@
      &          'parameter_check_flag to 1 to verify that those calibration', &
      &          'parameters have valid and compatible values.'
         ENDIF
-        IF ( Parameter_check_flag==2 .OR. Inputerror_flag==1 ) STOP
+        IF ( Parameter_check_flag==2 ) STOP 0
+        IF ( Inputerror_flag==1 ) ERROR STOP -1
         IF ( Model==25 ) THEN
           CALL convert_params()
-          STOP
+          STOP 0
         ENDIF
         IF ( Print_debug>-2 ) &
      &       PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day, EQULS
@@ -490,7 +491,7 @@
         Model = DOCUMENTATION
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
-        STOP
+        Inputerror_flag = 1
       ENDIF
 
       ! get simulation start_time and end_time
@@ -498,22 +499,28 @@
       DO j = 1, 6
         IF ( control_integer_array(Starttime(j), j, 'start_time')/=0 ) THEN
           PRINT *, 'ERROR, start_time, index:', j, 'value: ', Starttime(j)
-          STOP
+          Inputerror_flag = 1
         ENDIF
       ENDDO
       Start_year = Starttime(1)
-      IF ( Start_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
+      IF ( Start_year<0 ) THEN
+        PRINT *, 'ERROR, control parameter start_time must be specified'
+        Inputerror_flag = 1
+      ENDIF
       Start_month = Starttime(2)
       Start_day = Starttime(3)
       Endtime = -1
       DO j = 1, 6
         IF ( control_integer_array(Endtime(j), j, 'end_time')/=0 ) THEN
           PRINT *, 'ERROR, end_time, index:', j, 'value: ', Endtime(j)
-          STOP
+          Inputerror_flag = 1
         ENDIF
       ENDDO
       End_year = Endtime(1)
-      IF ( End_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
+      IF ( End_year<0 ) THEN
+        PRINT *, 'ERROR, control parameter start_time must be specified'
+        Inputerror_flag = 1
+      ENDIF
       End_month = Endtime(2)
       End_day = Endtime(3)
 
@@ -524,7 +531,7 @@
       IF ( control_string(Model_output_file, 'model_output_file')/=0 ) CALL read_error(5, 'model_output_file')
       IF ( Print_debug>-2 ) THEN
         CALL PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
-        IF ( iret/=0 ) STOP
+        IF ( iret/=0 ) Inputerror_flag = 1
       ENDIF
       IF ( control_file_name(Model_control_file)/=0 ) CALL read_error(5, 'control_file_name')
       IF ( control_string(Param_file, 'param_file')/=0 ) CALL read_error(5, 'param_file')
@@ -533,7 +540,7 @@
       IF ( Init_vars_from_file>0 ) THEN
         IF ( control_string(Var_init_file, 'var_init_file')/=0 ) CALL read_error(5, 'var_init_file')
         CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
-        IF ( iret/=0 ) STOP
+        IF ( iret/=0 ) Inputerror_flag = 1
       ENDIF
       IF ( Save_vars_to_file==1 ) THEN
         IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
@@ -554,7 +561,7 @@
       Strmflow_module = 'strmflow'
       IF ( control_string(Strmflow_module, 'strmflow_module')/=0 ) CALL read_error(5, 'strmflow_module')
 
-      IF ( Parameter_check_flag>0 ) CALL check_module_names()
+      IF ( Parameter_check_flag>0 ) CALL check_module_names(Inputerror_flag)
 
       Climate_precip_flag = 0
       Climate_temp_flag = 0
@@ -816,15 +823,12 @@
       IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
       IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
 
-      IF ( call_modules('setdims')/=0 ) STOP 'ERROR, in setdims'
+      IF ( call_modules('setdims')/=0 ) Inputerror_flag = 1
 
-      IF ( Inputerror_flag==1 ) THEN
-        PRINT '(//,A,/,A)', '**FIX input errors in your Control File to continue**', &
-     &        'NOTE: some errors may be due to use of defalut values'
-        STOP
-      ENDIF
+      IF ( Inputerror_flag==1 ) PRINT '(//,A,/,A,/ )', '**FIX input errors in your Control File to continue**', &
+     &     'NOTE: some errors may be due to use of defalut values'
 
-      setdims = 0
+      setdims = Inputerror_flag
       END FUNCTION setdims
 
 !***********************************************************************
@@ -836,8 +840,6 @@
 ! Functions
       INTEGER, EXTERNAL :: getdim
       EXTERNAL :: check_dimens
-! Local Variables
-      INTEGER :: ierr
 !***********************************************************************
 
       Nhru = getdim('nhru')
@@ -931,19 +933,17 @@
      &       Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 .OR. Nwateruse>0 ) Water_use_flag = 1
       ENDIF
 
-      ierr = 0
       IF ( Segment_transferON_OFF==1 .OR. Gwr_transferON_OFF==1 .OR. External_transferON_OFF==1 .OR. &
      &     Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 ) THEN
         IF ( Dprst_transferON_OFF==1 .AND. Dprst_flag==0 ) THEN
           PRINT *, 'ERROR, specified water-use event based dprst input and have dprst inactive'
-          ierr = 1
+          Inputerror_flag = 1
         ENDIF
         IF ( Lake_transferON_OFF==1 .AND. Strmflow_flag/=3 ) THEN
           PRINT *, 'ERROR, specified water-use event based lake input and have lake simulation inactive'
-          ierr = 1
+          Inputerror_flag = 1
         ENDIF
       ENDIF
-      IF ( ierr==1 ) STOP
 
       Stream_order_flag = 0
       IF ( Nsegment>0 .AND. Strmflow_flag>1 .AND. Model/=0 ) THEN
@@ -953,7 +953,7 @@
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
         IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
-          STOP
+          Inputerror_flag = 1
         ENDIF
       ENDIF
 
@@ -963,7 +963,7 @@
       IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'
         PRINT *, '       must be set to strmflow_in_out, muskingum, muskingum_mann, or muskingum_lake'
-        STOP
+        Inputerror_flag = 1
       ENDIF
 
       IF ( NsubOutON_OFF==1 .AND. Nsub==0 ) THEN
@@ -987,27 +987,22 @@
       SUBROUTINE check_dimens()
       USE PRMS_MODULE
       IMPLICIT NONE
-! Local Variables
-      INTEGER :: ierr
 !***********************************************************************
-      ierr = 0
       IF ( Nhru==0 .OR. Nssr==0 .OR. Ngw==0 ) THEN
         PRINT *, 'ERROR, nhru, nssr, and ngw must be > 0: nhru=', Nhru, ', nssr=', Nssr, ', ngw=', Ngw
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Nssr/=Nhru .OR. Ngw/=Nhru ) THEN
         PRINT *, 'ERROR, nhru, nssr, and ngw must equal: nhru=', Nhru, ', nssr=', Nssr, ', ngw=', Ngw
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
       IF ( Ndepl==0 ) THEN
         PRINT *, 'ERROR, ndepl must be > 0: ndepl=', Ndepl
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
       IF ( Ndeplval/=Ndepl*11 ) THEN
         PRINT *, 'ERROR, ndeplval must be = ndepl*11: ndeplval:', Ndeplval, ', ndepl=', Ndepl
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
-
-      IF ( ierr==1 ) STOP
 
       IF ( Model==DOCUMENTATION ) THEN
         IF ( Ntemp==0 ) Ntemp = 1
@@ -1128,14 +1123,13 @@
 !***********************************************************************
 !     check module names
 !***********************************************************************
-      SUBROUTINE check_module_names()
+      SUBROUTINE check_module_names(Inputerror_flag)
       USE PRMS_MODULE, ONLY: Temp_module, Precip_module, Et_module, Solrad_module, &
      &    Transp_module, Srunoff_module, Strmflow_module
       IMPLICIT NONE
-! Local Variables
-      INTEGER :: ierr
+! Arguments
+      INTEGER, INTENT(INOUT) :: Inputerror_flag
 !***********************************************************************
-      ierr = 0
       IF ( Temp_module(:14)=='temp_1sta_prms' ) THEN
         PRINT *, 'WARNING, deprecated temp_module value, change temp_1sta_prms to temp_1sta'
         Temp_module = 'temp_1sta'
@@ -1147,7 +1141,7 @@
         Temp_module = 'temp_dist2'
       ELSEIF ( Temp_module(:9)=='temp_2sta' ) THEN
         PRINT *, 'ERROR, module temp_2sta_prms not available, use a different temp_module'
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
 
       IF ( Precip_module(:11)=='precip_prms' ) THEN
@@ -1164,19 +1158,19 @@
       IF ( Temp_module(:8)=='ide_dist' .AND. Precip_module(:8)/='ide_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if ide_dist is specified for temp_module,', &
      &        'it also must be specified for precip_module: ', Precip_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Precip_module(:8)=='ide_dist' .AND. Temp_module(:8)/='ide_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if ide_dist is specified for precip_module,', &
      &        'it also must be specified for temp_module: ', Temp_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Temp_module(:8)=='xyz_dist' .AND. Precip_module(:8)/='xyz_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if xyz_dist is specified for temp_module,', &
      &        'it also must be specified for precip_module: ', Precip_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' .AND. Temp_module(:8)/='xyz_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if xyz_dist is specified for precip_module,', &
      &        'it also must be specified for temp_module: ', Temp_module
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
 
       IF ( Transp_module(:18)=='transp_tindex_prms' ) THEN
@@ -1192,7 +1186,7 @@
         Et_module = 'potet_pan'
       ELSEIF ( Et_module(:15)=='potet_epan_prms' ) THEN
         PRINT *, 'ERROR, deprecated et_module value, change potet_epan_prms to potet_pan'
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Et_module(:20)=='potet_hamon_hru_prms' ) THEN
         PRINT *, 'WARNING, deprecated et_module value, change potet_hamon_hru_prms to potet_hamon_hru'
         Et_module = 'potet_hamon'
@@ -1228,9 +1222,9 @@
         Strmflow_module = 'strmflow'
       ELSEIF ( Strmflow_module(:13)=='strmflow_lake' ) THEN
         PRINT *, 'ERROR, module strmflow_lake not available, use a different strmflow_module, such as muskingum_lake'
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
-      IF ( ierr==1 ) STOP
+
       END SUBROUTINE check_module_names
 
 !***********************************************************************
@@ -1310,6 +1304,6 @@
             ierr = 1
           ENDIF
         ENDIF
-        IF ( ierr==1 ) STOP
+        IF ( ierr==1 ) ERROR STOP -3
       ENDIF
       END SUBROUTINE call_modules_restart

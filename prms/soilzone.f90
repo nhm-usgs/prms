@@ -126,7 +126,7 @@
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2020-01-10 17:04:00Z'
+      Version_soilzone = 'soilzone.f90 2020-04-28 17:04:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -458,7 +458,7 @@
 !     &     'decimal fraction', Snowevap_aet_frac)/=0 ) CALL read_error(3, 'snowevap_aet_frac')
 
       IF ( GSFLOW_flag==1 .OR. Model==99 ) THEN
-        IF ( Nhrucell<-1 ) STOP 'ERROR, dimension nhrucell not specified > 0'
+        IF ( Nhrucell<-1 ) CALL error_stop('dimension nhrucell not specified > 0')
         ALLOCATE ( Gravity_stor_res(Nhrucell) )
         IF ( declvar(MODNAME, 'gravity_stor_res', 'nhrucell', Nhrucell, 'real', &
      &       'Storage in each gravity-flow reservoir', &
@@ -608,7 +608,7 @@
       USE PRMS_SNOW, ONLY: Snowcov_area
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: init_basin_vars, checkdim_bounded_limits
+      EXTERNAL :: init_basin_vars, checkdim_bounded_limits, error_stop
       INTEGER, EXTERNAL :: getparam
       INTRINSIC MIN, DBLE
 ! Local Variables
@@ -817,10 +817,8 @@
         ENDDO
         ALLOCATE ( Hru_gvr_index(Max_gvrs, Nhru) )
         IF ( Nhru==Nhrucell ) THEN
-          IF ( Max_gvrs/=1 ) THEN
-            PRINT *, 'ERROR, nhru=nhrucell, but, gvr_hru_id array specifies more than one GVR for an HRU'
-            STOP
-          ENDIF
+          IF ( Max_gvrs/=1 ) &
+     &         CALL error_stop('nhru=nhrucell, but, gvr_hru_id array specifies more than one GVR for an HRU')
           DO i = 1, Nhru
             Hru_gvr_index(1, i) = i
           ENDDO
@@ -873,7 +871,7 @@
 ! Functions
       INTRINSIC MIN, ABS, MAX, SNGL, DBLE
       EXTERNAL compute_soilmoist, compute_szactet, compute_cascades, compute_gravflow
-      EXTERNAL compute_interflow, compute_gwflow, init_basin_vars, print_date
+      EXTERNAL compute_interflow, compute_gwflow, init_basin_vars, print_date, error_stop
 ! Local Variables
       INTEGER :: i, k, update_potet
       REAL :: dunnianflw, interflow, perv_area, harea
@@ -887,7 +885,7 @@
       szrun = 0
 
       IF ( GSFLOW_flag==1 ) THEN
-        IF ( Kkiter==0 ) STOP 'ERROR, problem with KKITER, equals 0'
+        IF ( Kkiter==0 ) CALL error_stop('problem with KKITER, equals 0')
 
         IF ( Kkiter==1 ) THEN
 ! It0 variables used with MODFLOW integration to save iteration states.
@@ -1561,6 +1559,8 @@
 ! Arguments
       REAL, INTENT(IN) :: Coef_lin, Coef_sq, Ssres_in
       REAL, INTENT(INOUT) :: Storage, Inter_flow
+! Functions
+      EXTERNAL error_stop
 ! Local Variables
       REAL :: c1, c2, c3, sos
 !***********************************************************************
@@ -1575,7 +1575,7 @@
       ELSEIF ( Coef_sq>0.0 ) THEN
         c3 = SQRT(Coef_lin**2.0+4.0*Coef_sq*Ssres_in)
         sos = Storage - ((c3-Coef_lin)/(2.0*Coef_sq))
-        IF ( c3==0.0 ) STOP 'ERROR, in compute_interflow sos=0, please contact code developers'
+        IF ( c3==0.0 ) CALL error_stop('in compute_interflow sos=0, please contact code developers')
         c1 = Coef_sq*sos/c3
         c2 = 1.0 - EXP(-c3)
         IF ( 1.0+c1*c2>0.0 ) THEN
