@@ -157,7 +157,7 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) STOP 1201
       IF ( Double_vars==1 ) THEN
         ALLOCATE ( Nsegment_var_dble(Nsegment, NsegmentOutVars) )
         Nsegment_var_dble = 0.0D0
@@ -208,7 +208,7 @@
           fileName = NsegmentOutBaseFileName(:numchars(NsegmentOutBaseFileName))//NsegmentOutVar_names(jj)(:Nc_vars(jj))//'.csv'
           !print *, fileName
           CALL PRMS_open_output_file(Dailyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) STOP 'in nsegment_summary, daily'
+          IF ( ios/=0 ) STOP 1202
           IF ( NsegmentOutON_OFF==1 ) THEN
             WRITE ( Dailyunit(jj), Output_fmt2 ) (j, j=1,Nsegment)
           ELSE
@@ -220,12 +220,12 @@
             fileName = NsegmentOutBaseFileName(:numchars(NsegmentOutBaseFileName))//NsegmentOutVar_names(jj)(:Nc_vars(jj))// &
       &                 '_meanyearly.csv'
             CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nsegment_summary, mean yearly'
+            IF ( ios/=0 ) STOP 1203
           ELSE  !IF ( NsegmentOut_freq==6 ) THEN
             fileName = NsegmentOutBaseFileName(:numchars(NsegmentOutBaseFileName))//NsegmentOutVar_names(jj)(:Nc_vars(jj))// &
       &                 '_yearly.csv'
             CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nsegment_summary, yearly'
+            IF ( ios/=0 ) STOP 1204
           ENDIF
           IF ( NsegmentOutON_OFF==1 ) THEN
             WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nsegment)
@@ -238,12 +238,12 @@
             fileName = NsegmentOutBaseFileName(:numchars(NsegmentOutBaseFileName))//NsegmentOutVar_names(jj)(:Nc_vars(jj))// &
      &                 '_meanmonthly.csv'
             CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nsegment_summary, mean monthly'
+            IF ( ios/=0 ) STOP 1205
           ELSE
             fileName = NsegmentOutBaseFileName(:numchars(NsegmentOutBaseFileName))//NsegmentOutVar_names(jj)(:Nc_vars(jj))// &
      &                  '_monthly.csv'
             CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nsegment_summary, monthly'
+            IF ( ios/=0 ) STOP 1206
           ENDIF
           IF ( NsegmentOutON_OFF==1 ) THEN
             WRITE ( Monthlyunit(jj), Output_fmt2 ) (j, j=1,Nsegment)

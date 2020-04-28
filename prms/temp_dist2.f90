@@ -84,7 +84,7 @@
 
       IF ( Ntemp<2 .AND. Model/=99 ) THEN
         PRINT *, 'ERROR, temp_dist2 requires at least 2 air-temperature-measurement stations'
-        STOP
+        STOP 2301
       ENDIF
 
 ! added by Mastin 5/8/98
@@ -393,7 +393,7 @@
       IF ( allmissing==0 ) THEN
         PRINT *,'ERROR, all temperature stations have missing data'
         CALL print_date(1)
-        STOP
+        STOP 2301
       ENDIF
 
       IF ( ntotx>0 ) THEN

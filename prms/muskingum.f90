@@ -297,7 +297,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            STOP
+            STOP 901
           ENDIF
 
           ! Seg_outflow (the mean daily flow rate for each segment) will be the average of the hourly values.

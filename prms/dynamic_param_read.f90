@@ -378,7 +378,10 @@
         ENDIF
       ENDIF
 
-      IF ( istop==1 ) STOP 'ERROR in dynamic_param_read initialize procedure'
+      IF ( istop==1 ) then
+         print *, 'ERROR in dynamic_param_read initialize procedure'
+         STOP 501
+      endif
 
       IF ( Print_debug>-2 ) THEN
         Output_unit = get_ftnunit(520)
@@ -842,7 +845,7 @@
         ENDIF
       ENDIF
 
-      IF ( istop==1 ) STOP
+      IF ( istop==1 ) STOP 502
 
  9001 FORMAT (/, 'ERROR, dynamic parameter', A, ' <', F0.7, ' for HRU:', I0, /, 9X, 'value:', F0.7) !, ' set to', F0.7)
  9002 FORMAT (/, 'ERROR, dynamic parameter causes soil_rechr_max:', F0.7, ' > soil_moist_max:', F0.7, ' for HRU:', I0)

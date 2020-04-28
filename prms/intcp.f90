@@ -424,7 +424,8 @@
                 Basin_hru_apply = Basin_hru_apply + DBLE( Gain_inches(i)*harea )
                 Basin_net_apply = Basin_net_apply + DBLE( Net_apply(i)*harea )
               ELSE
-                STOP 'ERROR, canopy transfer attempted to HRU with cov_den = 0.0'
+                print *, 'STOP ERROR, canopy transfer attempted to HRU with cov_den = 0.0'
+                STOP 701
               ENDIF
             ENDIF
           ENDIF

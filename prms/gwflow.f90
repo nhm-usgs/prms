@@ -503,7 +503,7 @@
             IF ( gwstor<0.0D0 ) THEN
               IF ( Print_debug>-1 ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, &
      &                                       ' is < 0.0 with gwstor_min active', gwstor
-!              STOP
+!              STOP 601
             ENDIF
             gwstor_last = gwstor
             gwstor = Gwstor_minarea(i)

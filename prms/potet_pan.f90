@@ -55,7 +55,7 @@
         CALL print_module(Version_potet_pan, 'Potential Evapotranspiration', 90)
         MODNAME = 'potet_pan'
 
-        IF ( Nevap==0 ) STOP 'ERROR, potet_pan module selected, but nevap=0'
+        IF ( Nevap==0 ) STOP 1501
         ALLOCATE ( Last_pan_evap(Nevap) )
 
       ELSEIF ( Process(:4)=='init' ) THEN

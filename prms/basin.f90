@@ -437,7 +437,7 @@
         ENDDO
       ENDIF
 
-      IF ( basinit==1 ) STOP
+      IF ( basinit==1 ) STOP 101
 
       Active_hrus = j
       Active_area = Land_area + Water_area

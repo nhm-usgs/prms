@@ -94,7 +94,7 @@
 
         PRMS_versn = 'call_modules.f90 2019-05-30 14:20:00Z'
 
-        IF ( check_dims()/=0 ) STOP
+        IF ( check_dims()/=0 ) STOP 301
 
         IF ( Print_debug>-2 ) THEN
           PRINT 10, PRMS_VERSION
@@ -180,7 +180,7 @@
         IF ( Save_vars_to_file==1 ) THEN
           nc = numchars(Var_save_file)
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file(:nc), 'var_save_file', 1, iret)
-          IF ( iret/=0 ) STOP
+          IF ( iret/=0 ) STOP 302
           CALL call_modules_restart(0)
         ENDIF
       ENDIF
@@ -192,7 +192,7 @@
           call_modules = 0
           RETURN
         ELSE
-          STOP
+          STOP 303
         ENDIF
       ENDIF
 
@@ -268,7 +268,7 @@
         call_modules = frost_date()
         IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
         IF ( Process_flag==0 ) RETURN
-        IF ( Process_flag==3 ) STOP
+        IF ( Process_flag==3 ) STOP 304
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
@@ -418,10 +418,10 @@
      &          'parameter_check_flag to 1 to verify that those calibration', &
      &          'parameters have valid and compatible values.'
         ENDIF
-        IF ( Parameter_check_flag==2 .OR. Inputerror_flag==1 ) STOP
+        IF ( Parameter_check_flag==2 .OR. Inputerror_flag==1 ) STOP 305
         IF ( Model==10 ) THEN
           CALL convert_params()
-          STOP
+          STOP 306
         ENDIF
         IF ( Print_debug>-2 ) &
      &       PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day, EQULS
@@ -487,7 +487,7 @@
         Model = 99
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
-        STOP
+        STOP 307
       ENDIF
 
       ! get simulation start_time and end_time
@@ -495,22 +495,28 @@
       DO j = 1, 6
         IF ( control_integer_array(Starttime(j), j, 'start_time')/=0 ) THEN
           PRINT *, 'ERROR, start_time, index:', j, 'value: ', Starttime(j)
-          STOP
+          STOP 308
         ENDIF
       ENDDO
       Start_year = Starttime(1)
-      IF ( Start_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
+      IF ( Start_year<0 ) then
+         print *, 'ERROR, control parameter start_time must be specified'
+         STOP 309
+      endif
       Start_month = Starttime(2)
       Start_day = Starttime(3)
       Endtime = -1
       DO j = 1, 6
         IF ( control_integer_array(Endtime(j), j, 'end_time')/=0 ) THEN
           PRINT *, 'ERROR, end_time, index:', j, 'value: ', Endtime(j)
-          STOP
+          STOP 310
         ENDIF
       ENDDO
       End_year = Endtime(1)
-      IF ( End_year<0 ) STOP 'ERROR, control parameter start_time must be specified'
+      IF ( End_year<0 ) then
+         print *, 'ERROR, control parameter start_time must be specified'
+         STOP 311
+      endif
       End_month = Endtime(2)
       End_day = Endtime(3)
 
@@ -521,7 +527,7 @@
       IF ( control_string(Model_output_file, 'model_output_file')/=0 ) CALL read_error(5, 'model_output_file')
       IF ( Print_debug>-2 ) THEN
         CALL PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
-        IF ( iret/=0 ) STOP
+        IF ( iret/=0 ) STOP 312
       ENDIF
       IF ( control_file_name(Model_control_file)/=0 ) CALL read_error(5, 'control_file_name')
       IF ( control_string(Param_file, 'param_file')/=0 ) CALL read_error(5, 'param_file')
@@ -530,7 +536,7 @@
       IF ( Init_vars_from_file>0 ) THEN
         IF ( control_string(Var_init_file, 'var_init_file')/=0 ) CALL read_error(5, 'var_init_file')
         CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
-        IF ( iret/=0 ) STOP
+        IF ( iret/=0 ) STOP 313
       ENDIF
       IF ( Save_vars_to_file==1 ) THEN
         IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
@@ -806,12 +812,15 @@
       IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
       IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
 
-      IF ( call_modules('setdims')/=0 ) STOP 'ERROR, in setdims'
+      IF ( call_modules('setdims')/=0 ) then
+         print *, 'ERROR, in setdims'
+         STOP 314
+      endif
 
       IF ( Inputerror_flag==1 ) THEN
         PRINT '(//,A,/,A)', '**FIX input errors in your Control File to continue**', &
      &        'NOTE: some errors may be due to use of defalut values'
-        STOP
+        STOP 315
       ENDIF
 
       setdims = 0
@@ -933,7 +942,7 @@
           ierr = 1
         ENDIF
       ENDIF
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) STOP 316
 
       Stream_order_flag = 0
       IF ( Nsegment>0 .AND. Strmflow_flag>1 .AND. Model/=0 ) THEN
@@ -943,7 +952,7 @@
       IF ( Nsegment<1 .AND. Model/=99 ) THEN
         IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
-          STOP
+          STOP 317
         ENDIF
       ENDIF
 
@@ -986,7 +995,7 @@
         ierr = 1
       ENDIF
 
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) STOP 318
 
       IF ( Model==99 ) THEN
         IF ( Ntemp==0 ) Ntemp = 1
@@ -1209,7 +1218,7 @@
         PRINT *, 'ERROR, module strmflow_lake not available, use a different strmflow_module, such as muskingum_lake'
         ierr = 1
       ENDIF
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) STOP 319
       END SUBROUTINE check_module_names
 
 !***********************************************************************
@@ -1289,6 +1298,6 @@
             ierr = 1
           ENDIF
         ENDIF
-        IF ( ierr==1 ) STOP
+        IF ( ierr==1 ) STOP 320
       ENDIF
       END SUBROUTINE call_modules_restart

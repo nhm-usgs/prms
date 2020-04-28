@@ -92,7 +92,7 @@
         IF ( control_string(Csv_output_file, 'csv_output_file')/=0 ) CALL read_error(5, 'csv_output_file')
         IF ( Model/=99 ) THEN
           CALL PRMS_open_output_file(Iunit, Csv_output_file, 'csv_output_file', 0, ios)
-          IF ( ios/=0 ) STOP
+          IF ( ios/=0 ) STOP 1701
         ENDIF
 
         IF ( declvar(MODNAME, 'basin_total_storage', 'one', 1, 'double', &
@@ -242,15 +242,28 @@
 !***********************************************************************
       IF ( control_string(statvar_file, 'stat_var_file')/=0 ) CALL read_error(5, 'stat_var_file')
       CALL PRMS_open_input_file(inunit, statvar_file, 'stat_var_file', 0, ios)
-      IF ( ios/=0 ) STOP 'ERROR, opening statvar file'
+
+      IF ( ios/=0 ) then
+         print *, 'ERROR, opening statvar file'
+         STOP 1702
+      endif
+
       statvar_file_csv = statvar_file(:numchars(statvar_file))//'.csv'
       CALL PRMS_open_output_file(outunit, statvar_file_csv, 'statvar_csv', 0, ios)
-      IF ( ios/=0 ) STOP 'ERROR, opening statvar CSV file'
+
+      IF ( ios/=0 ) then
+         print *, 'ERROR, opening statvar CSV file'
+         STOP 1703
+      endif
+
       READ ( inunit, * ) numvariables
       ALLOCATE ( varname(numvariables), varindex(numvariables), values(numvariables), nc(numvariables) )
       DO i = 1, numvariables
         READ ( inunit, '(A)', IOSTAT=ios ) varname(i)
-        IF ( ios/=0 ) STOP 'ERROR, reading statvar file'
+        IF ( ios/=0 ) then
+           print *, 'ERROR, reading statvar file'
+           STOP 1704
+        endif
         num = numchars(varname(i))
         READ ( varname(i)(num+1:32), '(I5)' ) varindex(i)
         WRITE ( varname(i), '(A,I0)' ) varname(i)(:num)//'_', varindex(i)
@@ -268,7 +281,7 @@
           PRINT *, 'ERROR, reading statvar file values, IOSTAT:', ios
           PRINT *, ts, yr, mo, day, hr, 'number of variables:', numvariables
           PRINT *, (values(i), i = 1, numvariables )
-          STOP 
+          STOP 1705
         ENDIF
         WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, day
         WRITE ( outunit, fmt2 ) chardate, (values(i), i = 1, numvariables )

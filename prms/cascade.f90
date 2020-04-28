@@ -224,7 +224,7 @@
 !        ALLOCATE ( Gwr_down_fracwt(Ndown,Ngw) )
         IF ( Cascadegw_flag==1 ) THEN
           CALL initgw_cascade(iret)
-          IF ( iret==1 ) STOP
+          IF ( iret==1 ) STOP 401
         ELSE ! cascadegw_flag=2 so GWR cascades set to HRU cascades
           Gwr_type = Hru_type
           Active_gwrs = Active_hrus
@@ -248,7 +248,7 @@
           ENDDO
         ENDIF
       ENDIF
-      IF ( cascinit/=0 .OR. iret/=0 ) STOP
+      IF ( cascinit/=0 .OR. iret/=0 ) STOP 402
 
       IF ( Print_debug==13 ) THEN
         IF ( Cascade_flag>0 ) THEN

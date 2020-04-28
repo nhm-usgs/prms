@@ -153,7 +153,8 @@
             ENDIF
             IF ( dim/=Nhru ) THEN
               PRINT '(/,2(A,I0))', '***CBH file dimension incorrect*** nhru= ', Nhru, ' CBH dimension= ', dim, ' File: '//Fname
-              STOP 'ERROR: update Control File with correct CBH files'
+              print *, 'ERROR: update Control File with correct CBH files'
+              STOP 2401
             ENDIF
             IF ( Cbh_binary_flag==0 ) THEN
               READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
@@ -399,7 +400,7 @@
       ELSEIF ( Iflag==16 ) THEN
         PRINT *, 'ERROR, declared parameter ', Name
       ENDIF
-      STOP
+      STOP 2402
       END SUBROUTINE read_error
 
 !**********************************************************************
@@ -412,7 +413,7 @@
       INTEGER, INTENT(IN) :: Retcode
 !**********************************************************************
       PRINT 9001, Modname, Arg, Retcode
-      STOP
+      STOP 2403
  9001 FORMAT ('ERROR in ', A, ' module, arg = ', A, /, 'Return val = ', I0)
       END SUBROUTINE module_error
 
@@ -531,7 +532,7 @@
         time_array = Starttime
       ELSE
         PRINT *, 'ERROR, invalid argument to compute Julian Day: ', Date_type
-        STOP
+        STOP 2404
       ENDIF
       year = time_array(1)
       month = time_array(2)
@@ -613,7 +614,7 @@
       ENDIF
       IF ( found==0 ) THEN
         PRINT *, 'ERROR, invalid year type argument to compute Julian Day: ', Year_type
-        STOP
+        STOP 2405
       ENDIF
 
       ! set actual Julian Day
@@ -801,7 +802,7 @@
       IF ( ios/=0 ) THEN
         WRITE ( *, '(/,A,/,A,/)' ) 'ERROR opening water balance output file:', Fname(:nchars), &
      &                             'check to be sure the pathname is valid and the file is not open'
-        STOP
+        STOP 2406
       ENDIF
       END SUBROUTINE PRMS_open_module_file
 
@@ -824,7 +825,7 @@
         PRINT *, 'PRMS code error, string longer than:', MAXFILE_LENGTH, ' referenced'
         PRINT *, 'string length:', numchars, ' value: ', String
         PRINT *, 'Contact PRMS program support'
-        STOP
+        STOP 2407
       ENDIF
       END FUNCTION numchars
 
@@ -872,7 +873,7 @@
 !***********************************************************************
       IF ( Restart_module/=Modname ) THEN
         PRINT *, 'ERROR READING RESTART FILE, expecting module: ', Modname, ' found: ', Restart_module
-        STOP
+        STOP 2408
       ENDIF
       END SUBROUTINE check_restart
 

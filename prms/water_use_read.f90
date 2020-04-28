@@ -1,4 +1,3 @@
-!***********************************************************************
 ! Read and makes available water-use data (diversions and gains)
 ! from files pre-processed Data Files available for other PRMS modules
 !***********************************************************************
@@ -144,7 +143,7 @@
 !              cfs_value = Gwres_stor(id_src)*factor
 !              IF ( cfs_value<transfer_rate_dble ) THEN
 !                PRINT *, 'ERROR, not enough storage for transfer in GWR:', id_src, ' Date:', Nowyear, Nowmonth, Nowday
-!                STOP
+!                STOP 2501
 !              ENDIF
 !              Gwres_stor(id_src) = Gwres_stor(id_src) - transfer_rate_dble/factor
             ENDIF
@@ -167,7 +166,7 @@
               IF ( cfs_value<transfer_rate_dble ) THEN
                 PRINT *, 'ERROR, not enough storage for transfer in surface-depression storage:', &
      &                   id_src, ' Date:', Nowyear, Nowmonth, Nowday
-                STOP
+                STOP 2502
               ENDIF
               Dprst_vol_open(id_src) = Dprst_vol_open(id_src) - transfer_rate_dble/Cfs_conv
             ENDIF
@@ -201,7 +200,7 @@
 !             IF ( cfs_value<transfer_rate_dble ) THEN
 !               PRINT *, 'ERROR, not enough storage for transfer in lake:', &
 !    &                   id_src, ' Date:', Nowyear, Nowmonth, Nowday
-!               STOP
+!               STOP 2503
 !             ENDIF
               !Lake_vol(id_src) = Lake_vol(id_src) - transfer_rate_dble
             ENDIF
@@ -561,7 +560,9 @@
           Lake_gain_tot = 0.0
         ENDIF
 
-        IF ( istop==1 ) STOP 'ERROR in water_use_read module'
+        IF ( istop==1 ) then
+           print *, 'ERROR in water_use_read module'
+        endif
 
         ! type 6
         Soilzone_gain = 0.0
@@ -611,7 +612,7 @@
           READ ( Iunit, * ) Next_yr, Next_mo, Next_day, src_id, dest_type, dest_id, transfer
           IF ( dest_type>8 ) THEN
             PRINT *, 'ERROR, destination flag>8 for date:', Next_yr, Next_mo, Next_day, ' destination:', dest_type
-            STOP
+            STOP 2504
           ENDIF
           CALL check_event(Src_type, dest_type, src_id, dest_id, ignore)
           IF ( ignore==0 ) CALL set_transfers(Src_type, src_id, dest_type, dest_id, transfer)
@@ -642,19 +643,21 @@
       Ignore = 0
        IF ( Src_type>5 ) THEN
         PRINT *, 'ERROR, invalid src_type:', Src_type
-        STOP 'Valid src_type values are 1 to 5'
+        STOP 2505
       ENDIF
       IF ( Src_type==1 ) THEN
         IF ( Segment_transferON_OFF==0 ) THEN
           PRINT *, 'Warning, specified a stream segment transfer, but segment_transferON_OFF=0, transfer ignored'
           Ignore = 1
         ELSEIF ( Segment_transfers_on==0 ) THEN
-          STOP 'ERROR, specified a stream segment transfer, but stream segments not present in model'
+          print *, 'ERROR, specified a stream segment transfer, but stream segments not present in model'
+          STOP 2506
         ENDIF
       ENDIF
       IF ( Dest_type==1 ) THEN
         IF ( Strmflow_flag<2 ) THEN
-          STOP 'ERROR, specified a transfer to stream segment, but stream segments not present in model'
+          print *, 'ERROR, specified a transfer to stream segment, but stream segments not present in model'
+          STOP 2506
         ELSE
          Segment_transfers_on = 1
         ENDIF
@@ -664,19 +667,23 @@
           PRINT *, 'Warning, specified a external transfer, but external_transferON_OFF=0, transfer ignored'
           Ignore = 1
         ELSEIF ( External_transfers_on==0 ) THEN
-          STOP 'ERROR, specified a external transfer, but external locations not present in model'
+          print *, 'ERROR, specified a external transfer, but external locations not present in model'
+          STOP 2507
         ENDIF
       ENDIF
       IF ( Dest_type==4 ) THEN
         IF ( Nexternal==0 ) THEN
-          STOP 'ERROR, specified a transfer to external location, but nexternal = 0'
+          print *, 'ERROR, specified a transfer to external location, but nexternal = 0'
+          STOP 2508
         ELSE
           External_transfers_on = 1
         ENDIF
       ENDIF
       IF ( Dest_type==7 ) THEN
-        IF ( Consumed_transfers_on==0 ) &
-     &       STOP 'ERROR, specified a consumption-use transfer, but consumption locations not present in model'
+        IF ( Consumed_transfers_on==0 ) then
+            print *, 'ERROR, specified a consumption-use transfer, but consumption locations not present in model'
+            STOP 2509
+        endif
       ENDIF
       IF ( Src_type==2 ) THEN
         IF ( Gwr_transferON_OFF==0 ) THEN
@@ -690,12 +697,14 @@
           PRINT *, 'Warning, specified a external transfer, but dprst_transferON_OFF=0, transfer ignored'
           Ignore = 1
         ELSEIF ( Dprst_transfers_on==0 ) THEN
-          STOP 'ERROR, specified a surface-depression transfer, but dprst_flag=0'
+          print *, 'ERROR, specified a surface-depression transfer, but dprst_flag=0'
+          STOP 2510
         ENDIF
       ENDIF
       IF ( Dest_type==3 ) THEN
         IF ( Dprst_flag==0 ) THEN
-          STOP 'ERROR, specified a transfer to depression storage, but dprst_flag = 0'
+          print *, 'ERROR, specified a transfer to depression storage, but dprst_flag = 0'
+          STOP 2511
         ELSE
           Dprst_transfers_on = 1
         ENDIF
@@ -705,12 +714,14 @@
           PRINT *, 'Warning, specified a lake transfer, but lake_transferON_OFF=0, transfer ignored'
           Ignore = 1
         ELSEIF ( Lake_transfers_on==0 ) THEN
-          STOP 'ERROR, specified a lake transfer, but lake module is not active'
+          print *, 'ERROR, specified a lake transfer, but lake module is not active'
+          STOP 2512
         ENDIF
       ENDIF
       IF ( Dest_type==5 ) THEN
         IF ( Strmflow_flag/=3 ) THEN
-          STOP 'ERROR, specified a transfer to lake, but lake simulation is inactive'
+          print *, 'ERROR, specified a transfer to lake, but lake simulation is inactive'
+          STOP 2512
         ELSE
           Lake_transfers_on = 1
         ENDIF
@@ -746,7 +757,7 @@
         CALL check_transfer('lake storage', Src_type, Src_id, Dest_type, Dest_id, Diversion)
       ELSE
         PRINT *, 'ERROR, invalid src_type:', Src_type
-        STOP
+        STOP 2511
       ENDIF
       END SUBROUTINE set_transfers
 
@@ -818,5 +829,5 @@
       PRINT ('(3A, I5)'), 'ERROR, too many water-use ', ctype, ': specified nwateruse=', Nwateruse
       PRINT *, '       increase nwateruse to number of unique transfers'
       PRINT *, Nowyear, Nowmonth, Nowday
-      STOP
+      STOP 2512
       END SUBROUTINE nwateruse_error

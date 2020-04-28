@@ -141,7 +141,7 @@
           Basin_windspeed = 0.0D0
         ENDIF
 
-        IF ( ierr/=0 ) STOP
+        IF ( ierr/=0 ) STOP 401
 
         missing = 0
         DO jj = 1, Active_hrus
@@ -214,7 +214,7 @@
 
         IF ( missing==1 .OR. ierr==1 ) THEN
           CALL print_date(0)
-          STOP
+          STOP 402
         ENDIF
 
         IF ( Climate_temp_flag==1 ) THEN
@@ -446,7 +446,10 @@
           ENDIF
         ENDIF
 
-        IF ( istop==1 ) STOP 'ERROR in climate_hru'
+        IF ( istop==1 ) then
+           print *, 'ERROR in climate_hru'
+           STOP 403
+        endif
 
       ENDIF
 

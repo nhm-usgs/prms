@@ -96,7 +96,10 @@
       Mapflg = 1
       Numvalues = Nhru
       IF ( (Nhru/=Ngwcell .AND. Ngwcell/=0) .OR. mapOutON_OFF==2 ) THEN
-        IF ( Ngwcell==0 ) STOP 'ERROR, dimension ngwcell must be specified > 0'
+        IF ( Ngwcell==0 ) then
+            print *, 'ERROR, dimension ngwcell must be specified > 0'
+            STOP 801
+        endif
         Mapflg = 0
         Numvalues = Ngwcell
       ENDIF
@@ -106,7 +109,8 @@
           IF ( Model==99 ) THEN
             Nhrucell = 1
           ELSE
-            STOP 'ERROR, in map_results, nhrucell = 0 and must be > 0'
+            print *, 'STOP ERROR, in map_results, nhrucell = 0 and must be > 0'
+            STOP 802
           ENDIF
         ENDIF
         ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell), Map_var_id(Ngwcell) )

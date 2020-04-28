@@ -75,7 +75,7 @@
 
       IF ( Nrain<2 .AND. Model/=99 ) THEN
         PRINT *, 'ERROR, precip_dist2 requires at least 2 precipitation measurement stations'
-        STOP
+        STOP 1601
       ENDIF
 
       ALLOCATE ( N_psta(Nhru), Dist2(Nhru, Nrain) )
@@ -362,7 +362,7 @@
         IF ( allmissing==0 ) THEN
           PRINT *,'ERROR, all precipitation stations have missing data'
           CALL print_date(1)
-          STOP
+          STOP 1602
         ENDIF
 
         ppt = SNGL( ppt_dble )

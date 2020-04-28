@@ -160,7 +160,7 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) STOP
+      IF ( ierr==1 ) STOP 1101
       IF ( Double_vars==1 ) THEN
         ALLOCATE ( Nhru_var_dble(Nhru, NhruOutVars) )
         Nhru_var_dble = 0.0D0
@@ -214,7 +214,7 @@
           fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'.csv'
           !print *, fileName
           CALL PRMS_open_output_file(Dailyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) STOP 'in nhru_summary'
+          IF ( ios/=0 ) STOP 1102
           IF ( NhruOutON_OFF==1 ) THEN
             WRITE ( Dailyunit(jj), Output_fmt2 ) (j, j=1,Nhru)
           ELSE
@@ -225,11 +225,11 @@
           IF ( NhruOut_freq==5 ) THEN
             fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_meanyearly.csv'
             CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nhru_summary, mean yearly'
+            IF ( ios/=0 ) STOP 1103
           ELSE  !IF ( NhruOut_freq==6 ) THEN
             fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_yearly.csv'
             CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nhru_summary, yearly'
+            IF ( ios/=0 ) STOP 1104
           ENDIF
           IF ( NhruOutON_OFF==1 ) THEN
             WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nhru)
@@ -242,11 +242,11 @@
             fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))// &
      &                 '_meanmonthly.csv'
             CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nhru_summary, mean monthly'
+            IF ( ios/=0 ) STOP 1105
           ELSE
             fileName = NhruOutBaseFileName(:numchars(NhruOutBaseFileName))//NhruOutVar_names(jj)(:Nc_vars(jj))//'_monthly.csv'
             CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-            IF ( ios/=0 ) STOP 'in nhru_summary, monthly'
+            IF ( ios/=0 ) STOP 1107
           ENDIF
           IF ( NhruOutON_OFF==1 ) THEN
             WRITE ( Monthlyunit(jj), Output_fmt2 ) (j, j=1,Nhru)

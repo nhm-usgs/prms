@@ -110,7 +110,7 @@
           ENDIF
         ENDIF
         
-        IF ( ierr==1 ) STOP
+        IF ( ierr==1 ) STOP 2601
 
 !***Clean-up Procedure***
       ELSEIF ( Process(:5)=='clean' ) THEN

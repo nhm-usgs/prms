@@ -93,10 +93,10 @@
         ! Check to see if in a daily or subdaily time step
         IF ( Timestep_hours>24.0 ) THEN
           PRINT *, 'ERROR, timestep > daily, fix Data File, timestep:', Timestep_hours
-          STOP
+          STOP 1801
         ELSEIF ( Timestep_hours<24.0 ) THEN
           PRINT *, 'ERROR, timestep < daily for daily model, fix Data File', Timestep_hours
-          STOP
+          STOP 1802
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN

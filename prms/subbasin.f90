@@ -75,7 +75,10 @@
       MODNAME = 'subbasin'
 
       IF ( Nsub==0 ) THEN
-        IF ( Model/=99 ) STOP 'ERROR, nsub=0 when subbasin module called'
+        IF ( Model/=99 ) then
+           print *, 'ERROR, nsub=0 when subbasin module called'
+           STOP 2101
+        endif
         Nsub = 1
       ENDIF
 

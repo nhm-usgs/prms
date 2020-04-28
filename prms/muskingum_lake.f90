@@ -235,7 +235,7 @@
       IF ( Nratetbl>4 ) THEN
         PRINT *, 'ERROR, lake routing allows maximum of 4 rating tables'
         PRINT *, 'nratetbl specified as:', Nratetbl
-        STOP
+        STOP 1001
       ENDIF
       IF ( Nratetbl>0 ) THEN
         Ngate = getdim('ngate')
@@ -270,16 +270,28 @@
           IF ( Nstage4==0 ) Nstage4 = 1
           IF ( Ngate4==0 ) Ngate4 = 1
         ELSE
-          IF ( Nstage<1 .OR. Ngate<1 ) STOP 'ERROR, nratetbl>0 and nstage or ngate = 0'
+          IF ( Nstage<1 .OR. Ngate<1 ) then
+             print *, 'ERROR, nratetbl>0 and nstage or ngate = 0'
+             STOP 1002
+          endif
         ENDIF
         IF ( Nratetbl>1 ) THEN
-          IF ( Nstage2<1.OR.Ngate2<1 ) STOP 'ERROR, nratetbl>1 and nstage2 or ngate2 = 0'
+          IF ( Nstage2<1.OR.Ngate2<1 ) then
+             print *, 'ERROR, nratetbl>1 and nstage2 or ngate2 = 0'
+             STOP 1003
+          endif
         ENDIF
         IF ( Nratetbl>2 ) THEN
-          IF ( Nstage3<1 .OR. Ngate3<1 ) STOP 'ERROR, nratetbl>2 and nstage3 or ngate3 = 0'
+          IF ( Nstage3<1 .OR. Ngate3<1 ) then
+             print *,'ERROR, nratetbl>2 and nstage3 or ngate3 = 0'
+             STOP 1004
+          endif
         ENDIF
         IF ( Nratetbl>3 ) THEN
-          IF ( Nstage4<1 .OR. Ngate4<1 ) STOP 'ERROR, nratetbl>3 and nstage4 or ngate4 = 0'
+          IF ( Nstage4<1 .OR. Ngate4<1 ) then
+             print *, 'ERROR, nratetbl>3 and nstage4 or ngate4 = 0'
+             STOP 1005
+          endif
         ENDIF
       ENDIF
 
@@ -736,7 +748,10 @@
 
       Secondoutflow_flag = 0
       IF ( Gate_flag==1 ) THEN
-        IF ( Nratetbl<1 ) STOP 'ERROR, nratetbl = 0 and gate opening routing requested'
+        IF ( Nratetbl<1 ) then
+           print *, 'ERROR, nratetbl = 0 and gate opening routing requested'
+           STOP 1006
+        endif
         IF ( getparam(MODNAME, 'rate_table', Nstage*Ngate, 'real', Rate_table)/=0 ) CALL read_error(2, 'rate_table')
         IF ( getparam(MODNAME, 'tbl_stage', Nstage, 'real', Tbl_stage)/=0 ) CALL read_error(2, 'tbl_stage')
         IF ( getparam(MODNAME, 'tbl_gate', Ngate, 'real', Tbl_gate)/=0 ) CALL read_error(2, 'tbl_gate')
@@ -794,7 +809,11 @@
       ENDIF
 
       IF ( Puls_flag==1 ) THEN
-        IF ( Mxnsos==0 ) STOP 'ERROR, dimension mxnsos = 0 and Puls routing requested'
+        IF ( Mxnsos==0 ) then
+           print *, 'ERROR, dimension mxnsos = 0 and Puls routing requested'
+           STOP 1007
+        endif
+
         IF ( getparam(MODNAME, 'o2', Mxnsos*Nlake, 'real', O2)/=0 ) CALL read_error(2, 'o2')
         IF ( getparam(MODNAME, 's2', Mxnsos*Nlake, 'real', S2)/=0 ) CALL read_error(2, 's2')
         IF ( getparam(MODNAME, 'nsos', Nlake, 'integer', Nsos)/=0 ) CALL read_error(2, 'nsos')
@@ -1063,7 +1082,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            STOP
+            STOP 1008
           ENDIF
 
           IF ( Segment_type(iorder)/=2 ) THEN
@@ -1342,7 +1361,7 @@
       ENDIF
       IF ( lake_storage<0.0D0 ) THEN
         PRINT *, 'ERROR: lake storage < 0 lake:', Lakeid, '; storage:', lake_storage
-        STOP
+        STOP 1009
       ENDIF
 
       Lake_outcfs(Lakeid) = q2
