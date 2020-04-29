@@ -86,7 +86,7 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
-      CHARACTER(LEN=14), SAVE :: MODNAME
+      CHARACTER(LEN=9), SAVE :: MODNAME
       END MODULE PRMS_MUSKINGUM
 
 !***********************************************************************
@@ -131,7 +131,7 @@
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2020-04-27 19:02:00Z'
+      Version_muskingum = 'muskingum.f90 2020-04-28 19:02:00Z'
       IF ( Strmflow_flag==4 ) THEN
         MODNAME = 'muskingum'
       ELSE
