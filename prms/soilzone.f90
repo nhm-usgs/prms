@@ -850,7 +850,7 @@
       INTEGER FUNCTION szrun()
       USE PRMS_SOILZONE
       USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, Soilzone_aet_flag, &
-     &    GSFLOW_flag, Nlake, Cascade_flag, Dprst_flag
+     &    GSFLOW_flag, Nlake, Cascade_flag
       USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_frac_perv, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
      &    NEARZERO, Lake_hru_id, Cov_type, Numlake_hrus, Hru_area_dble
@@ -885,8 +885,6 @@
       szrun = 0
 
       IF ( GSFLOW_flag==1 ) THEN
-        IF ( Kkiter==0 ) CALL error_stop('problem with KKITER, equals 0')
-
         IF ( Kkiter==1 ) THEN
 ! It0 variables used with MODFLOW integration to save iteration states.
           DO k = 1, Active_hrus
@@ -1482,13 +1480,11 @@
 !          print *, 'reducing potet_rechr in cap reservoir', perv_frac, pet
 !          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
           Potet_rechr = Avail_potet / Perv_frac
-!          print *, 'Potet_rechr', Potet_rechr
         ENDIF
         IF ( Potet_lower*Perv_frac > Avail_potet ) THEN
 !          print *, 'reducing potet_lower in cap reservoir', perv_frac, pet
 !          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
           Potet_lower = Avail_potet / Perv_frac
-!          print *, 'potet_lower', potet_lower
         ENDIF
 
         IF ( Potet_rechr>Soil_rechr ) THEN

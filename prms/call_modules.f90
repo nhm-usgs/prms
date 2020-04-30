@@ -14,10 +14,12 @@
       INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
       INTEGER, PARAMETER :: DOCUMENTATION = 99
       CHARACTER(LEN=80), SAVE :: PRMS_versn
-      INTEGER, SAVE :: Model, Process_flag, Call_cascade, Ncascade, Ncascdgw
+! Dimensions
+      INTEGER, SAVE :: Ncascade, Ncascdgw
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
       INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval
-      INTEGER, SAVE :: Starttime(6), Endtime(6)
+! Global
+      INTEGER, SAVE :: Model, Process_flag, Call_cascade
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
       INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
@@ -26,21 +28,25 @@
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
-      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, PRMS4_flag
       INTEGER, SAVE :: Grid_flag, Logunt
       INTEGER, SAVE :: PRMS_flag, GSFLOW_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Nwateruse, Nexternal, Nconsumed, Npoigages, Prms_warmup
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag
+      INTEGER, SAVE :: PRMS4_flag
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
+!   Declared Variables
       INTEGER, SAVE :: Kkiter
+!   Declared Parameters
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta
 ! Control parameters
+      INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
+      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
+      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, statsON_OFF
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file, Param_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
@@ -180,6 +186,7 @@
 
       ELSE  !IF ( Process(:5)=='clean' ) THEN
         Process_flag = 3
+
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==1 ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)

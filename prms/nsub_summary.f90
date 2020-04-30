@@ -120,7 +120,7 @@
       IMPLICIT NONE
       INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file
+      EXTERNAL read_error, PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, dum, jj, j, i, k
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName

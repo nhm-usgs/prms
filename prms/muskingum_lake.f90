@@ -205,7 +205,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_muskingum_lake
 !***********************************************************************
@@ -896,7 +896,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD, DBLE
-      EXTERNAL route_lake
+      EXTERNAL route_lake, error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj
       DOUBLE PRECISION :: area_fac, segout, currin, tocfs, lake_in_ts

@@ -64,7 +64,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_subbasin
 !***********************************************************************
