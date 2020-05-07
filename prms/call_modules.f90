@@ -905,11 +905,9 @@
       Nlake = getdim('nlake')
       IF ( Nlake==-1 ) CALL read_error(7, 'nlake')
 
-      ! Nlake_hrus will be added in version 5.0.1
-!      Nlake_hrus = getdim('nlake_hrus')
-!      IF ( Nlake_hrus==-1 ) CALL read_error(7, 'nlake_hrus')
-!      IF ( Nlake>0 .AND. Nlake_hrus==0 ) Nlake_hrus = Nlake
-      Nlake_hrus = Nlake
+      Nlake_hrus = getdim('nlake_hrus')
+      IF ( Nlake_hrus==-1 ) CALL read_error(7, 'nlake_hrus')
+      IF ( Nlake>0 .AND. Nlake_hrus==0 ) Nlake_hrus = Nlake
 
       Ndepl = getdim('ndepl')
       IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')

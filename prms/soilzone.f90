@@ -120,7 +120,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL :: read_error, print_module, PRMS_open_module_file
+      EXTERNAL :: read_error, print_module, PRMS_open_module_file, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_soilzone
 !***********************************************************************

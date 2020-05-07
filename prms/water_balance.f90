@@ -288,13 +288,13 @@
             WRITE ( BALUNT, * ) Infil(i), perv_frac, Hru_impervevap(i), Imperv_stor_ante(i), Hru_impervstor(i), &
      &                          Hru_percent_imperv(i), Dprst_sroff_hru(i)
           ENDIF
-          IF ( Intcp_changeover(i)>SMALL ) then
-              print *, i, Intcp_changeover(i), SMALL
-              endif
+!          IF ( Intcp_changeover(i)>SMALL ) then
+!              print *, i, Intcp_changeover(i), SMALL
+!              endif
           IF ( ABS(robal)>SMALL ) THEN
             WRITE ( BALUNT, '(A,I0,A,1X,I0)') 'Possible HRU surface runoff water balance ERROR, HRU: ', i, &
      &                                         ' hru_type:', Hru_type(i)
-            print *, perv_frac, Hru_impervevap(i), Imperv_stor_ante(i), Hru_impervstor(i), Hru_percent_imperv(i)
+!            print *, perv_frac, Hru_impervevap(i), Imperv_stor_ante(i), Hru_impervstor(i), Hru_percent_imperv(i)
           ELSE
             WRITE ( BALUNT, '(A,I0,A,1X,I0)' ) 'HRU surface runoff rounding issue, HRU:', i, ' hru_type:', Hru_type(i)
           ENDIF
@@ -417,7 +417,7 @@
       pptbal = Basin_ppt - Basin_net_ppt - delta_stor - Basin_intcp_evap - Basin_changeover
       IF ( Use_sroff_transfer==1 ) pptbal = pptbal + Basin_net_apply
       IF ( DABS(pptbal)>DSMALL ) THEN
-        print *, Basin_changeover
+!        print *, Basin_changeover
         WRITE ( BALUNT, 9003 ) 'Possible basin interception water balance error', &
      &                         Nowyear, Nowmonth, Nowday, pptbal
       ELSEIF ( DABS(pptbal)>DTOOSMALL ) THEN
