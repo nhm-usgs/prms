@@ -30,7 +30,7 @@
       REAL, SAVE, ALLOCATABLE :: Seg_tave_air(:), Seg_melt(:), Seg_rain(:)
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 !   Segment Parameters
-      REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:)
       REAL, SAVE, ALLOCATABLE :: Width_values(:, :)
       REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:), Stream_tave_init(:)
       INTEGER, SAVE:: Width_dim, Maxiter_sntemp
@@ -99,7 +99,7 @@
 !***********************************************************************
       stream_temp_decl = 0
 
-      Version_stream_temp = 'stream_temp.f90 2020-04-28 12:36:00Z'
+      Version_stream_temp = 'stream_temp.f90 2020-06-10 10:00:00Z'
       CALL print_module(Version_stream_temp, 'Stream Temperature          ', 90)
       MODNAME = 'stream_temp'
 

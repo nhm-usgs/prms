@@ -5,7 +5,7 @@
       IMPLICIT NONE
 !   Local Variables
 !      CHARACTER(LEN=10), SAVE :: MODNAME
-      INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater
+      INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
       INTEGER, SAVE :: Nowtime(6), Nowday, Nowmonth, Nowyear, Nowhour, Nowminute
       REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
       DOUBLE PRECISION, SAVE :: Cfs2inches, Cfs_conv, Timestep_seconds
@@ -20,10 +20,11 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC SNGL
-      INTEGER, EXTERNAL :: leap_day, julian_day
+      INTEGER, EXTERNAL :: leap_day, julian_day, compute_julday
       DOUBLE PRECISION, EXTERNAL :: deltim
       EXTERNAL :: dattim, print_module
 ! Local Variables
+      INTEGER :: startday
       DOUBLE PRECISION :: dt
       CHARACTER(LEN=80), SAVE :: Version_prms_time
 !***********************************************************************
@@ -38,6 +39,7 @@
           Jday = julian_day('now', 'calendar')
           Jsol = julian_day('now', 'solar')
           Julwater = julian_day('now', 'water')
+          Julian_day_absolute = Julian_day_absolute + 1
 
         ELSE ! initialize
           Modays(1) = 31
@@ -56,6 +58,8 @@
           Jday = julian_day('start', 'calendar')
           Jsol = julian_day('start', 'solar')
           Julwater = julian_day('start', 'water')
+          startday = compute_julday(Starttime(1), Starttime(2), Starttime(3))
+          Julian_day_absolute = startday
         ENDIF
 
         Nowyear = Nowtime(1)

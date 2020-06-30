@@ -26,7 +26,7 @@
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
       REAL, SAVE, ALLOCATABLE :: Seg_depth(:), Mann_n(:), Segment_flow_init(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:), Seg_width(:)
       END MODULE PRMS_ROUTING
 
 !***********************************************************************
@@ -68,7 +68,7 @@
 !***********************************************************************
       routingdecl = 0
 
-      Version_routing = 'routing.f90 2020-04-27 14:54:00Z'
+      Version_routing = 'routing.f90 2020-06-10 10:00:00Z'
       CALL print_module(Version_routing, 'Routing Initialization      ', 90)
       MODNAME = 'routing'
 
@@ -128,31 +128,39 @@
       ! 11 = outbound to Great Lakes; 12 = ephemeral; + 100 user updated; 1000 user virtual segment
       ! 100 = user normal; 101 - 108 = not used; 109 sink (tosegment used by Lumen)
 
-      IF ( Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN ! muskingum_mann
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN ! muskingum_man or mizuroute
         ALLOCATE ( Mann_n(Nsegment) )
         IF ( declparam( MODNAME, 'mann_n', 'nsegment', 'real', &
      &     '0.04', '0.001', '0.15', &
      &     'Mannings roughness coefficient', &
      &     'Mannings roughness coefficient for each segment', &
      &     'dimensionless')/=0 ) CALL read_error(1, 'mann_n')
-
         ALLOCATE ( Seg_length(Nsegment) )
         IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
      &     '1000.0', '0.001', '200000.0', &
      &     'Length of each segment', &
      &     'Length of each segment including vertical drop, bounds based on CONUS', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
-
-        ALLOCATE ( Seg_depth(Nsegment) )
-        IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
-     &       '1.0', '0.03', '250.0', &
-     &       'Segment river depth', &
-     &       'Segment river depth at bankfull, shallowest from Blackburn-Lynch 2017,'//&
-     &       'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
-     &       'meters')/=0 ) CALL read_error(1, 'seg_depth')
+        IF ( Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN
+          ALLOCATE ( Seg_depth(Nsegment) )
+          IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
+     &         '1.0', '0.03', '250.0', &
+     &         'Segment river depth', &
+     &         'Segment river depth at bankfull, shallowest from Blackburn-Lynch 2017,'//&
+     &         'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
+     &         'meters')/=0 ) CALL read_error(1, 'seg_depth')
+        ENDIF
+        IF ( Strmflow_flag==6 .OR. Model==99 ) THEN
+          ALLOCATE ( Seg_width(Nsegment) )
+          IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
+     &       '15.0', '0.18', '40000.0', &
+     &         'Segment river width', &
+     &         'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
+     &         'meters')/=0 ) CALL read_error(1, 'seg_width')
+        ENDIF
       ENDIF
 
-      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN
+      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Seg_slope(Nsegment) )
         IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
      &     '0.0001', '0.0000001', '2.0', &
@@ -365,26 +373,31 @@
         Segment_type(i) = MOD( Segment_type(i), 100 )
       ENDDO
 
-      IF ( Strmflow_flag==7 ) THEN
+      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
+        IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+      ENDIF
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==7 ) THEN
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
         IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
 ! find segments that are too short and print them out as they are found
         ierr = 0
         DO i = 1, Nsegment
-           IF ( Seg_length(i)<NEARZERO ) THEN
-              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
-              ierr = 1
-           ENDIF
+          IF ( Seg_length(i)<NEARZERO ) THEN
+            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+            ierr = 1
+          ENDIF
         ENDDO
 ! exit if there are any segments that are too short
         IF ( ierr==1 ) THEN
-           Inputerror_flag = ierr
-           RETURN
+          Inputerror_flag = ierr
+          RETURN
         ENDIF
-        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
-      ENDIF
-      IF ( Stream_temp_flag==1 .OR. Strmflow_flag==7 ) THEN
-        IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+        IF ( Strmflow_flag==7 ) THEN
+          IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
+        ENDIF
+        IF ( Strmflow_flag==6 ) THEN
+          IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
+        ENDIF
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
@@ -514,7 +527,7 @@
 !      ENDIF
       DEALLOCATE ( x_off )
 
-      IF ( Strmflow_flag==5 ) RETURN ! strmflow_in_out
+      IF ( Strmflow_flag==6 .OR. Strmflow_flag==5 ) RETURN ! mizuroute or strmflow_in_out
 !
 !      Compute the three constants in the Muskingum routing equation based
 !      on the values of K_coef and a routing period of 1 hour. See the notes
@@ -650,7 +663,7 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, NEARZERO, FT2_PER_ACRE
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
@@ -658,6 +671,7 @@
       USE PRMS_WATER_USE, ONLY: Segment_transfer, Segment_gain
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_SRUNOFF, ONLY: Strm_seg_in
+      USE PRMS_GLACR, ONLY: Glacr_flow
       IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
@@ -692,6 +706,9 @@
         j = Hru_route_order(jj)
         tocfs = DBLE( Hru_area(j) )*Cfs_conv
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
+        ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
+        ! glacr_flow in inch^3, 1728=12^3
+        IF ( Glacier_flag==1 ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
         IF ( Hru_seg_cascades==1 ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN

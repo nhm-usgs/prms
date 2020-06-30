@@ -34,7 +34,7 @@
 !***********************************************************************
       setupdecl = 0
 
-      Version_setup = 'setup_param.f90 2019-09-26 10:24:00Z'
+      Version_setup = 'setup_param.f90 2020-06-10 10:00:00Z'
       CALL print_module(Version_setup, 'Parameter Setup             ', 90)
       MODNAME = 'setup'
 
@@ -74,7 +74,7 @@
      &     'Type code for each POI gage', 'Type code for each POI gage', &
      &     'none')/=0 ) CALL read_error(1, 'poi_type')
 
-      IF ( declparam(MODNAME, 'parent_poigages', 'npoigages','integer', &
+      IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &
      &     '0', '0', '9999999', &
      &     'Lumen index in parent model for each POI gage','Lumen index in parent model for each POI gage', &
      &     'none')/=0 ) CALL read_error(1, 'parent_poigages')

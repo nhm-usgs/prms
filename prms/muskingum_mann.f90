@@ -80,75 +80,83 @@
 !      value of the inflow.
 !
 !***********************************************************************
-      MODULE PRMS_MUSKINGUM
+      MODULE PRMS_MUSKINGUM_MANN
       IMPLICIT NONE
 !   Local Variables
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
       CHARACTER(LEN=14), SAVE :: MODNAME
-      END MODULE PRMS_MUSKINGUM
+!   Declared Parameters
+      REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
+      END MODULE PRMS_MUSKINGUM_MANN
 
 !***********************************************************************
-!     Main muskingum routine
+!     Main muskingum_mann routine
 !***********************************************************************
-      INTEGER FUNCTION muskingum()
+      INTEGER FUNCTION muskingum_mann()
       USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
-      EXTERNAL :: muskingum_restart
+      INTEGER, EXTERNAL :: muskingum_mann_decl, muskingum_mann_init, muskingum_mann_run
+      EXTERNAL :: muskingum_mann_restart
 !***********************************************************************
-      muskingum = 0
+      muskingum_mann = 0
 
       IF ( Process(:3)=='run' ) THEN
-        muskingum  = muskingum_run()
+        muskingum_mann  = muskingum_mann_run()
       ELSEIF ( Process(:4)=='decl' ) THEN
-        muskingum  = muskingum_decl()
+        muskingum_mann  = muskingum_mann_decl()
       ELSEIF ( Process(:4)=='init' ) THEN
-        IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
-        muskingum = muskingum_init()
+        IF ( Init_vars_from_file>0 ) CALL muskingum_mann_restart(1)
+        muskingum_mann = muskingum_mann_init()
       ELSEIF ( Process(:5)=='clean' ) THEN
-        IF ( Save_vars_to_file==1 ) CALL muskingum_restart(0)
+        IF ( Save_vars_to_file==1 ) CALL muskingum_mann_restart(0)
       ENDIF
 
-      END FUNCTION muskingum
+      END FUNCTION muskingum_mann
 
 !***********************************************************************
-!     muskingum_decl - Declare parameters and variables and allocate arrays
+!     muskingum_mann_decl - Declare parameters and variables and allocate arrays
 !   Declared Parameters
 !     tosegment, hru_segment, obsin_segment, K_coef, x_coef
 !***********************************************************************
-      INTEGER FUNCTION muskingum_decl()
-      USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Strmflow_flag
+      INTEGER FUNCTION muskingum_mann_decl()
+      USE PRMS_MUSKINGUM_MANN
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
+      INTEGER, EXTERNAL :: declparam
       EXTERNAL read_error, print_module
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_muskingum
 !***********************************************************************
-      muskingum_decl = 0
+      muskingum_mann_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2020-06-10 10:00:00Z'
-      IF ( Strmflow_flag==4 ) THEN
-        MODNAME = 'muskingum'
-      ELSE
-        MODNAME = 'muskingum_mann'
-      ENDIF
+      Version_muskingum = 'muskingum_mann.f90 2019-06/05 16:44:00Z'
       CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
+      MODNAME = 'muskingum_mann'
 
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
 
-      END FUNCTION muskingum_decl
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
+        ALLOCATE ( Segment_flow_init(Nsegment) )
+        IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
+     &       '0.0', '0.0', '1.0E7', &
+     &       'Initial flow in each stream segment', &
+     &       'Initial flow in each stream segment', &
+     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
+      ENDIF
+
+      END FUNCTION muskingum_mann_decl
 
 !***********************************************************************
 !    muskingum_init - Get and check parameter values and initialize variables
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
-      USE PRMS_MUSKINGUM
+      USE PRMS_MUSKINGUM_MANN
       USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
@@ -163,7 +171,14 @@
 !***********************************************************************
       muskingum_init = 0
 
-      !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
+        IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
+     &       CALL read_error(2,'segment_flow_init')
+        DO i = 1, Nsegment
+          Seg_outflow(i) = Segment_flow_init(i)
+        ENDDO
+        DEALLOCATE ( Segment_flow_init )
+      ENDIF
       IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
@@ -178,9 +193,9 @@
 !     muskingum_run - Compute routing summary values
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
-      USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
+      USE PRMS_MUSKINGUM_MANN
+      USE PRMS_MODULE, ONLY: Nsegment
+      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out, Basin_sroff
@@ -190,12 +205,10 @@
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
-      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD
-      EXTERNAL error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -240,7 +253,7 @@
 
 ! current inflow to the segment is the time weighted average of the outflow
 ! of the upstream segments plus the lateral HRU inflow plus any gains.
-          currin = Seg_lateral_inflow(iorder) !note, this routes to inlet and mizuroute routes to outlet
+          currin = Seg_lateral_inflow(iorder)
           IF ( Obsin_segment(iorder)>0 ) Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
           currin = currin + Seg_upstream_inflow(iorder)
           Seg_inflow(iorder) = Seg_inflow(iorder) + currin
@@ -283,7 +296,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            CALL error_stop('in muskingum')
+            STOP
           ENDIF
 
           ! Seg_outflow (the mean daily flow rate for each segment) will be the average of the hourly values.
@@ -359,11 +372,6 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
-      IF ( Glacier_flag==1 ) THEN
-        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
-        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
-        Basin_gl_cfs = Basin_gl_top_melt*area_fac
-      ENDIF
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac
       Basin_gwflow_cfs = Basin_gwflow*area_fac
@@ -372,11 +380,11 @@
       END FUNCTION muskingum_run
 
 !***********************************************************************
-!     muskingum_restart - write or read restart file
+!     muskingum_mann_restart - write or read restart file
 !***********************************************************************
-      SUBROUTINE muskingum_restart(In_out)
+      SUBROUTINE muskingum_mann_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
-      USE PRMS_MUSKINGUM
+      USE PRMS_MUSKINGUM_MANN
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
@@ -393,4 +401,4 @@
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Outflow_ts
       ENDIF
-      END SUBROUTINE muskingum_restart
+      END SUBROUTINE muskingum_mann_restart
