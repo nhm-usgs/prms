@@ -1,16 +1,14 @@
 submodule (PRMS_STRMTEMP) sm_stream_temp
   contains
     !! StreamTemp constructor
-    module function constructor_StreamTemp(ctl_data, param_data, model_basin, model_streamflow) result(this)
+    module subroutine init_StreamTemp(this, ctl_data, model_basin, model_streamflow) result(this)
       use prms_constants, only: dp, NEARZERO
       implicit none
 
-      type(StreamTemp) :: this
+      class(StreamTemp) :: this
         !! StreamTemp class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Streamflow), intent(in) :: model_streamflow
@@ -33,34 +31,22 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
       real(r32) :: tanod
       real(r32) :: temp
 
-      ! Control
-      ! nsegment,
-      ! init_vars_from_file, stream_temp_shade_flag,
-
-      ! Parameter
-      ! azrh, hru_segment, seg_elev, seg_lat, seg_length, tosegment,
-
-      ! Basin
-      ! active_hrus, hru_route_order,
-
-      ! Streamflow
-      ! segment_order, segment_up,
-
       ! ------------------------------------------------------------------------
       associate(nsegment => ctl_data%nsegment%value, &
                 init_vars_from_file => ctl_data%init_vars_from_file%value, &
                 print_debug => ctl_data%print_debug%value, &
                 stream_temp_shade_flag => ctl_data%stream_temp_shade_flag%value, &
 
-                azrh => param_data%azrh%values, &
-                hru_segment => param_data%hru_segment%values, &
-                seg_elev => param_data%seg_elev%values, &
-                seg_lat => param_data%seg_lat%values, &
-                seg_length => param_data%seg_length%values, &
-                tosegment => param_data%tosegment%values, &
                 active_hrus => model_basin%active_hrus, &
-                hru_route_order => model_basin%hru_route_order, &
+                hru_route_order => model_basin%hru_route_order, &                
 
+                ! seg_elev => param_data%seg_elev%values, &
+                ! seg_lat => param_data%seg_lat%values, &
+
+                azrh => model_streamflow%azrh%values, &
+                hru_segment => model_streamflow%hru_segment%values, &
+                seg_length => model_streamflow%seg_length%values, &
+                tosegment => model_streamflow%tosegment%values, &
                 segment_order => model_streamflow%segment_order, &
                 segment_up => model_streamflow%segment_up)
 
@@ -71,6 +57,8 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
           call this%print_module_info()
         endif
 
+        ! TODO: Allocate the parameters
+        
         allocate(this%gw_silo(nsegment, 365))
         allocate(this%gw_sum(nsegment))
         allocate(this%hru_area_sum(nsegment))
@@ -353,12 +341,11 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
 
 
       end associate
-    end function
+    end subroutine
 
 
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_precip, model_temp, &
-                                     model_potet, model_obs, model_streamflow, snow, model_solrad, &
-                                     model_time)
+    module subroutine run_StreamTemp(this, ctl_data, model_basin, model_precip, model_temp, model_potet, &
+                                     model_obs, model_streamflow, snow, model_solrad, model_time)
       use prms_constants, only: CFS2CMS_CONV, dp, NEARZERO
       implicit none
 
@@ -366,8 +353,6 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
         !! StreamTemp class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
       class(Precipitation), intent(in) :: model_precip
       class(Temperature), intent(in) :: model_temp
@@ -437,21 +422,20 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
                 stream_temp_shade_flag => ctl_data%stream_temp_shade_flag%value, &
                 strmtemp_humidity_flag => ctl_data%strmtemp_humidity_flag%value, &
 
-                gw_tau => param_data%gw_tau%values, &
-                hru_area => param_data%hru_area%values, &
-                hru_segment => param_data%hru_segment%values, &
-                lat_temp_adj => param_data%lat_temp_adj%values, &
-                segshade_sum => param_data%segshade_sum%values, &
-                segshade_win => param_data%segshade_win%values, &
-                seg_humidity => param_data%seg_humidity%values, &
-                seg_humidity_sta => param_data%seg_humidity_sta%values, &
+                ! gw_tau => param_data%gw_tau%values, &
+                ! lat_temp_adj => param_data%lat_temp_adj%values, &
+                ! segshade_sum => param_data%segshade_sum%values, &
+                ! segshade_win => param_data%segshade_win%values, &
+                ! seg_humidity => param_data%seg_humidity%values, &
+                ! seg_humidity_sta => param_data%seg_humidity_sta%values, &
                 seg_length => param_data%seg_length%values, &
-                ss_tau => param_data%ss_tau%values, &
-                tosegment => param_data%tosegment%values, &
-                width_alpha => param_data%width_alpha%values, &
-                width_m => param_data%width_m%values, &
+                ! ss_tau => param_data%ss_tau%values, &
+                
+                ! width_alpha => param_data%width_alpha%values, &
+                ! width_m => param_data%width_m%values, &
 
                 active_hrus => model_basin%active_hrus, &
+                hru_area => model_basin%hru_area%values, &
                 hru_route_order => model_basin%hru_route_order, &
 
                 potet => model_potet%potet, &
@@ -463,9 +447,11 @@ submodule (PRMS_STRMTEMP) sm_stream_temp
 
                 humidity => model_obs%humidity, &
 
+                hru_segment => model_streamflow%hru_segment%values, &
                 seg_outflow => model_streamflow%seg_outflow, &
                 seginc_swrad => model_streamflow%seginc_swrad, &
                 segment_order => model_streamflow%segment_order, &
+                tosegment => model_streamflow%tosegment%values, &
 
                 snowmelt => snow%snowmelt, &
 

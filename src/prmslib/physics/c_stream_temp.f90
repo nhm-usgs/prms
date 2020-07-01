@@ -30,6 +30,54 @@ module PRMS_STRMTEMP
   real(r64) :: MPS_CONVERT = 2.93981481D-07
 
   type, extends(ModelBase) :: StreamTemp
+    ! Parameters
+    integer(i32) :: maxiter_sntemp
+
+    integer(i32), pointer :: gw_tau(:)
+    integer(i32), pointer :: ss_tau(:)
+
+    real(r32) :: albedo
+    real(r32) :: melt_temp
+
+    real(r32), pointer :: alte(:)
+    real(r32), pointer :: altw(:)
+    real(r32), pointer :: azrh(:)
+    real(r32), pointer :: seg_elev(:)
+    real(r32), pointer :: seg_lat(:)
+    real(r32), pointer :: segshade_sum(:)
+    real(r32), pointer :: segshade_win(:)    
+    real(r32), pointer :: stream_tave_init(:)
+    real(r32), pointer :: vce(:)
+    real(r32), pointer :: vcw(:)
+    real(r32), pointer :: vdemn(:)
+    real(r32), pointer :: vdemx(:)
+    real(r32), pointer :: vdwmn(:)
+    real(r32), pointer :: vdwmx(:)
+    real(r32), pointer :: vhe(:)
+    real(r32), pointer :: vhw(:)
+    real(r32), pointer :: voe(:)
+    real(r32), pointer :: vow(:)
+    real(r32), pointer :: width_alpha(:)
+    real(r32), pointer :: width_m(:)
+
+    real(r32), pointer :: lat_temp_adj(:, :)
+    real(r32), pointer :: seg_humidity(:, :)
+
+    ! Output variables
+    real(r32), pointer :: seg_ccov(:)
+    real(r32), pointer :: seg_daylight(:)
+    real(r32), pointer :: seg_humid(:)
+    real(r32), pointer :: seg_melt(:)
+    real(r32), pointer :: seg_potet(:)
+    real(r32), pointer :: seg_shade(:)
+    real(r32), pointer :: seg_tave_air(:)
+    real(r32), pointer :: seg_tave_gw(:)
+    real(r32), pointer :: seg_tave_lat(:)
+    real(r32), pointer :: seg_tave_ss(:)
+    real(r32), pointer :: seg_tave_upstream(:)
+    real(r32), pointer :: seg_tave_water(:)
+    real(r32), pointer :: seg_width(:)
+
     ! Local Variables
     integer(i32) :: gw_index
     integer(i32) :: ss_index
@@ -39,10 +87,7 @@ module PRMS_STRMTEMP
 
     real(r32), pointer :: flowsum(:)
     real(r32), pointer :: seg_carea_inv(:)
-    real(r32), pointer :: seg_tave_gw(:)
-    real(r32), pointer :: seg_tave_lat(:)
     real(r32), pointer :: seg_tave_sroff(:)
-    real(r32), pointer :: seg_tave_ss(:)
 
     ! Next variables only needed if strm_temp_shade_flag = 0
     real(r32), pointer :: cos_lat_decl(:, :)
@@ -67,20 +112,13 @@ module PRMS_STRMTEMP
     real(r32), pointer :: total_shade(:, :)
 
     ! Declared variables
-    real(r32), pointer :: seg_ccov(:)
-    real(r32), pointer :: seg_daylight(:)
-    real(r32), pointer :: seg_humid(:)
-    real(r32), pointer :: seg_melt(:)
-    real(r32), pointer :: seg_rain(:)
-    real(r32), pointer :: seg_shade(:)
-    real(r32), pointer :: seg_tave_air(:)
-    real(r32), pointer :: seg_tave_upstream(:)
-    real(r32), pointer :: seg_tave_water(:)
-    real(r32), pointer :: seg_width(:)
-
-    real(r64), pointer :: seg_potet(:)
+    ! real(r32), pointer :: seg_rain(:)
 
     contains
+      procedure, public :: init => init_StreamTemp
+      procedure, public :: run => run_StreamTemp
+      procedure, public :: cleanup => cleanup_StreamTemp
+
       procedure, private :: equilb
       procedure, private, nopass :: lat_inflow
       procedure, private :: rprnvg
@@ -89,8 +127,6 @@ module PRMS_STRMTEMP
       procedure, private :: solalt
       procedure, private :: teak1
       procedure, private, nopass :: twavg
-      procedure, public :: run => run_StreamTemp
-      procedure, public :: cleanup => cleanup_StreamTemp
 
     ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ! Parameters
@@ -149,18 +185,30 @@ module PRMS_STRMTEMP
 
   interface StreamTemp
     !! StreamTemp constructor
-    module function constructor_StreamTemp(ctl_data, param_data, model_basin, model_streamflow) result(this)
-      type(StreamTemp) :: this
+    module subroutine init_StreamTemp(this, ctl_data, model_basin, model_streamflow) result(this)
+      class(StreamTemp) :: this
         !! StreamTemp class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
         !! Basin variables
       class(Streamflow), intent(in) :: model_streamflow
-    end function
+    end subroutine
   end interface
+  ! interface StreamTemp
+  !   !! StreamTemp constructor
+  !   module function constructor_StreamTemp(ctl_data, param_data, model_basin, model_streamflow) result(this)
+  !     type(StreamTemp) :: this
+  !       !! StreamTemp class
+  !     type(Control), intent(in) :: ctl_data
+  !       !! Control file parameters
+  !     type(Parameters), intent(in) :: param_data
+  !       !! Parameters
+  !     type(Basin), intent(in) :: model_basin
+  !       !! Basin variables
+  !     class(Streamflow), intent(in) :: model_streamflow
+  !   end function
+  ! end interface
 
   interface
     module subroutine cleanup_StreamTemp(this, ctl_data)
@@ -170,15 +218,12 @@ module PRMS_STRMTEMP
   end interface
 
   interface
-    module subroutine run_StreamTemp(this, ctl_data, param_data, model_basin, model_precip, model_temp, &
-                                     model_potet, model_obs, model_streamflow, snow, model_solrad, &
-                                     model_time)
-      class(StreamTemp) :: this
+    module subroutine run_StreamTemp(this, ctl_data, model_basin, model_precip, model_temp, model_potet, &
+                                     model_obs, model_streamflow, snow, model_solrad, model_time)
+      class(StreamTemp), intent(inout) :: this
         !! StreamTemp class
       type(Control), intent(in) :: ctl_data
         !! Control file parameters
-      type(Parameters), intent(in) :: param_data
-        !! Parameters
       type(Basin), intent(in) :: model_basin
       class(Precipitation), intent(in) :: model_precip
       class(Temperature), intent(in) :: model_temp
