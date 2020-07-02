@@ -7,7 +7,9 @@
       MODULE PRMS_POTET_HS
         IMPLICIT NONE
         ! Local Variables
-        CHARACTER(LEN=8), SAVE :: MODNAME
+        character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_hs'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hs_krs(:, :)
       END MODULE PRMS_POTET_HS
@@ -26,7 +28,6 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: temp_diff, swrad_inch_day !, coef_kt
-      CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_hs = 0
 
@@ -52,9 +53,7 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_hs.f90 2016-07-20 15:30:00Z'
-        CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_hs'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ALLOCATE ( Hs_krs(Nhru,12) )
         IF ( declparam(MODNAME, 'hs_krs', 'nhru,nmonths', 'real', &

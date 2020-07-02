@@ -5,9 +5,11 @@
       MODULE PRMS_TRANSP_TINDEX
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
+        character(len=*), parameter :: MODNAME = 'transp_tindex'
+        character(len=*), parameter :: Version_transp = '2020-07-01'
         INTEGER, SAVE, ALLOCATABLE :: Transp_check(:), Transp_beg_restart(:), Transp_end_restart(:)
         REAL, SAVE, ALLOCATABLE :: Tmax_sum(:), Transp_tmax_f(:), Transp_tmax_restart(:)
-        CHARACTER(LEN=13), SAVE :: MODNAME
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Transp_beg(:), Transp_end(:)
         REAL, SAVE, ALLOCATABLE :: Transp_tmax(:)
@@ -26,7 +28,6 @@
       EXTERNAL :: read_error, print_module, transp_tindex_restart
 ! Local Variables
       INTEGER :: i, j, motmp, new_values
-      CHARACTER(LEN=80), SAVE :: Version_transp
 !***********************************************************************
       transp_tindex = 0
 
@@ -71,9 +72,7 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp = 'transp_tindex.f90 2015-01-06 00:09:15Z'
-        CALL print_module(Version_transp, 'Transpiration Distribution  ', 90)
-        MODNAME = 'transp_tindex'
+        CALL print_module(MODDESC, MODNAME, Version_transp)
 
         ALLOCATE ( Tmax_sum(Nhru), Transp_check(Nhru), Transp_tmax_f(Nhru) )
 

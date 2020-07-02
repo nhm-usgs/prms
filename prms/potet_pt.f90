@@ -9,7 +9,9 @@
       MODULE PRMS_POTET_PT
         IMPLICIT NONE
         ! Local Variables
-        CHARACTER(LEN=8), SAVE :: MODNAME
+        character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_pt'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         !REAL, SAVE, ALLOCATABLE :: Tavgc_ante(:) ! if Tavgc_ante is used in future, need to add save in restart file
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pt_alpha(:, :)
@@ -35,7 +37,6 @@
       INTEGER :: i, j
       REAL :: elh, satvapor, prsr, psycnst, ratio, eeq, heat_flux, net_rad
       REAL :: stab, A1, B1, t1, num, den, sw
-      CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_pt = 0
 
@@ -151,9 +152,7 @@
         Basin_humidity = Basin_humidity*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_pt.f90 2018-04-18 11:10:00Z'
-        CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_pt'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
         ALLOCATE ( Pt_alpha(Nhru,12) )

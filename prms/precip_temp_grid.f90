@@ -8,14 +8,17 @@
         USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
+        character(len=*), parameter :: MODDESC2 = 'Temperature Distribution'
+        character(len=*), parameter :: MODNAME = 'precip_temp_grid'
+        character(len=*), parameter :: Version_precip_temp_grid = '2020-07-01'
         INTEGER, SAVE :: Ngrid2hru, Ngrid, Precip_unit, Tmax_unit, Tmin_unit
-        CHARACTER(LEN=16), SAVE :: MODNAME
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2grid_id(:), Grid2hru_id(:)
         REAL, SAVE, ALLOCATABLE :: Hru2grid_pct(:), Tmax_grid_values(:), Tmin_grid_values(:), Precip_grid_values(:)
         REAL, SAVE, ALLOCATABLE :: Tmax_grid_adj(:, :), Tmin_grid_adj(:, :), Precip_grid_adj(:, :)
         ! parameters in climateflow or basin:
-        !    hru_area, hru_type
+        !    hru_area
         ! Control Parameters
         CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Tmin_grid, Tmax_grid, Precip_grid
       END MODULE PRMS_PRECIP_TEMP_GRID
@@ -23,8 +26,8 @@
       SUBROUTINE precip_temp_grid()
       USE PRMS_PRECIP_TEMP_GRID
       USE PRMS_MODULE, ONLY: Process, Model, Temp_flag, Precip_flag, &
-     &    Start_year, Start_month, Start_day, MAXDIM
-      USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, MM2INCH, Active_hrus, Hru_route_order
+     &    Start_year, Start_month, Start_day, MAXDIM, MM2INCH, DOCUMENTATION
+      USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
      &    Tavgc, Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
@@ -40,7 +43,6 @@
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       REAL :: tmax_hru, tmin_hru, ppt, harea
-      CHARACTER(LEN=80), SAVE :: Version_climate_grid
 !***********************************************************************
        IF ( Process(:3)=='run' ) THEN
         IF ( Temp_flag==9 ) THEN
@@ -130,17 +132,14 @@
         IF ( decldim('ngrid', 0, MAXDIM, 'Number of grid values')/=0 ) CALL read_error(7, 'ngrid')
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_grid = 'precip_temp_grid.f90 2019-08-16 17:22:00Z'
-        MODNAME = 'precip_temp_grid'
-
-        IF ( Temp_flag==9 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Temperature Distribution    ', 90)
-        IF ( Precip_flag==9 .OR. Model==99 ) CALL print_module(Version_climate_grid, 'Precipitation Distribution  ', 90)
+        IF ( Temp_flag==9 .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC2, MODNAME, Version_precip_temp_grid)
+        IF ( Precip_flag==9 .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC, MODNAME, Version_precip_temp_grid)
 
         Ngrid2hru = getdim('ngrid2hru')
         IF ( Ngrid2hru==-1 ) CALL read_error(6, 'ngrid2hru')
         Ngrid = getdim('ngrid')
         IF ( Ngrid==-1 ) CALL read_error(6, 'ngrid')
-        IF ( Model==99 ) THEN
+        IF ( Model==DOCUMENTATION ) THEN
           IF ( Ngrid2hru==0 ) Ngrid2hru = 1
           IF ( Ngrid==0 ) Ngrid = 1
         ENDIF
@@ -149,7 +148,7 @@
         IF ( Precip_flag==9 ) ALLOCATE ( Precip_grid_values(Ngrid) )
 
 ! Declare parameters
-        IF ( Temp_flag==9 .OR. Model==99 ) THEN
+        IF ( Temp_flag==9 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Tmax_grid_adj(Ngrid,12) )
           IF ( declparam(MODNAME, 'tmax_grid_adj', 'ngrid,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
@@ -166,7 +165,7 @@
      &         'temp_units')/=0 ) CALL read_error(1, 'tmin_grid_adj')
         ENDIF
 
-        IF ( Precip_flag==9 .OR. Model==99 ) THEN
+        IF ( Precip_flag==9 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Precip_grid_adj(Ngrid, 12) )
           IF ( declparam(MODNAME, 'precip_grid_adj', 'ngrid,nmonths', 'real', &
      &       '1.0', '0.5', '2.0', &

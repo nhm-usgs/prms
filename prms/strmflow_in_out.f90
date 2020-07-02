@@ -2,9 +2,9 @@
 ! Routes water between segments in the system as inflow equals outflow
 !***********************************************************************
       INTEGER FUNCTION strmflow_in_out()
-      USE PRMS_MODULE, ONLY: Process, Nsegment, Print_debug
+      USE PRMS_MODULE, ONLY: Process, Nsegment, Print_debug, CFS2CMS_CONV
       USE PRMS_SET_TIME, ONLY: Cfs_conv
-      USE PRMS_BASIN, ONLY: Active_area, CFS2CMS_CONV
+      USE PRMS_BASIN, ONLY: Active_area
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cfs, Basin_cms, Basin_stflow_in, &
      &    Basin_sroff_cfs, Basin_ssflow_cfs, Basin_gwflow_cfs, Basin_stflow_out, &
@@ -17,9 +17,11 @@
 ! Functions
       EXTERNAL :: print_module
 ! Local Variables
+      character(len=*), parameter :: MODDESC = 'Streamflow Routing'
+      character(len=*), parameter :: MODNAME = 'strmflow_in_out'
+      character(len=*), parameter :: Version_strmflow = '2020-07-01'
       INTEGER :: i, iorder, toseg, segtype
       DOUBLE PRECISION :: area_fac, segout
-      CHARACTER(LEN=80), SAVE :: Version_strmflow
 !***********************************************************************
       strmflow_in_out = 0
 
@@ -100,8 +102,7 @@
         Basin_ssflow_cfs = Basin_ssflow*area_fac
         Basin_gwflow_cfs = Basin_gwflow*area_fac
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_strmflow = 'strmflow_in_out.f90 2020-04-21 16:43:00Z'
-        CALL print_module(Version_strmflow, 'Streamflow Routing          ', 90)
+        CALL print_module(MODDESC, MODNAME, Version_strmflow)
       ENDIF
 
       END FUNCTION strmflow_in_out

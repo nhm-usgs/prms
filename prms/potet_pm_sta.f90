@@ -9,7 +9,9 @@
       MODULE PRMS_POTET_PM_STA
         IMPLICIT NONE
         ! Local Variables
-        CHARACTER(LEN=12), SAVE :: MODNAME
+         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_pm_sta'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         !REAL, SAVE, ALLOCATABLE :: Tavgc_ante(:) ! if Tavgc_ante is used in future, need to add save in restart file
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
@@ -19,7 +21,7 @@
 !***********************************************************************
       INTEGER FUNCTION potet_pm_sta()
       USE PRMS_POTET_PM_STA
-      USE PRMS_MODULE, ONLY: Process, Nhru, Parameter_check_flag, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Process, Nhru, Parameter_check_flag, Inputerror_flag, INCH2MM
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity
@@ -36,7 +38,6 @@
       INTEGER :: i, j
       REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
       REAL :: A1, B1, t1, num, den, stab, sw
-      CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_pm_sta = 0
 
@@ -127,7 +128,7 @@
 !  PM equation with crop_coef in mm/day
 !          Potet(i) = (a + b)/c
           Potet(i) = Crop_coef(i, Nowmonth) * (a + b)/c
-          Potet(i) = Potet(i) / 25.4
+          Potet(i) = Potet(i) / INCH2MM
 
 ! may be able to use intrinsic ISNAN
 !          if (potet(i) .ne. potet(i)) then
@@ -143,9 +144,7 @@
         Basin_humidity = Basin_humidity*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_pm_sta.f90 2018-04-18 11:10:00Z'
-        CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_pm_sta'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
         ALLOCATE ( Pm_n_coef(Nhru,12) )

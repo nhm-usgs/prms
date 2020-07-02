@@ -29,14 +29,13 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam
       EXTERNAL read_error, print_module
-      CHARACTER(LEN=5), SAVE :: MODNAME
-      CHARACTER(LEN=80), SAVE :: Version_setup
+      character(len=*), parameter :: MODDESC = 'Parameter Setup'
+      character(len=*), parameter :: MODNAME = 'setup_param'
+      character(len=*), parameter :: Version_setup = '2020-07-01'
 !***********************************************************************
       setupdecl = 0
 
-      Version_setup = 'setup_param.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_setup, 'Parameter Setup             ', 90)
-      MODNAME = 'setup'
+      CALL print_module(MODDESC, MODNAME, Version_setup)
 
       IF (declparam(MODNAME, 'tosegment_nhm', 'nsegment', 'integer', &
      &     '0', '0', '9999999', &

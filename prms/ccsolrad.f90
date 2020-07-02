@@ -11,8 +11,10 @@
       MODULE PRMS_CCSOLRAD
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
+        character(len=*), parameter :: MODNAME = 'ccsolrad'
+        character(len=*), parameter :: Version_ccsolrad = '2020-07-01'
         INTEGER, SAVE :: Observed_flag
-        CHARACTER(LEN=8), SAVE :: MODNAME
         ! Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_radadj, Basin_cloud_cover
         REAL, SAVE, ALLOCATABLE :: Cloud_radadj(:), Cloud_cover_hru(:)
@@ -39,7 +41,6 @@
 ! Local Variables
       INTEGER :: j, jj, k
       REAL :: pptadj, radadj, ccov
-      CHARACTER(LEN=80), SAVE :: Version_ccsolrad
 !***********************************************************************
       ccsolrad = 0
 
@@ -111,9 +112,7 @@
         Basin_cloud_cover = Basin_cloud_cover*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ccsolrad = 'ccsolrad.f90 2018-04-17 14:43:00Z'
-        CALL print_module(Version_ccsolrad, 'Solar Radiation Distribution', 90)
-        MODNAME = 'ccsolrad'
+        CALL print_module(MODDESC, MODNAME, Version_ccsolrad)
 
         ALLOCATE ( Cloud_radadj(Nhru) )
         IF ( declvar(MODNAME, 'cloud_radadj', 'nhru', Nhru, 'real', &

@@ -10,6 +10,9 @@
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
       USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
+      character(len=*), parameter :: MODDESC = 'Preprocessing'
+      character(len=*), parameter :: MODNAME = 'frost_date'
+      character(len=*), parameter :: Version_frost_date = '2020-07-01'
 ! Functions
       INTRINSIC NINT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam, get_season
@@ -32,8 +35,6 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: fallFrostSum(:), springFrostSum(:)
       INTEGER, SAVE, ALLOCATABLE :: currentFallFrost(:), currentSpringFrost(:)
       INTEGER :: season, j, jj, basin_fall(1), basin_spring(1)
-      CHARACTER(LEN=10), SAVE :: MODNAME
-      CHARACTER(LEN=80), SAVE :: Version_frost_date
 !***********************************************************************
       frost_date = 0
 
@@ -97,9 +98,7 @@
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_frost_date = 'frost_date.f90 2016-03-04 17:57:51Z'
-        CALL print_module(Version_frost_date, 'Preprocessing               ', 90)
-        MODNAME = 'frost_date'
+        CALL print_module(MODDESC, MODNAME, Version_frost_date)
 
         ALLOCATE ( Frost_temp(Nhru) )
         IF ( declparam(MODNAME, 'frost_temp', 'nhru', 'real', &

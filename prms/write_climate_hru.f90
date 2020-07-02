@@ -13,11 +13,12 @@
       INTEGER, EXTERNAL :: control_string
       EXTERNAL :: read_error, PRMS_open_output_file, print_module
 ! Local Variables
+      character(len=*), parameter :: MODDESC = 'Preprocessing'
+      character(len=*), parameter :: MODNAME = 'write_climate_hru'
+      character(len=*), parameter :: Version_write_climate_hru = '2020-07-01'
       INTEGER, SAVE :: tmax_unit, tmin_unit, precip_unit, potet_unit, swrad_unit, transp_unit
       INTEGER :: i, ios, ierr
       CHARACTER(LEN=32), SAVE :: fmt1, fmt2, fmt3
-!      CHARACTER(LEN=17), SAVE :: MODNAME
-      CHARACTER(LEN=80), SAVE :: Version_write_climate_hru
 ! Control Parameters
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Tmin_day, Tmax_day, Precip_day, Potet_day, Swrad_day, Transp_day
 !***********************************************************************
@@ -36,9 +37,7 @@
 
 !***Declare Procedure***
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_write_climate_hru = 'write_climate_hru.f90 2020-04-27 19:06:41Z'
-        CALL print_module(Version_write_climate_hru, 'Preprocessing               ', 90)
-!        MODNAME = 'write_climate_hru'
+        CALL print_module(MODDESC, MODNAME, Version_write_climate_hru)
 
 !***Initialize Procedure***
       ELSEIF ( Process(:4)=='init' ) THEN

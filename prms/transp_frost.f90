@@ -5,7 +5,9 @@
       MODULE PRMS_TRANSP_FROST
         IMPLICIT NONE
         ! Local Variables
-        CHARACTER(LEN=12), SAVE :: MODNAME
+        character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
+        character(len=*), parameter :: MODNAME = 'transp_frost'
+        character(len=*), parameter :: Version_transp = '2020-07-01'
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
       END MODULE PRMS_TRANSP_FROST
@@ -22,7 +24,6 @@
       EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      CHARACTER(LEN=80), SAVE :: Version_transp_frost
 !***********************************************************************
       transp_frost = 0
 
@@ -44,9 +45,7 @@
         ENDDO
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_transp_frost = 'transp_frost.f90 2014-12-02 19:06:41Z'
-        CALL print_module(Version_transp_frost, 'Transpiration Distribution  ', 90)
-        MODNAME = 'transp_frost'
+        CALL print_module(MODDESC, MODNAME, Version_transp)
 
         ALLOCATE ( Spring_frost(Nhru) )
         IF ( declparam(MODNAME, 'spring_frost', 'nhru', 'integer', &

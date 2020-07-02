@@ -19,9 +19,11 @@
       MODULE PRMS_PRECIP_1STA_LAPS
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
+        character(len=11) :: MODNAME
+        character(len=*), parameter :: Version_precip = '2020-07-01'
         INTEGER, SAVE, ALLOCATABLE :: Psta_nuse(:)
         REAL, SAVE, ALLOCATABLE :: Rain_adj_lapse(:, :), Snow_adj_lapse(:, :), Precip_local(:)
-        CHARACTER(LEN=11), SAVE :: MODNAME
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru_psta(:)
         ! Declared Parameters for precip_laps
@@ -31,8 +33,9 @@
 
       INTEGER FUNCTION precip_1sta_laps()
       USE PRMS_PRECIP_1STA_LAPS
-      USE PRMS_MODULE, ONLY: Process, Nhru, Nrain, Inputerror_flag, Precip_flag, Model, Print_debug, Glacier_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, MM2INCH, &
+      USE PRMS_MODULE, ONLY: Process, Nhru, Nrain, Inputerror_flag, Precip_flag, Model, &
+     &    Print_debug, Glacier_flag, MM2INCH, GLACIER, CELSIUS, FAHRENHEIT
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
@@ -50,7 +53,6 @@
       INTEGER :: i, ii, ierr
       REAL :: ppt
       DOUBLE PRECISION :: sum_obs
-      CHARACTER(LEN=80), SAVE :: Version_precip
 !***********************************************************************
       precip_1sta_laps = 0
 
@@ -64,7 +66,7 @@
                 CALL print_date(1)
               ENDIF
               Precip_local(i) = 0.0
-            ELSEIF ( Precip_units==1 ) THEN
+            ELSEIF ( Precip_units==CELSIUS ) THEN
               Precip_local(i) = Precip_local(i)*MM2INCH
             ENDIF
           ENDIF
@@ -85,7 +87,7 @@
           Pptmix(i) = 0
           ppt = Precip_local(Hru_psta(i))
           IF ( Glacier_flag==1 ) THEN
-            IF ( Hru_type(i)==4 ) THEN
+            IF ( Hru_type(i)==GLACIER ) THEN
               ! Hru_elev_ts is the antecedent glacier elevation
               IF ( Precip_flag==2 ) CALL compute_precip_laps(i, Hru_plaps(i), Hru_psta(i), Hru_elev_ts(i))
             ENDIF
@@ -102,14 +104,12 @@
         Basin_snow = Basin_snow*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_precip = 'precip_1sta_laps.f90 2016-10-21 17:36:00Z'
         IF ( Precip_flag==1 ) THEN
           MODNAME = 'precip_1sta'
         ELSE
           MODNAME = 'precip_laps'
         ENDIF
-        Version_precip = MODNAME//'.f90 '//Version_precip(22:80)
-        CALL print_module(Version_precip, 'Precipitation Distribution  ', 90)
+        CALL print_module(MODDESC, MODNAME, Version_precip)
 
         ALLOCATE ( Psta_nuse(Nrain), Precip_local(Nrain) )
 
@@ -230,7 +230,7 @@
       SUBROUTINE compute_precip_laps(Ihru, Hru_plaps, Hru_psta, Hru_elev)
       USE PRMS_PRECIP_1STA_LAPS, ONLY: Pmn_mo, Padj_sn, Padj_rn, Snow_adj_lapse, Rain_adj_lapse
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Hru_psta, Hru_plaps

@@ -5,8 +5,10 @@
       MODULE PRMS_POTET_HAMON
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_hamon'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         DOUBLE PRECISION, PARAMETER :: ONE_12TH = 1.0D0/12.0D0
-        CHARACTER(LEN=11), SAVE :: MODNAME
         ! Declared Parameter
         REAL, SAVE, ALLOCATABLE :: Hamon_coef(:, :)
       END MODULE PRMS_POTET_HAMON
@@ -26,7 +28,6 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat
-      CHARACTER(LEN=80), SAVE :: Version_potet
 !***********************************************************************
       potet_hamon = 0
 
@@ -49,9 +50,7 @@
         Basin_potet = Basin_potet*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet = 'potet_hamon.f90 2015-12-04 23:29:08Z'
-        CALL print_module(Version_potet, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_hamon'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ALLOCATE ( Hamon_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'hamon_coef', 'nhru,nmonths', 'real', &

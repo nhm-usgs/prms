@@ -4,7 +4,9 @@
       MODULE PRMS_OBS
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=3), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Time Series Data'
+      character(len=*), parameter :: MODNAME = 'obs'
+      character(len=*), parameter :: Version_obs = '2020-07-01'
       INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
@@ -72,14 +74,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declvar, getdim, declparam
       EXTERNAL read_error, print_module
-! Local Variable
-      CHARACTER(LEN=80), SAVE :: Version_obs
 !***********************************************************************
       obsdecl = 0
 
-      Version_obs = 'obs.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_obs, 'Time Series Data            ', 90)
-      MODNAME = 'obs'
+      CALL print_module(MODDESC, MODNAME, Version_obs)
 
 !   Declared Variables
       IF ( Nobs>0 ) THEN
@@ -254,8 +252,7 @@
 ! **********************************************************************
       INTEGER FUNCTION obsrun()
       USE PRMS_OBS
-      USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, CFS2CMS_CONV
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
       IMPLICIT NONE

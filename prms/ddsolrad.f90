@@ -12,8 +12,10 @@
       MODULE PRMS_DDSOLRAD
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
+        character(len=*), parameter :: MODNAME = 'ddsolrad'
+        character(len=*), parameter :: Version_ddsolrad = '2020-07-01'
         INTEGER, SAVE :: Observed_flag
-        CHARACTER(LEN=8), SAVE :: MODNAME
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
         REAL, SAVE, ALLOCATABLE :: Dday_slope(:, :), Dday_intcp(:, :), Tmax_index(:, :)
@@ -38,8 +40,6 @@
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi
-! Save Variables
-      CHARACTER(LEN=80), SAVE :: Version_ddsolrad
       REAL, SAVE, DIMENSION(26) :: solf
       DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
      &          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
@@ -119,9 +119,7 @@
         Basin_potsw = Basin_swrad
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_ddsolrad = 'ddsolrad.f90 2019-04-04 11:36:00Z'
-        CALL print_module(Version_ddsolrad, 'Solar Radiation Distribution', 90)
-        MODNAME = 'ddsolrad'
+        CALL print_module(MODDESC, MODNAME, Version_ddsolrad)
 
         ! Declare Parameters
         ALLOCATE ( Dday_slope(Nhru,12) )

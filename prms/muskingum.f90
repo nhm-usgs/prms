@@ -82,11 +82,12 @@
 !***********************************************************************
       MODULE PRMS_MUSKINGUM
       IMPLICIT NONE
+      character(len=*), parameter :: MODDESC = 'Streamflow Routing'
+      character(len=*), parameter :: MODNAME = 'muskingum_mann'
+      character(len=*), parameter :: Version_muskingum = '2020-07-01'
 !   Local Variables
-      DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
-      CHARACTER(LEN=14), SAVE :: MODNAME
       END MODULE PRMS_MUSKINGUM
 
 !***********************************************************************
@@ -125,18 +126,14 @@
       IMPLICIT NONE
 ! Functions
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_muskingum
 !***********************************************************************
       muskingum_decl = 0
 
-      Version_muskingum = 'muskingum.f90 2020-06-10 10:00:00Z'
       IF ( Strmflow_flag==4 ) THEN
-        MODNAME = 'muskingum'
+        CALL print_module(MODDESC, MODNAME(:9), Version_muskingum)
       ELSE
-        MODNAME = 'muskingum_mann'
+        CALL print_module(MODDESC, MODNAME, Version_muskingum)
       ENDIF
-      CALL print_module(Version_muskingum, 'Streamflow Routing          ', 90)
 
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
@@ -150,7 +147,7 @@
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
       USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
-      USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv
+      USE PRMS_BASIN, ONLY: Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
@@ -179,8 +176,8 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
+      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag, CFS2CMS_CONV, ONE_24TH, ERROR_streamflow
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out, Basin_sroff
@@ -283,7 +280,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            CALL error_stop('in muskingum')
+            CALL error_stop('negative streamflow in muskingum', ERROR_streamflow)
           ENDIF
 
           ! Seg_outflow (the mean daily flow rate for each segment) will be the average of the hourly values.

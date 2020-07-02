@@ -5,8 +5,10 @@
 !***********************************************************************
       MODULE PRMS_POTET_JH
         IMPLICIT NONE
-        ! Local Variable
-        CHARACTER(LEN=8), SAVE :: MODNAME
+        ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_jh'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
       END MODULE PRMS_POTET_JH
@@ -25,7 +27,6 @@
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh
-      CHARACTER(LEN=80), SAVE :: Version_potet_jh
 !***********************************************************************
       potet_jh = 0
 
@@ -46,9 +47,7 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_jh = 'potet_jh.f90 2019-04-04 11:43:00Z'
-        CALL print_module(Version_potet_jh, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_jh'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ALLOCATE ( Jh_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'jh_coef', 'nhru,nmonths', 'real', &

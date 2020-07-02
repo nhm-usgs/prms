@@ -6,13 +6,15 @@
       MODULE PRMS_POTET_PAN
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
+        character(len=*), parameter :: MODNAME = 'potet_pan'
+        character(len=*), parameter :: Version_potet = '2020-07-01'
         REAL, SAVE, ALLOCATABLE :: Last_pan_evap(:)
-        CHARACTER(LEN=9), SAVE :: MODNAME
       END MODULE PRMS_POTET_PAN
 
       INTEGER FUNCTION potet_pan()
       USE PRMS_POTET_PAN
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Save_vars_to_file, Init_vars_from_file, Nevap
+      USE PRMS_MODULE, ONLY: Process, Print_debug, Save_vars_to_file, Init_vars_from_file, Nevap, ERROR_dim
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_SET_TIME, ONLY: Nowmonth
@@ -23,7 +25,6 @@
       EXTERNAL read_error, print_module, potet_pan_restart, print_date, error_stop
 ! Local Variables
       INTEGER :: i, k, j
-      CHARACTER(LEN=80), SAVE :: Version_potet_pan
 !***********************************************************************
       potet_pan = 0
 
@@ -51,11 +52,9 @@
 
 !******Declare parameters
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_potet_pan = 'potet_pan.f90 2020-04-28 23:29:08Z'
-        CALL print_module(Version_potet_pan, 'Potential Evapotranspiration', 90)
-        MODNAME = 'potet_pan'
+        CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        IF ( Nevap==0 ) CALL error_stop('potet_pan module selected, but nevap=0')
+        IF ( Nevap==0 ) CALL error_stop('potet_pan module selected, but nevap=0', ERROR_dim)
         ALLOCATE ( Last_pan_evap(Nevap) )
 
       ELSEIF ( Process(:4)=='init' ) THEN

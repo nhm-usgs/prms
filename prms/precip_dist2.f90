@@ -15,9 +15,11 @@
       MODULE PRMS_PRECIP_DIST2
         IMPLICIT NONE
 !   Local Variables
+        character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
+        character(len=*), parameter :: MODNAME = 'precip_dist2'
+        character(len=*), parameter :: Version_precip = '2020-07-01'
         INTEGER, SAVE, ALLOCATABLE :: N_psta(:), Nuse_psta(:, :)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist2(:, :)
-        CHARACTER(LEN=12), SAVE :: MODNAME
 !   Declared Parameters
         INTEGER, SAVE :: Max_psta
         REAL, SAVE :: Dist_max, Maxday_prec
@@ -59,22 +61,18 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2decl()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nrain
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nrain, ERROR_dim, DOCUMENTATION
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
       EXTERNAL read_error, print_module, error_stop
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_precip
 !***********************************************************************
       pptdist2decl = 0
 
-      Version_precip = 'precip_dist2.f90 2020-04-28 14:01:00Z'
-      CALL print_module(Version_precip, 'Precipitation Distribution  ', 90)
-      MODNAME = 'precip_dist2'
+      CALL print_module(MODDESC, MODNAME, Version_precip)
 
-      IF ( Nrain<2 .AND. Model/=99 ) &
-     &     CALL error_stop('precip_dist2 requires at least 2 precipitation measurement stations')
+      IF ( Nrain<2 .AND. Model/=DOCUMENTATION ) &
+     &     CALL error_stop('precip_dist2 requires at least 2 precipitation measurement stations', ERROR_dim)
 
       ALLOCATE ( N_psta(Nhru), Dist2(Nhru, Nrain) )
 
@@ -168,8 +166,8 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2init()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_MODULE, ONLY: Nhru, Nrain
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, DNEARZERO
+      USE PRMS_MODULE, ONLY: Nhru, Nrain, DNEARZERO
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -271,7 +269,8 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2run()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO, CELSIUS, ERROR_data, INCH2MM
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
      &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
@@ -359,7 +358,7 @@
         ENDDO
         IF ( allmissing==0 ) THEN
           CALL print_date(1)
-          CALL error_stop('all precipitation stations have missing data')
+          CALL error_stop('all precipitation stations have missing data', ERROR_data)
         ENDIF
 
         ppt = SNGL( ppt_dble )
@@ -368,7 +367,7 @@
 
         IF ( sumdist>0.0D0 ) ppt = SNGL( ppt_dble/sumdist )
 
-        IF ( Precip_units==1 ) ppt = ppt/25.4
+        IF ( Precip_units==CELSIUS ) ppt = ppt/INCH2MM
         Hru_ppt(i) = ppt
         sum_obs = sum_obs + DBLE( ppt*Hru_area(i) )
 

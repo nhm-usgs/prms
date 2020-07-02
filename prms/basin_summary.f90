@@ -5,10 +5,12 @@
       USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
 ! Module Variables
+      character(len=*), parameter :: MODDESC = 'Output Summary'
+      character(len=*), parameter :: MODNAME = 'basin_summary'
+      character(len=*), parameter :: Version_basin_summary = '2020-07-01'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear, Dailyunit, Monthlyunit, Yearlyunit, Basin_var_type
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:)
       CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
-      CHARACTER(LEN=13), SAVE :: MODNAME
       INTEGER, SAVE :: Daily_flag, Yeardays, Monthly_flag
       DOUBLE PRECISION, SAVE :: Monthdays
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_daily(:), Basin_var_monthly(:), Basin_var_yearly(:)
@@ -22,7 +24,7 @@
 !     Basin results module
 !     ******************************************************************
       SUBROUTINE basin_summary()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_MODULE, ONLY: Process, MEAN_MONTHLY
       USE PRMS_BASIN_SUMMARY
       IMPLICIT NONE
 ! Functions
@@ -36,7 +38,7 @@
         CALL basin_summaryinit()
       ELSEIF ( Process(:5)=='clean' ) THEN
         IF ( Daily_flag==1 ) CLOSE ( Dailyunit )
-        IF ( BasinOut_freq>4 ) CLOSE ( Yearlyunit )
+        IF ( BasinOut_freq>MEAN_MONTHLY ) CLOSE ( Yearlyunit )
         IF ( Monthly_flag==1 ) CLOSE ( Monthlyunit )
       ENDIF
 
@@ -47,32 +49,24 @@
 !***********************************************************************
       SUBROUTINE basin_summarydecl()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Model, ERROR_control
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
-      CHARACTER(LEN=80), SAVE :: Version_basin_summary
 !***********************************************************************
-      Version_basin_summary = 'basin_summary.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_basin_summary, 'Basin Output Summary        ', 90)
-      MODNAME = 'basin_summary'
+      CALL print_module(MODDESC, MODNAME, Version_basin_summary)
 
       IF ( control_integer(BasinOutVars, 'basinOutVars')/=0 ) BasinOutVars = 0
       ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
       IF ( control_integer(BasinOut_freq, 'basinOut_freq')/=0 ) BasinOut_freq = 0
+      IF ( BasinOut_freq<DAILY .OR. BasinOut_freq>YEARLY ) CALL error_stop('invalid basinOut_freq value', ERROR_control)
 
       IF ( BasinOutVars==0 ) THEN
-        IF ( Model/=99 ) THEN
-          PRINT *, 'ERROR, basin_summary requested with basinOutVars equal 0'
-!          PRINT *, 'no basin_summary output is produced'
-!          BasinOutON_OFF = 0
-          Inputerror_flag = 1
-          RETURN
-        ENDIF
+        IF ( Model/=DOCUMENTATION ) CALL error_stop('basin_summary requested with basinOutVars equal 0', ERROR_control)
       ELSE
         ALLOCATE ( BasinOutVar_names(BasinOutVars), Nc_vars(BasinOutVars) )
         BasinOutVar_names = ' '
@@ -89,11 +83,12 @@
 !***********************************************************************
       SUBROUTINE basin_summaryinit()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, Start_year, Prms_warmup
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, Start_year, Prms_warmup, ERROR_open_out, &
+     &    DAILY, DAILY_MONTHLY, MONTHLY, MEAN_MONTHLY, YEARLY, MEAN_YEARLY, ERROR_control
       IMPLICIT NONE
       INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file
+      EXTERNAL read_error, PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, dum, jj
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -121,17 +116,17 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) ERROR STOP -2
+      IF ( ierr==1 ) ERROR STOP ERROR_control
       ALLOCATE ( Basin_var_daily(BasinOutVars) )
       Basin_var_daily = 0.0D0
 
       Daily_flag = 0
-      IF ( BasinOut_freq==1 .OR. BasinOut_freq==3 ) Daily_flag = 1
+      IF ( BasinOut_freq==DAILY .OR. BasinOut_freq==DAILY_MONTHLY ) Daily_flag = 1
 
       Monthly_flag = 0
-      IF ( BasinOut_freq==2 .OR. BasinOut_freq==3 .OR. BasinOut_freq==4 ) Monthly_flag = 1
+      IF ( BasinOut_freq==MONTHLY .OR. BasinOut_freq==DAILY_MONTHLY .OR. BasinOut_freq==MEAN_MONTHLY ) Monthly_flag = 1
 
-      IF ( BasinOut_freq>4 ) THEN
+      IF ( BasinOut_freq>MEAN_MONTHLY ) THEN
         Yeardays = 0
         ALLOCATE ( Basin_var_yearly(BasinOutVars) )
         Basin_var_yearly = 0.0D0
@@ -148,33 +143,31 @@
       IF ( Daily_flag==1 ) THEN
         fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'.csv'
         CALL PRMS_open_output_file(Dailyunit, fileName, 'basin_summary, daily', 0, ios)
-        IF ( ios/=0 ) ierr = 1
+        IF ( ios/=0 ) CALL error_stop('in basin_summary, daily', ERROR_open_out)
         WRITE ( Dailyunit, Output_fmt2 ) (BasinOutVar_names(jj)(:Nc_vars(jj)), jj=1, BasinOutVars)
       ENDIF
-      IF ( BasinOut_freq==5 ) THEN
+      IF ( BasinOut_freq==MEAN_YEARLY ) THEN
         fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'_meanyearly.csv'
         CALL PRMS_open_output_file(Yearlyunit, fileName, 'basin_summary, mean yearly', 0, ios)
-        IF ( ios/=0 ) ierr = 1
+        IF ( ios/=0 ) CALL error_stop('in basin_summary, mean yearly', ERROR_open_out)
         WRITE ( Yearlyunit, Output_fmt2 ) (BasinOutVar_names(jj)(:Nc_vars(jj)), jj=1, BasinOutVars)
-      ELSEIF ( BasinOut_freq==6 ) THEN
+      ELSEIF ( BasinOut_freq==MEAN_YEARLY ) THEN
         fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'_yearly.csv'
         CALL PRMS_open_output_file(Yearlyunit, fileName, 'basin_summary, yearly', 0, ios)
-        IF ( ios/=0 ) ierr = 1
+        IF ( ios/=0 ) CALL error_stop('in basin_summary, yearly', ERROR_open_out)
         WRITE ( Yearlyunit, Output_fmt2 ) (BasinOutVar_names(jj)(:Nc_vars(jj)), jj=1, BasinOutVars)
       ELSEIF ( Monthly_flag==1 ) THEN
-        IF ( BasinOut_freq==4 ) THEN
+        IF ( BasinOut_freq==MEAN_MONTHLY ) THEN
           fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'_meanmonthly.csv'
         ELSE
           fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'_monthly.csv'
         ENDIF
         CALL PRMS_open_output_file(Monthlyunit, fileName, 'basin_summary, monthly', 0, ios)
-        IF ( ios/=0 ) ierr = 1
+        IF ( ios/=0 ) CALL error_stop('in basin_summary, monthly', ERROR_open_out)
         WRITE ( Monthlyunit, Output_fmt2 ) (BasinOutVar_names(jj)(:Nc_vars(jj)), jj=1, BasinOutVars)
       ENDIF
 
-      IF ( ierr==1 ) ERROR STOP -2
-
- 9001 FORMAT ('(I4, 2(''-'',I2.2),',I6,'('',''ES10.3))')
+ 9001 FORMAT ('(I4, 2(''-'',I2.2),',I0,'('','',ES10.3))')
  9002 FORMAT ('("Date"',I0,'('', ''A))')
  9003 FORMAT ('(I4,', I0,'('',''ES10.3))')
 
@@ -185,7 +178,7 @@
 !***********************************************************************
       SUBROUTINE basin_summaryrun()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
+      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day, MEAN_MONTHLY, YEARLY
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
@@ -212,13 +205,13 @@
 
       write_month = 0
       write_year = 0
-      IF ( BasinOut_freq>4 ) THEN
+      IF ( BasinOut_freq>MEAN_MONTHLY ) THEN
         last_day = 0
         IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = 1
         IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
           IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==1 ) THEN
             DO jj = 1, BasinOutVars
-              IF ( BasinOut_freq==5 ) Basin_var_yearly(jj) = Basin_var_yearly(jj)/Yeardays
+              IF ( BasinOut_freq==YEARLY ) Basin_var_yearly(jj) = Basin_var_yearly(jj)/Yeardays
             ENDDO
             WRITE ( Yearlyunit, Output_fmt3) Lastyear, (Basin_var_yearly(jj), jj=1, BasinOutVars)
             Basin_var_yearly = 0.0D0
@@ -239,7 +232,7 @@
         Monthdays = Monthdays + 1.0D0
       ENDIF
 
-      IF ( BasinOut_freq>4 ) THEN
+      IF ( BasinOut_freq>MEAN_MONTHLY ) THEN
         DO jj = 1, BasinOutVars
           Basin_var_yearly(jj) = Basin_var_yearly(jj) + Basin_var_daily(jj)
         ENDDO
@@ -250,7 +243,7 @@
         DO jj = 1, BasinOutVars
           Basin_var_monthly(jj) = Basin_var_monthly(jj) + Basin_var_daily(jj)
           IF ( write_month==1 ) THEN
-            IF ( BasinOut_freq==4 ) Basin_var_monthly(jj) = Basin_var_monthly(jj)/Monthdays
+            IF ( BasinOut_freq==MEAN_MONTHLY ) Basin_var_monthly(jj) = Basin_var_monthly(jj)/Monthdays
           ENDIF
         ENDDO
       ENDIF

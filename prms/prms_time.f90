@@ -2,9 +2,12 @@
 ! Sets PRMS time variables
 !***********************************************************************
       MODULE PRMS_SET_TIME
+      USE PRMS_MODULE, ONLY: YEAR, MONTH, DAY, HOUR, MINUTE
       IMPLICIT NONE
 !   Local Variables
-!      CHARACTER(LEN=10), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Timestep Control'
+      character(len=*), parameter :: MODNAME = 'prms_time'
+      character(len=*), parameter :: Version_prms_time = '2020-07-01'
       INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
       INTEGER, SAVE :: Nowtime(6), Nowday, Nowmonth, Nowyear, Nowhour, Nowminute
       REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
@@ -15,8 +18,8 @@
 !***********************************************************************
       INTEGER FUNCTION prms_time()
       USE PRMS_SET_TIME
-      USE PRMS_MODULE, ONLY: Process, Timestep, Starttime
-      USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv, FT2_PER_ACRE
+      USE PRMS_MODULE, ONLY: Process, Timestep, Starttime, SECS_PER_DAY, SECS_PER_HOUR, FT2_PER_ACRE, ERROR_time
+      USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
       IMPLICIT NONE
 ! Functions
       INTRINSIC SNGL
@@ -26,7 +29,6 @@
 ! Local Variables
       INTEGER :: startday
       DOUBLE PRECISION :: dt
-      CHARACTER(LEN=80), SAVE :: Version_prms_time
 !***********************************************************************
       prms_time = 0
 
@@ -62,11 +64,11 @@
           Julian_day_absolute = startday
         ENDIF
 
-        Nowyear = Nowtime(1)
-        Nowmonth = Nowtime(2)
-        Nowday = Nowtime(3)
-        Nowhour = Nowtime(4)
-        Nowminute = Nowtime(5)
+        Nowyear = Nowtime(YEAR)
+        Nowmonth = Nowtime(MONTH)
+        Nowday = Nowtime(DAY)
+        Nowhour = Nowtime(HOUR)
+        Nowminute = Nowtime(MINUTE)
 
         IF ( leap_day(Nowyear)==1 ) THEN
           Yrdays = 366
@@ -90,24 +92,22 @@
         Timestep_hours = SNGL( dt )
         Timestep_days = Timestep_hours/24.0
         Timestep_minutes = Timestep_hours*60.0
-        Timestep_seconds = dt*3600.0D0
+        Timestep_seconds = dt*SECS_PER_HOUR
         Cfs_conv = FT2_PER_ACRE/12.0D0/Timestep_seconds
         Cfs2inches = Basin_area_inv*12.0D0*Timestep_seconds/FT2_PER_ACRE
 
         ! Check to see if in a daily or subdaily time step
         IF ( Timestep_hours>24.0 ) THEN
           PRINT *, 'ERROR, timestep > daily, fix Data File, timestep:', Timestep_hours
-          ERROR STOP -3
+          ERROR STOP ERROR_time
         ELSEIF ( Timestep_hours<24.0 ) THEN
           PRINT *, 'ERROR, timestep < daily for daily model, fix Data File', Timestep_hours
-          ERROR STOP -3
+          ERROR STOP ERROR_time
         ENDIF
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_time = 'prms_time.f90 2020-04-28 16:00:42Z'
-        CALL print_module(Version_prms_time, 'PRMS Set Time Variables     ', 90)
-!        MODNAME = 'prms_time'
-        Timestep_seconds = 86400.0D0
+        CALL print_module(MODDESC, MODNAME, Version_prms_time)
+        Timestep_seconds = SECS_PER_DAY
         Cfs_conv = FT2_PER_ACRE/12.0D0/Timestep_seconds
         Cfs2inches = Basin_area_inv*12.0D0*Timestep_seconds/FT2_PER_ACRE
       ENDIF

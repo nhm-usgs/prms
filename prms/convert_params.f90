@@ -4,6 +4,9 @@
       SUBROUTINE convert_params()
       USE PRMS_MODULE, ONLY: Process, Dprst_flag, Nhru, Model_mode
       IMPLICIT NONE
+      character(len=*), parameter :: MODDESC = 'Convert PRMS parameters'
+      character(len=*), parameter :: MODNAME = 'convert_params'
+      character(len=*), parameter :: Version_convert_params = '2020-07-01'
 ! Functions
       EXTERNAL print_module, PRMS_open_module_file, read_error
       INTEGER, EXTERNAL :: declparam, getparam
@@ -17,9 +20,6 @@
 !      REAL, SAVE, ALLOCATABLE :: Sro_to_dprst(:)
 ! Local Variables
       INTEGER :: i, j, dprst_frac_flag, ounit
-      CHARACTER(LEN=14), SAVE :: MODNAME
-! Save Variables
-      CHARACTER(LEN=80), SAVE :: Version_convert_params
 !***********************************************************************
       IF ( Process(:4)=='init' ) THEN
 
@@ -155,9 +155,7 @@
  300    FORMAT (F0.7)
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_convert_params = 'convert_params.f90 2018-03-15 11:44:00Z'
-        CALL print_module(Version_convert_params, 'Convert PRMS parameters     ', 90)
-        MODNAME = 'convert_params'
+        CALL print_module(MODDESC, MODNAME, Version_convert_params)
 
         ALLOCATE ( Tmax_allsnow(Nhru,12) )
         IF ( declparam(MODNAME, 'tmax_allsnow', 'nhru,nmonths', 'real', &

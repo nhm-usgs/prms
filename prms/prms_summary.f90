@@ -4,8 +4,10 @@
       MODULE PRMS_PRMS_SUMMARY
         IMPLICIT NONE
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Output Summary'
+        character(len=*), parameter :: MODNAME = 'prms_summary'
+        character(len=*), parameter :: Version_prms_summary = '2020-07-01'
         INTEGER, PARAMETER :: NVARS = 51
-        CHARACTER(LEN=12), SAVE :: MODNAME
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segmentout(:) !, Gageout(:)
@@ -24,7 +26,7 @@
       SUBROUTINE prms_summary()
       USE PRMS_PRMS_SUMMARY
       USE PRMS_MODULE, ONLY: Model, Process, Nsegment, Csv_output_file, Inputerror_flag, Nobs, &
-     &    MAXDIM, Npoigages, Parameter_check_flag, CsvON_OFF
+     &    MAXDIM, Npoigages, Parameter_check_flag, CsvON_OFF, DOCUMENTATION, ERROR_open_out
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
      &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
@@ -50,7 +52,6 @@
       INTEGER :: i, ios, foo, idim !, statsON_OFF
       DOUBLE PRECISION :: gageflow
       CHARACTER(LEN=10) :: chardate
-      CHARACTER(LEN=80), SAVE :: Version_prms_summary
 !***********************************************************************
       IF ( Process(:3)=='run' ) THEN
         DO i = 1, Npoigages
@@ -89,15 +90,13 @@
 
 ! Declare procedure
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_prms_summary = 'prms_summary.f90 2020-06-10 10:00:00Z'
-        CALL print_module(Version_prms_summary, 'Output Summary              ', 90)
-        MODNAME = 'prms_summary'
+        CALL print_module(MODDESC, MODNAME, Version_prms_summary)
 
 !       Open summary file
         IF ( control_string(Csv_output_file, 'csv_output_file')/=0 ) CALL read_error(5, 'csv_output_file')
-        IF ( Model/=99 ) THEN
+        IF ( Model/=DOCUMENTATION ) THEN
           CALL PRMS_open_output_file(Iunit, Csv_output_file, 'csv_output_file', 0, ios)
-          IF ( ios/=0 ) ERROR STOP -1
+          IF ( ios/=0 ) ERROR STOP ERROR_open_out
         ENDIF
 
         IF ( declvar(MODNAME, 'basin_total_storage', 'one', 1, 'double', &
@@ -107,7 +106,7 @@
      &       'Basin area-weighted average storage in all surface water storage reservoirs', &
      &       'inches', Basin_surface_storage)/=0 ) CALL read_error(3, 'basin_surface_storage')
 
-        IF ( Npoigages>0 ) THEN
+        IF ( Npoigages>0 .OR. Model==DOCUMENTATION ) THEN
 !          ALLOCATE ( Parent_poigages(Npoigages) )
 !          IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &
 !     &         '1', '1', '1000000', &
@@ -247,7 +246,7 @@
 !     statvar_to_csv - write a CSV file based on the statvar file
 !***********************************************************************
       SUBROUTINE statvar_to_csv()
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, ERROR_open_in, ERROR_open_out, ERROR_read
       IMPLICIT NONE
       INTEGER, EXTERNAL :: control_string, numchars
       EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
@@ -264,15 +263,15 @@
 !***********************************************************************
       IF ( control_string(statvar_file, 'stat_var_file')/=0 ) CALL read_error(5, 'stat_var_file')
       CALL PRMS_open_input_file(inunit, statvar_file, 'stat_var_file', 0, ios)
-      IF ( ios/=0 ) CALL error_stop('opening statvar file')
+      IF ( ios/=0 ) CALL error_stop('opening statvar file', ERROR_open_in)
       statvar_file_csv = statvar_file(:numchars(statvar_file))//'.csv'
       CALL PRMS_open_output_file(outunit, statvar_file_csv, 'statvar_csv', 0, ios)
-      IF ( ios/=0 ) CALL error_stop('opening statvar CSV file')
+      IF ( ios/=0 ) CALL error_stop('opening statvar CSV file', ERROR_open_out)
       READ ( inunit, * ) numvariables
       ALLOCATE ( varname(numvariables), varindex(numvariables), values(numvariables), nc(numvariables) )
       DO i = 1, numvariables
         READ ( inunit, '(A)', IOSTAT=ios ) varname(i)
-        IF ( ios/=0 ) CALL error_stop('reading statvar file')
+        IF ( ios/=0 ) CALL error_stop('reading statvar file', ERROR_read)
         num = numchars(varname(i))
         READ ( varname(i)(num+1:32), '(I5)' ) varindex(i)
         WRITE ( varname(i), '(A,I0)' ) varname(i)(:num)//'_', varindex(i)
@@ -290,7 +289,7 @@
           PRINT *, 'ERROR, reading statvar file values, IOSTAT:', ios
           PRINT *, ts, yr, mo, day, hr, 'number of variables:', numvariables
           PRINT *, (values(i), i = 1, numvariables )
-          ERROR STOP  -3
+          ERROR STOP ERROR_read
         ENDIF
         WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, day
         WRITE ( outunit, fmt2 ) chardate, (values(i), i = 1, numvariables )
