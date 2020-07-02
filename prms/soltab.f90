@@ -13,6 +13,9 @@
       MODULE PRMS_SOLTAB
       IMPLICIT NONE
 !   Local Variables
+      character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
+      character(len=*), parameter :: MODNAME = 'soltab'
+      character(len=*), parameter :: Version_soltab = '2020-07-01'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -27,7 +30,6 @@
       DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYSYR
       DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS ! about 0.00143356672
 ! DEGDAY = 360 degrees/days in year
-      CHARACTER(LEN=6), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE :: Solar_declination(366), Soltab_basinpotsw(366)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_cossl(:), Soltab_sunhrs(:, :)
 !   Declared Variables
@@ -68,14 +70,10 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_soltab
 !***********************************************************************
       sthdecl = 0
 
-      Version_soltab = 'soltab.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_soltab, 'Potential Solar Radiation   ', 90)
-      MODNAME = 'soltab'
+      CALL print_module(MODDESC, MODNAME, Version_soltab)
 
       ALLOCATE ( Soltab_potsw(366, Nhru) )
 !      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', 366*Nhru, 'double', &
@@ -234,7 +232,7 @@
       SUBROUTINE compute_soltab(Obliquity, Solar_declination, Slope, Aspect, &
      &                          Latitude, Cossl, Soltab, Sunhrs, Hru_type, Id)
       USE PRMS_SOLTAB, ONLY: PI, TWOPI, RADIANS, PI_12
-      USE PRMS_BASIN, ONLY: DNEARZERO
+      USE PRMS_MODULE, ONLY: DNEARZERO
       IMPLICIT NONE
       EXTERNAL compute_t
 !     Functions

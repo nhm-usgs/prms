@@ -15,7 +15,9 @@
       MODULE PRMS_TEMP_DIST2
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=10), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Temperature Distribution'
+      character(len=*), parameter :: MODNAME = 'temp_dist2'
+      character(len=*), parameter :: Version_temp = '2020-07-01'
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
       REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
@@ -67,22 +69,19 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, ERROR_dim
       IMPLICIT NONE
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module, error_stop
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_temp
 !***********************************************************************
       t2dist2decl = 0
 
-      Version_temp = 'temp_dist2.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
-      MODNAME = 'temp_dist2'
+      CALL print_module(MODDESC, MODNAME, Version_temp)
 
-      IF ( Ntemp<2 .AND. Model/=99 ) CALL error_stop('temp_dist2 requires at least 2 air-temperature-measurement stations')
+      IF ( Ntemp<2 .AND. Model/=99 ) &
+     &     CALL error_stop('temp_dist2 requires at least 2 air-temperature-measurement stations', ERROR_dim)
 
 ! added by Mastin 5/8/98
       ALLOCATE ( Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp), N_tsta(Nhru) )
@@ -200,8 +199,8 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2init()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Init_vars_from_file
-      USE PRMS_BASIN, ONLY: Hru_elev, DNEARZERO, NEARZERO
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Init_vars_from_file, DNEARZERO, NEARZERO
+      USE PRMS_BASIN, ONLY: Hru_elev
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -317,8 +316,8 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Ntemp, Glacier_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, DNEARZERO, MAXTEMP, MINTEMP, &
+      USE PRMS_MODULE, ONLY: Ntemp, Glacier_flag, MAXTEMP, MINTEMP, DNEARZERO, GLACIER, ERROR_data
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tsta_elev
@@ -390,7 +389,7 @@
       ENDDO
       IF ( allmissing==0 ) THEN
         CALL print_date(1)
-        CALL error_stop('all temperature stations have missing data')
+        CALL error_stop('all temperature stations have missing data', ERROR_data)
       ENDIF
 
       IF ( ntotx>0 ) THEN
@@ -415,7 +414,7 @@
 
         DO kk = 1, N_tsta(j)
           k = Nuse_tsta(kk, j)
-          IF ( Hru_type(j)==4 .AND. Glacier_flag==1 ) Elfac(j, k) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
+          IF ( Hru_type(j)==GLACIER .AND. Glacier_flag==1 ) Elfac(j, k) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
 
 ! check for missing or bad temps
           IF ( Tmax(k)<mn ) CYCLE

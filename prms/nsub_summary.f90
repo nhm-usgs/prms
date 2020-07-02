@@ -2,16 +2,18 @@
 !     Output a set of declared variables by subbasin in CSV format
 !***********************************************************************
       MODULE PRMS_NSUB_SUMMARY
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY
       IMPLICIT NONE
 ! Module Variables
+      character(len=*), parameter :: MODDESC = 'Output Summary'
+      character(len=*), parameter :: MODNAME = 'nsub_summary'
+      character(len=*), parameter :: Version_nsub_summary = '2020-07-01'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsub_var_type(:), Nsub_var_size(:)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nhru_var_dble(:, :), Nsub_var_dble(:, :), Nsub_var_daily(:, :)
       REAL, SAVE, ALLOCATABLE :: Nsub_var_single(:, :)
       CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
-      CHARACTER(LEN=12), SAVE :: MODNAME
       INTEGER, SAVE :: Daily_flag, Nhru_double_vars, Yeardays, Monthly_flag
       INTEGER, SAVE :: Nsub_single_vars, Nsub_vars, Nhru_vars
       DOUBLE PRECISION, SAVE :: Monthdays
@@ -49,7 +51,7 @@
           IF ( Daily_flag==1 ) THEN
             IF ( Dailyunit(i)>0 ) CLOSE ( Dailyunit(i) )
           ENDIF
-          IF ( NsubOut_freq>4 ) THEN
+          IF ( NsubOut_freq>MEAN_MONTHLY ) THEN
             IF ( Yearlyunit(i)>0 ) CLOSE ( Yearlyunit(i) )
           ENDIF
           IF ( Monthly_flag==1 ) THEN
@@ -65,33 +67,28 @@
 !***********************************************************************
       SUBROUTINE nsub_summarydecl()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, Inputerror_flag, Nhru, Nsub
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nsub, DOCUMENTATION, ERROR_control
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
-      CHARACTER(LEN=80), SAVE :: Version_nsub_summary
 !***********************************************************************
-      Version_nsub_summary = 'nsub_summary.f90 2020-04-28 13:36:00Z'
-      CALL print_module(Version_nsub_summary, 'Subbasin Output Summary     ', 90)
-      MODNAME = 'nsub_summary'
+      CALL print_module(MODDESC, MODNAME, Version_nsub_summary)
 
       IF ( control_integer(NsubOutVars, 'nsubOutVars')/=0 ) NsubOutVars = 0
       ! 1 = daily, 2 = monthly, 3 = both, 4 = mean monthly, 5 = mean yearly, 6 = yearly total
       IF ( control_integer(NsubOut_freq, 'nsubOut_freq')/=0 ) NsubOut_freq = 0
+      IF ( NsubOut_freq<DAILY .OR. NsubOut_freq>YEARLY ) CALL error_stop('invalid nsubOut_freq value', ERROR_control)
       ! 1 = ES10.3; 2 = F0.2; 3 = F0.3; 4 = F0.4; 5 = F0.5
       IF ( control_integer(NsubOut_format, 'nsubOut_format')/=0 ) NsubOut_format = 1
+      IF ( NsubOut_format<1 .OR. NsubOut_format>5 ) CALL error_stop('invalid nsubOut_format value', ERROR_control)
 
       ALLOCATE ( Nsub_var_size(NsubOutVars) )
       IF ( NsubOutVars==0 ) THEN
-        IF ( Model/=99 ) THEN
-          PRINT *, 'ERROR, nsub_summary requested with nsubOutVars equal 0'
-          Inputerror_flag = 1
-          RETURN
-        ENDIF
+        IF ( Model/=DOCUMENTATION ) CALL error_stop('ERROR, nsub_summary requested with nsubOutVars equal 0', ERROR_control)
       ELSE
         ALLOCATE ( NsubOutVar_names(NsubOutVars), Nsub_var_type(NsubOutVars), Nc_vars(NsubOutVars) )
         NsubOutVar_names = ' '
@@ -115,8 +112,9 @@
 !***********************************************************************
       SUBROUTINE nsub_summaryinit()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_MODULE, ONLY: Nhru, Nsub, Inputerror_flag, MAXFILE_LENGTH, Start_year, Prms_warmup
-      USE PRMS_BASIN, ONLY: Hru_area_dble, DNEARZERO, Active_hrus, Hru_route_order
+      USE PRMS_MODULE, ONLY: Nhru, Nsub, Inputerror_flag, MAXFILE_LENGTH, Start_year, Prms_warmup, &
+     &    DNEARZERO, ERROR_control, ERROR_open_out
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order
       IMPLICIT NONE
       INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
@@ -168,7 +166,7 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) ERROR STOP -1
+      IF ( ierr==1 ) ERROR STOP ERROR_control
 
       IF ( Nhru_vars==1 ) THEN
         IF ( Nhru_double_vars==1 ) THEN
@@ -187,7 +185,7 @@
       ENDIF
 
       Daily_flag = 0
-      IF ( NsubOut_freq==1 .OR. NsubOut_freq==3 ) THEN
+      IF ( NsubOut_freq==DAILY .OR. NsubOut_freq==DAILY_MONTHLY ) THEN
         Daily_flag = 1
         ALLOCATE ( Dailyunit(NsubOutVars) )
         Dailyunit = 0
@@ -196,9 +194,9 @@
       ENDIF
 
       Monthly_flag = 0
-      IF ( NsubOut_freq==2 .OR. NsubOut_freq==3 .OR. NsubOut_freq==4 ) Monthly_flag = 1
+      IF ( NsubOut_freq==MONTHLY .OR. NsubOut_freq==DAILY_MONTHLY .OR. NsubOut_freq==MEAN_MONTHLY ) Monthly_flag = 1
 
-      IF ( NsubOut_freq>4 ) THEN
+      IF ( NsubOut_freq>MEAN_MONTHLY ) THEN
         Yeardays = 0
         ALLOCATE ( Nsub_var_yearly(Nsub, NsubOutVars), Yearlyunit(NsubOutVars) )
         Nsub_var_yearly = 0.0D0
@@ -229,29 +227,28 @@
           fileName = NsubOutBaseFileName(:numchars(NsubOutBaseFileName))//NsubOutVar_names(jj)(:Nc_vars(jj))//'.csv'
           !print *, fileName
           CALL PRMS_open_output_file(Dailyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) CALL error_stop('in nsub_summary, daily')
+          IF ( ios/=0 ) CALL error_stop('in nsub_summary, daily', ERROR_open_out)
           WRITE ( Dailyunit(jj), Output_fmt2 ) (j, j=1,Nsub)
         ENDIF
-        IF ( NsubOut_freq==5 ) THEN
+        IF ( NsubOut_freq==MEAN_YEARLY ) THEN
           fileName = NsubOutBaseFileName(:numchars(NsubOutBaseFileName))//NsubOutVar_names(jj)(:Nc_vars(jj))//'_meanyearly.csv'
           CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) CALL error_stop('in nsub_summary, mean yearly')
+          IF ( ios/=0 ) CALL error_stop('in nsub_summary, mean yearly', ERROR_open_out)
           WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nsub)
-        ELSEIF ( NsubOut_freq==6 ) THEN
+        ELSEIF ( NsubOut_freq==YEARLY ) THEN
           fileName = NsubOutBaseFileName(:numchars(NsubOutBaseFileName))//NsubOutVar_names(jj)(:Nc_vars(jj))//'_yearly.csv'
           CALL PRMS_open_output_file(Yearlyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) CALL error_stop('in nsub_summary, yearly')
+          IF ( ios/=0 ) CALL error_stop('in nsub_summary, yearly', ERROR_open_out)
           WRITE ( Yearlyunit(jj), Output_fmt2 ) (j, j=1,Nsub)
         ELSEIF ( Monthly_flag==1 ) THEN
-          IF ( NsubOut_freq==4 ) THEN
+          IF ( NsubOut_freq==MEAN_MONTHLY ) THEN
             fileName = NsubOutBaseFileName(:numchars(NsubOutBaseFileName))//NsubOutVar_names(jj)(:Nc_vars(jj))// &
      &                 '_meanmonthly.csv'
           ELSE
             fileName = NsubOutBaseFileName(:numchars(NsubOutBaseFileName))//NsubOutVar_names(jj)(:Nc_vars(jj))//'_monthly.csv'
           ENDIF
-          !print *, fileName
           CALL PRMS_open_output_file(Monthlyunit(jj), fileName, 'xxx', 0, ios)
-          IF ( ios/=0 ) CALL error_stop('in nsub_summary, monthly')
+          IF ( ios/=0 ) CALL error_stop('in nsub_summary, monthly', ERROR_open_out)
           WRITE ( Monthlyunit(jj), Output_fmt2 ) (j, j=1,Nsub)
         ENDIF
       ENDDO
@@ -332,7 +329,7 @@
 
       write_month = 0
       write_year = 0
-      IF ( NsubOut_freq>4 ) THEN
+      IF ( NsubOut_freq>MEAN_MONTHLY ) THEN
         last_day = 0
         IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = 1
         IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
@@ -340,11 +337,11 @@
             DO jj = 1, NsubOutVars
               IF ( Nsub_var_size(jj)==Nhru ) THEN
                 DO k = 1, Nsub
-                  IF ( NsubOut_freq==5 ) Nsub_var_yearly(k, jj) = Nsub_var_yearly(k, jj)/Yeardays
+                  IF ( NsubOut_freq==MEAN_YEARLY ) Nsub_var_yearly(k, jj) = Nsub_var_yearly(k, jj)/Yeardays
                   Nsub_var_yearly(k, jj) = Nsub_var_yearly(k, jj)/Sub_area(k)
                 ENDDO
               ELSE
-                IF ( NsubOut_freq==5 ) THEN
+                IF ( NsubOut_freq==MEAN_YEARLY ) THEN
                   DO k = 1, Nsub
                     Nsub_var_yearly(k, jj) = Nsub_var_yearly(k, jj)/Yeardays
                   ENDDO
@@ -393,7 +390,7 @@
         ENDDO
       ENDIF
 
-      IF ( NsubOut_freq>4 ) THEN
+      IF ( NsubOut_freq>MEAN_MONTHLY ) THEN
         DO jj = 1, NsubOutVars
           IF ( Nsub_var_size(jj)==Nhru ) THEN
             DO j = 1, Active_hrus
@@ -420,7 +417,7 @@
             ENDDO
             DO k = 1, Nsub
               IF ( write_month==1 ) THEN
-                IF ( NsubOut_freq==4 ) Nsub_var_monthly(k, jj) = Nsub_var_monthly(k, jj)/Monthdays/Sub_area(k)
+                IF ( NsubOut_freq==MEAN_MONTHLY ) Nsub_var_monthly(k, jj) = Nsub_var_monthly(k, jj)/Monthdays/Sub_area(k)
               ENDIF
             ENDDO
           ELSE
