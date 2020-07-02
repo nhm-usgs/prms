@@ -20,7 +20,10 @@
       IMPLICIT NONE
 !   Local Variables
       INTEGER, PARAMETER :: MAXLAPSE = 3
-      CHARACTER(LEN=8), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC =
+     +                               'Temp & Precip Distribution'
+      character(len=*), parameter :: MODNAME = 'xyz_dist'
+      character(len=*), parameter :: Version_xyz_dist = '2020-07-01'
       INTEGER, SAVE :: Nlapse, Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
@@ -124,16 +127,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_xyz_dist
 !***********************************************************************
       xyzdecl = 0
 
-      Version_xyz_dist =
-     +'xyz_dist.f 2020-06-10 10:00:00Z'
-      CALL print_module(Version_xyz_dist,
-     +                  'Temp & Precip Distribution  ', 77)
-      MODNAME = 'xyz_dist'
+      CALL print_module(MODDESC, MODNAME, Version_xyz_dist)
 
       IF ( declvar(MODNAME, 'is_rain_day', 'one', 1, 'integer',
      +     'Flag to indicate if it is raining anywhere in the basin',
@@ -456,9 +453,10 @@
 !***********************************************************************
       INTEGER FUNCTION xyzinit()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Nhru, Inputerror_flag, Ntemp, Nrain,
+     +    FEET2METERS
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Hru_elev_ts, Active_hrus, Hru_route_order, FEET2METERS
+     +    Hru_elev_ts, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -716,9 +714,9 @@
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
-      USE PRMS_MODULE, ONLY: Nrain, Glacier_flag
+      USE PRMS_MODULE, ONLY: Nrain, Glacier_flag, DNEARZERO, GLACIER
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    DNEARZERO, Hru_route_order, Hru_type, Hru_elev_meters
+     +    Hru_route_order, Hru_type, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust
@@ -901,7 +899,7 @@
         i = Hru_route_order(ii)
         IF ( Glacier_flag==1 ) THEN
           ! glacier module may have changed Hru_elev_meters
-          IF ( Hru_type(i)==4 )
+          IF ( Hru_type(i)==GLACIER )
      +         MRUelev(i) = (Hru_elev_meters(i)+Z_add)/Z_div
         ENDIF
 
@@ -955,9 +953,9 @@
      +    Tmin_rain_sta, Is_rain_day, Psta_freq_nuse, X_div, Y_div,
      +    Z_div, X_add, Y_add, Z_add, Precip_xyz, MAXLAPSE, MRUelev,
      +    Tmax_allsnow_dist, Tmax_allrain_dist, Adjust_snow, Adjust_rain
-      USE PRMS_MODULE, ONLY: Nrain
+      USE PRMS_MODULE, ONLY: Nrain, NEARZERO, DNEARZERO, MM2INCH,CELSIUS
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
-     +    Hru_route_order, NEARZERO, DNEARZERO, MM2INCH
+     +    Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev, Basin_obs_ppt,
@@ -1146,7 +1144,7 @@
 
 !******Ignore small amounts of precipitation on HRU
           IF ( ppt>NEARZERO ) THEN
-            IF ( Precip_units==1 ) ppt = ppt*MM2INCH
+            IF ( Precip_units==CELSIUS ) ppt = ppt*MM2INCH
             CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i),
      +           Hru_snow(i), Tmaxf(i), Tminf(i), Pptmix(i),
      +           Newsnow(i), Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0,

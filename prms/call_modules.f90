@@ -1,19 +1,117 @@
 !***********************************************************************
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
-      MODULE PRMS_MODULE
-      IMPLICIT NONE
-      INTEGER, PARAMETER :: MAXFILE_LENGTH = 256, MAXCONTROL_LENGTH = 32
-      INTEGER, PARAMETER :: MAXDIM = 500
-      CHARACTER(LEN=68), PARAMETER :: &
-     &  EQULS = '===================================================================='
-      CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
-      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.2.0 06/25/2020'
-      CHARACTER(LEN=8), SAVE :: Process
-      ! model_mode
-      INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
-      INTEGER, PARAMETER :: DOCUMENTATION = 99
-      CHARACTER(LEN=80), SAVE :: PRMS_versn
+MODULE PRMS_MODULE
+    USE ISO_FORTRAN_ENV
+    IMPLICIT NONE
+    !! INT32, REAL32, REAL64
+    integer, parameter :: sp = REAL32
+    !! Define real precision and range
+    integer, parameter :: dp = REAL64
+    !! Define double precision and range
+    character(len=*), parameter :: MODDESC = 'Computation Order'
+    character(len=*), parameter :: MODNAME = 'call_modules'
+    character(len=*), parameter :: PRMS_versn = '2020-07-01'
+    character(LEN=*), parameter :: PRMS_VERSION = 'Version 5.2.0 07/01/2020'
+
+    integer, parameter :: MAXFILE_LENGTH = 256
+    integer, parameter :: MAXCONTROL_LENGTH = 32
+    integer, parameter :: MAXDIM = 500
+    character(LEN=*), parameter :: EQULS = '===================================================================='
+
+    real(REAL64), parameter :: ONE_24TH = 1.0_dp / 24.0_dp
+    real(REAL32), parameter :: ONETHIRD = 1.0_sp / 3.0_sp
+    real(REAL32), parameter :: TWOTHIRDS = 2.0_sp / 3.0_sp
+    real(REAL32), parameter :: PI = ACOS(-1.0_sp)
+
+    real(REAL64), parameter :: SECS_PER_DAY = 86400_dp
+    real(REAL64), parameter :: SECS_PER_HOUR = 3600_dp
+    !real(REAL32), parameter :: MIN_PER_HOUR = 60_sp
+    !real(REAL32), parameter :: HOUR_PER_DAY = 24_sp
+
+    real(REAL32), parameter :: CLOSEZERO = EPSILON(0.0_sp)
+    real(REAL32), parameter :: NEARZERO = 1.0E-6
+    !!real(r32), parameter :: NEARZERO = EPSILON(0.0_sp)
+    real(REAL64), parameter :: DNEARZERO = EPSILON(0.0_dp)
+
+    real(REAL64), parameter :: FT2_PER_ACRE = 43560.0_dp
+    real(REAL64), parameter :: CFS2CMS_CONV = 0.028316847_dp
+
+    real(REAL32), parameter :: INCH2CM = 2.54_sp
+    real(REAL32), parameter :: INCH2MM = 25.4_sp
+    real(REAL32), parameter :: INCH2M = 0.0254_sp
+    real(REAL32), parameter :: MM2INCH = 1.0_sp / INCH2MM
+    real(REAL32), parameter :: FEET2METERS = 0.3048_sp
+    real(REAL32), parameter :: METERS2FEET = 1.0_sp / FEET2METERS
+
+    ! TODO: what units are MAXTEMP and MINTEMP?
+    real(REAL32), parameter :: MAXTEMP = 200.0_sp
+    real(REAL32), parameter :: MINTEMP = -150.0_sp
+
+    ! Frequency values
+    ! Used for basinOut_freq, nhruOut_freq, and nsubOut_freq
+    integer, parameter :: DAILY = 1
+    integer, parameter :: MONTHLY = 2
+    integer, parameter :: DAILY_MONTHLY = 3
+    integer, parameter :: MEAN_MONTHLY = 4
+    integer, parameter :: MEAN_YEARLY = 5
+    integer, parameter :: YEARLY = 6
+    ! nowtime index
+    integer, parameter :: YEAR = 1
+    integer, parameter :: MONTH = 2
+    integer, parameter :: DAY = 3
+    integer, parameter :: HOUR = 4
+    integer, parameter :: MINUTE = 5
+    integer, parameter :: SECOND = 6
+    ! precip_units
+    integer, parameter :: FAHRENHEIT = 0
+    integer, parameter :: CELSIUS = 1
+    ! elev_units
+    integer, parameter :: FEET = 0
+    integer, parameter :: METERS = 1
+    ! cov_type
+    integer, parameter :: BARESOIL = 0
+    integer, parameter :: GRASSES = 1
+    integer, parameter :: SHRUBS = 2
+    integer, parameter :: TREES = 3
+    integer, parameter :: CONIFEROUS = 4
+    ! hru_type
+    integer, parameter :: INACTIVE = 0
+    integer, parameter :: LAND = 1
+    integer, parameter :: LAKE = 2
+    integer, parameter :: SWALE = 3
+    integer, parameter :: GLACIER = 4
+    ! model_mode
+    integer, parameter :: GSFLOW = 0
+    integer, parameter :: PRMS = 1
+    integer, parameter :: MODFLOW = 2
+    integer, parameter :: DOCUMENTATION = 99
+    ! Error Codes
+    integer, parameter :: ERROR_read = -4
+    integer, parameter :: ERROR_open_out = -3
+    integer, parameter :: ERROR_open_in = -2
+    integer, parameter :: ERROR_write = -1
+    integer, parameter :: ERROR_control = 1
+    integer, parameter :: ERROR_var = 2
+    integer, parameter :: ERROR_dim = 3
+    integer, parameter :: ERROR_param = 4
+    integer, parameter :: ERROR_data = 5
+    integer, parameter :: ERROR_time = 6
+    integer, parameter :: ERROR_temp = 7
+    integer, parameter :: ERROR_streamflow = 8
+    integer, parameter :: ERROR_basin = 9
+    integer, parameter :: ERROR_cbh = 10
+    integer, parameter :: ERROR_cascades = 11
+    integer, parameter :: ERROR_restart = 12
+    integer, parameter :: ERROR_dynamic = 13
+    integer, parameter :: ERROR_water_use = 14
+    integer, parameter :: ERROR_decl_get = 15
+    integer, parameter :: ERROR_module = 16
+    integer, parameter :: ERROR_lake = 17
+    integer, parameter :: ERROR_soilzone = 18
+
+    character(LEN=8), save :: Process
+
 ! Dimensions
       INTEGER, SAVE :: Ncascade, Ncascdgw, Nsnow
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
@@ -90,7 +188,6 @@
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: error_stop
 ! Local Variables
       INTEGER :: i, iret, nc
 !***********************************************************************
@@ -108,9 +205,7 @@
 
         Process_flag = 1
 
-        PRMS_versn = 'call_modules.f90 2020-06-25 12:00:00Z'
-
-        IF ( check_dims()/=0 ) ERROR STOP -1
+        IF ( check_dims()/=0 ) ERROR STOP ERROR_dim
 
         IF ( Print_debug>-2 ) THEN
           PRINT 10, PRMS_VERSION
@@ -144,18 +239,18 @@
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
      &        '                    basin_summary, nsegment_summary', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'))
-  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 19X, &
-     &        'Module', 16X, 'Version Date', /, A)
+  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
+     &        'Module', 9X, 'Version Date', /, A)
 
         Diversion2soil_flag = 0
         IF ( Print_debug>-2 ) THEN
           PRINT 15
           PRINT 9002
           WRITE ( PRMS_output_unit, 15 )
-          PRINT 16, EQULS
-          WRITE ( PRMS_output_unit, 16 ) EQULS
+          PRINT 16, EQULS(:62)
+          WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
-        CALL print_module(PRMS_versn, 'Computation Order           ', 90)
+        CALL print_module(MODDESC, MODNAME, PRMS_versn)
 
         Kkiter = 1 ! set for PRMS-only mode
 
@@ -192,11 +287,10 @@
 
       ELSE  !IF ( Process(:5)=='clean' ) THEN
         Process_flag = 3
-
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==1 ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
-          IF ( iret/=0 ) ERROR STOP -1
+          IF ( iret/=0 ) ERROR STOP ERROR_open_in
           CALL call_modules_restart(0)
         ENDIF
       ENDIF
@@ -429,8 +523,8 @@
         IF ( Save_vars_to_file>0 ) CLOSE ( Restart_outunit )
       ELSEIF ( Process_flag==1 ) THEN
         IF ( Print_debug>-2 ) THEN
-          PRINT '(A)', EQULS
-          WRITE ( PRMS_output_unit, '(A)' ) EQULS
+          PRINT '(A)', EQULS(:62)
+          WRITE ( PRMS_output_unit, '(A)' ) EQULS(:62)
         ENDIF
         IF ( Model==25 ) CALL convert_params()
       ELSEIF ( Process_flag==2 ) THEN
@@ -446,7 +540,7 @@
      &          'parameters have valid and compatible values.'
         ENDIF
         IF ( Parameter_check_flag==2 ) STOP 0
-        IF ( Inputerror_flag==1 ) ERROR STOP -1
+        IF ( Inputerror_flag==1 ) ERROR STOP ERROR_param
         IF ( Model==25 ) THEN
           CALL convert_params()
           STOP 0
@@ -1345,6 +1439,6 @@
             ierr = 1
           ENDIF
         ENDIF
-        IF ( ierr==1 ) ERROR STOP -3
+        IF ( ierr==1 ) ERROR STOP ERROR_restart
       ENDIF
       END SUBROUTINE call_modules_restart

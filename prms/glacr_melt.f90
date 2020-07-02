@@ -49,7 +49,9 @@
       IMPLICIT NONE
       !****************************************************************
       !   Local Variables
-
+      character(len=*), parameter :: MODDESC = 'Glacier Dynamics'
+      character(len=*), parameter :: MODNAME = 'glacr_melt'
+      character(len=*), parameter :: Version_glacr = '2020-07-01'
       ! Ngl - Number of glaciers counted by termini
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
       ! Nhrugl - Number of at least partially glacierized hrus at initiation
@@ -61,7 +63,6 @@
       REAL, PARAMETER :: Aflow = 1.e-25 ! Pa^-3/s, Farinotti 2009 could be 2.4e-24, could be 1e-26 see Patterson 2010
       REAL, PARAMETER :: Density = 917.0 ! kg/m3
       DOUBLE PRECISION, PARAMETER :: Acre_inch2 = 43560.0D0*12.0D0*12.0D0
-      CHARACTER(LEN=5), SAVE :: MODNAME
 
       !****************************************************************
       !   Declared Variables
@@ -148,14 +149,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80) :: Version_glacr
 !***********************************************************************
       glacrdecl = 0
 
-      Version_glacr = 'glacr_melt.f90 2020-06-11 08:45:00Z'
-      CALL print_module(Version_glacr, 'Glacier Dynamics            ', 90)
-      MODNAME = 'glacr'
+      CALL print_module(MODDESC, MODNAME, Version_glacr)
 
       IF (declvar(MODNAME, 'nhrugl', 'one', 1, 'integer',                 &
            'Number of at least partially glacierized HRUs at initiation', &
@@ -441,7 +438,7 @@
 !***********************************************************************
       INTEGER FUNCTION glacrinit()
       USE PRMS_GLACR
-      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, GLACIER, LAND
       USE PRMS_BASIN, ONLY: Hru_area, Hru_elev_ts, Active_hrus, Hru_route_order, &
      &    Hru_type, Basin_area_inv, Hru_elev_meters
       USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
@@ -538,7 +535,7 @@
       DO jj = 1, Active_hrus
         j = Hru_route_order(jj)
         ! fill all glacier capable hrus to get variables calculated for all possible glaciers with correct branching
-        IF ( Hru_type(j)==4 ) THEN
+        IF ( Hru_type(j)==GLACIER ) THEN
           count = 1 !has at least one glacier
           glacier_frac_use(j) = 1.0
           !should be end of extensions or branches-- will fail if don't set up with indices stacked
@@ -568,7 +565,7 @@
         Nhrugl = 0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          IF ( Hru_type(j)==4 ) THEN
+          IF ( Hru_type(j)==GLACIER ) THEN
             Nhrugl = Nhrugl + 1
             cell_idm(Nhrugl) = REAL(j)
             str_idm(Nhrugl) = REAL(hru_flowline(j))
@@ -704,7 +701,7 @@
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
           Hru_area_inch2(j) = Hru_area(j)*Acre_inch2
-          IF ( Hru_type(j)==4 ) THEN
+          IF ( Hru_type(j)==GLACIER ) THEN
             glacier_frac_use(j)= Glacier_frac(j)
             !should be end of extensions or branches-- will fail if don't set up with indices stacked
             ! making it so has no connected branches because branching bottom calculations don't work
@@ -751,7 +748,7 @@
         ENDDO
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          IF ( Hru_type(j)==4 ) THEN
+          IF ( Hru_type(j)==GLACIER ) THEN
             curr_area(j) = curr_area(j) + add_area(j)
             Prev_area(j) = curr_area(j) !need this for ela calcs, actually is current area
           ENDIF
@@ -770,14 +767,14 @@
         ENDDO
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)==1 ) Basin_gl_area = Basin_gl_area + DBLE(Glrette_frac(j))*Hru_area_inch2(j)
+          IF ( Hru_type(j)==LAND ) Basin_gl_area = Basin_gl_area + DBLE(Glrette_frac(j))*Hru_area_inch2(j)
         ENDDO
   !
         doela = compute_ela_aar() !no previous years MB, get ELA from AAR ratio, need Prev_area
         DO ii = 1, Ntp
           DO i = 1, Active_hrus
             j = Hru_route_order(i)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               IF ( Top_tag(j)==Top_tag(Top(ii)) ) Alt_above_ela(j) = Hru_elev_ts(j)- Hru_elev_ts(Ela(ii))
             ENDIF
           ENDDO
@@ -797,8 +794,9 @@
 !***********************************************************************
       INTEGER FUNCTION glacrrun()
       USE PRMS_GLACR
-      USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, Hru_type, NEARZERO, &
-     &                      Elev_units, Hru_elev_feet, Hru_elev_meters, FEET2METERS, METERS2FEET
+      USE PRMS_MODULE, ONLY: FEET2METERS, METERS2FEET, NEARZERO, LAND, GLACIER, FEET, METERS
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, Hru_type, &
+     &                      Elev_units, Hru_elev_feet, Hru_elev_meters
       USE PRMS_FLOWVARS, ONLY: Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
@@ -811,7 +809,7 @@
 !
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
-        IF ( Hru_type(i)==1 ) THEN
+        IF ( Hru_type(i)==LAND ) THEN
           IF (Glrette_frac(j)>NEARZERO) THEN
             count=1 !has at least one snowfield
             EXIT
@@ -854,9 +852,9 @@
       ! reset hru_elev variables for glacier HRUs
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
-        IF ( Hru_type(i)==4 ) THEN
+        IF ( Hru_type(i)==GLACIER ) THEN
           IF ( Ngl==0 ) Hru_elev_ts(i) = Basal_elev(i)
-          IF ( Elev_units==0 ) THEN
+          IF ( Elev_units==FEET ) THEN
             Hru_elev_feet(i) = Hru_elev_ts(i)
             Hru_elev_meters(i) = Hru_elev_ts(i)*FEET2METERS
           ELSE
@@ -874,9 +872,10 @@
 !***********************************************************************
       INTEGER FUNCTION comp_glsurf(glacr_exist, glrette_exist)
       USE PRMS_GLACR
-      USE PRMS_MODULE, ONLY: Nhru, Starttime
+      USE PRMS_MODULE, ONLY: Nhru, Starttime, FEET2METERS, METERS2FEET, NEARZERO, DNEARZERO, &
+     &    GLACIER, LAND, FEET, METERS
       USE PRMS_BASIN, ONLY: Hru_type, Hru_elev_ts, Basin_area_inv, Active_hrus, &
-     &    Hru_route_order, NEARZERO, DNEARZERO, Elev_units, FEET2METERS, METERS2FEET, Hru_elev
+     &    Hru_route_order, Elev_units, Hru_elev
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt, Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
@@ -943,7 +942,7 @@
 ! Save year ending values from previous year
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               IF ( Glacier_frac(j)>NEARZERO ) THEN
                 Hru_mb_yrend(j) = SNGL(Hru_mb_yrcumul(j))
               ENDIF
@@ -954,7 +953,7 @@
             doela = compute_ela_aar() !want steady state ELA estimation for fraw calc
             DO j = 1, Ntp
               ela_elevt(j)=Hru_elev(Ela(j)) !will scale inside subroutine, want initial one without _ts
-              IF (elev_units==0) ela_elevt(j) = ela_elevt(j)*FEET2METERS !put in meters
+              IF ( Elev_units==FEET ) ela_elevt(j) = ela_elevt(j)*FEET2METERS !put in meters
             ENDDO
           ENDIF
           doela = compute_ela_mb() !Regular ELA estimation for daily reservoir calcs
@@ -972,7 +971,7 @@
             glacier_frac_use = 0.0
             DO jj = 1, Active_hrus
               j = Hru_route_order(jj)
-              IF ( Hru_type(j)==4 ) THEN
+              IF ( Hru_type(j)==GLACIER ) THEN
                 glacier_frac_use(j)= Glacier_frac(j)
                 !should be end of extensions or branches-- will fail if don't set up with indices stacked
                 ! making it so has no connected branches because branching bottom calculations don't work
@@ -1027,7 +1026,7 @@
               Basin_gl_storstart = 0.D0
               DO i = 1, Nhrugl
                 Keep_gl(i,4) = slope(i) !likely negative, assuming glacier HRU downhill
-                IF ( Elev_units==0 ) THEN
+                IF ( Elev_units==FEET ) THEN
                   Basal_elev(cell_id(i)) = av_elev(i)/FEET2METERS !'av_elev in meters, want in elev_units
                 ELSE
                   Basal_elev(cell_id(i)) = av_elev(i)
@@ -1110,7 +1109,7 @@
             ENDDO
             DO jj = 1, Active_hrus
               j = Hru_route_order(jj)
-              IF ( Hru_type(j)==4 ) THEN
+              IF ( Hru_type(j)==GLACIER ) THEN
                 curr_area(j) = curr_area(j) + add_area(j)
               ENDIF
             ENDDO
@@ -1164,7 +1163,7 @@
           ENDDO
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               Prev_area(j) = Prev_area(j) + add_area(j)
             ENDIF
           ENDDO
@@ -1228,7 +1227,7 @@
                 oldlow = lowpt(o)
                 DO i = 1, Active_hrus
                   j = Hru_route_order(i)
-                  IF ( Hru_type(j)==4 ) THEN
+                  IF ( Hru_type(j)==GLACIER ) THEN
                     ! find a j in glacier
                     IF ( Tohru(j)==oldlow ) THEN
                       lowpt(o) = j
@@ -1254,7 +1253,7 @@
 ! clean up and compute area before start of year
           DO i = 1, Active_hrus
             j = Hru_route_order(i)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               IF ( Glacier_frac(j)<NEARZERO ) Glacier_frac(j)=0.0
               IF ( Glacier_frac(j)>1.0-NEARZERO ) Glacier_frac(j)=1.0
             ELSE
@@ -1303,7 +1302,7 @@
           ENDDO
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               curr_area(j) = curr_area(j) + add_area(j)
               curr_areap(j) = curr_areap(j) + add_areap(j)
             ENDIF
@@ -1321,7 +1320,7 @@
           DO ii = 1, Ntp
             DO i = 1, Active_hrus
               j = Hru_route_order(i)
-              IF ( Hru_type(j)==4 ) THEN
+              IF ( Hru_type(j)==GLACIER ) THEN
                 IF ( Top_tag(j)==Top_tag(Top(ii)) ) Alt_above_ela(j) = Hru_elev_ts(j)- Hru_elev_ts(Ela(ii))
                 Hru_elev_ts(j) = Glacier_frac(j)*Glacr_elev_init(j) + (1.0-Glacier_frac(j))*Basal_elev(j)
                 Hru_slope_ts(j) = Glacier_frac(j)*Glacr_slope_init(j) + (1.0-Glacier_frac(j))*Basal_slope(j)
@@ -1335,7 +1334,7 @@
 ! Clean stuff if gone
           DO i = 1, Active_hrus
             j = Hru_route_order(i)
-            IF ( Hru_type(j)==4 ) THEN
+            IF ( Hru_type(j)==GLACIER ) THEN
               IF ( Glacier_frac(j)==0.0 ) THEN
                 Hru_mb_yrend(j) = 0.0
                 Hru_mb_yrcumul(j) = 0.0D0
@@ -1361,10 +1360,10 @@
           IF ( MOD(Nowyear-Starttime(1),10)==0 ) THEN !change them
             DO i = 1, Active_hrus
               j = Hru_route_order(i)
-              IF ( Hru_type(j)==1 .AND. Glrette_frac(j)>NEARZERO) THEN
-                IF ( Elev_units==0 ) Glrette_frac(j) = ( METERS2FEET*(45.7*Glacr_air_deltemp(j) &
+              IF ( Hru_type(j)==LAND .AND. Glrette_frac(j)>NEARZERO) THEN
+                IF ( Elev_units==FEET ) Glrette_frac(j) = ( METERS2FEET*(45.7*Glacr_air_deltemp(j) &
      &               -12.0*Glacr_delsnow(j))/Abl_elev_range(j) +1.0 )*Glrette_frac_init(j)
-                IF ( Elev_units==1 ) Glrette_frac(j) = ( (45.7*Glacr_air_deltemp(j) &
+                IF ( Elev_units==METERS ) Glrette_frac(j) = ( (45.7*Glacr_air_deltemp(j) &
      &               -12.0*Glacr_delsnow(j))/Abl_elev_range(j) +1.0 )*Glrette_frac_init(j)
                 IF ( Glrette_frac(j)<0.0 ) Glrette_frac(j)=0.0
                 IF ( Glrette_frac(j)>1.0 ) Glrette_frac(j)=1.0
@@ -1389,7 +1388,7 @@
         j = Hru_route_order(i)
         Hru_glres_melt(j) = 0.0
         gl_total(j) = 0.0D0
-        IF ( Hru_type(j)==4 ) THEN
+        IF ( Hru_type(j)==GLACIER ) THEN
           !melting ice + melting snow (energy model), *area = volume
           IF ( Glacier_frac(j)>NEARZERO ) THEN
             Hru_glres_melt(j) = Glacier_frac(j)*(Snowmelt(j) + Glacrmelt(j)/Glacier_frac(j))
@@ -1405,7 +1404,7 @@
             !postive indicates snow, negative indicates melt
           ENDIF
         ENDIF
-        IF ( Hru_type(j)==1 ) THEN
+        IF ( Hru_type(j)==LAND ) THEN
           Glrette_melt(j) = 0.0
           !melting ice + melting snow (energy model), *area = volume
           IF ( Glrette_frac(j)>NEARZERO ) THEN
@@ -1431,7 +1430,7 @@
             keep = Top(ii)
             DO i = 1, Active_hrus
               j = Hru_route_order(i)
-              IF ( Hru_type(j)==4 ) THEN
+              IF ( Hru_type(j)==GLACIER ) THEN
                 !find lowest in branch
                 IF ( Glacr_tag(j)==p .AND. &
      &                  (Top_tag(j)==Top_tag(Top(ii)) .OR. (Top_tag(j)==-1.AND.count_delta2(j)==0)) ) THEN
@@ -1456,7 +1455,7 @@
                 keep = Top(ii)
                 DO i = 1, Active_hrus
                   j = Hru_route_order(i)
-                  IF ( Hru_type(j)==4 ) THEN
+                  IF ( Hru_type(j)==GLACIER ) THEN
                     !find lowest in branch above ELA-- there will be one
                     IF ( Top_tag(j)==Top_tag(Top(ii)) .AND.            &
      &                    Hru_elev_ts(j)<Hru_elev_ts(keep) .AND.       &
@@ -1470,7 +1469,7 @@
                 keep = Ela(ii)
                 DO i = 1, Active_hrus
                   j = Hru_route_order(i)
-                  IF ( Hru_type(j)==4 ) THEN
+                  IF ( Hru_type(j)==GLACIER ) THEN
                     !find lowest in branch with snow cover below ELA
                     IF ( Top_tag(j)==Top_tag(Top(ii)) .AND.         &
      &                    Snowcov_area(j)>NEARZERO .AND.        &
@@ -1484,7 +1483,7 @@
                 keep = lowest(ii)
                 DO i = 1, Active_hrus
                   j = Hru_route_order(i)
-                  IF ( Hru_type(j)==4 ) THEN
+                  IF ( Hru_type(j)==GLACIER ) THEN
                     !find highest in branch with no snow cover below ELA
                     IF ( Top_tag(j)==Top_tag(Top(ii)) .AND. Snowcov_area(j)<NEARZERO .AND. &
      &                    Hru_elev_ts(j)>Hru_elev_ts(keep) .AND.                               &
@@ -1500,7 +1499,7 @@
                 j = Hru_route_order(i)
                 volresv = 0.0D0
                 volresv_ice = 0.0D0
-                IF ( Hru_type(j)==4 ) THEN
+                IF ( Hru_type(j)==GLACIER ) THEN
                   IF ( Glacr_tag(j)==p .AND. Hru_elev_ts(j)<=Hru_elev_ts(stact_hrus) .AND.  &
      &                   Hru_elev_ts(j)>=Hru_elev_ts(endact_hrus) .AND. &
      &                  (Top_tag(j)==Top_tag(stact_hrus) .OR.           &
@@ -1564,10 +1563,10 @@
         tot_delta_mb = 0.D0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          IF ( Hru_type(j)==4 ) THEN
+          IF ( Hru_type(j)==GLACIER ) THEN
             DO ii = 1, Active_hrus
               i = Hru_route_order(ii)
-              IF ( Hru_type(i)==4 ) THEN !find a i in glacier
+              IF ( Hru_type(i)==GLACIER ) THEN !find a i in glacier
                 IF ( Glacr_tag(i)==Glacr_tag(j) .AND. Hru_elev_ts(i)>=Hru_elev_ts(j) ) THEN
                 !will add self (i=j) and everything above
                   tot_delta_mb(j) = tot_delta_mb(j) + Hru_mb_yrcumul(i)*Glacier_frac(i)*Hru_area_inch2(i)
@@ -1587,7 +1586,7 @@
       IF (glrette_exist==1) THEN
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)==1 .AND. Glrette_frac(j)>NEARZERO) THEN
+          IF ( Hru_type(j)==LAND .AND. Glrette_frac(j)>NEARZERO) THEN
             ! all excess rain is included in melt, should be true unless Glacrmelt==0
             IF ( Glacrmelt(j)-Net_rain(j)*Glrette_frac(j)>NEARZERO ) &
      &        Basin_gl_ice_melt = Basin_gl_ice_melt + DBLE(Glacrmelt(j)-Net_rain(j)*Glrette_frac(j))*Hru_area_inch2(j)
@@ -1621,7 +1620,7 @@
 !***********************************************************************
       INTEGER FUNCTION compute_ela_mb()
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Hru_mb_yrend, Ela
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, GLACIER
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
@@ -1643,7 +1642,7 @@
         p = Glacr_tag(Term(o)) !index by Glacr_tag
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)/=4 ) CYCLE
+          IF ( Hru_type(j)/=GLACIER ) CYCLE
           ! find a j in glacier
           IF ( Glacr_tag(j)/=p ) CYCLE
           DO ii = 1, Ntp
@@ -1680,7 +1679,7 @@
 !***********************************************************************
       INTEGER FUNCTION compute_ela_aar()
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Prev_area, Ela
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, GLACIER
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
@@ -1713,7 +1712,7 @@
         !find the ELA hru
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(j)/=4 ) CYCLE
+          IF ( Hru_type(j)/=GLACIER ) CYCLE
           ! find a j in glacier
           IF ( Glacr_tag(j)/=p ) CYCLE
           DO ii = 1, Ntp
@@ -1753,6 +1752,7 @@
       USE PRMS_SOLTAB, ONLY: Hru_aspect, Hru_cossl, PI, RADIANS, &
      &    Soltab_potsw, Soltab_sunhrs, Solar_declination, &
      &    ECCENTRICY, DAYSYR, DEGDAY, DEGDAYRAD
+      USE PRMS_MODULE, ONLY: GLACIER
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Hru_lat
       IMPLICIT NONE
 ! Functions
@@ -1778,7 +1778,7 @@
 !   Module Variables
       DO nn = 1, Active_hrus
         n = Hru_route_order(nn)
-        IF ( Hru_type(n)==4 ) THEN !only call if glacier HRU and could have changed
+        IF ( Hru_type(n)==GLACIER ) THEN !only call if glacier HRU and could have changed
           Soltab_sunhrs(1, n) = 0.0
           Soltab_potsw(1, n) = 0.0
           CALL compute_soltab(obliquity, Solar_declination, Hru_slope_ts(n), Hru_aspect(n), &
@@ -1799,7 +1799,7 @@
 !***********************************************************************
       SUBROUTINE tag_count(do_init, hru_flowline, toflowline, glacier_frac_use)
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Tohru
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, GLACIER
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
       IMPLICIT NONE
 ! Arguments
@@ -1816,7 +1816,7 @@
       toflowline = 0
       DO ii = 1, Active_hrus
         j = Hru_route_order(ii)
-        IF ( Hru_type(j)==4 ) THEN
+        IF ( Hru_type(j)==GLACIER ) THEN
           numup(j) = -1
           count = 0
           IF ( glacier_frac_use(j)>0.0 ) THEN ! in glacier HRU that is glacierized
@@ -1834,7 +1834,7 @@
             ENDIF
             DO jj = 1, Active_hrus
               i = Hru_route_order(jj)
-              IF ( Hru_type(i)==4 ) THEN
+              IF ( Hru_type(i)==GLACIER ) THEN
                 IF ( glacier_frac_use(i)==1.0 .AND. Tohru(i)==j ) THEN
                   !segment with a glacier does feed to j
                   count = count + 1
@@ -1886,7 +1886,7 @@
             DO jj = 1, Active_hrus
               i = Hru_route_order(jj)
               !give all glaciers the same tag
-              IF ( Hru_type(i)==4 .AND. Glacr_tag(i)==gltag0 ) Glacr_tag(i) = label
+              IF ( Hru_type(i)==GLACIER .AND. Glacr_tag(i)==gltag0 ) Glacr_tag(i) = label
              ENDDO
             Top_tag(next) = -1
             toflowline(label) = hru_flowline(next)
@@ -1938,7 +1938,6 @@
      &                   Toflowline, Slope, Ode_area, Ode_vol,Botwrite)
       USE PRMS_GLACR, ONLY: Ntp, Nhrugl, All_unit, Output_unit, Density, Gravity, Aflow, &
      &   Order_flowline, Max_gldepth, Keep_gl, Ikeep_gl, Hru_length, Hru_slope_ts
-      USE PRMS_BASIN, ONLY: NEARZERO
       USE PRMS_FLOWVARS, ONLY: Glacier_frac
       IMPLICIT NONE
       INTEGER, PARAMETER :: N = 101
@@ -2461,7 +2460,7 @@
       SUBROUTINE yearly_ca_coef(Frawt, Ela_elevt)
       USE PRMS_GLACR, ONLY: Ntp, Nhrugl, Ngl, Order_flowline, Keep_gl, Ikeep_gl, &
      &    Hru_length, Av_basal_slope, Av_fgrad, Glacr_tag, Term, Glacr_slope_init, Hru_length
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, GLACIER
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
       USE PRMS_FLOWVARS, ONLY: Glacier_frac
       IMPLICIT NONE
@@ -2555,7 +2554,7 @@
         tot_length = 0.0
         DO i = 1, Active_hrus
           j = Hru_route_order(i)
-          IF ( Hru_type(i)==4 .AND. Glacr_tag(j)==p ) THEN
+          IF ( Hru_type(i)==GLACIER .AND. Glacr_tag(j)==p ) THEN
             tot_slope = tot_slope + slopem(j)*Glacier_frac(j)*Hru_length(j)
             tot_fgrad = tot_fgrad + fgradm(j)*Glacier_frac(j)*Hru_length(j)
             tot_length = tot_length + Glacier_frac(j)*Hru_length(j)

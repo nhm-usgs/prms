@@ -4,12 +4,14 @@
       MODULE PRMS_WATER_BALANCE
         IMPLICIT NONE
 !   Local Variables
+        character(len=*), parameter :: MODDESC = 'Water Balance Computations'
+        character(len=*), parameter :: MODNAME_WB = 'water_balance'
+        character(len=*), parameter :: Version_water_balance = '2020-07-01'
         INTEGER, SAVE :: BALUNT, SZUNIT, GWUNIT, INTCPUNT, SROUNIT, SNOWUNIT
         REAL, PARAMETER :: TOOSMALL = 3.1E-05, SMALL = 1.0E-04, BAD = 1.0E-03
         DOUBLE PRECISION, PARAMETER :: DSMALL = 1.0D-04, DTOOSMALL = 1.0D-05
         DOUBLE PRECISION, SAVE :: Last_basin_gwstor, Basin_dprst_wb
         DOUBLE PRECISION, ALLOCATABLE, SAVE :: Hru_storage_ante(:), Gwstor_ante(:)
-        CHARACTER(LEN=13), SAVE :: MODNAME_WB
 !   Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_capillary_wb, Basin_gravity_wb, Basin_soilzone_wb
 !        DOUBLE PRECISION, ALLOCATABLE, SAVE :: Hru_runoff(:)
@@ -51,12 +53,8 @@
 ! Functions
       INTEGER, EXTERNAL :: declvar
       EXTERNAL :: read_error, print_module, PRMS_open_module_file
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_water_balance
 !***********************************************************************
-      Version_water_balance = 'water_balance.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_water_balance, 'Water Balance Computations  ', 90 )
-      MODNAME_WB = 'water_balance'
+      CALL print_module(MODDESC, MODNAME_WB, Version_water_balance)
 
 ! Declare Variables
       IF ( declvar(MODNAME_WB, 'basin_capillary_wb', 'one', 1, 'double', &
@@ -148,9 +146,9 @@
 !***********************************************************************
       SUBROUTINE water_balance_run()
       USE PRMS_WATER_BALANCE
-      USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag, Dprst_flag, Glacier_flag
+      USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag, Dprst_flag, Glacier_flag, DNEARZERO, NEARZERO, LAKE
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_frac_perv, Hru_area_dble, Hru_perv, &
-     &    Hru_type, Basin_area_inv, NEARZERO, Dprst_area_max, Hru_percent_imperv, Dprst_frac, Cov_type, DNEARZERO
+     &    Hru_type, Basin_area_inv, Dprst_area_max, Hru_percent_imperv, Dprst_frac, Cov_type
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Newsnow, Pptmix
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Soil_to_gw, Soil_to_ssr, &
      &    Infil, Soil_moist_max, Ssr_to_gw, Ssres_flow, Basin_soil_to_gw, Soil_moist, Ssres_stor, &
@@ -208,7 +206,7 @@
       DO k = 1, Active_hrus
         i = Hru_route_order(k)
 
-        IF ( Hru_type(i)==2 ) CYCLE ! no water balance for lakes
+        IF ( Hru_type(i)==LAKE ) CYCLE ! no water balance for lakes
 
         harea = Hru_area_dble(i)
         perv_frac = Hru_frac_perv(i)

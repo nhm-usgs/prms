@@ -4,13 +4,14 @@
       MODULE PRMS_ROUTING
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=7), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
+      character(len=*), parameter :: MODNAME = 'routing'
+      character(len=*), parameter :: Version_routing = '2020-07-01'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades
       INTEGER, SAVE, ALLOCATABLE :: Segment_order(:), Segment_up(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:)
-      CHARACTER(LEN=80), SAVE :: Version_routing
       !CHARACTER(LEN=32), SAVE :: Outfmt
       INTEGER, SAVE, ALLOCATABLE :: Ts_i(:)
       REAL, SAVE, ALLOCATABLE :: Ts(:), C0(:), C1(:), C2(:)
@@ -68,9 +69,7 @@
 !***********************************************************************
       routingdecl = 0
 
-      Version_routing = 'routing.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_routing, 'Routing Initialization      ', 90)
-      MODNAME = 'routing'
+      CALL print_module(MODDESC, MODNAME, Version_routing)
 
 ! Declared Variables
       ALLOCATE ( Hru_outflow(Nhru) )
@@ -135,12 +134,14 @@
      &     'Mannings roughness coefficient', &
      &     'Mannings roughness coefficient for each segment', &
      &     'dimensionless')/=0 ) CALL read_error(1, 'mann_n')
+
         ALLOCATE ( Seg_length(Nsegment) )
         IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
      &     '1000.0', '0.001', '200000.0', &
      &     'Length of each segment', &
      &     'Length of each segment including vertical drop, bounds based on CONUS', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
+
         IF ( Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Seg_depth(Nsegment) )
           IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
@@ -150,7 +151,7 @@
      &         'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
      &         'meters')/=0 ) CALL read_error(1, 'seg_depth')
         ENDIF
-        IF ( Strmflow_flag==6 .OR. Model==99 ) THEN
+        IF ( Strmflow_flag==6 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Seg_width(Nsegment) )
           IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
      &       '15.0', '0.18', '40000.0', &
@@ -189,7 +190,7 @@
      &     ' streamflow flows, for segments that do not flow to another segment enter 0', &
      &     'none')/=0 ) CALL read_error(1, 'tosegment')
 
-      IF ( Cascade_flag==0 .OR. Cascade_flag==2 .OR. Model==99 ) THEN
+      IF ( Cascade_flag==0 .OR. Cascade_flag==2 .OR. Model==DOCUMENTATION ) THEN
         Hru_seg_cascades = 1
         ALLOCATE ( Hru_segment(Nhru) )
         IF ( declparam(MODNAME, 'hru_segment', 'nhru', 'integer', &
@@ -226,7 +227,7 @@
       ENDIF
 
       IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 ) ALLOCATE ( K_coef(Nsegment) )
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Model==99 ) THEN
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Model==DOCUMENTATION ) THEN
         IF ( declparam(MODNAME, 'K_coef', 'nsegment', 'real', &
      &       '1.0', '0.01', '24.0', &
      &       'Muskingum storage coefficient', &
@@ -236,7 +237,7 @@
      &       'hours')/=0 ) CALL read_error(1, 'K_coef')
       ENDIF
 
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 .OR. Model==99 ) THEN
+      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 .OR. Strmflow_flag==7 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( X_coef(Nsegment) )
         IF ( declparam(MODNAME, 'x_coef', 'nsegment', 'real', &
      &       '0.2', '0.0', '0.5', &
@@ -247,7 +248,7 @@
      &       'decimal fraction')/=0 ) CALL read_error(1, 'x_coef')
       ENDIF
 
-      IF ( Hru_seg_cascades==1 .OR. Model==99 ) THEN
+      IF ( Hru_seg_cascades==1 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Seginc_potet(Nsegment) )
         IF ( declvar(MODNAME, 'seginc_potet', 'nsegment', Nsegment, 'double', &
      &       'Area-weighted average potential ET for each segment'// &
@@ -318,9 +319,9 @@
       USE PRMS_ROUTING
       USE PRMS_MODULE, ONLY: Nsegment, Nhru, Init_vars_from_file, Strmflow_flag, &
      &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag, &
-     &    Stream_temp_flag !, Print_debug
+     &    Stream_temp_flag, DNEARZERO, NEARZERO, FT2_PER_ACRE, ERROR_param !, Print_debug
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
-      USE PRMS_BASIN, ONLY: FT2_PER_ACRE, DNEARZERO, Active_hrus, Hru_route_order, Hru_area_dble, NEARZERO !, Active_area
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
       IMPLICIT NONE
 ! Functions
@@ -516,7 +517,7 @@
         ENDDO
         IF ( ierr==1 ) THEN
           PRINT *, 'ERROR, circular segments involving', iseg, 'and', eseg
-          ERROR STOP -3
+          ERROR STOP ERROR_param
         ENDIF
       ENDDO
 !      IF ( Print_debug==20 ) THEN
@@ -663,8 +664,8 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
-      USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, NEARZERO, FT2_PER_ACRE
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag, NEARZERO, FT2_PER_ACRE
+      USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
       USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow !, Seg_outflow

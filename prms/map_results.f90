@@ -5,6 +5,9 @@
       MODULE PRMS_MAP_RESULTS
       IMPLICIT NONE
 ! Module Variables
+      character(len=*), parameter :: MODDESC = 'Output Summary'
+      character(len=*), parameter :: MODNAME = 'map_results'
+      character(len=*), parameter :: Version_map_results = '2020-07-01'
       INTEGER, SAVE :: Mapflg, Numvalues, Lastyear, Totdays
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
       INTEGER, SAVE :: Begin_results, Begyr, Dailyresults
@@ -21,7 +24,6 @@
       REAL, SAVE, ALLOCATABLE :: Map_var(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Map_var_dble(:, :)
       CHARACTER(LEN=15), SAVE :: Mapfmt
-      CHARACTER(LEN=11), SAVE :: MODNAME
 ! Declared Parameters
       INTEGER, SAVE :: Ncol, Mapvars_freq, Mapvars_units
       INTEGER, SAVE, ALLOCATABLE :: Gvr_map_id(:), Gvr_hru_id(:)
@@ -60,7 +62,7 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsdecl()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Model, Nhru, MapOutON_OFF, Nhrucell, Ngwcell
+      USE PRMS_MODULE, ONLY: Model, Nhru, MapOutON_OFF, Nhrucell, Ngwcell, ERROR_dim
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR
@@ -68,13 +70,10 @@
       EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
-      CHARACTER(LEN=80), SAVE :: Version_map_results
 !***********************************************************************
       map_resultsdecl = 0
 
-      Version_map_results = 'map_results.f90 2020-04-27 19:00:00Z'
-      CALL print_module(Version_map_results, 'Output Summary              ', 90)
-      MODNAME = 'map_results'
+      CALL print_module(MODDESC, MODNAME, Version_map_results)
 
       IF ( control_integer(NmapOutVars, 'nmapOutVars')/=0 ) NmapOutVars = 0
       IF ( NmapOutVars==0 ) THEN
@@ -96,7 +95,7 @@
       Mapflg = 1
       Numvalues = Nhru
       IF ( (Nhru/=Ngwcell .AND. Ngwcell/=0) .OR. mapOutON_OFF==2 ) THEN
-        IF ( Ngwcell==0 ) CALL error_stop('in map_results, ngwcell must be specified > 0')
+        IF ( Ngwcell==0 ) CALL error_stop('in map_results, ngwcell must be specified > 0', ERROR_dim)
         Mapflg = 0
         Numvalues = Ngwcell
       ENDIF
@@ -106,7 +105,7 @@
           IF ( Model==99 ) THEN
             Nhrucell = 1
           ELSE
-            CALL error_stop('in map_results, nhrucell = 0 and must be > 0')
+            CALL error_stop('in map_results, nhrucell = 0 and must be > 0', ERROR_dim)
           ENDIF
         ENDIF
         ALLOCATE ( Gvr_map_id(Nhrucell), Gvr_map_frac(Nhrucell), Gvr_hru_id(Nhrucell), Map_var_id(Ngwcell) )
@@ -164,8 +163,7 @@
       INTEGER FUNCTION map_resultsinit()
       USE PRMS_MAP_RESULTS
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Nhrucell, Ngwcell, Inputerror_flag, MapOutON_OFF, &
-     &                       Start_year, Start_month, Start_day, Parameter_check_flag, Prms_warmup
-      USE PRMS_BASIN, ONLY: NEARZERO
+     &                       Start_year, Start_month, Start_day, Parameter_check_flag, Prms_warmup, NEARZERO
       IMPLICIT NONE
       INTRINSIC ABS, DBLE
       INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
@@ -365,8 +363,8 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsrun()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Nhru, Nhrucell, Start_month, Start_day, End_year, End_month, End_day
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv, NEARZERO
+      USE PRMS_MODULE, ONLY: Nhru, Nhrucell, Start_month, Start_day, End_year, End_month, End_day, NEARZERO
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES

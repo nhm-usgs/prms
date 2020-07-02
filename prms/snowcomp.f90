@@ -9,7 +9,7 @@
 ! PRMS_SNOW module for defining stateful variables
 
       MODULE PRMS_SNOW
-
+      USE PRMS_MODULE, ONLY: PI
       IMPLICIT NONE
       !****************************************************************
       !   Local Constants
@@ -18,15 +18,15 @@
 
       !****************************************************************
       !   Local Variables
-
-      REAL, PARAMETER :: PI = 3.1415927
+      character(len=*), parameter :: MODDESC = 'Snow Dynamics'
+      character(len=*), parameter :: MODNAME = 'snowcomp'
+      character(len=*), parameter :: Version_snowcomp = '2020-07-01'
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
       REAL, SAVE, ALLOCATABLE :: Snowcov_areasv(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Scrv(:), Pss(:), Pksv(:), Pst(:)
       REAL, SAVE, ALLOCATABLE :: Salb(:), Slst(:)
-      CHARACTER(LEN=8), SAVE :: MODNAME
 
       !****************************************************************
       !   Declared Variables
@@ -109,14 +109,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80) :: Version_snowcomp
 !***********************************************************************
       snodecl = 0
 
-      Version_snowcomp = 'snowcomp.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_snowcomp, 'Snow Dynamics               ', 90)
-      MODNAME = 'snowcomp'
+      CALL print_module(MODDESC, MODNAME, Version_snowcomp)
 
 ! declare variables
       ALLOCATE ( Scrv(Nhru) )
@@ -683,9 +679,10 @@
 !***********************************************************************
       INTEGER FUNCTION snoinit()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Nhru, Ndepl, Init_vars_from_file, Snarea_curve_flag, Print_debug, Glacier_flag
+      USE PRMS_MODULE, ONLY: Nhru, Ndepl, Init_vars_from_file, Snarea_curve_flag, Print_debug, &
+     &    Glacier_flag, FEET2METERS, GLACIER, LAND, FEET
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_route_order, Active_hrus, Hru_area_dble, &
-     &    FEET2METERS, Elev_units, Hru_type
+     &    Elev_units, Hru_type
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
       IMPLICIT NONE
 ! Functions
@@ -806,8 +803,8 @@
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             IF ( Glacier_frac(i)>0.0 ) THEN
-              IF ( Hru_type(i)==4 ) THEN
-                IF ( Elev_units==0 ) THEN !from Oerlemans 1992
+              IF ( Hru_type(i)==GLACIER ) THEN
+                IF ( Elev_units==FEET ) THEN !from Oerlemans 1992
                   Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)*FEET2METERS+300.0)/200.0 )
                 ELSE
                   Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)+300.0)/200.0 )
@@ -819,7 +816,7 @@
               ENDIF
             ENDIF
             IF ( Glrette_frac(i)>0.0 ) THEN
-              IF ( Hru_type(i)==1 ) THEN
+              IF ( Hru_type(i)==LAND ) THEN
                 Glacr_albedo(i) = Albedo_ice(i)
               ELSE
                 PRINT *, 'Warning, glrette_frac > 0, but hru_type not equal to 1, glrette_frac set to 0'
@@ -882,7 +879,7 @@
         Glacr_freeh2o_capm = Glacr_freeh2o_cap
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
-          IF ( Glacier_frac(i)>0.0 .AND. Hru_type(i)==4 ) CALL glacr_states_to_zero(i,1)
+          IF ( Glacier_frac(i)>0.0 .AND. Hru_type(i)==GLACIER ) CALL glacr_states_to_zero(i,1)
         ENDDO
       ENDIF
 
@@ -893,9 +890,10 @@
 !***********************************************************************
       INTEGER FUNCTION snorun()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag, Starttime
-      USE PRMS_BASIN, ONLY: DNEARZERO, Hru_area, Active_hrus, Hru_type, &
-     &    Basin_area_inv, Hru_route_order, Cov_type, INCH2M, FEET2METERS, Elev_units
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag, Starttime, DNEARZERO, &
+     &    INCH2M, FEET2METERS, LAKE, LAND, GLACIER, SHRUBS, FEET, GRASSES
+      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_type, &
+     &    Basin_area_inv, Hru_route_order, Cov_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
      &    Hru_ppt, Prmx, Tmaxc, Tminc, Tavgc, Swrad, Potet, Transp_on, Tmax_allsnow_c
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
@@ -938,11 +936,11 @@
         i = Hru_route_order(j) ! [counter]
 
         ! Skip the HRU if it is a lake
-        IF ( Hru_type(i)==2 ) CYCLE
+        IF ( Hru_type(i)==LAKE ) CYCLE
 
         Active_glacier = 0
         isglacier = 0
-        IF ( Hru_type(i)==4 .OR. Hru_type(i)==1 ) THEN
+        IF ( Hru_type(i)==GLACIER .OR. Hru_type(i)==LAND ) THEN
           IF ( Glacier_flag==1 ) THEN
             Glacrmelt(i) = 0.0 ! [inches]
             Glacrb_melt(i) = 0.0 ! [inches]
@@ -1011,7 +1009,7 @@
             Snowcov_areasv(i) = 0.0 ! rsr, not in original code
             Ai(i) = 0.0D0
             Frac_swe(i) = 0.0
-            IF ( Elev_units==0 ) THEN !from Oerlemans 1992
+            IF ( Elev_units==FEET ) THEN !from Oerlemans 1992
               Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)*FEET2METERS+300.0)/200.0 )
             ELSE
               Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)+300.0)/200.0 )
@@ -1189,7 +1187,7 @@
                                            ! or [Langleys / degC]
           ! If the land cover is trees, reduce the convection-
           ! condensation parameter by half
-          IF ( Cov_type(i)>2 ) cec = cec*0.5 ! [cal/(cm^2 degC)] RSR: cov_type=4 is valid for trees (coniferous)
+          IF ( Cov_type(i)>SHRUBS ) cec = cec*0.5 ! [cal/(cm^2 degC)] RSR: cov_type=4 is valid for trees (coniferous)
                                              ! or [Langleys / degC]
           ! Check whether to force spring melt
           ! Spring melt is forced if time is before the melt-force
@@ -1370,7 +1368,7 @@
             ! Snow can evaporate when transpiration is not occuring
             ! or when transpiration is occuring with cover types of
             ! bare soil or grass
-            IF ( Transp_on(i)==0 .OR. (Transp_on(i)==1 .AND. Cov_type(i)<2) ) &
+            IF ( Transp_on(i)==0 .OR. (Transp_on(i)==1 .AND. Cov_type(i)<GRASSES) ) &
      &           CALL snowevap(Potet_sublim(i), Potet(i), Snowcov_area(i), &
      &                         Snow_evap(i), Pkwater_equiv(i), Pk_ice(i), &
      &                         Pk_def(i), Freeh2o(i), Pk_temp(i), Hru_intcpevap(i))
@@ -1501,7 +1499,7 @@
      &           Pkwater_equiv, Net_rain, Pk_def, Pk_temp, Pk_ice, &
      &           Freeh2o, Snowcov_area, Snowmelt, Pk_depth, Pss, Pst, &
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, Freeh2o_cap, Den_max, Ihru_gl)
-      USE PRMS_BASIN, ONLY: CLOSEZERO, INCH2CM !, DNEARZERO
+      USE PRMS_MODULE, ONLY: CLOSEZERO, INCH2CM !, DNEARZERO
       IMPLICIT NONE
       REAL, EXTERNAL :: f_to_c
       EXTERNAL calin
@@ -1749,7 +1747,7 @@
 !        heat energy has occurred.
 !***********************************************************************
       SUBROUTINE caloss(Cal, Pkwater_equiv, Pk_def, Pk_temp, Pk_ice, Freeh2o, Ihru_gl)
-      USE PRMS_BASIN, ONLY: CLOSEZERO !, DNEARZERO
+      USE PRMS_MODULE, ONLY: CLOSEZERO !, DNEARZERO
       IMPLICIT NONE
       INTRINSIC SNGL
 ! Arguments
@@ -2259,7 +2257,7 @@
      &           Trd, Emis_noppt, Canopy_covden, Cec, Pkwater_equiv, &
      &           Pk_def, Pk_temp, Pk_ice, Freeh2o, Snowcov_area, &
      &           Snowmelt, Pk_depth, Pss, Pst, Pk_den, Cst, Cal, Sw, Freeh2o_cap, Den_max, Ihru_gl)
-      USE PRMS_BASIN, ONLY: CLOSEZERO
+      USE PRMS_MODULE, ONLY: CLOSEZERO, ONETHIRD
       IMPLICIT NONE
       INTRINSIC SNGL
       EXTERNAL calin, caloss
@@ -2276,7 +2274,6 @@
       DOUBLE PRECISION, INTENT(INOUT) :: Pkwater_equiv, Pk_depth
 ! Local Variables
       REAL :: air, ts, emis, sno, sky, can, cecsub, qcond, pk_defsub, pkt, pks
-      REAL, PARAMETER :: ONETHIRD = 1.0/3.0
 !***********************************************************************
       ! Calculate the potential long wave energy from air based on
       ! temperature (assuming perfect black-body emission)
@@ -2509,8 +2506,7 @@
       SUBROUTINE snowevap(Potet_sublim, Potet, Snowcov_area, Snow_evap, &
      &                    Pkwater_equiv, Pk_ice, Pk_def, Freeh2o, Pk_temp, Hru_intcpevap)
       USE PRMS_SNOW, ONLY: Active_glacier
-      USE PRMS_BASIN, ONLY: CLOSEZERO, DNEARZERO
-      USE PRMS_MODULE, ONLY: Print_debug
+      USE PRMS_MODULE, ONLY: Print_debug, CLOSEZERO, DNEARZERO
       IMPLICIT NONE
       INTRINSIC DBLE, SNGL
 ! Arguments

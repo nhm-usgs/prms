@@ -7,9 +7,11 @@
       MODULE PRMS_CLIMATE_HRU
         USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
         ! Local Variables
+        character(len=*), parameter :: MODDESC = 'Climate Input'
+        character(len=*), parameter :: MODNAME = 'climate_hru'
+        character(len=*), parameter :: Version_climate_hru = '2020-07-01'
         INTEGER, SAVE :: Precip_unit, Tmax_unit, Tmin_unit, Et_unit, Swrad_unit, Transp_unit
         INTEGER, SAVE :: Humidity_unit, Windspeed_unit
-        CHARACTER(LEN=11), SAVE :: MODNAME
         ! Control Parameters
         CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Tmin_day, Tmax_day, Precip_day, Potet_day, Swrad_day, Transp_day
         CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Humidity_day, Windspeed_day
@@ -26,8 +28,9 @@
       USE PRMS_CLIMATE_HRU
       USE PRMS_MODULE, ONLY: Process, Nhru, Climate_transp_flag, Orad_flag, Model, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
-     &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, MM2INCH, MINTEMP, MAXTEMP
+     &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
+     &    ERROR_cbh, MM2INCH, MINTEMP, MAXTEMP, DOCUMENTATION, CELSIUS
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
      &    Tavgc, Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
@@ -47,7 +50,6 @@
       INTEGER :: yr, mo, dy, i, hr, mn, sec, jj, ierr, istop, missing, ios
       DOUBLE PRECISION :: sum_obs
       REAL :: tmax_hru, tmin_hru, ppt, harea
-      CHARACTER(LEN=80), SAVE :: Version_climate_hru
 !***********************************************************************
       climate_hru = 0
       ierr = 0
@@ -174,7 +176,7 @@
           Basin_windspeed = 0.0D0
         ENDIF
 
-        IF ( ierr/=0 ) ERROR STOP -3
+        IF ( ierr/=0 ) ERROR STOP ERROR_cbh
 
         missing = 0
         DO jj = 1, Active_hrus
@@ -219,7 +221,7 @@
             Hru_snow(i) = 0.0
 
             IF ( Hru_ppt(i)>0.0 ) THEN
-              IF ( Precip_units==1 ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
+              IF ( Precip_units==CELSIUS ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
      &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
@@ -245,7 +247,7 @@
 
         IF ( missing==1 .OR. ierr==1 ) THEN
           CALL print_date(0)
-          ERROR STOP -3
+          ERROR STOP ERROR_cbh
         ENDIF
 
         IF ( Climate_temp_flag==1 ) THEN
@@ -273,24 +275,28 @@
         IF ( Windspeed_cbh_flag==1 ) Basin_windspeed = Basin_windspeed*Basin_area_inv
 
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_climate_hru = 'climate_hru.f90 2020-04-27 08:56:00Z'
-        MODNAME = 'climate_hru'
 
         IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = 1
         IF ( control_integer(Cbh_binary_flag, 'cbh_binary_flag')/=0 ) Cbh_binary_flag = 0
 
-        IF ( Climate_temp_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Temperature Distribution    ', 90)
-        IF ( Climate_precip_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Precipitation Distribution  ', 90)
-        IF ( Climate_swrad_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Solar Radiation Distribution', 90)
-        IF ( Climate_potet_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Potential Evapotranspiration', 90)
-        IF ( Climate_transp_flag==1 .OR. Model==99 ) CALL print_module(Version_climate_hru, 'Transpiration Distribution  ', 90)
-        IF ( Humidity_cbh_flag==1 .OR. Model==99 ) THEN
+        IF ( Climate_temp_flag==1 .OR. Model==DOCUMENTATION ) &
+     &       CALL print_module('Temperature Distribution', MODNAME, Version_climate_hru)
+        IF ( Climate_precip_flag==1 .OR. Model==DOCUMENTATION ) &
+     &       CALL print_module('Precipitation Distribution', MODNAME, Version_climate_hru)
+        IF ( Climate_swrad_flag==1 .OR. Model==DOCUMENTATION ) &
+     &       CALL print_module('Solar Radiation Distribution', MODNAME, Version_climate_hru)
+        IF ( Climate_potet_flag==1 .OR. Model==DOCUMENTATION ) &
+     &       CALL print_module('Potential Evapotranspiration', MODNAME, Version_climate_hru)
+        IF ( Climate_transp_flag==1 .OR. Model==DOCUMENTATION ) &
+     &       CALL print_module('Transpiration Distribution', MODNAME, Version_climate_hru)
+
+        IF ( Humidity_cbh_flag==1 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Humidity_hru(Nhru) )
           IF ( declvar(MODNAME, 'humidity_hru', 'nhru', Nhru, 'real', &
      &         'Relative humidity of each HRU', &
      &         'percentage', Humidity_hru)/=0 ) CALL read_error(3, 'humidity_hru')
         ENDIF
-        IF ( Windspeed_cbh_flag==1 .OR. Model==99 ) THEN
+        IF ( Windspeed_cbh_flag==1 .OR. Model==DOCUMENTATION ) THEN
           IF ( declvar(MODNAME, 'basin_windspeed', 'one', 1, 'double', &
      &         'Basin area-weighted average wind speed', &
      &         'meters/second', Basin_windspeed)/=0 ) CALL read_error(3, 'basin_windspeed')
@@ -301,7 +307,7 @@
         ENDIF
 
 !   Declared Parameters
-        IF ( Climate_temp_flag==1 .OR. Model==99 ) THEN
+        IF ( Climate_temp_flag==1 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Tmax_cbh_adj(Nhru,12) )
           IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
@@ -319,7 +325,7 @@
      &         'temp_units')/=0 ) CALL read_error(1, 'tmin_cbh_adj')
         ENDIF
 
-        IF ( Climate_precip_flag==1 .OR. Model==99 ) THEN
+        IF ( Climate_precip_flag==1 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Rain_cbh_adj(Nhru,12) )
           IF ( declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '2.0', &
@@ -339,7 +345,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'snow_cbh_adj')
         ENDIF
 
-        IF ( Climate_potet_flag==1 .OR. Model==99 ) THEN
+        IF ( Climate_potet_flag==1 .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Potet_cbh_adj(Nhru,12) )
           IF ( declparam(MODNAME, 'potet_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '1.5', &
@@ -479,7 +485,7 @@
 
         IF ( istop==1 ) THEN
           PRINT *, 'ERROR in climate_hru'
-          ERROR STOP -3
+          ERROR STOP ERROR_cbh
         ENDIF
 
       ENDIF

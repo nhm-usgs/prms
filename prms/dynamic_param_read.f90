@@ -8,7 +8,9 @@
         USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
         IMPLICIT NONE
         ! Local Variables
-        !CHARACTER(LEN=18), SAVE :: MODNAME
+        character(len=*), parameter :: MODDESC = 'Time Series Data'
+        character(len=*), parameter :: MODNAME = 'dynamic_param_read'
+        character(len=*), parameter :: Version_dynamic_param_read = '2020-07-01'
         INTEGER, SAVE :: Imperv_frac_unit, Imperv_next_yr, Imperv_next_mo, Imperv_next_day, Imperv_frac_flag
         INTEGER, SAVE :: Wrain_intcp_unit, Wrain_intcp_next_yr, Wrain_intcp_next_mo, Wrain_intcp_next_day
         INTEGER, SAVE :: Srain_intcp_unit, Srain_intcp_next_yr, Srain_intcp_next_mo, Srain_intcp_next_day
@@ -49,22 +51,18 @@
 !***********************************************************************
       INTEGER FUNCTION dynamic_param_read()
       USE PRMS_MODULE, ONLY: Process
-      !USE PRMS_DYNAMIC_PARAM_READ, ONLY: MODNAME
+      USE PRMS_DYNAMIC_PARAM_READ, ONLY: MODDESC, MODNAME, Version_dynamic_param_read
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: dynparamrun, dynparaminit
       EXTERNAL print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_dynamic_param_read
 !***********************************************************************
       dynamic_param_read = 0
 
       IF ( Process(:3)=='run' ) THEN
         dynamic_param_read = dynparamrun()
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_dynamic_param_read = 'dynamic_param_read.f90 2020-04-27 08:47:00Z'
-        CALL print_module(Version_dynamic_param_read, 'Time Series Data            ', 90)
-        !MODNAME = 'dynamic_param_read'
+        CALL print_module(MODDESC, MODNAME, Version_dynamic_param_read)
       ELSEIF ( Process(:4)=='init' ) THEN
         dynamic_param_read = dynparaminit()
       ENDIF
@@ -79,7 +77,7 @@
       USE PRMS_MODULE, ONLY: Nhru, Starttime, Dyn_imperv_flag, Dyn_dprst_flag, Dyn_intcp_flag, Dyn_covden_flag, &
      &    Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_soil_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
      &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dprst_flag, Dyn_fallfrost_flag, &
-     &    Dyn_springfrost_flag, Dyn_snareathresh_flag, Print_debug, PRMS4_flag
+     &    Dyn_springfrost_flag, Dyn_snareathresh_flag, Print_debug, PRMS4_flag, ERROR_dynamic
       IMPLICIT NONE
       INTEGER, EXTERNAL :: control_string, numchars
       EXTERNAL read_error, find_header_end, find_current_file_time, PRMS_open_output_file, error_stop
@@ -386,7 +384,7 @@
      &                     dynamic_param_log_file(:numchars(dynamic_param_log_file))
       ENDIF
 
-      IF ( istop==1 .OR. ierr/=0 ) CALL error_stop('in dynamic_param_read initialize procedure')
+      IF ( istop==1 .OR. ierr/=0 ) CALL error_stop('in dynamic_param_read initialize procedure', ERROR_dynamic)
 
       END FUNCTION dynparaminit
 
@@ -397,12 +395,13 @@
       USE PRMS_DYNAMIC_PARAM_READ
       USE PRMS_MODULE, ONLY: Nhru, Dprst_flag, Dyn_imperv_flag, &
      &    Dyn_covtype_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, Dyn_snareathresh_flag, &
-     &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Et_flag, Dyn_potet_flag, PRMS4_flag
+     &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Et_flag, Dyn_potet_flag, PRMS4_flag, &
+     &    INACTIVE, LAKE, ERROR_dynamic
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_BASIN, ONLY: Hru_type, Hru_area, Dprst_clos_flag, &
      &    Hru_percent_imperv, Hru_frac_perv, Hru_imperv, Hru_perv, Dprst_frac, Dprst_open_flag, &
      &    Dprst_area_max, Dprst_area_open_max, Dprst_area_clos_max, Dprst_frac_open, &
-     &    Cov_type, Basin_area_inv, NEARZERO, Covden_win, Covden_sum
+     &    Cov_type, Basin_area_inv, Covden_win, Covden_sum
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Epan_coef
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor
@@ -483,7 +482,7 @@
           Basin_soil_moist = 0.0D0
           Basin_soil_rechr = 0.0D0
           DO i = 1, Nhru
-            IF ( Hru_type(i)==2 .OR. Hru_type(i)==0 ) CYCLE ! skip lake and inactive HRUs
+            IF ( Hru_type(i)==LAKE .OR. Hru_type(i)==INACTIVE ) CYCLE ! skip lake and inactive HRUs
             harea = Hru_area(i)
             soil_adj = 0.0
 
@@ -778,7 +777,7 @@
         Basin_soil_moist = 0.0D0
         Basin_soil_rechr = 0.0D0
         DO i = 1, Nhru
-          IF ( Hru_type(i)==2 .OR. Hru_type(i)==0 ) CYCLE ! skip lake and inactive HRUs
+          IF ( Hru_type(i)==LAKE .OR. Hru_type(i)==INACTIVE ) CYCLE ! skip lake and inactive HRUs
 
           IF ( Soil_moist_max(i)<0.00001 ) THEN
             istop = 1
@@ -857,7 +856,7 @@
         ENDIF
       ENDIF
 
-      IF ( istop==1 ) ERROR STOP
+      IF ( istop==1 ) ERROR STOP ERROR_dynamic
 
  9001 FORMAT (/, 'ERROR, dynamic parameter', A, ' <', F0.7, ' for HRU:', I0, /, 9X, 'value:', F0.7) !, ' set to', F0.7)
  9002 FORMAT (/, 'ERROR, dynamic parameter causes soil_rechr_max:', F0.7, ' > soil_moist_max:', F0.7, ' for HRU:', I0)
@@ -868,7 +867,7 @@
 !     Values are read in, Parm are last, Values are updated or old
 !***********************************************************************
       SUBROUTINE write_dynoutput(Output_unit, Dim, Updated_hrus, Values, Param, Param_name)
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, INACTIVE
       USE PRMS_BASIN, ONLY: Hru_type
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
@@ -884,7 +883,7 @@
       Updated_hrus = 0
       num = 0
       DO i = 1, Nhru
-        IF ( Hru_type(i)==0 ) CYCLE ! skip inactive HRUs
+        IF ( Hru_type(i)==INACTIVE ) CYCLE ! skip inactive HRUs
         IF ( Values(i)<0.0 ) THEN
           Values(i) = Param(i)
         ELSEIF ( Values(i)/=Param(i) ) THEN
@@ -905,7 +904,7 @@
 !     Values are read in, Parm are are updated or old
 !***********************************************************************
       SUBROUTINE write_dynparam_int(Output_unit, Dim, Updated_hrus, Values, Param, Param_name)
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, INACTIVE
       USE PRMS_BASIN, ONLY: Hru_type
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
@@ -921,7 +920,7 @@
       Updated_hrus = 0
       num = 0
       DO i = 1, Nhru
-        IF ( Hru_type(i)==0 ) CYCLE ! skip inactive HRUs
+        IF ( Hru_type(i)==INACTIVE ) CYCLE ! skip inactive HRUs
         IF ( Values(i)<0 ) CYCLE
         IF ( Values(i)/=Param(i) ) THEN
           num = num + 1
@@ -942,7 +941,7 @@
 !     Values are read in, Parm are are updated or old
 !***********************************************************************
       SUBROUTINE write_dynparam(Output_unit, Dim, Updated_hrus, Values, Param, Param_name)
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, INACTIVE
       USE PRMS_BASIN, ONLY: Hru_type
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
@@ -958,7 +957,7 @@
       Updated_hrus = 0
       num = 0
       DO i = 1, Nhru
-        IF ( Hru_type(i)==0 ) CYCLE ! skip inactive HRUs
+        IF ( Hru_type(i)==INACTIVE ) CYCLE ! skip inactive HRUs
         IF ( Values(i)<0.0 ) CYCLE
         IF ( Values(i)/=Param(i) ) THEN
           Param(i) = Values(i)
@@ -997,7 +996,7 @@
 !      Updated_hrus = 0
 !      num = 0
 !      DO i = 1, Nhru
-!        IF ( Hru_type(i)==0 ) CYCLE ! skip inactive HRUs
+!        IF ( Hru_type(i)==INACTIVE ) CYCLE ! skip inactive HRUs
 !        IF ( Values(i)<0.0 ) CYCLE
 !        IF ( Values(i)/=SNGL(Param(i)) ) THEN
 !          Param(i) = DBLE( Values(i) )
@@ -1018,7 +1017,7 @@
 !     Values are read in, Parm are are updated or old
 !***********************************************************************
       SUBROUTINE write_dynparam_potet(Output_unit, Dim, Updated_hrus, Values, Param, Param_name)
-      USE PRMS_MODULE, ONLY: Print_debug, Nhru
+      USE PRMS_MODULE, ONLY: Print_debug, Nhru, INACTIVE
       USE PRMS_BASIN, ONLY: Hru_type
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
@@ -1034,7 +1033,7 @@
       Updated_hrus = 0
       num = 0
       DO i = 1, Nhru
-        IF ( Hru_type(i)==0 ) CYCLE ! skip inactive HRUs
+        IF ( Hru_type(i)==INACTIVE ) CYCLE ! skip inactive HRUs
         IF ( Values(i)/=Param(i) ) THEN
           Param(i) = Values(i)
           num = num + 1

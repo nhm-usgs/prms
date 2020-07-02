@@ -2,9 +2,12 @@
 ! stream temperature module
 !***********************************************************************
       MODULE PRMS_STRMTEMP
+      USE PRMS_MODULE, ONLY: PI
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=11), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Stream Temperature'
+      character(len=*), parameter :: MODNAME = 'stream_temp'
+      character(len=*), parameter :: Version_stream_temp = '2020-07-01'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -52,7 +55,6 @@
 !   Conversions
       INTRINSIC :: ACOS
       REAL, PARAMETER :: HALF_PI = ACOS(0.0), ZERO_C = 273.16
-      REAL, PARAMETER :: PI = ACOS(-1.0)
       REAL, PARAMETER :: DEG_TO_RAD = PI / 180.0, DAYSYR = 365.242
       DOUBLE PRECISION :: MPS_CONVERT = 2.93981481D-07
       END MODULE PRMS_STRMTEMP
@@ -94,14 +96,10 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
       EXTERNAL :: read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_stream_temp
 !***********************************************************************
       stream_temp_decl = 0
 
-      Version_stream_temp = 'stream_temp.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_stream_temp, 'Stream Temperature          ', 90)
-      MODNAME = 'stream_temp'
+      CALL print_module(MODDESC, MODNAME, Version_stream_temp)
 
       ! 0 = compute shade; 1 = specified constant
       IF ( control_integer(Stream_temp_shade_flag, 'stream_temp_shade_flag')/=0 ) Stream_temp_shade_flag = 0
@@ -404,8 +402,9 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Inputerror_flag, Strmtemp_humidity_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, NEARZERO
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Inputerror_flag, Strmtemp_humidity_flag, &
+     &    NEARZERO, ERROR_param
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
       IMPLICIT NONE
@@ -569,7 +568,7 @@
                   IF ( j>1 ) THEN
                      Seg_close(i) = Segment_order(j-1) ! set to previous segment id
                   ELSE ! this is a problem, shouldn't happen
-                     CALL error_stop('segments do not have associated HRUs')
+                     CALL error_stop('segments do not have associated HRUs', ERROR_param)
                     ! Seg_close(i) = Segment_order(1) ! set to first segment id
                   ENDIF
                ENDIF
@@ -708,8 +707,8 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_run()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, NEARZERO, CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, NEARZERO, CFS2CMS_CONV
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area
       USE PRMS_SET_TIME, ONLY: Summer_flag, Nowmonth
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Potet, Hru_rain, Swrad
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
@@ -1023,8 +1022,7 @@
 !*********************************************************************************
       SUBROUTINE lat_inflow(Qlat, Tl_avg, id, tave_gw, tave_air, tave_ss, melt, rain)
       USE PRMS_STRMTEMP, ONLY: Melt_temp
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_lateral_inflow
       USE PRMS_ROUTING, ONLY: Seginc_sroff, Seginc_ssflow, Seginc_gwflow
       IMPLICIT NONE
@@ -1079,7 +1077,7 @@
 !     PURPOSE:
 !        1. TO PREDICT THE AVERAGE DAILY WATER TEMPERATURE USING A SECOND-ORDER
 !           CLOSED-FORM SOLUTION TO THE STEADY-STATE HEAT TRANSPORT EQUATION.
-      USE PRMS_BASIN, ONLY: NEARZERO, CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: NEARZERO, CFS2CMS_CONV
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, EXP, ALOG, SNGL, SIGN
@@ -1171,7 +1169,7 @@
 
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Seg_width, Seg_humid, Press, MPS_CONVERT, &
      &    Seg_ccov, Seg_potet, Albedo, seg_tave_gw
-      USE PRMS_BASIN, ONLY: NEARZERO, CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
       USE PRMS_ROUTING, ONLY: Seginc_swrad, Seg_slope
       IMPLICIT NONE
@@ -1268,7 +1266,6 @@
 !           EQUATION BY ITERATING NEWTON'S METHOD
 !        2. TO DETERMINE THE 1ST THERMAL EXCHANGE COEFFICIENT.
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Maxiter_sntemp
-      USE PRMS_BASIN, ONLY: NEARZERO
 !      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
       INTRINSIC ABS
@@ -1386,7 +1383,6 @@
       USE PRMS_STRMTEMP, ONLY: Azrh, Alte, Altw, Seg_daylight, Seg_width, &
      &    PI, HALF_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
      &    Level_sunset_azimuth, Max_solar_altitude, Sin_alrs, Sin_declination, Sin_lat_decl, Total_shade
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV
       IMPLICIT NONE
 ! Functions
       INTRINSIC COS, SIN, TAN, ACOS, ASIN, ATAN, ABS, MAX, SNGL
@@ -1554,7 +1550,7 @@
 ! AZIMUTH, ALTITUDE, AND HOUR ANGLE
 !
       USE PRMS_STRMTEMP, ONLY: Azrh, PI, Maxiter_sntemp
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC TAN, SIN, COS, ACOS, ASIN, ABS
@@ -1658,7 +1654,7 @@
 !      Sin_d   = SIN(DECL)
 !      Sino   = SIN(XLAT)
       USE PRMS_STRMTEMP, ONLY: HALF_PI, Maxiter_sntemp
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC ASIN, ABS, COS, SIN
@@ -1721,7 +1717,7 @@
 !
       USE PRMS_STRMTEMP, ONLY: Azrh, Vce, Vdemx, Vhe, Voe, Vcw, Vdwmx, Vhw, Vow, Seg_width, &
      &    Vdemn, Vdwmn, HALF_PI
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO
       USE PRMS_SET_TIME, ONLY: Summer_flag
       IMPLICIT NONE
 ! Functions

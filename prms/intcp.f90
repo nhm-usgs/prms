@@ -6,12 +6,14 @@
       MODULE PRMS_INTCP
       IMPLICIT NONE
 !   Local Variables
+      character(len=*), parameter :: MODDESC = 'Canopy Interception'
+      character(len=*), parameter :: MODNAME = 'intcp'
+      character(len=*), parameter :: Version_intcp = '2020-07-01'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
       INTEGER, SAVE :: Use_transfer_intcp
       REAL, SAVE, ALLOCATABLE :: Gain_inches(:)
-      CHARACTER(LEN=5), SAVE :: MODNAME
 !   Declared Variables
       INTEGER, SAVE, ALLOCATABLE :: Intcp_on(:), Intcp_form(:)
       DOUBLE PRECISION, SAVE :: Basin_net_ppt, Basin_intcp_stor, Basin_changeover
@@ -64,14 +66,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_intcp
 !***********************************************************************
       intdecl = 0
 
-      Version_intcp = 'intcp.f90 2020-04-27 19:05:00Z'
-      CALL print_module(Version_intcp, 'Canopy Interception         ', 90)
-      MODNAME = 'intcp'
+      CALL print_module(MODDESC, MODNAME, Version_intcp)
 
 ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       Use_transfer_intcp = 0
@@ -258,12 +256,12 @@
 !***********************************************************************
       INTEGER FUNCTION intrun()
       USE PRMS_INTCP
-      USE PRMS_MODULE, ONLY: Print_debug
+      USE PRMS_MODULE, ONLY: Print_debug, NEARZERO, DNEARZERO, LAKE, BARESOIL, GRASSES, ERROR_param
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
-     &    Hru_route_order, Hru_area, NEARZERO, DNEARZERO, Cov_type
+     &    Hru_route_order, Hru_area, Cov_type
       USE PRMS_WATER_USE, ONLY: Canopy_gain
 ! Newsnow and Pptmix can be modfied, WARNING!!!
-      USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
+      USE PRMS_CLIMATEVARS, ONLY: Hru_rain, Hru_ppt, &
      &    Hru_snow, Transp_on, Potet, Use_pandata, Hru_pansta, Epan_coef, Potet_sublim
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
       USE PRMS_SET_TIME, ONLY: Nowmonth, Cfs_conv, Nowyear, Nowday
@@ -321,8 +319,8 @@
         changeover = 0.0
         extra_water = 0.0
         ! Lake or bare ground HRUs
-        IF ( Hru_type(i)==2 .OR. Cov_type(i)==0 ) THEN
-          IF ( Cov_type(i)==0 .AND. intcpstor>0.0 ) THEN
+        IF ( Hru_type(i)==LAKE .OR. Cov_type(i)==BARESOIL ) THEN
+          IF ( Cov_type(i)==BARESOIL .AND. intcpstor>0.0 ) THEN
             ! could happen if cov_type changed from > 0 to 0 with storage using dynamic parameters
             extra_water = Hru_intcpstor(i)
             IF ( Print_debug>-1 ) THEN
@@ -378,7 +376,7 @@
 
 !*****Determine the amount of interception from rain
 
-        IF ( Hru_type(i)/=2 .AND. Cov_type(i)/=0 ) THEN         ! not a lake or bare ground HRU
+        IF ( Hru_type(i)/=LAKE .AND. Cov_type(i)/=BARESOIL ) THEN         ! not a lake or bare ground HRU
           IF ( Transp_on(i)==1 ) THEN
             stor = Srain_intcp(i)
           ELSE
@@ -386,9 +384,9 @@
           ENDIF
           IF ( Hru_rain(i)>0.0 ) THEN
             IF ( cov>0.0 ) THEN
-              IF ( Cov_type(i)>1 ) THEN
+              IF ( Cov_type(i)>GRASSES ) THEN
                 CALL intercept(Hru_rain(i), stor, cov, intcpstor, netrain)
-              ELSEIF ( Cov_type(i)==1 ) THEN
+              ELSEIF ( Cov_type(i)==GRASSES ) THEN
                 !rsr, 03/24/2008 intercept rain on snow-free grass,
                 !rsr             when not a mixed event
                 IF ( Pkwater_equiv(i)<DNEARZERO .AND. netsnow<NEARZERO ) THEN
@@ -424,7 +422,7 @@
                 Basin_hru_apply = Basin_hru_apply + DBLE( Gain_inches(i)*harea )
                 Basin_net_apply = Basin_net_apply + DBLE( Net_apply(i)*harea )
               ELSE
-                CALL error_stop('canopy transfer attempted to HRU with cov_den = 0.0')
+                CALL error_stop('canopy transfer attempted to HRU with cov_den = 0.0', ERROR_param)
               ENDIF
             ENDIF
           ENDIF
@@ -433,15 +431,9 @@
 
           IF ( Hru_snow(i)>0.0 ) THEN
             IF ( cov>0.0 ) THEN
-              IF ( Cov_type(i)>1 ) THEN
+              IF ( Cov_type(i)>GRASSES ) THEN
                 stor = Snow_intcp(i)
                 CALL intercept(Hru_snow(i), stor, cov, intcpstor, netsnow)
-                IF ( netsnow<NEARZERO ) THEN   !rsr, added 3/9/2006
-                  netrain = netrain + netsnow
-                  netsnow = 0.0
-                  Newsnow(i) = 0
-                  Pptmix(i) = 0   ! reset to be sure it is zero
-                ENDIF
               ENDIF
             ENDIF
           ENDIF

@@ -1,4 +1,4 @@
-      ! utils_prms.f90 2020-04-27 12:55:00Z
+      ! utils_prms.f90 2020-07-01
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -370,6 +370,7 @@
 !     Parameter or Variable delcare or read error
 !**********************************************************************
       SUBROUTINE read_error(Iflag, Name)
+      USE PRMS_MODULE, ONLY: ERROR_decl_get
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iflag
@@ -409,20 +410,21 @@
       ELSEIF ( Iflag==16 ) THEN
         PRINT *, 'ERROR, declared parameter ', Name
       ENDIF
-      ERROR STOP -1
+      ERROR STOP ERROR_decl_get
       END SUBROUTINE read_error
 
 !**********************************************************************
 !     Module error
 !**********************************************************************
       SUBROUTINE module_error(Modname, Arg, Retcode)
+      USE PRMS_MODULE, ONLY: ERROR_module
       IMPLICIT NONE
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Modname, Arg
       INTEGER, INTENT(IN) :: Retcode
 !**********************************************************************
       PRINT 9001, Modname, Arg, Retcode
-      ERROR STOP -1
+      ERROR STOP ERROR_module
  9001 FORMAT ('ERROR in ', A, ' module, arg = ', A, /, 'Return val = ', I0)
       END SUBROUTINE module_error
 
@@ -520,7 +522,7 @@
 ! extends to noon the next Gregorian day.
 !***********************************************************************
       INTEGER FUNCTION julian_day(Date_type, Year_type)
-      USE PRMS_MODULE, ONLY: Starttime, Endtime
+      USE PRMS_MODULE, ONLY: Starttime, Endtime, ERROR_time
       USE PRMS_BASIN, ONLY: Hemisphere
       USE PRMS_SET_TIME, ONLY: Nowtime
       IMPLICIT NONE
@@ -541,7 +543,7 @@
         time_array = Starttime
       ELSE
         PRINT *, 'ERROR, invalid argument to compute Julian Day: ', Date_type
-        ERROR STOP -3
+        ERROR STOP ERROR_time
       ENDIF
       year = time_array(1)
       month = time_array(2)
@@ -623,7 +625,7 @@
       ENDIF
       IF ( found==0 ) THEN
         PRINT *, 'ERROR, invalid year type argument to compute Julian Day: ', Year_type
-        ERROR STOP -3
+        ERROR STOP ERROR_time
       ENDIF
 
       ! set actual Julian Day
@@ -800,6 +802,7 @@
 !     Open PRMS module output file and assign unit number
 !***********************************************************************
       SUBROUTINE PRMS_open_module_file(Iunit, Fname)
+      USE PRMS_MODULE, ONLY: ERROR_open_in
       IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(OUT) :: Iunit
@@ -815,7 +818,7 @@
       IF ( ios/=0 ) THEN
         WRITE ( *, '(/,A,/,A,/)' ) 'ERROR opening water balance output file:', Fname(:nchars), &
      &                             'check to be sure the pathname is valid and the file is not open'
-        ERROR STOP -1
+        ERROR STOP ERROR_open_in
       ENDIF
       END SUBROUTINE PRMS_open_module_file
 
@@ -823,7 +826,7 @@
 !     Determine number of characters in a string
 !***********************************************************************
       INTEGER FUNCTION numchars(String)
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
+      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, ERROR_control
       IMPLICIT NONE
 ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: String
@@ -838,7 +841,7 @@
         PRINT *, 'PRMS code error, string longer than:', MAXFILE_LENGTH, ' referenced'
         PRINT *, 'string length:', numchars, ' value: ', String
         PRINT *, 'Contact PRMS program support'
-        ERROR STOP -1
+        ERROR STOP ERROR_control
       ENDIF
       END FUNCTION numchars
 
@@ -846,46 +849,41 @@
 ! print_module
 ! print module version information to user's screen
 !***********************************************************************
-      SUBROUTINE print_module(Versn, Description, Ftntype)
-      USE PRMS_MODULE, ONLY: PRMS_output_unit, Model, Print_debug
+      SUBROUTINE print_module(Description, Modname, Versn)
+      USE PRMS_MODULE, ONLY: PRMS_output_unit, Print_debug
       IMPLICIT NONE
       ! Arguments
-      CHARACTER(LEN=*), INTENT(IN) :: Description, Versn
-      INTEGER, INTENT(IN) :: Ftntype
+      CHARACTER(LEN=*), INTENT(IN) :: Description, Modname, Versn
       ! Functions
-      INTRINSIC INDEX, TRIM
+      INTRINSIC TRIM, LEN_TRIM, MAX
       ! Local Variables
-      INTEGER nc, n, nb, is
-      CHARACTER(LEN=28) :: blanks
-      CHARACTER(LEN=80) :: string
+      INTEGER nvers, nmod, nblanks, nblanks2
+      CHARACTER(LEN=24) :: blanks
+      CHARACTER(LEN=68) :: string
 !***********************************************************************
       IF ( Print_debug==-2 ) RETURN
-      nc = INDEX( Versn, 'Z' ) - 10
-      n = INDEX( Versn, '.f' ) - 1
-      IF ( n<1 ) n = 1
-      IF ( Ftntype==90 ) THEN
-        is = 5
-      ELSE
-        is = 3
-      ENDIF
+      nvers = LEN_TRIM(Description)
+      nblanks = MIN(32 - nvers, 32)
+      nmod = LEN_TRIM(Modname)
+      nblanks2 = MIN(20 - nmod, 20)
       blanks = ' '
-      nb = 29 - (n + 3)
-      string = Description//'   '//Versn(:n)//blanks(:nb)//Versn(n+is:nc)
+      string = Description//blanks(:nblanks)//Modname//blanks(:nblanks2)//Versn
       PRINT '(A)', TRIM( string )
-      IF ( Model/=2 ) WRITE ( PRMS_output_unit, '(A)' ) TRIM( string )
+      WRITE ( PRMS_output_unit, '(A)' ) TRIM( string )
       END SUBROUTINE print_module
 
 !***********************************************************************
 ! check restart file module order
 !***********************************************************************
       SUBROUTINE check_restart(Modname, Restart_module)
+      USE PRMS_MODULE, ONLY: ERROR_restart
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Modname, Restart_module
 !***********************************************************************
       IF ( Restart_module/=Modname ) THEN
         PRINT *, 'ERROR READING RESTART FILE, expecting module: ', Modname, ' found: ', Restart_module
-        ERROR STOP -1
+        ERROR STOP ERROR_restart
       ENDIF
       END SUBROUTINE check_restart
 
@@ -1003,11 +1001,12 @@
 !***********************************************************************
 ! Print ERROR message and stop
 !***********************************************************************
-      SUBROUTINE error_stop(Msg)
+      SUBROUTINE error_stop(Msg, Ierr)
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Msg
+      INTEGER, INTENT(IN) :: Ierr
 !***********************************************************************
       PRINT '(/,2A,/)', 'ERROR, ', Msg
-      ERROR STOP -1
+      ERROR STOP Ierr
       END SUBROUTINE error_stop

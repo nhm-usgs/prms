@@ -49,7 +49,7 @@
 !***********************************************************************
       SUBROUTINE basin_summarydecl()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, ERROR_control
+      USE PRMS_MODULE, ONLY: Model, ERROR_control, DAILY, YEARLY, DOCUMENTATION
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR

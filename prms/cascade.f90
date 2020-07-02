@@ -5,8 +5,10 @@
       MODULE PRMS_CASCADE
       IMPLICIT NONE
 !   Local Variables
+      character(len=*), parameter :: MODDESC = 'Cascading Flow'
+      character(len=*), parameter :: MODNAME = 'cascade'
+      character(len=*), parameter :: Version_cascade = '2020-07-01'
       INTEGER, SAVE :: MSGUNT
-      CHARACTER(LEN=7), SAVE :: MODNAME
       INTEGER, SAVE :: Iorder, Igworder, Ndown
 !   Computed Variables
       INTEGER, SAVE, ALLOCATABLE :: Hru_down(:, :), Gwr_down(:, :)
@@ -77,14 +79,10 @@
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declparam
       EXTERNAL read_error, print_module, PRMS_open_module_file
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_cascade
 !***********************************************************************
       cascdecl = 0
 
-      Version_cascade = 'cascade.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_cascade, 'Cascading Flow              ', 90)
-      MODNAME = 'cascade'
+      CALL print_module(MODDESC, MODNAME, Version_cascade)
 
       IF ( Cascade_flag>0 .OR. Model==99 ) ALLOCATE ( Ncascade_hru(Nhru) )
 
@@ -195,7 +193,7 @@
 !***********************************************************************
       INTEGER FUNCTION cascinit()
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Ngw, Print_debug, Cascade_flag, Cascadegw_flag, Gwr_swale_flag
+      USE PRMS_MODULE, ONLY: Ngw, Print_debug, Cascade_flag, Cascadegw_flag, Gwr_swale_flag, ERROR_cascades
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Gwr_route_order, Active_gwrs, Gwr_type, Hru_type
       IMPLICIT NONE
 ! Functions
@@ -224,7 +222,7 @@
 !        ALLOCATE ( Gwr_down_fracwt(Ndown,Ngw) )
         IF ( Cascadegw_flag==1 ) THEN
           CALL initgw_cascade(iret)
-          IF ( iret==1 ) ERROR STOP -2
+          IF ( iret==1 ) ERROR STOP ERROR_cascades
         ELSE ! cascadegw_flag=2 so GWR cascades set to HRU cascades
           Gwr_type = Hru_type
           Active_gwrs = Active_hrus
@@ -248,7 +246,7 @@
           ENDDO
         ENDIF
       ENDIF
-      IF ( itest/=0 .OR. iret/=0 ) ERROR STOP -2
+      IF ( itest/=0 .OR. iret/=0 ) ERROR STOP ERROR_cascades
 
       IF ( Print_debug==13 ) THEN
         IF ( Cascade_flag>0 ) THEN
@@ -306,7 +304,8 @@
 !***********************************************************************
       SUBROUTINE init_cascade(Iret)
       USE PRMS_CASCADE
-      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Print_debug, Ncascade, Ncascdgw, Cascadegw_flag, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nhru, Nsegment, Print_debug, Ncascade, Ncascdgw, Cascadegw_flag, Cascade_flag, &
+     &    INACTIVE, SWALE, LAKE
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_area
       IMPLICIT NONE
       INTEGER, EXTERNAL :: getparam
@@ -412,18 +411,18 @@
         ELSEIF ( istrm==0 .AND. jdn==0 ) THEN
           IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'Cascade ignored as down HRU and segment = 0', &
      &                                                  i, kup, jdn, frac, istrm
-        ELSEIF ( Hru_type(kup)==0 ) THEN
+        ELSEIF ( Hru_type(kup)==INACTIVE ) THEN
           IF ( Print_debug==13 ) WRITE (MSGUNT, 9004) 'Cascade ignored as up HRU is inactive', &
      &                                                i, kup, jdn, frac, istrm
-        ELSEIF ( Hru_type(kup)==3 ) THEN
+        ELSEIF ( Hru_type(kup)==SWALE ) THEN
           IF ( Print_debug==13 ) WRITE (MSGUNT, 9004) 'Cascade ignored as up HRU is a swale', &
      &                                                i, kup, jdn, frac, istrm
-        ELSEIF ( Hru_type(kup)==2 .AND. istrm<1 ) THEN
+        ELSEIF ( Hru_type(kup)==LAKE .AND. istrm<1 ) THEN
           IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) 'Cascade ignored as lake HRU cannot cascade to an HRU', &
      &                                                  i, kup, jdn, frac, istrm
         ELSE
           IF ( jdn>0 .AND. istrm<1 ) THEN
-            IF ( Hru_type(jdn)==0 ) THEN
+            IF ( Hru_type(jdn)==INACTIVE ) THEN
               IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) &
      &             'Cascade ignored as down HRU is inactive', i, kup, jdn, frac, istrm
               CYCLE
@@ -542,7 +541,7 @@
 !***********************************************************************
       SUBROUTINE order_hrus(Iret)
       USE PRMS_CASCADE, ONLY: Hru_down, Iorder, MSGUNT, Circle_switch, Ncascade_hru
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, INACTIVE, LAND, SWALE
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
       IMPLICIT NONE
       EXTERNAL up_tree, PRMS_open_module_file
@@ -596,19 +595,19 @@
         ENDIF
         IF ( up_id_count(i)==0 ) THEN
           !HRU does not receive or cascade flow - swale
-          IF ( Hru_type(i)==1 .AND. Ncascade_hru(i)==0 ) THEN
+          IF ( Hru_type(i)==LAND .AND. Ncascade_hru(i)==0 ) THEN
             IF ( Print_debug==13 ) WRITE ( MSGUNT, 9008 ) i
             PRINT 9008, i
-            Hru_type(i) = 3
+            Hru_type(i) = SWALE
             type_flag = 1
             CYCLE
           ENDIF
         ENDIF
-        IF ( Hru_type(i)==1 .AND. Ncascade_hru(i)==0 ) THEN
+        IF ( Hru_type(i)==LAND .AND. Ncascade_hru(i)==0 ) THEN
           !HRU does not cascade flow - swale
           IF ( Print_debug==13 ) WRITE ( MSGUNT, 9009 ) i
           PRINT 9009, i
-          Hru_type(i) = 3
+          Hru_type(i) = SWALE
           type_flag = 1
           CYCLE
         ELSE
@@ -659,7 +658,7 @@
       DO WHILE ( Iorder < Active_hrus )
         added = 0
         DO i = 1, Nhru
-          IF ( Hru_type(i)==0 ) CYCLE !ignore inactive HRUs
+          IF ( Hru_type(i)==INACTIVE ) CYCLE !ignore inactive HRUs
             IF ( is_hru_on_list(i)==0 ) THEN
             goes_on_list = 1
             DO j = 1, up_id_count(i)
@@ -710,7 +709,7 @@
         IF ( Print_debug==13 ) WRITE ( MSGUNT, 9004 ) Iorder, Nhru, Active_hrus
         DO i = 1, Nhru
           IF ( is_hru_on_list(i)==0 ) THEN
-            IF ( Hru_type(i)/=0 ) THEN
+            IF ( Hru_type(i)/=INACTIVE ) THEN
               PRINT 9006, i
               IF ( Print_debug==13 ) WRITE ( MSGUNT, 9006 ) i
               Iret = 1

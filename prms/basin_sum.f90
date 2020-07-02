@@ -5,8 +5,11 @@
       MODULE PRMS_BASINSUM
       IMPLICIT NONE
 !   Local Variables
+      character(len=*), parameter :: MODDESC = 'Output Summary'
+      character(len=*), parameter :: MODNAME = 'basin_sum'
+      character(len=*), parameter :: Version_basin_sum = '2020-07-01'
+
       INTEGER, SAVE :: BALUNT, Totdays
-      CHARACTER(LEN=9), SAVE :: MODNAME
       INTEGER, SAVE :: Header_prt, Endjday
       CHARACTER(LEN=32) :: Buffer32
       CHARACTER(LEN=40) :: Buffer40
@@ -90,14 +93,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_basin_sum
 !***********************************************************************
       sumbdecl = 0
 
-      Version_basin_sum = 'basin_sum.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_basin_sum, 'Summary                     ', 90)
-      MODNAME = 'basin_sum'
+      CALL print_module(MODDESC, MODNAME, Version_basin_sum)
 
       IF ( declvar(MODNAME, 'last_basin_stor', 'one', 1, 'double', &
      &     'Basin area-weighted average storage in all water storage reservoirs from previous time step', &

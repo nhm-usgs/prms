@@ -4,7 +4,9 @@
       MODULE PRMS_CLIMATEVARS
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=11), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
+      character(len=*), parameter :: MODNAME = 'climateflow'
+      character(len=*), parameter :: Version_climateflow = '2020-07-01'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -126,19 +128,15 @@
      &    Nsegment, Strmflow_module, Temp_module, Ntemp, Stream_order_flag, GSFLOW_flag, &
      &    Precip_module, Solrad_module, Transp_module, Et_module, Init_vars_from_file, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Nrain, Nsol, Call_cascade, Et_flag, Dprst_flag, &
-     &    Solrad_flag, Glacier_flag
+     &    Solrad_flag, Glacier_flag, ERROR_dim
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_climateflow
 !***********************************************************************
       climateflow_decl = 0
 
-      Version_climateflow = 'climateflow.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_climateflow, 'Common States and Fluxes    ', 90)
-      MODNAME = 'climateflow'
+      CALL print_module(MODDESC, MODNAME, Version_climateflow)
 
       ALLOCATE ( Tmaxf(Nhru) )
       IF ( declvar(Temp_module, 'tmaxf', 'nhru', Nhru, 'real', &
@@ -436,6 +434,7 @@
       IF ( declvar(Soilzone_module, 'recharge', 'nhru', Nhru, 'real', &
      &     'Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU', &
      &     'inches', Recharge)/=0 ) CALL read_error(3, 'recharge')
+
 ! gwflow
       IF ( GSFLOW_flag==0 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Gwres_stor(Nhru) )
@@ -496,7 +495,7 @@
       IF ( Call_cascade==1 .OR. Stream_order_flag==1 ) THEN
         IF ( Nsegment==0 .AND. Model/=DOCUMENTATION ) THEN
           PRINT *, 'ERROR, nsegment=0, must be > 0 for selected module options'
-          ERROR STOP -1
+          ERROR STOP ERROR_dim
         ENDIF
       ENDIF
 
@@ -868,8 +867,8 @@
       USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Nhru, Nssr, Temp_module, Precip_module, Parameter_check_flag, &
      &    Solrad_module, Soilzone_module, Srunoff_module, Stream_order_flag, Ntemp, Nrain, Nsol, Nevap, &
      &    Init_vars_from_file, Inputerror_flag, Dprst_flag, Solrad_flag, Et_flag, Nlake, Et_module, Humidity_cbh_flag, &
-     &    PRMS4_flag, Print_debug, GSFLOW_flag
-      USE PRMS_BASIN, ONLY: Elev_units, FEET2METERS, METERS2FEET, Active_hrus, Hru_route_order, Hru_type
+     &    PRMS4_flag, Print_debug, GSFLOW_flag, FEET2METERS, METERS2FEET, INACTIVE, LAKE, FEET
+      USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -883,7 +882,7 @@
       IF ( Temp_flag<7 ) THEN
         IF ( getparam(Temp_module, 'tsta_elev', Ntemp, 'real', Tsta_elev)/=0 ) CALL read_error(2, 'tsta_elev')
         DO i = 1, Ntemp
-          IF ( Elev_units==0 ) THEN
+          IF ( Elev_units==FEET ) THEN
             Tsta_elev_feet(i) = Tsta_elev(i)
             Tsta_elev_meters(i) = Tsta_elev_feet(i)*FEET2METERS
           ELSE
@@ -966,7 +965,7 @@
       IF ( Precip_flag==2 .OR. Precip_flag==6 .OR. Precip_flag==5 ) THEN
         IF ( getparam(Precip_module, 'psta_elev', Nrain, 'real', Psta_elev)/=0 ) CALL read_error(2, 'psta_elev')
         DO i = 1, Nrain
-          IF ( Elev_units==0 ) THEN
+          IF ( Elev_units==FEET ) THEN
             Psta_elev_feet(i) = Psta_elev(i)
             Psta_elev_meters(i) = Psta_elev_feet(i)*FEET2METERS
           ELSE
@@ -1063,7 +1062,7 @@
 
       ! check parameters
       DO i = 1, Nhru
-        IF ( Hru_type(i)==0 .OR. Hru_type(i)==2 ) CYCLE
+        IF ( Hru_type(i)==INACTIVE .OR. Hru_type(i)==LAKE ) CYCLE
         ! hru_type = 1 or 3
         IF ( Soil_moist_max(i)<0.00001 ) THEN
           IF ( Parameter_check_flag==1 ) THEN
@@ -1265,7 +1264,7 @@
 !***********************************************************************
       SUBROUTINE temp_set(Ihru, Tmax, Tmin, Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, Hru_area)
       USE PRMS_CLIMATEVARS, ONLY: Basin_temp, Basin_tmax, Basin_tmin, Temp_units, Tmax_hru, Tmin_hru
-      USE PRMS_BASIN, ONLY: MINTEMP, MAXTEMP
+      USE PRMS_MODULE, ONLY: MINTEMP, MAXTEMP, ERROR_temp
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
@@ -1299,7 +1298,7 @@
       IF ( Tminf<MINTEMP .OR. Tmaxf>MAXTEMP ) THEN
         PRINT '(A,I0,1X,F0.4,1X,F0.4,/)', ' ERROR, invalid temperature value for HRU: ', Ihru, Tminf, Tmaxf
         CALL print_date(1)
-        ERROR STOP -3
+        ERROR STOP ERROR_temp
       ENDIF
       Tmax_hru(Ihru) = Tmax ! in units temp_units
       Tmin_hru(Ihru) = Tmin ! in units temp_units
@@ -1315,7 +1314,7 @@
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f)
-      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_MODULE, ONLY: NEARZERO
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions

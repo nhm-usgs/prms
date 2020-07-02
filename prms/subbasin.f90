@@ -13,7 +13,9 @@
       MODULE PRMS_SUBBASIN
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=8), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Output Summary'
+      character(len=*), parameter :: MODNAME = 'subbasin'
+      character(len=*), parameter :: Version_subbasin = '2020-07-01'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -60,22 +62,18 @@
 !***********************************************************************
       INTEGER FUNCTION subdecl()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, GSFLOW_flag, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, GSFLOW_flag, DOCUMENTATION, ERROR_dim
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module, error_stop
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_subbasin
 !***********************************************************************
       subdecl = 0
 
-      Version_subbasin = 'subbasin.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_subbasin, 'Output Summary              ', 90)
-      MODNAME = 'subbasin'
+      CALL print_module(MODDESC, MODNAME, Version_subbasin)
 
       IF ( Nsub==0 ) THEN
-        IF ( Model/=DOCUMENTATION ) CALL error_stop('nsub=0 when subbasin module called')
+        IF ( Model/=DOCUMENTATION ) CALL error_stop('nsub=0 when subbasin module called', ERROR_dim)
         Nsub = 1
       ENDIF
 
@@ -248,9 +246,10 @@
 !***********************************************************************
       INTEGER FUNCTION subinit()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: GSFLOW_flag, Nsub, Nhru, Print_debug, Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
+      USE PRMS_MODULE, ONLY: GSFLOW_flag, Nsub, Nhru, Print_debug, Inputerror_flag, Dprst_flag, &
+     &    Lake_route_flag, Cascade_flag, DNEARZERO, Cfs2cms_conv, LAKE
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, DNEARZERO, Lake_hru_id, Cfs2cms_conv
+     &    Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_INTCP, ONLY: Hru_intcpstor
@@ -365,7 +364,7 @@
             gwstor = Gwres_stor(j)*harea
             gwq = DBLE(Gwres_flow(j))*harea
           ENDIF
-          IF ( Hru_type(j)/=2 ) THEN
+          IF ( Hru_type(j)/=LAKE ) THEN
             srq = DBLE(Sroff(j))*harea
             ssq = DBLE(Ssres_flow(j))*harea
             soilstor = DBLE(Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
@@ -444,9 +443,9 @@
 !***********************************************************************
       INTEGER FUNCTION subrun()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: GSFLOW_flag, Nsub, Cascade_flag, Dprst_flag, Lake_route_flag
+      USE PRMS_MODULE, ONLY: GSFLOW_flag, Nsub, Cascade_flag, Dprst_flag, Lake_route_flag, CFS2CMS_CONV, LAKE
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, CFS2CMS_CONV, Hru_frac_perv, Lake_hru_id
+     &    Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
@@ -507,7 +506,7 @@
         k = Hru_subbasin(j)
         IF ( k>0 ) THEN
           harea = Hru_area_dble(j)
-          IF ( Hru_type(j)/=2 ) THEN
+          IF ( Hru_type(j)/=LAKE ) THEN
             srq = DBLE(Sroff(j))*harea
             ssq = DBLE(Ssres_flow(j))*harea
             soilstor = DBLE(Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea

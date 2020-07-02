@@ -23,7 +23,9 @@
       MODULE PRMS_SRUNOFF
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=13), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Surface Runoff'
+      character(LEN=13), save :: MODNAME
+      character(len=*), parameter :: Version_srunoff = '2020-07-01'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -112,19 +114,15 @@
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_srunoff
 !***********************************************************************
       srunoffdecl = 0
 
-      Version_srunoff = 'srunoff.f90 2020-06-30 11:30:00Z'
       IF ( Sroff_flag==1 ) THEN
         MODNAME = 'srunoff_smidx'
       ELSE
         MODNAME = 'srunoff_carea'
       ENDIF
-      Version_srunoff = MODNAME//'.f90 '//Version_srunoff(13:80)
-      CALL print_module(Version_srunoff, 'Surface Runoff              ', 90)
+      CALL print_module(MODDESC, MODNAME, Version_srunoff)
 
       IF ( declvar(MODNAME, 'basin_imperv_evap', 'one', 1, 'double', &
      &     'Basin area-weighted average evaporation from impervious area', &
@@ -622,7 +620,7 @@
       INTEGER FUNCTION srunoffrun()
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Print_debug, &
-     &    Frozen_flag, GSFLOW_flag, KKITER, Glacier_flag
+     &    Frozen_flag, GSFLOW_flag, KKITER, Glacier_flag, LAND, LAKE, GLACIER
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
@@ -709,7 +707,7 @@
         Isglacier = 0
         active_glacier = -1 ! not an glacier
         IF ( Glacier_flag>0 ) THEN
-          IF ( Hru_type(i)==4 ) THEN
+          IF ( Hru_type(i)==GLACIER ) THEN
             IF ( Glacier_flag==1 ) THEN ! glacier
               Isglacier = 1
               glcrmltb = Glacrb_melt(i)
@@ -722,7 +720,7 @@
           ENDIF
         ENDIF
 
-        IF ( Hru_type(i)==2 ) THEN
+        IF ( Hru_type(i)==LAKE ) THEN
 ! HRU is a lake
 !     eventually add code for lake area less than hru_area
 !     that includes soil_moist for fraction of hru_area that is dry bank
@@ -792,7 +790,7 @@
           IF ( Net_apply(i)>0.0 ) THEN
             sra = 0.0
             Infil(i) = Infil(i) + Net_apply(i)
-            IF ( Hru_type(i)==1 ) THEN
+            IF ( Hru_type(i)==LAND ) THEN
               CALL perv_comp(Net_apply(i), Net_apply(i), Infil(i), sra)
 ! ** ADD in water from irrigation application and water-use transfer for pervious portion - sra (if any)
               apply_sroff = DBLE( sra*hperv )
@@ -956,8 +954,7 @@
      &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type, Intcp_changeover)
       USE PRMS_SRUNOFF, ONLY: Sri, Hruarea_imperv, Upslope_hortonian, Ihru, Srp, Perv_frac, Isglacier
       USE PRMS_SNOW, ONLY: Pptmix_nopack
-      USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
-      USE PRMS_MODULE, ONLY: Cascade_flag
+      USE PRMS_MODULE, ONLY: NEARZERO, DNEARZERO, Cascade_flag, LAND
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Hru_type
@@ -973,7 +970,7 @@
       INTEGER :: hru_flag
 !***********************************************************************
       hru_flag = 0
-      IF ( Hru_type==1 .OR. Isglacier==1 ) hru_flag = 1 ! land or glacier
+      IF ( Hru_type==LAND .OR. Isglacier==1 ) hru_flag = 1 ! land or glacier
 ! compute runoff from cascading Hortonian flow, put all water in pervious portion
       IF ( Cascade_flag>0 ) THEN
         avail_water = SNGL( Upslope_hortonian(Ihru)/Perv_frac )
@@ -989,7 +986,7 @@
       IF ( Intcp_changeover>0.0 ) THEN
         avail_water = avail_water + Intcp_changeover
         Infil = Infil + Intcp_changeover
-        IF ( Hru_type==1 ) CALL perv_comp(Intcp_changeover, Intcp_changeover, Infil, Srp)
+        IF ( Hru_type==LAND ) CALL perv_comp(Intcp_changeover, Intcp_changeover, Infil, Srp)
       ENDIF
 
 !******if rain/snow event with no antecedent snowpack,
@@ -1061,8 +1058,7 @@
       SUBROUTINE perv_comp(Pptp, Ptc, Infil, Srp)
       USE PRMS_SRUNOFF, ONLY: Ihru, Smidx_coef, Smidx_exp, &
      &    Carea_max, Carea_min, Carea_dif, Contrib_fraction
-      USE PRMS_MODULE, ONLY: Sroff_flag
-!      USE PRMS_BASIN, ONLY: CLOSEZERO
+      USE PRMS_MODULE, ONLY: Sroff_flag !, CLOSEZERO
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Soil_rechr_max
       IMPLICIT NONE
 ! Arguments
@@ -1176,8 +1172,8 @@
 !***********************************************************************
       SUBROUTINE dprst_init()
       USE PRMS_SRUNOFF
-      USE PRMS_MODULE, ONLY: Init_vars_from_file, Nhru, PRMS4_flag, Inputerror_flag, Print_debug
-      USE PRMS_BASIN, ONLY: Dprst_clos_flag, NEARZERO, Dprst_frac, &
+      USE PRMS_MODULE, ONLY: Init_vars_from_file, Nhru, PRMS4_flag, Inputerror_flag, Print_debug, NEARZERO
+      USE PRMS_BASIN, ONLY: Dprst_clos_flag, Dprst_frac, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Basin_area_inv, &
      &    Hru_area_dble, Active_hrus, Hru_route_order, Dprst_open_flag
       USE PRMS_FLOWVARS, ONLY: Dprst_vol_open, Dprst_vol_clos
@@ -1328,8 +1324,8 @@
      &    Dprst_vol_thres_open, Dprst_vol_clos_max, Dprst_insroff_hru, &
      &    Basin_dprst_volop, Basin_dprst_volcl, Basin_dprst_evap, Basin_dprst_seep, Basin_dprst_sroff, &
      &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Dprst_stor_hru, Hruarea_dble
-!      USE PRMS_MODULE, ONLY: Cascade_flag !, Print_debug
-      USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO, Dprst_frac_open, Dprst_frac_clos
+      USE PRMS_MODULE, ONLY: NEARZERO, DNEARZERO !, Cascade_flag, Print_debug
+      USE PRMS_BASIN, ONLY: Dprst_frac_open, Dprst_frac_clos
       USE PRMS_INTCP, ONLY: Net_snow
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv

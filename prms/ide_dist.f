@@ -11,7 +11,10 @@
       MODULE PRMS_IDE
       IMPLICIT NONE
 !   Local Variables
-      CHARACTER(LEN=8), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC =
+     +                               'Temp & Precip Distribution'
+      character(len=*), parameter :: MODNAME = 'ide_dist'
+      character(len=*), parameter :: Version_ide_dist = '2020-07-01'
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Dalr
@@ -65,16 +68,10 @@
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL read_error, print_module
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_ide_dist
 !***********************************************************************
       idedecl = 0
 
-      Version_ide_dist =
-     +'ide_dist.f 2020-06-10 10:00:00Z'
-      CALL print_module(Version_ide_dist,
-     +                  'Temp & Precip Distribution  ', 77)
-      MODNAME = 'ide_dist'
+      CALL print_module(MODDESC, MODNAME, Version_ide_dist)
 
       IF ( Model/=99 ) THEN
         ALLOCATE ( Tmax_rain_sta(Nrain) )
@@ -424,10 +421,10 @@
       USE PRMS_IDE, ONLY: Hru_x, Hru_y, Tmax_rain_sta, Solrad_elev,
      +    Tmin_rain_sta, Temp_nuse, Temp_nsta, Tsta_x, Tsta_y, Dist_exp,
      +    Psta_x, Psta_y, Basin_centroid_x, Basin_centroid_y, Ndist_tsta
-      USE PRMS_MODULE, ONLY: Nrain, Ntemp
+      USE PRMS_MODULE, ONLY: Nrain, Ntemp, FEET2METERS, GLACIER, FEET
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
      +    Hru_route_order, Hru_elev_meters, Hru_elev_ts, Hru_type,
-     +    FEET2METERS, Elev_units
+     +    Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust,
@@ -468,9 +465,9 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        IF ( Hru_type(n)/=4 ) THEN
+        IF ( Hru_type(n)/=GLACIER ) THEN
           z = Hru_elev_meters(n)
-        ELSEIF ( Elev_units==0 ) THEN
+        ELSEIF ( Elev_units==FEET ) THEN
           z = Hru_elev_ts(n)*FEET2METERS
         ELSE
           z = Hru_elev_ts(n)
@@ -601,10 +598,11 @@
      +    Rain_nuse, Rain_nsta, Tmax_rain_sta, Tmin_rain_sta,
      +    Ndist_psta, Dist_exp, Precip_ide,
      +    Adjust_snow, Adjust_rain, Tmax_allsnow_sta, Tmax_allrain_sta
-      USE PRMS_MODULE, ONLY: Nrain
+      USE PRMS_MODULE, ONLY: Nrain, MM2INCH, FEET2METERS, GLACIER, FEET,
+     +    CELSIUS, ERROR_data
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus,
-     +    Hru_route_order, MM2INCH, Hru_elev_meters,
-     +    FEET2METERS, Hru_elev_ts, Hru_type, Elev_units
+     +    Hru_route_order, Hru_elev_meters, Hru_elev_ts, Hru_type,
+     +    Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Tminf, Newsnow, Pptmix,
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
@@ -655,7 +653,8 @@
       ENDDO
       IF ( allmissing==0 ) THEN
         CALL print_date(1)
-        CALL error_stop('all precipitation stations have missing data')
+        CALL error_stop('all precipitation stations have missing data',
+     +                  ERROR_data)
       ENDIF
 
       Basin_ppt = 0.0D0
@@ -685,9 +684,9 @@
         dat_dist = 0.0
         x = Hru_x(n)
         y = Hru_y(n)
-        IF ( Hru_type(n)/=4 ) THEN
+        IF ( Hru_type(n)/=GLACIER ) THEN
           z = Hru_elev_meters(n)
-        ELSEIF ( Elev_units==0 ) THEN
+        ELSEIF ( Elev_units==FEET ) THEN
           z = Hru_elev_ts(n)*FEET2METERS
         ELSE
           z = Hru_elev_ts(n)
@@ -705,7 +704,7 @@
         ppt = (Prcp_wght_dist*dat_dist) + (Prcp_wght_elev*dat_elev)
 
         IF ( ppt>0.0 ) THEN
-          IF ( Precip_units==1 ) ppt = ppt*MM2INCH
+          IF ( Precip_units==CELSIUS ) ppt = ppt*MM2INCH
           CALL precip_form(ppt, Hru_ppt(n), Hru_rain(n), Hru_snow(n),
      +         Tmaxf(n), Tminf(n), Pptmix(n), Newsnow(n), Prmx(n),
      +         Tmax_allrain_f(n,Nowmonth), 1.0, 1.0,
@@ -730,6 +729,7 @@
 !***********************************************************************
       SUBROUTINE compute_inv(Imax, Nsta, Nuse, Sta_x, X, Sta_y, Y, Dat,
      +                       Dat_dist, Ndist, Dist_exp)
+      USE PRMS_MODULE, ONLY: ERROR_data
       IMPLICIT NONE
       INTRINSIC SQRT, DBLE, SNGL
       EXTERNAL SORT2I, print_date, error_stop
@@ -760,7 +760,8 @@
       ENDDO
       IF ( allmissing==0 ) THEN
         CALL print_date(1)
-        CALL error_stop('all temperature stations have missing data')
+        CALL error_stop('all temperature stations have missing data',
+     +                  ERROR_data)
       ENDIF
 !
 ! calculate weighting functions for ndist closest stations

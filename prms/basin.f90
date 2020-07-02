@@ -5,15 +5,9 @@
       IMPLICIT NONE
       INTRINSIC :: EPSILON
 !   Local Variables
-      REAL, PARAMETER :: NEARZERO = 1.0E-6, INCH2CM = 2.54
-      REAL, PARAMETER :: CLOSEZERO = EPSILON(0.0)
-      DOUBLE PRECISION, PARAMETER :: DNEARZERO = EPSILON(0.0D0), FT2_PER_ACRE = 43560.0D0
-      DOUBLE PRECISION, PARAMETER :: CFS2CMS_CONV = 0.028316847D0
-      REAL, PARAMETER :: INCH2MM = 25.4, INCH2M = 0.0254, MAXTEMP = 200.0, MINTEMP = -150.0
-      REAL, PARAMETER :: MM2INCH = 1.0/INCH2MM
-      REAL, PARAMETER :: FEET2METERS = 0.3048
-      REAL, PARAMETER :: METERS2FEET = 1.0/FEET2METERS
-      CHARACTER(LEN=5), SAVE :: MODNAME
+      character(len=*), parameter :: MODDESC = 'Basin Definition'
+      character(len=*), parameter :: MODNAME = 'basin'
+      character(len=*), parameter :: Version_basin = '2020-07-01'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -23,7 +17,6 @@
       INTEGER, SAVE, ALLOCATABLE :: Gwr_type(:), Hru_route_order(:), Gwr_route_order(:)
       INTEGER, SAVE :: Weir_gate_flag, Puls_lin_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_dble(:), Lake_area(:)
-      CHARACTER(LEN=80), SAVE :: Version_basin
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_frac_perv(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_max(:)
@@ -78,9 +71,7 @@
 !***********************************************************************
       basdecl = 0
 
-      Version_basin = 'basin.f90 2020-06-25 11:11:00Z'
-      CALL print_module(Version_basin, 'Basin Definition            ', 90)
-      MODNAME = 'basin'
+      CALL print_module(MODDESC, MODNAME, Version_basin)
 
 ! Declared Variables
       ALLOCATE ( Hru_elev_ts(Nhru) )
@@ -266,7 +257,8 @@
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Dprst_flag, PRMS4_flag, &
      &    Print_debug, GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
      &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &
-     &    Stream_temp_flag, Frozen_flag, Glacier_flag
+     &    Stream_temp_flag, Frozen_flag, Glacier_flag, FEET2METERS, METERS2FEET, DNEARZERO, &
+     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -355,9 +347,9 @@
         Hru_area_dble(i) = harea_dble
         Totarea = Totarea + harea_dble
 
-        IF ( Hru_type(i)==0 ) CYCLE ! inactive
+        IF ( Hru_type(i)==INACTIVE ) CYCLE
 ! ????????? need to fix for lakes with multiple HRUs and PRMS lake routing ????????
-        IF ( Hru_type(i)==2 ) THEN ! lake
+        IF ( Hru_type(i)==LAKE ) THEN
           Numlake_hrus = Numlake_hrus + 1
           Water_area = Water_area + harea_dble
           lakeid = Lake_hru_id(i)
@@ -385,7 +377,7 @@
             CYCLE
           ENDIF
           IF ( Frozen_flag==1 ) THEN
-            IF ( Hru_type(i)==3 ) THEN
+            IF ( Hru_type(i)==SWALE ) THEN
               PRINT *, 'ERROR, a swale HRU cannot be frozen for CFGI, HRU:', i
               basinit = 1
               CYCLE
@@ -395,7 +387,7 @@
         ENDIF
 
         Basin_lat = Basin_lat + DBLE( Hru_lat(i)*harea )
-        IF ( Elev_units==0 ) THEN
+        IF ( Elev_units==FEET ) THEN
           IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) Hru_elev_feet(i) = Hru_elev(i)
           IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
      &         Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
@@ -407,7 +399,7 @@
         j = j + 1
         Hru_route_order(j) = i
 
-        IF ( Hru_type(i)==2 ) CYCLE ! lake
+        IF ( Hru_type(i)==LAKE ) CYCLE
 
         Hru_imperv(i) = Hru_percent_imperv(i)*harea
         Hru_perv(i) = harea - Hru_imperv(i)
@@ -469,7 +461,7 @@
         ENDDO
       ENDIF
 
-      IF ( basinit==1 ) ERROR STOP -2
+      IF ( basinit==1 ) ERROR STOP ERROR_basin
 
       Active_hrus = j
       Active_area = Land_area + Water_area

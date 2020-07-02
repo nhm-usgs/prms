@@ -94,12 +94,13 @@
       MODULE PRMS_MUSKINGUM_LAKE
       IMPLICIT NONE
 !   Local Variables
-      DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
+      character(len=*), parameter :: MODDESC = 'Streamflow & Lake Routing'
+      character(len=*), parameter :: MODNAME = 'muskingum_lake'
+      character(len=*), parameter :: Version_muskingum_lake = '2020-07-01'
       INTEGER, SAVE :: Obs_flag, Linear_flag, Weir_flag, Gate_flag, Puls_flag
       INTEGER, SAVE :: Secondoutflow_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
-      CHARACTER(LEN=14), SAVE :: MODNAME
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: C24(:, :), S24(:, :), Wvd(:, :)
 !   Dimensions
       INTEGER, SAVE :: Mxnsos, Ngate, Nstage, Ngate2, Nstage2, Ngate3, Nstage3, Ngate4, Nstage4
@@ -201,19 +202,15 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_decl()
       USE PRMS_MUSKINGUM_LAKE
-      USE PRMS_MODULE, ONLY: Model, Nsegment, Init_vars_from_file, Nratetbl, Cascade_flag, Nlake
+      USE PRMS_MODULE, ONLY: Model, Nsegment, Init_vars_from_file, Nratetbl, Cascade_flag, Nlake, ERROR_dim
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
       EXTERNAL read_error, print_module, error_stop
-! Local Variables
-      CHARACTER(LEN=80), SAVE :: Version_muskingum_lake
 !***********************************************************************
       muskingum_lake_decl = 0
 
-      Version_muskingum_lake = 'muskingum_lake.f90 2020-06-10 10:00:00Z'
-      CALL print_module(Version_muskingum_lake, 'Streamflow Routing          ', 90)
-      MODNAME = 'muskingum_lake'
+      CALL print_module(MODDESC, MODNAME, Version_muskingum_lake)
 
       ! Dimension for Puls routing
       Mxnsos = getdim('mxnsos')
@@ -235,7 +232,7 @@
       IF ( Model==99 ) Nratetbl = 4
       IF ( Nratetbl>4 ) THEN
         PRINT *, 'dimension nratetbl specified as:', Nratetbl
-        CALL error_stop('lake routing allows a maximum of 4 rating tables')
+        CALL error_stop('lake routing allows a maximum of 4 rating tables', ERROR_dim)
       ENDIF
       IF ( Nratetbl>0 ) THEN
         Ngate = getdim('ngate')
@@ -270,16 +267,16 @@
           IF ( Nstage4==0 ) Nstage4 = 1
           IF ( Ngate4==0 ) Ngate4 = 1
         ELSE
-          IF ( Nstage<1 .OR. Ngate<1 ) CALL error_stop('nratetbl>0 and nstage or ngate = 0')
+          IF ( Nstage<1 .OR. Ngate<1 ) CALL error_stop('nratetbl>0 and nstage or ngate = 0', ERROR_dim)
         ENDIF
         IF ( Nratetbl>1 ) THEN
-          IF ( Nstage2<1.OR.Ngate2<1 ) CALL error_stop('nratetbl>1 and nstage2 or ngate2 = 0')
+          IF ( Nstage2<1.OR.Ngate2<1 ) CALL error_stop('nratetbl>1 and nstage2 or ngate2 = 0', ERROR_dim)
         ENDIF
         IF ( Nratetbl>2 ) THEN
-          IF ( Nstage3<1 .OR. Ngate3<1 ) CALL error_stop('nratetbl>2 and nstage3 or ngate3 = 0')
+          IF ( Nstage3<1 .OR. Ngate3<1 ) CALL error_stop('nratetbl>2 and nstage3 or ngate3 = 0', ERROR_dim)
         ENDIF
         IF ( Nratetbl>3 ) THEN
-          IF ( Nstage4<1 .OR. Ngate4<1 )  CALL error_stop('nratetbl>3 and nstage4 or ngate4 = 0')
+          IF ( Nstage4<1 .OR. Ngate4<1 )  CALL error_stop('nratetbl>3 and nstage4 or ngate4 = 0', ERROR_dim)
         ENDIF
       ENDIF
 
@@ -615,9 +612,10 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_init()
       USE PRMS_MUSKINGUM_LAKE
-      USE PRMS_MODULE, ONLY: Nsegment, Inputerror_flag, Init_vars_from_file, Nratetbl, Nhru, Cascade_flag, Nlake
-      USE PRMS_BASIN, ONLY: NEARZERO, Basin_area_inv, DNEARZERO, Active_hrus, Hru_route_order, Gwr_type, &
-     &    CFS2CMS_CONV, Lake_hru_id, Weir_gate_flag, Lake_type, Puls_lin_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Inputerror_flag, Init_vars_from_file, Nratetbl, Nhru, Cascade_flag, &
+     &    Nlake, DNEARZERO, CFS2CMS_CONV, ERROR_dim
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_route_order, Gwr_type, &
+     &    Lake_hru_id, Weir_gate_flag, Lake_type, Puls_lin_flag
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Basin_lake_stor, Lake_vol
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage, Segment_type, Hru_segment
@@ -719,7 +717,7 @@
 
       Secondoutflow_flag = 0
       IF ( Gate_flag==1 ) THEN
-        IF ( Nratetbl<1 ) CALL error_stop('nratetbl = 0 and gate opening routing requested')
+        IF ( Nratetbl<1 ) CALL error_stop('nratetbl = 0 and gate opening routing requested', ERROR_dim)
         IF ( getparam(MODNAME, 'rate_table', Nstage*Ngate, 'real', Rate_table)/=0 ) CALL read_error(2, 'rate_table')
         IF ( getparam(MODNAME, 'tbl_stage', Nstage, 'real', Tbl_stage)/=0 ) CALL read_error(2, 'tbl_stage')
         IF ( getparam(MODNAME, 'tbl_gate', Ngate, 'real', Tbl_gate)/=0 ) CALL read_error(2, 'tbl_gate')
@@ -777,7 +775,7 @@
       ENDIF
 
       IF ( Puls_flag==1 ) THEN
-        IF ( Mxnsos==0 ) CALL error_stop('dimension mxnsos = 0 and Puls routing requested')
+        IF ( Mxnsos==0 ) CALL error_stop('dimension mxnsos = 0 and Puls routing requested', ERROR_dim)
         IF ( getparam(MODNAME, 'o2', Mxnsos*Nlake, 'real', O2)/=0 ) CALL read_error(2, 'o2')
         IF ( getparam(MODNAME, 's2', Mxnsos*Nlake, 'real', S2)/=0 ) CALL read_error(2, 's2')
         IF ( getparam(MODNAME, 'nsos', Nlake, 'integer', Nsos)/=0 ) CALL read_error(2, 'nsos')
@@ -876,8 +874,8 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_run()
       USE PRMS_MUSKINGUM_LAKE
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Nlake, Glacier_flag
-      USE PRMS_BASIN, ONLY: CFS2CMS_CONV, Basin_area_inv, &
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Nlake, Glacier_flag, ONE_24TH, CFS2CMS_CONV, LAKE, ERROR_streamflow
+      USE PRMS_BASIN, ONLY: Basin_area_inv, &
      &    Lake_area, Lake_type, Hru_area_dble, Lake_hru_id, Hru_type, Weir_gate_flag, &
      &    Hru_route_order, Active_hrus, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt
@@ -957,7 +955,7 @@
       ! units of lake_inflow = cfs
       DO jj = 1, Active_hrus
         k = Hru_route_order(jj)
-        IF ( Hru_type(k)/=2 ) CYCLE
+        IF ( Hru_type(k)/=LAKE ) CYCLE
         tocfs = Hru_area_dble(k)*Cfs_conv
         lakeid = Lake_hru_id(k)
         Lake_precip(lakeid) = Lake_precip(lakeid) + tocfs*DBLE(Hru_ppt(k))
@@ -1047,7 +1045,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            CALL error_stop('in muskingum_lake')
+            CALL error_stop('in muskingum_lake', ERROR_streamflow)
           ENDIF
 
           IF ( Segment_type(iorder)/=2 ) THEN
@@ -1154,7 +1152,7 @@
      &    Tbl_gate3, Tbl_stage3, Rate_table3, Tbl_gate4, Tbl_stage4, Rate_table4, &
      &    Obsout_lake, Ratetbl_lake, Ngate, Nstage, Ngate2, Nstage2, Ngate3, Nstage3, Ngate4, Nstage4, &
      &    Secondoutflow_flag, Lake_out2, Lake_out2_a, Lake_out2_b, Lake_outq2, Basin_2ndstflow
-      USE PRMS_MODULE, ONLY: Nratetbl, Print_debug
+      USE PRMS_MODULE, ONLY: Nratetbl, Print_debug, ERROR_lake
       USE PRMS_OBS, ONLY: Gate_ht, Streamflow_cfs
       USE PRMS_ROUTING, ONLY: Cfs2acft
       USE PRMS_GWFLOW, ONLY: Elevlake
@@ -1331,7 +1329,7 @@
       ENDIF
       IF ( lake_storage<0.0D0 ) THEN
         PRINT *, 'ERROR: lake storage < 0 lake:', Lakeid, '; storage:', lake_storage
-        CALL error_stop('in muskingum_lake')
+        CALL error_stop('in muskingum_lake', ERROR_lake)
       ENDIF
 
       Lake_outcfs(Lakeid) = q2
