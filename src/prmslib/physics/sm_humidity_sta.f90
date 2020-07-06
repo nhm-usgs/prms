@@ -20,11 +20,18 @@ contains
 
               nhru => model_basin%nhru)
 
+      call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
+
+      if (print_debug > -2) then
+        ! Output module and version information
+        call this%print_module_info()
+      endif
+
       ! Get the number of humidity stations
       this%nhumid = param_hdl%get_dimension('nhumid')
 
       ! Allocate the humidity station by HRU parameter
-      allocate(this%hru_humidity_sta(nhru, nhumid))
+      allocate(this%hru_humidity_sta(nhru, this%nhumid))
       call param_hdl%get_variable('hru_humidity_sta', this%hru_humidity_sta)
 
       allocate(this%humidity_obs(nhru))
