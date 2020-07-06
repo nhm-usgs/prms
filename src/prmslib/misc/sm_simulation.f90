@@ -53,6 +53,25 @@ submodule (Simulation_class) sm_simulation
       call this%transpiration%init(ctl_data, this%model_basin, this%model_temp, this%model_summary)
       ! this%transpiration = Transp_tindex(ctl_data, this%model_basin, this%model_temp)
 
+      ! Humidity
+      if (allocated(ctl_data%humidity_module%values)) then
+        select case(ctl_data%humidity_module%values(1)%s)
+          case('humidity_hru')
+            allocate(Humidity_hru::this%model_humidity)
+          case('humidity_per')
+            allocate(Humidity_per::this%model_humidity)
+          case('humidity_sta')
+            allocate(Humidity_sta::this%model_humidity)
+          case default
+            allocate(Humidity::this%model_humidity)
+        end select
+      else
+        allocate(Humidity::this%model_humidity)
+      end if
+
+      call this%model_humidity%init(ctl_data, this%model_basin)
+
+
       ! TODO: PAN - add logic for other potential ET modules
       allocate(Potet_jh::this%potet)
       call this%potet%init(ctl_data, this%model_basin, this%model_summary)

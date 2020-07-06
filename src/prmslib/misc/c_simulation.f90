@@ -4,6 +4,10 @@ module Simulation_class
   use PRMS_BASIN, only: Basin
   use PRMS_CLIMATEVARS, only: Climateflow
   use PRMS_GWFLOW, only: Gwflow
+  use PRMS_HUMIDITY, only: Humidity
+  use PRMS_HUMIDITY_HRU, only: Humidity_hru
+  use PRMS_HUMIDITY_PER, only: Humidity_per
+  use PRMS_HUMIDITY_STA, only: Humidity_sta
   use PRMS_INTCP, only: Interception
   use PRMS_MUSKINGUM, only: Muskingum
   use PRMS_OBS, only: Obs
@@ -11,6 +15,7 @@ module Simulation_class
   use PRMS_POTET_JH, only: Potet_jh
   use PRMS_PRECIPITATION, only: Precipitation
   use PRMS_PRECIPITATION_HRU, only: Precipitation_hru
+  ! use PRMS_RESTART, only: Restart
   use PRMS_SET_TIME, only: Time_t
   use PRMS_SNOW, only: Snowcomp
   use PRMS_SOILZONE, only: Soilzone
@@ -35,6 +40,7 @@ module Simulation_class
       class(Climateflow), allocatable :: climate
       type(Obs) :: model_obs
 
+      class(Humidity), allocatable :: model_humidity
       class(Precipitation), allocatable :: model_precip
       class(Temperature), allocatable :: model_temp
 
@@ -43,11 +49,11 @@ module Simulation_class
       class(Potential_ET), allocatable :: potet
       class(Interception), allocatable :: intcp
 
+      ! class(Restart), allocatable :: model_restart
       class(Snowcomp), allocatable :: snow
       class(Srunoff), allocatable :: runoff
       class(Soilzone), allocatable :: soil
       class(Gwflow), allocatable :: groundwater
-      ! ! type(Routing) :: model_route
       class(Streamflow), allocatable :: model_streamflow
       type(Summary) :: model_summary
       type(WaterBalance) :: model_waterbal
