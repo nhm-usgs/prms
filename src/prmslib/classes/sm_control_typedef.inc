@@ -134,6 +134,7 @@ type(sArray) :: transpbeg_dynamic
 type(sArray) :: transpend_dynamic
 type(sArray) :: var_init_file
 type(sArray) :: var_save_file
+type(sArray) :: wind_module
 type(sArray) :: windspeed_day
 type(sArray) :: wrain_intcp_dynamic
 

@@ -1065,4 +1065,10 @@
         <numvals>1</numvals>
         <desc>List of variable names for which output is written to Statistics Variables File</desc>
     </control_param>
+    <control_param name="wind_module">
+        <default>none</default>
+        <type>4</type>
+        <numvals>1</numvals>
+        <desc>Module name for wind distribution</desc>
+    </control_param>
 </control>

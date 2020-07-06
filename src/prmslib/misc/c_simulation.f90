@@ -29,6 +29,9 @@ module Simulation_class
   use PRMS_WATER_BALANCE, only: WaterBalance
   use SOLAR_RADIATION, only: SolarRadiation
   use SOLAR_RADIATION_DEGDAY, only: Solrad_degday
+  use PRMS_WIND, only: Wind
+  use PRMS_WIND_HRU, only: Wind_hru
+  use PRMS_WIND_STA, only: Wind_sta
   implicit none
 
   private
@@ -41,6 +44,7 @@ module Simulation_class
       type(Obs) :: model_obs
 
       class(Humidity), allocatable :: model_humidity
+      class(Wind), allocatable :: model_wind
       class(Precipitation), allocatable :: model_precip
       class(Temperature), allocatable :: model_temp
 

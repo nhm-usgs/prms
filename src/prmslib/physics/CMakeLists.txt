@@ -28,6 +28,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/c_transpiration.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/c_transp_hru.f90"
     "${CMAKE_CURRENT_LIST_DIR}/c_transp_tindex.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_wind.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_wind_hru.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/c_wind_sta.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_climateflow.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/sm_climate_hru.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/sm_flowvars.f90"
@@ -58,6 +61,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/sm_transpiration.f90"
     # "${CMAKE_CURRENT_LIST_DIR}/sm_transp_hru.f90"
     "${CMAKE_CURRENT_LIST_DIR}/sm_transp_tindex.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_wind.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_wind_hru.f90"
+    "${CMAKE_CURRENT_LIST_DIR}/sm_wind_sta.f90"
   )
 
 # SET_SOURCE_FILES_PROPERTIES("${CMAKE_CURRENT_LIST_DIR}/c_temperature.f90" PROPERTIES COMPILE_FLAGS -O0)

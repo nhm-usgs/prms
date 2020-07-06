@@ -540,6 +540,10 @@ select case(buf)
     this%var_save_file%name = last
     call this%var_save_file%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
+  case('wind_module')
+    this%wind_module%name = last
+    call this%wind_module%read(iUnit)
+    line = line + 1 + ENTRY_OFFSET
   case('windspeed_day')
     this%windspeed_day%name = last
     call this%windspeed_day%read(iUnit)

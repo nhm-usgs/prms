@@ -63,6 +63,7 @@ submodule (Simulation_class) sm_simulation
           case('humidity_sta')
             allocate(Humidity_sta::this%model_humidity)
           case default
+            ! NOTE: This defaults humidity_hru to zero
             allocate(Humidity::this%model_humidity)
         end select
       else
@@ -71,6 +72,22 @@ submodule (Simulation_class) sm_simulation
 
       call this%model_humidity%init(ctl_data, this%model_basin)
 
+      ! Wind
+      if (allocated(ctl_data%wind_module%values)) then
+        select case(ctl_data%wind_module%values(1)%s)
+          case('wind_hru')
+            allocate(Wind_hru::this%model_wind)
+          case('wind_sta')
+            allocate(Wind_sta::this%model_wind)
+          case default
+            ! NOTE: This defaults humidity_hru to zero
+            allocate(Wind::this%model_wind)
+        end select
+      else
+        allocate(Wind::this%model_wind)
+      end if
+
+      call this%model_wind%init(ctl_data, this%model_basin)
 
       ! TODO: PAN - add logic for other potential ET modules
       allocate(Potet_jh::this%potet)
