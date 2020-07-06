@@ -47,7 +47,7 @@ contains
       call param_hdl%get_variable('tmin_cbh_adj', this%tmin_cbh_adj)
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ! Open netcdf or ascii-base cbh files
+      ! Open netcdf or ascii-based cbh files
       if (tmax_day%s(scan(trim(tmax_day%s),".", BACK= .true.)+1:) == 'nc') then
         ! Read a netcdf file
         call open_netcdf_cbh_file(this%tmax_funit, this%tmax_varid, this%tmax_idx_offset, &
