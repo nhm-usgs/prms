@@ -13,14 +13,6 @@ contains
     character(len=*), intent(in) :: control_filename
       !! File name to read the control parameters from.
 
-  ! module function constructor_Control(control_filename) result(this)
-  !   use iso_fortran_env
-  !   use UTILS_PRMS, only: print_module_info
-  !   implicit none
-
-  !   type(Control) :: this
-  !   character(len=*), intent(in) :: control_filename
-
     ! Local variables
     character(len=2) :: fileext
     integer(i32) :: numfiles, ppos

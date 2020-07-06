@@ -212,6 +212,10 @@ select case(buf)
     this%humidity_day%name = last
     call this%humidity_day%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
+  case('humidity_module')
+    this%humidity_module%name = last
+    call this%humidity_module%read(iUnit)
+    line = line + 1 + ENTRY_OFFSET
   case('imperv_frac_dynamic')
     this%imperv_frac_dynamic%name = last
     call this%imperv_frac_dynamic%read(iUnit)

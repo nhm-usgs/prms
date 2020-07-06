@@ -317,6 +317,12 @@
             <value name="1">on</value>
         </values>
     </control_param>
+    <control_param name="humidity_module">
+        <default>none</default>
+        <type>4</type>
+        <numvals>1</numvals>
+        <desc>Module name for humidity distribution</desc>
+    </control_param>
     <control_param name="init_vars_from_file">
         <default>0</default>
         <type>1</type>

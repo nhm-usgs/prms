@@ -73,6 +73,7 @@ module Control_class
     type(iScalar) :: gwr_transferON_OFF
     type(sArray) :: gwr_transfer_file
     type(sArray) :: humidity_day
+    type(sArray) :: humidity_module
     type(sArray) :: imperv_frac_dynamic
     type(sArray) :: imperv_stor_dynamic
     type(iScalar) :: init_vars_from_file
