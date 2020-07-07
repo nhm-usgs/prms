@@ -209,68 +209,6 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !   this%gw2sm_grav = 0.0
         ! endif
 
-        if (save_vars_to_file == 1) then
-          ! Create restart variables
-          ! call ctl_data%add_variable('et_type', this%et_type, 'nhru', 'none')
-          ! call ctl_data%add_variable('gravity_stor_res', this%gravity_stor_res, 'nhru', 'none')
-          call ctl_data%add_variable('pref_flow_stor', this%pref_flow_stor, 'nhru', 'inches')
-          call ctl_data%add_variable('slow_stor', this%slow_stor, 'nhru', 'inches')
-          call ctl_data%add_variable('ssres_stor', this%ssres_stor, 'nhru', 'inches')
-        end if
-
-        ! Connect summary variables that need to be output
-        if (outVarON_OFF == 1) then
-          do jj = 1, outVar_names%size()
-            ! TODO: This is where the daily basin values are linked based on
-            !       what was requested in basinOutVar_names.
-            select case(outVar_names%values(jj)%s)
-              case('cap_waterin')
-                call model_summary%set_summary_var(jj, this%cap_waterin)
-              case('dunnian_flow')
-                call model_summary%set_summary_var(jj, this%dunnian_flow)
-              case('hru_actet')
-                call model_summary%set_summary_var(jj, this%hru_actet)
-              case('perv_actet')
-                call model_summary%set_summary_var(jj, this%perv_actet)
-              case('pref_flow')
-                call model_summary%set_summary_var(jj, this%pref_flow)
-              case('pref_flow_in')
-                call model_summary%set_summary_var(jj, this%pref_flow_in)
-              case('pref_flow_infil')
-                call model_summary%set_summary_var(jj, this%pref_flow_infil)
-              case('pref_flow_stor')
-                call model_summary%set_summary_var(jj, this%pref_flow_stor)
-              case('recharge')
-                call model_summary%set_summary_var(jj, this%recharge)
-              case('slow_flow')
-                call model_summary%set_summary_var(jj, this%slow_flow)
-              case('slow_stor')
-                call model_summary%set_summary_var(jj, this%slow_stor)
-              case('snow_free')
-                call model_summary%set_summary_var(jj, this%snow_free)
-              case('soil_lower')
-                call model_summary%set_summary_var(jj, this%soil_lower)
-              case('soil_moist_tot')
-                call model_summary%set_summary_var(jj, this%soil_moist_tot)
-              case('soil_to_gw')
-                call model_summary%set_summary_var(jj, this%soil_to_gw)
-              case('soil_to_ssr')
-                call model_summary%set_summary_var(jj, this%soil_to_ssr)
-              case('ssres_flow')
-                call model_summary%set_summary_var(jj, this%ssres_flow)
-              case('ssres_in')
-                call model_summary%set_summary_var(jj, this%ssres_in)
-              case('ssres_stor')
-                call model_summary%set_summary_var(jj, this%ssres_stor)
-              case('ssr_to_gw')
-                call model_summary%set_summary_var(jj, this%ssr_to_gw)
-              case('unused_potet')
-                call model_summary%set_summary_var(jj, this%unused_potet)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
 
         ! Initialize
         this%grav_dunnian_flow = 0.0_dp
@@ -431,6 +369,69 @@ submodule (PRMS_SOILZONE) sm_soilzone
         !     enddo
         !   endif
         ! endif
+
+        if (save_vars_to_file == 1) then
+          ! Create restart variables
+          ! call ctl_data%add_variable('et_type', this%et_type, 'nhru', 'none')
+          ! call ctl_data%add_variable('gravity_stor_res', this%gravity_stor_res, 'nhru', 'none')
+          call ctl_data%add_variable('pref_flow_stor', this%pref_flow_stor, 'nhru', 'inches')
+          call ctl_data%add_variable('slow_stor', this%slow_stor, 'nhru', 'inches')
+          call ctl_data%add_variable('ssres_stor', this%ssres_stor, 'nhru', 'inches')
+        end if
+
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
+            ! TODO: This is where the daily basin values are linked based on
+            !       what was requested in basinOutVar_names.
+            select case(outVar_names%values(jj)%s)
+              case('cap_waterin')
+                call model_summary%set_summary_var(jj, this%cap_waterin)
+              case('dunnian_flow')
+                call model_summary%set_summary_var(jj, this%dunnian_flow)
+              case('hru_actet')
+                call model_summary%set_summary_var(jj, this%hru_actet)
+              case('perv_actet')
+                call model_summary%set_summary_var(jj, this%perv_actet)
+              case('pref_flow')
+                call model_summary%set_summary_var(jj, this%pref_flow)
+              case('pref_flow_in')
+                call model_summary%set_summary_var(jj, this%pref_flow_in)
+              case('pref_flow_infil')
+                call model_summary%set_summary_var(jj, this%pref_flow_infil)
+              case('pref_flow_stor')
+                call model_summary%set_summary_var(jj, this%pref_flow_stor)
+              case('recharge')
+                call model_summary%set_summary_var(jj, this%recharge)
+              case('slow_flow')
+                call model_summary%set_summary_var(jj, this%slow_flow)
+              case('slow_stor')
+                call model_summary%set_summary_var(jj, this%slow_stor)
+              case('snow_free')
+                call model_summary%set_summary_var(jj, this%snow_free)
+              case('soil_lower')
+                call model_summary%set_summary_var(jj, this%soil_lower)
+              case('soil_moist_tot')
+                call model_summary%set_summary_var(jj, this%soil_moist_tot)
+              case('soil_to_gw')
+                call model_summary%set_summary_var(jj, this%soil_to_gw)
+              case('soil_to_ssr')
+                call model_summary%set_summary_var(jj, this%soil_to_ssr)
+              case('ssres_flow')
+                call model_summary%set_summary_var(jj, this%ssres_flow)
+              case('ssres_in')
+                call model_summary%set_summary_var(jj, this%ssres_in)
+              case('ssres_stor')
+                call model_summary%set_summary_var(jj, this%ssres_stor)
+              case('ssr_to_gw')
+                call model_summary%set_summary_var(jj, this%ssr_to_gw)
+              case('unused_potet')
+                call model_summary%set_summary_var(jj, this%unused_potet)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
       end associate
     end subroutine
 
