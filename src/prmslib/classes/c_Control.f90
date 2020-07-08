@@ -190,6 +190,10 @@ module Control_class
                                          add_variable_i32_1d, &
                                          add_variable_r32_1d, &
                                          add_variable_r64_1d
+      generic, public :: read_restart_variable => read_restart_var_logical_1d, &
+                                                  read_restart_var_i32_1d, &
+                                                  read_restart_var_r32_1d, &
+                                                  read_restart_var_r64_1d
       generic, public :: write_restart_variable => write_restart_var_logical_1d, &
                                                    write_restart_var_i32_0d, &
                                                    write_restart_var_i32_1d, &
@@ -199,15 +203,20 @@ module Control_class
 
       procedure, private :: load_output_variables
       procedure, private :: open_model_output_file
-      procedure, private :: open_var_save_file
       procedure, public :: add_dimension
       procedure, public :: add_time_dimension
       procedure, public :: create_restart_netcdf
-      ! procedure, private :: open_restart_file
+      procedure, public :: open_restart_netcdf
       procedure, private :: add_variable_logical_1d
       procedure, private :: add_variable_i32_1d
       procedure, private :: add_variable_r32_1d
       procedure, private :: add_variable_r64_1d
+      procedure, private :: read_restart_var_logical_1d
+      ! procedure, private :: read_restart_var_i32_0d
+      procedure, private :: read_restart_var_i32_1d
+      ! procedure, private :: read_restart_var_r32_0d
+      procedure, private :: read_restart_var_r32_1d
+      procedure, private :: read_restart_var_r64_1d
       procedure, private :: write_restart_var_logical_1d
       procedure, private :: write_restart_var_i32_0d
       procedure, private :: write_restart_var_i32_1d
@@ -216,6 +225,7 @@ module Control_class
       procedure, private :: write_restart_var_r64_1d
 
       procedure, nopass, private :: err_check
+      procedure, nopass, private :: timestamped_filename
 
   end type
 
@@ -250,14 +260,14 @@ module Control_class
     end function
   end interface
 
-  interface
-    module function open_var_save_file(this)
-      !! Open the var_save_file (aka restart file)
-      integer(i32) :: open_var_save_file
-      class(Control), intent(inout) :: this
-        !! Control class
-    end function
-  end interface
+  ! interface
+  !   module function open_var_save_file(this)
+  !     !! Open the var_save_file (aka restart file)
+  !     integer(i32) :: open_var_save_file
+  !     class(Control), intent(inout) :: this
+  !       !! Control class
+  !   end function
+  ! end interface
 
   interface
     module subroutine write_restart_var_logical_1d(this, var_name, data)
@@ -370,6 +380,39 @@ module Control_class
     end subroutine
   end interface
 
+
+  interface
+    module subroutine read_restart_var_logical_1d(this, var_name, data)
+      class(Control), intent(in) :: this
+      character(len=*), intent(in) :: var_name
+      logical, pointer, intent(inout) :: data(:)
+    end subroutine
+  end interface
+
+  interface
+    module subroutine read_restart_var_i32_1d(this, var_name, data)
+      class(Control), intent(in) :: this
+      character(len=*), intent(in) :: var_name
+      integer(i32), pointer, intent(inout) :: data(:)
+    end subroutine
+  end interface
+
+  interface
+    module subroutine read_restart_var_r32_1d(this, var_name, data)
+      class(Control), intent(in) :: this
+      character(len=*), intent(in) :: var_name
+      real(r32), pointer, intent(inout) :: data(:)
+    end subroutine
+  end interface
+
+  interface
+    module subroutine read_restart_var_r64_1d(this, var_name, data)
+      class(Control), intent(in) :: this
+      character(len=*), intent(in) :: var_name
+      real(r64), pointer, intent(inout) :: data(:)
+    end subroutine
+  end interface
+
   interface
     module subroutine create_restart_netcdf(this)
       class(Control), intent(inout) :: this
@@ -383,6 +426,19 @@ module Control_class
     end subroutine
   end interface
 
+  interface
+    module subroutine open_restart_netcdf(this)
+      class(Control), intent(inout) :: this
+    end subroutine
+  end interface
+
+  interface
+    module function timestamped_filename(prefix, timestamp) result(res)
+      character(len=:), allocatable :: res
+      character(len=*), intent(in) :: prefix
+      integer(i32), intent(in) :: timestamp(6)
+    end function
+  end interface
 
   interface
     module subroutine cleanup_control(this)

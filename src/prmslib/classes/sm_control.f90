@@ -34,9 +34,17 @@ contains
 
     this%model_output_unit = this%open_model_output_file()
 
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Restart
+
+    if (this%init_vars_from_file%value == 1) then
+      ! Open a prior restart file
+      call this%open_restart_netcdf()
+    end if
+
     if (this%save_vars_to_file%value == 1) then
+      ! Create restart output file
       call this%create_restart_netcdf()
-      ! this%restart_output_unit = this%open_var_save_file()
     endif
 
     if (this%model_mode%values(1)%s == 'GSFLOW') then
@@ -188,43 +196,23 @@ contains
     endif
   end function
 
-
-  module function open_var_save_file(this)
-    !! Open the var_save_file (aka restart file)
-    use m_errors, only: fErr, IO_OPEN
-    implicit none
-
-    integer(i32) :: open_var_save_file
-    class(Control), intent(inout) :: this
-
-    integer(i32) :: istat
-    integer(i32) :: iunit
-
-    ! --------------------------------------------------------------------------
-    open_var_save_file = -1
-
-    if (allocated(this%var_save_file%values)) then
-      open(newunit=iunit, file=this%var_save_file%values(1)%s, status='replace', &
-           form='unformatted', access='stream', iostat=istat)
-
-      call fErr(istat, this%var_save_file%values(1)%s, IO_OPEN)
-
-      open_var_save_file = iunit
-    endif
-  end function
-
   module subroutine cleanup_control(this)
     use netcdf
     implicit none
 
     class(Control) :: this
-      !! Srunoff class
 
     logical :: is_opened
 
     inquire(UNIT=this%model_output_unit, OPENED=is_opened)
     if (is_opened) then
       close(this%model_output_unit)
+    end if
+
+    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ! Restart files
+    if (this%init_vars_from_file%value == 1) then
+      call this%err_check(nf90_close(this%restart_in_hdl))
     end if
 
     if (this%save_vars_to_file%value == 1) then
@@ -590,6 +578,82 @@ contains
     call this%err_check(nf90_enddef(this%restart_out_hdl))
   end subroutine
 
+  module subroutine read_restart_var_logical_1d(this, var_name, data)
+    use netcdf
+    implicit none
+
+    class(Control), intent(in) :: this
+    character(len=*), intent(in) :: var_name
+    logical, pointer, intent(inout) :: data(:)
+
+    ! Local variables
+    integer(i32) :: ii
+    integer(i32) :: var_id
+    integer, allocatable :: src_int(:)
+
+    ! ------------------------------------------------------------------------
+    allocate(src_int(size(data)))
+
+    call this%err_check(nf90_inq_varid(this%restart_in_hdl, var_name, var_id))
+    call this%err_check(nf90_get_var(this%restart_in_hdl, var_id, src_int))
+
+    do ii=1, size(src_int)
+      if (src_int(ii) == 0) then
+        data(ii) = .false.
+      else
+        data(ii) = .true.
+      end if
+    end do
+  end subroutine
+
+  module subroutine read_restart_var_i32_1d(this, var_name, data)
+    use netcdf
+    implicit none
+
+    class(Control), intent(in) :: this
+    character(len=*), intent(in) :: var_name
+    integer(i32), pointer, intent(inout) :: data(:)
+
+    ! Local variables
+    integer(i32) :: var_id
+
+    call this%err_check(nf90_inq_varid(this%restart_in_hdl, var_name, var_id))
+    call this%err_check(nf90_get_var(this%restart_in_hdl, var_id, data))
+  end subroutine
+
+
+  module subroutine read_restart_var_r32_1d(this, var_name, data)
+    use netcdf
+    implicit none
+
+    class(Control), intent(in) :: this
+    character(len=*), intent(in) :: var_name
+    real(r32), pointer, intent(inout) :: data(:)
+
+    ! Local variables
+    integer(i32) :: var_id
+
+    call this%err_check(nf90_inq_varid(this%restart_in_hdl, var_name, var_id))
+    call this%err_check(nf90_get_var(this%restart_in_hdl, var_id, data))
+  end subroutine
+
+
+  module subroutine read_restart_var_r64_1d(this, var_name, data)
+    use netcdf
+    implicit none
+
+    class(Control), intent(in) :: this
+    character(len=*), intent(in) :: var_name
+    real(r64), pointer, intent(inout) :: data(:)
+
+    ! Local variables
+    integer(i32) :: var_id
+
+    call this%err_check(nf90_inq_varid(this%restart_in_hdl, var_name, var_id))
+    call this%err_check(nf90_get_var(this%restart_in_hdl, var_id, data))
+  end subroutine
+
+
   module subroutine create_restart_netcdf(this)
     use netcdf
     use prms_constants, only: YEAR, MONTH, DAY
@@ -597,51 +661,62 @@ contains
 
     class(Control), intent(inout) :: this
 
-    ! Dimension IDs
-    ! integer(i32) :: nhru_dimid
-    ! integer(i32) :: nsegment_dimid
-    integer(i32) :: time_dimid
+    ! Local variables
+    character(len=:), allocatable :: filename
 
-    ! integer(i32) :: time_varid
+    filename = timestamped_filename('PRMS_RESTART_', this%end_time%values)
+    write(*, *) 'Output restart filename: ', filename
 
-    ! Variable IDs
-    ! integer(i32) :: nhm_id_varid
-    ! integer(i32) :: nhm_seg_varid
+    ! Create the netcdf restart file
+    call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%restart_out_hdl))
 
-    ! character(len=:), allocatable :: days_since
-    character(len=26) :: filename
-
-    ! ------------------------------------------------------------------------
-    ! associate(nhru => model_basin%nhru, &
-    !           nsegment => model_basin%nsegment, &
-    !           nhm_id => model_basin%nhm_id, &
-    !           nhm_seg => model_basin%nhm_seg, &
-
-    !           days_in_model => model_time%days_in_model, &
-    !           months_in_model => model_time%months_in_model, &
-    !           start_string => model_time%start_string, &
-    !           years_in_model => model_time%years_in_model)
-
-      write(filename, 9001) this%end_time%values(YEAR), this%end_time%values(MONTH), this%end_time%values(DAY)
-      write(*, *) 'Output restart filename: ', filename
-      9001 format('PRMS_RESTART_', I4, '-', I2.2, '-', I2.2, '.nc')
-
-      ! Create the netcdf restart file
-      call this%err_check(nf90_create(filename, NF90_64BIT_OFFSET, this%restart_out_hdl))
-
-      ! End define mode. This tells netCDF we are done defining metadata.
-      call this%err_check(nf90_enddef(this%restart_out_hdl))
-
-      ! ! Write the nhm_id values to the file
-      ! call this%err_check(nf90_put_var(this%restart_out_hdl, nhm_id_varid, nhm_id))
-
-      ! ! Write the nhm_seg values to the file
-      ! call this%err_check(nf90_put_var(this%restart_out_hdl, nhm_seg_varid, nhm_seg))
-
-    ! end associate
+    ! End define mode. This tells netCDF we are done defining metadata.
+    call this%err_check(nf90_enddef(this%restart_out_hdl))
   end subroutine
 
 
+  module subroutine open_restart_netcdf(this)
+    use netcdf
+    use prms_constants, only: YEAR, MONTH, DAY
+    use UTILS_TIME, only: gregorian_to_julian, julian_to_gregorian
+    implicit none
+
+    class(Control), intent(inout) :: this
+
+    ! Local variables
+    integer(i32) :: jul_date
+    integer(i32) :: adj_ts(6)
+    character(len=:), allocatable :: filename
+
+    jul_date = gregorian_to_julian(this%start_time%values(YEAR), this%start_time%values(MONTH), this%start_time%values(DAY))
+    adj_ts = julian_to_gregorian(jul_date - 1)
+    filename = timestamped_filename('PRMS_RESTART_', adj_ts)
+    write(*, *) 'Input restart filename: ', filename
+
+    ! Open netcdf file as read only
+    call this%err_check(nf90_open(filename, NF90_NOWRITE, this%restart_in_hdl))
+  end subroutine
+
+
+  module function timestamped_filename(prefix, timestamp) result(res)
+    use prms_constants, only: YEAR, MONTH, DAY
+    implicit none
+
+    character(len=:), allocatable :: res
+    character(len=*), intent(in) :: prefix
+      !! Prefix to use for the filename
+    integer(i32), intent(in) :: timestamp(6)
+      !! Array of timestamp values (YY, MM, DD, hh, mm, ss) to append to filename
+
+    ! Local variables
+    character(len=256) :: buf
+
+    write(buf, 9001) prefix, timestamp(YEAR), timestamp(MONTH), timestamp(DAY)
+    9001 format(A, I4, '-', I2.2, '-', I2.2, '.nc')
+
+    res = trim(buf)
+    return
+  end function
 
   module subroutine err_check(status)
     integer(i32), intent(in) :: status
