@@ -18,6 +18,7 @@ module PRMS_TRANSPIRATION
   character(len=*), parameter :: MODVERSION = '2018-08-30 13:51:00Z'
 
   type, extends(ModelBase) :: Transpiration
+    ! Parameters
     logical, pointer :: transp_on(:)
 
   contains

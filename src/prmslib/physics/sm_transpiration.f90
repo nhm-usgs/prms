@@ -11,11 +11,13 @@ contains
 
     integer(i32) :: jj
     ! --------------------------------------------------------------------------
-    associate(print_debug => ctl_data%print_debug%value, &
-              nhru => model_basin%nhru, &
+    associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
-              save_vars_to_file => ctl_data%save_vars_to_file%value)
+              print_debug => ctl_data%print_debug%value, &
+              save_vars_to_file => ctl_data%save_vars_to_file%value, &
+
+              nhru => model_basin%nhru)
 
       call this%set_module_info(name=MODNAME, desc=MODDESC, version=MODVERSION)
 
@@ -25,7 +27,12 @@ contains
       endif
 
       allocate(this%transp_on(nhru))
-      this%transp_on = .false.
+
+      if (init_vars_from_file == 0) then
+        this%transp_on = .false.
+      else
+        call ctl_data%read_restart_variable('transp_on', this%transp_on)
+      end if
 
       if (save_vars_to_file == 1) then
         ! Create restart variables

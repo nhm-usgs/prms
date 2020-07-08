@@ -40,11 +40,7 @@ contains
 
       ! Parameters
       allocate(this%transp_beg(nhru))
-      call param_hdl%get_variable('transp_beg', this%transp_beg)
-
       allocate(this%transp_end(nhru))
-      call param_hdl%get_variable('transp_end', this%transp_end)
-
       allocate(this%transp_tmax(nhru))
       call param_hdl%get_variable('transp_tmax', this%transp_tmax)
 
@@ -52,8 +48,25 @@ contains
       allocate(this%tmax_sum(nhru))
       allocate(this%transp_check(nhru))
 
-      this%tmax_sum = 0.0
-      this%transp_check = .false.
+      if (init_vars_from_file == 0) then
+        ! Read parameter data
+        call param_hdl%get_variable('transp_beg', this%transp_beg)
+        call param_hdl%get_variable('transp_end', this%transp_end)
+
+        ! Initialize internal variables
+        this%tmax_sum = 0.0
+        this%transp_check = .false.
+
+        this%transp_on = init_transp_on(this%transp_beg, this%transp_end, st_month, st_day)
+        this%transp_check = init_transp_check(this%transp_beg, st_month, st_day)
+      else
+        ! ~~~~~~~~~~~~~~~~~~~~~~~
+        ! Initialize from restart
+        call ctl_data%read_restart_variable('transp_beg', this%transp_beg)
+        call ctl_data%read_restart_variable('transp_end', this%transp_end)
+        call ctl_data%read_restart_variable('transp_check', this%transp_check)
+        call ctl_data%read_restart_variable('tmax_sum', this%tmax_sum)
+      end if
 
       if (save_vars_to_file == 1) then
         ! Create restart variables
@@ -61,12 +74,12 @@ contains
         call ctl_data%add_variable('transp_beg', this%transp_beg, 'nhru', 'month')
         call ctl_data%add_variable('transp_end', this%transp_end, 'nhru', 'month')
         call ctl_data%add_variable('transp_check', this%transp_check, 'nhru', 'none')
-        call ctl_data%add_variable('transp_tmax', this%transp_tmax, 'nhru', 'temp_units')
+        ! call ctl_data%add_variable('transp_tmax', this%transp_tmax, 'nhru', 'temp_units')
       end if
 
       ! NOTE: changed to use Celsius units by default
       ! NOTE: this will be unnecessary once parameter file units are standardized
-      ! NOTE: 2019-11-01 PAN: There is no simple way to convert transp_tmax
+      ! WARNING: 2019-11-01 PAN: There is no simple way to convert transp_tmax
       !                       from F to C because it represents a running total
       !                       of temperature. So if a transp_tmax in F is converted
       !                       to celsius then timing of transpiration turning
@@ -76,25 +89,6 @@ contains
       ! else
       !   this%transp_tmax_c = f_to_c(this%transp_tmax)
       ! endif
-
-      ! if (init_vars_from_file == 1) then
-      !   ! TODO: Incorporate the load from restart file stuff
-      !   ! These are only allocated when initializing from restart file
-      !   ! integer(i32), allocatable :: transp_beg_restart(:)
-      !   ! integer(i32), allocatable :: transp_end_restart(:)
-      !   ! real(r32), allocatable :: transp_tmax_restart(:)
-
-      !   ! read(rst_unit) modname_rst
-      !   ! call check_restart(MODNAME, modname_rst)
-      !   ! read(rst_unit) this%transp_check
-      !   ! read(rst_unit) this%tmax_sum
-      !   ! read(rst_unit) Transp_beg_restart
-      !   ! read(rst_unit) Transp_end_restart
-      !   ! read(rst_unit) Transp_tmax_restart
-      ! endif
-
-      this%transp_on = init_transp_on(this%transp_beg, this%transp_end, st_month, st_day)
-      this%transp_check = init_transp_check(this%transp_beg, st_month, st_day)
     end associate
   end subroutine
 
@@ -176,7 +170,7 @@ contains
         call ctl_data%write_restart_variable('transp_beg', this%transp_beg)
         call ctl_data%write_restart_variable('transp_check', this%transp_check)
         call ctl_data%write_restart_variable('transp_end', this%transp_end)
-        call ctl_data%write_restart_variable('transp_tmax', this%transp_tmax)
+        ! call ctl_data%write_restart_variable('transp_tmax', this%transp_tmax)
       end if
     end associate
   end subroutine
