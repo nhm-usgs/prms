@@ -21,7 +21,7 @@ contains
       !! Julian day of model start_time
     integer(i32) :: endday
       !! Julian day of model end_time
-    real(r64) :: dt
+    ! real(r64) :: dt
     character(len=:), allocatable :: days_since
 
     ! ------------------------------------------------------------------------
@@ -86,11 +86,10 @@ contains
       this%Nowhour = this%Nowtime(HOUR)
       this%Nowminute = this%Nowtime(MINUTE)
 
-      dt = deltim()
-      this%Timestep_hours = SNGL(dt)
+      this%Timestep_hours = SNGL(TIMESTEP_DELTA)
       this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
       this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-      this%Timestep_seconds = dt * SECS_PER_HOUR
+      this%Timestep_seconds = TIMESTEP_DELTA * SECS_PER_HOUR
 
       ! Check to see if in a daily or subdaily time step
       if (this%Timestep_hours > HOUR_PER_DAY) then
@@ -118,12 +117,10 @@ contains
     type(Control), intent(in) :: ctl_data
 
     ! ------------------------------------------------------------------------
-    ! --------------------------------------------------------------------------
+    ! ------------------------------------------------------------------------
     if (ctl_data%save_vars_to_file%value == 1) then
       ! Write out this module's restart variables
       call ctl_data%write_restart_variable('time', this%days_since_start)
-      ! call ctl_data%write_restart_variable('nhm_id', this%nhm_id)
-      ! call ctl_data%write_restart_variable('nhm_seg', this%nhm_seg)
     end if
 
   end subroutine
@@ -152,7 +149,7 @@ contains
     class(Time_t), intent(inout) :: this
     ! type(Control), intent(in) :: ctl_data
 
-    real(r64) :: dt
+    ! real(r64) :: dt
 
     ! ------------------------------------------------------------------------
     res = .true.
@@ -184,11 +181,10 @@ contains
     this%Nowminute = this%Nowtime(5)
 
     ! TODO: This stuff shouldn't change once it's initialized
-    dt = deltim()
-    this%Timestep_hours = SNGL(dt)
+    this%Timestep_hours = SNGL(TIMESTEP_DELTA)
     this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
     this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-    this%Timestep_seconds = dt * SECS_PER_HOUR
+    this%Timestep_seconds = TIMESTEP_DELTA * SECS_PER_HOUR
     this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
 
     ! TODO: If cfs2inches is really needed it should not be in the time object
@@ -243,21 +239,6 @@ contains
       endif
     end associate
   end subroutine
-
-
-  !***********************************************************************
-  ! timestep_hours - time step increment in hours
-  ! 2017-11-07 PAN: moved here from mmf_utils.f90
-  !***********************************************************************
-  module function deltim() result(res)
-    use prms_constants, only: dp
-    implicit none
-
-    real(r64) :: res
-    !***********************************************************************
-    !deltim = lisfunction() ! need to make routine to get time step increment
-    res = 24.0_dp
-  end function
 
 
   !***********************************************************************

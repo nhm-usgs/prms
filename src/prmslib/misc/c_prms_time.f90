@@ -3,7 +3,7 @@
 !***********************************************************************
 module PRMS_SET_TIME
   use variableKind
-  use prms_constants, only: NORTHERN, SOUTHERN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
+  use prms_constants, only: NORTHERN, SOUTHERN, YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, dp
   use ModelBase_class, only: ModelBase
   use Control_class, only: Control
   implicit none
@@ -15,7 +15,10 @@ module PRMS_SET_TIME
   character(len=*), parameter :: MODNAME = 'prms_time'
   character(len=*), parameter :: MODVERSION = '2018-08-30 13:36:00Z'
 
+  real(r64), parameter :: TIMESTEP_DELTA = 24.0_dp
+    !! Timestep delta in hours
   integer(i32), parameter :: DAYPMO(12) = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    !! Days per month for non-leap years
 
   type, extends(ModelBase) :: Time_t
     ! integer(i32) :: Yrdays  ! only used by last_day_of_month()
@@ -71,7 +74,6 @@ module PRMS_SET_TIME
       procedure, nopass, public :: leap_day
 
       procedure, private :: dattim
-      procedure, nopass, private :: deltim
       procedure, nopass, private :: ordinal_date
       procedure, private :: update_summer_flag
   end type
@@ -120,12 +122,6 @@ module PRMS_SET_TIME
         !! One of: 'now', 'start', or 'end'
       integer(i32), intent(inout) :: date_time(6)
     end subroutine
-  end interface
-
-  interface
-    module function deltim() result(res)
-      real(r64) :: res
-    end function deltim
   end interface
 
   interface
