@@ -173,9 +173,16 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         this%hru_impervevap = 0.0
         this%hru_impervstor = 0.0
         this%imperv_evap = 0.0
-        this%imperv_stor = 0.0
         this%infil = 0.0
         this%sroff = 0.0
+
+        if (init_vars_from_file == 0) then
+          this%imperv_stor = 0.0
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('imperv_stor', this%imperv_stor)
+        end if
 
         if (save_vars_to_file == 1) then
           ! Create restart variables
@@ -650,8 +657,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
 
         if (any([0, 2, 7]==init_vars_from_file)) then
           call param_hdl%get_variable('dprst_frac_init', this%dprst_frac_init)
-        else
-          this%dprst_frac_init = 0.0
         end if
 
         allocate(this%dprst_frac_open(nhru))
@@ -757,20 +762,22 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         ! Compute total area of depressions in the model
         this%dprst_area_clos = 0.0_dp
         this%dprst_area_open = 0.0_dp
+        this%dprst_stor_hru = 0.0_dp
+        this%dprst_vol_clos = 0.0_dp
+        this%dprst_vol_open = 0.0_dp
+        this%dprst_vol_thres_open = 0.0_dp
+
+
         this%dprst_evap_hru = 0.0_dp
         this%dprst_in = 0.0_dp
         this%dprst_insroff_hru = 0.0_dp
         this%dprst_seep_hru = 0.0_dp
         this%dprst_sroff_hru = 0.0_dp
-        this%dprst_stor_hru = 0.0_dp
-        this%dprst_vol_clos = 0.0_dp
         this%dprst_vol_clos_frac = 0.0
         this%dprst_vol_clos_max = 0.0_dp
         this%dprst_vol_frac = 0.0
-        this%dprst_vol_open = 0.0_dp
         this%dprst_vol_open_frac = 0.0
         this%dprst_vol_open_max = 0.0_dp
-        this%dprst_vol_thres_open = 0.0_dp
 
         where (this%has_closed_dprst .and. active_mask .and. this%dprst_area_max > 0.0)
           this%dprst_vol_clos_max = dble(this%dprst_area_clos_max * this%dprst_depth_avg)
@@ -789,28 +796,38 @@ submodule (PRMS_SRUNOFF) sm_srunoff
           where (this%has_open_dprst .and. active_mask .and. this%dprst_area_max > 0.0)
             this%dprst_vol_open = dble(this%dprst_frac_init) * this%dprst_vol_open_max
           end where
+
+          deallocate(this%dprst_frac_init)
+
+          where (active_mask .and. this%dprst_area_max > 0.0)
+            this%dprst_vol_thres_open = dble(this%op_flow_thres) * this%dprst_vol_open_max
+          end where
+
+          ! Calculate depression surface area
+          where (this%dprst_vol_open > 0.0_dp .and. active_mask .and. this%dprst_area_max > 0.0)
+            ! Open depression surface area for each HRU:
+            this%dprst_area_open = this%depression_surface_area(this%dprst_vol_open, &
+                                                                this%dprst_vol_open_max, &
+                                                                this%dprst_area_open_max, &
+                                                                this%va_open_exp)
+          end where
+
+          where (this%dprst_vol_clos > 0.0_dp .and. active_mask .and. this%dprst_area_max > 0.0)
+            ! Closed depression surface area for each HRU:
+            this%dprst_area_clos = this%depression_surface_area(this%dprst_vol_clos, &
+                                                                this%dprst_vol_clos_max, &
+                                                                this%dprst_area_clos_max, &
+                                                                this%va_clos_exp)
+          end where
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('dprst_area_clos', this%dprst_area_clos)
+          call ctl_data%read_restart_variable('dprst_area_open', this%dprst_area_open)
+          call ctl_data%read_restart_variable('dprst_vol_clos', this%dprst_vol_clos)
+          call ctl_data%read_restart_variable('dprst_vol_open', this%dprst_vol_open)
+          call ctl_data%read_restart_variable('dprst_vol_thres_open', this%dprst_vol_thres_open)
         endif
-
-        where (active_mask .and. this%dprst_area_max > 0.0)
-          this%dprst_vol_thres_open = dble(this%op_flow_thres) * this%dprst_vol_open_max
-        end where
-
-        ! Calculate depression surface area
-        where (this%dprst_vol_open > 0.0_dp .and. active_mask .and. this%dprst_area_max > 0.0)
-          ! Open depression surface area for each HRU:
-          this%dprst_area_open = this%depression_surface_area(this%dprst_vol_open, &
-                                                              this%dprst_vol_open_max, &
-                                                              this%dprst_area_open_max, &
-                                                              this%va_open_exp)
-        end where
-
-        where (this%dprst_vol_clos > 0.0_dp .and. active_mask .and. this%dprst_area_max > 0.0)
-          ! Closed depression surface area for each HRU:
-          this%dprst_area_clos = this%depression_surface_area(this%dprst_vol_clos, &
-                                                              this%dprst_vol_clos_max, &
-                                                              this%dprst_area_clos_max, &
-                                                              this%va_clos_exp)
-        end where
 
         where (this%dprst_vol_clos_max > 0.0_dp)
           this%dprst_vol_clos_frac = sngl(this%dprst_vol_clos / this%dprst_vol_clos_max)
@@ -823,11 +840,19 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         where (active_mask .and. this%dprst_area_max > 0.0)
           this%dprst_vol_frac = sngl((this%dprst_vol_open + this%dprst_vol_clos) / &
                                      (this%dprst_vol_open_max + this%dprst_vol_clos_max))
-          this%dprst_stor_hru = update_dprst_storage(this%dprst_vol_clos, &
-                                                     this%dprst_vol_open, &
-                                                     hru_area_dble)
-          ! this%dprst_stor_hru = (this%dprst_vol_open + this%dprst_vol_clos) / dble(hru_area)
         end where
+
+        if (any([0, 2, 7]==init_vars_from_file)) then
+          where (active_mask .and. this%dprst_area_max > 0.0)
+            this%dprst_stor_hru = update_dprst_storage(this%dprst_vol_clos, &
+                                                      this%dprst_vol_open, &
+                                                      hru_area_dble)
+          end where
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('dprst_stor_hru', this%dprst_stor_hru)
+        end if
 
         if (save_vars_to_file == 1) then
           ! Create restart variables
@@ -901,10 +926,6 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         ! enddo
 
         ! write(output_unit, *) '  dprst_vol_frac: ', this%dprst_vol_frac
-
-        if (any([0, 2, 7]==init_vars_from_file)) then
-          deallocate(this%dprst_frac_init)
-        end if
 
         ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ! If requested, open dynamic parameter file(s)

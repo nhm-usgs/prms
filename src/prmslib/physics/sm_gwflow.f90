@@ -122,47 +122,25 @@ submodule (PRMS_GWFLOW) sm_gwflow
           allocate(this%elevlake(nlake))
         endif
 
+        if (any([0, 2, 6] == init_vars_from_file)) then
+          this%gwres_stor = dble(this%gwstor_init)
+          deallocate(this%gwstor_init)
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('gwres_stor', this%gwres_stor)
+        endif
+
         if (save_vars_to_file == 1) then
           ! Create restart variables
-          ! TODO: nlake and ngw are no currently added to the restart file
+          ! TODO: nlake and ngw are not currently added to the restart file
           ! call ctl_data%add_variable('elevlake', this%elevlake, 'nlake', 'feet')
-          ! call ctl_data%add_variable('gwres_stor', this%gwres_stor, 'ngw', 'inches')
+          call ctl_data%add_variable('gwres_stor', this%gwres_stor, 'nhru', 'inches')
           ! call ctl_data%add_variable('lake_vol', this%lake_vol, 'nlake', 'acre-feet')
         end if
 
-        ! Connect summary variables that need to be output
-        if (outVarON_OFF == 1) then
-          do jj = 1, outVar_names%size()
-            select case(outVar_names%values(jj)%s)
-              case('gw_in_soil')
-                call model_summary%set_summary_var(jj, this%gw_in_soil)
-              case('gw_in_ssr')
-                call model_summary%set_summary_var(jj, this%gw_in_ssr)
-              case('gwres_flow')
-                call model_summary%set_summary_var(jj, this%gwres_flow)
-              case('gwres_in')
-                call model_summary%set_summary_var(jj, this%gwres_in)
-              case('gwres_stor')
-                call model_summary%set_summary_var(jj, this%gwres_stor)
-              case('hru_lateral_flow')
-                call model_summary%set_summary_var(jj, this%hru_lateral_flow)
-              case('hru_storage')
-                call model_summary%set_summary_var(jj, this%hru_storage)
-              case('hru_streamflow_out')
-                call model_summary%set_summary_var(jj, this%hru_streamflow_out)
-              case default
-                ! pass
-            end select
-          enddo
-        endif
-
         ! Initialize
-        this%gwres_stor = 0.0_dp  ! moved from flowvars
         this%gwstor_minarea_wb = 0.0_dp
-
-        if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 6) then
-          this%gwres_stor = dble(this%gwstor_init)
-        endif
 
         ! Lakes (moved from flowvars)
         if (nlake > 0) then
@@ -232,13 +210,15 @@ submodule (PRMS_GWFLOW) sm_gwflow
         endif
 
         if (weir_gate_flag == 1) then
-          if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 4) then
+          if (any([0, 2, 4] == init_vars_from_file)) then
             this%elevlake = this%elevlake_init
+            deallocate(this%elevlake_init)
           endif
 
           this%lake_seepage_max = 0.0_dp
 
           if (init_vars_from_file == 0) then
+            ! WARNING: What happens if the restart if used for init?
             this%lake_seepage_gwr = 0.0_dp
             this%lake_seepage = 0.0_dp
             this%gw_seep_lakein = 0.0_dp
@@ -272,6 +252,33 @@ submodule (PRMS_GWFLOW) sm_gwflow
         this%gw_in_soil = 0.0_dp
         this%hru_streamflow_out = 0.0_dp
         this%hru_lateral_flow = 0.0_dp
+
+        ! Connect summary variables that need to be output
+        if (outVarON_OFF == 1) then
+          do jj = 1, outVar_names%size()
+            select case(outVar_names%values(jj)%s)
+              case('gw_in_soil')
+                call model_summary%set_summary_var(jj, this%gw_in_soil)
+              case('gw_in_ssr')
+                call model_summary%set_summary_var(jj, this%gw_in_ssr)
+              case('gwres_flow')
+                call model_summary%set_summary_var(jj, this%gwres_flow)
+              case('gwres_in')
+                call model_summary%set_summary_var(jj, this%gwres_in)
+              case('gwres_stor')
+                call model_summary%set_summary_var(jj, this%gwres_stor)
+              case('hru_lateral_flow')
+                call model_summary%set_summary_var(jj, this%hru_lateral_flow)
+              case('hru_storage')
+                call model_summary%set_summary_var(jj, this%hru_storage)
+              case('hru_streamflow_out')
+                call model_summary%set_summary_var(jj, this%hru_streamflow_out)
+              case default
+                ! pass
+            end select
+          enddo
+        endif
+
       end associate
     end subroutine
 
@@ -580,7 +587,7 @@ submodule (PRMS_GWFLOW) sm_gwflow
         if (save_vars_to_file == 1) then
           ! Write out this module's restart variables
           ! call ctl_data%write_restart_variable('elevlake', this%elevlake)
-          ! call ctl_data%write_restart_variable('gwres_stor', this%gwres_stor)
+          call ctl_data%write_restart_variable('gwres_stor', this%gwres_stor)
           ! call ctl_data%write_restart_variable('lake_vol', this%lake_vol)
         end if
       end associate

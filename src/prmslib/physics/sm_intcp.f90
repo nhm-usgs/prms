@@ -93,13 +93,10 @@ contains
 
       this%canopy_covden = 0.0
       this%hru_intcpevap = 0.0
-      this%hru_intcpstor = 0.0
       this%intcp_changeover = 0.0
       this%intcp_evap = 0.0
       this%intcp_form = 0
-      this%intcp_on = .false.
-      this%intcp_stor = 0.0
-      this%intcp_transp_on = transp_on
+
       this%net_ppt = 0.0
       this%net_rain = -200.
       this%net_snow = 0.0
@@ -109,9 +106,22 @@ contains
       !   this%basin_net_apply = 0.0_dp
       ! end if
 
-      ! if (init_vars_from_file == 1) then
-      !   ! TODO: hook up reading restart file
-      ! endif
+      ! The restart output variables have to be handled here because the netcdf
+      ! read var routine reallocates the variables (which would mess up the
+      ! output variable pointers)
+      if (init_vars_from_file == 0) then
+        this%hru_intcpstor = 0.0
+        this%intcp_on = .false.
+        this%intcp_stor = 0.0
+        this%intcp_transp_on = transp_on
+      else
+        ! ~~~~~~~~~~~~~~~~~~~~~~~~
+        ! Initialize from restart
+        call ctl_data%read_restart_variable('hru_intcpstor', this%hru_intcpstor)
+        call ctl_data%read_restart_variable('intcp_on', this%intcp_on)
+        call ctl_data%read_restart_variable('intcp_stor', this%intcp_stor)
+        call ctl_data%read_restart_variable('intcp_transp_on', this%intcp_transp_on)
+      endif
 
       if (save_vars_to_file == 1) then
         ! Create restart variables

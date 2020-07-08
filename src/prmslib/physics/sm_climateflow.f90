@@ -19,7 +19,6 @@ contains
     associate(init_vars_from_file => ctl_data%init_vars_from_file%value, &
               outVarON_OFF => ctl_data%outVarON_OFF%value, &
               outVar_names => ctl_data%outVar_names, &
-              ! rst_unit => ctl_data%restart_output_unit, &
               param_hdl => ctl_data%param_file_hdl, &
               print_debug => ctl_data%print_debug%value, &
               save_vars_to_file => ctl_data%save_vars_to_file%value, &
@@ -35,28 +34,39 @@ contains
       endif
 
       ! Parameters
-      allocate(this%soil_moist_init_frac(nhru))
-      call param_hdl%get_variable('soil_moist_init_frac', this%soil_moist_init_frac)
-
       allocate(this%soil_moist_max(nhru))
       call param_hdl%get_variable('soil_moist_max', this%soil_moist_max)
-
-      allocate(this%soil_rechr_init_frac(nhru))
-      call param_hdl%get_variable('soil_rechr_init_frac', this%soil_rechr_init_frac)
 
       allocate(this%soil_rechr_max_frac(nhru))
       call param_hdl%get_variable('soil_rechr_max_frac', this%soil_rechr_max_frac)
 
-      ! Other variables
-
       ! Soilzone variables
       allocate(this%soil_moist(nhru))
-      allocate(this%soil_rechr_max(nhru))
       allocate(this%soil_rechr(nhru))
+      allocate(this%soil_rechr_max(nhru))
 
-      this%soil_moist = this%soil_moist_init_frac * this%soil_moist_max
       this%soil_rechr_max = this%soil_rechr_max_frac * this%soil_moist_max
-      this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
+
+      if (any([0, 2, 5] == init_vars_from_file)) then
+        ! Parameters soil_moist_init_frac and soil_rechr_init_frac are only needed if they
+        ! are not initialized from a restart file
+        allocate(this%soil_moist_init_frac(nhru))
+        call param_hdl%get_variable('soil_moist_init_frac', this%soil_moist_init_frac)
+
+        allocate(this%soil_rechr_init_frac(nhru))
+        call param_hdl%get_variable('soil_rechr_init_frac', this%soil_rechr_init_frac)
+
+        this%soil_moist = this%soil_moist_init_frac * this%soil_moist_max
+        this%soil_rechr = this%soil_rechr_init_frac * this%soil_rechr_max
+
+        deallocate(this%soil_moist_init_frac)
+        deallocate(this%soil_rechr_init_frac)
+      else
+        ! ~~~~~~~~~~~~~~~~~~
+        ! Init from restart
+        call ctl_data%read_restart_variable('soil_moist', this%soil_moist)
+        call ctl_data%read_restart_variable('soil_rechr', this%soil_rechr)
+      end if
 
       where (hru_type == INACTIVE .or. hru_type == LAKE)
         this%soil_moist = 0.0
@@ -65,7 +75,6 @@ contains
 
       do jj=1, nhru
         if (any([LAND, SWALE] == hru_type(jj))) then
-        ! if (hru_type(jj) /= INACTIVE .and. hru_type(jj) /= LAKE) then
           if (this%soil_rechr_max(jj) > this%soil_moist_max(jj)) then
             write(error_unit, 9012) MODNAME, '%init(): WARNING: soil_rechr_max > soil_moist_max (HRU=', jj, ')'
             this%soil_rechr_max(jj) = this%soil_moist_max(jj)
@@ -96,15 +105,18 @@ contains
 
       ! Snow
       allocate(this%pkwater_equiv(nhru))
-      this%pkwater_equiv = 0.0_dp
 
-      if (save_vars_to_file == 1) then
-        ! Create restart variables
-        call ctl_data%add_variable('pkwater_equiv', this%pkwater_equiv, 'nhru', 'inches')
-        call ctl_data%add_variable('soil_moist', this%soil_moist, 'nhru', 'inches')
-        call ctl_data%add_variable('soil_rechr', this%soil_rechr, 'nhru', 'inches')
+      if (any([0, 2, 3] == init_vars_from_file)) then
+        this%pkwater_equiv = 0.0_dp
+        ! Additional initialization handled in snowcomp
+      else
+        ! ~~~~~~~~~~~~~~~~~~~~~~~~
+        ! Initialize from restart
+        call ctl_data%read_restart_variable('pkwater_equiv', this%pkwater_equiv)
       end if
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Output variables
 
       ! Connect any nhru_summary variables that need to be output
       if (outVarON_OFF == 1) then
@@ -122,8 +134,14 @@ contains
         enddo
       endif
 
-      ! NOTE: could deallocate soil_moist_init_frac, soil_rechr_init_frac,
-      !       and ssstor_init_frac
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Restart variables
+      if (save_vars_to_file == 1) then
+        ! Create restart variables
+        call ctl_data%add_variable('pkwater_equiv', this%pkwater_equiv, 'nhru', 'inches')
+        call ctl_data%add_variable('soil_moist', this%soil_moist, 'nhru', 'inches')
+        call ctl_data%add_variable('soil_rechr', this%soil_rechr, 'nhru', 'inches')
+      end if
     end associate
   end subroutine
 
@@ -139,6 +157,8 @@ contains
     ! TODO: Update to reflect the full PRMS codebase
     associate(save_vars_to_file => ctl_data%save_vars_to_file%value)
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Restart variables
       if (save_vars_to_file == 1) then
         ! Write out this module's restart variables
         call ctl_data%write_restart_variable('pkwater_equiv', this%pkwater_equiv)

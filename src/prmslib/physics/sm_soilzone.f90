@@ -84,6 +84,10 @@ submodule (PRMS_SOILZONE) sm_soilzone
         allocate(this%sat_threshold(nhru))
         call param_hdl%get_variable('sat_threshold', this%sat_threshold)
 
+        where (hru_type == INACTIVE .or. hru_type == LAKE)
+          this%sat_threshold = 0.0  ! WARNING: parameters should be read-only
+        end where
+
         allocate(this%slowcoef_lin(nhru))
         call param_hdl%get_variable('slowcoef_lin', this%slowcoef_lin)
 
@@ -230,15 +234,20 @@ submodule (PRMS_SOILZONE) sm_soilzone
         this%ssres_flow = 0.0
         this%swale_limit = 0.0
 
-        where (hru_type == INACTIVE .or. hru_type == LAKE)
-          this%ssres_stor = 0.0
-          this%sat_threshold = 0.0  ! WARNING: parameters should be read-only
-        else where
-          this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
-        end where
+        if (any([0, 2, 5] == init_vars_from_file)) then
+          where (hru_type == INACTIVE .or. hru_type == LAKE)
+            this%ssres_stor = 0.0
+          else where
+            this%ssres_stor = this%ssstor_init_frac * this%sat_threshold
+          end where
 
-        ! ssstor_init_frac no longer needed at this point
-        deallocate(this%ssstor_init_frac)
+          ! ssstor_init_frac no longer needed at this point
+          deallocate(this%ssstor_init_frac)
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('ssres_stor', this%ssres_stor)
+        end if
 
         where (hru_type /= LAND)
             this%pref_flow_den = 0.0  ! WARNING: parameters should be read-only
@@ -258,11 +267,16 @@ submodule (PRMS_SOILZONE) sm_soilzone
           end where
         end where
 
-        if (init_vars_from_file == 0 .or. init_vars_from_file == 2 .or. init_vars_from_file == 5) then
+        if (any([0, 2, 5] == init_vars_from_file)) then
           where (hru_type == LAND .or. hru_type == SWALE)
             this%slow_stor = min(this%ssres_stor, this%pref_flow_thrsh)
             this%pref_flow_stor = this%ssres_stor - this%slow_stor
           end where
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('pref_flow_stor', this%pref_flow_stor)
+          call ctl_data%read_restart_variable('slow_stor', this%slow_stor)
         endif
 
         where (this%soil2gw_max > 0.0)
