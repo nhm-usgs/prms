@@ -180,7 +180,7 @@ module UTILS_CBH
 
     subroutine open_netcdf_cbh_file(iunit, varid, idx_offset, filename, param_name, start_time, end_time, model_nhru)
       use netcdf
-      use PRMS_SET_TIME, only: gregorian_to_julian
+      use UTILS_TIME, only: gregorian_to_julian
       implicit none
 
       integer(i32), intent(out) :: iunit
@@ -283,7 +283,7 @@ module UTILS_CBH
 
     subroutine read_netcdf_cbh_file(iunit, varid, idx_offset, timestep, nhru, thedata)
       use netcdf
-      use PRMS_SET_TIME, only: gregorian_to_julian
+      use UTILS_TIME, only: gregorian_to_julian
       implicit none
 
       integer(i32), intent(in) :: iunit

@@ -9,7 +9,7 @@ module PRMS_SET_TIME
   implicit none
 
   private
-  public :: Time_t, gregorian_to_julian, julian_to_gregorian, leap_day
+  public :: Time_t
 
   character(len=*), parameter :: MODDESC = 'Time_t variables'
   character(len=*), parameter :: MODNAME = 'prms_time'
@@ -30,7 +30,7 @@ module PRMS_SET_TIME
     integer(i32) :: day_of_water_year
     integer(i32) :: days_since_start
       !! Number of days since the start date of the model simulation
-    integer(i32) :: Julian_day_absolute
+
     integer(i32), private :: hemisphere
     integer(i32) :: months
     integer(i32) :: months_in_model
@@ -46,6 +46,9 @@ module PRMS_SET_TIME
     integer(i32) :: Nowminute
     integer(i32) :: Number_timesteps
     integer(i32) :: Timestep
+
+    integer(i32) :: current_jdn
+      !! Julian day number of current datetime
     integer(i32) :: start_jdn
       !! Julian day number of model start date
     integer(i32) :: end_jdn
@@ -69,11 +72,11 @@ module PRMS_SET_TIME
       procedure, public :: print_date
       procedure, public :: set_hemisphere
 
-      procedure, nopass, public :: gregorian_to_julian
-      procedure, nopass, public :: julian_to_gregorian
-      procedure, nopass, public :: leap_day
+      ! procedure, nopass, public :: gregorian_to_julian
+      ! procedure, nopass, public :: julian_to_gregorian
+      ! procedure, nopass, public :: leap_day
 
-      procedure, nopass, private :: ordinal_date
+      ! procedure, nopass, private :: ordinal_date
       procedure, private :: update_summer_flag
   end type
 
@@ -112,21 +115,21 @@ module PRMS_SET_TIME
     end function
   end interface
 
-  interface
-    module function ordinal_date(datetime, Year_type, hemisphere) result(res)
-      integer(i32) :: res
-      ! class(Time_t) :: this
-      ! type(Control), intent(in) :: ctl_data
-        !! Control file data
-      integer(i32), intent(in) :: datetime(6)
-      ! character(len=*), intent(in) :: Date_type
-        !! One of: "start", "end", "now"
-      character(len=*), intent(in) :: Year_type
-        !! One of: "calendar", "solar", "water", "absolute"
-      integer(i32), intent(in) :: hemisphere
-        !! Hemisphere (0=North; 1=South)
-    end function
-  end interface
+  ! interface
+  !   module function ordinal_date(datetime, Year_type, hemisphere) result(res)
+  !     integer(i32) :: res
+  !     ! class(Time_t) :: this
+  !     ! type(Control), intent(in) :: ctl_data
+  !       !! Control file data
+  !     integer(i32), intent(in) :: datetime(6)
+  !     ! character(len=*), intent(in) :: Date_type
+  !       !! One of: "start", "end", "now"
+  !     character(len=*), intent(in) :: Year_type
+  !       !! One of: "calendar", "solar", "water", "absolute"
+  !     integer(i32), intent(in) :: hemisphere
+  !       !! Hemisphere (0=North; 1=South)
+  !   end function
+  ! end interface
 
   interface
     module subroutine print_date(this, Flag)
@@ -149,29 +152,29 @@ module PRMS_SET_TIME
     end subroutine
   end interface
 
-  interface
-    pure module function leap_day(year) result(res)
-      logical :: res
-      integer(i32), intent(in) :: year
-    end function
-  end interface
+  ! interface
+  !   pure module function leap_day(year) result(res)
+  !     logical :: res
+  !     integer(i32), intent(in) :: year
+  !   end function
+  ! end interface
 
-  interface
-    module function julian_to_gregorian(julian_day) result(res)
-      integer(i32) :: res(6)
-        !! Gregorian date ([1]=year, [2]=month, [3]=day)
-      integer(i32), intent(in) :: julian_day
-    end function
-  end interface
+  ! interface
+  !   module function julian_to_gregorian(julian_day) result(res)
+  !     integer(i32) :: res(6)
+  !       !! Gregorian date ([1]=year, [2]=month, [3]=day)
+  !     integer(i32), intent(in) :: julian_day
+  !   end function
+  ! end interface
 
-  interface
-    pure module function gregorian_to_julian(year, month, day) result(julian_day)
-      integer(i32) :: julian_day
-      integer(i32), intent(in) :: year
-      integer(i32), intent(in) :: month
-      integer(i32), intent(in) :: day
-    end function
-  end interface
+  ! interface
+  !   pure module function gregorian_to_julian(year, month, day) result(julian_day)
+  !     integer(i32) :: julian_day
+  !     integer(i32), intent(in) :: year
+  !     integer(i32), intent(in) :: month
+  !     integer(i32), intent(in) :: day
+  !   end function
+  ! end interface
 
 
 end module

@@ -236,7 +236,7 @@ contains
 
   pure module function yr_mo_eq_dy_le(lh_date, rh_date) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
-    use PRMS_SET_TIME, only: gregorian_to_julian
+    use UTILS_TIME, only: gregorian_to_julian
     implicit none
 
     logical :: res
@@ -347,7 +347,7 @@ contains
 
   module function get_first_time(iunit, datetime) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
-    use PRMS_SET_TIME, only: gregorian_to_julian
+    use UTILS_TIME, only: gregorian_to_julian
     implicit none
 
     ! Argument
