@@ -81,10 +81,24 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         this%seg_lateral_inflow = 0.0_dp
 
         allocate(this%seg_inflow(nsegment))
-        this%seg_inflow = 0.0_dp
-
         allocate(this%seg_outflow(nsegment))
-        this%seg_outflow = 0.0_dp
+
+        if (any([0, 2] == init_vars_from_file)) then
+          this%seg_outflow = this%segment_flow_init
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('seg_outflow', this%seg_outflow)
+        endif
+
+        if (init_vars_from_file == 0) then
+          this%seg_inflow = 0.0_dp
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('seg_inflow', this%seg_inflow)
+        endif
+
+        deallocate(this%segment_flow_init)
 
         if (cascade_flag == 0) then
           allocate(this%seg_gwflow(nsegment))
@@ -133,6 +147,10 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         if (init_vars_from_file == 0) then
           this%segment_delta_flow = 0.0_dp
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('segment_delta_flow', this%segment_delta_flow)
         endif
 
         this%flow_out = 0.0_dp
@@ -173,6 +191,9 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           this%segment_area = sum(this%segment_hruarea)
           this%noarea_flag = any(this%segment_hruarea < DNEARZERO)
         endif
+
+        print *, 'segment_hruarea'
+        print *, this%segment_hruarea
 
         isegerr = 0
         this%segment_up = 0

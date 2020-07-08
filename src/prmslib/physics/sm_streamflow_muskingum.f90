@@ -162,13 +162,12 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         allocate(this%pastin(nsegment))
         allocate(this%pastout(nsegment))
 
-        if (init_vars_from_file == 0 .or. init_vars_from_file == 2) then
-          this%seg_outflow = this%segment_flow_init
-          deallocate(this%segment_flow_init)
-        endif
-
         if (init_vars_from_file==0) then
           this%outflow_ts = 0.0_dp
+        else
+          ! ~~~~~~~~~~~~~~~~~~~~~~~~
+          ! Initialize from restart
+          call ctl_data%read_restart_variable('outflow_ts', this%outflow_ts)
         endif
 
         if (save_vars_to_file == 1) then

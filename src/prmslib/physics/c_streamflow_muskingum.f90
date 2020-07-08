@@ -30,7 +30,7 @@ module PRMS_MUSKINGUM
     ! Local Variables
     real(r64), allocatable, private :: currinsum(:)
     real(r64), allocatable, private :: inflow_ts(:)
-    real(r64), allocatable, private :: outflow_ts(:)
+    real(r64), pointer, private :: outflow_ts(:)
     real(r64), allocatable, private :: pastin(:)
     real(r64), allocatable, private :: pastout(:)
 
