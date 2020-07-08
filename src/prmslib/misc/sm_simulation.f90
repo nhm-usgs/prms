@@ -219,9 +219,10 @@ submodule (Simulation_class) sm_simulation
       call this%climate%cleanup(ctl_data)
       call this%transpiration%cleanup(ctl_data)
       call this%intcp%cleanup(ctl_data)
+      call this%snow%cleanup(ctl_data)
       call this%runoff%cleanup(ctl_data)
       call this%soil%cleanup(ctl_data)
-      call this%snow%cleanup(ctl_data)
+      call this%groundwater%cleanup(ctl_data)
 
       call this%model_streamflow%cleanup(ctl_data)
 
