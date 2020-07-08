@@ -73,7 +73,6 @@ module PRMS_SET_TIME
       procedure, nopass, public :: julian_to_gregorian
       procedure, nopass, public :: leap_day
 
-      procedure, private :: dattim
       procedure, nopass, private :: ordinal_date
       procedure, private :: update_summer_flag
   end type
@@ -111,17 +110,6 @@ module PRMS_SET_TIME
       class(Time_t), intent(inout) :: this
       ! type(Control), intent(in) :: ctl_data
     end function
-  end interface
-
-  interface
-    module subroutine dattim(this, ctl_data, period, date_time)
-      class(Time_t), intent(in) :: this
-      type(Control), intent(in) :: ctl_data
-        !! Control file data
-      character(len=*), intent(in) :: period
-        !! One of: 'now', 'start', or 'end'
-      integer(i32), intent(inout) :: date_time(6)
-    end subroutine
   end interface
 
   interface

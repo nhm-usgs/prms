@@ -147,9 +147,6 @@ contains
 
     logical :: res
     class(Time_t), intent(inout) :: this
-    ! type(Control), intent(in) :: ctl_data
-
-    ! real(r64) :: dt
 
     ! ------------------------------------------------------------------------
     res = .true.
@@ -171,21 +168,18 @@ contains
     this%Julian_day_absolute = this%Julian_day_absolute + 1
     this%days_since_start = this%compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3)) - this%start_jdn
 
-    ! TODO: ?why? is this here? It shouldn't be.
-    ! call read_data_line(this%Nowtime, var_data)
-
     this%Nowyear = this%Nowtime(1)
     this%Nowmonth = this%Nowtime(2)
     this%Nowday = this%Nowtime(3)
     this%Nowhour = this%Nowtime(4)
     this%Nowminute = this%Nowtime(5)
 
-    ! TODO: This stuff shouldn't change once it's initialized
-    this%Timestep_hours = SNGL(TIMESTEP_DELTA)
-    this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
-    this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
-    this%Timestep_seconds = TIMESTEP_DELTA * SECS_PER_HOUR
-    this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
+    ! NOTE: This stuff shouldn't change once it's initialized
+    ! this%Timestep_hours = SNGL(TIMESTEP_DELTA)
+    ! this%Timestep_days = this%Timestep_hours / HOUR_PER_DAY
+    ! this%Timestep_minutes = this%Timestep_hours * MIN_PER_HOUR
+    ! this%Timestep_seconds = TIMESTEP_DELTA * SECS_PER_HOUR
+    ! this%Cfs_conv = FT2_PER_ACRE / 12.0_dp / this%Timestep_seconds
 
     ! TODO: If cfs2inches is really needed it should not be in the time object
     !       causing a dependency to the Basin object.
@@ -195,51 +189,14 @@ contains
     !          this%Julian_day_absolute, this%day_of_year, this%day_of_solar_year, this%day_of_water_year
 
     ! Check to see if in a daily or subdaily time step
-    if (this%Timestep_hours > HOUR_PER_DAY) then
-      print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
-      STOP
-    elseif (this%Timestep_hours < HOUR_PER_DAY) then
-      print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
-      STOP
-    endif
+    ! if (this%Timestep_hours > HOUR_PER_DAY) then
+    !   print *, 'ERROR, timestep > daily, fix Data File, timestep:', this%Timestep_hours
+    !   STOP
+    ! elseif (this%Timestep_hours < HOUR_PER_DAY) then
+    !   print *, 'ERROR, timestep < daily for daily model, fix Data File', this%Timestep_hours
+    !   STOP
+    ! endif
   end function
-
-
-  !***********************************************************************
-  ! dattim - get start, end, or current date and time
-  ! 2017-11-07 PAN: moved here from mmf_utils.f90
-  !***********************************************************************
-  module subroutine dattim(this, ctl_data, period, date_time)
-    implicit none
-
-    ! Arguments
-    class(Time_t), intent(in) :: this
-    type(Control), intent(in) :: ctl_data
-      !! Control file data
-    character(len=*), intent(in) :: period
-      !! One of: 'now', 'start', or 'end'
-    integer(i32), intent(inout) :: date_time(6)
-
-    !***********************************************************************
-    associate(end_time => ctl_data%end_time%values, &
-              start_time => ctl_data%start_time%values)
-
-      date_time = 0
-
-      if (period == 'end') then
-        date_time = end_time
-      elseif (period == 'now') then
-        date_time = julian_to_gregorian(this%Julian_day_absolute)
-
-        ! Datetime = LIS function
-      elseif (period == 'start') then
-        date_time = start_time
-      else
-        STOP 'ERROR, invalid call to dattim'
-      endif
-    end associate
-  end subroutine
-
 
   !***********************************************************************
   ! ordinal_date
