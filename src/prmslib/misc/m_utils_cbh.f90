@@ -180,7 +180,7 @@ module UTILS_CBH
 
     subroutine open_netcdf_cbh_file(iunit, varid, idx_offset, filename, param_name, start_time, end_time, model_nhru)
       use netcdf
-      use PRMS_SET_TIME, only: compute_julday
+      use PRMS_SET_TIME, only: gregorian_to_julian
       implicit none
 
       integer(i32), intent(out) :: iunit
@@ -263,8 +263,8 @@ module UTILS_CBH
       ! Compute the offset to the location of the starting date for the model
       ! NOTE: In PRMS this should be a zero-based offset so it can be used in
       !       conjunction with the timestep which starts at 1.
-      idx_offset = compute_julday(start_time(1), start_time(2), start_time(3)) - &
-                   compute_julday(base_dt(1), base_dt(2), base_dt(3))
+      idx_offset = gregorian_to_julian(start_time(1), start_time(2), start_time(3)) - &
+                   gregorian_to_julian(base_dt(1), base_dt(2), base_dt(3))
 
       if (idx_offset < 0) then
         write(output_unit, *) 'ERROR: start time occurs before first available date in file'
@@ -283,7 +283,7 @@ module UTILS_CBH
 
     subroutine read_netcdf_cbh_file(iunit, varid, idx_offset, timestep, nhru, thedata)
       use netcdf
-      use PRMS_SET_TIME, only: compute_julday
+      use PRMS_SET_TIME, only: gregorian_to_julian
       implicit none
 
       integer(i32), intent(in) :: iunit

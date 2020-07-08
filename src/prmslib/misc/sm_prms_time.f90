@@ -57,8 +57,8 @@ contains
       !       causing a dependency to the Basin object.
       ! this%Cfs2inches = basin_area_inv * 12.0_dp * this%Timestep_seconds / FT2_PER_ACRE
 
-      this%start_jdn = compute_julday(model_start(YEAR), model_start(MONTH), model_start(DAY))
-      this%end_jdn = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
+      this%start_jdn = gregorian_to_julian(model_start(YEAR), model_start(MONTH), model_start(DAY))
+      this%end_jdn = gregorian_to_julian(model_end(YEAR), model_end(MONTH), model_end(DAY))
       this%days_in_model = this%end_jdn - this%start_jdn + 1
 
       this%months_in_model = (model_end(YEAR) - model_start(YEAR) - 1) * 12 + &
@@ -69,7 +69,7 @@ contains
         this%years_in_model = this%years_in_model + 1
       end if
 
-      endday = compute_julday(model_end(YEAR), model_end(MONTH), model_end(DAY))
+      endday = gregorian_to_julian(model_end(YEAR), model_end(MONTH), model_end(DAY))
       this%days_since_start = 0
 
       write(this%start_string, 9001) model_start(YEAR), model_start(MONTH), model_start(DAY)
@@ -105,7 +105,6 @@ contains
         call ctl_data%add_time_dimension(dim_name='time', dim_size=1, dim_var_name='time', &
                                          units=days_since, calendar='standard')
       end if
-
     end associate
   end function
 
@@ -166,13 +165,13 @@ contains
     call this%update_summer_flag()
 
     this%Julian_day_absolute = this%Julian_day_absolute + 1
-    this%days_since_start = this%compute_julday(this%Nowtime(1), this%Nowtime(2), this%Nowtime(3)) - this%start_jdn
+    this%days_since_start = this%gregorian_to_julian(this%Nowtime(YEAR), this%Nowtime(MONTH), this%Nowtime(DAY)) - this%start_jdn
 
-    this%Nowyear = this%Nowtime(1)
-    this%Nowmonth = this%Nowtime(2)
-    this%Nowday = this%Nowtime(3)
-    this%Nowhour = this%Nowtime(4)
-    this%Nowminute = this%Nowtime(5)
+    this%Nowyear = this%Nowtime(YEAR)
+    this%Nowmonth = this%Nowtime(MONTH)
+    this%Nowday = this%Nowtime(DAY)
+    this%Nowhour = this%Nowtime(HOUR)
+    this%Nowminute = this%Nowtime(MINUTE)
 
     ! NOTE: This stuff shouldn't change once it's initialized
     ! this%Timestep_hours = SNGL(TIMESTEP_DELTA)
@@ -322,17 +321,17 @@ contains
     endif
 
     ! set actual Julian Day
-    absolute_julday = compute_julday(yr, mo, dy)
+    absolute_julday = gregorian_to_julian(yr, mo, dy)
 
     ! relative_julday = 0
 
     ! 2018-01-18 PAN: this conditional isn't needed
     ! if (Year_type == 'calendar') then
-    !     relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
+    !     relative_julday = gregorian_to_julian(reftime_year, reftime_month, reftime_day)
     ! else
-    !     relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
+    !     relative_julday = gregorian_to_julian(reftime_year, reftime_month, reftime_day)
     ! endif
-    relative_julday = compute_julday(reftime_year, reftime_month, reftime_day)
+    relative_julday = gregorian_to_julian(reftime_year, reftime_month, reftime_day)
 
     res = absolute_julday - relative_julday
   end function
@@ -469,10 +468,10 @@ contains
 
 
   !***********************************************************************
-  ! compute_julday
+  ! gregorian_to_julian
   ! computes the Julian Day given a Gregorian calendar date
   !***********************************************************************
-  pure module function compute_julday(year, month, day) result(julian_day)
+  pure module function gregorian_to_julian(year, month, day) result(julian_day)
     implicit none
 
     ! Arguments

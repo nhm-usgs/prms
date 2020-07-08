@@ -236,14 +236,14 @@ contains
 
   pure module function yr_mo_eq_dy_le(lh_date, rh_date) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
-    use PRMS_SET_TIME, only: compute_julday
+    use PRMS_SET_TIME, only: gregorian_to_julian
     implicit none
 
     logical :: res
     integer(i32), intent(in) :: lh_date(3)
     integer(i32), intent(in) :: rh_date(3)
 
-    res = (compute_julday(lh_date(YEAR), lh_date(MONTH), lh_date(DAY)) <= compute_julday(rh_date(YEAR), rh_date(MONTH), rh_date(DAY)))
+    res = (gregorian_to_julian(lh_date(YEAR), lh_date(MONTH), lh_date(DAY)) <= gregorian_to_julian(rh_date(YEAR), rh_date(MONTH), rh_date(DAY)))
   end function
 
 
@@ -347,7 +347,7 @@ contains
 
   module function get_first_time(iunit, datetime) result(res)
     use prms_constants, only: YEAR, MONTH, DAY
-    use PRMS_SET_TIME, only: compute_julday
+    use PRMS_SET_TIME, only: gregorian_to_julian
     implicit none
 
     ! Argument
@@ -376,8 +376,8 @@ contains
       return
     end if
 
-    julday_file = compute_julday(yr, mo, dy)
-    julday_model = compute_julday(datetime(YEAR), datetime(MONTH), datetime(DAY))
+    julday_file = gregorian_to_julian(yr, mo, dy)
+    julday_model = gregorian_to_julian(datetime(YEAR), datetime(MONTH), datetime(DAY))
 
     if (julday_file < julday_model) then
       found = .false.
@@ -389,7 +389,7 @@ contains
           return
         end if
 
-        julday_file = compute_julday(yr, mo, dy)
+        julday_file = gregorian_to_julian(yr, mo, dy)
         if (julday_file >= julday_model) then
           found = .true.
         end if

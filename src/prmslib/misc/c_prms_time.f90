@@ -9,7 +9,7 @@ module PRMS_SET_TIME
   implicit none
 
   private
-  public :: Time_t, compute_julday, julian_to_gregorian, leap_day
+  public :: Time_t, gregorian_to_julian, julian_to_gregorian, leap_day
 
   character(len=*), parameter :: MODDESC = 'Time_t variables'
   character(len=*), parameter :: MODNAME = 'prms_time'
@@ -69,7 +69,7 @@ module PRMS_SET_TIME
       procedure, public :: print_date
       procedure, public :: set_hemisphere
 
-      procedure, nopass, public :: compute_julday
+      procedure, nopass, public :: gregorian_to_julian
       procedure, nopass, public :: julian_to_gregorian
       procedure, nopass, public :: leap_day
 
@@ -165,7 +165,7 @@ module PRMS_SET_TIME
   end interface
 
   interface
-    pure module function compute_julday(year, month, day) result(julian_day)
+    pure module function gregorian_to_julian(year, month, day) result(julian_day)
       integer(i32) :: julian_day
       integer(i32), intent(in) :: year
       integer(i32), intent(in) :: month
