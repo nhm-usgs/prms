@@ -224,6 +224,12 @@ contains
         this%hemisphere = SOUTHERN
       endif
 
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! Restart variables
+
+      ! TODO: When starting from a restart file check that nhru and nseg from the
+      !       restart file match what's read from the parameter file
+
       if (save_vars_to_file == 1) then
         call ctl_data%add_dimension(dim_name='nhru', dim_size=this%nhru, &
                                     dim_var_name='nhm_id', dim_var_longname='NHM ID', &
