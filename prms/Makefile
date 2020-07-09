@@ -1,7 +1,7 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= ../$(BINDIR)/prms
+TARGET 	= ./prms
 
 ####################################################
 # Rules for targets
@@ -65,7 +65,7 @@ OBJS = \
         write_climate_hru.o \
         prms_summary.o \
         basin_sum.o \
-        utils_prms.o
+        utils_prms_linux.o
 
 $(TARGET): $(OBJS)
 	$(RM) $(TARGET)
@@ -103,8 +103,8 @@ snowcomp.o: snowcomp.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_c
 gwflow.o: gwflow.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_intcp.mod prms_srunoff.mod prms_soilzone.mod prms_cascade.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) gwflow.f90
 
-utils_prms.o: utils_prms.f90 prms_module.mod prms_basin.mod prms_set_time.mod
-	$(FC) -c $(FFLAGS) utils_prms.f90
+utils_prms_linux.o: utils_prms_linux.f90 prms_module.mod prms_basin.mod prms_set_time.mod
+	$(FC) -c $(FFLAGS) utils_prms_linux.f90
 
 prms_summary.o: prms_summary.f90 prms_module.mod prms_climatevars.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_gwflow.mod
 	$(FC) -c $(FFLAGS) prms_summary.f90
