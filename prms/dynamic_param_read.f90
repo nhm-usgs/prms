@@ -5,6 +5,7 @@
 ! period. Associated states with each parameter are adjusted.
 !***********************************************************************
       MODULE PRMS_DYNAMIC_PARAM_READ
+        USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
         IMPLICIT NONE
         ! Local Variables
         !CHARACTER(LEN=18), SAVE :: MODNAME
@@ -34,6 +35,13 @@
         INTEGER, SAVE :: Snarea_thresh_unit, Snarea_thresh_next_yr, Snarea_thresh_next_mo, Snarea_thresh_next_day
         INTEGER, SAVE, ALLOCATABLE :: Itemp(:), Updated_hrus(:)
         REAL, SAVE, ALLOCATABLE :: Temp(:), Temp3(:), Potet_coef(:, :), Soil_rechr_max_frac(:)
+! Control Parameters
+        CHARACTER(LEN=MAXFILE_LENGTH) :: imperv_frac_dynamic, imperv_stor_dynamic, dprst_depth_dynamic, dprst_frac_dynamic
+        CHARACTER(LEN=MAXFILE_LENGTH) :: wrain_intcp_dynamic, srain_intcp_dynamic, snow_intcp_dynamic, covtype_dynamic
+        CHARACTER(LEN=MAXFILE_LENGTH) :: potetcoef_dynamic, transpbeg_dynamic, transpend_dynamic
+        CHARACTER(LEN=MAXFILE_LENGTH) :: soilmoist_dynamic, soilrechr_dynamic, radtrncf_dynamic, dynamic_param_log_file
+        CHARACTER(LEN=MAXFILE_LENGTH) :: fallfrost_dynamic, springfrost_dynamic, transp_on_dynamic, snareathresh_dynamic
+        CHARACTER(LEN=MAXFILE_LENGTH) :: covden_sum_dynamic, covden_win_dynamic, sro2dprst_perv_dyn, sro2dprst_imperv_dyn
       END MODULE PRMS_DYNAMIC_PARAM_READ
 
 !***********************************************************************
@@ -54,7 +62,7 @@
       IF ( Process(:3)=='run' ) THEN
         dynamic_param_read = dynparamrun()
       ELSEIF ( Process(:4)=='decl' ) THEN
-        Version_dynamic_param_read = 'dynamic_param_read.f90 2019-05-30 13:50:00Z'
+        Version_dynamic_param_read = 'dynamic_param_read.f90 2020-04-27 08:47:00Z'
         CALL print_module(Version_dynamic_param_read, 'Time Series Data            ', 90)
         !MODNAME = 'dynamic_param_read'
       ELSEIF ( Process(:4)=='init' ) THEN
@@ -71,20 +79,13 @@
       USE PRMS_MODULE, ONLY: Nhru, Starttime, Dyn_imperv_flag, Dyn_dprst_flag, Dyn_intcp_flag, Dyn_covden_flag, &
      &    Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_soil_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
      &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dprst_flag, Dyn_fallfrost_flag, &
-     &    Dyn_springfrost_flag, Dyn_snareathresh_flag, MAXFILE_LENGTH, Print_debug, PRMS4_flag
+     &    Dyn_springfrost_flag, Dyn_snareathresh_flag, Print_debug, PRMS4_flag
       IMPLICIT NONE
-      INTEGER, EXTERNAL :: control_string, get_ftnunit
-      EXTERNAL read_error, find_header_end, find_current_file_time
+      INTEGER, EXTERNAL :: control_string, numchars
+      EXTERNAL read_error, find_header_end, find_current_file_time, PRMS_open_output_file, error_stop
       INTRINSIC ABS
 ! Local Variables
       INTEGER :: year, month, day, istop, ierr
-! Control Parameters
-      CHARACTER(LEN=MAXFILE_LENGTH) :: imperv_frac_dynamic, imperv_stor_dynamic, dprst_depth_dynamic, dprst_frac_dynamic
-      CHARACTER(LEN=MAXFILE_LENGTH) :: wrain_intcp_dynamic, srain_intcp_dynamic, snow_intcp_dynamic, covtype_dynamic
-      CHARACTER(LEN=MAXFILE_LENGTH) :: potetcoef_dynamic, transpbeg_dynamic, transpend_dynamic
-      CHARACTER(LEN=MAXFILE_LENGTH) :: soilmoist_dynamic, soilrechr_dynamic, radtrncf_dynamic
-      CHARACTER(LEN=MAXFILE_LENGTH) :: fallfrost_dynamic, springfrost_dynamic, transp_on_dynamic, snareathresh_dynamic
-      CHARACTER(LEN=MAXFILE_LENGTH) :: covden_sum_dynamic, covden_win_dynamic, sro2dprst_perv_dyn, sro2dprst_imperv_dyn
 !***********************************************************************
       dynparaminit = 0
 
@@ -378,13 +379,14 @@
         ENDIF
       ENDIF
 
-      IF ( istop==1 ) STOP 'ERROR in dynamic_param_read initialize procedure'
-
       IF ( Print_debug>-2 ) THEN
-        Output_unit = get_ftnunit(520)
-        OPEN ( Output_unit, FILE='dynamic_parameter.out' )
-        PRINT '(/,A,//)', 'A summary of dynamic parameter events are written to file: dynamic_parameter.out'
+        IF ( control_string(dynamic_param_log_file, 'dynamic_param_log_file')/=0 ) CALL read_error(5, 'dynamic_param_log_file')
+        CALL PRMS_open_output_file(Output_unit, dynamic_param_log_file, 'dynamic_param_log_file', 0, ierr)
+        PRINT '(/,A,/,A)', 'A summary of dynamic parameter events are written to file:', &
+     &                     dynamic_param_log_file(:numchars(dynamic_param_log_file))
       ENDIF
+
+      IF ( istop==1 .OR. ierr/=0 ) CALL error_stop('in dynamic_param_read initialize procedure')
 
       END FUNCTION dynparaminit
 
@@ -426,12 +428,14 @@
       EXTERNAL write_dynoutput, is_eof, write_dynparam, write_dynparam_int
       EXTERNAL write_dynparam_potet
 ! Local Variables
-      INTEGER :: i, istop, check_dprst_depth_flag
+      INTEGER :: i, istop, check_dprst_depth_flag, check_sm_max_flag, check_srechr_max_flag
       REAL :: harea, frac_imperv, tmp, hruperv, dprstfrac, soil_adj
       CHARACTER(LEN=30), PARAMETER :: fmt1 = '(A, I0, ":", I5, 2("/",I2.2))'
 !***********************************************************************
       dynparamrun = 0
       istop = 0
+      check_srechr_max_flag = 0
+      check_sm_max_flag = 0
 
       IF ( Imperv_frac_flag==1 .OR. Dprst_frac_flag==1 .OR. Dprst_depth_flag==1 ) THEN
         Check_imperv = 0
@@ -477,6 +481,7 @@
 
         IF ( Check_imperv==1 .OR. Check_dprst_frac==1 .OR. check_dprst_depth_flag==1 ) THEN
           Basin_soil_moist = 0.0D0
+          Basin_soil_rechr = 0.0D0
           DO i = 1, Nhru
             IF ( Hru_type(i)==2 .OR. Hru_type(i)==0 ) CYCLE ! skip lake and inactive HRUs
             harea = Hru_area(i)
@@ -582,6 +587,7 @@
             ENDIF
             Basin_soil_moist = Basin_soil_moist + DBLE( Soil_moist(i)*Hru_perv(i) )
             Basin_soil_rechr = Basin_soil_rechr + DBLE( Soil_rechr(i)*Hru_perv(i) )
+            Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*Hru_frac_perv(i)
           ENDDO
           Basin_soil_moist = Basin_soil_moist*Basin_area_inv
           Basin_soil_rechr = Basin_soil_rechr*Basin_area_inv
@@ -668,33 +674,34 @@
               CALL write_dynparam(Output_unit, Nhru, Updated_hrus, Temp, Potet_coef(1,Nowmonth), 'potet_coef')
             ENDIF
             CALL is_eof(Potetcoef_unit, Potetcoef_next_yr, Potetcoef_next_mo, Potetcoef_next_day)
-          ENDIF
-          IF ( Et_flag==1 ) THEN ! potet_jh
-            IF ( Dyn_potet_flag==1 ) THEN
-              Jh_coef = Potet_coef
-            ELSE
-              DO i = 1, Nhru
-                Jh_coef_hru(i) = Potet_coef(i,Nowmonth)
-              ENDDO
+
+            IF ( Et_flag==1 ) THEN ! potet_jh
+              IF ( Dyn_potet_flag==1 ) THEN
+                Jh_coef = Potet_coef
+              ELSE
+                DO i = 1, Nhru
+                  Jh_coef_hru(i) = Potet_coef(i,Nowmonth)
+                ENDDO
+              ENDIF
+            ELSEIF ( Et_flag==7 ) THEN ! climate_hru
+              Potet_cbh_adj = Potet_coef
+            ELSEIF ( Et_flag==11 ) THEN ! potet_pm
+              IF ( Dyn_potet_flag==1 ) THEN
+                Pm_n_coef = Potet_coef
+              ELSE
+                Pm_d_coef = Potet_coef
+              ENDIF
+            ELSEIF ( Et_flag==5 ) THEN ! potet_pt
+              Pt_alpha = Potet_coef
+            ELSEIF ( Et_flag==10 ) THEN ! potet_hs
+              Hs_krs = Potet_coef
+            ELSEIF ( Et_flag==2 ) THEN ! potet_hamon
+              Hamon_coef = Potet_coef
+            !ELSEIF ( Et_flag==6 ) THEN ! potet_jh_hru
+              !Jh_coef_hru2 = Potet_coef
+            ELSEIF ( Et_flag==4 ) THEN ! potet_pan
+              Epan_coef = Potet_coef
             ENDIF
-          ELSEIF ( Et_flag==7 ) THEN ! climate_hru
-            Potet_cbh_adj = Potet_coef
-          ELSEIF ( Et_flag==11 ) THEN ! potet_pm
-            IF ( Dyn_potet_flag==1 ) THEN
-              Pm_n_coef = Potet_coef
-            ELSE
-              Pm_d_coef = Potet_coef
-            ENDIF
-          ELSEIF ( Et_flag==5 ) THEN ! potet_pt
-            Pt_alpha = Potet_coef
-          ELSEIF ( Et_flag==10 ) THEN ! potet_hs
-            Hs_krs = Potet_coef
-          ELSEIF ( Et_flag==2 ) THEN ! potet_hamon
-            Hamon_coef = Potet_coef
-          !ELSEIF ( Et_flag==6 ) THEN ! potet_jh_hru
-            !Jh_coef_hru2 = Potet_coef
-          ELSEIF ( Et_flag==4 ) THEN ! potet_pan
-            Epan_coef = Potet_coef
           ENDIF
         ENDIF
       ENDIF
@@ -750,6 +757,7 @@
               CALL write_dynparam(Output_unit, Nhru, Updated_hrus, Temp, Soil_rechr_max_frac, 'soil_rechr_max_frac')
             ENDIF
             CALL is_eof(Soil_rechr_unit, Soil_rechr_next_yr, Soil_rechr_next_mo, Soil_rechr_next_day)
+            check_srechr_max_flag = 1
           ENDIF
         ENDIF
       ENDIF
@@ -761,11 +769,14 @@
             READ ( Soil_moist_unit, * ) Soil_moist_next_yr, Soil_moist_next_mo, Soil_moist_next_day, Temp
             CALL write_dynparam(Output_unit, Nhru, Updated_hrus, Temp, Soil_moist_max, 'soil_moist_max')
             CALL is_eof(Soil_moist_unit, Soil_moist_next_yr, Soil_moist_next_mo, Soil_moist_next_day)
+            check_sm_max_flag = 1
           ENDIF
         ENDIF
       ENDIF
 
-      IF ( Soilmoist_flag==1 .OR. Soilrechr_flag==1 ) THEN
+      IF ( check_sm_max_flag==1 .OR. check_srechr_max_flag==1 ) THEN
+        Basin_soil_moist = 0.0D0
+        Basin_soil_rechr = 0.0D0
         DO i = 1, Nhru
           IF ( Hru_type(i)==2 .OR. Hru_type(i)==0 ) CYCLE ! skip lake and inactive HRUs
 
@@ -789,7 +800,11 @@
           Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*Hru_frac_perv(i)
           Soil_lower_stor_max(i) = Soil_moist_max(i) - Soil_rechr_max(i)
           Replenish_frac(i) = Soil_rechr_max(i)/Soil_moist_max(i)
+          Basin_soil_moist = Basin_soil_moist + DBLE( Soil_moist(i)*Hru_perv(i) )
+          Basin_soil_rechr = Basin_soil_rechr + DBLE( Soil_rechr(i)*Hru_perv(i) )
         ENDDO
+        Basin_soil_moist = Basin_soil_moist*Basin_area_inv
+        Basin_soil_rechr = Basin_soil_rechr*Basin_area_inv
       ENDIF
 
       IF ( Dyn_radtrncf_flag==1 ) THEN
@@ -842,7 +857,7 @@
         ENDIF
       ENDIF
 
-      IF ( istop==1 ) STOP
+      IF ( istop==1 ) ERROR STOP
 
  9001 FORMAT (/, 'ERROR, dynamic parameter', A, ' <', F0.7, ' for HRU:', I0, /, 9X, 'value:', F0.7) !, ' set to', F0.7)
  9002 FORMAT (/, 'ERROR, dynamic parameter causes soil_rechr_max:', F0.7, ' > soil_moist_max:', F0.7, ' for HRU:', I0)

@@ -1,3 +1,5 @@
+! need to add lake shape and changing area in same manner as depression storage
+
 !***********************************************************************
 ! Routes water between segments and lakes in the stream network;
 ! using Muskingum routing for stream segments and 5 lake routing methods
@@ -7,7 +9,7 @@
 ! problem
 !
 ! nlake_hrus set to nlake for version 5.0.0, nlake_hrus to be added in 5.0.1
-! in future this module may be used for muskingum only, so would need to 
+! in future this module may be used for muskingum only, so would need to
 ! check lake_route_flag = 1 in a bunch of places
 !
 !   The Muskingum equation is described in 'Hydrology for Engineers', 3rd ed.
@@ -110,7 +112,6 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_precip(:), Lake_sroff(:), Lake_interflow(:), Lake_outvol_ts(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_seep_in(:), Lake_evap(:), Lake_2gw(:), Lake_outq2(:)
 !   Declared Parameters
-      REAL, SAVE, ALLOCATABLE :: Segment_flow_init(:)
       ! lake_segment_id only required if cascades are active, otherwise use hru_segment
       INTEGER, SAVE, ALLOCATABLE :: Obsout_lake(:), Lake_out2(:), Nsos(:), Ratetbl_lake(:), Lake_segment_id(:)
       REAL, SAVE, ALLOCATABLE :: Lake_qro(:), Lake_coef(:), Elev_outflow(:), Weir_coef(:), Weir_len(:)
@@ -204,13 +205,13 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_muskingum_lake
 !***********************************************************************
       muskingum_lake_decl = 0
 
-      Version_muskingum_lake = 'muskingum_lake.f90 2018-04-25 17:00:00Z'
+      Version_muskingum_lake = 'muskingum_lake.f90 2020-04-27 19:00:00Z'
       CALL print_module(Version_muskingum_lake, 'Streamflow Routing          ', 90)
       MODNAME = 'muskingum_lake'
 
@@ -233,9 +234,8 @@
       Nstage4 = 0
       IF ( Model==99 ) Nratetbl = 4
       IF ( Nratetbl>4 ) THEN
-        PRINT *, 'ERROR, lake routing allows maximum of 4 rating tables'
-        PRINT *, 'nratetbl specified as:', Nratetbl
-        STOP
+        PRINT *, 'dimension nratetbl specified as:', Nratetbl
+        CALL error_stop('lake routing allows a maximum of 4 rating tables')
       ENDIF
       IF ( Nratetbl>0 ) THEN
         Ngate = getdim('ngate')
@@ -270,31 +270,22 @@
           IF ( Nstage4==0 ) Nstage4 = 1
           IF ( Ngate4==0 ) Ngate4 = 1
         ELSE
-          IF ( Nstage<1 .OR. Ngate<1 ) STOP 'ERROR, nratetbl>0 and nstage or ngate = 0'
+          IF ( Nstage<1 .OR. Ngate<1 ) CALL error_stop('nratetbl>0 and nstage or ngate = 0')
         ENDIF
         IF ( Nratetbl>1 ) THEN
-          IF ( Nstage2<1.OR.Ngate2<1 ) STOP 'ERROR, nratetbl>1 and nstage2 or ngate2 = 0'
+          IF ( Nstage2<1.OR.Ngate2<1 ) CALL error_stop('nratetbl>1 and nstage2 or ngate2 = 0')
         ENDIF
         IF ( Nratetbl>2 ) THEN
-          IF ( Nstage3<1 .OR. Ngate3<1 ) STOP 'ERROR, nratetbl>2 and nstage3 or ngate3 = 0'
+          IF ( Nstage3<1 .OR. Ngate3<1 ) CALL error_stop('nratetbl>2 and nstage3 or ngate3 = 0')
         ENDIF
         IF ( Nratetbl>3 ) THEN
-          IF ( Nstage4<1 .OR. Ngate4<1 ) STOP 'ERROR, nratetbl>3 and nstage4 or ngate4 = 0'
+          IF ( Nstage4<1 .OR. Ngate4<1 )  CALL error_stop('nratetbl>3 and nstage4 or ngate4 = 0')
         ENDIF
       ENDIF
 
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
-
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
-        ALLOCATE ( Segment_flow_init(Nsegment) )
-        IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
-     &       '0.0', '0.0', '1.0E7', &
-     &       'Initial flow in each stream segment', &
-     &       'Initial flow in each stream segment', &
-     &       'cfs')/=0 ) CALL read_error(1, 'segment_flow_init')
-      ENDIF
 
       ! Lake declared variables
       ALLOCATE ( Lake_inflow(Nlake) )
@@ -633,7 +624,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC ABS, NINT, DBLE, DABS
-      EXTERNAL :: read_error
+      EXTERNAL :: read_error, error_stop
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: i, ierr, j, jj, kk, ii, jjj
@@ -641,14 +632,6 @@
 !***********************************************************************
       muskingum_lake_init = 0
 
-      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
-        IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
-     &       CALL read_error(2,'segment_flow_init')
-        DO i = 1, Nsegment
-          Seg_outflow(i) = Segment_flow_init(i)
-        ENDDO
-        DEALLOCATE ( Segment_flow_init )
-      ENDIF
       IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
@@ -736,7 +719,7 @@
 
       Secondoutflow_flag = 0
       IF ( Gate_flag==1 ) THEN
-        IF ( Nratetbl<1 ) STOP 'ERROR, nratetbl = 0 and gate opening routing requested'
+        IF ( Nratetbl<1 ) CALL error_stop('nratetbl = 0 and gate opening routing requested')
         IF ( getparam(MODNAME, 'rate_table', Nstage*Ngate, 'real', Rate_table)/=0 ) CALL read_error(2, 'rate_table')
         IF ( getparam(MODNAME, 'tbl_stage', Nstage, 'real', Tbl_stage)/=0 ) CALL read_error(2, 'tbl_stage')
         IF ( getparam(MODNAME, 'tbl_gate', Ngate, 'real', Tbl_gate)/=0 ) CALL read_error(2, 'tbl_gate')
@@ -794,7 +777,7 @@
       ENDIF
 
       IF ( Puls_flag==1 ) THEN
-        IF ( Mxnsos==0 ) STOP 'ERROR, dimension mxnsos = 0 and Puls routing requested'
+        IF ( Mxnsos==0 ) CALL error_stop('dimension mxnsos = 0 and Puls routing requested')
         IF ( getparam(MODNAME, 'o2', Mxnsos*Nlake, 'real', O2)/=0 ) CALL read_error(2, 'o2')
         IF ( getparam(MODNAME, 's2', Mxnsos*Nlake, 'real', S2)/=0 ) CALL read_error(2, 's2')
         IF ( getparam(MODNAME, 'nsos', Nlake, 'integer', Nsos)/=0 ) CALL read_error(2, 'nsos')
@@ -913,7 +896,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC MOD, DBLE
-      EXTERNAL route_lake
+      EXTERNAL route_lake, error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj
       DOUBLE PRECISION :: area_fac, segout, currin, tocfs, lake_in_ts
@@ -1063,7 +1046,7 @@
               PRINT *, 'ERROR, outflow from segment:', iorder, ' is negative:', Outflow_ts(iorder)
               PRINT *, '       routing parameters may be invalid'
             ENDIF
-            STOP
+            CALL error_stop('in muskingum_lake')
           ENDIF
 
           IF ( Segment_type(iorder)/=2 ) THEN
@@ -1211,7 +1194,7 @@
         lake_storage = s2o2 - q2*0.5D0
         Lake_sto(Lakeid) = lake_storage
 
-!   Compute outflow using linear reservoir method
+!   Compute outflow using linear reservoir method, ?? need to fix for hourly loop
       ELSEIF ( Laketype==2 ) THEN
         !rsr, why half of current in and last in???
         avin = (Lake_inflow(Lakeid)+Din1(Lakeid)-Lake_outflow(Lakeid))*0.5D0
@@ -1342,7 +1325,7 @@
       ENDIF
       IF ( lake_storage<0.0D0 ) THEN
         PRINT *, 'ERROR: lake storage < 0 lake:', Lakeid, '; storage:', lake_storage
-        STOP
+        CALL error_stop('in muskingum_lake')
       ENDIF
 
       Lake_outcfs(Lakeid) = q2

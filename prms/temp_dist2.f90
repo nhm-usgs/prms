@@ -72,20 +72,17 @@
 ! Functions
       INTRINSIC INDEX
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_temp
 !***********************************************************************
       t2dist2decl = 0
 
-      Version_temp = 'temp_dist2.f90 2017-09-27 14:04:00Z'
+      Version_temp = 'temp_dist2.f90 2020-04-28 14:04:00Z'
       CALL print_module(Version_temp, 'Temperature Distribution    ', 90)
       MODNAME = 'temp_dist2'
 
-      IF ( Ntemp<2 .AND. Model/=99 ) THEN
-        PRINT *, 'ERROR, temp_dist2 requires at least 2 air-temperature-measurement stations'
-        STOP
-      ENDIF
+      IF ( Ntemp<2 .AND. Model/=99 ) CALL error_stop('temp_dist2 requires at least 2 air-temperature-measurement stations')
 
 ! added by Mastin 5/8/98
       ALLOCATE ( Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp), N_tsta(Nhru) )
@@ -328,7 +325,7 @@
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: temp_set, print_date
+      EXTERNAL :: temp_set, print_date, error_stop
       INTRINSIC FLOAT, DBLE, SNGL
 ! Local Variables
       INTEGER :: j, k, ntotx, ntotn, jj, kk, allmissing
@@ -361,7 +358,7 @@
       DO j = 1, Ntemp - 1
 
 ! check for missing or bad temps based on min and max daily values
-! observed for each month. 
+! observed for each month.
 
 ! the value of  -9999 = missing in HDB, and rdb
 
@@ -391,9 +388,8 @@
         ENDDO
       ENDDO
       IF ( allmissing==0 ) THEN
-        PRINT *,'ERROR, all temperature stations have missing data'
         CALL print_date(1)
-        STOP
+        CALL error_stop('all temperature stations have missing data')
       ENDIF
 
       IF ( ntotx>0 ) THEN

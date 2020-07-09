@@ -3,11 +3,11 @@
 # $Id: makelist 8328 2016-06-13 20:36:12Z rsregan $
 #-------------------------------------------------------------------
 
-#MMFDIR      = ./mmf
-#LIBDIR      = ../../lib
-#PRMSDIR    = ./prms
-#BINDIR      = ../../bin
-#MMFLIB      = $(LIBDIR)/libmmf.a
+MMFDIR      = ./mmf
+LIBDIR      = ./
+PRMSDIR    = ./prms
+#BINDIR      = ./bin
+MMFLIB      = ../mmf/libmmf.a
 
 #########################################################
 # Configure tags for each system
@@ -37,7 +37,8 @@ CC		= gcc
 # Define the libraries
 ##########################################################
 MATHLIB		= -lm
-GCLIB		= -lgfortran -lgcc $(MATHLIB)
+#GCLIB		= -lgfortran -lgcc $(MATHLIB)
+GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran
 FLIBS    = $(GCLIB)
 
 ##########################################################

@@ -83,7 +83,7 @@
 !***********************************************************************
       INTEGER FUNCTION srunoffdecl()
       USE PRMS_SRUNOFF
-      USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru, Nsegment, Print_debug, &
+      USE PRMS_MODULE, ONLY: Model, Dprst_flag, Nhru, Nsegment, Print_debug, DOCUMENTATION, &
      &    Cascade_flag, Sroff_flag, Nlake, Init_vars_from_file, Call_cascade, PRMS4_flag
       IMPLICIT NONE
 ! Functions
@@ -94,7 +94,7 @@
 !***********************************************************************
       srunoffdecl = 0
 
-      Version_srunoff = 'srunoff.f90 2019-05-24 14:50:00Z'
+      Version_srunoff = 'srunoff.f90 2020-03-03 12:11:00Z'
       IF ( Sroff_flag==1 ) THEN
         MODNAME = 'srunoff_smidx'
       ELSE
@@ -166,7 +166,7 @@
      &     'inches', Hru_sroffi)/=0 ) CALL read_error(3, 'hru_sroffi')
 
 ! Depression storage variables
-      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
+      IF ( Dprst_flag==1 .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'basin_dprst_sroff', 'one', 1, 'double', &
      &       'Basin area-weighted average surface runoff from open surface-depression storage', &
      &       'inches', Basin_dprst_sroff)/=0 ) CALL read_error(3, 'basin_dprst_sroff')
@@ -246,7 +246,7 @@
      &     'inches', Hortonian_flow)/=0 ) CALL read_error(3, 'hortonian_flow')
 
 ! cascading variables and parameters
-      IF ( Cascade_flag>0 .OR. Model==99 ) THEN
+      IF ( Cascade_flag>0 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Upslope_hortonian(Nhru) )
         IF ( declvar(MODNAME, 'upslope_hortonian', 'nhru', Nhru, 'double', &
      &       'Hortonian surface runoff received from upslope HRUs', &
@@ -277,7 +277,7 @@
         ENDIF
       ENDIF
 
-      IF ( Call_cascade==1 .OR. Model==99 ) THEN
+      IF ( Call_cascade==1 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Strm_seg_in(Nsegment) )
         IF ( declvar(MODNAME, 'strm_seg_in', 'nsegment', Nsegment, 'double', &
      &       'Flow in stream segments as a result of cascading flow in each stream segment', &
@@ -285,7 +285,7 @@
       ENDIF
 
 ! Declare parameters
-      IF ( Sroff_flag==1 .OR. Model==99 ) THEN
+      IF ( Sroff_flag==1 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Smidx_coef(Nhru) )
         IF ( declparam(MODNAME, 'smidx_coef', 'nhru', 'real', &
      &       '0.005', '0.0', '1.0', &
@@ -300,7 +300,7 @@
      &       '1.0/inch')/=0 ) CALL read_error(1, 'smidx_exp')
       ENDIF
 
-      IF ( Sroff_flag==2 .OR. Model==99 ) THEN
+      IF ( Sroff_flag==2 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Carea_min(Nhru), Carea_dif(Nhru) )
         IF ( declparam(MODNAME, 'carea_min', 'nhru', 'real', &
      &       '0.2', '0.0', '1.0', &
@@ -317,7 +317,7 @@
      &     'decimal fraction')/=0 ) CALL read_error(1, 'carea_max')
 
 ! Depression Storage parameters:
-      IF ( Dprst_flag==1 .OR. Model==99 ) THEN
+      IF ( Dprst_flag==1 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Dprst_depth_avg(Nhru) )
         IF ( declparam(MODNAME, 'dprst_depth_avg', 'nhru', 'real', &
      &       '132.0', '0.0', '500.0', &
@@ -358,7 +358,7 @@
      &       'decimal fraction')/=0 ) CALL read_error(1, 'op_flow_thres')
 
         ALLOCATE ( Sro_to_dprst_perv(Nhru) )
-        IF ( PRMS4_flag==1 ) THEN
+        IF ( PRMS4_flag==1 .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'sro_to_dprst', 'nhru', 'real', &
      &         '0.2', '0.0', '1.0', &
      &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
@@ -366,7 +366,8 @@
      &         ' flows into surface-depression storage; the remainder'// &
      &         ' flows to a stream network for each HRU', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst')
-        ELSE
+        ENDIF
+        IF ( PRMS4_flag==0 .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'sro_to_dprst_perv', 'nhru', 'real', &
      &         '0.2', '0.0', '1.0', &
      &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
@@ -410,7 +411,7 @@
      &       'Coefficient in the exponential equation relating'// &
      &       ' maximum surface area to the fraction that open'// &
      &       ' depressions are full to compute current surface area for each HRU;'// &
-     &       ' 0.001 is an approximate rectangle; 1.0 is a triangle', &
+     &       ' 0.001 is an approximate cylinder; 1.0 is a cone', &
      &       'none')/=0 ) CALL read_error(1, 'va_open_exp')
 
         ALLOCATE ( Va_clos_exp(Nhru) )
@@ -421,7 +422,7 @@
      &       'Coefficient in the exponential equation relating'// &
      &       ' maximum surface area to the fraction that closed'// &
      &       ' depressions are full to compute current surface area for each HRU;'// &
-     &       ' 0.001 is an approximate rectangle; 1.0 is a triangle', &
+     &       ' 0.001 is an approximate cylinder; 1.0 is a cone', &
      &       'none')/=0 ) CALL read_error(1, 'va_clos_exp')
       ENDIF
 
@@ -438,7 +439,7 @@
       INTEGER FUNCTION srunoffinit()
       USE PRMS_SRUNOFF
       USE PRMS_MODULE, ONLY: Dprst_flag, Nhru, Nlake, Cascade_flag, Sroff_flag, &
-     &    Init_vars_from_file, Call_cascade, Water_use_flag !, Parameter_check_flag
+     &    Init_vars_from_file, Call_cascade, Water_use_flag, Print_debug !, Parameter_check_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
 !      USE PRMS_FLOWVARS, ONLY: Soil_moist_max
       IMPLICIT NONE
@@ -460,7 +461,6 @@
       Hru_sroffp = 0.0
       Contrib_fraction = 0.0
       Hru_impervevap = 0.0
-      Hru_impervstor = 0.0
       IF ( Call_cascade==1 ) Strm_seg_in = 0.0D0
       IF ( Cascade_flag>0 ) THEN
         Upslope_hortonian = 0.0D0
@@ -485,6 +485,7 @@
         Basin_sroff_down = 0.0D0
         Basin_hortonian_lakes = 0.0D0
         Basin_contrib_fraction = 0.0D0
+        Hru_impervstor = 0.0
         Srp = 0.0
         Sri = 0.0
       ENDIF
@@ -541,6 +542,11 @@
 
 ! Depression Storage parameters and variables:
       IF ( Dprst_flag==1 ) CALL dprst_init()
+
+      IF ( Print_debug==1 ) THEN
+        Imperv_stor_ante = Hru_impervstor
+        IF ( Dprst_flag==1 ) Dprst_stor_ante = Dprst_stor_hru
+      ENDIF
 
       END FUNCTION srunoffinit
 
@@ -631,10 +637,12 @@
         Hru_sroffp(i) = 0.0
         Contrib_fraction(i) = 0.0
         Hruarea_imperv = Hru_imperv(i)
-        Imperv_frac = Hru_percent_imperv(i)
-        Hru_sroffi(i) = 0.0
-        Imperv_evap(i) = 0.0
-        Hru_impervevap(i) = 0.0
+        IF ( Hruarea_imperv>0.0 ) THEN
+          Imperv_frac = Hru_percent_imperv(i)
+          Hru_sroffi(i) = 0.0
+          Imperv_evap(i) = 0.0
+          Hru_impervevap(i) = 0.0
+        ENDIF
 
         avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
 
@@ -655,9 +663,8 @@
           ENDIF
         ENDIF
 
-        availh2o = Intcp_changeover(i) + Net_rain(i)
-        CALL compute_infil(availh2o, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
-     &                     Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i))
+        CALL compute_infil(Net_rain(i), Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
+     &                     Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), Intcp_changeover(i))
 
         IF ( Dprst_flag==1 ) THEN
           Dprst_in(i) = 0.0D0
@@ -666,6 +673,7 @@
             dprst_chk = 1
 !           ******Compute the depression storage component
 !           only call if total depression surface area for each HRU is > 0.0
+            availh2o = Intcp_changeover(i) + Net_rain(i)
             CALL dprst_comp(Dprst_vol_clos(i), Dprst_area_clos_max(i), Dprst_area_clos(i), &
      &                      Dprst_vol_open_max(i), Dprst_vol_open(i), Dprst_area_open_max(i), Dprst_area_open(i), &
      &                      Dprst_sroff_hru(i), Dprst_seep_hru(i), Sro_to_dprst_perv(i), Sro_to_dprst_imperv(i), &
@@ -792,7 +800,7 @@
 !     Compute infiltration
 !***********************************************************************
       SUBROUTINE compute_infil(Net_rain, Net_ppt, Imperv_stor, Imperv_stor_max, Snowmelt, &
-     &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type)
+     &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type, Intcp_changeover)
       USE PRMS_SRUNOFF, ONLY: Sri, Hruarea_imperv, Upslope_hortonian, Ihru, Srp
       USE PRMS_SNOW, ONLY: Pptmix_nopack
       USE PRMS_BASIN, ONLY: NEARZERO, DNEARZERO
@@ -801,7 +809,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Hru_type
       REAL, INTENT(IN) :: Net_rain, Net_ppt, Imperv_stor_max
-      REAL, INTENT(IN) :: Snowmelt, Snowinfil_max, Net_snow
+      REAL, INTENT(IN) :: Snowmelt, Snowinfil_max, Net_snow, Intcp_changeover
       DOUBLE PRECISION, INTENT(IN) :: Pkwater_equiv
       REAL, INTENT(INOUT) :: Imperv_stor, Infil
 ! Functions
@@ -814,11 +822,18 @@
       IF ( Cascade_flag>0 ) THEN
         avail_water = SNGL( Upslope_hortonian(Ihru) )
         IF ( avail_water>0.0 ) THEN
-          Infil = avail_water
+          Infil = Infil + avail_water
           IF ( Hru_type==1 ) CALL perv_comp(avail_water, avail_water, Infil, Srp)
         ENDIF
       ELSE
         avail_water = 0.0
+      ENDIF
+
+! compute runoff from canopy changeover water
+      IF ( Intcp_changeover>0.0 ) THEN
+        avail_water = avail_water + Intcp_changeover
+        Infil = Infil + Intcp_changeover
+        IF ( Hru_type==1 ) CALL perv_comp(Intcp_changeover, Intcp_changeover, Infil, Srp)
       ENDIF
 
 !******if rain/snow event with no antecedent snowpack,
@@ -1409,6 +1424,7 @@
      &                            Sri, Srp, Basin_hortonian_lakes
         WRITE ( Restart_outunit ) Basin_dprst_sroff, Basin_dprst_evap, Basin_dprst_seep, &
      &                            Basin_dprst_volop, Basin_dprst_volcl, Basin_contrib_fraction
+        WRITE ( Restart_outunit ) Hru_impervstor
         IF ( Dprst_flag==1 ) THEN
           WRITE ( Restart_outunit ) Dprst_area_open
           WRITE ( Restart_outunit ) Dprst_area_clos
@@ -1423,6 +1439,7 @@
      &                          Sri, Srp, Basin_hortonian_lakes
         READ ( Restart_inunit ) Basin_dprst_sroff, Basin_dprst_evap, Basin_dprst_seep, &
      &                          Basin_dprst_volop, Basin_dprst_volcl, Basin_contrib_fraction
+        READ ( Restart_inunit ) Hru_impervstor
         IF ( Dprst_flag==1 ) THEN
           READ ( Restart_inunit ) Dprst_area_open
           READ ( Restart_inunit ) Dprst_area_clos

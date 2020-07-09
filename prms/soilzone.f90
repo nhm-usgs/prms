@@ -59,9 +59,10 @@
       REAL, SAVE, ALLOCATABLE :: Pref_flow_infil(:), Pref_flow_in(:)
       REAL, SAVE, ALLOCATABLE :: Hru_sz_cascadeflow(:), Swale_actet(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_max(:), Snow_free(:)
-      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:) 
+      REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:), Soil_zone_max(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
       REAL, SAVE, ALLOCATABLE :: Unused_potet(:)
+      INTEGER, SAVE, ALLOCATABLE :: Soil_saturated(:)
 !      REAL, SAVE, ALLOCATABLE :: Cascade_interflow(:), Cascade_dunnianflow(:), Interflow_max(:)
 !      REAL, SAVE, ALLOCATABLE :: Cpr_stor_frac(:), Pfr_stor_frac(:), Gvr_stor_frac(:), Soil_moist_frac(:)
 !      REAL, SAVE, ALLOCATABLE :: Soil_rechr_ratio(:), Snowevap_aet_frac(:), Perv_avail_et(:), Cap_upflow_max(:)
@@ -119,13 +120,13 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL :: read_error, print_module, PRMS_open_module_file
+      EXTERNAL :: read_error, print_module, PRMS_open_module_file, error_stop
 ! Local Variables
       CHARACTER(LEN=80), SAVE :: Version_soilzone
 !***********************************************************************
       szdecl = 0
 
-      Version_soilzone = 'soilzone.f90 2019-03-05 11:11:00Z'
+      Version_soilzone = 'soilzone.f90 2020-04-28 17:04:00Z'
       CALL print_module(Version_soilzone, 'Soil Zone Computations      ', 90 )
       MODNAME = 'soilzone'
 
@@ -446,13 +447,18 @@
      &     'Unsatisfied potential evapotranspiration', &
      &     'inches', Unused_potet)/=0 ) CALL read_error(3, 'unused_potet')
 
+      ALLOCATE ( Soil_saturated(Nhru) )
+      IF ( declvar(MODNAME, 'soil_saturated', 'nhru', Nhru, 'integer', &
+     &     'Flag set if infiltration saturates capillary reservoir (0=no, 1=yes)', &
+     &     'none', Soil_saturated)/=0 ) CALL read_error(3, 'soil_saturated')
+
 !      ALLOCATE ( Snowevap_aet_frac(Nhru) )
 !      IF ( declvar(MODNAME, 'snowevap_aet_frac', 'nhru', Nhru, 'double', &
 !     &     'Fraction of sublimation of AET for each HRU', &
 !     &     'decimal fraction', Snowevap_aet_frac)/=0 ) CALL read_error(3, 'snowevap_aet_frac')
 
       IF ( GSFLOW_flag==1 .OR. Model==99 ) THEN
-        IF ( Nhrucell<-1 ) STOP 'ERROR, dimension nhrucell not specified > 0'
+        IF ( Nhrucell<-1 ) CALL error_stop('dimension nhrucell not specified > 0')
         ALLOCATE ( Gravity_stor_res(Nhrucell) )
         IF ( declvar(MODNAME, 'gravity_stor_res', 'nhrucell', Nhrucell, 'real', &
      &       'Storage in each gravity-flow reservoir', &
@@ -511,7 +517,7 @@
       IF ( Nlake>0 ) THEN
         ALLOCATE ( Lake_evap_adj(12,Nlake) )
         IF ( declparam(MODNAME, 'lake_evap_adj', 'nmonths,nlake', &
-     &       'real', '1.0', '0.5', '1.0', &
+     &       'real', '1.0', '0.5', '1.5', &
      &       'Monthly potet factor to adjust potet on lakes', &
      &       'Monthly (January to December) adjustment factor for potential ET for each lake', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'lake_evap_adj')
@@ -602,7 +608,7 @@
       USE PRMS_SNOW, ONLY: Snowcov_area
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: init_basin_vars, checkdim_bounded_limits
+      EXTERNAL :: init_basin_vars, checkdim_bounded_limits, error_stop
       INTEGER, EXTERNAL :: getparam
       INTRINSIC MIN, DBLE
 ! Local Variables
@@ -779,6 +785,7 @@
       Potet_lower = 0.0
       Potet_rechr = 0.0
       Unused_potet = 0.0 ! dimension nhru
+      Soil_saturated = 0
 !      Interflow_max = 0.0
 !      Snowevap_aet_frac = 0.0
 
@@ -810,10 +817,8 @@
         ENDDO
         ALLOCATE ( Hru_gvr_index(Max_gvrs, Nhru) )
         IF ( Nhru==Nhrucell ) THEN
-          IF ( Max_gvrs/=1 ) THEN
-            PRINT *, 'ERROR, nhru=nhrucell, but, gvr_hru_id array specifies more than one GVR for an HRU'
-            STOP
-          ENDIF
+          IF ( Max_gvrs/=1 ) &
+     &         CALL error_stop('nhru=nhrucell, but, gvr_hru_id array specifies more than one GVR for an HRU')
           DO i = 1, Nhru
             Hru_gvr_index(1, i) = i
           ENDDO
@@ -844,8 +849,8 @@
 !***********************************************************************
       INTEGER FUNCTION szrun()
       USE PRMS_SOILZONE
-      USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, &
-     &    GSFLOW_flag, Nlake, Cascade_flag, Dprst_flag
+      USE PRMS_MODULE, ONLY: Dprst_flag, Print_debug, Kkiter, Soilzone_aet_flag, &
+     &    GSFLOW_flag, Nlake, Cascade_flag
       USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_frac_perv, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
      &    NEARZERO, Lake_hru_id, Cov_type, Numlake_hrus, Hru_area_dble
@@ -866,12 +871,12 @@
 ! Functions
       INTRINSIC MIN, ABS, MAX, SNGL, DBLE
       EXTERNAL compute_soilmoist, compute_szactet, compute_cascades, compute_gravflow
-      EXTERNAL compute_interflow, compute_gwflow, init_basin_vars, print_date
+      EXTERNAL compute_interflow, compute_gwflow, init_basin_vars, print_date, error_stop
 ! Local Variables
       INTEGER :: i, k, update_potet
       REAL :: dunnianflw, interflow, perv_area, harea
       REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet
-      REAL :: gvr_maxin, topfr !, tmp
+      REAL :: gvr_maxin, topfr, excess !, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capacity, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow
@@ -880,8 +885,6 @@
       szrun = 0
 
       IF ( GSFLOW_flag==1 ) THEN
-        IF ( Kkiter==0 ) STOP 'ERROR, problem with KKITER, equals 0'
-
         IF ( Kkiter==1 ) THEN
 ! It0 variables used with MODFLOW integration to save iteration states.
           DO k = 1, Active_hrus
@@ -961,9 +964,7 @@
           IF ( Hru_actet(i)>Potet(i) ) THEN
             PRINT *, 'WARNING, lake evap > potet, for HRU:', i, ' potential ET increased to adjusted lake ET'
             PRINT *, Hru_actet(i), Potet(i), Hru_actet(i) - Potet(i)
-            Basin_potet = Basin_potet - DBLE( Potet(i)*harea )
             Potet(i) = Hru_actet(i) ! this could be a problem when it happens
-            Basin_potet = Basin_potet + DBLE( Potet(i)*harea )
             update_potet = 1
           ENDIF
           Unused_potet(i) = Potet(i) - Hru_actet(i)
@@ -1050,6 +1051,7 @@
         gvr_maxin = 0.0
         Cap_waterin(i) = capwater_maxin
 
+        Soil_saturated(i) = 0
         ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
         IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
           CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
@@ -1078,8 +1080,14 @@
             Soil_moist(i) = Soil_moist(i) + Gvr2sm(i)/perv_frac
 !            IF ( Soil_moist(i)>Soil_moist_max(i) ) &
 !     &           PRINT *, 'sm>max', Soil_moist(i), Soil_moist_max(i), i
-            Soil_rechr(i) = Soil_rechr(i) + Gvr2sm(i)/perv_frac*Replenish_frac(i)
-            Soil_rechr(i) = MIN( Soil_rechr_max(i), Soil_rechr(i) )
+            IF ( Soilzone_aet_flag==1 ) THEN
+              Soil_lower(i) = Soil_lower(i) + Gvr2sm(i)/perv_frac
+              excess = Soil_lower(i) - Soil_lower_stor_max(i)
+              Soil_rechr(i) = MIN( Soil_rechr_max(i), (Soil_rechr(i) + MAX (0.0, excess)))
+            ELSE
+              Soil_rechr(i) = Soil_rechr(i) + Gvr2sm(i)/perv_frac*Replenish_frac(i)
+              Soil_rechr(i) = MIN( Soil_rechr_max(i), Soil_rechr(i) )
+            ENDIF
             Basin_gvr2sm = Basin_gvr2sm + DBLE( Gvr2sm(i)*harea )
 !          ELSEIF ( Gvr2sm(i)<-NEARZERO ) THEN
 !            PRINT *, 'negative gvr2sm, HRU:', i, Gvr2sm(i)
@@ -1141,8 +1149,8 @@
         pervactet = 0.0
         IF ( Soil_moist(i)>0.0 ) THEN
           CALL compute_szactet(Soil_moist_max(i), Soil_rechr_max(i), Transp_on(i), Cov_type(i), &
-     &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, &
-     &                         avail_potet, Snow_free(i), Potet_rechr(i), Potet_lower(i))
+     &                         Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, avail_potet, &
+     &                         Snow_free(i), Potet_rechr(i), Potet_lower(i), Potet(i), perv_frac, Soil_saturated(i))
           ! sanity check
 !          IF ( pervactet>avail_potet ) THEN
 !            Soil_moist(i) = Soil_moist(i) + pervactet - avail_potet
@@ -1291,7 +1299,6 @@
       Basin_soil_rechr = Basin_soil_rechr*Basin_area_inv
       Basin_soil_to_gw = Basin_soil_to_gw*Basin_area_inv
       Basin_soil_moist = Basin_soil_moist*Basin_area_inv
-      IF ( update_potet==1 ) Basin_potet = Basin_potet*Basin_area_inv
       Basin_soil_moist_tot = Basin_soil_moist_tot*Basin_area_inv
       IF ( Nlake>0 ) THEN
         Basin_lakeevap = Basin_lakeevap*Basin_area_inv
@@ -1333,6 +1340,14 @@
       Basin_sz_stor_frac = Basin_sz_stor_frac*Basin_area_inv
       Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac*Basin_area_inv
       Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac*Basin_area_inv
+      IF ( update_potet==1 ) THEN
+        Basin_potet = 0.0D0
+        DO k = 1, Active_hrus
+          i = Hru_route_order(k)
+          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
+        ENDDO
+        Basin_potet = Basin_potet*Basin_area_inv
+      ENDIF
 
       END FUNCTION szrun
 
@@ -1388,25 +1403,32 @@
       SUBROUTINE compute_szactet(Soil_moist_max, Soil_rechr_max, &
      &           Transp_on, Cov_type, Soil_type, &
      &           Soil_moist, Soil_rechr, Perv_actet, Avail_potet, &
-     &           Snow_free, Potet_rechr, Potet_lower)
+     &           Snow_free, Potet_rechr, Potet_lower, Potet, Perv_frac, Soil_saturated)
+      USE PRMS_MODULE, ONLY: Soilzone_aet_flag
       USE PRMS_SOILZONE, ONLY: Et_type
       USE PRMS_BASIN, ONLY: NEARZERO
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Transp_on, Cov_type, Soil_type
-      REAL, INTENT(IN) :: Soil_moist_max, Soil_rechr_max, Snow_free
+      INTEGER, INTENT(INOUT) :: Soil_saturated
+      REAL, INTENT(IN) :: Soil_moist_max, Soil_rechr_max, Snow_free, Potet, Perv_frac
       REAL, INTENT(INOUT) :: Soil_moist, Soil_rechr, Avail_potet, Potet_rechr, Potet_lower
       REAL, INTENT(OUT) :: Perv_actet
 ! Local Variables
       REAL, PARAMETER :: ONETHIRD = 1.0/3.0, TWOTHIRDS = 2.0/3.0
-      REAL :: et, pcts, pctr
+      REAL :: et, pcts, pctr, pet
 !***********************************************************************
 !******Determine if evaporation(Et_type = 2) or transpiration plus
 !******evaporation(Et_type = 3) are active.  if not, Et_type = 1
 
+      IF ( Soilzone_aet_flag==1 ) THEN
+        pet = Potet
+      ELSE
+        pet = Avail_potet
+      ENDIF
       IF ( Avail_potet<NEARZERO ) THEN
         Et_type = 1
-        Avail_potet = 0.0
+        pet = 0.0
       ELSEIF ( Transp_on==0 ) THEN
         IF ( Snow_free<0.01 ) THEN
           Et_type = 1
@@ -1423,34 +1445,48 @@
 
       IF ( Et_type>1 ) THEN
         pcts = Soil_moist/Soil_moist_max
+        IF ( pcts>0.9999 ) Soil_saturated = 1
         pctr = Soil_rechr/Soil_rechr_max
-        Potet_lower = Avail_potet
-        Potet_rechr = Avail_potet
+        Potet_lower = pet
+        Potet_rechr = pet
 
 !******sandy soil
         IF ( Soil_type==1 ) THEN
-          IF ( pcts<0.25 ) Potet_lower = 0.5*pcts*Avail_potet
-          IF ( pctr<0.25 ) Potet_rechr = 0.5*pctr*Avail_potet
+          IF ( pcts<0.25 ) Potet_lower = 0.5*pcts*pet
+          IF ( pctr<0.25 ) Potet_rechr = 0.5*pctr*pet
 !******loam soil
         ELSEIF ( Soil_type==2 ) THEN
-          IF ( pcts<0.5 ) Potet_lower = pcts*Avail_potet
-          IF ( pctr<0.5 ) Potet_rechr = pctr*Avail_potet
+          IF ( pcts<0.5 ) Potet_lower = pcts*pet
+          IF ( pctr<0.5 ) Potet_rechr = pctr*pet
 !******clay soil
         ELSEIF ( Soil_type==3 ) THEN
           IF ( pcts<TWOTHIRDS .AND. pcts>ONETHIRD ) THEN
-            Potet_lower = pcts*Avail_potet
+            Potet_lower = pcts*pet
           ELSEIF ( pcts<=ONETHIRD ) THEN
-            Potet_lower = 0.5*pcts*Avail_potet
+            Potet_lower = 0.5*pcts*pet
           ENDIF
           IF ( pctr<TWOTHIRDS .AND. pctr>ONETHIRD ) THEN
-            Potet_rechr = pctr*Avail_potet
+            Potet_rechr = pctr*pet
           ELSEIF ( pctr<=ONETHIRD ) THEN
-            Potet_rechr = 0.5*pctr*Avail_potet
+            Potet_rechr = 0.5*pctr*pet
           ENDIF
         ENDIF
 
 !******Soil moisture accounting
         IF ( Et_type==2 ) Potet_rechr = Potet_rechr*Snow_free
+
+!!!! need to limit Potet_rechr and Potet_lower (pervious area) by Avail_potet (whole HRU)
+        IF ( Potet_rechr*Perv_frac > Avail_potet ) THEN
+!          print *, 'reducing potet_rechr in cap reservoir', perv_frac, pet
+!          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
+          Potet_rechr = Avail_potet / Perv_frac
+        ENDIF
+        IF ( Potet_lower*Perv_frac > Avail_potet ) THEN
+!          print *, 'reducing potet_lower in cap reservoir', perv_frac, pet
+!          print *, potet_rechr, potet_lower, avail_potet, (Potet_rechr+Potet_lower)*Perv_frac
+          Potet_lower = Avail_potet / Perv_frac
+        ENDIF
+
         IF ( Potet_rechr>Soil_rechr ) THEN
           Potet_rechr = Soil_rechr
           Soil_rechr = 0.0
@@ -1478,11 +1514,14 @@
       ENDIF
       Perv_actet = et
       ! sanity check
-!      IF ( Perv_actet>Avail_potet ) THEN
-!        PRINT *, 'perv_et problem', Perv_actet, Avail_potet
+      IF ( Perv_actet*Perv_frac-Avail_potet > NEARZERO ) THEN
+        PRINT *, 'perv_et problem', Perv_actet*Perv_frac, Avail_potet, Perv_frac
 !        Soil_moist = Soil_moist + Perv_actet - Avail_potet
 !        Perv_actet = Avail_potet
-!      ENDIF
+      ENDIF
+      IF ( Perv_actet>Potet ) THEN
+        PRINT *, 'perv_et PET problem', Perv_actet*Perv_frac, Avail_potet, Perv_frac, Potet
+      ENDIF
 
       END SUBROUTINE compute_szactet
 
@@ -1516,6 +1555,8 @@
 ! Arguments
       REAL, INTENT(IN) :: Coef_lin, Coef_sq, Ssres_in
       REAL, INTENT(INOUT) :: Storage, Inter_flow
+! Functions
+      EXTERNAL error_stop
 ! Local Variables
       REAL :: c1, c2, c3, sos
 !***********************************************************************
@@ -1530,7 +1571,7 @@
       ELSEIF ( Coef_sq>0.0 ) THEN
         c3 = SQRT(Coef_lin**2.0+4.0*Coef_sq*Ssres_in)
         sos = Storage - ((c3-Coef_lin)/(2.0*Coef_sq))
-        IF ( c3==0.0 ) STOP 'ERROR, in compute_interflow sos=0, please contact code developers'
+        IF ( c3==0.0 ) CALL error_stop('in compute_interflow sos=0, please contact code developers')
         c1 = Coef_sq*sos/c3
         c2 = 1.0 - EXP(-c3)
         IF ( 1.0+c1*c2>0.0 ) THEN

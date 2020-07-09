@@ -78,7 +78,7 @@
 !***********************************************************************
       obsdecl = 0
 
-      Version_obs = 'obs.f90 2018-02-23 15:44:00Z'
+      Version_obs = 'obs.f90 2020-01-09 14:38:00Z'
       CALL print_module(Version_obs, 'Time Series Data            ', 90)
       MODNAME = 'obs'
 
@@ -168,7 +168,7 @@
         ALLOCATE ( Wind_speed(Nwind) )
         IF ( declvar(MODNAME, 'wind_speed', 'nwind', Nwind, 'real', &
      &       'Wind speed at each measurement station', &
-     &       'mph', Wind_speed)/=0 ) CALL read_error(8, 'wind_speed')
+     &       'meters per second', Wind_speed)/=0 ) CALL read_error(8, 'wind_speed')
       ENDIF
 
 !   Declared Parameters
@@ -260,6 +260,7 @@
       USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap
       USE PRMS_BASIN, ONLY: CFS2CMS_CONV
       USE PRMS_SET_TIME, ONLY: Nowmonth
+      USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
       IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
@@ -287,6 +288,11 @@
 
       IF ( Nrain>0 ) THEN
         IF ( readvar(MODNAME, 'precip')/=0 ) CALL read_error(9, 'precip')
+        IF ( Ppt_zero_thresh>0.0 ) THEN
+          DO i = 1, Nrain
+            IF ( Precip(i)<Ppt_zero_thresh ) Precip(i) = 0.0
+          ENDDO
+        ENDIF
       ENDIF
 
       IF ( Ntemp>0 ) THEN
