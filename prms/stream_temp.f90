@@ -715,7 +715,7 @@
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
-      USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
+      USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order
       USE PRMS_OBS, ONLY: Humidity
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
@@ -844,7 +844,7 @@
       seg_tave_upstream(i) = -100.0
 
 ! Big do loop
-      write(*,*) "big do loop ", Nowyear, Nowmonth, Nowday
+!      write(*,*) "big do loop ", Nowyear, Nowmonth, Nowday
       DO j = 1, Nsegment
          i = Segment_order(j)
 
@@ -875,7 +875,7 @@
 ! Add in the heat from upstream
          do k = 1, upstream_count(i)
             kk = upstream_idx(i,k)
-            fs_kk = SNGL(Seg_outflow(kk)) * CFS2CMS_CONV
+            fs_kk = SNGL(Seg_outflow(kk) * CFS2CMS_CONV)
 
             up_temp = up_temp + (Seg_tave_water(kk) * fs_kk)
             fs = fs + fs_kk
@@ -891,10 +891,10 @@
 
 ! Add the lateral temperature to the upstream temperature 
 ! Compute t_o
-        fs2 = (Seg_lateral_inflow(i) * CFS2CMS_CONV + fs)
+        fs2 = sngl(Seg_lateral_inflow(i) * CFS2CMS_CONV + fs)
         if (fs2 > 0.0) then
-           t_o = ((seg_tave_lat(i) * Seg_lateral_inflow(i) * CFS2CMS_CONV) + &
-     &        (fs * seg_tave_upstream(i))) / fs2
+           t_o = (sngl(seg_tave_lat(i) * Seg_lateral_inflow(i) * CFS2CMS_CONV) + &
+     &        sngl(fs * seg_tave_upstream(i))) / fs2
         else
            t_o = -99.9
         endif
@@ -935,20 +935,17 @@
 
 ! debug
          if (t_o .ne. t_o) then
-             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
-     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
-!             continue
-         endif
+             write(*,*) "t_o is Nan"
+             Seg_tave_water(i) = -98.9
 
-! debug
-         if (t_o .gt. 50.0) then
-             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
+         else if (t_o .gt. 50.0) then
+             write(*,*) "t_o = ", t_o, " ted = ", te, " seg_id = ", i
              write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
      &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
              write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
-          endif
+             Seg_tave_water(i) = -98.9
 
-          if (t_o .lt. -98.0) then
+          else if (t_o .lt. -98.0) then
               Seg_tave_water(i) = -98.9
 
           else
