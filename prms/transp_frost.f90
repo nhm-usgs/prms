@@ -3,6 +3,7 @@
 ! on time between the last spring and the first fall killing frost.
 !***********************************************************************
       MODULE PRMS_TRANSP_FROST
+        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
@@ -14,20 +15,16 @@
 
       INTEGER FUNCTION transp_frost()
       USE PRMS_TRANSP_FROST
-      USE PRMS_MODULE, ONLY: Process, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i, j
 !***********************************************************************
       transp_frost = 0
 
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
 !******Set switch for active transpiration period
 ! If the current solar day is between the last frost of the
 ! spring and the first frost of the fall, then transpiration
@@ -44,7 +41,7 @@
           ENDIF
         ENDDO
 
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_transp)
 
         ALLOCATE ( Spring_frost(Nhru) )
@@ -61,7 +58,7 @@
      &       'The solar date (number of days after winter solstice) of the first killing frost of the fall', &
      &       'Solar date')/=0 ) CALL read_error(1, 'fall_frost')
 
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         IF ( getparam(MODNAME, 'spring_frost', Nhru, 'integer', Spring_frost)/=0 ) CALL read_error(2, 'spring_frost')
         IF ( getparam(MODNAME, 'fall_frost', Nhru, 'integer', Fall_frost)/=0 ) CALL read_error(2, 'fall_frost')
 

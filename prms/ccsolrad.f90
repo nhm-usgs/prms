@@ -9,6 +9,7 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_CCSOLRAD
+	    USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
@@ -25,7 +26,6 @@
 !***********************************************************************
       INTEGER FUNCTION ccsolrad()
       USE PRMS_CCSOLRAD
-      USE PRMS_MODULE, ONLY: Process, Print_debug, Nhru, Nsol
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, &
@@ -34,17 +34,13 @@
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
       IMPLICIT NONE
-! Functions
-      INTRINSIC DBLE
-      INTEGER, EXTERNAL :: declparam, getparam, declvar
-      EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k
       REAL :: pptadj, radadj, ccov
 !***********************************************************************
       ccsolrad = 0
 
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
 !rsr using julian day as the soltab arrays are filled by julian day
         Basin_horad = Soltab_basinpotsw(Jday)
         Basin_swrad = 0.0D0
@@ -56,7 +52,7 @@
 
           ! determine radiation adjustment due to precipitation
           IF ( Hru_ppt(j)>Ppt_rad_adj(j,Nowmonth) ) THEN
-            IF ( Summer_flag==1 ) THEN
+            IF ( Summer_flag==ON ) THEN
               pptadj = Radj_sppt(j)
             ELSE
               pptadj = Radj_wppt(j) ! Winter
@@ -82,7 +78,7 @@
 
           Orad_hru(j) = Cloud_radadj(j)*SNGL( Soltab_horad_potsw(Jday,j) )
           Basin_orad = Basin_orad + DBLE( Orad_hru(j)*Hru_area(j) )
-          IF ( Solsta_flag==1 ) THEN
+          IF ( Solsta_flag==ON ) THEN
             k = Hru_solsta(j)
             IF ( k>0 ) THEN
               IF ( Solrad(k)<0.0 .OR. Solrad(k)>10000.0 ) THEN
@@ -97,12 +93,12 @@
               ENDIF
             ENDIF
           ENDIF
-          Swrad(j) = SNGL( Soltab_potsw(Jday, j)*DBLE(Cloud_radadj(j))/Hru_cossl(j) )
+          Swrad(j) = SNGL( Soltab_potsw(Jday, j)*DBLE( Cloud_radadj(j))/Hru_cossl(j) )
           Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
         Basin_radadj = Basin_radadj*Basin_area_inv
-        IF ( Observed_flag==1 ) THEN
+        IF ( Observed_flag==ON ) THEN
           Orad = Solrad(Basin_solsta)*Rad_conv
         ELSE
           Orad = SNGL( Basin_orad )
@@ -111,7 +107,7 @@
         Basin_potsw = Basin_swrad
         Basin_cloud_cover = Basin_cloud_cover*Basin_area_inv
 
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_ccsolrad)
 
         ALLOCATE ( Cloud_radadj(Nhru) )
@@ -133,28 +129,28 @@
      &       'decimal fraction', Basin_cloud_cover)/=0 ) CALL read_error(3, 'basin_cloud_cover')
 
         ! Declare Parameters
-        ALLOCATE ( Crad_coef(Nhru,12) )
+        ALLOCATE ( Crad_coef(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'crad_coef', 'nhru,nmonths', 'real', &
      &       '0.4', '0.1', '0.7', &
      &       'Coefficient in cloud cover-solar radiation relationship', &
      &       'Coefficient(B) in Thompson(1976) equation;' // &
      &       ' varies by region, contour map of values in reference', &
      &       'none')/=0 ) CALL read_error(1, 'crad_coef')
-        ALLOCATE ( Crad_exp(Nhru,12) )
+        ALLOCATE ( Crad_exp(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'crad_exp', 'nhru,nmonths', 'real', &
      &       '0.61', '0.2', '0.8', &
      &       'Exponent in cloud cover-solar radiation relationship', &
      &       'Exponent(P) in Thompson(1976) equation', &
      &       'none')/=0 ) CALL read_error(1, 'crad_exp')
 
-        ALLOCATE ( Ccov_slope(Nhru,12) )
+        ALLOCATE ( Ccov_slope(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'ccov_slope', 'nhru,nmonths', 'real', &
      &       '-0.13', '-0.5', '-0.01', &
      &       'Slope in temperature cloud cover relationship', &
      &       'Monthly (January to December) coefficient in cloud-cover relationship', &
      &       'none')/=0 ) CALL read_error(1, 'ccov_slope')
 
-        ALLOCATE ( Ccov_intcp(Nhru,12) )
+        ALLOCATE ( Ccov_intcp(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'ccov_intcp', 'nhru,nmonths', 'real', &
      &       '1.83', '0.0', '5.0', &
      &       'Intercept in temperature cloud cover relationship', &
@@ -163,18 +159,18 @@
 
       ELSEIF ( Process(:4)=='init' ) THEN
 ! Get parameters
-        IF ( getparam(MODNAME, 'crad_coef', Nhru*12, 'real', Crad_coef)/=0 ) CALL read_error(2, 'crad_coef')
-        IF ( getparam(MODNAME, 'crad_exp', Nhru*12, 'real', Crad_exp)/=0 ) CALL read_error(2, 'crad_exp')
-        IF ( getparam(MODNAME, 'ccov_slope', Nhru*12, 'real', Ccov_slope)/=0 ) CALL read_error(2, 'ccov_slope')
-        IF ( getparam(MODNAME, 'ccov_intcp', Nhru*12, 'real', Ccov_intcp)/=0 ) CALL read_error(2, 'ccov_intcp')
+        IF ( getparam(MODNAME, 'crad_coef', Nhru*MONTHS_PER_YEAR, 'real', Crad_coef)/=0 ) CALL read_error(2, 'crad_coef')
+        IF ( getparam(MODNAME, 'crad_exp', Nhru*MONTHS_PER_YEAR, 'real', Crad_exp)/=0 ) CALL read_error(2, 'crad_exp')
+        IF ( getparam(MODNAME, 'ccov_slope', Nhru*MONTHS_PER_YEAR, 'real', Ccov_slope)/=0 ) CALL read_error(2, 'ccov_slope')
+        IF ( getparam(MODNAME, 'ccov_intcp', Nhru*MONTHS_PER_YEAR, 'real', Ccov_intcp)/=0 ) CALL read_error(2, 'ccov_intcp')
 
         Cloud_radadj = 0.0
         Basin_radadj = 0.0D0
         Basin_cloud_cover = 0.0D0
         Cloud_cover_hru = 0.0
 
-        Observed_flag = 0
-        IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = 1
+        Observed_flag = OFF
+        IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = ON
 
       ENDIF
 

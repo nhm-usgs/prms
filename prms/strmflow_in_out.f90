@@ -2,7 +2,7 @@
 ! Routes water between segments in the system as inflow equals outflow
 !***********************************************************************
       INTEGER FUNCTION strmflow_in_out()
-      USE PRMS_MODULE, ONLY: Process, Nsegment, Print_debug, CFS2CMS_CONV
+      USE PRMS_CONSTANTS
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_BASIN, ONLY: Active_area
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
@@ -14,18 +14,16 @@
      &    Flow_out_NHM, Flow_terminus, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
       USE PRMS_OBS, ONLY: Streamflow_cfs
       IMPLICIT NONE
-! Functions
-      EXTERNAL :: print_module
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=*), parameter :: MODNAME = 'strmflow_in_out'
-      character(len=*), parameter :: Version_strmflow = '2020-07-01'
+      character(len=*), parameter :: Version_strmflow = '2020-07-24'
       INTEGER :: i, iorder, toseg, segtype
       DOUBLE PRECISION :: area_fac, segout
 !***********************************************************************
       strmflow_in_out = 0
 
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
         Seg_inflow = 0.0D0
         Seg_outflow = 0.0D0
         Seg_upstream_inflow = 0.0D0
@@ -53,8 +51,8 @@
             Seg_outflow(iorder) = Seg_inflow(iorder)
           ENDIF
 
-          IF ( Seg_outflow(iorder) < 0.0 ) THEN
-            IF ( Print_debug>-1 ) THEN
+          IF ( Seg_outflow(iorder)<0.0 ) THEN
+            IF ( Print_debug>DEBUG_less ) THEN
               PRINT *, 'WARNING, negative flow from segment:', iorder, ' flow:', Seg_outflow(iorder)
               PRINT *, '         likely a water-use specification or replacement flow issue'
             ENDIF
@@ -86,7 +84,7 @@
           ELSEIF ( segtype==11 ) THEN
             Flow_to_great_lakes = Flow_to_great_lakes + segout
           ENDIF
-          IF ( toseg==0 ) THEN
+          IF ( toseg==OUTFLOW_SEGMENT ) THEN
             Flow_out = Flow_out + segout
           ELSE
             Seg_upstream_inflow(toseg) = Seg_upstream_inflow(toseg) + segout
@@ -101,7 +99,7 @@
         Basin_sroff_cfs = Basin_sroff*area_fac
         Basin_ssflow_cfs = Basin_ssflow*area_fac
         Basin_gwflow_cfs = Basin_gwflow*area_fac
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_strmflow)
       ENDIF
 

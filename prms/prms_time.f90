@@ -2,39 +2,38 @@
 ! Sets PRMS time variables
 !***********************************************************************
       MODULE PRMS_SET_TIME
-      USE PRMS_MODULE, ONLY: YEAR, MONTH, DAY, HOUR, MINUTE
-      IMPLICIT NONE
+        USE PRMS_CONSTANTS
+        IMPLICIT NONE
 !   Local Variables
-      character(len=*), parameter :: MODDESC = 'Timestep Control'
-      character(len=*), parameter :: MODNAME = 'prms_time'
-      character(len=*), parameter :: Version_prms_time = '2020-07-01'
-      INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
-      INTEGER, SAVE :: Nowtime(6), Nowday, Nowmonth, Nowyear, Nowhour, Nowminute
-      REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
-      DOUBLE PRECISION, SAVE :: Cfs2inches, Cfs_conv, Timestep_seconds
+        character(len=*), parameter :: MODDESC = 'Timestep Control'
+        character(len=*), parameter :: MODNAME = 'prms_time'
+        character(len=*), parameter :: Version_prms_time = '2020-07-28'
+        INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
+        INTEGER, SAVE :: Nowtime(6), Nowday, Nowmonth, Nowyear, Nowhour, Nowminute
+        REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
+        DOUBLE PRECISION, SAVE :: Cfs2inches, Cfs_conv, Timestep_seconds
       END MODULE PRMS_SET_TIME
 
 !***********************************************************************
 !***********************************************************************
       INTEGER FUNCTION prms_time()
       USE PRMS_SET_TIME
-      USE PRMS_MODULE, ONLY: Process, Timestep, Starttime, SECS_PER_DAY, SECS_PER_HOUR, FT2_PER_ACRE, ERROR_time
+      USE PRMS_MODULE, ONLY: Timestep, Starttime
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SNGL
       INTEGER, EXTERNAL :: leap_day, julian_day, compute_julday
       DOUBLE PRECISION, EXTERNAL :: deltim
-      EXTERNAL :: dattim, print_module
+      EXTERNAL :: dattim
 ! Local Variables
       INTEGER :: startday
       DOUBLE PRECISION :: dt
 !***********************************************************************
       prms_time = 0
 
-      IF ( Process(:3)=='run' .OR. Process(:4)=='init' ) THEN
+      IF ( Process_flag==RUN .OR. Process_flag==INIT ) THEN
 
-        IF ( Process(:3)=='run' ) THEN
+        IF ( Process_flag==RUN ) THEN
           Timestep = Timestep + 1
 
           CALL dattim('now', Nowtime)
@@ -71,10 +70,10 @@
         Nowminute = Nowtime(MINUTE)
 
         IF ( leap_day(Nowyear)==1 ) THEN
-          Yrdays = 366
+          Yrdays = MAX_DAYS_PER_YEAR
           Modays(2) = 29
         ELSE
-          Yrdays = 365
+          Yrdays = DAYS_PER_YEAR
           Modays(2) = 28
         ENDIF
 
@@ -90,11 +89,11 @@
 
         dt = deltim()
         Timestep_hours = SNGL( dt )
-        Timestep_days = Timestep_hours/24.0
-        Timestep_minutes = Timestep_hours*60.0
-        Timestep_seconds = dt*SECS_PER_HOUR
-        Cfs_conv = FT2_PER_ACRE/12.0D0/Timestep_seconds
-        Cfs2inches = Basin_area_inv*12.0D0*Timestep_seconds/FT2_PER_ACRE
+        Timestep_days = Timestep_hours / 24.0
+        Timestep_minutes = Timestep_hours * 60.0
+        Timestep_seconds = dt * SECS_PER_HOUR
+        Cfs_conv = FT2_PER_ACRE / INCHES_PER_FOOT / Timestep_seconds
+        Cfs2inches = Basin_area_inv * INCHES_PER_FOOT * Timestep_seconds / FT2_PER_ACRE
 
         ! Check to see if in a daily or subdaily time step
         IF ( Timestep_hours>24.0 ) THEN
@@ -105,11 +104,11 @@
           ERROR STOP ERROR_time
         ENDIF
 
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_prms_time)
         Timestep_seconds = SECS_PER_DAY
-        Cfs_conv = FT2_PER_ACRE/12.0D0/Timestep_seconds
-        Cfs2inches = Basin_area_inv*12.0D0*Timestep_seconds/FT2_PER_ACRE
+        Cfs_conv = FT2_PER_ACRE / INCHES_PER_FOOT / Timestep_seconds
+        Cfs2inches = Basin_area_inv * INCHES_PER_FOOT * Timestep_seconds / FT2_PER_ACRE
       ENDIF
 
       END FUNCTION prms_time

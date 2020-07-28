@@ -2,12 +2,12 @@
 !     Output a set of declared basin variables as CSV file
 !***********************************************************************
       MODULE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'basin_summary'
-      character(len=*), parameter :: Version_basin_summary = '2020-07-01'
+      character(len=*), parameter :: Version_basin_summary = '2020-07-28'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear, Dailyunit, Monthlyunit, Yearlyunit, Basin_var_type
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:)
       CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
@@ -24,22 +24,21 @@
 !     Basin results module
 !     ******************************************************************
       SUBROUTINE basin_summary()
-      USE PRMS_MODULE, ONLY: Process, MEAN_MONTHLY
       USE PRMS_BASIN_SUMMARY
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: basin_summarydecl, basin_summaryinit, basin_summaryrun
 !***********************************************************************
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
         CALL basin_summaryrun()
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL basin_summarydecl()
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         CALL basin_summaryinit()
-      ELSEIF ( Process(:5)=='clean' ) THEN
-        IF ( Daily_flag==1 ) CLOSE ( Dailyunit )
+      ELSEIF ( Process_flag==CLEAN ) THEN
+        IF ( Daily_flag==ON ) CLOSE ( Dailyunit )
         IF ( BasinOut_freq>MEAN_MONTHLY ) CLOSE ( Yearlyunit )
-        IF ( Monthly_flag==1 ) CLOSE ( Monthlyunit )
+        IF ( Monthly_flag==ON ) CLOSE ( Monthlyunit )
       ENDIF
 
       END SUBROUTINE basin_summary
@@ -49,12 +48,10 @@
 !***********************************************************************
       SUBROUTINE basin_summarydecl()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, ERROR_control, DAILY, YEARLY, DOCUMENTATION
       IMPLICIT NONE
 ! Functions
       INTRINSIC CHAR
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
-      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -83,18 +80,17 @@
 !***********************************************************************
       SUBROUTINE basin_summaryinit()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, Start_year, Prms_warmup, ERROR_open_out, &
-     &    DAILY, DAILY_MONTHLY, MONTHLY, MEAN_MONTHLY, YEARLY, MEAN_YEARLY, ERROR_control
+      USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
       IMPLICIT NONE
       INTRINSIC ABS
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file, error_stop
+      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
+      EXTERNAL PRMS_open_output_file
 ! Local Variables
       INTEGER :: ios, ierr, size, dum, jj
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 !***********************************************************************
-      Begin_results = 1
-      IF ( Prms_warmup>0 ) Begin_results = 0
+      Begin_results = ON
+      IF ( Prms_warmup>0 ) Begin_results = OFF
       Begyr = Start_year + Prms_warmup
       Lastyear = Begyr
 
@@ -104,7 +100,7 @@
       DO jj = 1, BasinOutVars
         Nc_vars(jj) = numchars(BasinOutVar_names(jj))
         Basin_var_type = getvartype(BasinOutVar_names(jj)(:Nc_vars(jj)), Basin_var_type )
-        IF ( Basin_var_type/=3 ) THEN
+        IF ( Basin_var_type/=DBLE_TYPE ) THEN
           PRINT *, 'ERROR, invalid basin_summary variable:', BasinOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only double variables allowed'
           ierr = 1
@@ -120,11 +116,11 @@
       ALLOCATE ( Basin_var_daily(BasinOutVars) )
       Basin_var_daily = 0.0D0
 
-      Daily_flag = 0
-      IF ( BasinOut_freq==DAILY .OR. BasinOut_freq==DAILY_MONTHLY ) Daily_flag = 1
+      Daily_flag = OFF
+      IF ( BasinOut_freq==DAILY .OR. BasinOut_freq==DAILY_MONTHLY ) Daily_flag = ON
 
-      Monthly_flag = 0
-      IF ( BasinOut_freq==MONTHLY .OR. BasinOut_freq==DAILY_MONTHLY .OR. BasinOut_freq==MEAN_MONTHLY ) Monthly_flag = 1
+      Monthly_flag = OFF
+      IF ( BasinOut_freq==MONTHLY .OR. BasinOut_freq==DAILY_MONTHLY .OR. BasinOut_freq==MEAN_MONTHLY ) Monthly_flag = ON
 
       IF ( BasinOut_freq>MEAN_MONTHLY ) THEN
         Yeardays = 0
@@ -178,19 +174,15 @@
 !***********************************************************************
       SUBROUTINE basin_summaryrun()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day, MEAN_MONTHLY, YEARLY
+      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
-      INTRINSIC SNGL, DBLE
-      INTEGER, EXTERNAL :: getvar
-      EXTERNAL read_error
 ! Local Variables
-      INTEGER :: jj, write_month, write_year, last_day
+      INTEGER :: jj, write_month, last_day
 !***********************************************************************
-      IF ( Begin_results==0 ) THEN
+      IF ( Begin_results==OFF ) THEN
         IF ( Nowyear==Begyr .AND. Nowmonth==Start_month .AND. Nowday==Start_day ) THEN
-          Begin_results = 1
+          Begin_results = ON
         ELSE
           RETURN
         ENDIF
@@ -203,13 +195,12 @@
      &       CALL read_error(4, BasinOutVar_names(jj)(:Nc_vars(jj)))
       ENDDO
 
-      write_month = 0
-      write_year = 0
+      write_month = OFF
       IF ( BasinOut_freq>MEAN_MONTHLY ) THEN
-        last_day = 0
-        IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = 1
-        IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
-          IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==1 ) THEN
+        last_day = OFF
+        IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = ON
+        IF ( Lastyear/=Nowyear .OR. last_day==ON ) THEN
+          IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==ON ) THEN
             DO jj = 1, BasinOutVars
               IF ( BasinOut_freq==YEARLY ) Basin_var_yearly(jj) = Basin_var_yearly(jj)/Yeardays
             ENDDO
@@ -220,13 +211,13 @@
           ENDIF
         ENDIF
         Yeardays = Yeardays + 1
-      ELSEIF ( Monthly_flag==1 ) THEN
+      ELSEIF ( Monthly_flag==ON ) THEN
         ! check for last day of month and simulation
         IF ( Nowday==Modays(Nowmonth) ) THEN
-          write_month = 1
+          write_month = ON
         ELSEIF ( Nowyear==End_year ) THEN
           IF ( Nowmonth==End_month ) THEN
-            IF ( Nowday==End_day ) write_month = 1
+            IF ( Nowday==End_day ) write_month = ON
           ENDIF
         ENDIF
         Monthdays = Monthdays + 1.0D0
@@ -239,17 +230,17 @@
         RETURN
       ENDIF
 
-      IF ( Monthly_flag==1 ) THEN
+      IF ( Monthly_flag==ON ) THEN
         DO jj = 1, BasinOutVars
           Basin_var_monthly(jj) = Basin_var_monthly(jj) + Basin_var_daily(jj)
-          IF ( write_month==1 ) THEN
+          IF ( write_month==ON ) THEN
             IF ( BasinOut_freq==MEAN_MONTHLY ) Basin_var_monthly(jj) = Basin_var_monthly(jj)/Monthdays
           ENDIF
         ENDDO
       ENDIF
 
-      IF ( Daily_flag==1 ) WRITE ( Dailyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_daily(jj), jj=1,BasinOutVars)
-      IF ( write_month==1 ) THEN
+      IF ( Daily_flag==ON) WRITE ( Dailyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_daily(jj), jj=1,BasinOutVars)
+      IF ( write_month==ON ) THEN
         WRITE ( Monthlyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_monthly(jj), jj=1,BasinOutVars)
         Monthdays = 0.0D0
         Basin_var_monthly = 0.0D0
