@@ -29,15 +29,15 @@
 ! If the current solar day is between the last frost of the
 ! spring and the first frost of the fall, then transpiration
 ! is on for the HRU. If any HRU is transpiring, then
-! Basin_transp_on is set to 1.
-        Basin_transp_on = 0
+! Basin_transp_on is set to 1 (ON).
+        Basin_transp_on = OFF
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
-            Transp_on(i) = 1
-            Basin_transp_on = 1
+            Transp_on(i) = ON
+            Basin_transp_on = ON
           ELSE
-            Transp_on(i) = 0
+            Transp_on(i) = OFF
           ENDIF
         ENDDO
 
@@ -65,8 +65,8 @@
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
-            Transp_on(i) = 1
-            Basin_transp_on = 1
+            Transp_on(i) = ON
+            Basin_transp_on = ON
           ENDIF
         ENDDO
       ENDIF

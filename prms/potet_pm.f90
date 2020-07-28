@@ -62,7 +62,7 @@
           ! Cp = 1.005 approximate specific heat capacity of air at 20 degrees C, increases with temp
           ! MW = 0.622 = molecular weight of water
           ! 1.615755627 = Cp / MW
-          psycnst = 1.615755627 * prsr / elh
+          psycnst = 1.615755627*prsr/elh
 
 !   heat flux density to the ground,  MJ / m2 / day
 !          heat_flux = -4.2 * (Tavgc_ante(i)-Tavgc(i)) ! could use solrad_tmax or running avg instead of Tavgc_ante
@@ -106,6 +106,7 @@
           ELSE
             sw = Swrad(i)
           ENDIF
+
 !
 ! Net long wave rediation (Irmak eqn. 10) MJ / m2/ day
 ! 4.903E-09 = Stefan-Boltzmann constant

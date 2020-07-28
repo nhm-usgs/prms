@@ -137,7 +137,7 @@
 !  eeq is in cm
           eeq = ratio*net_rad/elh * 100.0 ! if eeq<0, the Potet will be set to 0.0 below
 !...CONVERT TO INCHES/DAY
-          eeq = eeq / INCH2CM
+          eeq = eeq/INCH2CM
 
           Potet(i) = Pt_alpha(i, Nowmonth)*eeq
           IF ( Potet(i)<0.0 ) Potet(i) = 0.0

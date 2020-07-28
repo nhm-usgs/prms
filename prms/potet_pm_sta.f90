@@ -12,7 +12,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pm_sta'
-        character(len=*), parameter :: Version_potet = '2020-07-24'
+        character(len=*), parameter :: Version_potet = '2020-07-28'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
         INTEGER, SAVE, ALLOCATABLE :: Hru_windspeed_sta(:), Hru_humidity_sta(:)
@@ -31,6 +31,7 @@
       IMPLICIT NONE
 ! Functions
       REAL, EXTERNAL :: sat_vapor_press
+      EXTERNAL checkdim_param_limits
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
@@ -62,7 +63,7 @@
           ! Cp = 1.005 approximate specific heat capacity of air at 20 degrees C, increases with temp
           ! MW = 0.622 = molecular weight of water
           ! 1.615755627 = Cp / MW
-          psycnst = 1.615755627 * prsr / elh
+          psycnst = 1.615755627*prsr/elh
 
 !   heat flux density to the ground,  MJ / m2 / day
 !          heat_flux = -4.2 * (Tavgc_ante(i)-Tavgc(i)) ! could use solrad_tmax or running avg instead of Tavgc_ante
@@ -73,8 +74,8 @@
           A1 = 17.625
           B1 = 243.04
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG( Humidity(Hru_humidity_sta(i))/100.0 ) + t1)
-          den = A1 - LOG( Humidity(Hru_humidity_sta(i))/100.0 ) - t1
+          num = B1 * (LOG(Humidity(Hru_humidity_sta(i))/100.0) + t1)
+          den = A1 - LOG(Humidity(Hru_humidity_sta(i))/100.0) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
@@ -123,8 +124,8 @@
           c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i))))
 
 !  PM equation with crop_coef in mm/day
-!          Potet(i) = (a + b) / c
-          Potet(i) = Crop_coef(i, Nowmonth) * (a + b) / c
+!          Potet(i) = (a + b)/c
+          Potet(i) = Crop_coef(i, Nowmonth) * (a + b)/c
           Potet(i) = Potet(i) / INCH2MM
 
 ! may be able to use intrinsic ISNAN

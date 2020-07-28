@@ -8,7 +8,7 @@
         character(len=*), parameter :: MODDESC = 'Timestep Control'
         character(len=*), parameter :: MODNAME = 'prms_time'
         character(len=*), parameter :: Version_prms_time = '2020-07-28'
-        INTEGER, SAVE :: Modays(12), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
+        INTEGER, SAVE :: Modays(MONTHS_PER_YEAR), Yrdays, Summer_flag, Jday, Jsol, Julwater, Julian_day_absolute
         INTEGER, SAVE :: Nowtime(6), Nowday, Nowmonth, Nowyear, Nowhour, Nowminute
         REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
         DOUBLE PRECISION, SAVE :: Cfs2inches, Cfs_conv, Timestep_seconds
@@ -80,20 +80,20 @@
         ! Summer is based on equinox:
         !   Julian days 79 to 265 for Northern hemisphere
         !   Julian day 265 to 79 in Southern hemisphere
-        Summer_flag = 1 ! 1 = summer, 0 = winter
+        Summer_flag = ON ! 1 = summer, 0 = winter
         IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
-          IF ( Jday<79 .OR. Jday>265 ) Summer_flag = 0 ! Equinox
+          IF ( Jday<79 .OR. Jday>265 ) Summer_flag = OFF ! Equinox
         ELSE ! Southern Hemisphere
-          IF ( Jday>79 .AND. Jday<265 ) Summer_flag = 0 ! Equinox
+          IF ( Jday>79 .AND. Jday<265 ) Summer_flag = OFF ! Equinox
         ENDIF
 
         dt = deltim()
         Timestep_hours = SNGL( dt )
-        Timestep_days = Timestep_hours / 24.0
-        Timestep_minutes = Timestep_hours * 60.0
-        Timestep_seconds = dt * SECS_PER_HOUR
-        Cfs_conv = FT2_PER_ACRE / INCHES_PER_FOOT / Timestep_seconds
-        Cfs2inches = Basin_area_inv * INCHES_PER_FOOT * Timestep_seconds / FT2_PER_ACRE
+        Timestep_days = Timestep_hours/24.0
+        Timestep_minutes = Timestep_hours*60.0
+        Timestep_seconds = dt*SECS_PER_HOUR
+        Cfs_conv = FT2_PER_ACRE/INCHES_PER_FOOT/Timestep_seconds
+        Cfs2inches = Basin_area_inv*INCHES_PER_FOOT*Timestep_seconds/FT2_PER_ACRE
 
         ! Check to see if in a daily or subdaily time step
         IF ( Timestep_hours>24.0 ) THEN
@@ -107,8 +107,8 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_prms_time)
         Timestep_seconds = SECS_PER_DAY
-        Cfs_conv = FT2_PER_ACRE / INCHES_PER_FOOT / Timestep_seconds
-        Cfs2inches = Basin_area_inv * INCHES_PER_FOOT * Timestep_seconds / FT2_PER_ACRE
+        Cfs_conv = FT2_PER_ACRE/INCHES_PER_FOOT/Timestep_seconds
+        Cfs2inches = Basin_area_inv*INCHES_PER_FOOT*Timestep_seconds/FT2_PER_ACRE
       ENDIF
 
       END FUNCTION prms_time

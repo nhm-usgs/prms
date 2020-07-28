@@ -128,7 +128,7 @@
         Basin_var_yearly = 0.0D0
         WRITE ( Output_fmt3, 9003 ) BasinOutVars
       ENDIF
-      IF ( Monthly_flag==1 ) THEN
+      IF ( Monthly_flag==ON ) THEN
         Monthdays = 0.0D0
         ALLOCATE ( Basin_var_monthly(BasinOutVars) )
         Basin_var_monthly = 0.0D0
@@ -136,7 +136,7 @@
 
       WRITE ( Output_fmt2, 9002 ) BasinOutVars
 
-      IF ( Daily_flag==1 ) THEN
+      IF ( Daily_flag==ON ) THEN
         fileName = BasinOutBaseFileName(:numchars(BasinOutBaseFileName))//'.csv'
         CALL PRMS_open_output_file(Dailyunit, fileName, 'basin_summary, daily', 0, ios)
         IF ( ios/=0 ) CALL error_stop('in basin_summary, daily', ERROR_open_out)
@@ -239,7 +239,7 @@
         ENDDO
       ENDIF
 
-      IF ( Daily_flag==ON) WRITE ( Dailyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_daily(jj), jj=1,BasinOutVars)
+      IF ( Daily_flag==ON ) WRITE ( Dailyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_daily(jj), jj=1,BasinOutVars)
       IF ( write_month==ON ) THEN
         WRITE ( Monthlyunit, Output_fmt) Nowyear, Nowmonth, Nowday, (Basin_var_monthly(jj), jj=1,BasinOutVars)
         Monthdays = 0.0D0

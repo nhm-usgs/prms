@@ -10,7 +10,7 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_DDSOLRAD
-	    USE PRMS_CONSTANTS
+        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
@@ -55,8 +55,8 @@
           dday = Dday_slope(j, Nowmonth)*Tmax_hru(j) + Dday_intcp(j, Nowmonth) + 1.0
           IF ( dday<1.0 ) dday = 1.0
           IF ( dday<26.0 ) THEN
-            kp = INT( dday )
-            ddayi = FLOAT( kp )
+            kp = INT(dday)
+            ddayi = FLOAT(kp)
             kp1 = kp + 1
             radadj = solf(kp) + ((solf(kp1)-solf(kp))*(dday-ddayi))
             IF ( radadj>Radmax(j,Nowmonth) ) radadj = Radmax(j, Nowmonth)

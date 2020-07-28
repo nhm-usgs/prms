@@ -51,7 +51,7 @@
             Seg_outflow(iorder) = Seg_inflow(iorder)
           ENDIF
 
-          IF ( Seg_outflow(iorder)<0.0 ) THEN
+          IF ( Seg_outflow(iorder) < 0.0 ) THEN
             IF ( Print_debug>DEBUG_less ) THEN
               PRINT *, 'WARNING, negative flow from segment:', iorder, ' flow:', Seg_outflow(iorder)
               PRINT *, '         likely a water-use specification or replacement flow issue'

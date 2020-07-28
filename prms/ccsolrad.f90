@@ -9,7 +9,7 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_CCSOLRAD
-	    USE PRMS_CONSTANTS
+        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
