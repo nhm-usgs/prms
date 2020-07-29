@@ -123,7 +123,7 @@
         springFrostCount = 0
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
-        IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
+        IF ( Hemisphere==Northern ) THEN
           spring1 = 1
           fall1 = DAYS_PER_YEAR
         ELSE
@@ -164,11 +164,12 @@
 ! Figure out if the current solar day is in "spring" or "fall"
 !*************************************************************
       INTEGER FUNCTION get_season()
+      USE PRMS_CONSTANTS, ONLY: Northern
       USE PRMS_BASIN, ONLY: Hemisphere
       USE PRMS_SET_TIME, ONLY: Jsol
 !*************************************************************
       get_season = 2 ! default is fall frost
-      IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
+      IF ( Hemisphere==Northern ) THEN
         IF ( Jsol>0 .AND. Jsol<183 ) get_season = 1 ! This is the spring phase
       ELSE ! Southern Hemisphere
         IF ( Jsol>182 .AND. Jsol<367 ) get_season = 1 ! This is the spring phase

@@ -81,7 +81,7 @@
         !   Julian days 79 to 265 for Northern hemisphere
         !   Julian day 265 to 79 in Southern hemisphere
         Summer_flag = ON ! 1 = summer, 0 = winter
-        IF ( Hemisphere==0 ) THEN ! Northern Hemisphere
+        IF ( Hemisphere==Northern ) THEN
           IF ( Jday<79 .OR. Jday>265 ) Summer_flag = OFF ! Equinox
         ELSE ! Southern Hemisphere
           IF ( Jday>79 .AND. Jday<265 ) Summer_flag = OFF ! Equinox

@@ -1,6 +1,12 @@
 MODULE PRMS_CONSTANTS
     USE ISO_FORTRAN_ENV
     IMPLICIT NONE
+! Functions
+    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS
+    INTRINSIC :: INDEX, MAX, CHAR, MIN, MOD, EPSILON
+    EXTERNAL :: print_module, read_error, print_date, error_stop
+    INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
+
     !! INT32, REAL32, REAL64
     integer, parameter :: sp = REAL32
     !! Define real precision and range
@@ -76,6 +82,10 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: TREES = 3
     integer, parameter :: CONIFEROUS = 4
 
+    ! Hemisphere
+    integer, parameter :: Northern = 0
+    integer, parameter :: Southern = 1
+
     ! hru_type
     integer, parameter :: INACTIVE = 0
     integer, parameter :: LAND = 1
@@ -132,7 +142,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
     integer, parameter :: temp_grid_module = 9, temp_sta_module = 8
     integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
-!    integer, parameter :: potet_hs_module = 5
+    integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_pm_module = 11
 
     integer, parameter :: OFF = 0
     integer, parameter :: ON = 1
@@ -147,27 +157,14 @@ MODULE PRMS_CONSTANTS
     integer, save :: Ntemp, Nrain, Nsol, Nsnow, Nobs, Nevap, Nwind, Nhumid
 	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval, Nratetbl 
 
-! Functions
-    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS, INDEX, MAX, CHAR, MIN, MOD
-    EXTERNAL :: print_module, read_error, print_date, error_stop
-    INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
-
 END MODULE PRMS_CONSTANTS
 
 !(0=run, 1=declare, 2=init, 3=clean, 4=setdims) Process_flag
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_temp_grid
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=precip_temp_grid
 ! Control parameters
-        !IF ( Et_flag==potet_jh_module ) THEN
-        !  call_modules = potet_jh()
-        !ELSEIF ( Et_flag==potet_hamon_module ) THEN
-        !  call_modules = potet_hamon()
-        !ELSEIF ( Et_flag==potet_pan_module ) THEN
-        !  call_modules = potet_pan()
-        !ELSEIF ( Et_flag==5 ) THEN
-        !  call_modules = potet_pt()
-        !ELSEIF ( Et_flag==6 ) THEN
-        !  call_modules = potet_pm_sta()
+
+
         !ELSEIF ( Et_flag==11 ) THEN
         !  call_modules = potet_pm()
         !ELSE !IF ( Et_flag==10 ) THEN

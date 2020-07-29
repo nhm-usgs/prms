@@ -2,12 +2,12 @@
 ! Defines shared watershed and HRU physical parameters and variables
 !***********************************************************************
       MODULE PRMS_BASIN
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
-      INTRINSIC :: EPSILON
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2020-07-01'
+      character(len=*), parameter :: Version_basin = '2020-07-28'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -37,16 +37,16 @@
 !     Main basin routine
 !***********************************************************************
       INTEGER FUNCTION basin()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: basdecl, basinit
 !***********************************************************************
       basin = 0
 
-      IF ( Process(:4)=='decl' ) THEN
+      IF ( Process_flag==DECL ) THEN
         basin = basdecl()
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         basin = basinit()
       ENDIF
 
@@ -61,13 +61,10 @@
 !***********************************************************************
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Model, Nhru, Dprst_flag, Lake_route_flag, DOCUMENTATION, &
-     &    Et_flag, Precip_flag, Nlake, Cascadegw_flag, Stream_temp_flag, PRMS4_flag, &
-     &    GSFLOW_flag, Glacier_flag
+      USE PRMS_MODULE, ONLY: Dprst_flag, Lake_route_flag, &
+     &    Et_flag, Precip_flag, Cascadegw_flag, Stream_temp_flag, PRMS4_flag, &
+     &    GSFLOW_flag, Glacier_flag, ide_dist_module
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
 !***********************************************************************
       basdecl = 0
 
@@ -75,7 +72,7 @@
 
 ! Declared Variables
       ALLOCATE ( Hru_elev_ts(Nhru) )
-      IF ( Glacier_flag==1 .OR. Model==DOCUMENTATION ) THEN
+      IF ( Glacier_flag==ON .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'hru_elev_ts', 'nhru', Nhru, 'real', &
      &       'HRU elevation for timestep, which can change for glaciers', &
      &       'elev_units', Hru_elev_ts)/=0 ) CALL read_error(3, 'hru_elev_ts')
@@ -104,7 +101,7 @@
      &     'Fraction of HRU that is pervious', &
      &     'decimal fraction', Hru_frac_perv)/=0 ) CALL read_error(3, 'hru_frac_perv')
 
-      IF ( Dprst_flag==1 .OR. Model==DOCUMENTATION ) THEN
+      IF ( Dprst_flag==ON .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Dprst_area_max(Nhru) )
         IF ( declvar(MODNAME, 'dprst_area_max', 'nhru', Nhru, 'real', &
      &       'Aggregate sum of surface-depression storage areas of each HRU', &
@@ -121,7 +118,7 @@
      &       'acres', Dprst_area_clos_max)/=0 ) CALL read_error(1, 'dprst_area_clos_max')
 
         ALLOCATE ( Dprst_frac(Nhru) )
-        IF ( PRMS4_flag==1 .OR. Model==DOCUMENTATION ) THEN
+        IF ( PRMS4_flag==ON .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Dprst_area(Nhru) )
           IF ( declparam(MODNAME, 'dprst_area', 'nhru', 'real', &
      &         '0.0', '0.0', '1.0E9', &
@@ -134,7 +131,7 @@
      &         'Fraction of each HRU area that has surface depressions', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'dprst_frac_hru')
         ENDIF
-        IF ( PRMS4_flag==0 .OR. Model==DOCUMENTATION ) THEN
+        IF ( PRMS4_flag==OFF .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'dprst_frac', 'nhru', 'real', &
      &         '0.0', '0.0', '0.999', &
      &         'Fraction of each HRU area that has surface depressions', &
@@ -156,11 +153,13 @@
       ALLOCATE ( Hru_route_order(Nhru) )
 ! gwflow inactive for GSFLOW mode so arrays not allocated
 ! when GSFLOW can run in multi-mode will need these arrays
-      IF ( GSFLOW_flag==0 .OR. Cascadegw_flag>0 ) ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
+      IF ( GSFLOW_flag==OFF .OR. Cascadegw_flag>0 ) ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
       ! potet_pm, potet_pm_sta, or potet_pt
-      IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Glacier_flag==1 ) ALLOCATE ( Hru_elev_feet(Nhru) )
+      IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module .OR. Et_flag==potet_pm_sta_module &
+     &     .OR. Glacier_flag==ON ) ALLOCATE ( Hru_elev_feet(Nhru) )
       ! ide_dist, potet_pm, potet_pm_sta, potet_pt, or stream_temp
-      IF ( Precip_flag==5 .OR. Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
+      IF ( Precip_flag==ide_dist_module .OR. Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module &
+     &     .OR. Et_flag==potet_pm_sta_module .OR. Stream_temp_flag==ON .OR. Glacier_flag==1 ) &
      &     ALLOCATE ( Hru_elev_meters(Nhru) )
 
       ! Declared Parameters
@@ -254,16 +253,13 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Nhru, Nlake, Dprst_flag, PRMS4_flag, &
-     &    Print_debug, GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
+      USE PRMS_MODULE, ONLY: Dprst_flag, PRMS4_flag, &
+     &    GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
      &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &
-     &    Stream_temp_flag, Frozen_flag, Glacier_flag, FEET2METERS, METERS2FEET, DNEARZERO, &
-     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin
+     &    Stream_temp_flag, Frozen_flag, Glacier_flag, ide_dist_module
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getparam
       EXTERNAL write_outfile, checkdim_bounded_limits
-      INTRINSIC ABS, DBLE, SNGL
 ! Local Variables
       CHARACTER(LEN=69) :: buffer
       INTEGER :: i, j, dprst_frac_flag, lakeid
@@ -284,12 +280,12 @@
       IF ( getparam(MODNAME, 'hru_percent_imperv', Nhru, 'real', Hru_percent_imperv)/=0 ) CALL read_error(2, 'hru_percent_imperv')
 
       dprst_frac_flag = 0
-      IF ( Dprst_flag==1 ) THEN
+      IF ( Dprst_flag==ON ) THEN
         IF ( getparam(MODNAME, 'dprst_frac_open', Nhru, 'real', Dprst_frac_open)/=0 ) CALL read_error(2, 'dprst_frac_open')
-        IF ( PRMS4_flag==1 ) THEN
+        IF ( PRMS4_flag==ON ) THEN
           IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac_hru')
           IF ( Dprst_frac(1)>-1.0 ) THEN
-            IF ( Print_debug>-1 ) PRINT *, 'Using dprst_frac_hru instead of dprst_area'
+            IF ( Print_debug>DEBUG_less ) PRINT *, 'Using dprst_frac_hru instead of dprst_area'
             dprst_frac_flag = 1
           ELSE
             IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
@@ -299,8 +295,8 @@
         ENDIF
       ENDIF
 
-      Weir_gate_flag = 0
-      Puls_lin_flag = 0
+      Weir_gate_flag = OFF
+      Puls_lin_flag = OFF
       Water_area = 0.0D0
       Lake_area = 0.0D0
       Numlakes_check = 0
@@ -308,13 +304,13 @@
       IF ( Nlake>0 ) THEN
         IF ( getparam(MODNAME, 'lake_hru_id', Nhru, 'integer', Lake_hru_id)/=0 ) CALL read_error(1, 'lake_hru_id')
         IF ( Parameter_check_flag==1 ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
-        IF ( Lake_route_flag==1 ) THEN ! Lake_route_flag set to 0 for GSFLOW mode and if muskingum_lake and nlake = 1
+        IF ( Lake_route_flag==ON ) THEN ! Lake_route_flag set to 0 for GSFLOW mode and if muskingum_lake and nlake = 1
           IF ( getparam(MODNAME, 'lake_type', Nlake, 'integer', Lake_type)/=0 ) CALL read_error(2, 'lake_type')
           DO i = 1, Nlake
             IF ( Lake_type(i)==4 .OR. Lake_type(i)==5 ) THEN
-              Weir_gate_flag = 1
+              Weir_gate_flag = ON
             ELSEIF ( Lake_type(i)==1 .OR. Lake_type(i)==2 ) THEN
-              Puls_lin_flag = 1
+              Puls_lin_flag = ON
             ENDIF
           ENDDO
         ENDIF
@@ -324,14 +320,14 @@
 
       Basin_gl_cfs = 0.0D0
       Basin_gl_ice_cfs = 0.0D0
-      IF ( Dprst_flag==1 ) THEN
+      IF ( Dprst_flag==ON ) THEN
         Dprst_frac_clos = 0.0
         Dprst_area_open_max = 0.0
         Dprst_area_clos_max = 0.0
         Dprst_area_max = 0.0
       ENDIF
-      Dprst_clos_flag = 0
-      Dprst_open_flag = 0
+      Dprst_clos_flag = OFF
+      Dprst_open_flag = OFF
       basin_perv = 0.0D0
       basin_imperv = 0.0D0
       basin_dprst = 0.0D0
@@ -376,7 +372,7 @@
             basinit = 1
             CYCLE
           ENDIF
-          IF ( Frozen_flag==1 ) THEN
+          IF ( Frozen_flag==ON ) THEN
             IF ( Hru_type(i)==SWALE ) THEN
               PRINT *, 'ERROR, a swale HRU cannot be frozen for CFGI, HRU:', i
               basinit = 1
@@ -388,13 +384,17 @@
 
         Basin_lat = Basin_lat + DBLE( Hru_lat(i)*harea )
         IF ( Elev_units==FEET ) THEN
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) Hru_elev_feet(i) = Hru_elev(i)
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
-     &         Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
+          IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module &
+     &         .OR. Et_flag==potet_pm_sta_module ) Hru_elev_feet(i) = Hru_elev(i)
+          IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module &
+     &         .OR. Et_flag==potet_pm_sta_module .OR. Precip_flag==ide_dist_module &
+     &         .OR. Stream_temp_flag==ON .OR. Glacier_flag==1 ) Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
         ELSE
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 .OR. Precip_flag==5 .OR. Stream_temp_flag==1 .OR. Glacier_flag==1 ) &
-     &         Hru_elev_meters(i) = Hru_elev(i)
-          IF ( Et_flag==5 .OR. Et_flag==11 .OR. Et_flag==6 ) Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
+          IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module &
+     &         .OR. Et_flag==potet_pm_sta_module .OR. Precip_flag==ide_dist_module &
+     &         .OR. Stream_temp_flag==ON .OR. Glacier_flag==ON ) Hru_elev_meters(i) = Hru_elev(i)
+          IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module &
+     &         .OR. Et_flag==potet_pm_sta_module ) Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
         ENDIF
         j = j + 1
         Hru_route_order(j) = i
@@ -404,8 +404,8 @@
         Hru_imperv(i) = Hru_percent_imperv(i)*harea
         Hru_perv(i) = harea - Hru_imperv(i)
 
-        IF ( Dprst_flag==1 ) THEN
-          IF ( dprst_frac_flag==1 .OR. PRMS4_flag==0 ) THEN
+        IF ( Dprst_flag==ON ) THEN
+          IF ( dprst_frac_flag==1 .OR. PRMS4_flag==OFF ) THEN
             Dprst_area_max(i) = Dprst_frac(i)*harea
           ELSE
             IF ( Dprst_area(i)>0.999*harea ) THEN
@@ -432,10 +432,10 @@
         Hru_frac_perv(i) = Hru_perv(i)/harea
         basin_perv = basin_perv + DBLE( Hru_perv(i) )
         basin_imperv = basin_imperv + DBLE( Hru_imperv(i) )
-        IF ( Dprst_flag==1 ) THEN
+        IF ( Dprst_flag==ON ) THEN
           basin_dprst = basin_dprst + DBLE( Dprst_area_max(i) )
-          IF ( Dprst_area_clos_max(i)>0.0 ) Dprst_clos_flag = 1
-          IF ( Dprst_area_open_max(i)>0.0 ) Dprst_open_flag = 1
+          IF ( Dprst_area_clos_max(i)>0.0 ) Dprst_clos_flag = ON
+          IF ( Dprst_area_open_max(i)>0.0 ) Dprst_open_flag = ON
         ENDIF
       ENDDO
       IF ( Dprst_flag==1 .AND. PRMS4_flag==1 ) DEALLOCATE ( Dprst_area )
@@ -476,9 +476,9 @@
       Basin_lat = Basin_lat*Basin_area_inv
       ! used in solrad modules to winter/summer radiation adjustment
       IF ( Basin_lat>0.0D0 ) THEN
-        Hemisphere = 0 ! Northern
+        Hemisphere = Northern
       ELSE
-        Hemisphere = 1 ! Southern
+        Hemisphere = Southern
       ENDIF
 
       basin_perv = basin_perv*Basin_area_inv
@@ -493,12 +493,12 @@
         PRINT *, 'Fraction impervious   = ', basin_imperv
         PRINT *, 'Fraction pervious     = ', basin_perv
         IF ( Water_area>0.0D0 ) PRINT *, 'Fraction lakes        = ', Water_area*Basin_area_inv
-        IF ( Dprst_flag==1 ) PRINT *, 'Depression storage area     =', basin_dprst
+        IF ( Dprst_flag==ON ) PRINT *, 'Depression storage area     =', basin_dprst
         PRINT *, ' '
       ENDIF
 
 !     print out start and end times
-      IF ( Print_debug>-2 ) THEN
+      IF ( Print_debug>DEBUG_minimum ) THEN
         !CALL write_outfile(' Surface Water and Energy Budgets Simulated by '//PRMS_VERSION)
         CALL write_outfile(' ')
         WRITE (buffer, 9002) 'Start time: ', Starttime
@@ -514,7 +514,7 @@
           WRITE (buffer, 9004) 'Lake area:            ', Water_area, '    Fraction lakes:    ', Water_area*Basin_area_inv
           CALL write_outfile(buffer)
         ENDIF
-        IF ( Dprst_flag==1 ) THEN
+        IF ( Dprst_flag==ON ) THEN
           WRITE (buffer, 9005) 'DPRST area:          ', basin_dprst, '    Fraction DPRST:   ', basin_dprst*Basin_area_inv
           CALL write_outfile(buffer)
         ENDIF
