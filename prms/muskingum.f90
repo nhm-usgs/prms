@@ -81,11 +81,13 @@
 !
 !***********************************************************************
       MODULE PRMS_MUSKINGUM
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
-      character(len=*), parameter :: MODNAME = 'muskingum_mann'
+      character(len=14), parameter :: MODNAME = 'muskingum_mann'
       character(len=*), parameter :: Version_muskingum = '2020-07-01'
 !   Local Variables
+      DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
       END MODULE PRMS_MUSKINGUM
@@ -94,7 +96,8 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_MODULE, ONLY: Process, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_MUSKINGUM
+      USE PRMS_MODULE, ONLY: Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
@@ -102,15 +105,15 @@
 !***********************************************************************
       muskingum = 0
 
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
         muskingum  = muskingum_run()
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         muskingum  = muskingum_decl()
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
         muskingum = muskingum_init()
-      ELSEIF ( Process(:5)=='clean' ) THEN
-        IF ( Save_vars_to_file==1 ) CALL muskingum_restart(0)
+      ELSEIF ( Process_flag==CLEAN ) THEN
+        IF ( Save_vars_to_file==ON ) CALL muskingum_restart(0)
       ENDIF
 
       END FUNCTION muskingum
@@ -122,10 +125,8 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Strmflow_flag
+      USE PRMS_MODULE, ONLY: Strmflow_flag
       IMPLICIT NONE
-! Functions
-      EXTERNAL read_error, print_module
 !***********************************************************************
       muskingum_decl = 0
 
@@ -146,22 +147,19 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Init_vars_from_file
       USE PRMS_BASIN, ONLY: Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
       IMPLICIT NONE
-! Functions
-      EXTERNAL :: read_error
-      INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
       muskingum_init = 0
 
       !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
+      IF ( Init_vars_from_file==OFF ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
@@ -176,7 +174,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag, CFS2CMS_CONV, ONE_24TH, ERROR_streamflow
+      USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
@@ -190,9 +188,6 @@
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
-! Functions
-      INTRINSIC MOD
-      EXTERNAL error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -345,7 +340,7 @@
         ELSEIF ( segtype==11 ) THEN
           Flow_to_great_lakes = Flow_to_great_lakes + segout
         ENDIF
-        IF ( Tosegment(i)==0 ) Flow_out = Flow_out + segout
+        IF ( Tosegment(i)==OUTFLOW_SEGMENT ) Flow_out = Flow_out + segout
         Segment_delta_flow(i) = Segment_delta_flow(i) + Seg_inflow(i) - segout
 !        IF ( Segment_delta_flow(i) < 0.0D0 ) PRINT *, 'negative delta flow', Segment_delta_flow(i)
         Basin_segment_storage = Basin_segment_storage + Segment_delta_flow(i)
@@ -356,7 +351,7 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
-      IF ( Glacier_flag==1 ) THEN
+      IF ( Glacier_flag==ON ) THEN
         Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
         Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
         Basin_gl_cfs = Basin_gl_top_melt*area_fac

@@ -256,7 +256,7 @@
      &         'Initial storage of the gravity and preferential-flow reservoirs for each HRU', &
      &         'inches')/=0 ) CALL read_error(1, 'ssstor_init')
 
-           IF ( Dprst_flag==1 ) THEN
+           IF ( Dprst_flag==ON ) THEN
 !            ALLOCATE ( Sro_to_dprst(Nhru) )
 !            IF ( declparam(MODNAME, 'sro_to_dprst', 'nhru', 'real', &
 !     &           '0.2', '0.0', '1.0', &

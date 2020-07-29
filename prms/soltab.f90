@@ -11,11 +11,12 @@
 !   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
       character(len=*), parameter :: MODNAME = 'soltab'
-      character(len=*), parameter :: Version_soltab = '2020-07-01'
+      character(len=*), parameter :: Version_soltab = '2020-07-28'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -23,14 +24,13 @@
 ! RADIANS ~ 0.017453292519943
 ! PI_12 ~ 3.8197186342055
       DOUBLE PRECISION, PARAMETER :: ECCENTRICY = 0.01671D0
-      DOUBLE PRECISION, PARAMETER :: DAYSYR = 365.242D0
       ! 0.016723401  daily change -1.115E-09, eccen = 0.016723401 + (julhour-julhour(1966,1,0,18))+dmin/60)/24*-1.115E-09
       ! julday(1966,1,0.75 UT) = 2439126.25
       ! eccen = 0.01675104-0.00004180*T-0.000000126*T^2  T is julian centuries (days time from epoch, is GMT from Jan 0.0
-      DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYSYR
+      DOUBLE PRECISION, PARAMETER :: DEGDAY = 360.0D0/DAYS_IN_YEAR
       DOUBLE PRECISION, PARAMETER :: DEGDAYRAD = DEGDAY*RADIANS ! about 0.00143356672
 ! DEGDAY = 360 degrees/days in year
-      DOUBLE PRECISION, SAVE :: Solar_declination(366), Soltab_basinpotsw(366)
+      DOUBLE PRECISION, SAVE :: Solar_declination(MAX_DAYS_PER_YEAR), Soltab_basinpotsw(MAX_DAYS_PER_YEAR)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_cossl(:), Soltab_sunhrs(:, :)
 !   Declared Variables
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Soltab_potsw(:, :), Soltab_horad_potsw(:, :)
@@ -42,16 +42,16 @@
 !     Main soltab routine
 !***********************************************************************
       INTEGER FUNCTION soltab()
-      USE PRMS_MODULE, ONLY: Process
+      USE PRMS_SOLTAB
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: sthdecl, sthinit
 !***********************************************************************
       soltab = 0
 
-      IF ( Process(:4)=='decl' ) THEN
+      IF ( Process_flag==DECL ) THEN
         soltab = sthdecl()
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         soltab = sthinit()
       ENDIF
 
@@ -64,28 +64,23 @@
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
       USE PRMS_SOLTAB
-      USE PRMS_MODULE, ONLY: Nhru
       IMPLICIT NONE
-! Functions
-      INTRINSIC INDEX
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
 !***********************************************************************
       sthdecl = 0
 
       CALL print_module(MODDESC, MODNAME, Version_soltab)
 
-      ALLOCATE ( Soltab_potsw(366, Nhru) )
-!      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', 366*Nhru, 'double', &
+      ALLOCATE ( Soltab_potsw(MAX_DAYS_PER_YEAR, Nhru) )
+!      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', DAYS_PER_YEAR*Nhru, 'double', &
 !     &     'Potential solar radiation for each Julian Day, for each HRU', &
 !     &     'Langleys', Soltab_potsw)/=0 ) CALL read_error(3, 'soltab_potsw')
 
-      ALLOCATE ( Soltab_horad_potsw(366, Nhru) )
-!      IF ( declvar(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', 366*Nhru, 'double', &
+      ALLOCATE ( Soltab_horad_potsw(MAX_DAYS_PER_YEAR, Nhru) )
+!      IF ( declvar(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, 'double', &
 !     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', &
 !     &     'Langleys', Soltab_horad_potsw)/=0 ) CALL read_error(3, 'soltab_horad_potsw')
 
-      ALLOCATE ( Hru_cossl(Nhru), Soltab_sunhrs(366, Nhru) )
+      ALLOCATE ( Hru_cossl(Nhru), Soltab_sunhrs(MAX_DAYS_PER_YEAR, Nhru) )
 
 !   Declared Parameters
       ALLOCATE ( Hru_slope(Nhru) )
@@ -111,20 +106,19 @@
 !***********************************************************************
       INTEGER FUNCTION sthinit()
       USE PRMS_SOLTAB
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag
+      USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SIN, COS, DBLE
+      INTRINSIC SIN, COS
 !     INTRINSIC ASIN
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL compute_soltab, read_error, PRMS_open_module_file
+      EXTERNAL compute_soltab, PRMS_open_module_file
 ! Local Variables
       CHARACTER(LEN=12) :: output_path
       INTEGER :: jd, j, n, file_unit, nn
       REAL :: lat
       DOUBLE PRECISION :: basin_cossl
-      DOUBLE PRECISION :: basin_sunhrs(366), obliquity(366)
+      DOUBLE PRECISION :: basin_sunhrs(MAX_DAYS_PER_YEAR), obliquity(MAX_DAYS_PER_YEAR)
       DOUBLE PRECISION :: y, y2, y3, jddbl
 !***********************************************************************
       sthinit = 0
@@ -132,7 +126,7 @@
       IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
       IF ( getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
 
-      DO jd = 1, 366
+      DO jd = 1, MAX_DAYS_PER_YEAR
         jddbl = DBLE(jd)
 
         ! cosine of the solar zenith angle: http://www.cesm.ucar.edu/models/cesm1.0/cesm/cesmBbrowser/html_code/csm_share/shr_orb_mod.F90.html
@@ -145,10 +139,10 @@
 
         ! Eccentricity from equation E-2 (Dingman, S. L., 1994, Physical Hydrology. Englewood Cliffs, NJ: Prentice Hall, 575 p.)
         ! eccentricity = (r_0/r)^2 = 1.00011+0.034221 cos⁡Γ+0.00128 sin⁡Γ+0.000719 cos⁡2Γ+0.000077 sin⁡2Γ
-        ! Γ = (2π(J-1))/365 = DEGDAYRAD*(jddbl-1.0D0) = day angle
+        ! Γ = (2π(J-1))/DAYS_PER_YEAR = DEGDAYRAD*(jddbl-1.0D0) = day angle
         ! dayangle = DEGDAYRAD*(jddbl-1.0D0)
         ! eccentricity = 1.00011D0 + 0.034221D0*COS(dayangle) + 0.00128D0*SIN(dayangle) + 0.000719D0*COS(2.0D0*dayangle) + 0.000077D0*SIN(2.0D0*dayangle)
-!rsr .0172 = 2PI/365 = RADIAN_YEAR = DEGDAYRAD
+!rsr .0172 = 2PI/DAYS_PER_YEAR = RADIAN_YEAR = DEGDAYRAD
 !rsr01/2006 commented out equations from Llowd W. Swift paper 2/1976
 !       obliquity(jd) = 1.0D0 - (0.0167D0*COS((jd-3)*0.0172D0))
         obliquity(jd) = 1.0D0 - (ECCENTRICY*COS((jddbl-3.0D0)*DEGDAYRAD))
@@ -183,7 +177,7 @@
       CALL compute_soltab(obliquity, Solar_declination, 0.0, 0.0, lat, basin_cossl, &
      &                    Soltab_basinpotsw, basin_sunhrs, 0, 0)
 
-      IF ( Print_debug==5 ) THEN
+      IF ( Print_debug==DEBUG_SOLTAB ) THEN
         output_path = 'soltab_debug'
         PRINT *, ''
         PRINT *, 'soltab debug data written to: ', output_path
@@ -191,9 +185,9 @@
         DO n = 1, Nhru
           WRITE ( file_unit, * ) 'HRU:', n
           WRITE ( file_unit, * ) '***Soltab_sunhrs***'
-          WRITE ( file_unit, '(13F8.3)' ) (Soltab_sunhrs(j,n), j=1,366)
+          WRITE ( file_unit, '(13F8.3)' ) (Soltab_sunhrs(j,n), j=1,MAX_DAYS_PER_YEAR)
           WRITE ( file_unit, * ) '***Soltab_potsw***'
-          WRITE ( file_unit, '(13F8.3)' ) (Soltab_potsw(j,n), j=1,366)
+          WRITE ( file_unit, '(13F8.3)' ) (Soltab_potsw(j,n), j=1,MAX_DAYS_PER_YEAR)
         ENDDO
 !       WRITE ( file_unit, * ) obliquity, Solar_declination
         WRITE ( file_unit, * ) 2.0D0/(obliquity(356)*obliquity(356)), 2.0D0/(obliquity(10)*obliquity(10)), &
@@ -231,19 +225,18 @@
 !***********************************************************************
       SUBROUTINE compute_soltab(Obliquity, Solar_declination, Slope, Aspect, &
      &                          Latitude, Cossl, Soltab, Sunhrs, Hru_type, Id)
-      USE PRMS_SOLTAB, ONLY: PI, TWOPI, RADIANS, PI_12
-      USE PRMS_MODULE, ONLY: DNEARZERO
+      USE PRMS_SOLTAB, ONLY: PI, TWOPI, RADIANS, PI_12, MAX_DAYS_PER_YEAR, DNEARZERO
       IMPLICIT NONE
       EXTERNAL compute_t
 !     Functions
       DOUBLE PRECISION, EXTERNAL :: func3
-      INTRINSIC ASIN, SIN, COS, ATAN, ABS
+      INTRINSIC ASIN, SIN, COS, ATAN
 !     Arguments
       INTEGER, INTENT(IN) :: Hru_type, Id
-      DOUBLE PRECISION, INTENT(IN), DIMENSION(366) :: Obliquity, Solar_declination
+      DOUBLE PRECISION, INTENT(IN), DIMENSION(MAX_DAYS_PER_YEAR) :: Obliquity, Solar_declination
       REAL, INTENT(IN) :: Slope, Aspect, Latitude
       DOUBLE PRECISION, INTENT(OUT) :: Cossl
-      DOUBLE PRECISION, INTENT(OUT), DIMENSION(366) :: Soltab, Sunhrs
+      DOUBLE PRECISION, INTENT(OUT), DIMENSION(MAX_DAYS_PER_YEAR) :: Soltab, Sunhrs
 !     Local Variables
       INTEGER :: jd
       DOUBLE PRECISION :: a, x0, x1, x2, r0, r1, d1, t, sunh, solt
@@ -277,7 +270,7 @@
 ! r0 is the minute solar constant cal/cm2/min
       r0 = 2.0D0
 ! r0 could be 1.95 (Drummond, et al 1968)
-      DO jd = 1, 366
+      DO jd = 1, MAX_DAYS_PER_YEAR
         d = Solar_declination(jd)
 
 ! This is adjusted to express the variability of available insolation as

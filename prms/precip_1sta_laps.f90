@@ -35,7 +35,7 @@
       INTEGER FUNCTION precip_1sta_laps()
       USE PRMS_PRECIP_1STA_LAPS
       USE PRMS_MODULE, ONLY: Inputerror_flag, Precip_flag, &
-     &    Print_debug, Glacier_flag, GLACIER, precip_1sta_module, precip_laps_module
+     &    Print_debug, Glacier_flag, precip_1sta_module, precip_laps_module
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
@@ -226,14 +226,13 @@
 !     Compute lapse rate for an HRU
 !***********************************************************************
       SUBROUTINE compute_precip_laps(Ihru, Hru_plaps, Hru_psta, Hru_elev)
-      USE PRMS_PRECIP_1STA_LAPS
+      USE PRMS_PRECIP_1STA_LAPS, ONLY: Pmn_mo, Padj_sn, Padj_rn, Snow_adj_lapse, &
+     &    Rain_adj_lapse, NEARZERO, MONTHS_PER_YEAR
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Hru_psta, Hru_plaps
       REAL, INTENT(IN) :: Hru_elev
-! Functions
-      INTRINSIC ABS
 ! Local Variables
       INTEGER :: j
       REAL :: elp_diff, elh_diff, pmo_diff, pmo_rate, adj_p

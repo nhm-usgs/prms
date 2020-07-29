@@ -136,6 +136,7 @@ MODULE PRMS_CONSTANTS
 
     integer, parameter :: OFF = 0
     integer, parameter :: ON = 1
+    integer, parameter :: INT_TYPE = 1
     integer, parameter :: REAL_TYPE = 2
     integer, parameter :: DBLE_TYPE = 3
 
@@ -147,7 +148,7 @@ MODULE PRMS_CONSTANTS
 	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval, Nratetbl 
 
 ! Functions
-    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS, INDEX, MAX, CHAR, MIN
+    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS, INDEX, MAX, CHAR, MIN, MOD
     EXTERNAL :: print_module, read_error, print_date, error_stop
     INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
 
