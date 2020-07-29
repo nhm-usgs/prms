@@ -113,7 +113,7 @@
         IF ( ierr==1 ) ERROR STOP -1
 
 !***Clean-up Procedure***
-      ELSEIF ( Process(:5)=='clean' ) THEN
+      ELSEIF ( Process_flag==CLEAN ) THEN
         IF ( Climate_temp_flag==OFF ) THEN
           CLOSE ( tmax_unit )
           CLOSE ( tmin_unit )

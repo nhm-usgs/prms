@@ -150,7 +150,7 @@
      &       ' to determine precipitation adjustments to solar radiation for each HRU', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_index')
 
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
 ! Get parameters
         IF ( getparam(MODNAME, 'dday_slope', Nhru*MONTHS_PER_YEAR, 'real', Dday_slope)/=0 ) CALL read_error(2, 'dday_slope')
         IF ( getparam(MODNAME, 'dday_intcp', Nhru*MONTHS_PER_YEAR, 'real', Dday_intcp)/=0 ) CALL read_error(2, 'dday_intcp')

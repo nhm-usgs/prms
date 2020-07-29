@@ -8,7 +8,7 @@
 !     Main setup routine
 !***********************************************************************
       INTEGER FUNCTION setup()
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: setupdecl
@@ -25,6 +25,7 @@
 !     parent_gw, parent_ssr, parent_segment, parent_hru, hru_lon
 !***********************************************************************
       INTEGER FUNCTION setupdecl()
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Parameter Setup'
       character(len=*), parameter :: MODNAME = 'setup_param'

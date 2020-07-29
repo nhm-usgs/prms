@@ -157,7 +157,7 @@
      &       'Monthly (January to December) intercept in cloud-cover relationship', &
      &       'none')/=0 ) CALL read_error(1, 'ccov_intcp')
 
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
 ! Get parameters
         IF ( getparam(MODNAME, 'crad_coef', Nhru*MONTHS_PER_YEAR, 'real', Crad_coef)/=0 ) CALL read_error(2, 'crad_coef')
         IF ( getparam(MODNAME, 'crad_exp', Nhru*MONTHS_PER_YEAR, 'real', Crad_exp)/=0 ) CALL read_error(2, 'crad_exp')

@@ -3,6 +3,7 @@
 ! based on a temperature index method.
 !***********************************************************************
       MODULE PRMS_TRANSP_TINDEX
+        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'

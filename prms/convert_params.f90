@@ -2,15 +2,14 @@
 ! Convert PRMS IV parameters to PRMS 5
 !***********************************************************************
       SUBROUTINE convert_params()
-      USE PRMS_MODULE, ONLY: Process, Dprst_flag, Nhru, Model_mode
+      USE PRMS_CONSTANTS
+      USE PRMS_MODULE, ONLY: Model_mode, Dprst_flag
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Convert PRMS parameters'
       character(len=*), parameter :: MODNAME = 'convert_params'
       character(len=*), parameter :: Version_convert_params = '2020-07-01'
 ! Functions
-      EXTERNAL print_module, PRMS_open_module_file, read_error
-      INTEGER, EXTERNAL :: declparam, getparam
-      INTRINSIC :: MIN
+      EXTERNAL PRMS_open_module_file
 ! Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_rechr_init(:), Soil_moist_init(:), Soil_rechr_max(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Ssstor_init(:), Sat_threshold(:)
@@ -19,15 +18,15 @@
       REAL, SAVE, ALLOCATABLE :: Soil_moist_init_frac(:), Soil_rechr_max_frac(:), Ssstor_init_frac(:)
 !      REAL, SAVE, ALLOCATABLE :: Sro_to_dprst(:)
 ! Local Variables
-      INTEGER :: i, j, dprst_frac_flag, ounit
+      INTEGER :: i, j, ounit
 !***********************************************************************
-      IF ( Process(:4)=='init' ) THEN
+      IF ( Process_flag==INIT ) THEN
 
-        IF ( getparam(MODNAME, 'tmax_allsnow', Nhru*12, 'real', Tmax_allsnow)/=0 ) CALL read_error(2, 'tmax_allsnow')
+        IF ( getparam(MODNAME, 'tmax_allsnow', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allsnow)/=0 ) CALL read_error(2, 'tmax_allsnow')
         IF ( getparam(MODNAME, 'sat_threshold', Nhru, 'real', Sat_threshold)/=0 ) CALL read_error(2, 'sat_threshold')
         IF ( getparam(MODNAME, 'soil_moist_max', Nhru, 'real', Soil_moist_max)/=0 ) CALL read_error(2, 'soil_moist_max')
         IF ( Model_mode(:8)=='CONVERT4' ) THEN
-          IF ( getparam(MODNAME, 'tmax_allrain_offset', Nhru*12, 'real', Tmax_allrain_offset)/=0 ) &
+          IF ( getparam(MODNAME, 'tmax_allrain_offset', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allrain_offset)/=0 ) &
      &         CALL read_error(2, 'tmax_allrain_offset')
           IF ( getparam(MODNAME, 'ssstor_init_frac', Nhru, 'real', Ssstor_init_frac)/=0 ) &
      &         CALL read_error(2, 'ssstor_init_frac')
@@ -44,7 +43,7 @@
           Soil_moist_init = Soil_moist_init_frac*Soil_moist_max
           Ssstor_init = Ssstor_init_frac*Sat_threshold
           Tmax_allrain = Tmax_allsnow + Tmax_allrain_offset
-          IF ( Dprst_flag==1 ) THEN
+          IF ( Dprst_flag==ON ) THEN
 !            IF ( getparam(MODNAME, 'sro_to_dprst_perv', Nhru, 'real', Sro_to_dprst)/=0 ) CALL read_error(2, 'sro_to_dprst_perv')
 !            IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac')
             PRINT *, 'Change parameter names sro_to_dprst_perv to sro_to_dprst and dprst_frac to dprst_frac_hru'
@@ -61,21 +60,21 @@
           WRITE ( ounit, 110 ) 'ssstor_init', Nhru
           WRITE ( ounit, 300 ) ( Ssstor_init(i), i = 1, Nhru )
 
-!          IF ( Dprst_flag==1 ) THEN
+!          IF ( Dprst_flag==ON ) THEN
 !            WRITE ( ounit, 100 ) 'sro_to_dprst_perv', Nhru
 !            WRITE ( ounit, 300 ) ( Sro_to_dprst(i), i = 1, Nhru )
 !            WRITE ( ounit, 100 ) 'dprst_frac', Nhru
 !            WRITE ( ounit, 300 ) ( Dprst_frac(i), i = 1, Nhru )
 !          ENDIF
 
-          WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru*12
-          DO i = 1, 12
+          WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru*MONTHS_PER_YEAR
+          DO i = 1, MONTHS_PER_YEAR
             DO j = 1, Nhru
               WRITE ( ounit, 300 ) Tmax_allrain_offset(j, i)
             ENDDO
           ENDDO
         ELSE
-          IF ( getparam(MODNAME, 'tmax_allrain', Nhru*12, 'real', Tmax_allrain)/=0 ) CALL read_error(2, 'tmax_allrain')
+          IF ( getparam(MODNAME, 'tmax_allrain', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allrain)/=0 ) CALL read_error(2, 'tmax_allrain')
           IF ( getparam(MODNAME, 'ssstor_init', Nhru, 'real', Ssstor_init)/=0 ) CALL read_error(2, 'ssstor_init')
           IF ( getparam(MODNAME, 'soil_moist_init', Nhru, 'real', Soil_moist_init)/=0 ) CALL read_error(2, 'soil_moist_init')
           IF ( getparam(MODNAME, 'soil_rechr_init', Nhru, 'real', Soil_rechr_init)/=0 ) CALL read_error(2, 'soil_rechr_init')
@@ -96,7 +95,7 @@
           ENDDO
 
           Tmax_allrain_offset = Tmax_allrain - Tmax_allsnow
-          IF ( Dprst_flag==1 ) THEN
+          IF ( Dprst_flag==ON ) THEN
             IF ( getparam(MODNAME, 'hru_area', Nhru, 'real', Hru_area)/=0 ) CALL read_error(2, 'hru_area')
 !              IF ( getparam(MODNAME, 'sro_to_dprst', Nhru, 'real', Sro_to_dprst)/=0 ) CALL read_error(2, 'sro_to_dprst')
               PRINT *, 'Change parameter name sro_to_dprst to sro_to_dprst_perv'
@@ -113,10 +112,7 @@
             IF ( j==0 ) THEN
               PRINT *, 'Change parameter name dprst_frac_hru to dprst_frac'
               PRINT *, 'Using dprst_frac_hru instead of dprst_area'
-              dprst_frac_flag = 1
               Dprst_frac = Dprst_area/Hru_area
-            ELSE
-              dprst_frac_flag = 0
             ENDIF
           ENDIF
 
@@ -132,7 +128,7 @@
           WRITE ( ounit, 110 ) 'ssstor_init_frac', Nhru
           WRITE ( ounit, 300 ) ( Ssstor_init_frac(i), i = 1, Nhru )
 
-          IF ( Dprst_flag==1 ) THEN
+          IF ( Dprst_flag==ON ) THEN
  !           WRITE ( ounit, 100 ) 'sro_to_dprst_perv', Nhru
  !           WRITE ( ounit, 300 ) ( Sro_to_dprst(i), i = 1, Nhru )
 
@@ -140,8 +136,8 @@
             WRITE ( ounit, 300 ) ( Dprst_frac(i), i = 1, Nhru )
           ENDIF
 
-          WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru*12
-          DO i = 1, 12
+          WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru*MONTHS_PER_YEAR
+          DO i = 1, MONTHS_PER_YEAR
             DO j = 1, Nhru
               WRITE ( ounit, 300 ) Tmax_allrain_offset(j, i)
             ENDDO
@@ -154,10 +150,10 @@
  200    FORMAT ('####', /, A, /, '2', /, 'nhru', /, 'nmonths', /, I0, /, '2')
  300    FORMAT (F0.7)
 
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_convert_params)
 
-        ALLOCATE ( Tmax_allsnow(Nhru,12) )
+        ALLOCATE ( Tmax_allsnow(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'tmax_allsnow', 'nhru,nmonths', 'real', &
      &       '32.0', '-10.0', '40.0', &
      &       'Maximum temperature when precipitation is all snow', &
@@ -183,7 +179,7 @@
      &       ' major vegetation type of each HRU', &
      &       'inches')/=0 ) CALL read_error(1, 'soil_moist_max')
 
-        ALLOCATE ( Tmax_allrain(Nhru,12), Tmax_allrain_offset(Nhru,12) )
+        ALLOCATE ( Tmax_allrain(Nhru,MONTHS_PER_YEAR), Tmax_allrain_offset(Nhru,MONTHS_PER_YEAR) )
         ALLOCATE ( Soil_rechr_max(Nhru), Soil_rechr_init(Nhru), Soil_moist_init(Nhru), Ssstor_init(Nhru) )
         ALLOCATE ( Soil_rechr_init_frac(Nhru), Soil_rechr_max_frac(Nhru), Soil_moist_init_frac(Nhru), Ssstor_init_frac(Nhru) )
 

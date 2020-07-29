@@ -65,6 +65,10 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: FEET = 0
     integer, parameter :: METERS = 1
 
+    ! runoff_units
+    integer, parameter :: CFS = 0
+    integer, parameter :: CMS = 1
+
     ! cov_type
     integer, parameter :: BARESOIL = 0
     integer, parameter :: GRASSES = 1
@@ -140,10 +144,10 @@ MODULE PRMS_CONSTANTS
 ! Dimensions
     integer, save :: Nhru, Nssr, Ngw, Nsegment, Nlake, Nlake_hrus, Nsub
     integer, save :: Ntemp, Nrain, Nsol, Nsnow, Nobs, Nevap, Nwind, Nhumid
-	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval 
+	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval, Nratetbl 
 
 ! Functions
-    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG
+    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS, INDEX, MAX, CHAR, MIN
     EXTERNAL :: print_module, read_error, print_date, error_stop
     INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
 

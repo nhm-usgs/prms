@@ -50,7 +50,6 @@
       USE PRMS_BASIN_SUMMARY
       IMPLICIT NONE
 ! Functions
-      INTRINSIC CHAR
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
 ! Local Variables
       INTEGER :: i
@@ -82,7 +81,6 @@
       USE PRMS_BASIN_SUMMARY
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
       IMPLICIT NONE
-      INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
       EXTERNAL PRMS_open_output_file
 ! Local Variables

@@ -6,7 +6,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
         character(len=*), parameter :: MODNAME = 'prms_summary'
-        character(len=*), parameter :: Version_prms_summary = '2020-07-01'
+        character(len=*), parameter :: Version_prms_summary = '2020-07-28'
         INTEGER, PARAMETER :: NVARS = 51
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
@@ -24,9 +24,9 @@
       END MODULE PRMS_PRMS_SUMMARY
 
       SUBROUTINE prms_summary()
+      USE PRMS_CONSTANTS
       USE PRMS_PRMS_SUMMARY
-      USE PRMS_MODULE, ONLY: Model, Process, Nsegment, Csv_output_file, Inputerror_flag, Nobs, &
-     &    MAXDIM, Npoigages, Parameter_check_flag, CsvON_OFF, DOCUMENTATION, ERROR_open_out
+      USE PRMS_MODULE, ONLY: Csv_output_file, Inputerror_flag, Npoigages, Parameter_check_flag, CsvON_OFF
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
      &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
@@ -44,16 +44,15 @@
      &    Basin_gwstor_minarea_wb, Basin_dnflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC CHAR, INDEX, MAX
-      INTEGER, EXTERNAL :: declparam, declvar, getparam !, control_integer
-      EXTERNAL :: read_error, PRMS_open_output_file, print_module, statvar_to_csv, checkdim_bounded_limits
+!      INTEGER, EXTERNAL :: control_integer
+      EXTERNAL :: PRMS_open_output_file, statvar_to_csv, checkdim_bounded_limits
       INTEGER, EXTERNAL :: getparamstring, control_string
 ! Local Variables
       INTEGER :: i, ios, foo, idim !, statsON_OFF
       DOUBLE PRECISION :: gageflow
       CHARACTER(LEN=10) :: chardate
 !***********************************************************************
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Process_flag==RUN ) THEN
         DO i = 1, Npoigages
           Segmentout(i) = Seg_outflow(Poi_gage_segment(i))
 !          Gageout(i) = Streamflow_cfs(Parent_poigages(i))
@@ -65,7 +64,7 @@
      &                        Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
         Basin_surface_storage = Basin_intcp_stor + Basin_pweqv + Basin_imperv_stor + Basin_lake_stor + &
      &                          Basin_dprst_volop + Basin_dprst_volcl
-        IF ( CsvON_OFF==1 ) THEN
+        IF ( CsvON_OFF==ON ) THEN
           WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, &
      &            Basin_potet, Basin_actet, Basin_dprst_evap, Basin_imperv_evap, Basin_intcp_evap, Basin_lakeevap, &
@@ -89,7 +88,7 @@
         ENDIF
 
 ! Declare procedure
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_prms_summary)
 
 !       Open summary file
@@ -126,13 +125,13 @@
         ENDIF
 
 ! Initialize Procedure
-      ELSEIF ( Process(:4)=='init' ) THEN
+      ELSEIF ( Process_flag==INIT ) THEN
         idim = MAX(1, Npoigages)
         ALLOCATE ( Streamflow_pairs(idim), Cfs_strings(idim), Segmentout(idim), Gageid_len(idim) )
 !        ALLOCATE ( Gageout(idim) )
         Streamflow_pairs = ' '
 !        Cfs_strings = ',cfs,cfs'
-        IF ( CsvON_OFF==1 ) THEN
+        IF ( CsvON_OFF==ON ) THEN
           Cfs_strings = ',cfs'
         ELSE
           Cfs_strings = ' cfs'
@@ -156,7 +155,6 @@
             foo = getparamstring(MODNAME, 'poi_gage_id', Npoigages, 'string', &
      &            i-1, Poi_gage_id(i))
           ENDDO
-          !print *, "second", poi_gage_id
 
           DO i = 1, Npoigages
             IF ( Poi_gage_segment(i)<1 .OR. Poi_gage_segment(i)>Nsegment ) CYCLE
@@ -166,7 +164,7 @@
             IF ( Gageid_len(i)<1 ) Gageid_len(i) = 0
             IF ( Gageid_len(i)>0 ) THEN
               IF ( Gageid_len(i)>15 ) Gageid_len(i) = 15
-              IF ( CsvON_OFF==1 ) THEN
+              IF ( CsvON_OFF==ON ) THEN
                 WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ',seg_outflow_', Poi_gage_segment(i), '_gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
               ELSE
@@ -186,11 +184,9 @@
               WRITE (Streamflow_pairs(i), '(A,I0)' ) ',seg_outflow_', Poi_gage_segment(i)
             ENDIF
           ENDDO
-          !print *, 'pairs', streamflow_pairs
         ENDIF
 
-!        WRITE ( Fmt, '(A,I0,A)' ) '( ', 2*Npoigages+14, 'A )'
-        IF ( CsvON_OFF==1 ) THEN
+        IF ( CsvON_OFF==ON ) THEN
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+14, 'A )'
           WRITE ( Iunit, Fmt ) 'Date,', &
      &            'basin_potet,basin_actet,basin_dprst_evap,basin_imperv_evap,basin_intcp_evap,basin_lakeevap,', &
@@ -234,9 +230,9 @@
           WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages, '(1X,F0.4) )'
         ENDIF
 
-      ELSEIF ( Process(:5)=='clean' ) THEN
+      ELSEIF ( Process_flag==CLEAN ) THEN
         !IF ( control_integer(statsON_OFF, 'statsON_OFF')/=0 ) statsON_OFF = 1
-        !IF ( statsON_OFF==1 ) CALL statvar_to_csv()
+        !IF ( statsON_OFF==ON ) CALL statvar_to_csv()
         CLOSE ( Iunit )
       ENDIF
 
@@ -246,10 +242,10 @@
 !     statvar_to_csv - write a CSV file based on the statvar file
 !***********************************************************************
       SUBROUTINE statvar_to_csv()
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, ERROR_open_in, ERROR_open_out, ERROR_read
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_open_in, ERROR_open_out, ERROR_read
       IMPLICIT NONE
       INTEGER, EXTERNAL :: control_string, numchars
-      EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
+      EXTERNAL PRMS_open_input_file, PRMS_open_output_file
       ! Local Variable
       INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)
