@@ -2,11 +2,13 @@
 !     WRITES NHM CSV SUMMARY FILE
 !***********************************************************************
       MODULE PRMS_PRMS_SUMMARY
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &      MODEL, DOCUMENTATION, ERROR_OPEN_OUT, ERROR_OPEN_IN, ERROR_READ, Nobs, Nsegment
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
         character(len=*), parameter :: MODNAME = 'prms_summary'
-        character(len=*), parameter :: Version_prms_summary = '2020-07-28'
+        character(len=*), parameter :: Version_prms_summary = '2020-07-29'
         INTEGER, PARAMETER :: NVARS = 51
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
@@ -24,8 +26,8 @@
       END MODULE PRMS_PRMS_SUMMARY
 
       SUBROUTINE prms_summary()
-      USE PRMS_CONSTANTS
       USE PRMS_PRMS_SUMMARY
+      USE PRMS_CONSTANTS, ONLY: 
       USE PRMS_MODULE, ONLY: Csv_output_file, Inputerror_flag, Npoigages, Parameter_check_flag, CsvON_OFF
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
@@ -42,10 +44,10 @@
      &    Basin_pref_stor, Basin_slstor, Basin_soil_rechr, Basin_sz2gw, Basin_dunnian
       USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
-      IMPLICIT NONE
 ! Functions
-!      INTEGER, EXTERNAL :: control_integer
-      EXTERNAL :: PRMS_open_output_file, statvar_to_csv, checkdim_bounded_limits
+      INTRINSIC CHAR, INDEX, MAX
+      INTEGER, EXTERNAL :: declparam, declvar, getparam !, control_integer
+      EXTERNAL :: read_error, PRMS_open_output_file, print_module, statvar_to_csv, checkdim_bounded_limits
       INTEGER, EXTERNAL :: getparamstring, control_string
 ! Local Variables
       INTEGER :: i, ios, foo, idim !, statsON_OFF
@@ -145,7 +147,7 @@
 !     &         CALL read_error(2, 'parent_poigages')
           IF ( getparam(MODNAME, 'poi_gage_segment', Npoigages, 'integer', Poi_gage_segment)/=0 ) &
      &         CALL read_error(2, 'poi_gage_segment')
-          IF ( Parameter_check_flag>0 ) &
+          IF ( Parameter_check_flag>OFF ) &
      &      CALL checkdim_bounded_limits('poi_gage_segment', 'nsegment', Poi_gage_segment, Npoigages, 1, Nsegment, Inputerror_flag)
           DO i = 1, Npoigages
             Poi_gage_id(i) = '                '
@@ -242,20 +244,20 @@
 !     statvar_to_csv - write a CSV file based on the statvar file
 !***********************************************************************
       SUBROUTINE statvar_to_csv()
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_open_in, ERROR_open_out, ERROR_read
-      IMPLICIT NONE
+      USE PRMS_PRMS_SUMMARY
+! Functions
       INTEGER, EXTERNAL :: control_string, numchars
-      EXTERNAL PRMS_open_input_file, PRMS_open_output_file
+      EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
       ! Local Variable
-      INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
+      INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, dy, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)
       REAL, ALLOCATABLE :: values(:)
       CHARACTER(LEN=32), ALLOCATABLE :: varname(:)
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: statvar_file, statvar_file_csv
       CHARACTER(LEN=10) :: chardate
-      CHARACTER(LEN=13) :: fmt
+      CHARACTER(LEN=13) :: fmt5
       CHARACTER(LEN=17) :: fmt3
-      CHARACTER(LEN=27) :: fmt2
+      CHARACTER(LEN=27) :: fmt6
 !***********************************************************************
       IF ( control_string(statvar_file, 'stat_var_file')/=0 ) CALL read_error(5, 'stat_var_file')
       CALL PRMS_open_input_file(inunit, statvar_file, 'stat_var_file', 0, ios)
@@ -273,22 +275,22 @@
         WRITE ( varname(i), '(A,I0)' ) varname(i)(:num)//'_', varindex(i)
         nc(i) = num + 6
       ENDDO
-      WRITE ( fmt, '(A,I0,A)' ) '( A, ', 2*numvariables, 'A )'
-      WRITE ( outunit, fmt ) 'Date,', ( varname(i)(:nc(i)), ',', i = 1, numvariables )
+      WRITE ( fmt5, '(A,I0,A)' ) '( A, ', 2*numvariables, 'A )'
+      WRITE ( outunit, fmt5 ) 'Date,', ( varname(i)(:nc(i)), ',', i = 1, numvariables )
       WRITE ( fmt3, '(A,I0,A)' ) '(A, ', 2*numvariables, '(I0,A))'
       WRITE ( outunit, fmt3 ) 'date,', ( varindex(i), ',', i = 1, numvariables )
-      WRITE ( fmt2, '(A,I0,A)' ) '( A, ', numvariables, '(",",E14.6) )'
+      WRITE ( fmt6, '(A,I0,A)' ) '( A, ', numvariables, '(",",E14.6) )'
       DO WHILE ( ios/=-1 )
-        READ ( inunit, *, IOSTAT=ios ) ts, yr, mo, day, hr, mn, sec, (values(i), i = 1, numvariables )
+        READ ( inunit, *, IOSTAT=ios ) ts, yr, mo, dy, hr, mn, sec, (values(i), i = 1, numvariables )
         IF ( ios==-1 ) EXIT
         IF ( ios/=0 ) THEN
           PRINT *, 'ERROR, reading statvar file values, IOSTAT:', ios
-          PRINT *, ts, yr, mo, day, hr, 'number of variables:', numvariables
+          PRINT *, ts, yr, mo, dy, hr, 'number of variables:', numvariables
           PRINT *, (values(i), i = 1, numvariables )
           ERROR STOP ERROR_read
         ENDIF
-        WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, day
-        WRITE ( outunit, fmt2 ) chardate, (values(i), i = 1, numvariables )
+        WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, dy
+        WRITE ( outunit, fmt6 ) chardate, (values(i), i = 1, numvariables )
       ENDDO
       CLOSE ( outunit )
       END SUBROUTINE statvar_to_csv

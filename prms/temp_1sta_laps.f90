@@ -15,12 +15,11 @@
 !     hru_tlaps
 !***********************************************************************
       MODULE PRMS_TEMP_1STA_LAPS
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=9), SAVE :: MODNAME
-        character(len=*), parameter :: Version_temp = '2020-07-28'
+        character(len=*), parameter :: Version_temp = '2020-07-29'
         INTEGER, SAVE, ALLOCATABLE :: Tmax_cnt(:), Tmin_cnt(:), Nuse_tsta(:)
         REAL, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
         REAL, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
@@ -33,8 +32,11 @@
 
       INTEGER FUNCTION temp_1sta_laps()
       USE PRMS_TEMP_1STA_LAPS
-      USE PRMS_MODULE, ONLY: Save_vars_to_file, Inputerror_flag, Temp_flag, Init_vars_from_file, Start_month, &
-     &    Glacier_flag, temp_grid_module, temp_1sta_module, temp_laps_module
+      USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, Model, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &    GLACIER, Print_debug, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
+     &    MINTEMP, MAXTEMP, Init_vars_from_file, Save_vars_to_file, &
+     &    temp_1sta_module, temp_laps_module, temp_grid_module
+      USE PRMS_MODULE, ONLY: Temp_flag, Inputerror_flag, Start_month, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, &
      &    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
@@ -42,9 +44,11 @@
      &    Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tmax_allrain
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
       USE PRMS_OBS, ONLY: Tmax, Tmin
-      IMPLICIT NONE
 ! Functions
-      EXTERNAL temp_set, temp_1sta_laps_restart, checkdim_param_limits, compute_temp_laps
+      INTRINSIC INDEX, ABS
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
+      EXTERNAL compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
       REAL :: tmx, tmn
@@ -218,7 +222,7 @@
      &       'none')/=0 ) CALL read_error(1, 'max_missing')
 
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL temp_1sta_laps_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL temp_1sta_laps_restart(1)
 
         ! Initialize variables, get parameter values, compute Elfac
         IF ( Temp_flag==temp_1sta_module ) THEN
@@ -262,7 +266,7 @@
           ENDIF
         ENDIF
 
-        IF ( Init_vars_from_file==0 ) THEN
+        IF ( Init_vars_from_file==OFF ) THEN
           Solrad_tmax_good = Solrad_tmax
           Solrad_tmin_good = Solrad_tmin
           Tmax_cnt = 0
@@ -275,7 +279,7 @@
         ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL temp_1sta_laps_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL temp_1sta_laps_restart(0)
 
       ENDIF
 

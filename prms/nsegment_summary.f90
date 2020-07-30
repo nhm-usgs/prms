@@ -2,12 +2,13 @@
 !     Output a set of declared variables by segment in CSV format
 !***********************************************************************
       MODULE PRMS_NSEGMENT_SUMMARY
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Nsegment, ERROR_control, ERROR_open_out, &
+     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ON, OFF, REAL_TYPE, DBLE_TYPE
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsegment_summary'
-      character(len=*), parameter :: Version_nsegment_summary = '2020-07-28'
+      character(len=*), parameter :: Version_nsegment_summary = '2020-07-29'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsegment_var_type(:)
       REAL, SAVE, ALLOCATABLE :: Nsegment_var_daily(:, :)
@@ -30,7 +31,7 @@
 !     ******************************************************************
       SUBROUTINE nsegment_summary()
       USE PRMS_NSEGMENT_SUMMARY
-      IMPLICIT NONE
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN
 ! Functions
       EXTERNAL :: nsegment_summarydecl, nsegment_summaryinit, nsegment_summaryrun
 ! Local Variables
@@ -63,10 +64,12 @@
 !***********************************************************************
       SUBROUTINE nsegment_summarydecl()
       USE PRMS_NSEGMENT_SUMMARY
+      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
       USE PRMS_MODULE, ONLY: NsegmentOutON_OFF
-      IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
+      INTRINSIC CHAR
+      INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -107,10 +110,12 @@
 !***********************************************************************
       SUBROUTINE nsegment_summaryinit()
       USE PRMS_NSEGMENT_SUMMARY
+      USE PRMS_CONSTANTS, ONLY: 
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup, NsegmentOutON_OFF
-      IMPLICIT NONE
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
-      EXTERNAL PRMS_open_output_file
+! Functions
+      INTRINSIC ABS
+      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
+      EXTERNAL read_error, PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -267,7 +272,10 @@
       USE PRMS_NSEGMENT_SUMMARY
       USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
-      IMPLICIT NONE
+! FUNCTIONS AND SUBROUTINES
+      INTRINSIC SNGL, DBLE
+      INTEGER, EXTERNAL :: getvar
+      EXTERNAL read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day
 !***********************************************************************

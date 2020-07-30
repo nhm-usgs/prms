@@ -5,7 +5,7 @@
 ! in altitude, spatial variation, topography, and measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_PRECIP_TEMP_GRID
-        USE PRMS_CONSTANTS
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
@@ -25,7 +25,10 @@
 
       SUBROUTINE precip_temp_grid()
       USE PRMS_PRECIP_TEMP_GRID
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Start_year, Start_month, Start_day, pricip_grid_module, temp_grid_module
+      USE PRMS_CONSTANTS, ONLY: Model, Process_flag, RUN, DECL, INIT, SETDIMENS, OFF, &
+     &    MM, MM2INCH, MONTHS_PER_YEAR, DOCUMENTATION, pricip_grid_module, temp_grid_module, &
+     &    MAXDIM
+      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Start_year, Start_month, Start_day
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
@@ -33,10 +36,11 @@
      &    Precip_units, Tmax_allrain_f, Adjmix_rain, &
      &    Basin_ppt, Basin_snow, Basin_rain, Basin_obs_ppt, Tmax_allsnow_f
       USE PRMS_SET_TIME, ONLY: Nowmonth
-      IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: control_string
-      EXTERNAL :: precip_form, temp_set, find_header_end, find_current_time, read_cbh_date
+      INTRINSIC ABS, DBLE
+      INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
+      EXTERNAL :: read_error, precip_form, temp_set, find_header_end, find_current_time
+      EXTERNAL :: read_cbh_date, print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       REAL :: tmax_hru, tmin_hru, ppt, harea

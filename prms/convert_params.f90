@@ -2,14 +2,15 @@
 ! Convert PRMS IV parameters to PRMS 5
 !***********************************************************************
       SUBROUTINE convert_params()
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, DECL, INIT, MONTHS_PER_YEAR, ON
       USE PRMS_MODULE, ONLY: Model_mode, Dprst_flag
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Convert PRMS parameters'
       character(len=*), parameter :: MODNAME = 'convert_params'
       character(len=*), parameter :: Version_convert_params = '2020-07-01'
 ! Functions
-      EXTERNAL PRMS_open_module_file
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL :: print_module, read_error, PRMS_open_module_file
 ! Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_rechr_init(:), Soil_moist_init(:), Soil_rechr_max(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Ssstor_init(:), Sat_threshold(:)
