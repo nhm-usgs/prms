@@ -9,8 +9,9 @@
       character(len=*), parameter :: MODNAME = 'convert_params'
       character(len=*), parameter :: Version_convert_params = '2020-07-01'
 ! Functions
+      EXTERNAL print_module, PRMS_open_module_file, read_error
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: print_module, read_error, PRMS_open_module_file
+      INTRINSIC :: MIN
 ! Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_rechr_init(:), Soil_moist_init(:), Soil_rechr_max(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Ssstor_init(:), Sat_threshold(:)

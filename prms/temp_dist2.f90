@@ -13,7 +13,7 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, MONTHS_PER_YEAR, ON, OFF
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
@@ -39,7 +39,7 @@
 !     Main temp_dist2 routine
 !***********************************************************************
       INTEGER FUNCTION temp_dist2()
-      USE PRMS_TEMP_DIST2
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF
       USE PRMS_MODULE, ONLY: Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
@@ -53,10 +53,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         temp_dist2 = t2dist2decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL temp_dist2_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL temp_dist2_restart(1)
         temp_dist2 = t2dist2init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL temp_dist2_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL temp_dist2_restart(0)
       ENDIF
 
       END FUNCTION temp_dist2
@@ -71,7 +71,11 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
       USE PRMS_TEMP_DIST2
-      IMPLICIT NONE
+      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION, ERROR_dim
+! Functions
+      INTRINSIC INDEX
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module, error_stop
 !***********************************************************************
       t2dist2decl = 0
 
@@ -196,12 +200,14 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2init()
       USE PRMS_TEMP_DIST2
+      USE PRMS_CONSTANTS, ONLY: DNEARZERO, NEARZERO
       USE PRMS_MODULE, ONLY: Init_vars_from_file
       USE PRMS_BASIN, ONLY: Hru_elev
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
-      IMPLICIT NONE
 ! Functions
-      INTRINSIC DSQRT, DABS
+      INTEGER, EXTERNAL :: getparam
+      EXTERNAL read_error
+      INTRINSIC DSQRT, ABS, DABS, DBLE
 ! Local Variables
       INTEGER :: i, j, k, n, kk, kkbig
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist2
@@ -242,7 +248,7 @@
       IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
      &     /=0 ) CALL read_error(2, 'hru_ylat')
 
-      IF ( Init_vars_from_file==0 ) THEN
+      IF ( Init_vars_from_file==OFF ) THEN
         Basin_lapse_max = 0.0
         Basin_lapse_min = 0.0
         Solrad_tmax_good = 0.0
@@ -311,6 +317,7 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
+      USE PRMS_CONSTANTS, ONLY: DNEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER
       USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
@@ -320,7 +327,8 @@
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: temp_set
+      EXTERNAL :: temp_set, print_date, error_stop
+      INTRINSIC FLOAT, DBLE, SNGL
 ! Local Variables
       INTEGER :: j, k, ntotx, ntotn, jj, kk, allmissing
       REAL :: tcrx, tcrn, diffn, diffx, mx, mn, tmx_sngl, tmn_sngl

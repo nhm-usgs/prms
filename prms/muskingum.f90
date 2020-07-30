@@ -81,7 +81,6 @@
 !
 !***********************************************************************
       MODULE PRMS_MUSKINGUM
-      USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_mann'
@@ -96,8 +95,7 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
@@ -110,7 +108,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         muskingum  = muskingum_decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL muskingum_restart(1)
         muskingum = muskingum_init()
       ELSEIF ( Process_flag==CLEAN ) THEN
         IF ( Save_vars_to_file==ON ) CALL muskingum_restart(0)
@@ -125,14 +123,15 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Strmflow_flag
-      IMPLICIT NONE
+      USE PRMS_CONSTANTS, ONLY: Nsegment, strmflow_muskingum_module
+! Functions
+      EXTERNAL print_module
 !***********************************************************************
       muskingum_decl = 0
 
-      IF ( Strmflow_flag==4 ) THEN
+      IF ( strmflow_muskingum_module==4 ) THEN
         CALL print_module(MODDESC, MODNAME(:9), Version_muskingum)
-      ELSE
+      ELSE ! muskingum_mann
         CALL print_module(MODDESC, MODNAME, Version_muskingum)
       ENDIF
 
@@ -147,7 +146,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_MODULE, ONLY: Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Nsegment, Init_vars_from_file, ON, OFF
       USE PRMS_BASIN, ONLY: Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
@@ -174,6 +173,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
+      USE PRMS_CONSTANTS, ONLY: Nsegment, OUTFLOW_SEGMENT, ERROR_streamflow, CFS2CMS_CONV, ON
       USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
@@ -188,6 +188,9 @@
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
+! Functions
+      INTRINSIC MOD
+      EXTERNAL error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin

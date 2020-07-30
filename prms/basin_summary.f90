@@ -4,7 +4,7 @@
       MODULE PRMS_BASIN_SUMMARY
       USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
      &    MODEL, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, DAILY, YEARLY, MONTHLY, DOCUMENTATION, &
-     &    DBLE_TYPE, REAL_TYPE, ERROR_CONTROL, ERROR_OPEN_OUT
+     &    DBLE_TYPE, ERROR_control, ERROR_open_out
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
@@ -27,7 +27,6 @@
 !     ******************************************************************
       SUBROUTINE basin_summary()
       USE PRMS_BASIN_SUMMARY
-      IMPLICIT NONE
 ! Functions
       EXTERNAL :: basin_summarydecl, basin_summaryinit, basin_summaryrun
 !***********************************************************************
@@ -52,7 +51,7 @@
       USE PRMS_BASIN_SUMMARY
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
-      EXTERNAL :: print_module, read_error, error_stop
+      EXTERNAL read_error, print_module
 ! Local Variables
       INTEGER :: i
 !***********************************************************************

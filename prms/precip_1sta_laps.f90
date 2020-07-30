@@ -47,8 +47,8 @@
       USE PRMS_OBS, ONLY: Precip
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: print_module, print_date, read_error
-      EXTERNAL :: precip_form, compute_precip_laps, checkdim_param_limits
+      EXTERNAL :: read_error, precip_form, print_module, compute_precip_laps
+      EXTERNAL :: print_date, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, ii, ierr
       REAL :: ppt

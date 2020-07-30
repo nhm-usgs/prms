@@ -13,7 +13,6 @@
 !      adjust total precip
 !***********************************************************************
       MODULE PRMS_PRECIP_DIST2
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
@@ -35,7 +34,7 @@
 !     Main precipitation routine
 !***********************************************************************
       INTEGER FUNCTION precip_dist2()
-      USE PRMS_PRECIP_DIST2
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: pptdist2decl, pptdist2init, pptdist2run
@@ -62,7 +61,10 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2decl()
       USE PRMS_PRECIP_DIST2
-      IMPLICIT NONE
+      USE PRMS_CONSTANTS, ONLY: Model, Nhru, Nrain, DOCUMENTATION, MONTHS_PER_YEAR, ERROR_dim
+! Functions
+      INTEGER, EXTERNAL :: declparam
+      EXTERNAL read_error, print_module, error_stop
 !***********************************************************************
       pptdist2decl = 0
 
@@ -163,11 +165,13 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2init()
       USE PRMS_PRECIP_DIST2
+      USE PRMS_CONSTANTS, ONLY: Nhru, Nrain, MONTHS_PER_YEAR, DNEARZERO
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      IMPLICIT NONE
-! Functions
-      INTRINSIC DSQRT, DABS
 ! Local Variables
+! Functions
+      INTEGER, EXTERNAL :: getparam
+      EXTERNAL :: read_error
+      INTRINSIC :: DSQRT, DABS, DBLE
       INTEGER :: i, k, n, kk, kkbig, jj
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist, dist_max_dble
       DOUBLE PRECISION, ALLOCATABLE :: nuse_psta_dist(:, :)
@@ -263,6 +267,7 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2run()
       USE PRMS_PRECIP_DIST2
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, ON, OFF, ERROR_data, CELSIUS, INCH2MM
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
@@ -271,6 +276,9 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
+! Functions
+      INTRINSIC ABS, DBLE, SNGL
+      EXTERNAL :: print_date, error_stop
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
       REAL :: tdiff, pcor, ppt

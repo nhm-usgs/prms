@@ -27,7 +27,6 @@
 
       SUBROUTINE prms_summary()
       USE PRMS_PRMS_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: 
       USE PRMS_MODULE, ONLY: Csv_output_file, Inputerror_flag, Npoigages, Parameter_check_flag, CsvON_OFF
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &

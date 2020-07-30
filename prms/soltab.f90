@@ -11,7 +11,7 @@
 !   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nhru, Print_debug, DAYS_IN_YEAR, MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, DNEARZERO
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
@@ -42,7 +42,7 @@
 !     Main soltab routine
 !***********************************************************************
       INTEGER FUNCTION soltab()
-      USE PRMS_SOLTAB
+      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: sthdecl, sthinit
@@ -64,14 +64,16 @@
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
       USE PRMS_SOLTAB
-      IMPLICIT NONE
+! Functions
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module
 !***********************************************************************
       sthdecl = 0
 
       CALL print_module(MODDESC, MODNAME, Version_soltab)
 
       ALLOCATE ( Soltab_potsw(MAX_DAYS_PER_YEAR, Nhru) )
-!      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', DAYS_PER_YEAR*Nhru, 'double', &
+!      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, 'double', &
 !     &     'Potential solar radiation for each Julian Day, for each HRU', &
 !     &     'Langleys', Soltab_potsw)/=0 ) CALL read_error(3, 'soltab_potsw')
 
@@ -108,11 +110,11 @@
       USE PRMS_SOLTAB
       USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
-      IMPLICIT NONE
 ! Functions
-      INTRINSIC SIN, COS
+      INTRINSIC SIN, COS, DBLE
 !     INTRINSIC ASIN
-      EXTERNAL compute_soltab, PRMS_open_module_file
+      INTEGER, EXTERNAL :: getparam
+      EXTERNAL :: compute_soltab, read_error, PRMS_open_module_file
 ! Local Variables
       CHARACTER(LEN=12) :: output_path
       INTEGER :: jd, j, n, file_unit, nn
@@ -139,10 +141,10 @@
 
         ! Eccentricity from equation E-2 (Dingman, S. L., 1994, Physical Hydrology. Englewood Cliffs, NJ: Prentice Hall, 575 p.)
         ! eccentricity = (r_0/r)^2 = 1.00011+0.034221 cos⁡Γ+0.00128 sin⁡Γ+0.000719 cos⁡2Γ+0.000077 sin⁡2Γ
-        ! Γ = (2π(J-1))/DAYS_PER_YEAR = DEGDAYRAD*(jddbl-1.0D0) = day angle
+        ! Γ = (2π(J-1))/365 = DEGDAYRAD*(jddbl-1.0D0) = day angle
         ! dayangle = DEGDAYRAD*(jddbl-1.0D0)
         ! eccentricity = 1.00011D0 + 0.034221D0*COS(dayangle) + 0.00128D0*SIN(dayangle) + 0.000719D0*COS(2.0D0*dayangle) + 0.000077D0*SIN(2.0D0*dayangle)
-!rsr .0172 = 2PI/DAYS_PER_YEAR = RADIAN_YEAR = DEGDAYRAD
+!rsr .0172 = 2PI/365 = RADIAN_YEAR = DEGDAYRAD
 !rsr01/2006 commented out equations from Llowd W. Swift paper 2/1976
 !       obliquity(jd) = 1.0D0 - (0.0167D0*COS((jd-3)*0.0172D0))
         obliquity(jd) = 1.0D0 - (ECCENTRICY*COS((jddbl-3.0D0)*DEGDAYRAD))

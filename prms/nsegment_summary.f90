@@ -67,7 +67,6 @@
       USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
       USE PRMS_MODULE, ONLY: NsegmentOutON_OFF
 ! Functions
-      INTRINSIC CHAR
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
       EXTERNAL read_error, print_module, error_stop
 ! Local Variables
