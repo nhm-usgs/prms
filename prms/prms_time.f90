@@ -2,7 +2,7 @@
 ! Sets PRMS time variables
 !***********************************************************************
       MODULE PRMS_SET_TIME
-        USE PRMS_CONSTANTS
+        USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
         IMPLICIT NONE
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Timestep Control'
@@ -18,10 +18,13 @@
 !***********************************************************************
       INTEGER FUNCTION prms_time()
       USE PRMS_SET_TIME
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, YEAR, MONTH, DAY, HOUR, MINUTE, &
+     &    MAX_DAYS_PER_YEAR, DAYS_PER_YEAR, ON, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, &
+     &    INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time
       USE PRMS_MODULE, ONLY: Timestep, Starttime
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
-      IMPLICIT NONE
 ! Functions
+      INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: leap_day, julian_day, compute_julday
       DOUBLE PRECISION, EXTERNAL :: deltim
       EXTERNAL :: dattim
@@ -81,7 +84,7 @@
         !   Julian days 79 to 265 for Northern hemisphere
         !   Julian day 265 to 79 in Southern hemisphere
         Summer_flag = ON ! 1 = summer, 0 = winter
-        IF ( Hemisphere==Northern ) THEN
+        IF ( Hemisphere==NORTHERN ) THEN
           IF ( Jday<79 .OR. Jday>265 ) Summer_flag = OFF ! Equinox
         ELSE ! Southern Hemisphere
           IF ( Jday>79 .AND. Jday<265 ) Summer_flag = OFF ! Equinox

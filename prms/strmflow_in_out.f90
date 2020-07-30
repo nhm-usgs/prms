@@ -2,7 +2,8 @@
 ! Routes water between segments in the system as inflow equals outflow
 !***********************************************************************
       INTEGER FUNCTION strmflow_in_out()
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nsegment, Process_flag, RUN, DECL, INIT, Print_debug, &
+     &    DEBUG_less, OUTFLOW_SEGMENT, CFS2CMS_CONV
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_BASIN, ONLY: Active_area
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
@@ -14,6 +15,8 @@
      &    Flow_out_NHM, Flow_terminus, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
       USE PRMS_OBS, ONLY: Streamflow_cfs
       IMPLICIT NONE
+! Functions
+      EXTERNAL :: print_module
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=*), parameter :: MODNAME = 'strmflow_in_out'

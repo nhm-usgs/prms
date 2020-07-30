@@ -25,11 +25,13 @@
 !     parent_gw, parent_ssr, parent_segment, parent_hru, hru_lon
 !***********************************************************************
       INTEGER FUNCTION setupdecl()
-      USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Parameter Setup'
       character(len=*), parameter :: MODNAME = 'setup_param'
       character(len=*), parameter :: Version_setup = '2020-07-01'
+! Functions
+      INTEGER, EXTERNAL :: declparam
+      EXTERNAL :: print_module, read_error
 !***********************************************************************
       setupdecl = 0
 

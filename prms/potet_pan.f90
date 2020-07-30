@@ -4,7 +4,6 @@
 !   Declared Parameters: hru_pansta, epan_coef
 !***********************************************************************
       MODULE PRMS_POTET_PAN
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
@@ -15,14 +14,16 @@
 
       INTEGER FUNCTION potet_pan()
       USE PRMS_POTET_PAN
-      USE PRMS_MODULE, ONLY: Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Nevap, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
+	 &    Print_debug, DEBUG_less, Save_vars_to_file, Init_vars_from_file, ERROR_dim
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Pan_evap
-      IMPLICIT NONE
 ! Functions
-      EXTERNAL potet_pan_restart
+      INTRINSIC :: DBLE
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL :: print_module, read_error, print_date, error_stop, potet_pan_restart
 ! Local Variables
       INTEGER :: i, k, j
 !***********************************************************************
@@ -58,14 +59,14 @@
         ALLOCATE ( Last_pan_evap(Nevap) )
 
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) THEN
+        IF ( Init_vars_from_file>OFF ) THEN
           CALL potet_pan_restart(1)
         ELSE
           Last_pan_evap = 0.0
         ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL potet_pan_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL potet_pan_restart(0)
 
       ENDIF
 

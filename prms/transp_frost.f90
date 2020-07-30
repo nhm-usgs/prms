@@ -3,7 +3,6 @@
 ! on time between the last spring and the first fall killing frost.
 !***********************************************************************
       MODULE PRMS_TRANSP_FROST
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
@@ -14,11 +13,14 @@
       END MODULE PRMS_TRANSP_FROST
 
       INTEGER FUNCTION transp_frost()
+      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, RUN, DECL, INIT, ON, OFF
       USE PRMS_TRANSP_FROST
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_SET_TIME, ONLY: Jsol
-      IMPLICIT NONE
+! Functions
+      INTEGER, EXTERNAL :: declparam, getparam
+	  EXTERNAL :: print_module, read_error
 ! Local Variables
       INTEGER :: i, j
 !***********************************************************************

@@ -3,7 +3,6 @@
 ! formulation (Hamon, 1961)
 !***********************************************************************
       MODULE PRMS_POTET_HAMON
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
@@ -16,11 +15,15 @@
 
       INTEGER FUNCTION potet_hamon()
       USE PRMS_POTET_HAMON
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
-      IMPLICIT NONE
+! Functions
+      INTRINSIC :: SNGL, EXP, DBLE
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL :: print_module, read_error
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat

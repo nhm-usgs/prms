@@ -4,7 +4,6 @@
 !     Potet = Coef_t_mean*(Tavgf-Temp_x_mean)*Swrad/elh
 !***********************************************************************
       MODULE PRMS_POTET_JH
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
@@ -16,10 +15,14 @@
 
       INTEGER FUNCTION potet_jh()
       USE PRMS_POTET_JH
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tavgf, Swrad
       USE PRMS_SET_TIME, ONLY: Nowmonth
-      IMPLICIT NONE
+! Functions
+      INTRINSIC :: DBLE
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL :: print_module, read_error
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh

@@ -4,7 +4,8 @@
 ! the climate_hru module
 !***********************************************************************
       INTEGER FUNCTION write_climate_hru()
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nhru, MAXFILE_LENGTH, &
+     &    Process_flag, RUN, DECL, INIT, CLEAN, OFF
       USE PRMS_MODULE, ONLY: Climate_temp_flag, Climate_precip_flag, &
      &    Climate_swrad_flag, Climate_potet_flag, Climate_transp_flag
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
@@ -12,7 +13,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string
-      EXTERNAL :: PRMS_open_output_file
+      EXTERNAL :: print_module, PRMS_open_output_file, read_error
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Preprocessing'
       character(len=*), parameter :: MODNAME = 'write_climate_hru'
