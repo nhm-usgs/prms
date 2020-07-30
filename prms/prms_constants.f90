@@ -1,13 +1,6 @@
 MODULE PRMS_CONSTANTS
     USE ISO_FORTRAN_ENV
     IMPLICIT NONE
-! Functions
-    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ALOG, ABS, DABS
-    INTRINSIC :: INDEX, MAX, CHAR, MIN, MOD, EPSILON, DSQRT
-    EXTERNAL :: print_module, read_error, print_date, error_stop
-    EXTERNAL :: PRMS_open_input_file, PRMS_open_output_file
-    INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
-    INTEGER, EXTERNAL :: control_integer, control_string, control_string_array
 
     !! INT32, REAL32, REAL64
     integer, parameter :: sp = REAL32
@@ -84,6 +77,11 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: TREES = 3
     integer, parameter :: CONIFEROUS = 4
 
+    ! soil_type
+    integer, parameter :: SAND = 1
+    integer, parameter :: LOAM = 2
+    integer, parameter :: CLAY = 3
+
     ! Hemisphere
     integer, parameter :: NORTHERN = 0
     integer, parameter :: SOUTHERN = 1
@@ -140,11 +138,15 @@ MODULE PRMS_CONSTANTS
 
 ! module flags
     integer, parameter :: precip_1sta_module = 1, precip_laps_module = 2, precip_dist2_module = 3
-    integer, parameter :: ide_dist_module = 5, xyz_dist_module = 6, pricip_grid_module = 9, climate_hru_module = 7
+    integer, parameter :: ide_dist_module = 5, xyz_dist_module = 6, precip_grid_module = 9, climate_hru_module = 7
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
     integer, parameter :: temp_grid_module = 9, temp_sta_module = 8
     integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
+    integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
+    integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5
+    integer, parameter :: strmflow_mizuroute_module = 6, strmflow_noroute_module = 1
+    integer, parameter :: smidx_module = 1, carea_module = 2
 
     integer, parameter :: OFF = 0
     integer, parameter :: ON = 1

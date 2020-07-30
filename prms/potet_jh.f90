@@ -8,14 +8,14 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_jh'
-        character(len=*), parameter :: Version_potet = '2020-07-24'
+        character(len=*), parameter :: Version_potet = '2020-07-30'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
       END MODULE PRMS_POTET_JH
 
       INTEGER FUNCTION potet_jh()
       USE PRMS_POTET_JH
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR, INCH2CM
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tavgf, Swrad
       USE PRMS_SET_TIME, ONLY: Nowmonth
