@@ -1,8 +1,9 @@
-      ! utils_prms.f90 2020-07-01
+      ! utils_prms.f90 2020-07-30
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
       SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret, Cbh_binary_flag)
+      IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(IN) :: Iunit, Year, Month, Day, Cbh_binary_flag
       INTEGER, INTENT(OUT) :: Iret
@@ -28,6 +29,7 @@
 !     Read File dynamic paramter file to current time
 !***********************************************************************
       SUBROUTINE find_current_file_time(Iunit, Year, Month, Day, Year_file, Month_file, Day_file)
+      IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(IN) :: Iunit, Year, Month, Day
       INTEGER, INTENT(OUT) :: Year_file, Month_file, Day_file
@@ -92,7 +94,8 @@
 !     Read File to line before data starts in file
 !***********************************************************************
       SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag, Cbh_binary_flag)
-      USE PRMS_MODULE, ONLY: Nhru, Orad_flag, Print_debug
+      USE PRMS_CONSTANTS, ONLY: Nhru, Print_debug, DEBUG_less
+      USE PRMS_MODULE, ONLY: Orad_flag
       IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(IN) :: Cbh_flag, Cbh_binary_flag
@@ -117,7 +120,7 @@
       IF ( ios/=0 ) THEN
         IF ( Iret==2 ) THEN ! this signals climate_hru to ignore the Humidity CBH file, could add other files
           Iret = 0
-          IF ( Print_debug>-1 ) &
+          IF ( Print_debug>DEBUG_less ) &
      &         WRITE ( *, '(/,A,/,A,/,A)' ) 'WARNING, optional CBH file not found, will use associated parameter values'
         ELSE
           WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure the input file exists'
@@ -213,6 +216,7 @@
 !     Determine an unopened FORTRAN File Unit
 !***********************************************************************
       INTEGER FUNCTION get_ftnunit(Iunit)
+      IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(IN) :: Iunit
 ! Local Variables
@@ -232,6 +236,7 @@
 ! Convert Fahrenheit to Celsius
 !***********************************************************************
       REAL FUNCTION f_to_c(Temp)
+      IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Temp
 !***********************************************************************
@@ -242,6 +247,7 @@
 ! Convert Celsius to Fahrenheit
 !***********************************************************************
       REAL FUNCTION c_to_f(Temp)
+      IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Temp
 !***********************************************************************
@@ -370,7 +376,7 @@
 !     Parameter or Variable delcare or read error
 !**********************************************************************
       SUBROUTINE read_error(Iflag, Name)
-      USE PRMS_MODULE, ONLY: ERROR_decl_get
+      USE PRMS_CONSTANTS, ONLY: ERROR_decl_get
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iflag
@@ -417,7 +423,7 @@
 !     Module error
 !**********************************************************************
       SUBROUTINE module_error(Modname, Arg, Retcode)
-      USE PRMS_MODULE, ONLY: ERROR_module
+      USE PRMS_CONSTANTS, ONLY: ERROR_module
       IMPLICIT NONE
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Modname, Arg
@@ -494,16 +500,17 @@
 ! write_outfile - print to model output file
 !***********************************************************************
       SUBROUTINE write_outfile(String)
-      USE PRMS_MODULE, ONLY: PRMS_output_unit, Print_debug
+      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_minimum
+      USE PRMS_MODULE, ONLY: PRMS_output_unit
       IMPLICIT NONE
       ! Functions
-      INTRINSIC LEN_TRIM
+      INTRINSIC :: LEN_TRIM
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: String
       ! Local variable
       INTEGER nchars
 !***********************************************************************
-      IF ( Print_debug==-2 ) RETURN
+      IF ( Print_debug==DEBUG_minimum ) RETURN
       nchars = LEN_TRIM(String)
       IF ( nchars>0 ) THEN
         WRITE ( PRMS_output_unit, '(A)' ) String(:nchars)
@@ -522,7 +529,8 @@
 ! extends to noon the next Gregorian day.
 !***********************************************************************
       INTEGER FUNCTION julian_day(Date_type, Year_type)
-      USE PRMS_MODULE, ONLY: Starttime, Endtime, ERROR_time
+      USE PRMS_CONSTANTS, ONLY: NORTHERN, ERROR_time
+      USE PRMS_MODULE, ONLY: Starttime, Endtime
       USE PRMS_BASIN, ONLY: Hemisphere
       USE PRMS_SET_TIME, ONLY: Nowtime
       IMPLICIT NONE
@@ -555,7 +563,7 @@
       IF ( length>4 ) THEN
         IF ( Year_type(:5)=='solar' ) THEN
           found = 1
-          IF ( Hemisphere==0 ) THEN ! Northern
+          IF ( Hemisphere==NORTHERN ) THEN
             IF ( month==12 .AND. day>21 ) THEN
               reftime_year = year
             ELSE
@@ -574,7 +582,7 @@
           ENDIF
         ELSEIF ( Year_type(:5)=='water' ) THEN
           found = 1
-          IF ( Hemisphere==0 ) THEN ! Northern
+          IF ( Hemisphere==NORTHERN ) THEN
             IF ( month>9 ) THEN
               reftime_year = year
             ELSE
@@ -596,7 +604,7 @@
       IF ( found==0 .AND. length>5 ) THEN
         IF ( Year_type(:6)=='spring' ) THEN
           found = 1
-          IF ( Hemisphere==0 ) THEN ! Northern
+          IF ( Hemisphere==NORTHERN ) THEN
             IF ( month>3 .OR. (month==3 .AND. day>20) ) THEN
               reftime_year = year
             ELSE
@@ -669,6 +677,7 @@
 ! computes the Gregorian calendar date given the Julian Day
 !***********************************************************************
       SUBROUTINE compute_gregorian(Julday, Year, Month, Day)
+      !USE PRMS_CONSTANTS, ONLY: DAYS_YR
       IMPLICIT NONE
       ! Arguments
       INTEGER, INTENT(OUT) :: Year, Month, Day
@@ -695,8 +704,8 @@
       !X = FLOOR(W/4.0)
       !A = Z + 1.0 + W - X
       !B = A + 1524.0
-      !C = FLOOR((B - 122.1)/365.25)
-      !D = FLOOR(365.25*C)
+      !C = FLOOR((B - 122.1)/DAYS_YR)
+      !D = FLOOR(DAYS_YR*C)
       !E = FLOOR((B - D)/30.6001)
       !F = FLOOR(30.6001*E)
       !Day = NINT(B - D -F)
@@ -802,7 +811,7 @@
 !     Open PRMS module output file and assign unit number
 !***********************************************************************
       SUBROUTINE PRMS_open_module_file(Iunit, Fname)
-      USE PRMS_MODULE, ONLY: ERROR_open_in
+      USE PRMS_CONSTANTS, ONLY: ERROR_open_in
       IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(OUT) :: Iunit
@@ -826,7 +835,7 @@
 !     Determine number of characters in a string
 !***********************************************************************
       INTEGER FUNCTION numchars(String)
-      USE PRMS_MODULE, ONLY: MAXFILE_LENGTH, ERROR_control
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control
       IMPLICIT NONE
 ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: String
@@ -850,7 +859,8 @@
 ! print module version information to user's screen
 !***********************************************************************
       SUBROUTINE print_module(Description, Modname, Versn)
-      USE PRMS_MODULE, ONLY: PRMS_output_unit, Print_debug
+      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_minimum
+      USE PRMS_MODULE, ONLY: PRMS_output_unit
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Description, Modname, Versn
@@ -861,7 +871,7 @@
       CHARACTER(LEN=24) :: blanks
       CHARACTER(LEN=68) :: string
 !***********************************************************************
-      IF ( Print_debug==-2 ) RETURN
+      IF ( Print_debug==DEBUG_minimum ) RETURN
       nvers = LEN_TRIM(Description)
       nblanks = MIN(32 - nvers, 32)
       nmod = LEN_TRIM(Modname)
@@ -876,7 +886,7 @@
 ! check restart file module order
 !***********************************************************************
       SUBROUTINE check_restart(Modname, Restart_module)
-      USE PRMS_MODULE, ONLY: ERROR_restart
+      USE PRMS_CONSTANTS, ONLY: ERROR_restart
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Modname, Restart_module
@@ -1007,6 +1017,6 @@
       CHARACTER(LEN=*), INTENT(IN) :: Msg
       INTEGER, INTENT(IN) :: Ierr
 !***********************************************************************
-      PRINT '(/,2A,/)', 'ERROR, ', Msg
-      ERROR STOP Ierr
+      PRINT '(/,A,I0,2A,/)', 'ERROR ', Ierr, ', ', Msg
+      ERROR STOP -99
       END SUBROUTINE error_stop

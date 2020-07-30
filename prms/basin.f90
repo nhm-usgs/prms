@@ -2,7 +2,6 @@
 ! Defines shared watershed and HRU physical parameters and variables
 !***********************************************************************
       MODULE PRMS_BASIN
-      USE PRMS_CONSTANTS
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
@@ -37,7 +36,7 @@
 !     Main basin routine
 !***********************************************************************
       INTEGER FUNCTION basin()
-      USE PRMS_BASIN
+      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: basdecl, basinit
@@ -61,10 +60,14 @@
 !***********************************************************************
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
+      USE PRMS_CONSTANTS, ONLY: Model, Nhru, Nlake, DOCUMENTATION, ON, OFF, &
+     &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
       USE PRMS_MODULE, ONLY: Dprst_flag, Lake_route_flag, &
      &    Et_flag, Precip_flag, Cascadegw_flag, Stream_temp_flag, PRMS4_flag, &
-     &    GSFLOW_flag, Glacier_flag, ide_dist_module
-      IMPLICIT NONE
+     &    GSFLOW_flag, Glacier_flag
+! Functions
+      INTEGER, EXTERNAL :: declparam, declvar
+      EXTERNAL read_error, print_module
 !***********************************************************************
       basdecl = 0
 
@@ -253,13 +256,19 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_BASIN
+      USE PRMS_CONSTANTS, ONLY: Nhru, Nlake, Print_debug, DEBUG_less, ON, OFF, &
+     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
+     &    NORTHERN, SOUTHERN, FEET2METERS, METERS2FEET, DNEARZERO, &
+     &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
       USE PRMS_MODULE, ONLY: Dprst_flag, PRMS4_flag, &
      &    GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
      &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &
-     &    Stream_temp_flag, Frozen_flag, Glacier_flag, ide_dist_module
+     &    Stream_temp_flag, Frozen_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
-      EXTERNAL write_outfile, checkdim_bounded_limits
+      INTEGER, EXTERNAL :: getparam
+      EXTERNAL :: write_outfile, checkdim_bounded_limits
+      INTRINSIC :: DBLE
 ! Local Variables
       CHARACTER(LEN=69) :: buffer
       INTEGER :: i, j, dprst_frac_flag, lakeid
@@ -303,7 +312,7 @@
       Numlake_hrus = 0
       IF ( Nlake>0 ) THEN
         IF ( getparam(MODNAME, 'lake_hru_id', Nhru, 'integer', Lake_hru_id)/=0 ) CALL read_error(1, 'lake_hru_id')
-        IF ( Parameter_check_flag==1 ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
+        IF ( Parameter_check_flag>OFF ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
         IF ( Lake_route_flag==ON ) THEN ! Lake_route_flag set to 0 for GSFLOW mode and if muskingum_lake and nlake = 1
           IF ( getparam(MODNAME, 'lake_type', Nlake, 'integer', Lake_type)/=0 ) CALL read_error(2, 'lake_type')
           DO i = 1, Nlake
@@ -476,9 +485,9 @@
       Basin_lat = Basin_lat*Basin_area_inv
       ! used in solrad modules to winter/summer radiation adjustment
       IF ( Basin_lat>0.0D0 ) THEN
-        Hemisphere = Northern
+        Hemisphere = NORTHERN
       ELSE
-        Hemisphere = Southern
+        Hemisphere = SOUTHERN
       ENDIF
 
       basin_perv = basin_perv*Basin_area_inv
