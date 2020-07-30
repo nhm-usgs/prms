@@ -5,7 +5,8 @@
 ! Declared Parameters: frost_temp
 !***********************************************************************
       INTEGER FUNCTION frost_date()
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &    DAYS_PER_YEAR, NORTHERN
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
       USE PRMS_SET_TIME, ONLY: Jsol
@@ -14,9 +15,9 @@
       character(len=*), parameter :: MODNAME = 'frost_date'
       character(len=*), parameter :: Version_frost_date = '2020-07-28'
 ! Functions
-      INTRINSIC NINT
-      INTEGER, EXTERNAL :: get_season
-      EXTERNAL write_integer_param, PRMS_open_module_file
+      INTRINSIC :: DBLE, NINT
+      INTEGER, EXTERNAL :: declparam, getparam, get_season
+      EXTERNAL print_module, read_error, write_integer_param, PRMS_open_module_file
 ! Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Frost_temp(:)
 ! Local Variables
@@ -123,7 +124,7 @@
         springFrostCount = 0
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
-        IF ( Hemisphere==Northern ) THEN
+        IF ( Hemisphere==NORTHERN ) THEN
           spring1 = 1
           fall1 = DAYS_PER_YEAR
         ELSE
@@ -164,12 +165,12 @@
 ! Figure out if the current solar day is in "spring" or "fall"
 !*************************************************************
       INTEGER FUNCTION get_season()
-      USE PRMS_CONSTANTS, ONLY: Northern
+      USE PRMS_CONSTANTS, ONLY: NORTHERN
       USE PRMS_BASIN, ONLY: Hemisphere
       USE PRMS_SET_TIME, ONLY: Jsol
 !*************************************************************
       get_season = 2 ! default is fall frost
-      IF ( Hemisphere==Northern ) THEN
+      IF ( Hemisphere==NORTHERN ) THEN
         IF ( Jsol>0 .AND. Jsol<183 ) get_season = 1 ! This is the spring phase
       ELSE ! Southern Hemisphere
         IF ( Jsol>182 .AND. Jsol<367 ) get_season = 1 ! This is the spring phase

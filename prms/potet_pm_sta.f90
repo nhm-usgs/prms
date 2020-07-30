@@ -7,7 +7,6 @@
 !   central Nebraska-USA: Journal of Hydrology, V. 420-421, p. 228-244
 !***********************************************************************
       MODULE PRMS_POTET_PM_STA
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
@@ -21,6 +20,8 @@
 !***********************************************************************
       INTEGER FUNCTION potet_pm_sta()
       USE PRMS_POTET_PM_STA
+      USE PRMS_CONSTANTS, ONLY: Nhru, Nwind, Nhumid, Process_flag, &
+     &    RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
       USE PRMS_MODULE, ONLY: Parameter_check_flag, Inputerror_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
@@ -28,10 +29,11 @@
       USE PRMS_OBS, ONLY: Humidity, Wind_speed
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
-      IMPLICIT NONE
 ! Functions
+      INTRINSIC :: LOG, SNGL, DBLE
+      INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: sat_vapor_press
-      EXTERNAL checkdim_param_limits
+      EXTERNAL :: print_module, read_error, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 

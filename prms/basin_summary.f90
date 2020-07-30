@@ -2,7 +2,9 @@
 !     Output a set of declared basin variables as CSV file
 !***********************************************************************
       MODULE PRMS_BASIN_SUMMARY
-      USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &    MODEL, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, DAILY, YEARLY, MONTHLY, DOCUMENTATION, &
+     &    DBLE_TYPE, REAL_TYPE, ERROR_CONTROL, ERROR_OPEN_OUT
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
@@ -48,9 +50,9 @@
 !***********************************************************************
       SUBROUTINE basin_summarydecl()
       USE PRMS_BASIN_SUMMARY
-      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
+      EXTERNAL :: print_module, read_error, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -80,9 +82,10 @@
       SUBROUTINE basin_summaryinit()
       USE PRMS_BASIN_SUMMARY
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
-      IMPLICIT NONE
+! Functions
+      INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
-      EXTERNAL PRMS_open_output_file
+      EXTERNAL :: PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, dum, jj
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -175,6 +178,9 @@
       USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
       IMPLICIT NONE
+! Functions
+      INTEGER, EXTERNAL :: getvar
+      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: jj, write_month, last_day
 !***********************************************************************

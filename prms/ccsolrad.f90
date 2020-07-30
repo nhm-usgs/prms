@@ -82,7 +82,7 @@
             k = Hru_solsta(j)
             IF ( k>0 ) THEN
               IF ( Solrad(k)<0.0 .OR. Solrad(k)>10000.0 ) THEN
-                IF ( Print_debug>-1 ) THEN
+                IF ( Print_debug>DEBUG_less ) THEN
                   PRINT *, 'WARNING, measured solar radiation missing, HRU:', j, '; station:', k, '; value computed'
                   CALL print_date(1)
                 ENDIF

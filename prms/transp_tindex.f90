@@ -18,7 +18,7 @@
 
       INTEGER FUNCTION transp_tindex()
       USE PRMS_TRANSP_TINDEX
-      USE PRMS_MODULE, ONLY: Save_vars_to_file, Init_vars_from_file, Start_month, Start_day
+      USE PRMS_MODULE, ONLY: Start_month, Start_day
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
@@ -107,7 +107,7 @@
         IF ( getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax)/=0 ) CALL read_error(2, 'transp_tmax')
 
         new_values = OFF
-        IF ( Init_vars_from_file>0 ) THEN
+        IF ( Init_vars_from_file>OFF ) THEN
           ALLOCATE ( Transp_beg_restart(Nhru), Transp_end_restart(Nhru), Transp_tmax_restart(Nhru) )
           CALL transp_tindex_restart(1)
           DO j = 1, Active_hrus
@@ -129,7 +129,7 @@
         ENDIF
         !DEALLOCATE ( Transp_tmax )
 
-        IF ( Init_vars_from_file==0 .OR. new_values==ON ) THEN
+        IF ( Init_vars_from_file==OFF .OR. new_values==ON ) THEN
           motmp = Start_month + MONTHS_PER_YEAR
           Tmax_sum = 0.0
           Transp_check = OFF
@@ -154,7 +154,7 @@
         ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL transp_tindex_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL transp_tindex_restart(0)
 
       ENDIF
 
