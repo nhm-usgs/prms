@@ -10,12 +10,11 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_DDSOLRAD
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ddsolrad'
-        character(len=*), parameter :: Version_ddsolrad = '2020-07-28'
+        character(len=*), parameter :: Version_ddsolrad = '2020-07-29'
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
@@ -24,6 +23,8 @@
 
       INTEGER FUNCTION ddsolrad()
       USE PRMS_DDSOLRAD
+      USE PRMS_CONSTANTS, ONLY: Process_flag, Print_debug, Nhru, Nsol, Process_flag, RUN, DECL, INIT, &
+     &    DEBUG_less, MONTHS_PER_YEAR, ON, OFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, &
@@ -32,7 +33,10 @@
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
-      IMPLICIT NONE
+! Functions
+      INTRINSIC :: INT, FLOAT, DBLE, SNGL
+      INTEGER, EXTERNAL :: declparam, getparam
+      EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi

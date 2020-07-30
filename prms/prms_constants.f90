@@ -2,10 +2,12 @@ MODULE PRMS_CONSTANTS
     USE ISO_FORTRAN_ENV
     IMPLICIT NONE
 ! Functions
-    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ABS
-    INTRINSIC :: INDEX, MAX, CHAR, MIN, MOD, EPSILON
+    INTRINSIC :: DBLE, SNGL, INT, FLOAT, SQRT, LOG, ALOG, ABS, DABS
+    INTRINSIC :: INDEX, MAX, CHAR, MIN, MOD, EPSILON, DSQRT
     EXTERNAL :: print_module, read_error, print_date, error_stop
+    EXTERNAL :: PRMS_open_input_file, PRMS_open_output_file
     INTEGER, EXTERNAL :: declparam, declvar, getparam, getvar, decldim, getdim, readvar
+    INTEGER, EXTERNAL :: control_integer, control_string, control_string_array
 
     !! INT32, REAL32, REAL64
     integer, parameter :: sp = REAL32
@@ -83,8 +85,8 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CONIFEROUS = 4
 
     ! Hemisphere
-    integer, parameter :: Northern = 0
-    integer, parameter :: Southern = 1
+    integer, parameter :: NORTHERN = 0
+    integer, parameter :: SOUTHERN = 1
 
     ! hru_type
     integer, parameter :: INACTIVE = 0
@@ -142,7 +144,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
     integer, parameter :: temp_grid_module = 9, temp_sta_module = 8
     integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
-    integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_pm_module = 11
+    integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
 
     integer, parameter :: OFF = 0
     integer, parameter :: ON = 1
@@ -150,7 +152,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: REAL_TYPE = 2
     integer, parameter :: DBLE_TYPE = 3
 
-    integer, save :: Model, Process_flag, Print_debug
+    integer, save :: Model, Process_flag, Print_debug, Save_vars_to_file, Init_vars_from_file
 
 ! Dimensions
     integer, save :: Nhru, Nssr, Ngw, Nsegment, Nlake, Nlake_hrus, Nsub
@@ -158,15 +160,3 @@ MODULE PRMS_CONSTANTS
 	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval, Nratetbl 
 
 END MODULE PRMS_CONSTANTS
-
-!(0=run, 1=declare, 2=init, 3=clean, 4=setdims) Process_flag
-! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_temp_grid
-! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=precip_temp_grid
-! Control parameters
-
-
-        !ELSEIF ( Et_flag==11 ) THEN
-        !  call_modules = potet_pm()
-        !ELSE !IF ( Et_flag==10 ) THEN
-        !  call_modules = potet_hs()
-        !ENDIF

@@ -3,7 +3,6 @@
 ! based on a temperature index method.
 !***********************************************************************
       MODULE PRMS_TRANSP_TINDEX
-        USE PRMS_CONSTANTS
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
@@ -18,14 +17,16 @@
 
       INTEGER FUNCTION transp_tindex()
       USE PRMS_TRANSP_TINDEX
+      USE PRMS_CONSTANTS, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, &
+     &    RUN, DECL, INIT, CLEAN, ON, OFF, FAHRENHEIT, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Start_month, Start_day
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
-      IMPLICIT NONE
 ! Functions
+      INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: c_to_f
-      EXTERNAL :: transp_tindex_restart
+      EXTERNAL :: read_error, print_module, transp_tindex_restart
 ! Local Variables
       INTEGER :: i, j, motmp, new_values
 !***********************************************************************

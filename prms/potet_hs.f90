@@ -21,9 +21,9 @@
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad
       USE PRMS_SET_TIME, ONLY: Nowmonth
 ! Functions
-      INTRINSIC :: SQRT, ABS, DBLE
+      INTRINSIC :: SQRT, DBLE, ABS
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: print_module, read_error
+      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: temp_diff, swrad_inch_day !, coef_kt

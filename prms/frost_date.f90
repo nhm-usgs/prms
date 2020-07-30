@@ -15,9 +15,9 @@
       character(len=*), parameter :: MODNAME = 'frost_date'
       character(len=*), parameter :: Version_frost_date = '2020-07-28'
 ! Functions
-      INTRINSIC :: DBLE, NINT
+      INTRINSIC :: NINT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam, get_season
-      EXTERNAL print_module, read_error, write_integer_param, PRMS_open_module_file
+      EXTERNAL :: read_error, write_integer_param, PRMS_open_module_file, print_module
 ! Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Frost_temp(:)
 ! Local Variables

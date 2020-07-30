@@ -20,7 +20,7 @@
       USE PRMS_SET_TIME, ONLY: Jsol
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
-	  EXTERNAL :: print_module, read_error
+      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
 !***********************************************************************

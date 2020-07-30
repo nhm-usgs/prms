@@ -31,7 +31,7 @@
       character(len=*), parameter :: Version_setup = '2020-07-01'
 ! Functions
       INTEGER, EXTERNAL :: declparam
-      EXTERNAL :: print_module, read_error
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       setupdecl = 0
 

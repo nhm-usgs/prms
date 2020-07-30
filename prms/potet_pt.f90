@@ -28,10 +28,10 @@
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
 ! Functions
-      INTRINSIC :: LOG, SNGL, DBLE
+      INTRINSIC :: DBLE, LOG, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: sat_vapor_press
-      EXTERNAL :: print_module, read_error
+      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, satvapor, prsr, psycnst, ratio, eeq, heat_flux, net_rad

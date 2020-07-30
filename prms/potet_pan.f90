@@ -23,7 +23,7 @@
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: print_module, read_error, print_date, error_stop, potet_pan_restart
+      EXTERNAL :: read_error, print_module, potet_pan_restart, print_date, error_stop
 ! Local Variables
       INTEGER :: i, k, j
 !***********************************************************************

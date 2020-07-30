@@ -13,7 +13,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string
-      EXTERNAL :: print_module, PRMS_open_output_file, read_error
+      EXTERNAL :: read_error, PRMS_open_output_file, print_module
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Preprocessing'
       character(len=*), parameter :: MODNAME = 'write_climate_hru'

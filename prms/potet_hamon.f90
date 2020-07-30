@@ -21,9 +21,9 @@
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
 ! Functions
-      INTRINSIC :: SNGL, EXP, DBLE
-      INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: print_module, read_error
+      INTRINSIC :: EXP, DBLE, SNGL
+      INTEGER, EXTERNAL :: getparam, declparam
+      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat

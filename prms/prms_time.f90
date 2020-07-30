@@ -27,7 +27,7 @@
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: leap_day, julian_day, compute_julday
       DOUBLE PRECISION, EXTERNAL :: deltim
-      EXTERNAL :: dattim
+      EXTERNAL :: dattim, print_module
 ! Local Variables
       INTEGER :: startday
       DOUBLE PRECISION :: dt
