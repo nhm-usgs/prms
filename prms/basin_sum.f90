@@ -4,7 +4,7 @@
 !***********************************************************************
       MODULE PRMS_BASINSUM
       USE PRMS_CONSTANTS, ONLY: Nhru, Nobs, Model, Process_flag, RUN, DECL, INIT, CLEAN, &
-     &    ON, OFF, Init_vars_from_file, Save_vars_to_file, DOCUMENTATION, Print_debug
+     &    ON, OFF, Init_vars_from_file, DOCUMENTATION, Print_debug
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
@@ -23,7 +23,7 @@
      &  '----------------------------------------------------------------------------------------------'
       CHARACTER(LEN=151), PARAMETER :: STARS = ' ********************************************************'// &
      &  '**********************************************************************************************'
-      CHARACTER(LEN=151), PARAMETER :: EQUALS = ' ========================================================'// &
+      CHARACTER(LEN=151), PARAMETER :: EQULS = ' ========================================================'// &
      &  '=============================================================================================='
       LOGICAL, SAVE :: Dprt, Mprt, Yprt, Tprt
       DOUBLE PRECISION, SAVE :: Basin_swrad_yr, Basin_swrad_tot, Basin_swrad_mo
@@ -63,7 +63,7 @@
 !     Main basin_sum routine
 !***********************************************************************
       INTEGER FUNCTION basin_sum()
-      USE PRMS_BASINSUM
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file
 ! Functions
       INTEGER, EXTERNAL :: sumbdecl, sumbinit, sumbrun
       EXTERNAL :: basin_sum_restart
@@ -334,7 +334,7 @@
       IF ( getparam(MODNAME, 'print_freq', 1, 'integer', Print_freq) &
      &     /=0 ) CALL read_error(2, 'print_freq')
 
-      IF ( Init_vars_from_file>OFF ) THEN
+      IF ( Init_vars_from_file>0 ) THEN
         CALL basin_sum_restart(1)
       ELSE
 !  Zero stuff out when Timestep = 0
@@ -688,18 +688,18 @@
 
             Obs_runoff_yr = Obs_runoff_yr/Yrdays
             Basin_cfs_yr = Basin_cfs_yr/Yrdays
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS(:40))
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:40))
             WRITE ( Buffer40, "(I7,F21.2,F12.2)" ) Nowyear, Obs_runoff_yr, Basin_cfs_yr
             CALL write_outfile(Buffer40)
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS(:40))
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:40))
 
 ! ****annual summary here
           ELSEIF ( Print_type==1 ) THEN
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS(:62))
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:62))
             WRITE ( Buffer80, "(I7,10X,5F9.3)" ) Nowyear, Basin_ppt_yr, &
      &              Basin_actet_yr, Basin_storage, Basin_stflow_yr, Obsq_inches_yr
             CALL write_outfile(Buffer80(:62))
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS(:62))
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:62))
 
           ELSEIF ( Print_type==2 ) THEN
             Basin_swrad_yr = Basin_swrad_yr/Yrdays
@@ -707,7 +707,7 @@
             Basin_min_temp_yr = Basin_min_temp_yr/Yrdays
             Obs_runoff_yr = Obs_runoff_yr/Yrdays
             Basin_cfs_yr = Basin_cfs_yr/Yrdays
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS)
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS)
             WRITE ( Buffer151, 9007 ) Nowyear, Basin_swrad_yr, Basin_max_temp_yr, &
      &              Basin_min_temp_yr, Basin_ppt_yr, Basin_net_ppt_yr, &
      &              Basin_intcp_stor, Basin_intcp_evap_yr, Basin_potet_yr, Basin_actet_yr, &
@@ -716,7 +716,7 @@
      &              Basin_ssflow_yr, Basin_sroff_yr, Basin_stflow_yr, &
      &              Basin_cfs_yr, Obs_runoff_yr, Basin_lakeevap_yr
             CALL write_outfile(Buffer151)
-            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQUALS)
+            IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS)
           ENDIF
 
           Obs_runoff_yr = 0.0D0
@@ -867,7 +867,8 @@
       USE PRMS_BASINSUM
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
+      ! Functions
+      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************

@@ -94,7 +94,6 @@
       INTEGER FUNCTION stream_temp_decl()
       USE PRMS_STRMTEMP
       USE PRMS_MODULE, ONLY: Strmtemp_humidity_flag
-      IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
@@ -482,11 +481,11 @@
       seg_tave_ss = 0.0
       seg_tave_sroff = 0.0
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==8 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==8 ) THEN
         IF ( getparam(MODNAME, 'stream_tave_init', Nsegment, 'real', Stream_tave_init)/=0 ) CALL read_error(2, 'stream_tave_init')
         Seg_tave_water = Stream_tave_init
       ENDIF
-      IF ( Init_vars_from_file == OFF ) THEN
+      IF ( Init_vars_from_file == 0 ) THEN
          gw_silo =  0.0
          ss_silo =  0.0
          gw_sum = 0.0
@@ -1026,7 +1025,7 @@
       USE PRMS_ROUTING, ONLY: Seginc_sroff, Seginc_ssflow, Seginc_gwflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SNGL
+      INTRINSIC :: SNGL
 ! Arguments
       INTEGER, INTENT(IN) :: id
       REAL, INTENT(IN) :: tave_gw, tave_air, tave_ss, melt, rain
@@ -1034,7 +1033,6 @@
       DOUBLE PRECISION, INTENT(OUT) :: Qlat
 ! Local Variables
       REAL :: weight_roff, weight_ss, weight_gw, melt_wt, rain_wt, troff, tss
-      INTRINSIC ABS
 !*****************************************************************************
 
       Qlat = Seg_lateral_inflow(id) * CFS2CMS_CONV
@@ -1384,9 +1382,9 @@
      &    Level_sunset_azimuth, Max_solar_altitude, Sin_alrs, Sin_declination, Sin_lat_decl, Total_shade
       IMPLICIT NONE
 ! Functions
-      INTRINSIC COS, SIN, TAN, ACOS, ASIN, ATAN, ABS, MAX, SNGL
+      INTRINSIC :: COS, SIN, TAN, ACOS, ASIN, ATAN, ABS, MAX, SNGL
       REAL, EXTERNAL:: solalt, rprnvg
-      EXTERNAL snr_sst
+      EXTERNAL :: snr_sst
 ! Arguments
       INTEGER, INTENT(IN) :: Seg_id
       REAL, INTENT(OUT):: Shade, Svi
@@ -1551,7 +1549,7 @@
       USE PRMS_STRMTEMP, ONLY: Azrh, PI, Maxiter_sntemp, NEARZERO
       IMPLICIT NONE
 ! Functions
-      INTRINSIC TAN, SIN, COS, ACOS, ASIN, ABS
+      INTRINSIC :: TAN, SIN, COS, ACOS, ASIN, ABS
 !  Arguments
       INTEGER, INTENT(IN):: Seg_id
       REAL, INTENT(IN):: Coso, Sino, Sin_d, Alt, Almn, Almx, Azmn, Azmx
@@ -1718,7 +1716,7 @@
       USE PRMS_SET_TIME, ONLY: Summer_flag
       IMPLICIT NONE
 ! Functions
-      INTRINSIC COS, SIN, ASIN, ACOS, ABS
+      INTRINSIC :: COS, SIN, ASIN, ACOS, ABS
 ! Arguments
       REAL, INTENT(IN) :: Hrsr, Hrrs, Hrss, Sino, Coso, Sin_d, Cosod, Sinod
       INTEGER, INTENT(IN):: Seg_id
@@ -1842,6 +1840,7 @@
       USE PRMS_STRMTEMP
       ! Argument
       INTEGER, INTENT(IN) :: In_out
+      ! Functions
       EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=11) :: module_name

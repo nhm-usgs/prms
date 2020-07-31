@@ -690,7 +690,7 @@
         ENDIF
 
         ! hru_type = LAND or SWALE
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
           Slow_stor(i) = MIN( Ssres_stor(i), Pref_flow_thrsh(i) )
           Pref_flow_stor(i) = Ssres_stor(i) - Slow_stor(i)
         ENDIF
@@ -778,7 +778,7 @@
 !      Snowevap_aet_frac = 0.0
 
       ! initialize scalers
-      IF ( Init_vars_from_file==OFF ) CALL init_basin_vars()
+      IF ( Init_vars_from_file==0 ) CALL init_basin_vars()
 
 ! initialize GSFLOW arrays
       IF ( GSFLOW_flag==ON ) THEN
@@ -796,7 +796,7 @@
             Replenish_frac(ihru) = 0.0
           ELSE
             ! set only for cold start simulations
-            IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) &
+            IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) &
       &          Gravity_stor_res(i) = Ssres_stor(ihru)
             Hru_gvr_count(ihru) = Hru_gvr_count(ihru) + 1
             IF ( Hru_gvr_count(ihru)>Max_gvrs ) Max_gvrs = Hru_gvr_count(ihru)
@@ -857,9 +857,9 @@
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Strm_seg_in, Dprst_evap_hru, Dprst_seep_hru, Frozen
 ! Functions
-      INTRINSIC MIN, ABS, MAX, SNGL, DBLE
-      EXTERNAL compute_soilmoist, compute_szactet, compute_cascades, compute_gravflow
-      EXTERNAL compute_interflow, compute_gwflow, init_basin_vars, print_date
+      INTRINSIC :: MIN, ABS, MAX, SNGL, DBLE
+      EXTERNAL :: compute_soilmoist, compute_szactet, compute_cascades, compute_gravflow
+      EXTERNAL :: compute_interflow, compute_gwflow, init_basin_vars, print_date
 ! Local Variables
       INTEGER :: i, k, update_potet
       REAL :: dunnianflw, interflow, perv_area, harea
@@ -1565,12 +1565,12 @@
       SUBROUTINE compute_interflow(Coef_lin, Coef_sq, Ssres_in, Storage, Inter_flow)
       USE PRMS_CONSTANTS, ONLY: ERROR_soilzone !,NEARZERO, CLOSEZERO
       IMPLICIT NONE
+! Functions
       INTRINSIC :: EXP, SQRT
+      EXTERNAL :: error_stop
 ! Arguments
       REAL, INTENT(IN) :: Coef_lin, Coef_sq, Ssres_in
       REAL, INTENT(INOUT) :: Storage, Inter_flow
-! Functions
-      EXTERNAL error_stop
 ! Local Variables
       REAL :: c1, c2, c3, sos
 !***********************************************************************
@@ -1675,8 +1675,8 @@
       USE PRMS_SRUNOFF, ONLY: Dprst_seep_hru
       IMPLICIT NONE
 ! Functions
-      INTRINSIC MAX, DBLE, SNGL
-      EXTERNAL check_gvr_sm, compute_interflow
+      INTRINSIC :: MAX, DBLE, SNGL
+      EXTERNAL :: check_gvr_sm, compute_interflow
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Hru_type
       REAL, INTENT(IN) :: Slowcoef_lin, Slowcoef_sq, Ssr2gw_rate, Ssr2gw_exp
@@ -1775,7 +1775,7 @@
 !      USE PRMS_CONSTANTS, ONLY: CLOSEZERO
       IMPLICIT NONE
 ! Functions
-      INTRINSIC MAX, ABS, SNGL
+      INTRINSIC :: MAX, ABS, SNGL
 ! Arguments
       DOUBLE PRECISION, INTENT(IN) :: Frac
       REAL, INTENT(INOUT) :: Capacity, Gvr2sm, Depth, Input

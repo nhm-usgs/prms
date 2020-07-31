@@ -14,9 +14,6 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: MAXFILE_LENGTH = 256
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
-    character(len=*), parameter :: EQULS = &
-   &                  '===================================================================='
-
     integer, parameter :: MONTHS_PER_YEAR = 12
 	integer, parameter :: MAX_DAYS_PER_YEAR = 366
 	integer, parameter :: DAYS_PER_YEAR = 365

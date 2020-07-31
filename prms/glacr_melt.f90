@@ -338,7 +338,7 @@
      &     'Basin storage volume in glacier storage reservoirs', &
      &     'acre-inches', Basin_gl_storvol)/=0 ) CALL read_error(3, 'basin_gl_storvol')
 
-      IF ( Init_vars_from_file==OFF .OR. Model==DOCUMENTATION ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         ALLOCATE ( Glacr_elev_init(Nhru) )
         IF ( declvar(MODNAME, 'glacr_elev_init', 'nhru', Nhru, 'real',    &
      &     'Glacier surface elevation mean over HRU at initiation extrapolating to 100% glacierized HRU', &
@@ -460,7 +460,7 @@
 !***********************************************************************
       glacrinit = 0
 
-      IF ( Init_vars_from_file>OFF ) CALL glacr_restart(1)
+      IF ( Init_vars_from_file>0 ) CALL glacr_restart(1)
 
       IF ( getparam(MODNAME, 'max_gldepth', 1, 'real', Max_gldepth)/=0 ) CALL read_error(2, 'max_gldepth')
       IF ( getparam(MODNAME, 'glacrva_coef', Nhru, 'real', Glacrva_coef)/=0 ) CALL read_error(2, 'glacrva_coef')
@@ -473,7 +473,7 @@
       IF ( getparam(MODNAME, 'abl_elev_range', Nhru, 'real', Abl_elev_range)/=0 ) CALL read_error(2, 'abl_elev_range')
       IF ( getparam(MODNAME, 'tohru', Nhru, 'integer', Tohru)/=0 ) CALL read_error(2, 'tohru')
       IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
-      IF ( Init_vars_from_file==OFF ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         Alt_above_ela = 0.0
         Prev_out = 0.0
         Prev_outi = 0.0

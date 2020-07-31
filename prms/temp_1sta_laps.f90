@@ -222,7 +222,7 @@
      &       'none')/=0 ) CALL read_error(1, 'max_missing')
 
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL temp_1sta_laps_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL temp_1sta_laps_restart(1)
 
         ! Initialize variables, get parameter values, compute Elfac
         IF ( Temp_flag==temp_1sta_module ) THEN
@@ -266,7 +266,7 @@
           ENDIF
         ENDIF
 
-        IF ( Init_vars_from_file==OFF ) THEN
+        IF ( Init_vars_from_file==0 ) THEN
           Solrad_tmax_good = Solrad_tmax
           Solrad_tmin_good = Solrad_tmin
           Tmax_cnt = 0

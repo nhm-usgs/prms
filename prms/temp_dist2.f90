@@ -40,7 +40,7 @@
 !     Main temp_dist2 routine
 !***********************************************************************
       INTEGER FUNCTION temp_dist2()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: t2dist2decl, t2dist2init, t2dist2run
@@ -56,7 +56,7 @@
         IF ( Init_vars_from_file>0 ) CALL temp_dist2_restart(1)
         temp_dist2 = t2dist2init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL temp_dist2_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL temp_dist2_restart(0)
       ENDIF
 
       END FUNCTION temp_dist2

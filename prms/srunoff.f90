@@ -78,7 +78,7 @@
 !     Main srunoff routine
 !***********************************************************************
       INTEGER FUNCTION srunoff()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: srunoffdecl, srunoffinit, srunoffrun
@@ -94,7 +94,7 @@
         IF ( Init_vars_from_file>0 ) CALL srunoff_restart(1)
         srunoff = srunoffinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL srunoff_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL srunoff_restart(0)
       ENDIF
 
       END FUNCTION srunoff
@@ -112,7 +112,7 @@
      &    Frozen_flag, GSFLOW_flag
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       srunoffdecl = 0
 
@@ -444,7 +444,7 @@
      &       'Fraction of unsatisfied potential evapotranspiration to apply to surface-depression storage', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'dprst_et_coef')
 
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
           ALLOCATE ( Dprst_frac_init(Nhru) )
           IF ( declparam(MODNAME, 'dprst_frac_init', 'nhru', 'real', &
      &         '0.5', '0.0', '1.0', &
@@ -518,7 +518,7 @@
         IF ( Nlake>0 ) Hortonian_lakes = 0.0D0
       ENDIF
 
-      IF ( Init_vars_from_file==OFF ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         Basin_sroffi = 0.0D0
         Basin_sroffp = 0.0D0
         Basin_infil = 0.0D0
@@ -628,8 +628,9 @@
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover
       USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt
       IMPLICIT NONE
-      INTRINSIC SNGL, DBLE
-      EXTERNAL imperv_et, compute_infil, run_cascade_sroff, dprst_comp, perv_comp
+! Functions
+      INTRINSIC :: SNGL, DBLE
+      EXTERNAL :: imperv_et, compute_infil, run_cascade_sroff, dprst_comp, perv_comp
 ! Local Variables
       INTEGER :: i, k, dprst_chk, frzen, active_glacier
       REAL :: srunoff, avail_et, hperv, sra, availh2o
@@ -939,8 +940,8 @@
       DOUBLE PRECISION, INTENT(IN) :: Pkwater_equiv
       REAL, INTENT(INOUT) :: Imperv_stor, Infil
 ! Functions
-      INTRINSIC SNGL
-      EXTERNAL perv_comp, check_capacity
+      INTRINSIC :: SNGL
+      EXTERNAL :: perv_comp, check_capacity
 ! Local Variables
       REAL :: avail_water
       INTEGER :: hru_flag
@@ -1076,7 +1077,7 @@
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
       IMPLICIT NONE
 ! Functions
-      INTRINSIC IABS, ABS, DBLE
+      INTRINSIC :: IABS, ABS, DBLE
 ! Arguments
       INTEGER, INTENT(IN) :: Ncascade_hru
       REAL, INTENT(INOUT) :: Runoff
@@ -1154,7 +1155,7 @@
      &    Hru_area_dble, Active_hrus, Hru_route_order, Dprst_open_flag
       USE PRMS_FLOWVARS, ONLY: Dprst_vol_open, Dprst_vol_clos
 ! Functions
-      INTRINSIC EXP, LOG, DBLE, SNGL
+      INTRINSIC :: EXP, LOG, DBLE, SNGL
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: i, j
@@ -1164,7 +1165,7 @@
       Dprst_seep_hru = 0.0D0
       Dprst_sroff_hru = 0.0D0
       Dprst_insroff_hru = 0.0
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
         IF ( getparam(MODNAME, 'dprst_frac_init', Nhru, 'real', Dprst_frac_init)/=0 ) CALL read_error(2, 'dprst_frac_init')
       ENDIF
       IF ( getparam(MODNAME, 'dprst_flow_coef', Nhru, 'real', Dprst_flow_coef)/=0 ) CALL read_error(2, 'dprst_flow_coef')
@@ -1223,7 +1224,7 @@
           IF ( Dprst_open_flag==ON ) Dprst_vol_open_max(i) = DBLE( Dprst_area_open_max(i)*Dprst_depth_avg(i) )
 
 !         calculate the initial open and closed depression storage volume:
-          IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
+          IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
             IF ( Dprst_open_flag==ON ) Dprst_vol_open(i) = DBLE(Dprst_frac_init(i))*Dprst_vol_open_max(i)
             IF ( Dprst_clos_flag==ON ) Dprst_vol_clos(i) = DBLE(Dprst_frac_init(i))*Dprst_vol_clos_max(i)
           ENDIF
@@ -1276,7 +1277,7 @@
       Basin_dprst_volop = Basin_dprst_volop*Basin_area_inv
       Basin_dprst_volcl = Basin_dprst_volcl*Basin_area_inv
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==7 ) THEN
         DEALLOCATE ( Dprst_frac_init )
         Basin_dprst_sroff = 0.0D0
         Basin_dprst_evap = 0.0D0
@@ -1307,7 +1308,8 @@
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
       USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snowcov_area
       IMPLICIT NONE
-      INTRINSIC EXP, LOG, MAX, DBLE, SNGL
+! Functions
+      INTRINSIC :: EXP, LOG, MAX, DBLE, SNGL
 ! Arguments
       REAL, INTENT(IN) :: Dprst_area_open_max, Dprst_area_clos_max, Net_rain
       REAL, INTENT(IN) :: Sro_to_dprst_perv, Sro_to_dprst_imperv
@@ -1549,6 +1551,7 @@
       USE PRMS_SRUNOFF
       ! Argument
       INTEGER, INTENT(IN) :: In_out
+      ! Functions
       EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=13) :: module_name

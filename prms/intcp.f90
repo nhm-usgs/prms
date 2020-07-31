@@ -33,7 +33,7 @@
 !     Main intcp routine
 !***********************************************************************
       INTEGER FUNCTION intcp()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: intdecl, intinit, intrun
@@ -49,7 +49,7 @@
         IF ( Init_vars_from_file>0 ) CALL intcp_restart(1)
         intcp = intinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL intcp_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL intcp_restart(0)
       ENDIF
 
       END FUNCTION intcp
@@ -233,7 +233,7 @@
       Net_ppt = 0.0
       Hru_intcpevap = 0.0
       Canopy_covden = 0.0
-      IF ( Init_vars_from_file==OFF ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         Intcp_transp_on = Transp_on
         Intcp_stor = 0.0
         Intcp_on = 0
@@ -262,7 +262,6 @@
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
      &    Hru_route_order, Hru_area, Cov_type
       USE PRMS_WATER_USE, ONLY: Canopy_gain
-! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Hru_rain, Hru_ppt, &
      &    Hru_snow, Transp_on, Potet, Use_pandata, Hru_pansta, Epan_coef, Potet_sublim
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv

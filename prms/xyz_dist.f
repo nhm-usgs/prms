@@ -132,7 +132,7 @@
       USE PRMS_XYZ_DIST
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       xyzdecl = 0
 
@@ -969,8 +969,8 @@
       USE PRMS_OBS, ONLY: Precip, Rain_day
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ABS, SNGL, DBLE
-      EXTERNAL precip_form
+      INTRINSIC :: ABS, SNGL, DBLE
+      EXTERNAL :: precip_form
 ! Arguments
 !   Declared Parameters
       INTEGER, INTENT(IN) :: Rain_code
@@ -1180,7 +1180,8 @@
      +    Ntemp, Nrain
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev
       IMPLICIT NONE
-      INTRINSIC DBLE
+! Functions
+      INTRINSIC :: DBLE
 ! Arguments
       REAL, INTENT(IN) :: PptMTH(Nrain), TminMTH(Ntemp), TmaxMTH(Ntemp)
       DOUBLE PRECISION, INTENT(OUT) :: Meanppt, Meantmax, Meantmin

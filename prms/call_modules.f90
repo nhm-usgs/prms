@@ -6,7 +6,7 @@ MODULE PRMS_MODULE
     USE PRMS_CONSTANTS, ONLY: Nhru, Nssr, Ngw, Nsegment, Nlake, Ntemp, Nrain, &
    &    Nsol, Nsnow, Nobs, Nevap, Ncascade, Ncascdgw, Nlake_hrus, Ndepl, Ndeplval, &
    &    Nsub, Nhrucell, Ngwcell, Nratetbl, Process_flag, Model, DOCUMENTATION, MODFLOW, &
-   &    EQULS, MAXFILE_LENGTH, MAXCONTROL_LENGTH, MAXDIM, MAX_DAYS_PER_YEAR, &
+   &    MAXFILE_LENGTH, MAXCONTROL_LENGTH, MAXDIM, MAX_DAYS_PER_YEAR, &
    &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_in, ERROR_param, ERROR_restart, Print_debug, &
    &    DEBUG_minimum, DEBUG_less, DEBUG_WB, Init_vars_from_file, Save_vars_to_file, &
    &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
@@ -17,7 +17,8 @@ MODULE PRMS_MODULE
    &    climate_hru_module, precip_grid_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
    &    smidx_module, carea_module    
     IMPLICIT NONE
-    !! Define double precision and range
+      character(LEN=*), parameter :: &
+     &  EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
     character(len=*), parameter :: PRMS_versn = '2020-07-31'
@@ -164,7 +165,7 @@ MODULE PRMS_MODULE
         Kkiter = 1 ! set for PRMS-only mode
 
         Timestep = 0
-        IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL call_modules_restart(1)
 
       ELSEIF ( Process(:4)=='init' ) THEN
         Process_flag = INIT
@@ -177,7 +178,7 @@ MODULE PRMS_MODULE
         IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using Parameter File: ', Param_file(:nc)
         IF ( Print_debug>DEBUG_minimum ) WRITE ( PRMS_output_unit, 9004 ) 'Using Parameter File: ', Param_file(:nc)
 
-        IF ( Init_vars_from_file>OFF ) THEN
+        IF ( Init_vars_from_file>0 ) THEN
           nc = numchars(Var_init_file)
           IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using var_init_file: ', Var_init_file(:nc)
         ENDIF
@@ -196,7 +197,7 @@ MODULE PRMS_MODULE
 
       ELSE  !IF ( Process(:5)=='clean' ) THEN
         Process_flag = CLEAN
-        IF ( Init_vars_from_file>OFF ) CLOSE ( Restart_inunit )
+        IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==ON ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
           IF ( iret/=0 ) ERROR STOP ERROR_open_in
@@ -206,7 +207,7 @@ MODULE PRMS_MODULE
 
       IF ( Model==DOCUMENTATION ) THEN
         IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
-          Init_vars_from_file = OFF ! make sure this is set so all variables and parameters are declared
+          Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
           call_modules = 0
           RETURN
@@ -563,7 +564,7 @@ MODULE PRMS_MODULE
       IF ( control_string(Param_file, 'param_file')/=0 ) CALL read_error(5, 'param_file')
 
       ! Check for restart files
-      IF ( Init_vars_from_file>OFF ) THEN
+      IF ( Init_vars_from_file>0 ) THEN
         IF ( control_string(Var_init_file, 'var_init_file')/=0 ) CALL read_error(5, 'var_init_file')
         CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
         IF ( iret/=0 ) Inputerror_flag = 1
@@ -997,7 +998,7 @@ MODULE PRMS_MODULE
       ENDIF
 
       Lake_route_flag = 0
-      IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = 1 ! muskingum_lake
+      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. GSFLOW_flag==OFF ) Lake_route_flag = 1 ! muskingum_lake
 
       IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'

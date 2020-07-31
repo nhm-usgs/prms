@@ -105,7 +105,7 @@
 !     Main climateflow routine
 !***********************************************************************
       INTEGER FUNCTION climateflow()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT, CLEAN, ON, OFF, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: climateflow_decl, climateflow_init
@@ -116,7 +116,7 @@
       IF ( Process_flag==DECL ) THEN
         climateflow = climateflow_decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL climateflow_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL climateflow_restart(1)
         climateflow = climateflow_init()
       ELSEIF ( Process_flag==CLEAN ) THEN
         IF ( Save_vars_to_file==ON ) CALL climateflow_restart(0)
@@ -817,7 +817,7 @@
      &     'Maximum impervious area retention storage for each HRU', &
      &     'inches')/=0 ) CALL read_error(1, 'imperv_stor_max')
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
         ALLOCATE ( Soil_rechr_init_frac(Nhru), Soil_moist_init_frac(Nhru), Ssstor_init_frac(Nssr) )
         IF ( PRMS4_flag==ON .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'soil_rechr_init', 'nhru', 'real', &
@@ -1036,7 +1036,7 @@
       ENDIF
 
       ierr = 0
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
         IF ( PRMS4_flag==ON ) THEN
           ! use PRMS4 parameters
           IF ( getparam(Soilzone_module, 'soil_moist_init', Nhru, 'real', Soil_moist_init_frac)/=0 ) &
@@ -1188,7 +1188,7 @@
         Seg_lateral_inflow = 0.0D0
       ENDIF
 
-      IF ( Init_vars_from_file>OFF .OR. ierr>0 ) RETURN
+      IF ( Init_vars_from_file>0 .OR. ierr>0 ) RETURN
 
 ! initialize scalers
       Basin_temp = 0.0D0
@@ -1276,7 +1276,7 @@
       REAL, INTENT(IN) :: Tmax, Tmin, Hru_area
       REAL, INTENT(OUT) :: Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc
 ! Functions
-      INTRINSIC DBLE
+      INTRINSIC :: DBLE
       REAL, EXTERNAL :: c_to_f, f_to_c
       EXTERNAL :: print_date
 !***********************************************************************
@@ -1323,7 +1323,7 @@
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ABS, DBLE
+      INTRINSIC :: ABS, DBLE
       EXTERNAL :: print_date
 ! Arguments
       REAL, INTENT(IN) :: Tmax_allrain_f, Tmax_allsnow_f, Rain_adj, Snow_adj
@@ -1396,7 +1396,8 @@
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
+      ! Functions
+      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=11) :: module_name
 !***********************************************************************

@@ -2,8 +2,10 @@
 ! Defines stream and lake routing parameters and variables
 !***********************************************************************
       MODULE PRMS_ROUTING
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nsegment, ON, OFF, FT2_PER_ACRE, &
-     &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param
+      USE PRMS_CONSTANTS, ONLY: Nhru, Nsegment, Model, DOCUMENTATION, ON, OFF, FT2_PER_ACRE, &
+     &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, Init_vars_from_file, &
+     &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
+     &    strmflow_muskingum_module, strmflow_in_out_module, strmflow_mizuroute_module
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
@@ -28,15 +30,15 @@
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_depth(:), Mann_n(:), Segment_flow_init(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:), Seg_width(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_depth(:), Mann_n(:), Segment_flow_init(:), Seg_width(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
       END MODULE PRMS_ROUTING
 
 !***********************************************************************
 !     Main routing routine
 !***********************************************************************
       INTEGER FUNCTION routing()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, Init_vars_from_file, Save_vars_to_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: routingdecl, routinginit, route_run
@@ -49,7 +51,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         routing = routingdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL routing_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL routing_restart(1)
         routing = routinginit()
       ELSEIF ( Process_flag==CLEAN ) THEN
         IF ( Save_vars_to_file==ON ) CALL routing_restart(0)
@@ -62,9 +64,6 @@
 !***********************************************************************
       INTEGER FUNCTION routingdecl()
       USE PRMS_ROUTING
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION, Init_vars_from_file, &
-     &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_mizuroute_module
       USE PRMS_MODULE, ONLY: Strmflow_flag, Cascade_flag, Stream_temp_flag
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
@@ -157,7 +156,7 @@
         IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Seg_width(Nsegment) )
           IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
-     &       '15.0', '0.18', '40000.0', &
+     &         '15.0', '0.18', '40000.0', &
      &         'Segment river width', &
      &         'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
      &         'meters')/=0 ) CALL read_error(1, 'seg_width')
@@ -221,7 +220,7 @@
      &     'Index of measured streamflow station that replaces outflow from a segment', &
      &     'none')/=0 ) CALL read_error(1, 'obsout_segment')
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
         ALLOCATE ( Segment_flow_init(Nsegment) )
         IF ( declparam(MODNAME, 'segment_flow_init', 'nsegment', 'real', &
      &       '0.0', '0.0', '1.0E7', &
@@ -324,9 +323,6 @@
 !**********************************************************************
       INTEGER FUNCTION routinginit()
       USE PRMS_ROUTING
-      USE PRMS_CONSTANTS, ONLY: Init_vars_from_file, &
-     &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_in_out_module, strmflow_mizuroute_module
       USE PRMS_MODULE, ONLY: Strmflow_flag, Water_use_flag, Segment_transferON_OFF, &
      &    Inputerror_flag, Parameter_check_flag, Stream_temp_flag
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
@@ -347,7 +343,7 @@
       Use_transfer_segment = OFF
       IF ( Water_use_flag==ON .AND. Segment_transferON_OFF==ON ) Use_transfer_segment = ON
 
-      IF ( Init_vars_from_file==OFF ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         Basin_segment_storage = 0.0D0
         Segment_delta_flow = 0.0D0
       ENDIF
@@ -423,7 +419,7 @@
         ENDIF
       ENDIF
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
         IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
      &       CALL read_error(2,'segment_flow_init')
         DO i = 1, Nsegment
@@ -683,7 +679,6 @@
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_SRUNOFF, ONLY: Strm_seg_in
       USE PRMS_GLACR, ONLY: Glacr_flow
-      IMPLICIT NONE
 ! Local Variables
       INTEGER :: i, j, jj, this_seg
       DOUBLE PRECISION :: tocfs
@@ -827,10 +822,10 @@
       SUBROUTINE routing_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_ROUTING
-      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
+      ! Functions
+      EXTERNAL :: check_restart
       ! Local Variables
       CHARACTER(LEN=7) :: module_name
 !***********************************************************************

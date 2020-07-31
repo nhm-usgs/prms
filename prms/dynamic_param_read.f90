@@ -58,7 +58,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: dynparamrun, dynparaminit
-      EXTERNAL print_module
+      EXTERNAL :: print_module
 !***********************************************************************
       dynamic_param_read = 0
 
@@ -85,7 +85,6 @@
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
       EXTERNAL :: read_error, find_header_end, find_current_file_time, PRMS_open_output_file, error_stop
-      INTRINSIC ABS
 ! Local Variables
       INTEGER :: year, month, day, istop, ierr
 !***********************************************************************
@@ -988,7 +987,7 @@
 !      INTEGER, INTENT(OUT) :: Updated_hrus(Nhru)
 !      CHARACTER(LEN=*), INTENT(IN) :: Param_name
 ! Functions
-!      INTRINSIC DBLE, SNGL
+!      INTRINSIC :: DBLE, SNGL
 ! Local Variables
 !      INTEGER i, j, num
 !***********************************************************************

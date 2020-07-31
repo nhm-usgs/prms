@@ -538,11 +538,10 @@
 ! order hrus allowing many to 1
 !***********************************************************************
       SUBROUTINE order_hrus(Iret)
-      USE PRMS_CASCADE, ONLY: Hru_down, Iorder, MSGUNT, Circle_switch, Ncascade_hru, &
-      &   Nhru, Print_debug, INACTIVE, LAND, SWALE, GLACIER, ON
+      USE PRMS_CASCADE
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
-      IMPLICIT NONE
-      EXTERNAL up_tree, PRMS_open_module_file
+! Functions
+      EXTERNAL :: up_tree, PRMS_open_module_file
 !     Arguments
       INTEGER, INTENT(OUT) :: Iret
 !     Local Variables
@@ -931,11 +930,11 @@
 ! order GWRs allowing many to 1
 !***********************************************************************
       SUBROUTINE order_gwrs(Iret)
-      USE PRMS_CASCADE, ONLY: Gwr_down, Igworder, MSGUNT, Circle_switch, Ncascade_gwr, Ngw, Print_debug
+      USE PRMS_CASCADE
       USE PRMS_MODULE, ONLY: Gwr_swale_flag
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Gwr_type
-      IMPLICIT NONE
-      EXTERNAL up_tree
+! Functions
+      EXTERNAL :: up_tree
 !     Arguments
       INTEGER, INTENT(OUT) :: Iret
 !     Local Variables
@@ -1157,7 +1156,8 @@
 !***********************************************************************
       RECURSIVE SUBROUTINE up_tree(Num, N, Down_id, Up_list, Npath, Path, Circle_flg, Imx)
       IMPLICIT NONE
-      EXTERNAL check_path
+! Functions
+      EXTERNAL :: check_path
 ! Arguments
       INTEGER, INTENT(IN) :: Num, N, Imx
       INTEGER, INTENT(IN) :: Down_id(Num), Up_list(Imx, Num)
@@ -1186,7 +1186,8 @@
       SUBROUTINE check_path(Npath, Path, Circle_flg, Nup)
       USE PRMS_CASCADE, ONLY: MSGUNT, Print_debug
       IMPLICIT NONE
-      INTRINSIC MIN
+!     Functions
+      INTRINSIC :: MIN
 !     Arguments
       INTEGER, INTENT(IN) :: Npath, Path(Npath), Nup
       INTEGER, INTENT(OUT) :: Circle_flg

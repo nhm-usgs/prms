@@ -108,7 +108,7 @@
         IF ( getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax)/=0 ) CALL read_error(2, 'transp_tmax')
 
         new_values = OFF
-        IF ( Init_vars_from_file>OFF ) THEN
+        IF ( Init_vars_from_file>0 ) THEN
           ALLOCATE ( Transp_beg_restart(Nhru), Transp_end_restart(Nhru), Transp_tmax_restart(Nhru) )
           CALL transp_tindex_restart(1)
           DO j = 1, Active_hrus
@@ -130,7 +130,7 @@
         ENDIF
         !DEALLOCATE ( Transp_tmax )
 
-        IF ( Init_vars_from_file==OFF .OR. new_values==ON ) THEN
+        IF ( Init_vars_from_file==0 .OR. new_values==ON ) THEN
           motmp = Start_month + MONTHS_PER_YEAR
           Tmax_sum = 0.0
           Transp_check = OFF

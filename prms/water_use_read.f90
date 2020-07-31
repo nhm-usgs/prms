@@ -602,7 +602,7 @@
       INTEGER, INTENT(IN) :: Iunit, Src_type
       INTEGER, INTENT (INOUT) :: Next_yr, Next_mo, Next_day
 ! Funcions
-      EXTERNAL check_event, set_transfers, is_eof
+      EXTERNAL :: check_event, set_transfers, is_eof
 ! Local Variables
       INTEGER src_id, dest_type, dest_id, keep_reading, ignore
       REAL transfer
@@ -636,7 +636,8 @@
      &    Dprst_transferON_OFF, External_transferON_OFF, Strmflow_flag, Nexternal, Dprst_flag
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
-      EXTERNAL error_stop
+! Functions
+      EXTERNAL :: error_stop
 ! Arguments
       INTEGER, INTENT(IN) :: Src_type, Dest_type, Src_id, Dest_id
       INTEGER, INTENT(OUT) :: Ignore
@@ -736,7 +737,7 @@
       INTEGER, INTENT(IN) :: Src_type, Src_id, Dest_type, Dest_id
       REAL, INTENT(IN) :: Diversion
 ! Functions
-      EXTERNAL check_transfer
+      EXTERNAL :: check_transfer
 !*******************************************************************************
       IF ( Src_type==4 ) THEN
         CALL check_transfer('external location', Src_type, Src_id, Dest_type, Dest_id, Diversion)
@@ -762,7 +763,7 @@
       USE PRMS_MODULE, ONLY: Nwateruse
       IMPLICIT NONE
       ! Functions
-      EXTERNAL nwateruse_error
+      EXTERNAL :: nwateruse_error
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Ctype
       INTEGER, INTENT(IN) :: Src_type, Src_id, Dest_type, Dest_id

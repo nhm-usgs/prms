@@ -255,9 +255,9 @@
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Active_hrus, Hru_route_order
 ! Functions
-      INTRINSIC DBLE
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL read_error
+      EXTERNAL :: read_error
 ! Local Variables
       INTEGER i, ii, ierr
 !***********************************************************************
@@ -734,8 +734,9 @@
      +                       Dat_dist, Ndist, Dist_exp)
       USE PRMS_CONSTANTS, ONLY: ERROR_data
       IMPLICIT NONE
-      INTRINSIC SQRT, DBLE, SNGL
-      EXTERNAL SORT2I, print_date, error_stop
+! Functions
+      INTRINSIC :: SQRT, DBLE, SNGL
+      EXTERNAL :: SORT2I, print_date, error_stop
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, Ndist, Nsta
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse

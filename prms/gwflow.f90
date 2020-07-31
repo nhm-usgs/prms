@@ -46,7 +46,7 @@
 !     Main gwflow routine
 !***********************************************************************
       INTEGER FUNCTION gwflow()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Init_vars_from_file, Save_vars_to_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: gwflowdecl, gwflowinit, gwflowrun
@@ -62,7 +62,7 @@
         IF ( Init_vars_from_file>0 ) CALL gwflow_restart(1)
         gwflow = gwflowinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL gwflow_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL gwflow_restart(0)
       ENDIF
 
       END FUNCTION gwflow
@@ -192,8 +192,7 @@
      &       'feet', Elevlake)/=0 ) CALL read_error(3, 'elevlake')
       ENDIF
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 &
-     &     .OR. Model==DOCUMENTATION ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 ) THEN
         ALLOCATE ( Gwstor_init(Ngw) )
         IF ( declparam(MODNAME, 'gwstor_init', 'ngw', 'real', &
      &       '2.0', '0.0', '50.0', &
@@ -226,8 +225,7 @@
      &       ' routing or gate opening routing', &
      &       'feet')/=0 ) CALL read_error(1, 'lake_seep_elev')
 
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 &
-     &       .OR. Model==DOCUMENTATION ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
           ALLOCATE ( Elevlake_init(Nlake) )
           IF ( declparam(MODNAME, 'elevlake_init', 'nlake', 'real', &
      &         '1.0', '-300.0', '10000.0', &
@@ -297,7 +295,7 @@
       Gwstor_minarea = 0.0D0
       Gwstor_minarea_wb = 0.0D0
       Basin_gwstor_minarea_wb = 0.0D0
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 ) THEN
         IF ( getparam(MODNAME, 'gwstor_init', Ngw, 'real', Gwstor_init)/=0 ) CALL read_error(2, 'gwstor_init')
         DO i = 1, Ngw
           Gwres_stor(i) = DBLE( Gwstor_init(i) )
@@ -345,13 +343,13 @@
       IF ( Weir_gate_flag==ON ) THEN
         IF ( getparam(MODNAME, 'gw_seep_coef', Ngw, 'real', Gw_seep_coef)/=0 ) CALL read_error(2, 'gw_seep_coef')
         IF ( getparam(MODNAME, 'lake_seep_elev', Nlake, 'real', Lake_seep_elev)/=0 ) CALL read_error(2, 'lake_seep_elev')
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
           IF ( getparam(MODNAME, 'elevlake_init', Nlake, 'real', Elevlake_init)/=0 ) CALL read_error(2, 'elevlake_init')
           Elevlake = Elevlake_init
           DEALLOCATE ( Elevlake_init )
         ENDIF
         Lake_seepage_max = 0.0D0
-        IF ( Init_vars_from_file==OFF ) THEN
+        IF ( Init_vars_from_file==0 ) THEN
           Lake_seepage_gwr = 0.0D0
           Lake_seepage = 0.0D0
           Gw_seep_lakein = 0.0D0
@@ -369,7 +367,7 @@
         ENDDO
       ENDIF
 
-      IF ( Init_vars_from_file==OFF ) THEN
+      IF ( Init_vars_from_file==0 ) THEN
         Basin_gwflow = 0.0D0
         Basin_gwsink = 0.0D0
         Basin_gwin = 0.0D0

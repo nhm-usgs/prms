@@ -132,7 +132,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake()
       USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, SETDIMENS, DECL, INIT, CLEAN, &
-     &    Save_vars_to_file, Init_vars_from_file
+     &    ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: muskingum_lake_decl, muskingum_lake_init, muskingum_lake_run, muskingum_lake_setdims
@@ -150,7 +150,7 @@
         IF ( Init_vars_from_file>0 ) CALL muskingum_lake_restart(1)
         muskingum_lake = muskingum_lake_init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==1 ) CALL muskingum_lake_restart(0)
+        IF ( Save_vars_to_file==ON ) CALL muskingum_lake_restart(0)
       ENDIF
 
       END FUNCTION muskingum_lake
@@ -210,7 +210,7 @@
       USE PRMS_MODULE, ONLY: Cascade_flag
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       muskingum_lake_decl = 0
 
@@ -402,7 +402,7 @@
      &       'none')/=0 ) CALL read_error(1, 'lake_segment_id')
       ENDIF
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
         ALLOCATE ( Lake_qro(Nlake) )
         IF ( declparam(MODNAME, 'lake_qro', 'nlake', 'real', &
      &       '0.1', '0.0', '1.0E7', &
@@ -459,7 +459,7 @@
       ENDIF
 
 ! Declared Parameters for broad-crested weir or gate opening routing
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
         ALLOCATE ( Lake_vol_init(Nlake) )
         IF ( declparam(MODNAME, 'lake_vol_init', 'nlake', 'real', &
      &       '0.0', '0.0', '1.0E7', &
@@ -623,7 +623,7 @@
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage, Segment_type, Hru_segment
 ! Functions
-      INTRINSIC ABS, NINT, DBLE, DABS
+      INTRINSIC :: ABS, NINT, DBLE, DABS
       EXTERNAL :: read_error, error_stop
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
@@ -632,7 +632,7 @@
 !***********************************************************************
       muskingum_lake_init = 0
 
-      IF ( Init_vars_from_file==OFF ) Outflow_ts = 0.0D0
+      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
@@ -663,7 +663,7 @@
         ENDIF
       ENDDO
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+      IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
         IF ( getparam(MODNAME, 'lake_qro', Nlake, 'real', Lake_qro)/=0 ) CALL read_error(2, 'lake_qro')
         DO j = 1, Nlake
           Lake_outcfs(j) = Lake_qro(j)
@@ -757,7 +757,7 @@
       ENDIF
 
       IF ( Puls_lin_flag==ON ) THEN
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
           IF ( getparam(MODNAME, 'lake_init', Nlake, 'real', Lake_init)/=0 ) CALL read_error(2, 'lake_init')
           IF ( getparam(MODNAME, 'lake_din1', Nlake, 'real', Lake_din1)/=0 ) CALL read_error(2, 'lake_din1')
           DO i = 1, Nlake
@@ -788,7 +788,7 @@
       ENDIF
 
       IF ( Weir_gate_flag==ON ) THEN
-        IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
+        IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
           IF ( getparam(MODNAME, 'lake_vol_init', Nlake, 'real', Lake_vol_init)/=0 ) CALL read_error(2, 'lake_vol_init')
           DO i = 1, Nlake
             Lake_vol(i) = DBLE( Lake_vol_init(i) )
@@ -895,8 +895,8 @@
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Lake_seepage, Gw_seep_lakein, Gw_upslope
 ! Functions
-      INTRINSIC MOD, DBLE
-      EXTERNAL route_lake, error_stop
+      INTRINSIC :: MOD, DBLE
+      EXTERNAL :: route_lake, error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj
       DOUBLE PRECISION :: area_fac, segout, currin, tocfs, lake_in_ts
@@ -1159,8 +1159,8 @@
       USE PRMS_GWFLOW, ONLY: Elevlake
       IMPLICIT NONE
 ! Functions
-      INTRINSIC EXP, DBLE, SNGL, DABS
-      EXTERNAL table_comp
+      INTRINSIC :: EXP, DBLE, SNGL, DABS
+      EXTERNAL :: table_comp
 ! Arguments
       INTEGER, INTENT(IN) :: Lakeid, Laketype
       DOUBLE PRECISION, INTENT(IN) :: Lake_area, Lake_in_ts
@@ -1350,7 +1350,7 @@
       DOUBLE PRECISION, INTENT(IN) :: Lake_area
       REAL, INTENT(OUT) :: Q2
 ! Functions
-      INTRINSIC SNGL
+      INTRINSIC :: SNGL
 ! Local Variables
       INTEGER m, mm, stg1, stg2, gate1, gate2
       REAL :: diff_q_stg1, diff_q_stg2, ratiog, ratios, q_stg1, q_stg2, diffq
