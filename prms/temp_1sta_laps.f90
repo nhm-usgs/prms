@@ -35,7 +35,7 @@
       USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, Model, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
      &    GLACIER, Print_debug, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
      &    MINTEMP, MAXTEMP, Init_vars_from_file, Save_vars_to_file, &
-     &    temp_1sta_module, temp_laps_module, temp_grid_module
+     &    temp_1sta_module, temp_laps_module
       USE PRMS_MODULE, ONLY: Temp_flag, Inputerror_flag, Start_month, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, &
      &    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
@@ -45,10 +45,10 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
       USE PRMS_OBS, ONLY: Tmax, Tmin
 ! Functions
-      INTRINSIC INDEX, ABS
+      INTRINSIC :: INDEX, ABS
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
-      EXTERNAL compute_temp_laps
+      EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
+      EXTERNAL :: compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
       REAL :: tmx, tmn
@@ -59,7 +59,7 @@
         kk = 0
         kkk = 0
         DO i = 1, Ntemp
-          IF ( Nuse_tsta(i)==ON ) THEN
+          IF ( Nuse_tsta(i)>0 ) THEN
             IF ( Tmax(i)<MINTEMP .OR. Tmax(i)>MAXTEMP ) THEN
               Tmax_cnt(i) = Tmax_cnt(i) + 1
               IF ( Tmax_cnt(i)<Max_missing ) THEN
@@ -105,7 +105,7 @@
         Basin_tmax = 0.0D0
         Basin_tmin = 0.0D0
         Basin_temp = 0.0D0
-        IF ( Temp_flag==temp_grid_module ) THEN
+        IF ( Temp_flag==temp_1sta_module ) THEN
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
@@ -234,7 +234,7 @@
         IF ( getparam(MODNAME, 'max_missing', 1, 'integer', Max_missing)/=0 ) CALL read_error(2, 'max_missing')
         Max_missing = Max_missing + 1
 
-        Nuse_tsta = OFF
+        Nuse_tsta = 0
         Elfac = 0.0
         IF ( Temp_flag==temp_1sta_module ) THEN
           Tcrx = 0.0
@@ -242,7 +242,7 @@
           DO i = 1, Active_hrus
             j = Hru_route_order(i)
             k = Hru_tsta(j)
-            Nuse_tsta(k) = ON
+            Nuse_tsta(k) = 1
             ! Hru_elev_ts is the current elevation, either hru_elev or for restart Hru_elev_ts
             Elfac(j) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
             Tcrx(j) = Tmax_lapse(j, Start_month)*Elfac(j) - Tmax_aspect_adjust(j, Start_month)
@@ -319,7 +319,7 @@
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
+      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************

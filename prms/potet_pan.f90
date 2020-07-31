@@ -15,7 +15,7 @@
       INTEGER FUNCTION potet_pan()
       USE PRMS_POTET_PAN
       USE PRMS_CONSTANTS, ONLY: Nevap, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
-	 &    Print_debug, DEBUG_less, Save_vars_to_file, Init_vars_from_file, ERROR_dim
+     &    Print_debug, DEBUG_less, Save_vars_to_file, Init_vars_from_file, ERROR_dim
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_SET_TIME, ONLY: Nowmonth

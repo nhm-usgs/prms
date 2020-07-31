@@ -9,7 +9,7 @@
       character(len=*), parameter :: MODNAME = 'convert_params'
       character(len=*), parameter :: Version_convert_params = '2020-07-01'
 ! Functions
-      EXTERNAL print_module, PRMS_open_module_file, read_error
+      EXTERNAL :: print_module, PRMS_open_module_file, read_error
       INTEGER, EXTERNAL :: declparam, getparam
       INTRINSIC :: MIN
 ! Parameters

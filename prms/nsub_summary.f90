@@ -70,7 +70,7 @@
       USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -136,10 +136,10 @@
         WRITE ( Output_fmt, 9012 ) Nsub
       ENDIF
 
-      Nhru_double_vars = 0
-      Nsub_single_vars = 0
-      Nsub_vars = 0
-      Nhru_vars = 0
+      Nhru_double_vars = OFF
+      Nsub_single_vars = OFF
+      Nsub_vars = OFF
+      Nhru_vars = OFF
       ierr = 0
       DO jj = 1, NsubOutVars
         Nc_vars(jj) = numchars(NsubOutVar_names(jj))
@@ -151,11 +151,11 @@
         ENDIF
         Nsub_var_size(jj) = getvarsize(NsubOutVar_names(jj)(:Nc_vars(jj)), dum )
         IF ( Nsub_var_size(jj)==Nhru ) THEN
-          Nhru_vars = 1
-          IF ( Nsub_var_type(jj)==DBLE_TYPE ) Nhru_double_vars = 1
+          Nhru_vars = ON
+          IF ( Nsub_var_type(jj)==DBLE_TYPE ) Nhru_double_vars = ON
         ELSEIF ( Nsub_var_size(jj)==Nsub ) THEN
-          Nsub_vars = 1
-          IF ( Nsub_var_type(jj)==REAL_TYPE ) Nsub_single_vars = 1
+          Nsub_vars = ON
+          IF ( Nsub_var_type(jj)==REAL_TYPE ) Nsub_single_vars = ON
         ELSE
           PRINT *, 'ERROR, invalid nsub_summary variable:', NsubOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only variables dimensioned by nsub, nhru, nssr, or ngw are allowed'
@@ -164,8 +164,8 @@
       ENDDO
       IF ( ierr==1 ) ERROR STOP ERROR_control
 
-      IF ( Nhru_vars==1 ) THEN
-        IF ( Nhru_double_vars==1 ) THEN
+      IF ( Nhru_vars==ON ) THEN
+        IF ( Nhru_double_vars==ON ) THEN
           ALLOCATE ( Nhru_var_dble(Nhru, NsubOutVars) )
           Nhru_var_dble = 0.0D0
         ENDIF
@@ -175,7 +175,7 @@
 
       ALLOCATE ( Nsub_var_dble(Nsub, NsubOutVars) )
       Nsub_var_dble = 0.0D0
-      IF ( Nsub_vars==1 .AND. Nsub_single_vars==1 ) THEN
+      IF ( Nsub_vars==ON .AND. Nsub_single_vars==ON ) THEN
         ALLOCATE ( Nsub_var_single(Nsub, NsubOutVars) )
         Nsub_var_single = 0.0
       ENDIF
@@ -288,7 +288,7 @@
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL read_error
+      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day, k
 !***********************************************************************
@@ -361,7 +361,7 @@
         Monthdays = Monthdays + 1.0D0
       ENDIF
 
-      IF ( Nhru_double_vars==1 ) THEN
+      IF ( Nhru_double_vars==ON ) THEN
         DO jj = 1, NsubOutVars
           IF ( Nsub_var_type(jj)==DBLE_TYPE ) THEN
             IF ( Nsub_var_size(jj)/=Nhru ) CYCLE
@@ -373,7 +373,7 @@
         ENDDO
       ENDIF
 
-      IF ( Nsub_single_vars==1 ) THEN
+      IF ( Nsub_single_vars==ON ) THEN
         DO jj = 1, NsubOutVars
           IF ( Nsub_var_type(jj)==REAL_TYPE ) THEN
             IF ( Nsub_var_size(jj)/=Nsub ) CYCLE
@@ -423,7 +423,7 @@
         ENDDO
       ENDIF
 
-      IF ( Daily_flag==ON .AND. Nhru_vars==1 ) THEN
+      IF ( Daily_flag==ON .AND. Nhru_vars==ON ) THEN
         Nsub_var_daily = 0.0D0
         DO jj = 1, NsubOutVars
           IF ( Nsub_var_size(jj)==Nhru ) THEN

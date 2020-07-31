@@ -95,7 +95,7 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
@@ -108,10 +108,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         muskingum  = muskingum_decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL muskingum_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
         muskingum = muskingum_init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ON ) CALL muskingum_restart(0)
+        IF ( Save_vars_to_file==1 ) CALL muskingum_restart(0)
       ENDIF
 
       END FUNCTION muskingum
@@ -125,11 +125,11 @@
       USE PRMS_MUSKINGUM
       USE PRMS_CONSTANTS, ONLY: Nsegment, strmflow_muskingum_module
 ! Functions
-      EXTERNAL print_module
+      EXTERNAL :: print_module
 !***********************************************************************
       muskingum_decl = 0
 
-      IF ( strmflow_muskingum_module==4 ) THEN
+      IF ( Strmflow_flag==strmflow_muskingum_module ) THEN
         CALL print_module(MODDESC, MODNAME(:9), Version_muskingum)
       ELSE ! muskingum_mann
         CALL print_module(MODDESC, MODNAME, Version_muskingum)
@@ -146,19 +146,18 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
       USE PRMS_MUSKINGUM
-      USE PRMS_CONSTANTS, ONLY: Nsegment, Init_vars_from_file, ON, OFF
+      USE PRMS_CONSTANTS, ONLY: Nsegment, Init_vars_from_file
       USE PRMS_BASIN, ONLY: Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
-      IMPLICIT NONE
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
       muskingum_init = 0
 
       !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
-      IF ( Init_vars_from_file==OFF ) Outflow_ts = 0.0D0
+      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
 
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
@@ -189,8 +188,8 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC MOD
-      EXTERNAL error_stop
+      INTRINSIC :: MOD
+      EXTERNAL :: error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -372,7 +371,6 @@
       SUBROUTINE muskingum_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_MUSKINGUM
-      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Function

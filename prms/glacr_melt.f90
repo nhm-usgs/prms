@@ -149,7 +149,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       glacrdecl = 0
 
@@ -183,7 +183,7 @@
      &     'inches', Gl_mb_yrcumul)/=0 ) CALL read_error(3, 'gl_mb_yrcumul')
 
       ALLOCATE ( Gl_mb_cumul(Nhru) )
-      IF ( declvar(MODNAME, 'gl_mb_cumul', 'nhru', Nhru,       &
+      IF ( declvar(MODNAME, 'gl_mb_cumul', 'nhru', Nhru, 'double', &
      &     'Cumulative mass balance for each glacier since start day, indexed by Glacr_tag', &
      &     'inches', Gl_mb_cumul)/=0 ) CALL read_error(3, 'gl_mb_cumul')
 
@@ -194,7 +194,7 @@
       ALLOCATE ( Gl_area(Nhru) )
       IF ( declvar(MODNAME, 'gl_area', 'nhru', Nhru, 'double', &
      &     'Area of each glacier, indexed by Glacr_tag',       &
-     &     'acres', Gl_area)/=0 ) CALL read_error(3, 'nhrugl')
+     &     'acres', Gl_area)/=0 ) CALL read_error(3, 'gl_area')
 
       ALLOCATE ( Glnet_ar_delta(Nhru) )
       IF ( declvar(MODNAME, 'glnet_ar_delta', 'nhru', Nhru, 'double',           &
@@ -1749,8 +1749,8 @@
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Hru_lat
       IMPLICIT NONE
 ! Functions
-      INTRINSIC SIN, COS, FLOAT, SNGL
-      EXTERNAL compute_soltab
+      INTRINSIC :: SIN, COS, FLOAT, SNGL
+      EXTERNAL :: compute_soltab
 ! Local Variables
       INTEGER :: jd, n, nn
       DOUBLE PRECISION :: obliquity(MAX_DAYS_PER_YEAR)
@@ -2457,8 +2457,8 @@
       USE PRMS_FLOWVARS, ONLY: Glacier_frac
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ISNAN
-      EXTERNAL cumtrapzv, getf_fgrad
+      INTRINSIC :: ISNAN
+      EXTERNAL :: cumtrapzv, getf_fgrad
 ! Arguments
       REAL, INTENT(IN) :: Frawt(Nhrugl), Ela_elevt(Ntp)
 ! Local Variables

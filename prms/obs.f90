@@ -2,12 +2,13 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, &
+     &    Nhumid, Nwind, DOCUMENTATION, ON, OFF, xyz_dist_module, MONTHS_PER_YEAR, CMS, CFS, CFS2CMS_CONV
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2020-07-29'
+      character(len=*), parameter :: Version_obs = '2020-07-30'
       INTEGER, SAVE :: Nlakeelev, Rain_flag
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
@@ -70,12 +71,10 @@
 !***********************************************************************
       INTEGER FUNCTION obsdecl()
       USE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, &
-     &    Nhumid, Nwind, DOCUMENTATION, ON, OFF, xyz_dist_module
       USE PRMS_MODULE, ONLY: Precip_flag
 ! Functions
       INTEGER, EXTERNAL :: declvar, getdim, declparam
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       obsdecl = 0
 
@@ -211,12 +210,9 @@
 !***********************************************************************
       INTEGER FUNCTION obsinit()
       USE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, &
-     &    Nhumid, Nwind, CFS, ON, OFF
-      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL read_error
+      EXTERNAL :: read_error
 !***********************************************************************
       obsinit = 0
 
@@ -255,11 +251,8 @@
 ! **********************************************************************
       INTEGER FUNCTION obsrun()
       USE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, &
-     &    Nhumid, Nwind, CFS2CMS_CONV, CMS
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
-      IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
       INTEGER, EXTERNAL :: readvar

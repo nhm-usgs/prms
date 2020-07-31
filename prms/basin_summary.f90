@@ -82,7 +82,6 @@
       USE PRMS_BASIN_SUMMARY
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
 ! Functions
-      INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
       EXTERNAL :: PRMS_open_output_file, error_stop
 ! Local Variables

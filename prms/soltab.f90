@@ -66,7 +66,7 @@
       USE PRMS_SOLTAB
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       sthdecl = 0
 
@@ -111,8 +111,8 @@
       USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
 ! Functions
-      INTRINSIC SIN, COS, DBLE
-!     INTRINSIC ASIN
+      INTRINSIC :: SIN, COS, DBLE
+!     INTRINSIC :: ASIN
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: compute_soltab, read_error, PRMS_open_module_file
 ! Local Variables

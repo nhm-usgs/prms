@@ -68,7 +68,7 @@
       USE PRMS_MODULE, ONLY: NsegmentOutON_OFF
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -112,9 +112,8 @@
       USE PRMS_CONSTANTS, ONLY: 
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup, NsegmentOutON_OFF
 ! Functions
-      INTRINSIC ABS
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file, error_stop
+      EXTERNAL :: read_error, PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -274,7 +273,7 @@
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL read_error
+      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day
 !***********************************************************************

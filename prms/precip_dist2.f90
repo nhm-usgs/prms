@@ -64,7 +64,7 @@
       USE PRMS_CONSTANTS, ONLY: Model, Nhru, Nrain, DOCUMENTATION, MONTHS_PER_YEAR, ERROR_dim
 ! Functions
       INTEGER, EXTERNAL :: declparam
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       pptdist2decl = 0
 
@@ -277,7 +277,7 @@
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ABS, DBLE, SNGL
+      INTRINSIC :: ABS, DBLE, SNGL
       EXTERNAL :: print_date, error_stop
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing

@@ -44,7 +44,7 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
 ! Functions
-      INTRINSIC CHAR, INDEX, MAX
+      INTRINSIC :: CHAR, INDEX, MAX
       INTEGER, EXTERNAL :: declparam, declvar, getparam !, control_integer
       EXTERNAL :: read_error, PRMS_open_output_file, print_module, statvar_to_csv, checkdim_bounded_limits
       INTEGER, EXTERNAL :: getparamstring, control_string
