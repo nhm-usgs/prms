@@ -2,6 +2,10 @@
 ! Defines shared watershed and HRU physical parameters and variables
 !***********************************************************************
       MODULE PRMS_BASIN
+      USE PRMS_CONSTANTS, ONLY: Nhru, Nlake, Print_debug, DEBUG_less, ON, OFF, &
+     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, Model, &
+     &    NORTHERN, SOUTHERN, FEET2METERS, METERS2FEET, DNEARZERO, DOCUMENTATION, &
+     &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
@@ -60,14 +64,11 @@
 !***********************************************************************
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
-      USE PRMS_CONSTANTS, ONLY: Model, Nhru, Nlake, DOCUMENTATION, ON, OFF, &
-     &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
-      USE PRMS_MODULE, ONLY: Dprst_flag, Lake_route_flag, &
-     &    Et_flag, Precip_flag, Cascadegw_flag, Stream_temp_flag, PRMS4_flag, &
-     &    GSFLOW_flag, Glacier_flag
+      USE PRMS_MODULE, ONLY: Dprst_flag, Lake_route_flag, GSFLOW_flag, Glacier_flag, &
+     &    Et_flag, Precip_flag, Cascadegw_flag, Stream_temp_flag, PRMS4_flag
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       basdecl = 0
 
@@ -256,10 +257,6 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_BASIN
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nlake, Print_debug, DEBUG_less, ON, OFF, &
-     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
-     &    NORTHERN, SOUTHERN, FEET2METERS, METERS2FEET, DNEARZERO, &
-     &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
       USE PRMS_MODULE, ONLY: Dprst_flag, PRMS4_flag, &
      &    GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
      &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &

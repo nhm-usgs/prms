@@ -260,7 +260,7 @@
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL read_error, PRMS_open_module_file
+      EXTERNAL :: read_error, PRMS_open_module_file
 ! Local Variables
       INTEGER :: i, j, k, kk, TREEUNIT
       DOUBLE PRECISION :: harea, gwstor, soilstor, snowstor, landstor, srq, ssq, gwq
@@ -461,8 +461,7 @@
 ! Local Variables
       INTEGER :: j, jj, k
       DOUBLE PRECISION :: harea, srq, ssq, gwq, dmy, dmy1, subarea
-      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2
-!     DOUBLE PRECISION :: conv
+      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2 !, conv
 !***********************************************************************
       subrun = 0
 

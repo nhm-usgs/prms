@@ -68,7 +68,7 @@
 ! Local Variables
 ! Functions
       INTEGER, EXTERNAL :: declparam, control_string_array, control_integer
-      EXTERNAL read_error, print_module, error_stop
+      EXTERNAL :: read_error, print_module, error_stop
       INTEGER :: i
 !***********************************************************************
       map_resultsdecl = 0
@@ -166,7 +166,7 @@
       USE PRMS_MODULE, ONLY: Inputerror_flag, MapOutON_OFF, Start_year, Start_month, &
      &    Start_day, Parameter_check_flag, Prms_warmup
 ! Functions
-      INTRINSIC ABS, DBLE
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
       EXTERNAL :: read_error, PRMS_open_output_file, checkdim_bounded_limits
 ! Local Variables
@@ -619,9 +619,7 @@
 !     map_resultsclean - close files
 !***********************************************************************
       INTEGER FUNCTION map_resultsclean()
-      USE PRMS_MAP_RESULTS, ONLY: Totresults, Monresults, Yrresults, &
-     &    Totunit, Monunit, Yrunit, NmapOutVars, Weekresults, Weekunit, ON
-      IMPLICIT NONE
+      USE PRMS_MAP_RESULTS
       INTEGER :: jj
 !***********************************************************************
       map_resultsclean = 0

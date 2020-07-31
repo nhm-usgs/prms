@@ -124,6 +124,7 @@
       INTEGER FUNCTION muskingum_decl()
       USE PRMS_MUSKINGUM
       USE PRMS_CONSTANTS, ONLY: Nsegment, strmflow_muskingum_module
+      USE PRMS_MODULE, ONLY: Strmflow_flag
 ! Functions
       EXTERNAL :: print_module
 !***********************************************************************

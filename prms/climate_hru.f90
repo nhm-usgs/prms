@@ -5,7 +5,9 @@
 ! PRMS modules
 !***********************************************************************
       MODULE PRMS_CLIMATE_HRU
-        USE PRMS_CONSTANTS, ONLY: Nhru, MAXFILE_LENGTH, ON, OFF
+        USE PRMS_CONSTANTS, ONLY: Nhru, MAXFILE_LENGTH, ON, OFF, &
+     &      Process_flag, RUN, DECL, INIT, Model, DOCUMENTATION, &
+     &      MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MONTHS_PER_YEAR
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Climate Input'
@@ -27,8 +29,6 @@
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CLIMATE_HRU
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Model, DOCUMENTATION, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag
@@ -43,7 +43,7 @@
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_basinpotsw, Hru_cossl, Soltab_potsw
 ! Functions
-      INTRINSIC DBLE, SNGL
+      INTRINSIC :: DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, control_integer, getparam, control_string, declvar
       EXTERNAL :: read_error, precip_form, temp_set, find_header_end, find_current_time
       EXTERNAL :: read_cbh_date, check_cbh_value, check_cbh_intvalue, print_module

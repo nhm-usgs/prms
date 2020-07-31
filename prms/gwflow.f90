@@ -46,7 +46,7 @@
 !     Main gwflow routine
 !***********************************************************************
       INTEGER FUNCTION gwflow()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, Init_vars_from_file, Save_vars_to_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: gwflowdecl, gwflowinit, gwflowrun
@@ -59,10 +59,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         gwflow = gwflowdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL gwflow_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL gwflow_restart(1)
         gwflow = gwflowinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ON ) CALL gwflow_restart(0)
+        IF ( Save_vars_to_file==1 ) CALL gwflow_restart(0)
       ENDIF
 
       END FUNCTION gwflow
@@ -192,7 +192,8 @@
      &       'feet', Elevlake)/=0 ) CALL read_error(3, 'elevlake')
       ENDIF
 
-      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 .OR. Model==DOCUMENTATION ) THEN
+      IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 &
+     &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Gwstor_init(Ngw) )
         IF ( declparam(MODNAME, 'gwstor_init', 'ngw', 'real', &
      &       '2.0', '0.0', '50.0', &
@@ -637,7 +638,7 @@
       USE PRMS_GWFLOW
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-! Functions
+      ! Functions
       EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=6) :: module_name

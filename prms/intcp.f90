@@ -33,7 +33,7 @@
 !     Main intcp routine
 !***********************************************************************
       INTEGER FUNCTION intcp()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: intdecl, intinit, intrun
@@ -46,10 +46,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         intcp = intdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL intcp_restart(1)
+        IF ( Init_vars_from_file>0 ) CALL intcp_restart(1)
         intcp = intinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ON ) CALL intcp_restart(0)
+        IF ( Save_vars_to_file==1 ) CALL intcp_restart(0)
       ENDIF
 
       END FUNCTION intcp
@@ -66,7 +66,7 @@
       USE PRMS_MODULE, ONLY: Water_use_flag
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 !***********************************************************************
       intdecl = 0
 
@@ -209,7 +209,6 @@
       USE PRMS_INTCP
       USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_WB, Init_vars_from_file
       USE PRMS_CLIMATEVARS, ONLY: Transp_on
-      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
@@ -557,7 +556,7 @@
       USE PRMS_INTCP
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-! Function
+      ! Function
       EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=5) :: module_name
