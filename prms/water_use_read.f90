@@ -3,13 +3,17 @@
 ! from files pre-processed Data Files available for other PRMS modules
 !***********************************************************************
       MODULE PRMS_WATER_USE
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nsegment, Model, DOCUMENTATION, MAXFILE_LENGTH, ON, OFF, &
-     &    Process_flag, RUN, DECL, INIT, CLEAN, ERROR_water_use
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, MAXFILE_LENGTH, ON, OFF, &
+     &    RUN, DECL, INIT, CLEAN, ERROR_water_use
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsegment, Nwateruse, Nexternal, Nconsumed, &
+     &    Segment_transferON_OFF, Gwr_transferON_OFF, Lake_transferON_OFF, &
+     &    External_transferON_OFF, Dprst_transferON_OFF, Dprst_flag, Strmflow_flag, &
+     &    Model, Starttime, Endtime, Inputerror_flag
       IMPLICIT NONE
       ! Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'water_use_read'
-      character(len=*), parameter :: Version_water_use_read = '2020-07-29'
+      character(len=*), parameter :: Version_water_use_read = '2020-08-03'
       ! Declared Variables
       DOUBLE PRECISION, SAVE :: Total_external_transfer, Total_external_gain
       REAL, ALLOCATABLE, SAVE :: External_transfer(:), External_gain(:), External_transfer_tot(:), External_gain_tot(:)
@@ -38,9 +42,6 @@
 
       INTEGER FUNCTION water_use_read()
       USE PRMS_WATER_USE
-      USE PRMS_MODULE, ONLY: Segment_transferON_OFF, Gwr_transferON_OFF, Lake_transferON_OFF, &
-     &    External_transferON_OFF, Dprst_transferON_OFF, Dprst_flag, Nwateruse, Strmflow_flag, &
-     &    Starttime, Endtime, Nexternal, Nconsumed, Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_perv !, Hru_area_dble
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowday, Nowmonth, Cfs_conv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Soil_rechr_max, Dprst_vol_open !, Gwres_stor
@@ -55,7 +56,7 @@
 ! Local Variables
       INTEGER, SAVE :: external_unit, external_next_year, external_next_month, external_next_day
       INTEGER, SAVE :: segment_unit, dprst_unit, gwr_unit, lake_unit
-      INTEGER :: yr, mon, dy, ierr, istop, i, id_src, id_dest
+      INTEGER :: year, month, day, ierr, istop, i, id_src, id_dest
       INTEGER, SAVE :: dprst_next_year, dprst_next_month, dprst_next_day
       INTEGER, SAVE :: gwr_next_year, gwr_next_month, gwr_next_day
       INTEGER, SAVE :: segment_next_year, segment_next_month, segment_next_day
@@ -461,12 +462,12 @@
         
       ELSEIF ( Process_flag==INIT ) THEN
         Ndiversions = 0
-        yr = Starttime(1)
-        mon = Starttime(2)
-        dy = Starttime(3)
+        year = Starttime(1)
+        month = Starttime(2)
+        day = Starttime(3)
 
         CALL PRMS_open_module_file(Outunit, 'water_use.out')
-        WRITE ( Outunit, 10 ) 'Simulation Start Date:', yr, mon, dy, '   End Date:', Endtime(1), Endtime(2), Endtime(3)
+        WRITE ( Outunit, 10 ) 'Simulation Start Date:', year, month, day, '   End Date:', Endtime(1), Endtime(2), Endtime(3)
 10      FORMAT ( 'Water Use Summary File', /, 2(A, I5, 2('/',I2.2)), / ) 
 
         istop = 0
@@ -475,7 +476,7 @@
      &         CALL read_error(5, 'segment_transfer_file')
           CALL find_header_end(segment_unit, Segment_transfer_file, 'segment_transfer_file', ierr, 0, 0)
           IF ( ierr==0 ) THEN
-            CALL find_current_file_time(segment_unit, yr, mon, dy, segment_next_year, segment_next_month, segment_next_day)
+            CALL find_current_file_time(segment_unit, year, month, day, segment_next_year, segment_next_month, segment_next_day)
             Total_segment_transfer = 0.0D0
             Segment_transfer = 0.0
             Segment_transfer_tot = 0.0
@@ -494,7 +495,7 @@
      &         CALL read_error(5, 'gwr_transfer_file')
           CALL find_header_end(gwr_unit, Gwr_transfer_file, 'gwr_transfer_file', ierr, 0, 0)
           IF ( ierr==0 ) THEN
-            CALL find_current_file_time(gwr_unit, yr, mon, dy, &
+            CALL find_current_file_time(gwr_unit, year, month, day, &
      &                                  gwr_next_year, gwr_next_month, gwr_next_day)
             Total_gwr_transfer = 0.0D0
             Gwr_transfer = 0.0
@@ -511,7 +512,7 @@
           IF ( control_string(Dprst_transfer_file, 'dprst_transfer_file')/=0 ) CALL read_error(5, 'dprst_transfer_file')
           CALL find_header_end(dprst_unit, Dprst_transfer_file, 'dprst_transfer_file', ierr, 0, 0)
           IF ( ierr==0 ) THEN
-            CALL find_current_file_time(dprst_unit, yr, mon, dy, dprst_next_year, dprst_next_month, dprst_next_day)
+            CALL find_current_file_time(dprst_unit, year, month, day, dprst_next_year, dprst_next_month, dprst_next_day)
             Total_dprst_transfer = 0.0D0
             Dprst_transfer = 0.0
             Dprst_transfer_tot = 0.0
@@ -530,7 +531,7 @@
      &         CALL read_error(5, 'external_transfer_file')
           CALL find_header_end(external_unit, External_transfer_file, 'external_transfer_file', ierr, 0, 0)
           IF ( ierr==0 ) THEN
-            CALL find_current_file_time(external_unit, yr, mon, dy, &
+            CALL find_current_file_time(external_unit, year, month, day, &
      &                                  external_next_year, external_next_month, external_next_day)
             Total_external_transfer = 0.0D0
             External_transfer = 0.0
@@ -549,7 +550,7 @@
           IF ( control_string(Lake_transfer_file, 'lake_transfer_file')/=0 ) CALL read_error(5, 'lake_transfer_file')
           CALL find_header_end(lake_unit, Lake_transfer_file, 'lake_transfer_file', ierr, 0, 0)
           IF ( ierr==0 ) THEN
-            CALL find_current_file_time(lake_unit, yr, mon, dy, lake_next_year, lake_next_month, lake_next_day)
+            CALL find_current_file_time(lake_unit, year, month, day, lake_next_year, lake_next_month, lake_next_day)
             Total_lake_transfer = 0.0D0
             Lake_transfer = 0.0
             Lake_transfer_tot = 0.0
@@ -596,7 +597,7 @@
 !*****************************
       SUBROUTINE read_event(Iunit, Src_type, Next_yr, Next_mo, Next_day)
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
-      USE PRMS_CONSTANTS, ONLY: ERROR_water_use, ON, OFF
+      USE PRMS_WATER_USE, ONLY: ERROR_water_use, ON, OFF
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit, Src_type

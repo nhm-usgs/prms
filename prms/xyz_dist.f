@@ -17,16 +17,18 @@
 ! rain_nuse (rain_nsta) - indicies of rain stations used
 !***********************************************************************
       MODULE PRMS_XYZ_DIST
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nrain, Ntemp, MONTHS_PER_YEAR, ON,
-     +    OFF, FEET2METERS, NEARZERO, DNEARZERO, MM2INCH, CELSIUS,
-     +    GLACIER
+      USE PRMS_CONSTANTS, ONLY: RUN, SETDIMENS, DECL, INIT,
+     +    MONTHS_PER_YEAR, ON, OFF, FEET2METERS, NEARZERO, DNEARZERO,
+     +    MM2INCH, CELSIUS, GLACIER
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nrain, Ntemp,
+     +    Inputerror_flag, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       INTEGER, PARAMETER :: MAXLAPSE = 3
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'xyz_dist'
-      character(len=*), parameter :: Version_xyz_dist = '2020-07-29'
+      character(len=*), parameter :: Version_xyz_dist = '2020-08-03'
       INTEGER, SAVE :: Nlapse, Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
@@ -77,7 +79,7 @@
 !     Main xyz_dist routine
 !***********************************************************************
       INTEGER FUNCTION xyz_dist()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, SETDIMENS, DECL, INIT
+      USE PRMS_XYZ_DIST
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: xyzdecl, xyzinit, xyzrun, xyzsetdims
@@ -130,6 +132,7 @@
 !***********************************************************************
       INTEGER FUNCTION xyzdecl()
       USE PRMS_XYZ_DIST
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -459,10 +462,10 @@
 !***********************************************************************
       INTEGER FUNCTION xyzinit()
       USE PRMS_XYZ_DIST
-      USE PRMS_MODULE, ONLY: Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Hru_elev_ts, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
@@ -718,8 +721,7 @@
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev,
-     +    Nrain, DNEARZERO, GLACIER, ON
-      USE PRMS_MODULE, ONLY: Glacier_flag
+     +    Nrain, DNEARZERO, GLACIER, ON, Glacier_flag
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
      +    Hru_route_order, Hru_type, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,

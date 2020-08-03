@@ -2,14 +2,16 @@
 !     Output a set of declared variables by HRU in CSV format
 !***********************************************************************
       MODULE PRMS_NHRU_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Nhru, Nsub, ERROR_control, ERROR_open_out, &
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, &
      &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ON, OFF, &
-     &    REAL_TYPE, DBLE_TYPE, INT_TYPE, DNEARZERO
+     &    REAL_TYPE, DBLE_TYPE, INT_TYPE, DNEARZERO, RUN, DECL, INIT, CLEAN, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Nsub, NhruOutON_OFF, Prms_warmup, &
+     &    Start_year, Start_month, Start_day, End_year, End_month, End_day
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nhru_summary'
-      character(len=*), parameter :: Version_nhru_summary = '2020-07-30'
+      character(len=*), parameter :: Version_nhru_summary = '2020-03-03'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nhru_var_type(:), Nhru_var_int(:, :)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -33,7 +35,7 @@
 !     ******************************************************************
       SUBROUTINE nhru_summary()
       USE PRMS_NHRU_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN
+      IMPLICIT NONE
 ! Functions
       EXTERNAL :: nhru_summarydecl, nhru_summaryinit, nhru_summaryrun
 ! Local Variables
@@ -66,8 +68,7 @@
 !***********************************************************************
       SUBROUTINE nhru_summarydecl()
       USE PRMS_NHRU_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: NhruOutON_OFF
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
       EXTERNAL :: read_error, print_module, error_stop
@@ -112,7 +113,7 @@
 !***********************************************************************
       SUBROUTINE nhru_summaryinit()
       USE PRMS_NHRU_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_year, NhruOutON_OFF, Prms_warmup
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL read_error, PRMS_open_output_file
@@ -155,7 +156,7 @@
         Nhru_var_type(jj) = getvartype(NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru_var_type(jj) )
         IF ( Nhru_var_type(jj)==DBLE_TYPE ) Double_vars = ON
         IF ( Nhru_var_type(jj)==INT_TYPE ) Integer_vars = ON
-        IF ( Nhru_var_type(jj)/=REAL_TYPE .AND. Nhru_var_type(jj)/=3 .AND. Nhru_var_type(jj)/=1 ) THEN
+        IF ( Nhru_var_type(jj)/=REAL_TYPE .AND. Nhru_var_type(jj)/=DBLE_TYPE .AND. Nhru_var_type(jj)/=INT_TYPE ) THEN
           PRINT *, 'ERROR, invalid nhru_summary variable:', NhruOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only integer, real or double variables allowed'
           ierr = 1
@@ -292,14 +293,14 @@
 !***********************************************************************
       SUBROUTINE nhru_summaryrun()
       USE PRMS_NHRU_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
-! Local Variables
+      IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error
+! Local Variables
       INTEGER :: j, i, jj, write_month, last_day
 !***********************************************************************
       IF ( Begin_results==OFF ) THEN

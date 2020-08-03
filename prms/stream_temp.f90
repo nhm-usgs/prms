@@ -2,9 +2,10 @@
 ! stream temperature module
 !***********************************************************************
       MODULE PRMS_STRMTEMP
-      USE PRMS_CONSTANTS, ONLY: Nsegment, Nhumid, Model, Init_vars_from_file, &
-     &    MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, DOCUMENTATION, Print_debug, ON, OFF, &
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, DOCUMENTATION, ON, OFF, &
      &    NEARZERO, ERROR_param, CFS2CMS_CONV, DAYS_YR
+      USE PRMS_MODULE, ONLY: Process_flag, Nsegment, Model, Save_vars_to_file, Init_vars_from_file, &
+     &    Print_debug, Strmtemp_humidity_flag, Model, Inputerror_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
@@ -66,7 +67,8 @@
 !     Main stream temperature routine
 !***********************************************************************
       INTEGER FUNCTION stream_temp()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON
+      USE PRMS_STRMTEMP, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: stream_temp_decl, stream_temp_init, stream_temp_run, stream_temp_setdims
@@ -93,7 +95,7 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_decl()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Strmtemp_humidity_flag
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
@@ -404,9 +406,10 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Inputerror_flag, Strmtemp_humidity_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
+      USE PRMS_OBS, ONLY: Nhumid
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: COS, SIN, ABS, SIGN, ASIN, maxval
       INTEGER, EXTERNAL :: getparam
@@ -706,7 +709,6 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_run()
       USE PRMS_STRMTEMP
-      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area
       USE PRMS_SET_TIME, ONLY: Summer_flag, Nowmonth
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Potet, Hru_rain, Swrad
@@ -1020,7 +1022,7 @@
 ! Compute the flow-weighted average temperature and a total sum of lateral inflows
 !*********************************************************************************
       SUBROUTINE lat_inflow(Qlat, Tl_avg, id, tave_gw, tave_air, tave_ss, melt, rain)
-      USE PRMS_STRMTEMP, ONLY: Melt_temp, CFS2CMS_CONV
+      USE PRMS_STRMTEMP, ONLY: Melt_temp, CFS2CMS_CONV, NEARZERO
       USE PRMS_FLOWVARS, ONLY: Seg_lateral_inflow
       USE PRMS_ROUTING, ONLY: Seginc_sroff, Seginc_ssflow, Seginc_gwflow
       IMPLICIT NONE
@@ -1074,7 +1076,7 @@
 !     PURPOSE:
 !        1. TO PREDICT THE AVERAGE DAILY WATER TEMPERATURE USING A SECOND-ORDER
 !           CLOSED-FORM SOLUTION TO THE STEADY-STATE HEAT TRANSPORT EQUATION.
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, CFS2CMS_CONV
+      USE PRMS_STRMTEMP, ONLY: NEARZERO, CFS2CMS_CONV
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, EXP, ALOG, SNGL, SIGN
@@ -1166,7 +1168,7 @@
 
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Seg_width, Seg_humid, Press, MPS_CONVERT, &
      &    Seg_ccov, Seg_potet, Albedo, seg_tave_gw
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, CFS2CMS_CONV
+      USE PRMS_STRMTEMP, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
       USE PRMS_ROUTING, ONLY: Seginc_swrad, Seg_slope
       IMPLICIT NONE
@@ -1380,6 +1382,7 @@
       USE PRMS_STRMTEMP, ONLY: Azrh, Alte, Altw, Seg_daylight, Seg_width, &
      &    PI, HALF_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
      &    Level_sunset_azimuth, Max_solar_altitude, Sin_alrs, Sin_declination, Sin_lat_decl, Total_shade
+      USE PRMS_STRMTEMP, ONLY: CFS2CMS_CONV
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: COS, SIN, TAN, ACOS, ASIN, ATAN, ABS, MAX, SNGL
@@ -1711,8 +1714,7 @@
 !  SEGMENT BETWEEN THE TWO HOUR ANGLES HRSR & HRSS.
 !
       USE PRMS_STRMTEMP, ONLY: Azrh, Vce, Vdemx, Vhe, Voe, Vcw, Vdwmx, Vhw, Vow, Seg_width, &
-     &    Vdemn, Vdwmn, HALF_PI
-      USE PRMS_CONSTANTS, ONLY: NEARZERO
+     &    Vdemn, Vdwmn, HALF_PI, NEARZERO
       USE PRMS_SET_TIME, ONLY: Summer_flag
       IMPLICIT NONE
 ! Functions
@@ -1838,6 +1840,7 @@
       SUBROUTINE stream_temp_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_STRMTEMP
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Functions

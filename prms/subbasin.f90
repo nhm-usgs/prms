@@ -11,12 +11,15 @@
 !***********************************************************************
 
       MODULE PRMS_SUBBASIN
-      USE PRMS_CONSTANTS, ONLY: Nsub, Nhru, ON, OFF, CFS2CMS_CONV, LAKE, Print_debug, DNEARZERO
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, ON, OFF, CFS2CMS_CONV, LAKE, DOCUMENTATION, &
+     &    DNEARZERO, ERROR_dim
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nsub, Nhru, Print_debug, GSFLOW_flag, &
+     &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2020-07-29'
+      character(len=*), parameter :: Version_subbasin = '2020-08-03'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -38,7 +41,7 @@
 !     Main daily stream flow routine
 !***********************************************************************
       INTEGER FUNCTION subbasin()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT
+      USE PRMS_SUBBASIN, ONLY: Process_flag, RUN, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: subdecl, subinit, subrun
@@ -63,8 +66,7 @@
 !***********************************************************************
       INTEGER FUNCTION subdecl()
       USE PRMS_SUBBASIN
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: GSFLOW_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module, error_stop
@@ -247,7 +249,6 @@
 !***********************************************************************
       INTEGER FUNCTION subinit()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: GSFLOW_flag, Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
@@ -257,6 +258,7 @@
       USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
@@ -442,7 +444,6 @@
 !***********************************************************************
       INTEGER FUNCTION subrun()
       USE PRMS_SUBBASIN
-      USE PRMS_MODULE, ONLY: GSFLOW_flag, Cascade_flag, Dprst_flag, Lake_route_flag
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
@@ -456,6 +457,7 @@
       USE PRMS_SOILZONE, ONLY: Lakein_sz, Soil_moist_tot, Soil_zone_max
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
 ! Local Variables
@@ -519,7 +521,7 @@
               landstor = Lake_vol(Lake_hru_id(j))*12.0D0
               srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
               ssq = 0.0D0
-            ELSEIF ( Cascade_flag>OFF ) THEN
+            ELSEIF ( Cascade_flag>0 ) THEN
               srq = Hortonian_lakes(j)*harea
               ssq = Lakein_sz(j)*harea
             ELSE

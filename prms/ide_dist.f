@@ -9,14 +9,17 @@
 ! Lauren Hay, November 2004
 !***********************************************************************
       MODULE PRMS_IDE
-      USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, Nrain, MONTHS_PER_YEAR, ON,
-     +    FEET2METERS, MM2INCH, GLACIER, FEET, CELSIUS, ERROR_data
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, ON,
+     +    FEET2METERS, MM2INCH, GLACIER, FEET, CELSIUS, ERROR_data,
+     +    DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Ntemp, Nrain,
+     +    Inputerror_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'ide_dist'
-      character(len=*), parameter :: Version_ide_dist = '2020-07-01'
+      character(len=*), parameter :: Version_ide_dist = '2020-08-03'
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Dalr
@@ -45,7 +48,7 @@
 !     Main ide_dist routine
 !***********************************************************************
       INTEGER FUNCTION ide_dist()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT
+      USE PRMS_IDE
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: idedecl, ideinit, iderun
@@ -67,7 +70,7 @@
 !***********************************************************************
       INTEGER FUNCTION idedecl()
       USE PRMS_IDE
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -251,9 +254,9 @@
 !***********************************************************************
       INTEGER FUNCTION ideinit()
       USE PRMS_IDE
-      USE PRMS_MODULE, ONLY: Inputerror_flag
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Active_hrus, Hru_route_order
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
@@ -732,7 +735,7 @@
 !***********************************************************************
       SUBROUTINE compute_inv(Imax, Nsta, Nuse, Sta_x, X, Sta_y, Y, Dat,
      +                       Dat_dist, Ndist, Dist_exp)
-      USE PRMS_CONSTANTS, ONLY: ERROR_data
+      USE PRMS_IDE, ONLY: ERROR_data
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SQRT, DBLE, SNGL

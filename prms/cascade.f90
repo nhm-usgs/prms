@@ -3,13 +3,14 @@
 ! reservoirs for routing flow downslope
 !***********************************************************************
       MODULE PRMS_CASCADE
-      USE PRMS_CONSTANTS, ONLY: Nhru, Ngw, Nsegment, Ncascade, Ncascdgw, Model, DOCUMENTATION, &
-     &    ON, OFF, Print_debug, DEBUG_less, INACTIVE, LAND, LAKE, SWALE, GLACIER, ERROR_cascades
+      USE PRMS_CONSTANTS, ONLY: ON, OFF, DEBUG_less, INACTIVE, LAND, LAKE, SWALE, GLACIER, &
+     &    ERROR_cascades, DECL, INIT, CLEAN, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Nhru, Ngw, Nsegment, Ncascade, Ncascdgw, Model, Print_debug, Process_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Cascading Flow'
       character(len=*), parameter :: MODNAME = 'cascade'
-      character(len=*), parameter :: Version_cascade = '2020-07-01'
+      character(len=*), parameter :: Version_cascade = '2020-08-03'
       INTEGER, SAVE :: MSGUNT
       INTEGER, SAVE :: Iorder, Igworder, Ndown
 !   Computed Variables
@@ -49,7 +50,7 @@
 !     Main cascade routine
 !***********************************************************************
       INTEGER FUNCTION cascade()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT, CLEAN
+      USE PRMS_CASCADE, ONLY: Process_flag, DECL, INIT, CLEAN
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: cascdecl, cascinit, cascclean
@@ -76,6 +77,7 @@
       INTEGER FUNCTION cascdecl()
       USE PRMS_CASCADE
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declparam
@@ -196,6 +198,7 @@
       USE PRMS_CASCADE
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag, Gwr_swale_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Gwr_route_order, Active_gwrs, Gwr_type, Hru_type
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error, init_cascade, initgw_cascade
@@ -285,6 +288,7 @@
       INTEGER FUNCTION cascclean()
       USE PRMS_CASCADE
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag
+      IMPLICIT NONE
 !***********************************************************************
       IF ( Cascade_flag>OFF ) THEN
         DEALLOCATE ( Hru_down, Hru_down_frac, Hru_down_fracwt )

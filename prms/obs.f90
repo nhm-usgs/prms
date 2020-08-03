@@ -2,14 +2,16 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, &
-     &    Nhumid, Nwind, DOCUMENTATION, ON, OFF, xyz_dist_module, MONTHS_PER_YEAR, CMS, CFS, CFS2CMS_CONV
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ON, OFF, xyz_dist_module, &
+     &    MONTHS_PER_YEAR, CMS, CFS, CFS2CMS_CONV, RUN, SETDIMENS, DECL, INIT
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, &
+     &    Precip_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2020-07-30'
-      INTEGER, SAVE :: Nlakeelev, Rain_flag
+      character(len=*), parameter :: Version_obs = '2020-08-03'
+      INTEGER, SAVE :: Nsnow, Nlakeelev, Nwind, Nhumid, Rain_flag
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
       REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
@@ -26,7 +28,7 @@
 !     main obs routine
 !***********************************************************************
       INTEGER FUNCTION obs()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, SETDIMENS, DECL, INIT
+      USE PRMS_OBS, ONLY: Process_flag, RUN, SETDIMENS, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: obsdecl, obsinit, obsrun, obssetdims
@@ -57,6 +59,7 @@
 !***********************************************************************
       obssetdims = 0
 
+      IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
       IF ( decldim('nlakeelev', 0, MAXDIM, &
      &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nlakeelev')
       IF ( decldim('nwind', 0, MAXDIM, 'Number of wind-speed measurement stations')/=0 ) CALL read_error(7, 'nwind')
@@ -71,7 +74,7 @@
 !***********************************************************************
       INTEGER FUNCTION obsdecl()
       USE PRMS_OBS
-      USE PRMS_MODULE, ONLY: Precip_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, getdim, declparam
       EXTERNAL :: read_error, print_module
@@ -125,6 +128,8 @@
      &       'Langleys', Solrad)/=0 ) CALL read_error(8, 'solrad')
       ENDIF
 
+      Nsnow = getdim('nsnow')
+      IF ( Nsnow==-1 ) CALL read_error(6, 'nsnow')
       Nhumid = getdim('nhumid')
       IF ( Nhumid==-1 ) CALL read_error(6, 'nhumid')
       Nwind = getdim('nwind')
@@ -210,6 +215,7 @@
 !***********************************************************************
       INTEGER FUNCTION obsinit()
       USE PRMS_OBS
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
@@ -253,6 +259,7 @@
       USE PRMS_OBS
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
+      IMPLICIT NONE
 ! Functions
       INTRINSIC DBLE
       INTEGER, EXTERNAL :: readvar

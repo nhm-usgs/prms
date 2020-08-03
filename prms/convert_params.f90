@@ -2,12 +2,12 @@
 ! Convert PRMS IV parameters to PRMS 5
 !***********************************************************************
       SUBROUTINE convert_params()
-      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, DECL, INIT, MONTHS_PER_YEAR, ON
-      USE PRMS_MODULE, ONLY: Model_mode, Dprst_flag
+      USE PRMS_CONSTANTS, ONLY: DECL, INIT, MONTHS_PER_YEAR, ON
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Dprst_flag, Model_mode
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Convert PRMS parameters'
       character(len=*), parameter :: MODNAME = 'convert_params'
-      character(len=*), parameter :: Version_convert_params = '2020-07-01'
+      character(len=*), parameter :: Version_convert_params = '2020-08-03'
 ! Functions
       EXTERNAL :: print_module, PRMS_open_module_file, read_error
       INTEGER, EXTERNAL :: declparam, getparam
@@ -131,8 +131,8 @@
           WRITE ( ounit, 300 ) ( Ssstor_init_frac(i), i = 1, Nhru )
 
           IF ( Dprst_flag==ON ) THEN
- !           WRITE ( ounit, 100 ) 'sro_to_dprst_perv', Nhru
- !           WRITE ( ounit, 300 ) ( Sro_to_dprst(i), i = 1, Nhru )
+!            WRITE ( ounit, 100 ) 'sro_to_dprst_perv', Nhru
+!            WRITE ( ounit, 300 ) ( Sro_to_dprst(i), i = 1, Nhru )
 
             WRITE ( ounit, 100 ) 'dprst_frac', Nhru
             WRITE ( ounit, 300 ) ( Dprst_frac(i), i = 1, Nhru )

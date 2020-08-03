@@ -13,11 +13,15 @@
 !      adjust total precip
 !***********************************************************************
       MODULE PRMS_PRECIP_DIST2
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DOCUMENTATION, MONTHS_PER_YEAR, ON, OFF, &
+     &      NEARZERO, DNEARZERO, ERROR_dim, ERROR_data, CELSIUS, INCH2MM
+        USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Nrain
+
         IMPLICIT NONE
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
         character(len=*), parameter :: MODNAME = 'precip_dist2'
-        character(len=*), parameter :: Version_precip = '2020-07-28'
+        character(len=*), parameter :: Version_precip = '2020-08-03'
         INTEGER, SAVE, ALLOCATABLE :: N_psta(:), Nuse_psta(:, :)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist2(:, :)
 !   Declared Parameters
@@ -34,7 +38,7 @@
 !     Main precipitation routine
 !***********************************************************************
       INTEGER FUNCTION precip_dist2()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT
+      USE PRMS_PRECIP_DIST2
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: pptdist2decl, pptdist2init, pptdist2run
@@ -61,7 +65,7 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2decl()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_CONSTANTS, ONLY: Model, Nhru, Nrain, DOCUMENTATION, MONTHS_PER_YEAR, ERROR_dim
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
       EXTERNAL :: read_error, print_module, error_stop
@@ -165,13 +169,13 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2init()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nrain, MONTHS_PER_YEAR, DNEARZERO
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-! Local Variables
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
       INTRINSIC :: DSQRT, DABS, DBLE
+! Local Variables
       INTEGER :: i, k, n, kk, kkbig, jj
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist, dist_max_dble
       DOUBLE PRECISION, ALLOCATABLE :: nuse_psta_dist(:, :)
@@ -267,7 +271,6 @@
 !***********************************************************************
       INTEGER FUNCTION pptdist2run()
       USE PRMS_PRECIP_DIST2
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ON, OFF, ERROR_data, CELSIUS, INCH2MM
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &

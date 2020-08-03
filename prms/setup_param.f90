@@ -8,7 +8,7 @@
 !     Main setup routine
 !***********************************************************************
       INTEGER FUNCTION setup()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL
+      USE PRMS_MODULE, ONLY: Process_flag, DECL
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: setupdecl
@@ -28,7 +28,7 @@
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Parameter Setup'
       character(len=*), parameter :: MODNAME = 'setup_param'
-      character(len=*), parameter :: Version_setup = '2020-07-01'
+      character(len=*), parameter :: Version_setup = '2020-08-03'
 ! Functions
       INTEGER, EXTERNAL :: declparam
       EXTERNAL :: read_error, print_module

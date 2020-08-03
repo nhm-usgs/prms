@@ -7,22 +7,24 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_hamon'
-        character(len=*), parameter :: Version_potet = '2020-07-24'
+        character(len=*), parameter :: Version_potet = '2020-08-03'
         DOUBLE PRECISION, PARAMETER :: ONE_12TH = 1.0D0/12.0D0
-        ! Declared Parameter
+        ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hamon_coef(:, :)
       END MODULE PRMS_POTET_HAMON
 
       INTEGER FUNCTION potet_hamon()
       USE PRMS_POTET_HAMON
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_route_order, Basin_area_inv
-      USE PRMS_CLIMATEVARS, ONLY: Tavgc, Basin_potet, Potet
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
+      USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, DBLE, SNGL
-      INTEGER, EXTERNAL :: getparam, declparam
+      INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
@@ -48,6 +50,7 @@
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
+!******Declare parameters
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 

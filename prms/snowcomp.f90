@@ -9,9 +9,11 @@
 ! PRMS_SNOW module for defining stateful variables
 
       MODULE PRMS_SNOW
-      USE PRMS_CONSTANTS, ONLY: Nhru, Ndepl, LAKE, LAND, GLACIER, SHRUBS, FEET, GRASSES, &
-     &    INCH2M, FEET2METERS, DNEARZERO, Init_vars_from_file, Model, DOCUMENTATION, ON, OFF, &
-     &    MONTHS_PER_YEAR, Print_debug, DEBUG_less, DAYS_YR, CLOSEZERO
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, LAKE, LAND, GLACIER, SHRUBS, FEET, GRASSES, &
+     &    INCH2M, FEET2METERS, DNEARZERO, DOCUMENTATION, ON, OFF, &
+     &    MONTHS_PER_YEAR, DEBUG_less, DAYS_YR, CLOSEZERO, INCH2CM
+      USE PRMS_MODULE, ONLY: Model, Process_flag, Nhru, Ndepl, Print_debug, &
+     &    Save_vars_to_file, Init_vars_from_file, Snarea_curve_flag, Glacier_flag
       IMPLICIT NONE
       !****************************************************************
       !   Local Constants
@@ -23,7 +25,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2020-07-31'
+      character(len=*), parameter :: Version_snowcomp = '2020-08-03'
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -75,7 +77,7 @@
 !     Main snowcomp routine
 !***********************************************************************
       INTEGER FUNCTION snowcomp()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, Save_vars_to_file, ON
+      USE PRMS_SNOW
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: snodecl, snoinit, snorun
@@ -107,7 +109,7 @@
 !***********************************************************************
       INTEGER FUNCTION snodecl()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Snarea_curve_flag, Glacier_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -497,10 +499,9 @@
 !***********************************************************************
       INTEGER FUNCTION snoinit()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Snarea_curve_flag, Print_debug, Glacier_flag
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_route_order, Active_hrus, Hru_area_dble, &
-     &    Elev_units, Hru_type
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_route_order, Active_hrus, Hru_area_dble
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, SNGL, ATAN
       INTEGER, EXTERNAL :: getparam
@@ -627,6 +628,7 @@
       Yrdays5 = 0
       Basin_glacrb_melt = 0.0D0
       Basin_glacrevap = 0.0D0
+
       END FUNCTION snoinit
 
 !***********************************************************************
@@ -634,7 +636,6 @@
 !***********************************************************************
       INTEGER FUNCTION snorun()
       USE PRMS_SNOW
-      USE PRMS_MODULE, ONLY: Glacier_flag, Starttime
       USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_type, &
      &    Basin_area_inv, Hru_route_order, Cov_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
@@ -642,6 +643,7 @@
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
       USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Julwater, Nowyear
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Canopy_covden, Hru_intcpevap
+      IMPLICIT NONE
 ! Functions
       EXTERNAL :: ppt_to_pack, snowcov, snalbedo, snowbal, snowevap, glacr_states_to_zero
       INTRINSIC :: ABS, SQRT, DBLE, SNGL, EXP, DABS, MOD, ATAN
@@ -1038,7 +1040,7 @@
      &           Pkwater_equiv, Net_rain, Pk_def, Pk_temp, Pk_ice, &
      &           Freeh2o, Snowcov_area, Snowmelt, Pk_depth, Pss, Pst, &
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, Freeh2o_cap, Den_max)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ON !, DNEARZERO
+      USE PRMS_SNOW, ONLY: CLOSEZERO, INCH2CM, ON !, DNEARZERO
       IMPLICIT NONE
 ! Functions
       REAL, EXTERNAL :: f_to_c
@@ -1286,11 +1288,10 @@
 !        heat energy has occurred.
 !***********************************************************************
       SUBROUTINE caloss(Cal, Pkwater_equiv, Pk_def, Pk_temp, Pk_ice, Freeh2o)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO !, DNEARZERO
+      USE PRMS_SNOW, ONLY: CLOSEZERO !, DNEARZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
-      EXTERNAL :: glacr_states_to_zero
 ! Arguments
       REAL, INTENT(IN) :: Cal
       DOUBLE PRECISION, INTENT(INOUT) :: Pkwater_equiv
@@ -1374,7 +1375,7 @@
       DOUBLE PRECISION, INTENT(INOUT) :: Pss, Pst, Pk_depth
 ! Functions
       INTRINSIC :: SNGL, DBLE
-      EXTERNAL :: print_date, glacr_states_to_zero
+      EXTERNAL :: print_date
 ! Local Variables
       REAL :: dif, pmlt, apmlt, apk_ice, pwcap
       DOUBLE PRECISION :: dif_dble
@@ -1774,7 +1775,7 @@
      &           Trd, Emis_noppt, Canopy_covden, Cec, Pkwater_equiv, &
      &           Pk_def, Pk_temp, Pk_ice, Freeh2o, Snowcov_area, &
      &           Snowmelt, Pk_depth, Pss, Pst, Pk_den, Cst, Cal, Sw, Freeh2o_cap, Den_max)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO
+      USE PRMS_SNOW, ONLY: CLOSEZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL

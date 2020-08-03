@@ -13,7 +13,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ccsolrad'
-        character(len=*), parameter :: Version_ccsolrad = '2020-07-29'
+        character(len=*), parameter :: Version_ccsolrad = '2020-08-03'
         INTEGER, SAVE :: Observed_flag
         ! Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_radadj, Basin_cloud_cover
@@ -25,8 +25,8 @@
 !***********************************************************************
       INTEGER FUNCTION ccsolrad()
       USE PRMS_CCSOLRAD
-      USE PRMS_CONSTANTS, ONLY: Process_flag, Print_debug, Nhru, Nsol, Process_flag, RUN, DECL, INIT, &
-     &    DEBUG_less, MONTHS_PER_YEAR, ON, OFF
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, MONTHS_PER_YEAR, ON, OFF
+      USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, &

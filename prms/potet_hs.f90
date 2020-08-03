@@ -9,17 +9,19 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_hs'
-        character(len=*), parameter :: Version_potet = '2020-07-29'
+        character(len=*), parameter :: Version_potet = '2020-08-03'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hs_krs(:, :)
       END MODULE PRMS_POTET_HS
 
       INTEGER FUNCTION potet_hs()
       USE PRMS_POTET_HS
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, Nhru, MONTHS_PER_YEAR
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tminc, Tmaxc, Swrad
       USE PRMS_SET_TIME, ONLY: Nowmonth
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: SQRT, DBLE, ABS
       INTEGER, EXTERNAL :: declparam, getparam
@@ -51,6 +53,7 @@
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
 
+!******Declare parameters
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 

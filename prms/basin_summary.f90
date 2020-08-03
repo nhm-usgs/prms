@@ -2,14 +2,15 @@
 !     Output a set of declared basin variables as CSV file
 !***********************************************************************
       MODULE PRMS_BASIN_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
-     &    MODEL, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, DAILY, YEARLY, MONTHLY, DOCUMENTATION, &
-     &    DBLE_TYPE, ERROR_control, ERROR_open_out
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &    DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, DAILY, YEARLY, MONTHLY, &
+     &    DOCUMENTATION, DBLE_TYPE, ERROR_control, ERROR_open_out, ERROR_control
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Inputerror_flag, Start_year, Prms_warmup
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'basin_summary'
-      character(len=*), parameter :: Version_basin_summary = '2020-07-28'
+      character(len=*), parameter :: Version_basin_summary = '2020-08-03'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear, Dailyunit, Monthlyunit, Yearlyunit, Basin_var_type
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:)
       CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
@@ -27,6 +28,7 @@
 !     ******************************************************************
       SUBROUTINE basin_summary()
       USE PRMS_BASIN_SUMMARY
+      IMPLICIT NONE
 ! Functions
       EXTERNAL :: basin_summarydecl, basin_summaryinit, basin_summaryrun
 !***********************************************************************
@@ -49,9 +51,10 @@
 !***********************************************************************
       SUBROUTINE basin_summarydecl()
       USE PRMS_BASIN_SUMMARY
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string
-      EXTERNAL read_error, print_module
+      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -80,9 +83,8 @@
 !***********************************************************************
       SUBROUTINE basin_summaryinit()
       USE PRMS_BASIN_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_year, Prms_warmup
-! Functions
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize
+      IMPLICIT NONE
+      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL :: PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, dum, jj

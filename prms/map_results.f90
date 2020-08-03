@@ -3,12 +3,16 @@
 !     spatial resolution
 !***********************************************************************
       MODULE PRMS_MAP_RESULTS
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nhrucell, Ngwcell, ON, OFF, NEARZERO, REAL_TYPE, DBLE_TYPE
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, OFF, NEARZERO, REAL_TYPE, DBLE_TYPE, &
+     &    DOCUMENTATION, ERROR_dim, DEBUG_less
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Nhrucell, Ngwcell, MapOutON_OFF, &
+     &    Print_debug, Inputerror_flag, Start_year, Start_month, Start_day, Parameter_check_flag, &
+     &    Prms_warmup, End_year, End_month, End_day
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'map_results'
-      character(len=*), parameter :: Version_map_results = '2020-07-29'
+      character(len=*), parameter :: Version_map_results = '2020-08-03'
       INTEGER, SAVE :: Mapflg, Numvalues, Lastyear, Totdays
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
       INTEGER, SAVE :: Begin_results, Begyr, Dailyresults
@@ -38,7 +42,7 @@
 !     Mapped results module
 !     ******************************************************************
       INTEGER FUNCTION map_results()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN
+      USE PRMS_MAP_RESULTS
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: map_resultsdecl, map_resultsinit
@@ -63,12 +67,11 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsdecl()
       USE PRMS_MAP_RESULTS
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: MapOutON_OFF
-! Local Variables
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, control_string_array, control_integer
       EXTERNAL :: read_error, print_module, error_stop
+! Local Variables
       INTEGER :: i
 !***********************************************************************
       map_resultsdecl = 0
@@ -162,9 +165,7 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsinit()
       USE PRMS_MAP_RESULTS
-      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_less
-      USE PRMS_MODULE, ONLY: Inputerror_flag, MapOutON_OFF, Start_year, Start_month, &
-     &    Start_day, Parameter_check_flag, Prms_warmup
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
@@ -364,9 +365,9 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsrun()
       USE PRMS_MAP_RESULTS
-      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
+      IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getvar
@@ -620,6 +621,7 @@
 !***********************************************************************
       INTEGER FUNCTION map_resultsclean()
       USE PRMS_MAP_RESULTS
+      IMPLICIT NONE
       INTEGER :: jj
 !***********************************************************************
       map_resultsclean = 0

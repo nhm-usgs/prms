@@ -151,11 +151,4 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: REAL_TYPE = 2
     integer, parameter :: DBLE_TYPE = 3
 
-    integer, save :: Model, Process_flag, Print_debug, Save_vars_to_file, Init_vars_from_file
-
-! Dimensions
-    integer, save :: Nhru, Nssr, Ngw, Nsegment, Nlake, Nlake_hrus, Nsub
-    integer, save :: Ntemp, Nrain, Nsol, Nsnow, Nobs, Nevap, Nwind, Nhumid
-	integer, save :: Ncascade, Ncascdgw, Nhrucell, Ngwcell, Ndepl, Ndeplval, Nratetbl 
-
 END MODULE PRMS_CONSTANTS

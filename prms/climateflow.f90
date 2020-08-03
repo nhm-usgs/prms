@@ -2,17 +2,23 @@
 ! Declares and initializes climate and flow parameters and variables
 !***********************************************************************
       MODULE PRMS_CLIMATEVARS
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nssr, Ngw, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
-     &    Model, DOCUMENTATION, ON, OFF, MONTHS_PER_YEAR, ERROR_dim, Print_debug, DEBUG_less, &
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ON, OFF, MONTHS_PER_YEAR, ERROR_dim, DEBUG_less, &
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
      &    temp_laps_module, temp_sta_module, temp_dist2_module, potet_pan_module, &
-     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, Init_vars_from_file
+     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, DECL, INIT, CLEAN, &
+     &    FEET2METERS, METERS2FEET
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nssr, Ngw, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
+     &    Model, Print_debug, Init_vars_from_file, Save_vars_to_file, Temp_flag, Precip_flag, &
+     &    Strmflow_module, Temp_module, Stream_order_flag, GSFLOW_flag, &
+     &    Precip_module, Solrad_module, Transp_module, Et_module, PRMS4_flag, &
+     &    Soilzone_module, Srunoff_module, Call_cascade, Et_flag, Dprst_flag, Solrad_flag, &
+     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2020-07-01'
+      character(len=*), parameter :: Version_climateflow = '2020-08-03'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -105,7 +111,7 @@
 !     Main climateflow routine
 !***********************************************************************
       INTEGER FUNCTION climateflow()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CLIMATEVARS, ONLY: Process_flag, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: climateflow_decl, climateflow_init
@@ -130,10 +136,7 @@
       INTEGER FUNCTION climateflow_decl()
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Solrad_flag, Glacier_flag, &
-     &    Strmflow_module, Temp_module, Stream_order_flag, GSFLOW_flag, &
-     &    Precip_module, Solrad_module, Transp_module, Et_module, PRMS4_flag, &
-     &    Soilzone_module, Srunoff_module, Call_cascade, Et_flag, Dprst_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declvar, declparam
       EXTERNAL :: read_error, print_module
@@ -592,7 +595,8 @@
      &       'elev_units')/=0 ) CALL read_error(1, 'tsta_elev')
       ENDIF
 
-      IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_sta_module .OR. Model==DOCUMENTATION ) THEN
+      IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_sta_module &
+     &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Hru_tsta(Nhru) )
         IF ( declparam(Temp_module, 'hru_tsta', 'nhru', 'integer', &
      &       '0', 'bounded', 'ntemp', &
@@ -602,7 +606,8 @@
       ENDIF
 
       IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_dist2_module .OR. &
-     &     Temp_flag==ide_dist_module .OR. Temp_flag==xyz_dist_module .OR. Temp_flag==temp_sta_module .OR. Model==DOCUMENTATION ) THEN
+     &     Temp_flag==ide_dist_module .OR. Temp_flag==xyz_dist_module .OR. Temp_flag==temp_sta_module &
+     &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Tmax_aspect_adjust(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(Temp_module, 'tmax_adj', 'nhru,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
@@ -869,11 +874,8 @@
       INTEGER FUNCTION climateflow_init()
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Temp_module, Precip_module, Parameter_check_flag, &
-     &    Solrad_module, Soilzone_module, Srunoff_module, Stream_order_flag, &
-     &    Inputerror_flag, Dprst_flag, Solrad_flag, Et_flag, Nlake, Et_module, Humidity_cbh_flag, &
-     &    PRMS4_flag, GSFLOW_flag
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits
@@ -915,14 +917,16 @@
 
       IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_sta_module ) THEN
         IF ( getparam(Temp_module, 'hru_tsta', Nhru, 'integer', Hru_tsta)/=0 ) CALL read_error(2, 'hru_tsta')
-        IF ( Parameter_check_flag>OFF ) &
+        IF ( Parameter_check_flag>0 ) &
      &       CALL checkdim_bounded_limits('hru_tsta', 'ntemp', Hru_tsta, Nhru, 0, Ntemp, Inputerror_flag)
       ENDIF
 
-      IF ( getparam(Precip_module, 'tmax_allsnow', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allsnow)/=0 ) CALL read_error(2, 'tmax_allsnow')
+      IF ( getparam(Precip_module, 'tmax_allsnow', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allsnow)/=0 ) &
+     &    CALL read_error(2, 'tmax_allsnow')
 
       IF ( PRMS4_flag==ON ) THEN
-        IF ( getparam(Precip_module, 'tmax_allrain', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allrain)/=0 ) CALL read_error(2, 'tmax_allrain')
+        IF ( getparam(Precip_module, 'tmax_allrain', Nhru*MONTHS_PER_YEAR, 'real', Tmax_allrain)/=0 ) &
+     &       CALL read_error(2, 'tmax_allrain')
         DO j = 1, MONTHS_PER_YEAR
           DO i = 1, Nhru
             Tmax_allrain_offset(i, j) = Tmax_allrain(i, j) - Tmax_allsnow(i, j)
@@ -989,7 +993,7 @@
 
           IF ( getparam(Solrad_module, 'hru_solsta', Nhru, 'integer', Hru_solsta)/=0 ) CALL read_error(2, 'hru_solsta')
 
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             CALL checkdim_param_limits(1, 'basin_solsta', 'nsol', Basin_solsta, 1, Nsol, Inputerror_flag)
             CALL checkdim_bounded_limits('hru_solsta', 'nsol', Hru_solsta, Nhru, 0, Nsol, Inputerror_flag)
           ENDIF
@@ -1004,8 +1008,8 @@
         ENDIF
         IF ( getparam(Solrad_module, 'radj_sppt', Nhru, 'real', Radj_sppt)/=0 ) CALL read_error(2, 'radj_sppt')
         IF ( getparam(Solrad_module, 'radj_wppt', Nhru, 'real', Radj_wppt)/=0 ) CALL read_error(2, 'radj_wppt')
-        IF ( getparam(Solrad_module, 'ppt_rad_adj', Nhru*12, 'real', Ppt_rad_adj)/=0 ) CALL read_error(2, 'ppt_rad_adj')
-        IF ( getparam(Solrad_module, 'radmax', Nhru*12, 'real', Radmax)/=0 ) CALL read_error(2, 'radmax')
+        IF ( getparam(Solrad_module, 'ppt_rad_adj', Nhru*MONTHS_PER_YEAR, 'real', Ppt_rad_adj)/=0 ) CALL read_error(2, 'ppt_rad_adj')
+        IF ( getparam(Solrad_module, 'radmax', Nhru*MONTHS_PER_YEAR, 'real', Radmax)/=0 ) CALL read_error(2, 'radmax')
       ELSE
         Basin_solsta = 0
         Rad_conv = 1.0
@@ -1013,11 +1017,11 @@
 
       IF ( Use_pandata==ON ) THEN
         IF ( getparam(MODNAME, 'hru_pansta', Nhru, 'integer', Hru_pansta)/=0 ) CALL read_error(2, 'hru_pansta')
-        IF ( Parameter_check_flag>OFF ) &
+        IF ( Parameter_check_flag>0 ) &
      &       CALL checkdim_bounded_limits('hru_pansta', 'nevap', Hru_pansta, Nhru, 0, Nevap, Inputerror_flag)
       ENDIF
 
-      IF ( getparam('intcp', 'epan_coef', Nhru*12, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
+      IF ( getparam('intcp', 'epan_coef', Nhru*MONTHS_PER_YEAR, 'real', Epan_coef)/=0 ) CALL read_error(2, 'epan_coef')
 
 ! FLOW VARIABLES AND PARAMETERS
       IF ( getparam(Soilzone_module, 'sat_threshold', Nhru, 'real', Sat_threshold)/=0 ) CALL read_error(2, 'sat_threshold')
@@ -1070,7 +1074,7 @@
         IF ( Hru_type(i)==INACTIVE .OR. Hru_type(i)==LAKE ) CYCLE
         ! hru_type = 1 or 3
         IF ( Soil_moist_max(i)<0.00001 ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9006, i, Soil_moist_max(i)
             ierr = 1
           ELSE
@@ -1079,7 +1083,7 @@
           ENDIF
         ENDIF
         IF ( Soil_rechr_max(i)<0.00001 ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9007, i, Soil_rechr_max(i)
             ierr = 1
           ELSE
@@ -1088,7 +1092,7 @@
           ENDIF
         ENDIF
         IF ( Soil_rechr_max(i)>Soil_moist_max(i) ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9002, i, Soil_rechr_max(i), Soil_moist_max(i)
             ierr = 1
           ELSE
@@ -1097,7 +1101,7 @@
           ENDIF
         ENDIF
         IF ( Soil_rechr(i)>Soil_rechr_max(i) ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9003, i, Soil_rechr(i), Soil_rechr_max(i)
             ierr = 1
           ELSE
@@ -1106,7 +1110,7 @@
           ENDIF
         ENDIF
         IF ( Soil_moist(i)>Soil_moist_max(i) ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9004, i, Soil_moist(i), Soil_moist_max(i)
             ierr = 1
           ELSE
@@ -1115,7 +1119,7 @@
           ENDIF
         ENDIF
         IF ( Soil_rechr(i)>Soil_moist(i) ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT 9005, i, Soil_rechr(i), Soil_moist(i)
             ierr = 1
           ELSE
@@ -1124,7 +1128,7 @@
           ENDIF
         ENDIF
         IF ( Ssres_stor(i)>Sat_threshold(i) ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT *, 'ERROR, HRU:', i, Ssres_stor(i), Sat_threshold(i), ' ssres_stor > sat_threshold'
             ierr = 1
           ELSE
@@ -1388,9 +1392,7 @@
 !     Write or read restart file
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: Nlake
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Stream_order_flag, Dprst_flag, &
-     &    GSFLOW_flag, Glacier_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       IMPLICIT NONE

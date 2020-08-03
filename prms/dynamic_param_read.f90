@@ -5,15 +5,20 @@
 ! period. Associated states with each parameter are adjusted.
 !***********************************************************************
       MODULE PRMS_DYNAMIC_PARAM_READ
-        USE PRMS_CONSTANTS, ONLY: Nhru, MONTHS_PER_YEAR, MAXFILE_LENGTH, ON, OFF, &
-     &      Print_debug, ERROR_dynamic, DEBUG_minimum, DEBUG_less, INACTIVE, LAKE, NEARZERO, &
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, MAXFILE_LENGTH, ON, OFF, &
+     &      ERROR_dynamic, DEBUG_minimum, DEBUG_less, INACTIVE, LAKE, NEARZERO, &
      &      potet_jh_module, potet_pan_module, potet_hamon_module, potet_hs_module, &
      &      potet_pt_module, potet_pm_module, climate_hru_module
+        USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Print_debug, Starttime, &
+     &      Dyn_imperv_flag, Dyn_dprst_flag, Dyn_intcp_flag, Dyn_covden_flag, &
+     &      Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_soil_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
+     &      Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dprst_flag, Dyn_fallfrost_flag, &
+     &      Dyn_springfrost_flag, Dyn_snareathresh_flag, Et_flag, PRMS4_flag
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Time Series Data'
         character(len=*), parameter :: MODNAME = 'dynamic_param_read'
-        character(len=*), parameter :: Version_dynamic_param_read = '2020-07-30'
+        character(len=*), parameter :: Version_dynamic_param_read = '2020-08-03'
         INTEGER, SAVE :: Imperv_frac_unit, Imperv_next_yr, Imperv_next_mo, Imperv_next_day, Imperv_frac_flag
         INTEGER, SAVE :: Wrain_intcp_unit, Wrain_intcp_next_yr, Wrain_intcp_next_mo, Wrain_intcp_next_day
         INTEGER, SAVE :: Srain_intcp_unit, Srain_intcp_next_yr, Srain_intcp_next_mo, Srain_intcp_next_day
@@ -53,8 +58,7 @@
 !     Main dynamic parameter routine
 !***********************************************************************
       INTEGER FUNCTION dynamic_param_read()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT
-      USE PRMS_DYNAMIC_PARAM_READ, ONLY: MODDESC, MODNAME, Version_dynamic_param_read
+      USE PRMS_DYNAMIC_PARAM_READ
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: dynparamrun, dynparaminit
@@ -77,10 +81,6 @@
 !***********************************************************************
       INTEGER FUNCTION dynparaminit()
       USE PRMS_DYNAMIC_PARAM_READ
-      USE PRMS_MODULE, ONLY: Starttime, Dyn_imperv_flag, Dyn_dprst_flag, Dyn_intcp_flag, Dyn_covden_flag, &
-     &    Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_soil_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
-     &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dprst_flag, Dyn_fallfrost_flag, &
-     &    Dyn_springfrost_flag, Dyn_snareathresh_flag, PRMS4_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
@@ -396,9 +396,6 @@
 !***********************************************************************
       INTEGER FUNCTION dynparamrun()
       USE PRMS_DYNAMIC_PARAM_READ
-      USE PRMS_MODULE, ONLY: Dprst_flag, PRMS4_flag, Dyn_imperv_flag, &
-     &    Dyn_covtype_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, Dyn_snareathresh_flag, &
-     &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Et_flag, Dyn_potet_flag
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_BASIN, ONLY: Hru_type, Hru_area, Dprst_clos_flag, &
      &    Hru_percent_imperv, Hru_frac_perv, Hru_imperv, Hru_perv, Dprst_frac, Dprst_open_flag, &
@@ -422,6 +419,7 @@
      &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Hru_impervstor
       USE PRMS_SOILZONE, ONLY: Basin_soil_rechr, Soil_zone_max, Soil_moist_tot, &
      &    Soil_lower_stor_max, Replenish_frac
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
       EXTERNAL :: write_dynoutput, is_eof, write_dynparam, write_dynparam_int

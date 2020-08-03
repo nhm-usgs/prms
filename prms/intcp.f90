@@ -4,12 +4,15 @@
 ! snowpack
 !***********************************************************************
       MODULE PRMS_INTCP
-      USE PRMS_CONSTANTS, ONLY: Nhru, ON, OFF
+      USE PRMS_CONSTANTS, ONLY: ON, OFF, DEBUG_WB, DOCUMENTATION, NEARZERO, DNEARZERO, &
+     &    RUN, DECL, INIT, CLEAN, ON, DEBUG_WB, DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
+      USE PRMS_MODULE, ONLY: Nhru, Model, Process_flag, Save_vars_to_file, Init_vars_from_file, &
+     &    Print_debug, Water_use_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2020-07-28'
+      character(len=*), parameter :: Version_intcp = '2020-08-03'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
@@ -33,7 +36,7 @@
 !     Main intcp routine
 !***********************************************************************
       INTEGER FUNCTION intcp()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_INTCP
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: intdecl, intinit, intrun
@@ -62,8 +65,7 @@
 !***********************************************************************
       INTEGER FUNCTION intdecl()
       USE PRMS_INTCP
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: Water_use_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -207,8 +209,8 @@
 !***********************************************************************
       INTEGER FUNCTION intinit()
       USE PRMS_INTCP
-      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_WB, Init_vars_from_file
       USE PRMS_CLIMATEVARS, ONLY: Transp_on
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
@@ -257,16 +259,16 @@
 !***********************************************************************
       INTEGER FUNCTION intrun()
       USE PRMS_INTCP
-      USE PRMS_CONSTANTS, ONLY: Print_debug, NEARZERO, DNEARZERO, DEBUG_WB, DEBUG_less, &
-     &    LAKE, BARESOIL, GRASSES, ERROR_param
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
      &    Hru_route_order, Hru_area, Cov_type
       USE PRMS_WATER_USE, ONLY: Canopy_gain
-      USE PRMS_CLIMATEVARS, ONLY: Hru_rain, Hru_ppt, &
+! Newsnow and Pptmix can be modfied, WARNING!!!
+      USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
      &    Hru_snow, Transp_on, Potet, Use_pandata, Hru_pansta, Epan_coef, Potet_sublim
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
       USE PRMS_SET_TIME, ONLY: Nowmonth, Cfs_conv, Nowyear, Nowday
       USE PRMS_OBS, ONLY: Pan_evap
+      IMPLICIT NONE
 ! Functions
       EXTERNAL :: intercept, error_stop
       INTRINSIC :: DBLE, SNGL
@@ -435,6 +437,13 @@
               IF ( Cov_type(i)>GRASSES ) THEN
                 stor = Snow_intcp(i)
                 CALL intercept(Hru_snow(i), stor, cov, intcpstor, netsnow)
+                IF ( netsnow<NEARZERO ) THEN   !rsr, added 3/9/2006
+ print *, netsnow, netrain, newsnow(i), pptmix(i)
+                  netrain = netrain + netsnow
+                  netsnow = 0.0
+                  Newsnow(i) = 0
+                  Pptmix(i) = 0   ! reset to be sure it is zero
+                ENDIF
               ENDIF
             ENDIF
           ENDIF
@@ -553,6 +562,7 @@
       SUBROUTINE intcp_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_INTCP
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Function

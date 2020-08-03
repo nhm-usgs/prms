@@ -2,15 +2,28 @@
 ! Defines shared watershed and HRU physical parameters and variables
 !***********************************************************************
       MODULE PRMS_BASIN
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nlake, Print_debug, DEBUG_less, ON, OFF, &
-     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, Model, &
-     &    NORTHERN, SOUTHERN, FEET2METERS, METERS2FEET, DNEARZERO, DOCUMENTATION, &
+      USE PRMS_CONSTANTS, ONLY: DEBUG_less, ON, OFF, DECL, INIT, &
+     &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
+     &    NORTHERN, SOUTHERN, DOCUMENTATION, &
      &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nlake, Print_debug, Model, &
+     &    Dprst_flag, Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, &
+     &    Stream_temp_flag, PRMS4_flag, GSFLOW_flag, Glacier_flag, Frozen_flag, PRMS_VERSION, &
+     &    Starttime, Endtime, Parameter_check_flag
       IMPLICIT NONE
+      INTRINSIC :: EPSILON
 !   Local Variables
+      REAL, PARAMETER :: NEARZERO = 1.0E-6, INCH2CM = 2.54
+      REAL, PARAMETER :: CLOSEZERO = EPSILON(0.0)
+      DOUBLE PRECISION, PARAMETER :: DNEARZERO = EPSILON(0.0D0), FT2_PER_ACRE = 43560.0D0
+      DOUBLE PRECISION, PARAMETER :: CFS2CMS_CONV = 0.028316847D0
+      REAL, PARAMETER :: INCH2MM = 25.4, INCH2M = 0.0254, MAXTEMP = 200.0, MINTEMP = -150.0
+      REAL, PARAMETER :: MM2INCH = 1.0/INCH2MM
+      REAL, PARAMETER :: FEET2METERS = 0.3048
+      REAL, PARAMETER :: METERS2FEET = 1.0/FEET2METERS
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2020-07-28'
+      character(len=*), parameter :: Version_basin = '2020-08-03'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -40,7 +53,8 @@
 !     Main basin routine
 !***********************************************************************
       INTEGER FUNCTION basin()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT
+      USE PRMS_CONSTANTS, ONLY: DECL, INIT
+      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: basdecl, basinit
@@ -64,8 +78,7 @@
 !***********************************************************************
       INTEGER FUNCTION basdecl()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Dprst_flag, Lake_route_flag, GSFLOW_flag, Glacier_flag, &
-     &    Et_flag, Precip_flag, Cascadegw_flag, Stream_temp_flag, PRMS4_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -257,10 +270,6 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_BASIN
-      USE PRMS_MODULE, ONLY: Dprst_flag, PRMS4_flag, &
-     &    GSFLOW_flag, PRMS_VERSION, Starttime, Endtime, &
-     &    Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, Parameter_check_flag, &
-     &    Stream_temp_flag, Frozen_flag, Glacier_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -289,12 +298,11 @@
       IF ( Dprst_flag==ON ) THEN
         IF ( getparam(MODNAME, 'dprst_frac_open', Nhru, 'real', Dprst_frac_open)/=0 ) CALL read_error(2, 'dprst_frac_open')
         IF ( PRMS4_flag==ON ) THEN
+          IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
           IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac_hru')
           IF ( Dprst_frac(1)>-1.0 ) THEN
             IF ( Print_debug>DEBUG_less ) PRINT *, 'Using dprst_frac_hru instead of dprst_area'
             dprst_frac_flag = 1
-          ELSE
-            IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
           ENDIF
         ELSE
           IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'Dprst_frac')
@@ -309,7 +317,7 @@
       Numlake_hrus = 0
       IF ( Nlake>0 ) THEN
         IF ( getparam(MODNAME, 'lake_hru_id', Nhru, 'integer', Lake_hru_id)/=0 ) CALL read_error(1, 'lake_hru_id')
-        IF ( Parameter_check_flag>OFF ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
+        IF ( Parameter_check_flag==1 ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
         IF ( Lake_route_flag==ON ) THEN ! Lake_route_flag set to 0 for GSFLOW mode and if muskingum_lake and nlake = 1
           IF ( getparam(MODNAME, 'lake_type', Nlake, 'integer', Lake_type)/=0 ) CALL read_error(2, 'lake_type')
           DO i = 1, Nlake

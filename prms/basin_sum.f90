@@ -3,13 +3,15 @@
 ! and flows for all HRUs
 !***********************************************************************
       MODULE PRMS_BASINSUM
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nobs, Model, Process_flag, RUN, DECL, INIT, CLEAN, &
-     &    ON, OFF, Init_vars_from_file, DOCUMENTATION, Print_debug
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, DOCUMENTATION, &
+     &    strmflow_muskingum_module, strmflow_muskingum_lake_module
+      USE PRMS_MODULE, ONLY: Nhru, Nobs, Model, Process_flag, Init_vars_from_file, &
+     &    Save_vars_to_file, Print_debug, End_year, Strmflow_flag, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=9), parameter :: MODNAME = 'basin_sum'
-      character(len=*), parameter :: Version_basin_sum = '2020-07-01'
+      character(len=*), parameter :: Version_basin_sum = '2020-08-03'
 
       INTEGER, SAVE :: BALUNT, Totdays
       INTEGER, SAVE :: Header_prt, Endjday
@@ -63,7 +65,8 @@
 !     Main basin_sum routine
 !***********************************************************************
       INTEGER FUNCTION basin_sum()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file
+      USE PRMS_BASINSUM
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: sumbdecl, sumbinit, sumbrun
       EXTERNAL :: basin_sum_restart
@@ -89,6 +92,7 @@
 !***********************************************************************
       INTEGER FUNCTION sumbdecl()
       USE PRMS_BASINSUM
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -313,6 +317,7 @@
       USE PRMS_SNOW, ONLY: Basin_pweqv
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_dprst_volcl, Basin_dprst_volop
       USE PRMS_GWFLOW, ONLY: Basin_gwstor
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: MAX, MOD
       INTEGER, EXTERNAL :: getparam, julian_day
@@ -471,7 +476,6 @@
 !***********************************************************************
       INTEGER FUNCTION sumbrun()
       USE PRMS_BASINSUM
-      USE PRMS_MODULE, ONLY: End_year, Strmflow_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Active_area, Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_lakeevap, &
      &    Basin_actet, Basin_perv_et, Basin_swale_et, Hru_actet, Basin_sroff, &
@@ -482,10 +486,11 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Basin_gwstor, Basin_gwsink, Basin_gwstor_minarea_wb
       USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor, Basin_net_ppt
       USE PRMS_SNOW, ONLY: Basin_snowmelt, Basin_pweqv, Basin_snowevap
-      USE PRMS_GLACR, ONLY: Basin_gl_storage
+!      USE PRMS_GLACR, ONLY: Basin_gl_storage
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_imperv_evap, &
      &    Basin_dprst_evap, Basin_dprst_volcl, Basin_dprst_volop
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, ABS, ALOG, DBLE
       EXTERNAL :: header_print, write_outfile
@@ -512,8 +517,9 @@
 ! Basin_storage doesn't include any processes on glacier
 ! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
 !   includes glaciers that have depth estimates and these are known to be iffy
-      IF ( Glacier_flag==1 ) Basin_storage = Basin_storage + Basin_gl_storage
-      IF ( Strmflow_flag==3 .OR. Strmflow_flag==4 ) Basin_storage = Basin_storage + Basin_segment_storage
+!      IF ( Glacier_flag==ON ) Basin_storage = Basin_storage + Basin_gl_storage
+      IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module ) &
+     &     Basin_storage = Basin_storage + Basin_segment_storage
 
 ! volume calculation for storage
       Basin_storvol = Basin_storage*Active_area
@@ -816,7 +822,7 @@
       SUBROUTINE header_print(Print_type)
       USE PRMS_BASINSUM, ONLY: DASHS, Buffer80, Print_freq, Header_prt
       IMPLICIT NONE
-      EXTERNAL write_outfile
+      EXTERNAL :: write_outfile
 ! Arguments
       INTEGER, INTENT(IN) :: Print_type
 !***********************************************************************
@@ -865,6 +871,7 @@
       SUBROUTINE basin_sum_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_BASINSUM
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Functions

@@ -2,8 +2,8 @@
 ! Routes water between segments in the system as inflow equals outflow
 !***********************************************************************
       INTEGER FUNCTION strmflow_in_out()
-      USE PRMS_CONSTANTS, ONLY: Nsegment, Process_flag, RUN, DECL, INIT, Print_debug, &
-     &    DEBUG_less, OUTFLOW_SEGMENT, CFS2CMS_CONV
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, DEBUG_less, OUTFLOW_SEGMENT, CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: Nsegment, Process_flag, Print_debug
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_BASIN, ONLY: Active_area
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
@@ -20,7 +20,7 @@
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=*), parameter :: MODNAME = 'strmflow_in_out'
-      character(len=*), parameter :: Version_strmflow = '2020-07-24'
+      character(len=*), parameter :: Version_strmflow = '2020-08-03'
       INTEGER :: i, iorder, toseg, segtype
       DOUBLE PRECISION :: area_fac, segout
 !***********************************************************************
@@ -102,6 +102,7 @@
         Basin_sroff_cfs = Basin_sroff*area_fac
         Basin_ssflow_cfs = Basin_ssflow*area_fac
         Basin_gwflow_cfs = Basin_gwflow*area_fac
+
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_strmflow)
       ENDIF

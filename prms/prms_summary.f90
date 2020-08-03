@@ -2,8 +2,10 @@
 !     WRITES NHM CSV SUMMARY FILE
 !***********************************************************************
       MODULE PRMS_PRMS_SUMMARY
-        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
-     &      MODEL, DOCUMENTATION, ERROR_OPEN_OUT, ERROR_OPEN_IN, ERROR_READ, Nobs, Nsegment
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &      DOCUMENTATION, ERROR_open_out, ERROR_OPEN_IN, ERROR_READ, MAXDIM
+        USE PRMS_MODULE, ONLY: Model, Process_flag, Nobs, Nsegment, Npoigages, &
+     &      Csv_output_file, Inputerror_flag, Parameter_check_flag, CsvON_OFF
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
@@ -27,7 +29,6 @@
 
       SUBROUTINE prms_summary()
       USE PRMS_PRMS_SUMMARY
-      USE PRMS_MODULE, ONLY: Csv_output_file, Inputerror_flag, Npoigages, Parameter_check_flag, CsvON_OFF
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
      &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
@@ -43,6 +44,7 @@
      &    Basin_pref_stor, Basin_slstor, Basin_soil_rechr, Basin_sz2gw, Basin_dunnian
       USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: CHAR, INDEX, MAX
       INTEGER, EXTERNAL :: declparam, declvar, getparam !, control_integer
@@ -146,7 +148,7 @@
 !     &         CALL read_error(2, 'parent_poigages')
           IF ( getparam(MODNAME, 'poi_gage_segment', Npoigages, 'integer', Poi_gage_segment)/=0 ) &
      &         CALL read_error(2, 'poi_gage_segment')
-          IF ( Parameter_check_flag>OFF ) &
+          IF ( Parameter_check_flag>0 ) &
      &      CALL checkdim_bounded_limits('poi_gage_segment', 'nsegment', Poi_gage_segment, Npoigages, 1, Nsegment, Inputerror_flag)
           DO i = 1, Npoigages
             Poi_gage_id(i) = '                '
@@ -244,11 +246,12 @@
 !***********************************************************************
       SUBROUTINE statvar_to_csv()
       USE PRMS_PRMS_SUMMARY
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
       EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
       ! Local Variable
-      INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, dy, hr, mn, sec, num
+      INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)
       REAL, ALLOCATABLE :: values(:)
       CHARACTER(LEN=32), ALLOCATABLE :: varname(:)
@@ -280,15 +283,15 @@
       WRITE ( outunit, fmt3 ) 'date,', ( varindex(i), ',', i = 1, numvariables )
       WRITE ( fmt6, '(A,I0,A)' ) '( A, ', numvariables, '(",",E14.6) )'
       DO WHILE ( ios/=-1 )
-        READ ( inunit, *, IOSTAT=ios ) ts, yr, mo, dy, hr, mn, sec, (values(i), i = 1, numvariables )
+        READ ( inunit, *, IOSTAT=ios ) ts, yr, mo, day, hr, mn, sec, (values(i), i = 1, numvariables )
         IF ( ios==-1 ) EXIT
         IF ( ios/=0 ) THEN
           PRINT *, 'ERROR, reading statvar file values, IOSTAT:', ios
-          PRINT *, ts, yr, mo, dy, hr, 'number of variables:', numvariables
+          PRINT *, ts, yr, mo, day, hr, 'number of variables:', numvariables
           PRINT *, (values(i), i = 1, numvariables )
           ERROR STOP ERROR_read
         ENDIF
-        WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, dy
+        WRITE ( chardate, '(I0,2("-",I2.2))' )  yr, mo, day
         WRITE ( outunit, fmt6 ) chardate, (values(i), i = 1, numvariables )
       ENDDO
       CLOSE ( outunit )

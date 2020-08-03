@@ -2,13 +2,16 @@
 !     Output a set of declared variables by subbasin in CSV format
 !***********************************************************************
       MODULE PRMS_NSUB_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Nhru, Nsub, ERROR_control, ERROR_open_out, DNEARZERO, &
-     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ON, OFF, REAL_TYPE, DBLE_TYPE
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
+     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ON, OFF, &
+     &    REAL_TYPE, DBLE_TYPE, RUN, DECL, INIT, CLEAN, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsub, Model, Inputerror_flag, &
+     &    Start_year, Start_month, Start_day, End_year, End_month, End_day, Prms_warmup
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsub_summary'
-      character(len=*), parameter :: Version_nsub_summary = '2020-07-30'
+      character(len=*), parameter :: Version_nsub_summary = '2020-08-03'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsub_var_type(:), Nsub_var_size(:)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -34,7 +37,7 @@
 !     ******************************************************************
       SUBROUTINE nsub_summary()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN
+      IMPLICIT NONE
 ! Functions
       EXTERNAL :: nsub_summarydecl, nsub_summaryinit, nsub_summaryrun
 ! Local Variables
@@ -67,7 +70,7 @@
 !***********************************************************************
       SUBROUTINE nsub_summarydecl()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
       EXTERNAL :: read_error, print_module, error_stop
@@ -110,9 +113,8 @@
 !***********************************************************************
       SUBROUTINE nsub_summaryinit()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_MODULE, ONLY: Inputerror_flag, Start_year, Prms_warmup
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order
-! Functions
+      IMPLICIT NONE
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL :: read_error, PRMS_open_output_file, error_stop
 ! Local Variables
@@ -282,11 +284,11 @@
 !***********************************************************************
       SUBROUTINE nsub_summaryrun()
       USE PRMS_NSUB_SUMMARY
-      USE PRMS_MODULE, ONLY: Start_month, Start_day, End_year, End_month, End_day
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
+      IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
-      INTRINSIC SNGL, DBLE
+      INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error
 ! Local Variables

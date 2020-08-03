@@ -94,8 +94,8 @@
 !     Read File to line before data starts in file
 !***********************************************************************
       SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag, Cbh_binary_flag)
-      USE PRMS_CONSTANTS, ONLY: Nhru, Print_debug, DEBUG_less
-      USE PRMS_MODULE, ONLY: Orad_flag
+      USE PRMS_CONSTANTS, ONLY: DEBUG_less
+      USE PRMS_MODULE, ONLY: Nhru, Orad_flag, Print_debug
       IMPLICIT NONE
 ! Argument
       INTEGER, INTENT(IN) :: Cbh_flag, Cbh_binary_flag
@@ -500,8 +500,8 @@
 ! write_outfile - print to model output file
 !***********************************************************************
       SUBROUTINE write_outfile(String)
-      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_minimum
-      USE PRMS_MODULE, ONLY: PRMS_output_unit
+      USE PRMS_CONSTANTS, ONLY: DEBUG_minimum
+      USE PRMS_MODULE, ONLY: PRMS_output_unit, Print_debug
       IMPLICIT NONE
       ! Functions
       INTRINSIC :: LEN_TRIM
@@ -859,8 +859,8 @@
 ! print module version information to user's screen
 !***********************************************************************
       SUBROUTINE print_module(Description, Modname, Versn)
-      USE PRMS_CONSTANTS, ONLY: Print_debug, DEBUG_minimum
-      USE PRMS_MODULE, ONLY: PRMS_output_unit
+      USE PRMS_CONSTANTS, ONLY: DEBUG_minimum
+      USE PRMS_MODULE, ONLY: Print_debug, PRMS_output_unit
       IMPLICIT NONE
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Description, Modname, Versn

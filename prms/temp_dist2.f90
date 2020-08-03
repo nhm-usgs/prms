@@ -13,8 +13,10 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, MONTHS_PER_YEAR, ON, OFF, &
-     &    Init_vars_from_file, DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ON, OFF, RUN, DECL, INIT, CLEAN, ON, &
+     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, DOCUMENTATION, ERROR_dim
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Ntemp, Init_vars_from_file, Save_vars_to_file, &
+     &    Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
@@ -40,7 +42,7 @@
 !     Main temp_dist2 routine
 !***********************************************************************
       INTEGER FUNCTION temp_dist2()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_TEMP_DIST2
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: t2dist2decl, t2dist2init, t2dist2run
@@ -71,7 +73,7 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
       USE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: Model, DOCUMENTATION, ERROR_dim
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declparam, declvar
@@ -202,6 +204,7 @@
       USE PRMS_TEMP_DIST2
       USE PRMS_BASIN, ONLY: Hru_elev
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
@@ -315,7 +318,6 @@
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
       USE PRMS_TEMP_DIST2
-      USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
@@ -477,6 +479,7 @@
       SUBROUTINE temp_dist2_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_TEMP_DIST2
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Function

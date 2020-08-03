@@ -11,12 +11,14 @@
 !   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
-      USE PRMS_CONSTANTS, ONLY: Nhru, Print_debug, DAYS_IN_YEAR, MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, DNEARZERO
+      USE PRMS_CONSTANTS, ONLY: DAYS_IN_YEAR, MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, DNEARZERO, &
+     &    DECL, INIT, DAYS_IN_YEAR
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Print_debug, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
       character(len=*), parameter :: MODNAME = 'soltab'
-      character(len=*), parameter :: Version_soltab = '2020-07-28'
+      character(len=*), parameter :: Version_soltab = '2020-08-03'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -42,7 +44,7 @@
 !     Main soltab routine
 !***********************************************************************
       INTEGER FUNCTION soltab()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, DECL, INIT
+      USE PRMS_SOLTAB, ONLY: Process_flag, DECL, INIT
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: sthdecl, sthinit
@@ -64,6 +66,7 @@
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
       USE PRMS_SOLTAB
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -108,8 +111,8 @@
 !***********************************************************************
       INTEGER FUNCTION sthinit()
       USE PRMS_SOLTAB
-      USE PRMS_MODULE, ONLY: Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: SIN, COS, DBLE
 !     INTRINSIC :: ASIN
@@ -216,7 +219,7 @@
       ENDIF
 
       DEALLOCATE ( Hru_slope )
-      IF ( Glacier_flag/=1 ) DEALLOCATE ( Hru_aspect )
+      IF ( Glacier_flag==0 ) DEALLOCATE ( Hru_aspect )
 
       END FUNCTION sthinit
 

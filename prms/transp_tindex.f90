@@ -7,7 +7,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
         character(len=13), parameter :: MODNAME = 'transp_tindex'
-        character(len=*), parameter :: Version_transp = '2020-07-28'
+        character(len=*), parameter :: Version_transp = '2020-08-03'
         INTEGER, SAVE, ALLOCATABLE :: Transp_check(:), Transp_beg_restart(:), Transp_end_restart(:)
         REAL, SAVE, ALLOCATABLE :: Tmax_sum(:), Transp_tmax_f(:), Transp_tmax_restart(:)
         ! Declared Parameters
@@ -17,12 +17,12 @@
 
       INTEGER FUNCTION transp_tindex()
       USE PRMS_TRANSP_TINDEX
-      USE PRMS_CONSTANTS, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, &
-     &    RUN, DECL, INIT, CLEAN, ON, OFF, FAHRENHEIT, MONTHS_PER_YEAR
-      USE PRMS_MODULE, ONLY: Start_month, Start_day
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, OFF, FAHRENHEIT, MONTHS_PER_YEAR
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, Start_month, Start_day
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: c_to_f

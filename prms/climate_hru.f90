@@ -5,14 +5,16 @@
 ! PRMS modules
 !***********************************************************************
       MODULE PRMS_CLIMATE_HRU
-        USE PRMS_CONSTANTS, ONLY: Nhru, MAXFILE_LENGTH, ON, OFF, &
-     &      Process_flag, RUN, DECL, INIT, Model, DOCUMENTATION, &
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ON, OFF, RUN, DECL, INIT, DOCUMENTATION, &
      &      MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MONTHS_PER_YEAR
+        USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
+     &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
+     &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Climate Input'
         character(len=*), parameter :: MODNAME = 'climate_hru'
-        character(len=*), parameter :: Version_climate_hru = '2020-07-29'
+        character(len=*), parameter :: Version_climate_hru = '2020-08-03'
         INTEGER, SAVE :: Precip_unit, Tmax_unit, Tmin_unit, Et_unit, Swrad_unit, Transp_unit
         INTEGER, SAVE :: Humidity_unit, Windspeed_unit
         ! Control Parameters
@@ -29,9 +31,6 @@
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CLIMATE_HRU
-      USE PRMS_MODULE, ONLY: Climate_transp_flag, Orad_flag, &
-     &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
-     &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
@@ -42,6 +41,7 @@
      &    Transp_on, Basin_transp_on, Tmax_allsnow_f, Basin_humidity, Ppt_zero_thresh
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_basinpotsw, Hru_cossl, Soltab_potsw
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, control_integer, getparam, control_string, declvar

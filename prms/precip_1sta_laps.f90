@@ -17,11 +17,15 @@
 ! Needs computed variables tmaxf and tminf set in the temperature module
 !***********************************************************************
       MODULE PRMS_PRECIP_1STA_LAPS
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, ON, OFF, GLACIER, &
+     &      DEBUG_less, MM, MM2INCH, MONTHS_PER_YEAR, DOCUMENTATION, NEARZERO, precip_1sta_module
+        USE PRMS_MODULE, ONLY: Nhru, Nrain, Model, Process_flag, Inputerror_flag, Precip_flag, &
+     &      Print_debug, Glacier_flag, precip_1sta_module, precip_laps_module, precip_1sta_module
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
         character(len=11) :: MODNAME
-        character(len=*), parameter :: Version_precip = '2020-07-29'
+        character(len=*), parameter :: Version_precip = '2020-08-03'
         INTEGER, SAVE, ALLOCATABLE :: Psta_nuse(:)
         REAL, SAVE, ALLOCATABLE :: Rain_adj_lapse(:, :), Snow_adj_lapse(:, :), Precip_local(:)
         ! Declared Parameters
@@ -33,18 +37,14 @@
 
       INTEGER FUNCTION precip_1sta_laps()
       USE PRMS_PRECIP_1STA_LAPS
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nrain, Model, Process_flag, RUN, DECL, INIT, ON, OFF, GLACIER, &
-     &    Print_debug, DEBUG_less, MM, MM2INCH, MONTHS_PER_YEAR, DOCUMENTATION, precip_1sta_module
-      USE PRMS_MODULE, ONLY: Inputerror_flag, Precip_flag, &
-     &    Print_debug, Glacier_flag, precip_1sta_module, precip_laps_module, precip_1sta_module
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, &
-     &    Hru_elev_ts, Hru_type
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_area, Hru_route_order, Basin_area_inv, Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
      &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allrain_f, Tmax_allsnow_f, &
      &    Adjmix_rain, Precip_units
       USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Precip
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, precip_form, print_module, compute_precip_laps
@@ -228,8 +228,8 @@
 !     Compute lapse rate for an HRU
 !***********************************************************************
       SUBROUTINE compute_precip_laps(Ihru, Hru_plaps, Hru_psta, Hru_elev)
-      USE PRMS_PRECIP_1STA_LAPS, ONLY: Pmn_mo, Padj_sn, Padj_rn, Snow_adj_lapse, Rain_adj_lapse
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, MONTHS_PER_YEAR
+      USE PRMS_PRECIP_1STA_LAPS, ONLY: Pmn_mo, Padj_sn, Padj_rn, Snow_adj_lapse, Rain_adj_lapse, &
+     &    NEARZERO, MONTHS_PER_YEAR
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev
       IMPLICIT NONE
 ! Arguments

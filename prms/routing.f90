@@ -2,15 +2,19 @@
 ! Defines stream and lake routing parameters and variables
 !***********************************************************************
       MODULE PRMS_ROUTING
-      USE PRMS_CONSTANTS, ONLY: Nhru, Nsegment, Model, DOCUMENTATION, ON, OFF, FT2_PER_ACRE, &
-     &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, Init_vars_from_file, &
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ON, OFF, FT2_PER_ACRE, &
+     &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, RUN, DECL, INIT, CLEAN, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
      &    strmflow_muskingum_module, strmflow_in_out_module, strmflow_mizuroute_module
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsegment, Model, Init_vars_from_file, &
+     &    Save_vars_to_file, Strmflow_flag, Cascade_flag, Stream_temp_flag, &
+     &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag, &
+     &    Print_debug, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2020-07-29'
+      character(len=*), parameter :: Version_routing = '2020-08-03'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades
@@ -38,7 +42,7 @@
 !     Main routing routine
 !***********************************************************************
       INTEGER FUNCTION routing()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, DECL, INIT, CLEAN, ON, Init_vars_from_file, Save_vars_to_file
+      USE PRMS_ROUTING
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: routingdecl, routinginit, route_run
@@ -64,7 +68,7 @@
 !***********************************************************************
       INTEGER FUNCTION routingdecl()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Strmflow_flag, Cascade_flag, Stream_temp_flag
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
       EXTERNAL :: read_error, print_module
@@ -129,7 +133,8 @@
       ! 11 = outbound to Great Lakes; 12 = ephemeral; + 100 user updated; 1000 user virtual segment
       ! 100 = user normal; 101 - 108 = not used; 109 sink (tosegment used by Lumen)
 
-      IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Strmflow_flag==strmflow_muskingum_mann_module .OR. Model==DOCUMENTATION ) THEN ! muskingum_man or mizuroute
+      IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Strmflow_flag==strmflow_muskingum_mann_module &
+     &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Mann_n(Nsegment) )
         IF ( declparam( MODNAME, 'mann_n', 'nsegment', 'real', &
      &     '0.04', '0.001', '0.15', &
@@ -323,11 +328,10 @@
 !**********************************************************************
       INTEGER FUNCTION routinginit()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Strmflow_flag, Water_use_flag, Segment_transferON_OFF, &
-     &    Inputerror_flag, Parameter_check_flag, Stream_temp_flag
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: MOD
       INTEGER, EXTERNAL :: getparam
@@ -410,11 +414,12 @@
       IF ( getparam(MODNAME, 'obsin_segment', Nsegment, 'integer', Obsin_segment)/=0 ) CALL read_error(2, 'obsin_segment')
       IF ( getparam(MODNAME, 'obsout_segment', Nsegment, 'integer', Obsout_segment)/=0 ) CALL read_error(2, 'obsout_segment')
 
-      IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. &
-     &     Strmflow_flag==strmflow_muskingum_module .OR. Strmflow_flag==strmflow_muskingum_mann_module ) THEN
+      IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
+     &     Strmflow_flag==strmflow_muskingum_mann_module ) THEN
         IF ( getparam(MODNAME, 'x_coef', Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
         ALLOCATE ( C1(Nsegment), C2(Nsegment), C0(Nsegment), Ts(Nsegment), Ts_i(Nsegment) )
         IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module ) THEN
+
           IF ( getparam(MODNAME, 'K_coef', Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
         ENDIF
       ENDIF
@@ -475,7 +480,7 @@
         ENDIF
       ENDDO
 
-      IF ( Parameter_check_flag>OFF ) THEN
+      IF ( Parameter_check_flag>0 ) THEN
         DO i = 1, Nsegment
           IF ( Segment_up(i)==0 .AND. Tosegment(i)==OUTFLOW_SEGMENT ) &
      &         PRINT *, 'WARNING, no other segment flows into segment:',  i, ' and tosegment=0'
@@ -554,7 +559,7 @@
         ENDIF
 
         IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) THEN
-          IF ( Parameter_check_flag>OFF ) PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments'
+          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments'
           K_coef(i) = 24.0
         ENDIF
         IF ( K_coef(i)<0.01 ) K_coef(i) = 0.01 !make compliant with old version of K_coef
@@ -565,7 +570,7 @@
 ! check the values of k and x to make sure that Muskingum routing is stable
 
         IF ( k<1.0 ) THEN
-!          IF ( Parameter_check_flag>OFF ) THEN
+!          IF ( Parameter_check_flag>0 ) THEN
 !            PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', i, ' has K_coef < 1.0,', k, &
 !     &              'this may produce unstable results'
 !              ierr = 1
@@ -621,7 +626,7 @@
 
         d = k - (k * x) + (0.5 * Ts(i))
         IF ( ABS(d)<NEARZERO ) THEN
-          IF ( Parameter_check_flag>OFF ) PRINT *, 'WARNING, segment ', i, ' computed value d <', NEARZERO, ', set to 0.0001'
+          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, segment ', i, ' computed value d <', NEARZERO, ', set to 0.0001'
           d = 0.0001
         ENDIF
         C0(i) = (-(k * x) + (0.5 * Ts(i))) / d
@@ -639,7 +644,7 @@
 !  c2 as is, reduce c1 by c0 and set c0=0
 ! SHORT travel time
         IF ( C2(i)<0.0 ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
             PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
             PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
@@ -650,7 +655,7 @@
 
 ! LONG travel time
         IF ( C0(i)<0.0 ) THEN
-          IF ( Parameter_check_flag>OFF ) THEN
+          IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
             PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
             PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
@@ -670,7 +675,6 @@
 !***********************************************************************
       INTEGER FUNCTION route_run()
       USE PRMS_ROUTING
-      USE PRMS_MODULE, ONLY: Cascade_flag, Glacier_flag
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
@@ -678,7 +682,10 @@
       USE PRMS_WATER_USE, ONLY: Segment_transfer, Segment_gain
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_SRUNOFF, ONLY: Strm_seg_in
-      USE PRMS_GLACR, ONLY: Glacr_flow
+!      USE PRMS_GLACR, ONLY: Glacr_flow
+      IMPLICIT NONE
+! Functions
+      INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: i, j, jj, this_seg
       DOUBLE PRECISION :: tocfs
@@ -712,7 +719,7 @@
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-        IF ( Glacier_flag==ON ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
+!        IF ( Glacier_flag==ON ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
         IF ( Hru_seg_cascades==ON ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
@@ -822,6 +829,7 @@
       SUBROUTINE routing_restart(In_out)
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_ROUTING
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Functions

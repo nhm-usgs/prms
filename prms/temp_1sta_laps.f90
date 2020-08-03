@@ -15,11 +15,17 @@
 !     hru_tlaps
 !***********************************************************************
       MODULE PRMS_TEMP_1STA_LAPS
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, OFF, &
+     &      GLACIER, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
+     &      MINTEMP, MAXTEMP, NEARZERO, temp_1sta_module, temp_laps_module
+        USE PRMS_MODULE, ONLY: Process_flag, Nhru, Ntemp, Model, &
+     &      Print_debug, Init_vars_from_file, Save_vars_to_file, &
+     &      Temp_flag, Inputerror_flag, Start_month, Glacier_flag
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=9), SAVE :: MODNAME
-        character(len=*), parameter :: Version_temp = '2020-07-29'
+        character(len=*), parameter :: Version_temp = '2020-08-03'
         INTEGER, SAVE, ALLOCATABLE :: Tmax_cnt(:), Tmin_cnt(:), Nuse_tsta(:)
         REAL, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
         REAL, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
@@ -32,23 +38,17 @@
 
       INTEGER FUNCTION temp_1sta_laps()
       USE PRMS_TEMP_1STA_LAPS
-      USE PRMS_CONSTANTS, ONLY: Nhru, Ntemp, Model, Process_flag, RUN, DECL, INIT, CLEAN, ON, OFF, &
-     &    GLACIER, Print_debug, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
-     &    MINTEMP, MAXTEMP, Init_vars_from_file, Save_vars_to_file, &
-     &    temp_1sta_module, temp_laps_module
-      USE PRMS_MODULE, ONLY: Temp_flag, Inputerror_flag, Start_month, Glacier_flag
-      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, &
-     &    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
      &    Hru_tsta, Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, &
      &    Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tmax_allrain
       USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
       USE PRMS_OBS, ONLY: Tmax, Tmin
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX, ABS
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
-      EXTERNAL :: compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
       REAL :: tmx, tmn

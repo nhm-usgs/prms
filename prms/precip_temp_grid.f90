@@ -131,8 +131,8 @@
         IF ( decldim('ngrid', 0, MAXDIM, 'Number of grid values')/=0 ) CALL read_error(7, 'ngrid')
 
       ELSEIF ( Process_flag==DECL ) THEN
-        IF ( Temp_flag==temp_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC2, MODNAME, Version_precip_temp_grid)
-        IF ( Precip_flag==precip_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC, MODNAME, Version_precip_temp_grid)
+!        IF ( Temp_flag==temp_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC2, MODNAME, Version_precip_temp_grid)
+!        IF ( Precip_flag==precip_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC, MODNAME, Version_precip_temp_grid)
 
         Ngrid2hru = getdim('ngrid2hru')
         IF ( Ngrid2hru==-1 ) CALL read_error(6, 'ngrid2hru')

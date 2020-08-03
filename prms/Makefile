@@ -36,14 +36,12 @@ OBJS = \
         ide_dist.o \
         xyz_dist.o \
         precip_1sta_laps.o \
-        precip_temp_grid.o \
         precip_dist2.o \
         temp_1sta_laps.o \
         temp_dist2.o \
         transp_frost.o \
         transp_tindex.o \
         frost_date.o \
-        glacr_melt.o \
         intcp.o \
         snowcomp.o \
         srunoff.o \
@@ -74,6 +72,7 @@ $(TARGET): $(OBJS)
 	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(FLIBS)
 
 clean:
+	$(RM) $(TARGET)
 	$(RM) *.o *.mod *~
 
 #
@@ -139,10 +138,6 @@ frost_date.o: frost_date.f90 prms_module.mod prms_basin.mod prms_climatevars.mod
 
 precip_1sta_laps.o: precip_1sta_laps.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod
 	$(FC) -c $(FFLAGS) precip_1sta_laps.f90
-
-
-precip_temp_grid.o: precip_temp_grid.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod
-	$(FC) -c $(FFLAGS) precip_temp_grid.f90
 
 transp_tindex.o: transp_tindex.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) transp_tindex.f90
@@ -240,9 +235,6 @@ water_use_read.o: water_use_read.f90 prms_module.mod prms_basin.mod prms_set_tim
 convert_params.o: convert_params.f90 prms_module.mod
 	$(FC) -c $(FFLAGS) convert_params.f90
 
-glacr_melt.o: glacr_melt.f90 prms_snow.mod prms_intcp.mod prms_soltab.mod
-	$(FC) -c $(FFLAGS) glacr_melt.f90
-
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o
 prms_gwflow.mod: gwflow.o
@@ -260,4 +252,3 @@ prms_snowcomp.mod: snowcomp.o
 prms_routing.mod: routing.o
 prms_water_use.mod: water_use_read.o
 prms_set_time.mod: prms_time.o
-prms_glacr.mod: glacr_melt.o

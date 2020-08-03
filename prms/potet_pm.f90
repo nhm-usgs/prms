@@ -11,7 +11,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pm'
-        character(len=*), parameter :: Version_potet = '2020-07-28'
+        character(len=*), parameter :: Version_potet = '2020-08-03'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
       END MODULE PRMS_POTET_PM
@@ -19,16 +19,17 @@
 !***********************************************************************
       INTEGER FUNCTION potet_pm()
       USE PRMS_POTET_PM
-      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
-      USE PRMS_MODULE, ONLY: Humidity_cbh_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity, Humidity_percent
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru, Windspeed_hru
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
+      IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SQRT, DBLE, LOG, SNGL
+      INTRINSIC :: DBLE, LOG, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: sat_vapor_press
       EXTERNAL :: read_error, print_module
@@ -141,6 +142,7 @@
         Basin_potet = Basin_potet*Basin_area_inv
         Basin_humidity = Basin_humidity*Basin_area_inv
 
+!******Declare parameters
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 

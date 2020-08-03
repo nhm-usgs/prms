@@ -1,35 +1,33 @@
 !***********************************************************************
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
-MODULE PRMS_MODULE
+      MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS, ONLY: Nhru, Nssr, Ngw, Nsegment, Nlake, Ntemp, Nrain, &
-   &    Nsol, Nsnow, Nobs, Nevap, Ncascade, Ncascdgw, Nlake_hrus, Ndepl, Ndeplval, &
-   &    Nsub, Nhrucell, Ngwcell, Nratetbl, Process_flag, Model, DOCUMENTATION, MODFLOW, &
-   &    MAXFILE_LENGTH, MAXCONTROL_LENGTH, MAXDIM, MAX_DAYS_PER_YEAR, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_in, ERROR_param, ERROR_restart, Print_debug, &
-   &    DEBUG_minimum, DEBUG_less, DEBUG_WB, Init_vars_from_file, Save_vars_to_file, &
+    USE PRMS_CONSTANTS, ONLY: MODFLOW, MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
+   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_in, ERROR_param, ERROR_restart, &
    &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
+   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
    &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
    &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
    &    strmflow_noroute_module, strmflow_mizuroute_module, strmflow_muskingum_mann_module, &
    &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
    &    climate_hru_module, precip_grid_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module    
-    IMPLICIT NONE
-      character(LEN=*), parameter :: &
+   &    smidx_module, carea_module
+      IMPLICIT NONE
+      CHARACTER(LEN=68), PARAMETER :: &
      &  EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-07-31'
-    character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 07/31/2020'
-
-    character(LEN=8), save :: Process
-
+    character(len=*), parameter :: PRMS_versn = '2020-08-03'
+    character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
+      CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
-      INTEGER, SAVE :: Nwateruse, Nexternal, Nconsumed, Npoigages
+      INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages
+      INTEGER, SAVE :: Ncascade, Ncascdgw
+      INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
+      INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval
 ! Global
-      INTEGER, SAVE :: Call_cascade
+      INTEGER, SAVE :: Model, Process_flag, Call_cascade
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
       INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
@@ -43,20 +41,20 @@ MODULE PRMS_MODULE
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Prms_warmup
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
       INTEGER, SAVE :: PRMS4_flag, Diversion2soil_flag
-      REAL(REAL32), SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
+      real(REAL32), SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
 !   Declared Variables
       INTEGER, SAVE :: Kkiter
-      REAL(REAL32), SAVE, ALLOCATABLE :: Hru_ag_irr(:)    !Ag irrigation added to HRU
+      real(REAL32), SAVE, ALLOCATABLE :: Hru_ag_irr(:)    !Ag irrigation added to HRU
 !   Declared Parameters
       INTEGER, SAVE :: Mxsziter
       INTEGER, SAVE, ALLOCATABLE :: Gvr_cell_id(:)
-      REAL(REAL32), SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
+      real(REAL32), SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_temp_grid
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=precip_temp_grid
 ! Control parameters
       INTEGER, SAVE :: Starttime(6), Endtime(6)
-      INTEGER, SAVE :: MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
-      INTEGER, SAVE :: Orad_flag, Cascade_flag, Cascadegw_flag
+      INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
+      INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
       INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
       INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, statsON_OFF
@@ -77,6 +75,7 @@ MODULE PRMS_MODULE
 !***********************************************************************
       INTEGER FUNCTION call_modules(Arg)
       USE PRMS_MODULE
+      IMPLICIT NONE
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Arg
 ! Functions
@@ -94,8 +93,8 @@ MODULE PRMS_MODULE
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp, glacr !, mizuroute
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_temp_grid
+      INTEGER, EXTERNAL :: stream_temp
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
 ! Local Variables
@@ -197,6 +196,7 @@ MODULE PRMS_MODULE
 
       ELSE  !IF ( Process(:5)=='clean' ) THEN
         Process_flag = CLEAN
+
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==ON ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
@@ -206,7 +206,7 @@ MODULE PRMS_MODULE
       ENDIF
 
       IF ( Model==DOCUMENTATION ) THEN
-        IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
+        IF ( Process_flag==SETDIMENS .OR. Process_flag<2 ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
           call_modules = 0
@@ -267,7 +267,7 @@ MODULE PRMS_MODULE
         ELSEIF ( Temp_flag==ide_dist_module ) THEN
           call_modules = ide_dist()
         ELSE !IF ( Temp_flag==temp_grid_module ) THEN ! may be a problem, temp needs to be first ??? rsr
-          CALL precip_temp_grid()
+!          CALL precip_temp_grid()
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
@@ -350,7 +350,7 @@ MODULE PRMS_MODULE
       IF ( call_modules/=0 ) CALL module_error('snowcomp', Arg, call_modules)
 
       IF ( Glacier_flag==ON ) THEN
-        call_modules = glacr()
+!        call_modules = glacr()
         IF ( call_modules/=0 ) CALL module_error('glacr', Arg, call_modules)
       ENDIF
 
@@ -472,6 +472,7 @@ MODULE PRMS_MODULE
 !***********************************************************************
       INTEGER FUNCTION setdims()
       USE PRMS_MODULE
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: decldim, declfix, call_modules, control_integer_array, control_file_name
       INTEGER, EXTERNAL :: control_string, control_integer
@@ -588,7 +589,7 @@ MODULE PRMS_MODULE
       Strmflow_module = 'strmflow'
       IF ( control_string(Strmflow_module, 'strmflow_module')/=0 ) CALL read_error(5, 'strmflow_module')
 
-      IF ( Parameter_check_flag>OFF ) CALL check_module_names(Inputerror_flag)
+      IF ( Parameter_check_flag>0 ) CALL check_module_names(Inputerror_flag)
 
       Climate_precip_flag = OFF
       Climate_temp_flag = OFF
@@ -634,7 +635,7 @@ MODULE PRMS_MODULE
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
         Temp_flag = temp_sta_module
       ELSEIF ( Temp_module(:15)=='precip_temp_grid' ) THEN
-        Temp_flag = temp_grid_module
+!        Temp_flag = temp_grid_module
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
@@ -845,7 +846,6 @@ MODULE PRMS_MODULE
       IF ( decldim('nevap', 0, MAXDIM, 'Number of pan-evaporation data sets')/=0 ) CALL read_error(7, 'nevap')
       IF ( decldim('nratetbl', 0, MAXDIM, 'Number of rating-table data sets for lake elevations') &
      &     /=0 ) CALL read_error(7, 'nratetbl')
-      IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
 
 ! depletion curves
       IF ( decldim('ndepl', 1, MAXDIM, 'Number of snow-depletion curves')/=0 ) CALL read_error(7, 'ndelp')
@@ -876,6 +876,7 @@ MODULE PRMS_MODULE
 !***********************************************************************
       INTEGER FUNCTION check_dims()
       USE PRMS_MODULE
+      IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getdim
       EXTERNAL :: check_dimens
@@ -898,9 +899,6 @@ MODULE PRMS_MODULE
 
       Nsol = getdim('nsol')
       IF ( Nsol==-1 ) CALL read_error(6, 'nsol')
-
-      Nsnow = getdim('nsnow')
-      IF ( Nsnow==-1 ) CALL read_error(6, 'nsnow')
 
       Nobs = getdim('nobs')
       IF ( Nobs==-1 ) CALL read_error(6, 'nobs')
@@ -987,7 +985,7 @@ MODULE PRMS_MODULE
 
       Stream_order_flag = 0
       IF ( Nsegment>0 .AND. Strmflow_flag>1 .AND. Model/=0 ) THEN
-        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann, mizuroute
+        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann
       ENDIF
 
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
@@ -1026,6 +1024,7 @@ MODULE PRMS_MODULE
 !***********************************************************************
       SUBROUTINE check_dimens()
       USE PRMS_MODULE
+      IMPLICIT NONE
 !***********************************************************************
       IF ( Nhru==0 .OR. Nssr==0 .OR. Ngw==0 ) THEN
         PRINT *, 'ERROR, nhru, nssr, and ngw must be > 0: nhru=', Nhru, ', nssr=', Nssr, ', ngw=', Ngw
@@ -1098,8 +1097,8 @@ MODULE PRMS_MODULE
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
-      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
-      EXTERNAL :: precip_temp_grid
+      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta !, glacr
+!      EXTERNAL :: precip_temp_grid
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1116,7 +1115,7 @@ MODULE PRMS_MODULE
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
-      CALL precip_temp_grid()
+!      CALL precip_temp_grid()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
@@ -1136,14 +1135,13 @@ MODULE PRMS_MODULE
       test = intcp()
       test = snowcomp()
       test = srunoff()
-      test = glacr()
+!      test = glacr()
       test = soilzone()
       test = gwflow()
       test = routing()
       test = strmflow()
       test = strmflow_in_out()
       test = muskingum()
-!      test = mizuroute()
       test = muskingum_lake()
       test = stream_temp()
       test = basin_sum()
@@ -1275,6 +1273,7 @@ MODULE PRMS_MODULE
 !***********************************************************************
       SUBROUTINE call_modules_restart(In_out)
       USE PRMS_MODULE
+      IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       EXTERNAL check_restart, check_restart_dimen

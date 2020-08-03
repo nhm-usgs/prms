@@ -11,7 +11,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pt'
-        character(len=*), parameter :: Version_potet = '2020-07-28'
+        character(len=*), parameter :: Version_potet = '2020-08-03'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pt_alpha(:, :)
       END MODULE PRMS_POTET_PT
@@ -19,14 +19,15 @@
 !***********************************************************************
       INTEGER FUNCTION potet_pt()
       USE PRMS_POTET_PT
-      USE PRMS_CONSTANTS, ONLY: Nhru, Process_flag, RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
-      USE PRMS_MODULE, ONLY: Humidity_cbh_flag
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_meters
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Basin_humidity, Humidity_percent
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
       USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
+      IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, LOG, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
@@ -34,8 +35,8 @@
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      REAL :: elh, satvapor, prsr, psycnst, ratio, eeq, heat_flux, net_rad
-      REAL :: stab, A1, B1, t1, num, den, sw
+      REAL :: elh, prsr, psycnst, heat_flux, net_rad, satvapor, ratio, eeq
+      REAL :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pt = 0
 
@@ -139,17 +140,17 @@
 !  eeq is in cm
           eeq = ratio*net_rad/elh * 100.0 ! if eeq<0, the Potet will be set to 0.0 below
 !...CONVERT TO INCHES/DAY
-          eeq = eeq/INCH2CM
+          eeq = eeq / INCH2CM
 
           Potet(i) = Pt_alpha(i, Nowmonth)*eeq
           IF ( Potet(i)<0.0 ) Potet(i) = 0.0
           Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
           Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i)*Hru_area(i) )
-!          Tavgc_ante(i) = Tavgc(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
         Basin_humidity = Basin_humidity*Basin_area_inv
 
+!******Declare parameters
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
