@@ -129,7 +129,7 @@
       USE PRMS_MUSKINGUM
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: read_error, print_module
+      EXTERNAL :: print_module
 !***********************************************************************
       muskingum_decl = 0
 
@@ -176,7 +176,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
       USE PRMS_MUSKINGUM
-      USE PRMS_BASIN, ONLY: Basin_area_inv
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
      &    Basin_stflow_out, Basin_cfs, Basin_stflow_in, Basin_sroff_cfs, Seg_inflow, Seg_outflow, &
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out, Basin_sroff
@@ -186,7 +186,7 @@
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
-!      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
+      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
       IMPLICIT NONE
 ! Functions
@@ -356,9 +356,9 @@
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
       IF ( Glacier_flag==ON ) THEN
-!        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
-!        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
-!        Basin_gl_cfs = Basin_gl_top_melt*area_fac
+        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
+        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
+        Basin_gl_cfs = Basin_gl_top_melt*area_fac
       ENDIF
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac

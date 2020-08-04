@@ -5,7 +5,9 @@
 ! in altitude, spatial variation, topography, and measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_PRECIP_TEMP_GRID
-        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, SETDIMENS, OFF, MAXDIM, MAXFILE_LENGTH, &
+     &      MM, MM2INCH, MONTHS_PER_YEAR, DOCUMENTATION, precip_grid_module, temp_grid_module
+        USE PRMS_MODULE, ONLY: Model, Process_flag, Temp_flag, Precip_flag, Start_year, Start_month, Start_day
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
@@ -25,9 +27,6 @@
 
       SUBROUTINE precip_temp_grid()
       USE PRMS_PRECIP_TEMP_GRID
-      USE PRMS_CONSTANTS, ONLY: Model, Process_flag, RUN, DECL, INIT, SETDIMENS, OFF, MAXDIM, &
-     &    MM, MM2INCH, MONTHS_PER_YEAR, DOCUMENTATION, precip_grid_module, temp_grid_module
-      USE PRMS_MODULE, ONLY: Temp_flag, Precip_flag, Start_year, Start_month, Start_day
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, &
@@ -131,8 +130,8 @@
         IF ( decldim('ngrid', 0, MAXDIM, 'Number of grid values')/=0 ) CALL read_error(7, 'ngrid')
 
       ELSEIF ( Process_flag==DECL ) THEN
-!        IF ( Temp_flag==temp_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC2, MODNAME, Version_precip_temp_grid)
-!        IF ( Precip_flag==precip_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC, MODNAME, Version_precip_temp_grid)
+        IF ( Temp_flag==temp_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC2, MODNAME, Version_precip_temp_grid)
+        IF ( Precip_flag==precip_grid_module .OR. Model==DOCUMENTATION ) CALL print_module(MODDESC, MODNAME, Version_precip_temp_grid)
 
         Ngrid2hru = getdim('ngrid2hru')
         IF ( Ngrid2hru==-1 ) CALL read_error(6, 'ngrid2hru')

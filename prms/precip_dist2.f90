@@ -16,7 +16,6 @@
         USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DOCUMENTATION, MONTHS_PER_YEAR, ON, OFF, &
      &      NEARZERO, DNEARZERO, ERROR_dim, ERROR_data, CELSIUS, INCH2MM
         USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Nrain
-
         IMPLICIT NONE
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'

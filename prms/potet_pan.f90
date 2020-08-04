@@ -4,6 +4,8 @@
 !   Declared Parameters: hru_pansta, epan_coef
 !***********************************************************************
       MODULE PRMS_POTET_PAN
+        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, MONTHS_PER_YEAR, DEBUG_less, ERROR_dim
+        USE PRMS_MODULE, ONLY: Process_flag, Nevap, Print_debug, Save_vars_to_file, Init_vars_from_file
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
@@ -14,8 +16,6 @@
 
       INTEGER FUNCTION potet_pan()
       USE PRMS_POTET_PAN
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ON, MONTHS_PER_YEAR, DEBUG_less, ERROR_dim
-      USE PRMS_MODULE, ONLY: Process_flag, Nevap, Print_debug, Save_vars_to_file, Init_vars_from_file
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_SET_TIME, ONLY: Nowmonth

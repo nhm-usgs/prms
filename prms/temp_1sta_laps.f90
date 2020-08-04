@@ -49,6 +49,7 @@
       INTRINSIC :: INDEX, ABS
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
+      EXTERNAL :: compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr
       REAL :: tmx, tmn

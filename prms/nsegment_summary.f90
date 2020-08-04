@@ -112,6 +112,7 @@
       SUBROUTINE nsegment_summaryinit()
       USE PRMS_NSEGMENT_SUMMARY
       IMPLICIT NONE
+! Functions
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
       EXTERNAL :: read_error, PRMS_open_output_file, error_stop
 ! Local Variables

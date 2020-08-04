@@ -22,7 +22,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL read_error, print_module
+      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
 !***********************************************************************
