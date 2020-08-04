@@ -161,9 +161,10 @@
      &    Basin_intcp_stor, Net_rain, Net_snow, Hru_intcpevap, &
      &    Srain_intcp, Wrain_intcp, Snow_intcp, Intcp_stor, Intcp_evap, &
      &    Canopy_covden, Intcp_changeover, Net_ppt, Intcp_stor_ante, Last_intcp_stor, &
-     &    Net_apply, Gain_inches, Use_transfer_intcp, Basin_hru_apply, Basin_net_apply, Basin_changeover
+     &    Net_apply, Gain_inches, Use_transfer_intcp, Basin_hru_apply, Basin_net_apply
       USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snow_evap, Snowcov_area, Basin_pweqv, &
-     &    Basin_snowmelt, Basin_snowevap, Basin_snowcov, Pkwater_ante
+     &    Basin_snowmelt, Basin_snowevap, Basin_snowcov, Pkwater_ante, Glacrb_melt
+      USE PRMS_GLACR, ONLY: Glacr_flow
       USE PRMS_SRUNOFF, ONLY: Basin_infil, Hru_hortn_cascflow, Upslope_hortonian, Hru_impervstor, &
      &    Dprst_stor_hru, Basin_sroffp, Basin_sroffi, Basin_dprst_sroff, Basin_sroff_down, &
      &    Basin_hortonian_lakes, Basin_imperv_evap, Basin_imperv_stor, &
@@ -268,7 +269,7 @@
             !??  IF ( frzen==1 ) robal = robal + Net_rain(i)
           ENDIF
         ENDIF
-        IF ( Cascade_flag>OFF ) robal = robal + SNGL( Upslope_hortonian(i) - Hru_hortn_cascflow(i) )
+        IF ( Cascade_flag>0 ) robal = robal + SNGL( Upslope_hortonian(i) - Hru_hortn_cascflow(i) )
         IF ( Dprst_flag==ON ) robal = robal - Dprst_evap_hru(i) + &
      &                               SNGL( Dprst_stor_ante(i) - Dprst_stor_hru(i) - Dprst_seep_hru(i) ) !- Dprst_in(i) - Dprst_insroff_hru(i)
         gmelt = 0.0
@@ -299,11 +300,12 @@
           ELSE
             WRITE ( BALUNT, '(A,I0,A,1X,I0)' ) 'HRU surface runoff rounding issue, HRU:', i, ' hru_type:', Hru_type(i)
           ENDIF
+          IF ( Glacier_flag==ON ) gmelt = Glacrb_melt(i) + Glacr_flow(i)
           IF ( Cascade_flag>0 ) THEN
-            WRITE ( BALUNT, '(4I4,1X,F0.6,17F0.5)' ) Nowyear, Nowmonth, Nowday, Pptmix_nopack(i), robal, Snowmelt(i), &
+            WRITE ( BALUNT, '(4I4,1X,F0.6,18F0.5)' ) Nowyear, Nowmonth, Nowday, Pptmix_nopack(i), robal, Snowmelt(i), &
      &              Upslope_hortonian(i), Imperv_stor_ante(i), Hru_hortn_cascflow(i), Infil(i), Hortonian_flow(i), &
      &              Hru_impervstor(i), Hru_impervevap(i), Net_ppt(i), &
-     &              Pkwater_equiv(i), Snow_evap(i), Net_snow(i), Net_rain(i), Hru_sroffp(i), Hru_sroffi(i), harea
+     &              Pkwater_equiv(i), Snow_evap(i), Net_snow(i), Net_rain(i), Hru_sroffp(i), Hru_sroffi(i), gmelt, harea
           ELSE
             WRITE ( BALUNT,'(4I4,1X,F0.6,18(1X,F0.5))' ) Nowyear, Nowmonth, Nowday, Pptmix_nopack(i), &
      &              robal, Snowmelt(i), Imperv_stor_ante(i), Infil(i), Hortonian_flow(i), Hru_impervstor(i), &
@@ -383,7 +385,7 @@
         IF ( DABS(wbal)>DTOOSMALL ) THEN
           WRITE ( BALUNT, * ) 'Possible HRU water balance issue:', wbal, '; HRU:', i, ' hru_type:', Hru_type(i), '; area:', harea
           WRITE ( BALUNT, * ) Sroff(i), Gwres_flow(i), Ssres_flow(i), Hru_actet(i), Gwres_sink(i), &
-     &            Hru_storage_ante(i), Hru_storage(i), Hru_type(i),  Pfr_dunnian_flow(i), Intcp_changeover(i)
+     &            Hru_storage_ante(i), Hru_storage(i), Hru_type(i),  Pfr_dunnian_flow(i), Intcp_changeover(i), Snowmelt(i), Hru_ppt(i)
           !WRITE ( BALUNT, * ) Gwstor_minarea_wb(i)
           WRITE ( BALUNT, * ) Soil_moist_tot(i), Hru_intcpstor(i), Gwres_stor(i), Pkwater_equiv(i), Hru_impervstor(i)
           IF ( Cascade_flag>0 ) THEN
@@ -442,7 +444,7 @@
      &                         Basin_snowmelt, Basin_snowevap, Basin_snowcov
 
 ! srunoff
-      brobal = Basin_sroff - Basin_sroffp - Basin_sroffi - Basin_dprst_sroff
+      brobal = Basin_sroff - Basin_sroffp - Basin_sroffi - Basin_dprst_sroff - Basin_cfgi_sroff
       IF ( Cascade_flag>0 ) THEN
         brobal = brobal + Basin_sroff_down
         WRITE ( SROUNIT, 9002 ) Nowyear, Nowmonth, Nowday, basin_robal, &

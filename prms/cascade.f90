@@ -87,14 +87,14 @@
 
       CALL print_module(MODDESC, MODNAME, Version_cascade)
 
-      IF ( Cascade_flag>OFF .OR. Model==DOCUMENTATION ) ALLOCATE ( Ncascade_hru(Nhru) )
+      IF ( Cascade_flag>0 .OR. Model==DOCUMENTATION ) ALLOCATE ( Ncascade_hru(Nhru) )
 
       IF ( Cascadegw_flag>OFF .OR. Model==DOCUMENTATION ) ALLOCATE ( Ncascade_gwr(Ngw) )
 
       IF ( Print_debug==13 ) CALL PRMS_open_module_file(MSGUNT, 'cascade.msgs')
 
 ! declare HRU cascade parameters
-      IF ( Cascade_flag>OFF ) THEN
+      IF ( Cascade_flag>0 ) THEN
         ALLOCATE ( Hru_up_id(Ncascade) )
         ALLOCATE ( Hru_strmseg_down_id(Ncascade) )
         ALLOCATE ( Hru_down_id(Ncascade) )
@@ -252,7 +252,7 @@
       IF ( itest/=0 .OR. iret/=0 ) ERROR STOP ERROR_cascades
 
       IF ( Print_debug==13 ) THEN
-        IF ( Cascade_flag>OFF ) THEN
+        IF ( Cascade_flag>0 ) THEN
           WRITE ( MSGUNT, 9001 )
           k = 0
           DO ii = 1, Active_hrus
@@ -290,7 +290,7 @@
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag
       IMPLICIT NONE
 !***********************************************************************
-      IF ( Cascade_flag>OFF ) THEN
+      IF ( Cascade_flag>0 ) THEN
         DEALLOCATE ( Hru_down, Hru_down_frac, Hru_down_fracwt )
         DEALLOCATE ( Cascade_area)
       ENDIF

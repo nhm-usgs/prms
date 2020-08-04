@@ -14,8 +14,8 @@
    &    climate_hru_module, precip_grid_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
    &    smidx_module, carea_module
       IMPLICIT NONE
-      CHARACTER(LEN=68), PARAMETER :: &
-     &  EQULS = '===================================================================='
+      character(LEN=*), parameter :: &
+     &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
     character(len=*), parameter :: PRMS_versn = '2020-08-03'
@@ -93,8 +93,8 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file
+      INTEGER, EXTERNAL :: stream_temp, glacr !, mizuroute
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_temp_grid
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
 ! Local Variables
@@ -206,7 +206,7 @@
       ENDIF
 
       IF ( Model==DOCUMENTATION ) THEN
-        IF ( Process_flag==SETDIMENS .OR. Process_flag<2 ) THEN
+        IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
           call_modules = 0
@@ -267,7 +267,7 @@
         ELSEIF ( Temp_flag==ide_dist_module ) THEN
           call_modules = ide_dist()
         ELSE !IF ( Temp_flag==temp_grid_module ) THEN ! may be a problem, temp needs to be first ??? rsr
-!          CALL precip_temp_grid()
+          CALL precip_temp_grid()
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
@@ -350,7 +350,7 @@
       IF ( call_modules/=0 ) CALL module_error('snowcomp', Arg, call_modules)
 
       IF ( Glacier_flag==ON ) THEN
-!        call_modules = glacr()
+        call_modules = glacr()
         IF ( call_modules/=0 ) CALL module_error('glacr', Arg, call_modules)
       ENDIF
 
@@ -635,7 +635,7 @@
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
         Temp_flag = temp_sta_module
       ELSEIF ( Temp_module(:15)=='precip_temp_grid' ) THEN
-!        Temp_flag = temp_grid_module
+        Temp_flag = temp_grid_module
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
@@ -985,7 +985,7 @@
 
       Stream_order_flag = 0
       IF ( Nsegment>0 .AND. Strmflow_flag>1 .AND. Model/=0 ) THEN
-        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann
+        Stream_order_flag = 1 ! strmflow_in_out, muskingum, muskingum_lake, muskingum_mann, mizuroute
       ENDIF
 
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
@@ -1097,8 +1097,8 @@
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
-      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta !, glacr
-!      EXTERNAL :: precip_temp_grid
+      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
+      EXTERNAL :: precip_temp_grid
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1115,7 +1115,7 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
-!      CALL precip_temp_grid()
+      CALL precip_temp_grid()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
@@ -1135,7 +1135,7 @@
       test = intcp()
       test = snowcomp()
       test = srunoff()
-!      test = glacr()
+      test = glacr()
       test = soilzone()
       test = gwflow()
       test = routing()

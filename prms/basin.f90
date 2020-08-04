@@ -4,7 +4,7 @@
       MODULE PRMS_BASIN
       USE PRMS_CONSTANTS, ONLY: DEBUG_less, ON, OFF, DECL, INIT, &
      &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
-     &    NORTHERN, SOUTHERN, DOCUMENTATION, &
+     &    NORTHERN, SOUTHERN, DOCUMENTATION, FEET2METERS, METERS2FEET, DNEARZERO, &
      &    ide_dist_module, potet_pt_module, potet_pm_module, potet_pm_sta_module
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nlake, Print_debug, Model, &
      &    Dprst_flag, Lake_route_flag, Et_flag, Precip_flag, Cascadegw_flag, &

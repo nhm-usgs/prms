@@ -381,7 +381,7 @@
               landstor = Lake_vol(Lake_hru_id(j))*12.0D0
               srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
               ssq = 0.0D0
-            ELSEIF ( Cascade_flag>OFF ) THEN
+            ELSEIF ( Cascade_flag>0 ) THEN
               srq = Hortonian_lakes(j)*harea
               ssq = Lakein_sz(j)*harea
             ELSE

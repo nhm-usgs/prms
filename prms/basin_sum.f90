@@ -486,7 +486,7 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Basin_gwstor, Basin_gwsink, Basin_gwstor_minarea_wb
       USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor, Basin_net_ppt
       USE PRMS_SNOW, ONLY: Basin_snowmelt, Basin_pweqv, Basin_snowevap
-!      USE PRMS_GLACR, ONLY: Basin_gl_storage
+      USE PRMS_GLACR, ONLY: Basin_gl_storage
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_imperv_evap, &
      &    Basin_dprst_evap, Basin_dprst_volcl, Basin_dprst_volop
       USE PRMS_ROUTING, ONLY: Basin_segment_storage
@@ -517,7 +517,7 @@
 ! Basin_storage doesn't include any processes on glacier
 ! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
 !   includes glaciers that have depth estimates and these are known to be iffy
-!      IF ( Glacier_flag==ON ) Basin_storage = Basin_storage + Basin_gl_storage
+      IF ( Glacier_flag==ON ) Basin_storage = Basin_storage + Basin_gl_storage
       IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module ) &
      &     Basin_storage = Basin_storage + Basin_segment_storage
 

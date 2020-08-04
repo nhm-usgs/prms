@@ -296,7 +296,7 @@
 !     &     'Maximum interflow for each HRU', &
 !     &     'inches', Interflow_max)/=0 ) CALL read_error(3, 'interflow_max')
 
-      IF ( Cascade_flag>OFF .OR. Model==DOCUMENTATION ) THEN
+      IF ( Cascade_flag>0 .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'basin_dndunnianflow', 'one', 1, 'double', &
      &       'Basin area-weighted average cascading Dunnian flow', &
      &       'inches', Basin_dndunnianflow)/=0 ) CALL read_error(3, 'basin_dndunnianflow')
@@ -755,7 +755,7 @@
 
 ! initialize arrays (dimensioned Nhru)
       Dunnian_flow = 0.0
-      IF ( Cascade_flag>OFF ) THEN
+      IF ( Cascade_flag>0 ) THEN
         Upslope_interflow = 0.0D0
         Upslope_dunnianflow = 0.0D0
         Hru_sz_cascadeflow = 0.0
@@ -912,7 +912,7 @@
         Sm2gw_grav = 0.0
       ENDIF
 
-      IF ( Cascade_flag>OFF ) THEN
+      IF ( Cascade_flag>0 ) THEN
         DO k = 1, Active_hrus
           i = Hru_route_order(k)
           Upslope_interflow(i) = 0.0D0
@@ -962,7 +962,7 @@
           Basin_actet = Basin_actet + DBLE( Hru_actet(i)*harea )
           Basin_lakeevap = Basin_lakeevap + DBLE( Hru_actet(i)*harea )
           Basin_lakeprecip = Basin_lakeprecip + DBLE( Hru_ppt(i)*harea )
-          IF ( Cascade_flag>OFF ) THEN
+          IF ( Cascade_flag>0 ) THEN
             ! if lake HRU doesn't cascade, should we limit ET to
             !  water entering the HRU to this point (no gwflow yet)
             Lakein_sz(i) = Upslope_interflow(i) + Upslope_dunnianflow(i)
@@ -1049,7 +1049,7 @@
           Pfr_dunnian_flow(i) = dunnianflw_pfr
         ENDIF
 
-        IF ( Cascade_flag>OFF ) THEN
+        IF ( Cascade_flag>0 ) THEN
 !          Cap_upflow_max(i) = SNGL(Upslope_dunnianflow(i)+Upslope_interflow(i))/perv_frac
 !          capwater_maxin = capwater_maxin + Cap_upflow_max(i)
 !          Basin_cap_up_max = Basin_cap_up_max + Cap_upflow_max(i)*perv_area
@@ -1214,13 +1214,13 @@
 
 ! if HRU cascades,
 ! compute interflow and excess flow to each HRU or stream
-        IF ( Hru_type(i)==LAND ) THEN
+        IF ( Is_land==1 ) THEN
           interflow = Slow_flow(i) + prefflow
 !          Interflow_max(i) = interflow
           Basin_interflow_max = Basin_interflow_max + interflow*harea
           dunnianflw = dunnianflw_gvr + dunnianflw_pfr
           Dunnian_flow(i) = dunnianflw
-          IF ( Cascade_flag>OFF ) THEN
+          IF ( Cascade_flag>0 ) THEN
             IF ( Ncascade_hru(i)>0 ) THEN
               dnslowflow = 0.0
               dnpreflow = 0.0

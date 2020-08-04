@@ -686,14 +686,14 @@
       Basin_2ndstflow = 0.0D0
       Lake_stream_in = 0.0D0
       Basin_lake_stor = 0.0D0
-      IF ( Cascade_flag>OFF ) THEN
+      IF ( Cascade_flag>0 ) THEN
         Lake_lateral_inflow = 0.0D0
         Lake_sroff = 0.0D0
         Lake_interflow = 0.0D0
         Lake_gwflow = 0.0D0
       ENDIF
 
-      IF ( Cascade_flag==OFF .OR. Cascade_flag==2 ) THEN ! when cascades are active, hru_segment is not used
+      IF ( Cascade_flag==0 .OR. Cascade_flag==2 ) THEN ! when cascades are active, hru_segment is not used
         Lake_segment_id = 0
         DO jjj = 1, Active_hrus
           j = Hru_route_order(jjj)
@@ -892,7 +892,7 @@
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
-!      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
+      USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Lake_seepage, Gw_seep_lakein, Gw_upslope
       IMPLICIT NONE
@@ -1131,9 +1131,9 @@
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
       IF ( Glacier_flag==ON ) THEN
-!        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
-!        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
-!        Basin_gl_cfs = Basin_gl_top_melt*area_fac
+        Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
+        Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
+        Basin_gl_cfs = Basin_gl_top_melt*area_fac
       ENDIF
       Basin_sroff_cfs = Basin_sroff*area_fac
       Basin_ssflow_cfs = Basin_ssflow*area_fac

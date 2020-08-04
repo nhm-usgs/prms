@@ -198,7 +198,7 @@
      &     ' streamflow flows, for segments that do not flow to another segment enter 0', &
      &     'none')/=0 ) CALL read_error(1, 'tosegment')
 
-      IF ( Cascade_flag==OFF .OR. Cascade_flag==2 .OR. Model==DOCUMENTATION ) THEN
+      IF ( Cascade_flag==0 .OR. Cascade_flag==2 .OR. Model==DOCUMENTATION ) THEN
         Hru_seg_cascades = ON
         ALLOCATE ( Hru_segment(Nhru) )
         IF ( declparam(MODNAME, 'hru_segment', 'nhru', 'integer', &
@@ -419,7 +419,6 @@
         IF ( getparam(MODNAME, 'x_coef', Nsegment, 'real', X_coef)/=0 ) CALL read_error(2, 'x_coef')
         ALLOCATE ( C1(Nsegment), C2(Nsegment), C0(Nsegment), Ts(Nsegment), Ts_i(Nsegment) )
         IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module ) THEN
-
           IF ( getparam(MODNAME, 'K_coef', Nsegment, 'real', K_coef)/=0 ) CALL read_error(2, 'K_coef')
         ENDIF
       ENDIF
@@ -682,7 +681,7 @@
       USE PRMS_WATER_USE, ONLY: Segment_transfer, Segment_gain
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_SRUNOFF, ONLY: Strm_seg_in
-!      USE PRMS_GLACR, ONLY: Glacr_flow
+      USE PRMS_GLACR, ONLY: Glacr_flow
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
@@ -707,7 +706,7 @@
         Seg_sroff = 0.0D0
         Seg_ssflow = 0.0D0
       ENDIF
-      IF ( Cascade_flag==OFF ) THEN
+      IF ( Cascade_flag==0 ) THEN
         Seg_lateral_inflow = 0.0D0
       ELSE ! use strm_seg_in for cascade_flag = 1 or 2
         Seg_lateral_inflow = Strm_seg_in
@@ -719,7 +718,7 @@
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-!        IF ( Glacier_flag==ON ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
+        IF ( Glacier_flag==ON ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
         IF ( Hru_seg_cascades==ON ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
@@ -743,7 +742,7 @@
         ENDDO
       ENDIF
 
-      IF ( Cascade_flag==ON ) RETURN
+      IF ( Cascade_flag>0 ) RETURN
 
 ! Divide solar radiation and PET by sum of HRU area to get avarage
       IF ( Noarea_flag==OFF ) THEN
