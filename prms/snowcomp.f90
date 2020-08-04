@@ -1375,7 +1375,7 @@
       DOUBLE PRECISION, INTENT(INOUT) :: Pss, Pst, Pk_depth
 ! Functions
       INTRINSIC :: SNGL, DBLE
-      EXTERNAL :: print_date
+      EXTERNAL :: print_date, glacr_states_to_zero
 ! Local Variables
       REAL :: dif, pmlt, apmlt, apk_ice, pwcap
       DOUBLE PRECISION :: dif_dble

@@ -45,9 +45,10 @@
 !***********************************************************************
 
       MODULE PRMS_GLACR
-      USE PRMS_CONSTANTS, ONLY: Nhru, Model, ON, OFF, Init_vars_from_file, &
-     &    DOCUMENTATION, MONTHS_PER_YEAR, GLACIER, LAND, FEET2METERS, METERS2FEET, &
-     &    DNEARZERO, NEARZERO, FEET, METERS, MAX_DAYS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: ON, OFF, DOCUMENTATION, MONTHS_PER_YEAR, GLACIER, LAND, &
+     &    FEET2METERS, METERS2FEET, DNEARZERO, NEARZERO, FEET, METERS, MAX_DAYS_PER_YEAR, &
+     &    RUN, SETDIMENS, DECL, INIT, CLEAN, ON
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Model, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
       !****************************************************************
       !   Local Variables
@@ -96,7 +97,7 @@
 !     Main glacr routine
 !***********************************************************************
       INTEGER FUNCTION glacr()
-      USE PRMS_CONSTANTS, ONLY: Process_flag, RUN, SETDIMENS, DECL, INIT, CLEAN, ON, Save_vars_to_file
+      USE PRMS_GLACR
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: glacrdecl, glacrinit, glacrrun, glacrsetdims
