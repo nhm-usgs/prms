@@ -13,15 +13,14 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ON, OFF, RUN, DECL, INIT, CLEAN, ON, &
-     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Ntemp, Init_vars_from_file, Save_vars_to_file, &
-     &    Glacier_flag
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ON, RUN, DECL, INIT, CLEAN, DOCUMENTATION, &
+     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
+      USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Ntemp, Init_vars_from_file, Save_vars_to_file, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
       character(len=10), parameter :: MODNAME = 'temp_dist2'
-      character(len=*), parameter :: Version_temp = '2020-07-28'
+      character(len=*), parameter :: Version_temp = '2020-08-04'
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
       REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
@@ -355,7 +354,7 @@
       sumtn = 0.0D0
       ntotx = 0
       ntotn = 0
-      allmissing = ON
+      allmissing = 0
       DO j = 1, Ntemp - 1
 
 ! check for missing or bad temps based on min and max daily values
@@ -374,7 +373,7 @@
           IF ( Tmin(k)<mn ) CYCLE
           IF ( Tmax(k)>mx ) CYCLE
           IF ( Tmin(k)>mx ) CYCLE
-          allmissing = OFF
+          allmissing = 1
 
           diffx = (Tmax(j)-Tmax(k))/Delv(j, k)
           diffn = (Tmin(j)-Tmin(k))/Delv(j, k)
@@ -388,7 +387,7 @@
           ntotn = ntotn + 1
         ENDDO
       ENDDO
-      IF ( allmissing==ON ) THEN
+      IF ( allmissing==0 ) THEN
         CALL print_date(1)
         CALL error_stop('all temperature stations have missing data', ERROR_data)
       ENDIF

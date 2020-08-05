@@ -12,7 +12,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'map_results'
-      character(len=*), parameter :: Version_map_results = '2020-08-03'
+      character(len=*), parameter :: Version_map_results = '2020-08-04'
       INTEGER, SAVE :: Mapflg, Numvalues, Lastyear, Totdays
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
       INTEGER, SAVE :: Begin_results, Begyr, Dailyresults
@@ -302,7 +302,7 @@
         IF ( getparam(MODNAME, 'gvr_cell_id', Nhrucell, 'integer', Gvr_map_id)/=0 ) CALL read_error(2, 'gvr_cell_id')
         IF ( Nhru/=Nhrucell ) THEN
           IF ( getparam(MODNAME, 'gvr_hru_id', Nhrucell, 'integer', Gvr_hru_id)/=0 ) CALL read_error(2, 'gvr_hru_id')
-          IF ( Parameter_check_flag>OFF ) &
+          IF ( Parameter_check_flag>0 ) &
      &         CALL checkdim_bounded_limits('gvr_hru_id', 'nhru', Gvr_hru_id, Nhrucell, 1, Nhru, Inputerror_flag)
         ELSE
           DO i = 1, Nhrucell
@@ -315,7 +315,7 @@
           Gvr_map_frac = 1.0
         ENDIF
 
-        IF ( Parameter_check_flag>OFF ) THEN
+        IF ( Parameter_check_flag>0 ) THEN
           ALLOCATE ( map_frac(Ngwcell) )
           map_frac = 0.0
           DO i = 1, Nhrucell

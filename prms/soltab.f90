@@ -12,13 +12,13 @@
 !***********************************************************************
       MODULE PRMS_SOLTAB
       USE PRMS_CONSTANTS, ONLY: DAYS_IN_YEAR, MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, DNEARZERO, &
-     &    DECL, INIT, DAYS_IN_YEAR
+     &    DECL, INIT, DAYS_IN_YEAR, OFF
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Print_debug, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
       character(len=*), parameter :: MODNAME = 'soltab'
-      character(len=*), parameter :: Version_soltab = '2020-08-03'
+      character(len=*), parameter :: Version_soltab = '2020-08-04'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -219,7 +219,7 @@
       ENDIF
 
       DEALLOCATE ( Hru_slope )
-      IF ( Glacier_flag==0 ) DEALLOCATE ( Hru_aspect )
+      IF ( Glacier_flag==OFF ) DEALLOCATE ( Hru_aspect )
 
       END FUNCTION sthinit
 

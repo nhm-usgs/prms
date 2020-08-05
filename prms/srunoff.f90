@@ -13,7 +13,7 @@
 !         the index is defined by cfgi_decay parameter.
 !     version: 2.2 added cascading flow for infiltration and runoff
 !
-! includes glacrb_melt for HRUs with glaciers and frozen ground under glaciers 12/2014
+! includes glacrb_melt for HRUs with glaciers and frozen ground under glaciers 08/2020
 ! rsr, 10/1/2008 added Vaccaro code
 ! rsr, 10/21/2008 added frozen ground code
 ! rsr, 10/30/2008 added depression storage code
@@ -30,7 +30,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Surface Runoff'
       character(LEN=13), save :: MODNAME
-      character(len=*), parameter :: Version_srunoff = '2020-08-03'
+      character(len=*), parameter :: Version_srunoff = '2020-08-04'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -65,7 +65,6 @@
       DOUBLE PRECISION, SAVE :: Basin_dprst_sroff, Basin_dprst_evap, Basin_dprst_seep
       DOUBLE PRECISION, SAVE :: Basin_dprst_volop, Basin_dprst_volcl
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_stor_hru(:), Dprst_sroff_hru(:), Dprst_seep_hru(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Upslope_dprst_hortonian(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_open(:), Dprst_area_clos(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_insroff_hru(:), Dprst_evap_hru(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_vol_frac(:), Dprst_vol_open_frac(:), Dprst_vol_clos_frac(:)
@@ -223,11 +222,6 @@
         IF ( declvar(MODNAME, 'dprst_area_clos', 'nhru', Nhru, 'real', &
      &       'Surface area of closed surface depressions based on storage volume for each HRU', &
      &       'acres', Dprst_area_clos)/=0 ) CALL read_error(3, 'dprst_area_clos')
-
-        ALLOCATE ( Upslope_dprst_hortonian(Nhru) )
-        IF ( declvar(MODNAME, 'upslope_dprst_hortonian', 'nhru', Nhru, 'double', &
-     &       'Upslope surface-depression spillage and interflow for each HRU',   &
-     &       'inches', Upslope_dprst_hortonian)/=0 ) CALL read_error(3,'upslope_dprst_hortonian')
 
         ALLOCATE ( Dprst_stor_hru(Nhru) )
         IF ( declvar(MODNAME, 'dprst_stor_hru', 'nhru', Nhru, 'double', &
@@ -498,7 +492,6 @@
       EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: i, j !, k, num_hrus
-!      REAL :: frac
 !***********************************************************************
       srunoffinit = 0
 
@@ -562,42 +555,8 @@
         ENDDO
       ENDIF
 
-!      num_hrus = 0
-!      DO j = 1, Active_hrus
-!        i = Hru_route_order(j)
-!        IF ( Sroff_flag==carea_module ) THEN
-!          Carea_dif(i) = Carea_max(i) - Carea_min(i)
-!        ELSEIF ( Parameter_check_flag>0 ) THEN
-!          frac = Smidx_coef(i)*10**(Soil_moist_max(i)*Smidx_exp(i))
-!          k = 0
-!          IF ( frac>2.0 ) k = 1
-!          IF ( frac>Carea_max(i)*2.0 ) k = k + 2
-!          IF ( k>0 ) THEN
-!            num_hrus = num_hrus + 1
-            !IF ( Print_debug>DEBUG_less ) THEN
-            !  PRINT *, ' '
-            !  PRINT *, 'WARNING'
-            !  PRINT *, 'Contributing area based on smidx parameters and soil_moist_max:', frac
-            !  IF ( k==1 .OR. k==3 ) PRINT *, 'Maximum contributing area > 200%'
-            !  IF ( k>1 ) PRINT *, 'Maximum contributing area > carea_max:', Carea_max(i)
-            !  PRINT *, 'HRU:', i, '; soil_moist_max:', Soil_moist_max(i)
-            !  PRINT *, 'smidx_coef:', Smidx_coef(i), '; smidx_exp:', Smidx_exp(i)
-            !  PRINT *, 'This can make smidx parameters insensitive and carea_max very sensitive'
-            !ENDIF
-!          ENDIF
-!        ENDIF
-!      ENDDO
-!      IF ( num_hrus>0 .AND. Print_debug>DEBUG_less ) THEN
-!        WRITE (*, '(/,A,/,9X,A,/,9X,A,I7,/,9X,A,/,9X,A,/)') &
-!     &         'WARNING, maximum contributing area based on smidx coefficents and', &
-!     &         'soil_moist_max are > 200% of the HRU area and/or > 2*carea_max', &
-!     &         'number of HRUs for which this condition exists:', num_hrus, &
-!     &         'This means the smidx parameters are insensitive and', &
-!     &         'carea_max very sensitive for those HRUs'
-!      ENDIF
-
 ! Depression Storage parameters and variables:
-      IF ( Dprst_flag==1 ) CALL dprst_init()
+      IF ( Dprst_flag==ON ) CALL dprst_init()
 
 ! Frozen soil parameters
       IF ( Frozen_flag==ON ) THEN
@@ -621,7 +580,7 @@
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
       USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
-     &    Imperv_stor_max, Snowinfil_max, Soil_moist, Soil_rechr, Basin_sroff, Glacier_frac
+     &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover
       USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt
@@ -926,7 +885,7 @@
 !***********************************************************************
       SUBROUTINE compute_infil(Net_rain, Net_ppt, Imperv_stor, Imperv_stor_max, Snowmelt, &
      &                         Snowinfil_max, Net_snow, Pkwater_equiv, Infil, Hru_type, Intcp_changeover)
-      USE PRMS_SRUNOFF, ONLY: Sri, Hruarea_imperv, Upslope_hortonian, Ihru, Srp, Perv_frac, Isglacier, &
+      USE PRMS_SRUNOFF, ONLY: Sri, Hruarea_imperv, Upslope_hortonian, Ihru, Srp, Isglacier, &
      &    LAND, ON, OFF, NEARZERO, DNEARZERO
       USE PRMS_SNOW, ONLY: Pptmix_nopack
       USE PRMS_MODULE, ONLY: Cascade_flag
@@ -1069,7 +1028,6 @@
 !     Compute cascading runoff (runoff in inche*acre/dt)
 !***********************************************************************
       SUBROUTINE run_cascade_sroff(Ncascade_hru, Runoff, Hru_sroff_down)
-!      USE PRMS_SRUNOFF ONLY: NEARZERO, DEBUG_less, Print_debug
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_SRUNOFF, ONLY: Ihru, Upslope_hortonian, Strm_seg_in
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
@@ -1099,23 +1057,6 @@
 
 ! reset Sroff as it accumulates flow to streams
       Runoff = Runoff - SNGL( Hru_sroff_down )
-!      IF ( Runoff<0.0 ) THEN
-!        IF ( Runoff<-NEARZERO ) THEN
-!          IF ( Print_debug>DEBUG_less ) PRINT *, 'runoff < NEARZERO', Runoff
-!          IF ( Hru_sroff_down>ABS(Runoff) ) THEN
-!            Hru_sroff_down = Hru_sroff_down - Runoff
-!          ELSE
-!            DO k = 1, Ncascade_hru
-!              j = Hru_down(k, Ihru)
-!              IF ( Strm_seg_in(j)>ABS(Runoff) ) THEN
-!                Strm_seg_in(j) = Strm_seg_in(j) - Runoff
-!                EXIT
-!              ENDIF
-!            ENDDO
-!          ENDIF
-!        ENDIF
-!        Runoff = 0.0
-!      ENDIF
 
       END SUBROUTINE run_cascade_sroff
 
@@ -1198,7 +1139,6 @@
       Dprst_area_open = 0.0
       Dprst_area_clos = 0.0
       Dprst_stor_hru = 0.0D0
-      Upslope_dprst_hortonian = 0.0D0
       Dprst_vol_thres_open = 0.0D0
       Dprst_vol_open_max = 0.0D0
       Dprst_vol_clos_max = 0.0D0

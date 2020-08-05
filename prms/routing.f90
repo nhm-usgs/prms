@@ -5,7 +5,7 @@
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ON, OFF, FT2_PER_ACRE, &
      &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, RUN, DECL, INIT, CLEAN, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_in_out_module, strmflow_mizuroute_module
+     &    strmflow_muskingum_module, strmflow_in_out_module
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsegment, Model, Init_vars_from_file, &
      &    Save_vars_to_file, Strmflow_flag, Cascade_flag, Stream_temp_flag, &
      &    Water_use_flag, Segment_transferON_OFF, Inputerror_flag, Parameter_check_flag, &
@@ -14,7 +14,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2020-08-03'
+      character(len=*), parameter :: Version_routing = '2020-08-04'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades
@@ -34,7 +34,7 @@
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_depth(:), Mann_n(:), Segment_flow_init(:), Seg_width(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_depth(:), Mann_n(:), Segment_flow_init(:)
       REAL, SAVE, ALLOCATABLE :: Seg_length(:), Seg_slope(:)
       END MODULE PRMS_ROUTING
 
@@ -133,8 +133,7 @@
       ! 11 = outbound to Great Lakes; 12 = ephemeral; + 100 user updated; 1000 user virtual segment
       ! 100 = user normal; 101 - 108 = not used; 109 sink (tosegment used by Lumen)
 
-      IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Strmflow_flag==strmflow_muskingum_mann_module &
-     &     .OR. Model==DOCUMENTATION ) THEN
+      IF ( Strmflow_flag==strmflow_muskingum_mann_module .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Mann_n(Nsegment) )
         IF ( declparam( MODNAME, 'mann_n', 'nsegment', 'real', &
      &     '0.04', '0.001', '0.15', &
@@ -149,27 +148,17 @@
      &     'Length of each segment including vertical drop, bounds based on CONUS', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
 
-        IF ( Strmflow_flag==strmflow_muskingum_mann_module .OR. Model==DOCUMENTATION ) THEN
-          ALLOCATE ( Seg_depth(Nsegment) )
-          IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
-     &         '1.0', '0.03', '250.0', &
-     &         'Segment river depth', &
-     &         'Segment river depth at bankfull, shallowest from Blackburn-Lynch 2017,'//&
-     &         'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
-     &         'meters')/=0 ) CALL read_error(1, 'seg_depth')
-        ENDIF
-        IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Model==DOCUMENTATION ) THEN
-          ALLOCATE ( Seg_width(Nsegment) )
-          IF ( declparam(MODNAME, 'seg_width', 'nsegment', 'real', &
-     &         '15.0', '0.18', '40000.0', &
-     &         'Segment river width', &
-     &         'Segment river width, narrowest observed from Zimmerman 1967, Amazon biggest', &
-     &         'meters')/=0 ) CALL read_error(1, 'seg_width')
-        ENDIF
+        ALLOCATE ( Seg_depth(Nsegment) )
+        IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
+     &       '1.0', '0.03', '250.0', &
+     &       'Segment river depth', &
+     &       'Segment river depth at bankfull, shallowest from Blackburn-Lynch 2017,'//&
+     &       'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
+     &       'meters')/=0 ) CALL read_error(1, 'seg_depth')
       ENDIF
 
-      IF ( Stream_temp_flag==ON .OR. Strmflow_flag==strmflow_mizuroute_module .OR. &
-     &     Strmflow_flag==strmflow_muskingum_mann_module .OR. Model==DOCUMENTATION ) THEN
+      IF ( Stream_temp_flag==ON .OR. Strmflow_flag==strmflow_muskingum_mann_module &
+     &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Seg_slope(Nsegment) )
         IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
      &     '0.0001', '0.0000001', '2.0', &
@@ -382,11 +371,10 @@
         Segment_type(i) = MOD( Segment_type(i), 100 )
       ENDDO
 
-      IF ( Stream_temp_flag==ON .OR. Strmflow_flag==strmflow_mizuroute_module .OR. &
-     &     Strmflow_flag==strmflow_muskingum_mann_module ) THEN
+      IF ( Stream_temp_flag==ON .OR. Strmflow_flag==strmflow_muskingum_mann_module ) THEN
         IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
       ENDIF
-      IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Strmflow_flag==strmflow_muskingum_mann_module ) THEN
+      IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
         IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
 ! find segments that are too short and print them out as they are found
@@ -402,12 +390,7 @@
           Inputerror_flag = ierr
           RETURN
         ENDIF
-        IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
-          IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
-        ENDIF
-        IF ( Strmflow_flag==strmflow_mizuroute_module ) THEN
-          IF ( getparam(MODNAME, 'seg_width', Nsegment, 'real', Seg_width)/=0 ) CALL read_error(2, 'seg_width')
-        ENDIF
+        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
       ENDIF
 
       IF ( getparam(MODNAME, 'tosegment', Nsegment, 'integer', Tosegment)/=0 ) CALL read_error(2, 'tosegment')
@@ -448,7 +431,7 @@
           Segment_area = Segment_area + Segment_hruarea(j)
           IF ( Segment_hruarea(j)<DNEARZERO ) THEN
             Noarea_flag = ON
-            IF ( Parameter_check_flag>OFF ) THEN
+            IF ( Parameter_check_flag>0 ) THEN
               WRITE ( buffer, '(I10)' ) j
               CALL write_outfile('WARNING, No HRUs are associated with segment:'//buffer)
               IF ( Tosegment(j)==0 ) PRINT *, 'WARNING, No HRUs and tosegment=0 for segment:', j
@@ -538,7 +521,7 @@
 !      ENDIF
       DEALLOCATE ( x_off )
 
-      IF ( Strmflow_flag==strmflow_mizuroute_module .OR. Strmflow_flag==strmflow_in_out_module ) RETURN
+      IF ( Strmflow_flag==strmflow_in_out_module ) RETURN
 !
 !      Compute the three constants in the Muskingum routing equation based
 !      on the values of K_coef and a routing period of 1 hour. See the notes

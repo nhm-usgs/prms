@@ -15,10 +15,10 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
     integer, parameter :: MONTHS_PER_YEAR = 12
-	integer, parameter :: MAX_DAYS_PER_YEAR = 366
-	integer, parameter :: DAYS_PER_YEAR = 365
+    integer, parameter :: MAX_DAYS_PER_YEAR = 366
+    integer, parameter :: DAYS_PER_YEAR = 365
     real(REAL32), parameter :: DAYS_YR = 365.242
-	real(REAL64), parameter :: DAYS_IN_YEAR = 365.242D0
+    real(REAL64), parameter :: DAYS_IN_YEAR = 365.242D0
     real(REAL64), parameter :: SECS_PER_DAY = 86400.0D0
     real(REAL64), parameter :: SECS_PER_HOUR = 3600.0D0
     real(REAL64), parameter :: FT2_PER_ACRE = 43560.0D0
@@ -54,7 +54,7 @@ MODULE PRMS_CONSTANTS
     ! precip_units
     integer, parameter :: INCHES = 0
     integer, parameter :: MM = 1
-    
+
     ! temp_units
     integer, parameter :: FAHRENHEIT = 0
     integer, parameter :: CELSIUS = 1
@@ -91,7 +91,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: GLACIER = 4
 
     ! seg_type
-	integer, parameter :: OUTFLOW_SEGMENT = 0
+    integer, parameter :: OUTFLOW_SEGMENT = 0
 
     ! model_mode
     integer, parameter :: GSFLOW = 0
@@ -131,7 +131,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: DEBUG_less = -1
     integer, parameter :: DEBUG_normal = 0
     integer, parameter :: DEBUG_WB = 1
-	integer, parameter :: DEBUG_SOLTAB = 5
+    integer, parameter :: DEBUG_SOLTAB = 5
 
 ! module flags
     integer, parameter :: precip_1sta_module = 1, precip_laps_module = 2, precip_dist2_module = 3
@@ -141,8 +141,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
     integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
-    integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5
-    integer, parameter :: strmflow_mizuroute_module = 6, strmflow_noroute_module = 1
+    integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5, strmflow_noroute_module = 1
     integer, parameter :: smidx_module = 1, carea_module = 2
 
     integer, parameter :: OFF = 0

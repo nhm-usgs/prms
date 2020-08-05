@@ -19,7 +19,7 @@
         INTEGER, SAVE, ALLOCATABLE :: Hru2grid_id(:), Grid2hru_id(:)
         REAL, SAVE, ALLOCATABLE :: Hru2grid_pct(:), Tmax_grid_values(:), Tmin_grid_values(:), Precip_grid_values(:)
         REAL, SAVE, ALLOCATABLE :: Tmax_grid_adj(:, :), Tmin_grid_adj(:, :), Precip_grid_adj(:, :)
-        ! parameters in climateflow or basin:
+        ! parameters in basin:
         !    hru_area
         ! Control Parameters
         CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Tmin_grid, Tmax_grid, Precip_grid

@@ -12,7 +12,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2020-08-03'
+      character(len=*), parameter :: Version_intcp = '2020-08-04'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
@@ -438,7 +438,6 @@
                 stor = Snow_intcp(i)
                 CALL intercept(Hru_snow(i), stor, cov, intcpstor, netsnow)
                 IF ( netsnow<NEARZERO ) THEN   !rsr, added 3/9/2006
- print *, netsnow, netrain, newsnow(i), pptmix(i)
                   netrain = netrain + netsnow
                   netsnow = 0.0
                   Newsnow(i) = 0
