@@ -20,17 +20,17 @@ module PRMS_OBS
     ! Declared Variables
     real(r32), allocatable :: gate_ht(:)
       !! Lake module gate height
-    real(r32), allocatable :: humidity(:)
+    ! real(r32), allocatable :: humidity(:)
     real(r32), allocatable :: lake_elev(:)
       !! Lake module lake elevation
     real(r32), allocatable :: pan_evap(:)
-    real(r32), allocatable :: precip(:)
+    ! real(r32), allocatable :: precip(:)
     real(r32), allocatable :: runoff(:)
     real(r32), allocatable :: snowdepth(:)
-    real(r32), allocatable :: solrad(:)
-    real(r32), allocatable :: tmax(:)
-    real(r32), allocatable :: tmin(:)
-    real(r32), allocatable :: wind_speed(:)
+    ! real(r32), allocatable :: solrad(:)
+    ! real(r32), allocatable :: tmax(:)
+    ! real(r32), allocatable :: tmin(:)
+    ! real(r32), allocatable :: wind_speed(:)
 
     real(r64), allocatable :: streamflow_cfs(:)
     real(r64), allocatable :: streamflow_cms(:)
