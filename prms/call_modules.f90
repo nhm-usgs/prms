@@ -4,7 +4,7 @@
       MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
     USE PRMS_CONSTANTS, ONLY: MODFLOW, MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_in, ERROR_param, ERROR_restart, &
+   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
    &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
    &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
    &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
@@ -18,7 +18,7 @@
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-08-04'
+    character(len=*), parameter :: PRMS_versn = '2020-08-11'
     character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -35,19 +35,21 @@
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
-      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag
+      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag, PRMS4_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Prms_warmup
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      INTEGER, SAVE :: PRMS4_flag, Diversion2soil_flag
-      real(REAL32), SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
+      INTEGER, SAVE :: Diversion2soil_flag
+      REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
 !   Declared Variables
       INTEGER, SAVE :: Kkiter
-      real(REAL32), SAVE, ALLOCATABLE :: Hru_ag_irr(:)    !Ag irrigation added to HRU
+      REAL, SAVE, ALLOCATABLE :: Hru_ag_irr(:)    !Ag irrigation added to HRU
 !   Declared Parameters
       INTEGER, SAVE :: Mxsziter
       INTEGER, SAVE, ALLOCATABLE :: Gvr_cell_id(:)
-      real(REAL32), SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
+      REAL, SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
+! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_temp_grid
+! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=precip_temp_grid
 ! Control parameters
       INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
@@ -99,7 +101,7 @@
 !***********************************************************************
       call_modules = 1
 
-      Process = Arg  !(0=run, 1=declare, 2=init, 3=clean, 4=setdims)
+      Process = Arg
 
       IF ( Process(:3)=='run' ) THEN
         Process_flag = RUN
@@ -908,12 +910,12 @@
         Cascadegw_flag = 2
       ENDIF
       IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
-      IF ( Ncascade==0 ) Cascade_flag = 0
-      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==MODFLOW ) Cascadegw_flag = 0
+      IF ( Ncascade==0 ) Cascade_flag = OFF
+      IF ( Ncascdgw==0 .OR. GSFLOW_flag==ON .OR. Model==MODFLOW ) Cascadegw_flag = OFF
       IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=25 ) THEN ! don't call if model_mode = CONVERT
-        Call_cascade = 1
+        Call_cascade = ON
       ELSE
-        Call_cascade = 0
+        Call_cascade = OFF
       ENDIF
 
       Nwateruse = getdim('nwateruse')
@@ -958,19 +960,19 @@
       Nratetbl = getdim('nratetbl')
       IF ( Nratetbl==-1 ) CALL read_error(6, 'nratetbl')
 
-      Water_use_flag = 0
+      Water_use_flag = OFF
       IF ( Nwateruse>0 ) THEN
         IF ( Segment_transferON_OFF==1 .OR. Gwr_transferON_OFF==1 .OR. External_transferON_OFF==1 .OR. &
      &       Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 .OR. Nwateruse>0 ) Water_use_flag = 1
       ENDIF
 
-      IF ( Segment_transferON_OFF==1 .OR. Gwr_transferON_OFF==1 .OR. External_transferON_OFF==1 .OR. &
-     &     Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 ) THEN
-        IF ( Dprst_transferON_OFF==1 .AND. Dprst_flag==0 ) THEN
+      IF ( Segment_transferON_OFF==ON .OR. Gwr_transferON_OFF==ON .OR. External_transferON_OFF==ON .OR. &
+     &     Dprst_transferON_OFF==ON .OR. Lake_transferON_OFF==ON .OR. Nconsumed>0 ) THEN
+        IF ( Dprst_transferON_OFF==ON .AND. Dprst_flag==OFF ) THEN
           PRINT *, 'ERROR, specified water-use event based dprst input and have dprst inactive'
           Inputerror_flag = 1
         ENDIF
-        IF ( Lake_transferON_OFF==1 .AND. Strmflow_flag/=3 ) THEN
+        IF ( Lake_transferON_OFF==ON .AND. Strmflow_flag==strmflow_muskingum_lake_module ) THEN
           PRINT *, 'ERROR, specified water-use event based lake input and have lake simulation inactive'
           Inputerror_flag = 1
         ENDIF
