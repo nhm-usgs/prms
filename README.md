@@ -1,27 +1,56 @@
-# PRMS
-Precipitation Runoff Modeling System
+# Precipitation-Runoff Modeling System (PRMS)
 
-# Provisional software
-This software is preliminary or provisional and is subject to revision. It is being provided to meet the need for timely best science. The software has not received final approval by the U.S. Geological Survey (USGS). No warranty, expressed or implied, is made by the USGS or the U.S. Government as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. The software is provided on the condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from the authorized or unauthorized use of the software.
+## Table of contents
+* [General information](#general-information)
+* [Technologies](#technologies)
+* [Setup](#setup)
 
-# Building From Source
-PRMS6 uses the cmake build system (version 3.8 or greater). To compile PRMS from source on Unix/Linux/POSIX systems run the following from the top-level prms directory:
+## General information
+The Precipitation-Runoff Modeling System is a modular, deterministic,
+distributed-parameter, physical-process-based hydrologic simulation
+code developed to evaluate effects of various combinations of climate,
+physical characteristics, and simulation options on hydrologic
+response and water distribution at the watershed scale.
+
+For more information, please see [Documentation of the Dynamic Parameter, Water-Use, Stream and Lake Flow Routing, and Two Summary Output Modules and Updates to Surface-Depression Storage Simulation and Initial Conditions Specification Options With the Precipitation-Runoff Modeling System (PRMS)](https://pubs.usgs.gov/tm/06/b8/tm6b8.pdf).
+
+## Technologies
+The system is built with:
+* [GNU Fortran](https://gcc.gnu.org/fortran/) version: 8.3.0
+* [CMake](https://cmake.org/) version: 3.8.0 or greater
+	
+## Setup
+To compile PRMS from source on Unix/Linux/POSIX systems:
+
+### Build and Install Coretran
+1. Clone [Coretran](https://github.com/leonfoks/coretran) from GitHub.
+2. In the `coretran` directory:
 
 ```
+    mkdir build
+    cd build
+    cmake -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_INSTALL_PREFIX="/usr/local/coretran/debug" -DBUILD_SHARED_LIBS=ON ../src
+    make
+    make install
+    cmake -DCMAKE_Fortran_COMPILER=/usr/bin/gfortran -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX="/usr/local/coretran/release" -DBUILD_SHARED_LIBS=ON ../src
+    make
+    make install
+```
+
+### Other prerequisite libraries:
+The following libraries are required to build PRMS 6. They are likely available as binary packages via your distro's package
+manager:
+* [zlib](http://www.zlib.net/)
+* [HDF5](https://www.hdfgroup.org/solutions/hdf5)
+* [netCDF-C](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
+* [netCDF-Fortran](https://github.com/Unidata/netcdf-fortran/releases/tag/v4.5.3)
+
+### Build PRMS:
+```
+cd prms
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=<install_location> -DBUILD_SHARED_LIBS=OFF ../src
+cmake -DCMAKE_FORTRAN_COMPILER=/usr/bin/gfortran -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake ../src
 make
 make install
 ```
-
-# Debug builds
-To build prms for debugging purposes, run:
-
-```
-cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_INSTALL_PREFIX=<install_location> -DBUILD_SHARED_LIBS=OFF ../src
-make
-make install
-```
-
-To output additional compile-time messages add VERBOSE=1 to the make command.
