@@ -5,6 +5,8 @@
     USE ISO_FORTRAN_ENV
     USE PRMS_CONSTANTS, ONLY: MODFLOW, MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
    &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
+   &    ERROR_modflow, PRMS, GSFLOW, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
+   &    CASCADEGW_SAME, CASCADEGW_OFF, &  
    &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
    &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
    &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
@@ -18,7 +20,7 @@
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-08-11'
+    character(len=*), parameter :: PRMS_versn = '2020-08-13'
     character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -104,7 +106,7 @@
       Process = Arg
 
       IF ( Process(:3)=='run' ) THEN
-        Process_flag = RUN
+        Process_flag = RUN !(0=run, 1=declare, 2=init, 3=clean, 4=setdims)
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
@@ -199,7 +201,7 @@
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==ON ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
-          IF ( iret/=0 ) ERROR STOP ERROR_open_in
+          IF ( iret/=0 ) ERROR STOP ERROR_open_out
           CALL call_modules_restart(0)
         ENDIF
       ENDIF
@@ -484,7 +486,7 @@
       Inputerror_flag = 0
 
       ! debug print flag:
-      ! -1=quiet - reduced screen output
+      ! -1=quiet - reduced screen output (DEBUG_less)
       ! 0=none; 1=water balances; 2=basin;
       ! 4=basin_sum; 5=soltab; 7=soil zone;
       ! 9=snowcomp; 13=cascade; 14=subbasin tree
@@ -493,13 +495,13 @@
       IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
-      PRMS4_flag = 1
+      PRMS4_flag = ON
       IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = 0
-      PRMS_flag = 1
-      GSFLOW_flag = 0
+      PRMS_flag = ON
+      GSFLOW_flag = OFF
       ! Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='prms' .OR. Model_mode(:4)=='    ' .OR. Model_mode(:5)=='DAILY' ) THEN
-        Model = 1
+        Model = PRMS
       ELSEIF ( Model_mode(:5)=='FROST' ) THEN
         Model = 29
       ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
@@ -762,7 +764,7 @@
 ! map results dimensions
       IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = OFF
       idim = 0
-      IF ( GSFLOW_flag==ON .OR. MapOutON_OFF==ON ) idim = 1
+      IF ( GSFLOW_flag==ON .OR. MapOutON_OFF>0 ) idim = 1
       IF ( decldim('nhrucell', idim, MAXDIM, &
      &     'Number of unique intersections between HRUs and spatial units of a target map for mapped results')/=0 ) &
      &     CALL read_error(7, 'nhrucell')
@@ -820,10 +822,10 @@
       ENDIF
 
 ! cascade
-      ! if cascade_flag = 2, use hru_segment parameter for cascades, ncascade=ncascdgw=nhru (typical polygon HRUs)
-      IF ( control_integer(Cascade_flag, 'cascade_flag')/=0 ) Cascade_flag = 1
-      ! if cascadegw_flag = 2, use same cascades as HRUs
-      IF ( control_integer(Cascadegw_flag, 'cascadegw_flag')/=0 ) Cascadegw_flag = 1
+      ! if cascade_flag = 2 (CASCADE_HRU_SEGMENT), use hru_segment parameter for cascades, ncascade=ncascdgw=nhru (typical polygon HRUs)
+      IF ( control_integer(Cascade_flag, 'cascade_flag')/=0 ) Cascade_flag = CASCADE_NORMAL
+      ! if cascadegw_flag = 2 (CASCADEGW_SAME), use same cascades as HRUs
+      IF ( control_integer(Cascadegw_flag, 'cascadegw_flag')/=0 ) Cascadegw_flag = CASCADE_NORMAL
 
 ! spatial units
       IF ( decldim('ngw', 1, MAXDIM, 'Number of GWRs')/=0 ) CALL read_error(7, 'ngw')
@@ -854,7 +856,8 @@
       IF ( decldim('nconsumed', 0, MAXDIM, 'Number of consumptive water-use destinations')/=0 ) CALL read_error(7, 'nconsumed')
 
 ! fixed dimensions
-      IF ( declfix('ndays', MAX_DAYS_PER_YEAR, MAX_DAYS_PER_YEAR, 'Maximum number of days in a year ')/=0 ) CALL read_error(7, 'ndays')
+      IF ( declfix('ndays', MAX_DAYS_PER_YEAR, MAX_DAYS_PER_YEAR, 'Maximum number of days in a year ')/=0 ) &
+     &     CALL read_error(7, 'ndays')
       IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
       IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
 
@@ -905,14 +908,14 @@
       IF ( Ncascade==-1 ) CALL read_error(7, 'ncascade')
       Ncascdgw = getdim('ncascdgw')
       IF ( Ncascdgw==-1 ) CALL read_error(7, 'ncascdgw')
-      IF ( Cascade_flag==2 ) THEN
+      IF ( Cascade_flag==CASCADE_HRU_SEGMENT ) THEN
         Ncascade = Nhru
-        Cascadegw_flag = 2
+        Cascadegw_flag = CASCADEGW_SAME
       ENDIF
-      IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
-      IF ( Ncascade==0 ) Cascade_flag = OFF
-      IF ( Ncascdgw==0 .OR. GSFLOW_flag==ON .OR. Model==MODFLOW ) Cascadegw_flag = OFF
-      IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=25 ) THEN ! don't call if model_mode = CONVERT
+      IF ( Cascadegw_flag==CASCADEGW_SAME ) Ncascdgw = Ncascade
+      IF ( Ncascade==0 ) Cascade_flag = CASCADE_OFF
+      IF ( Ncascdgw==0 .OR. GSFLOW_flag==ON .OR. Model==MODFLOW ) Cascadegw_flag = CASCADEGW_OFF
+      IF ( (Cascade_flag>CASCADE_OFF .OR. Cascadegw_flag>CASCADEGW_OFF) .AND. Model/=25 ) THEN ! don't call if model_mode = CONVERT
         Call_cascade = ON
       ELSE
         Call_cascade = OFF
@@ -1056,19 +1059,19 @@
         IF ( Nexternal==0 ) Nexternal = 1
         IF ( Nconsumed==0 ) Nconsumed = 1
         IF ( Npoigages==0 ) Npoigages = 1
-        Subbasin_flag = 1
-        Cascade_flag = 1
-        Cascadegw_flag = 1
-        Call_cascade = 1
-        Stream_order_flag = 1
-        Climate_hru_flag = 1
-        Lake_route_flag = 1
-        Water_use_flag = 1
-        Segment_transferON_OFF = 1
-        Gwr_transferON_OFF = 1
-        External_transferON_OFF = 1
-        Dprst_transferON_OFF = 1
-        Lake_transferON_OFF = 1
+        Subbasin_flag = ON
+        Cascade_flag = CASCADE_NORMAL
+        Cascadegw_flag = CASCADE_NORMAL
+        Call_cascade = ON
+        Stream_order_flag = ON
+        Climate_hru_flag = ON
+        Lake_route_flag = ON
+        Water_use_flag = ON
+        Segment_transferON_OFF = ON
+        Gwr_transferON_OFF = ON
+        External_transferON_OFF = ON
+        Dprst_transferON_OFF = ON
+        Lake_transferON_OFF = ON
       ENDIF
 
       END SUBROUTINE check_dimens
