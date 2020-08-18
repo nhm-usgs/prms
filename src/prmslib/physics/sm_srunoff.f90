@@ -132,11 +132,16 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         allocate(this%infil(nhru))
         allocate(this%sroff(nhru))
 
+        ! NOTE: Even though upslope_hortonian is only needed when cascades are
+        !       used it is passed to routines by index which causes gcc compiled
+        !       versions to crash.
+        allocate(this%upslope_hortonian(nhru))
+        this%upslope_hortonian = 0.0_dp
+
         if (cascade_flag == 1) then
           ! Cascading variables
-          allocate(this%upslope_hortonian(nhru))
           allocate(this%hru_hortn_cascflow(nhru))
-          this%upslope_hortonian = 0.0_dp
+
           this%hru_hortn_cascflow = 0.0_dp
 
           if (nlake > 0) then
@@ -171,17 +176,18 @@ submodule (PRMS_SRUNOFF) sm_srunoff
         this%hru_sroffi = 0.0
         this%hru_sroffp = 0.0
         this%hru_impervevap = 0.0
-        this%hru_impervstor = 0.0
         this%imperv_evap = 0.0
         this%infil = 0.0
         this%sroff = 0.0
 
         if (init_vars_from_file == 0) then
+          this%hru_impervstor = 0.0
           this%imperv_stor = 0.0
         else
           ! ~~~~~~~~~~~~~~~~~~~~~~~~
           ! Initialize from restart
           call ctl_data%read_restart_variable('imperv_stor', this%imperv_stor)
+          call ctl_data%read_restart_variable('hru_impervstor', this%hru_impervstor)
         end if
 
         if (save_vars_to_file == 1) then
@@ -596,6 +602,7 @@ submodule (PRMS_SRUNOFF) sm_srunoff
             call ctl_data%write_restart_variable('dprst_vol_thres_open', this%dprst_vol_thres_open)
           end if
 
+          call ctl_data%write_restart_variable('hru_impervstor', this%hru_impervstor)
           call ctl_data%write_restart_variable('imperv_stor', this%imperv_stor)
         end if
       end associate
