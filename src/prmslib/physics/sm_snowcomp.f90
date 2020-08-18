@@ -18,6 +18,7 @@ contains
     ! integer(i32) :: idx1D
     integer(i32) :: j
     integer(i32) :: jj
+    integer(i32) :: sd
 
     ! real(r32), allocatable :: snarea_curve_2d(:, :)
     ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
@@ -158,8 +159,9 @@ contains
       this%deninv = 1.0_dp / dble(this%den_init)
       this%denmaxinv = 1.0_dp / dble(this%den_max)
 
-      allocate(this%snarea_curve_2d(11, nhru))
-      this%snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
+      sd = this%ndeplval / 11
+      allocate(this%snarea_curve_2d(11, sd))
+      this%snarea_curve_2d = reshape(this%snarea_curve, (/11, sd/))
 
       ! this%settle_const_dble = dble(settle_const)
 
