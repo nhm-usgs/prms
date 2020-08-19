@@ -6,7 +6,7 @@
     USE PRMS_CONSTANTS, ONLY: MODFLOW, MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
    &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
    &    ERROR_modflow, PRMS, GSFLOW, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
-   &    CASCADEGW_SAME, CASCADEGW_OFF, &  
+   &    CASCADEGW_SAME, CASCADEGW_OFF, &
    &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
    &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
    &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
@@ -20,7 +20,7 @@
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-08-13'
+    character(len=*), parameter :: PRMS_versn = '2020-08-19'
     character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -152,7 +152,7 @@
   16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
 
-        Diversion2soil_flag = 0
+        Diversion2soil_flag = OFF
         IF ( Print_debug>DEBUG_minimum ) THEN
           PRINT 15
           PRINT 9002
@@ -764,7 +764,7 @@
 ! map results dimensions
       IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = OFF
       idim = 0
-      IF ( GSFLOW_flag==ON .OR. MapOutON_OFF>0 ) idim = 1
+      IF ( GSFLOW_flag==ON .OR. MapOutON_OFF>OFF ) idim = 1
       IF ( decldim('nhrucell', idim, MAXDIM, &
      &     'Number of unique intersections between HRUs and spatial units of a target map for mapped results')/=0 ) &
      &     CALL read_error(7, 'nhrucell')
@@ -993,8 +993,8 @@
         ENDIF
       ENDIF
 
-      Lake_route_flag = 0
-      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. GSFLOW_flag==OFF ) Lake_route_flag = 1 ! muskingum_lake
+      Lake_route_flag = OFF
+      IF ( Nlake>0 .AND. Strmflow_flag==3 .AND. GSFLOW_flag==OFF ) Lake_route_flag = ON ! muskingum_lake
 
       IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'

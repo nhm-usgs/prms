@@ -24,7 +24,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2020-08-13'
+      character(len=*), parameter :: Version_soilzone = '2020-08-19'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag, Is_land
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:), Pref_flow_flag(:)
@@ -867,7 +867,7 @@
       REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet
       REAL :: gvr_maxin, topfr, excess !, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
-      REAL :: perv_frac, capacity, capwater_maxin, ssresin
+      REAL :: perv_frac, capacity, cap_water_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow
       DOUBLE PRECISION :: gwin
       INTEGER :: cfgi_frozen_hru
@@ -875,24 +875,8 @@
       szrun = 0
 
       IF ( GSFLOW_flag==ON ) THEN
-        IF ( Kkiter==1 ) THEN
+        IF ( Kkiter>1 ) THEN
 ! It0 variables used with MODFLOW integration to save iteration states.
-          DO k = 1, Active_hrus
-            i = Hru_route_order(k)
-            It0_soil_rechr(i) = Soil_rechr(i)
-            It0_soil_moist(i) = Soil_moist(i)
-            It0_ssres_stor(i) = Ssres_stor(i)
-            It0_pref_flow_stor(i) = Pref_flow_stor(i)
-            It0_slow_stor(i) = Slow_stor(i)
-            It0_sroff(i) = Sroff(i)
-            It0_potet(i) = Potet(i)
-          ENDDO
-          It0_basin_soil_moist = Basin_soil_moist
-          It0_basin_ssstor = Basin_ssstor
-          It0_gravity_stor_res = Gravity_stor_res
-          It0_strm_seg_in = Strm_seg_in
-          Gw2sm_grav = 0.0
-        ELSE
           DO k = 1, Active_hrus
             i = Hru_route_order(k)
             Soil_rechr(i) = It0_soil_rechr(i)
@@ -907,7 +891,23 @@
           Basin_ssstor = It0_basin_ssstor
           Gravity_stor_res = It0_gravity_stor_res
           Strm_seg_in = It0_strm_seg_in
+        ELSE
+          DO k = 1, Active_hrus
+            i = Hru_route_order(k)
+            It0_soil_rechr(i) = Soil_rechr(i)
+            It0_soil_moist(i) = Soil_moist(i)
+            It0_ssres_stor(i) = Ssres_stor(i)
+            It0_pref_flow_stor(i) = Pref_flow_stor(i)
+            It0_slow_stor(i) = Slow_stor(i)
+            It0_sroff(i) = Sroff(i)
+            It0_potet(i) = Potet(i)
+          ENDDO
+          It0_basin_soil_moist = Basin_soil_moist
+          It0_basin_ssstor = Basin_ssstor
+          It0_gravity_stor_res = Gravity_stor_res
+          It0_strm_seg_in = Strm_seg_in
         ENDIF
+        Gw2sm_grav = 0.0
         Sm2gw_grav = 0.0
       ENDIF
 
@@ -1004,8 +1004,8 @@
 !****** add soil excess (Dunnian flow) to infiltration
         ! perv_frac has to be > 0.001
         ! infil for pervious portion of HRU
-        capwater_maxin = Infil(i)
-        IF ( Diversion2soil_flag==ON ) capwater_maxin = capwater_maxin + Hru_ag_irr(i)
+        cap_water_maxin = Infil(i)
+        IF ( Diversion2soil_flag==ON ) cap_water_maxin = cap_water_maxin + Hru_ag_irr(i)
 
         cfgi_frozen_hru = OFF
         !Frozen is HRU variable that says if frozen gravity reservoir
@@ -1024,10 +1024,10 @@
         prefflow = 0.0
         IF ( Pref_flow_flag(i)==ON ) THEN
           Pref_flow_infil(i) = 0.0
-          IF ( capwater_maxin>0.0 ) THEN
+          IF ( cap_water_maxin>0.0 ) THEN
             ! pref_flow for whole HRU
-            pref_flow_maxin = capwater_maxin*Pref_flow_den(i)
-            capwater_maxin = capwater_maxin - pref_flow_maxin
+            pref_flow_maxin = cap_water_maxin*Pref_flow_den(i)
+            cap_water_maxin = cap_water_maxin - pref_flow_maxin
             pref_flow_maxin = pref_flow_maxin*perv_frac
             IF ( cfgi_frozen_hru==ON ) THEN
               dunnianflw_pfr = pref_flow_maxin
@@ -1049,23 +1049,23 @@
 
         IF ( Cascade_flag>CASCADE_OFF ) THEN
 !          Cap_upflow_max(i) = SNGL(Upslope_dunnianflow(i)+Upslope_interflow(i))/perv_frac
-!          capwater_maxin = capwater_maxin + Cap_upflow_max(i)
+!          cap_water_maxin = cap_water_maxin + Cap_upflow_max(i)
 !          Basin_cap_up_max = Basin_cap_up_max + Cap_upflow_max(i)*perv_area
           cap_upflow_max = SNGL(Upslope_dunnianflow(i)+Upslope_interflow(i))/perv_frac
-          capwater_maxin = capwater_maxin + cap_upflow_max
+          cap_water_maxin = cap_water_maxin + cap_upflow_max
           Basin_cap_up_max = Basin_cap_up_max + cap_upflow_max*perv_area
         ENDIF
-        Cap_infil_tot(i) = capwater_maxin*perv_frac
+        Cap_infil_tot(i) = cap_water_maxin*perv_frac
         Basin_cap_infil_tot = Basin_cap_infil_tot + DBLE( Cap_infil_tot(i)*harea )
 
 !******Add infiltration to soil and compute excess
         gvr_maxin = 0.0
-        Cap_waterin(i) = capwater_maxin
+        Cap_waterin(i) = cap_water_maxin
 
         Soil_saturated(i) = OFF
         IF ( cfgi_frozen_hru==OFF ) THEN
-          ! call even if capwater_maxin = 0, just in case soil_moist now > Soil_moist_max
-          IF ( capwater_maxin+Soil_moist(i)>0.0 ) THEN
+          ! call even if cap_water_maxin = 0, just in case soil_moist now > Soil_moist_max
+          IF ( cap_water_maxin+Soil_moist(i)>0.0 ) THEN
             CALL compute_soilmoist(Cap_waterin(i), Soil_moist_max(i), &
      &           Soil_rechr_max(i), Soil2gw_max(i), gvr_maxin, &
      &           Soil_moist(i), Soil_rechr(i), Soil_to_gw(i), Soil2gw(i), perv_frac)
@@ -1091,6 +1091,8 @@
           ! adjust soil moisture with replenish amount
           IF ( Gvr2sm(i)>0.0 ) THEN
             Soil_moist(i) = Soil_moist(i) + Gvr2sm(i)/perv_frac
+!            IF ( Soil_moist(i)>Soil_moist_max(i) ) &
+!     &           PRINT *, 'sm>max', Soil_moist(i), Soil_moist_max(i), i
             IF ( Soilzone_aet_flag==ON ) THEN
               Soil_lower(i) = Soil_lower(i) + Gvr2sm(i)/perv_frac
               excess = Soil_lower(i) - Soil_lower_stor_max(i)
@@ -1100,6 +1102,9 @@
               Soil_rechr(i) = MIN( Soil_rechr_max(i), Soil_rechr(i) )
             ENDIF
             Basin_gvr2sm = Basin_gvr2sm + DBLE( Gvr2sm(i)*harea )
+!          ELSEIF ( Gvr2sm(i)<-NEARZERO ) THEN
+!            PRINT *, 'negative gvr2sm, HRU:', i, Gvr2sm(i)
+!            Gvr2sm(i) = 0.0
           ENDIF
           Grav_gwin(i) = SNGL( gwin )
           Basin_sz_gwin = Basin_sz_gwin + gwin*DBLE( harea )
@@ -1168,8 +1173,35 @@
         ENDIF
 !        Perv_avail_et(i) = avail_potet
 
+        ! sanity check
+!        IF ( Soil_moist(i)<0.0 ) THEN
+!          IF ( Print_debug>-1 ) PRINT *, i, Soil_moist(i), ' negative'
+!          IF ( pervactet>=ABS(Soil_moist(i)) ) THEN
+!            pervactet = pervactet + Soil_moist(i)
+!            Soil_moist(i) = 0.0
+!          ENDIF
+!          IF ( Soil_moist(i)<-NEARZERO ) THEN
+!            IF ( Print_debug>-1 ) PRINT *, 'HRU:', i, ' soil_moist<0.0', Soil_moist(i)
+!          ENDIF
+!          Soil_moist(i) = 0.0
+!        ENDIF
+
         Hru_actet(i) = Hru_actet(i) + pervactet*perv_frac
         avail_potet = Potet(i) - Hru_actet(i)
+        ! sanity check
+!        IF ( avail_potet<0.0 ) THEN
+!          IF ( Print_debug>-1 ) THEN
+!            IF ( avail_potet<-NEARZERO ) PRINT *, 'hru_actet>potet', i, &
+!     &           Nowmonth, Nowday, Hru_actet(i), Potet(i), avail_potet
+!          ENDIF
+!          Hru_actet(i) = Potet(i)
+!          tmp = avail_potet/perv_frac
+!          pervactet = pervactet + tmp
+!          Soil_moist(i) = Soil_moist(i) - tmp
+!          Soil_rechr(i) = Soil_rechr(i) - tmp
+!          IF ( Soil_rechr(i)<0.0 ) Soil_rechr(i) = 0.0
+!          IF ( Soil_moist(i)<0.0 ) Soil_moist(i) = 0.0
+!        ENDIF
         Perv_actet(i) = pervactet
 
 ! soil_moist & soil_rechr multiplied by perv_area instead of harea
@@ -1364,6 +1396,13 @@
           Infil = 0.0
         ELSE
           Infil = Infil - excs/Perv_frac         !???? what if Infil<0 ??? might happen with dynamic and small values, maybe ABS < NEARZERO = 0.0
+!          IF ( Infil<0.0 ) THEN
+!            IF ( Infil<-0.0001 ) THEN
+!              PRINT *, 'negative infil', infil, soil_moist, excs
+!              Soil_moist = Soil_moist + Infil
+!            ENDIF
+!            Infil = 0.0
+!          ENDIF
         ENDIF
 
         Soil_to_ssr = excs
@@ -1523,7 +1562,7 @@
 !     Compute subsurface lateral flow
 !***********************************************************************
       SUBROUTINE compute_interflow(Coef_lin, Coef_sq, Ssres_in, Storage, Inter_flow)
-      USE PRMS_SOILZONE, ONLY: ERROR_soilzone
+      USE PRMS_SOILZONE, ONLY: ERROR_soilzone !,NEARZERO, CLOSEZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, SQRT
@@ -1565,6 +1604,15 @@
         Inter_flow = Storage
       ENDIF
       Storage = Storage - Inter_flow
+!      IF ( Storage<0.0 ) THEN
+!        IF ( Storage<-CLOSEZERO ) PRINT *, 'Sanity check, ssres_stor<0.0', Storage
+!        Storage = 0.0
+! rsr, if very small storage, add it to interflow
+!      ELSEIF ( Storage>0.0 .AND. Storage<NEARZERO ) THEN
+!        print *, 'small storage', storage, inter_flow
+!        Inter_flow = Inter_flow + Storage
+!        Storage = 0.0
+!      ENDIF
 
       END SUBROUTINE compute_interflow
 
@@ -1692,6 +1740,9 @@
             Sm2gw_grav(igvr) = perc
             togw = togw + DBLE( perc )*frac
           ENDIF
+!        ELSE ! GVRs can go negative if flux change in MODFLOW final iteration decreases, so don't set to 0
+!          if(depth<0.0) print *, 'depth<0', depth, ihru
+!          depth = 0.0
         ENDIF
 
         Gravity_stor_res(igvr) = depth
@@ -1719,6 +1770,7 @@
 !     and preferential-flow threshold (Pref_flow_thrsh)
 !***********************************************************************
       SUBROUTINE check_gvr_sm(Capacity, Depth, Frac, Gvr2sm, Input)
+!      USE PRMS_CONSTANTS, ONLY: CLOSEZERO
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: MAX, ABS, SNGL
@@ -1746,6 +1798,8 @@
       ENDIF
       Gvr2sm = Gvr2sm + to_sm*frac_sngl
       Depth = Depth - to_sm
+      !IF ( Depth<0.0 ) PRINT *, 'depth<0', depth
+!      IF ( Depth<CLOSEZERO ) Depth = 0.0
       Input = Input - to_sm*frac_sngl
 
       END SUBROUTINE check_gvr_sm
