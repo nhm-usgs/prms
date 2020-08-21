@@ -42,7 +42,7 @@
       REAL, SAVE, ALLOCATABLE :: Vdemx(:), Vhe(:), Voe(:), Vcw(:), Vdwmx(:), Vhw(:), Vow(:)
       REAL, SAVE, ALLOCATABLE :: Vdemn(:), Vdwmn(:)
       INTEGER, SAVE :: Spring_jday, Summer_jday, Autumn_jday, Winter_jday
-!   Shade Parameters needed if stream_temp_shade_flag = 2
+!   Shade Parameters needed if stream_temp_shade_flag = 1
       REAL, SAVE, ALLOCATABLE :: Segshade_sum(:), Segshade_win(:)
       REAL, SAVE:: Albedo, Melt_temp
       ! INTEGER, SAVE :: Shadeflg, now using stream_temp_shade_flag
@@ -841,7 +841,10 @@
       ! If the value is something other than -100.0, then I know that it has been computed.
       ! Trying to get at the differece between computed bad values and segments that have not been
       ! computed yet.
-      seg_tave_upstream(i) = -100.0
+      DO j = 1, Nsegment
+         seg_tave_upstream(j) = -100.0
+         Seg_tave_water(j) = 0.0
+      enddo
 
 ! Big do loop
 !      write(*,*) "big do loop ", Nowyear, Nowmonth, Nowday
@@ -866,20 +869,44 @@
          CALL lat_inflow(qlat, seg_tave_lat(i), i, seg_tave_gw(i), Seg_tave_air(i), seg_tave_ss(i), &
      &                   Seg_melt(i), Seg_rain(i))
 
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "####  NEW DATE"
+!            write(*,*) "0", i, Nowyear, Nowmonth, Nowday
+!            write(*,*) "0", qlat, seg_tave_lat(i), seg_tave_gw(i)
+!            write(*,*) Seg_tave_air(i), seg_tave_ss(i)
+!            write(*,*) Seg_melt(i), Seg_rain(i)
+!            write(*,*) "#################"
+!         endif
+
 ! Find upstream intitial inflow temperature for segment i
-! i is the current segment
+! i is the current segm)ent
 ! kk is the upstream segment
          fs = 0.0
          up_temp = 0.0
 
 ! Add in the heat from upstream
+
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) 0.5,  i, upstream_count(i)
+!            write(*,*) "#################"
+!         endif
+
          do k = 1, upstream_count(i)
             kk = upstream_idx(i,k)
             fs_kk = SNGL(Seg_outflow(kk) * CFS2CMS_CONV)
 
             up_temp = up_temp + (Seg_tave_water(kk) * fs_kk)
             fs = fs + fs_kk
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) 1, i, k, kk, fs, fs_kk, Seg_tave_water(kk), up_temp
+!         endif
          ENDDO
+
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 2, fs, up_temp
+!            write(*,*) "#################"
+!         endif
 
 !         ! Finish computing seg_tave_upstream
          IF ( fs > NEARZERO) THEN
@@ -888,6 +915,13 @@
             ! -98.9 is the code for no flow on this timestep
             seg_tave_upstream(i) = 0.0
          ENDIF
+
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 2.5, seg_tave_upstream(i) , fs, Seg_lateral_inflow(i) * CFS2CMS_CONV
+!            write(*,*) "#################"
+!         endif
+
 
 ! Add the lateral temperature to the upstream temperature 
 ! Compute t_o
@@ -899,6 +933,14 @@
            t_o = -99.9
         endif
 
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 3, i, t_o, fs, fs2, Seg_lateral_inflow(i) * CFS2CMS_CONV
+!            write(*,*)  seg_tave_lat(i),  seg_tave_upstream(i)
+!            write(*,*) "#################"
+!         endif
+
+
 
          ! Compute flow-dependent water-in-segment width value
          if (seg_outflow(i) > NEARZERO) then
@@ -909,6 +951,10 @@
 
 
          ! Compute the shade on the segment. Either set by value in the parameter file or computed
+         !
+         ! stream_temp_shade_flag == 0 compute shade from shday using the segment topology and veg shade.
+         ! stream_temp_shade_flag == 1 read the parameter values for segshade_win and segshade_sum.
+         !
          IF ( Stream_temp_shade_flag==1 ) THEN
             IF ( Summer_flag==0 ) THEN
                seg_shade(i) = Segshade_win(i)
@@ -935,7 +981,7 @@
 
 ! debug
          if (t_o .ne. t_o) then
-             write(*,*) "t_o is Nan"
+             write(*,*) "t_o is Nan", i , Nowyear, Nowmonth, Nowday
              Seg_tave_water(i) = -98.9
 
          else if (t_o .gt. 50.0) then
@@ -948,6 +994,9 @@
           else if (t_o .lt. -98.0) then
               Seg_tave_water(i) = -98.9
 
+          else if (t_o .lt. 0.5) then
+              Seg_tave_water(i) = 0.0
+
           else
 !             This block computes the value for seg_tave_water
 !             Compute the equilibrium temerature
@@ -955,9 +1004,53 @@
               ! In: seg_shade, svi, i, t_o
               CALL equilb(te, ak1, ak2, seg_shade(i), svi, i, t_o)
 
-!             Compute the daily mean water temperature
-              ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
-              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 4,te, ak1, ak2, seg_shade(i), svi, i, t_o
+!            write(*,*) "#################"
+!         endif
+
+              if (te .ne. te) then
+
+!                te was computed as nan so set water temperature to -98.0
+                 Seg_tave_water(i) = -98.9
+
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 4.5, "te is NaN, seg_tave_water set to -98, t_o = ", t_o
+!            write(*,*) "#################"
+!         endif
+
+
+              else
+!                 Compute the daily mean water temperature
+                  ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
+                  Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
+
+! This next block checks to see if the computed water temperature (seg_tave_water) is between the initial
+! temperature (t_o) and the equilibrium temperature (te). If it's not, then set seg_tave_water to t_o
+! In the NHM, there was a case where the stream length was 20m and the stream width was 33 meter, so the
+! length was shorter than the width. A case like this could be outside the valid range of the SNTemp math.
+! Especially if the segment is 20 m long, the outflow temperature is going to be equal to the inflow temperature.
+                  if (t_o < te) then
+                     if ((Seg_tave_water(i) < t_o) .or. (Seg_tave_water(i) > te)) then
+                        Seg_tave_water(i) = t_o
+                     endif
+                  else
+                     if ((Seg_tave_water(i) > t_o) .or. (Seg_tave_water(i) < te)) then
+                        Seg_tave_water(i) = t_o
+                     endif
+                  endif
+
+              endif
+
+!         if (i == 15955 .or. i == 15959) then 
+!            write(*,*) "#################"
+!            write(*,*) 5,fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i)
+!            write(*,*) 5, Seg_tave_water(i)
+!            write(*,*) "#################"
+!         endif
+
 
           endif
          enddo
