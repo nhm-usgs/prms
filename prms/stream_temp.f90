@@ -733,7 +733,9 @@
       REAL :: te, ak1, ak2, ccov
       DOUBLE PRECISION :: qlat
       REAL :: t_o, up_temp
-      REAL :: fs_kk, fs2
+      REAL :: fs_kk
+      real sum_flow
+      real sum_temp
 !***********************************************************************
       stream_temp_run = 0
       Seg_tave_air = 0.0
@@ -869,7 +871,7 @@
          CALL lat_inflow(qlat, seg_tave_lat(i), i, seg_tave_gw(i), Seg_tave_air(i), seg_tave_ss(i), &
      &                   Seg_melt(i), Seg_rain(i))
 
-!         if (i == 15955 .or. i == 15959) then 
+!         if (i == 56371 .or. i == 56379) then 
 !            write(*,*) "####  NEW DATE"
 !            write(*,*) "0", i, Nowyear, Nowmonth, Nowday
 !            write(*,*) "0", qlat, seg_tave_lat(i), seg_tave_gw(i)
@@ -886,7 +888,7 @@
 
 ! Add in the heat from upstream
 
-!         if (i == 15955 .or. i == 15959) then 
+!         if (i == 56371 .or. i == 56379) then 
 !            write(*,*) 0.5,  i, upstream_count(i)
 !            write(*,*) "#################"
 !         endif
@@ -897,14 +899,14 @@
 
             up_temp = up_temp + (Seg_tave_water(kk) * fs_kk)
             fs = fs + fs_kk
-!         if (i == 15955 .or. i == 15959) then 
-!            write(*,*) 1, i, k, kk, fs, fs_kk, Seg_tave_water(kk), up_temp
-!         endif
+!            if (i == 56371 .or. i == 56379) then 
+!               write(*,*) 1, i, k, kk, fs, fs_kk, Seg_tave_water(kk), up_temp
+!            endif
          ENDDO
 
-!         if (i == 15955 .or. i == 15959) then 
+!         if (i == 56371 .or. i == 56379) then 
 !            write(*,*) "#################"
-!            write(*,*) 2, fs, up_temp
+!            write(*,*) 2, fs, Seg_outflow(kk) * CFS2CMS_CONV,  up_temp
 !            write(*,*) "#################"
 !         endif
 
@@ -916,30 +918,42 @@
             seg_tave_upstream(i) = 0.0
          ENDIF
 
-!         if (i == 15955 .or. i == 15959) then 
+!         if (i == 56371 .or. i == 56379) then 
 !            write(*,*) "#################"
 !            write(*,*) 2.5, seg_tave_upstream(i) , fs, Seg_lateral_inflow(i) * CFS2CMS_CONV
 !            write(*,*) "#################"
 !         endif
 
-
-! Add the lateral temperature to the upstream temperature 
+!!!!
 ! Compute t_o
-        fs2 = sngl(Seg_lateral_inflow(i) * CFS2CMS_CONV + fs)
-        if (fs2 > 0.0) then
-           t_o = (sngl(seg_tave_lat(i) * Seg_lateral_inflow(i) * CFS2CMS_CONV) + &
-     &        sngl(fs * seg_tave_upstream(i))) / fs2
-        else
-           t_o = -99.9
-        endif
+!
+         sum_flow = 0.0
+         sum_temp = 0.0
 
-!         if (i == 15955 .or. i == 15959) then 
+        ! seg_lateral_infow is in cfs, so don't include the lateral inflow if is it less than 0.5 cfs
+         if (seg_lateral_inflow(i) >= 0.5) then
+            sum_flow = sum_flow + sngl(seg_lateral_inflow(i) * CFS2CMS_CONV)
+            sum_temp = sum_temp + sngl(seg_tave_lat(i) * seg_lateral_inflow(i) * CFS2CMS_CONV)
+         endif
+
+        ! fs is the sum of the upstream flow in cms, don't include if it is less than 0.5 cfs
+         if ((fs / CFS2CMS_CONV) >= 0.5) then
+            sum_flow = sum_flow + fs
+            sum_temp = sum_temp + seg_tave_upstream(i) * fs
+         endif
+
+         if (sum_flow >= 0.5) then
+            t_o = sum_temp / sum_flow
+         else
+            t_o = -99.9
+         endif
+
+!         if (i == 56371 .or. i == 56379) then 
 !            write(*,*) "#################"
-!            write(*,*) 3, i, t_o, fs, fs2, Seg_lateral_inflow(i) * CFS2CMS_CONV
+!            write(*,*) 3, i, t_o, fs, Seg_lateral_inflow(i) * CFS2CMS_CONV
 !            write(*,*)  seg_tave_lat(i),  seg_tave_upstream(i)
 !            write(*,*) "#################"
 !         endif
-
 
 
          ! Compute flow-dependent water-in-segment width value
@@ -991,38 +1005,37 @@
              write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
              Seg_tave_water(i) = -98.9
 
-          else if (t_o .lt. -98.0) then
-              Seg_tave_water(i) = -98.9
+         else if (t_o .lt. -98.0) then
+            Seg_tave_water(i) = -98.9
 
-          else if (t_o .lt. 0.5) then
-              Seg_tave_water(i) = 0.0
+         else if (t_o .lt. 0.5) then
+            Seg_tave_water(i) = 0.0
 
-          else
+         else
 !             This block computes the value for seg_tave_water
 !             Compute the equilibrium temerature
               ! Out: te, ak1, ak2
               ! In: seg_shade, svi, i, t_o
-              CALL equilb(te, ak1, ak2, seg_shade(i), svi, i, t_o)
+            CALL equilb(te, ak1, ak2, seg_shade(i), svi, i, t_o)
 
-!         if (i == 15955 .or. i == 15959) then 
-!            write(*,*) "#################"
-!            write(*,*) 4,te, ak1, ak2, seg_shade(i), svi, i, t_o
-!            write(*,*) "#################"
-!         endif
+!            if (i == 56371 .or. i == 56379) then 
+!               write(*,*) "#################"
+!               write(*,*) 4,te, ak1, ak2, seg_shade(i), svi, i, t_o
+!               write(*,*) "#################"
+!            endif
 
-              if (te .ne. te) then
+            if (te .ne. te) then
 
 !                te was computed as nan so set water temperature to -98.0
-                 Seg_tave_water(i) = -98.9
+               Seg_tave_water(i) = -98.9
 
-!         if (i == 15955 .or. i == 15959) then 
-!            write(*,*) "#################"
-!            write(*,*) 4.5, "te is NaN, seg_tave_water set to -98, t_o = ", t_o
-!            write(*,*) "#################"
-!         endif
+               if (i == 56371 .or. i == 56379) then 
+                  write(*,*) "#################"
+                  write(*,*) 4.5, "te is NaN, seg_tave_water set to -98, t_o = ", t_o
+                  write(*,*) "#################"
+               endif
 
-
-              else
+               else
 !                 Compute the daily mean water temperature
                   ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
                   Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
@@ -1032,27 +1045,35 @@
 ! In the NHM, there was a case where the stream length was 20m and the stream width was 33 meter, so the
 ! length was shorter than the width. A case like this could be outside the valid range of the SNTemp math.
 ! Especially if the segment is 20 m long, the outflow temperature is going to be equal to the inflow temperature.
-                  if (t_o < te) then
-                     if ((Seg_tave_water(i) < t_o) .or. (Seg_tave_water(i) > te)) then
-                        Seg_tave_water(i) = t_o
-                     endif
-                  else
-                     if ((Seg_tave_water(i) > t_o) .or. (Seg_tave_water(i) < te)) then
-                        Seg_tave_water(i) = t_o
-                     endif
-                  endif
-
+                 if (t_o < te) then
+                    if ((Seg_tave_water(i) < t_o) .or. (Seg_tave_water(i) > te)) then
+                       Seg_tave_water(i) = t_o
+                    endif
+                 else
+                    if ((Seg_tave_water(i) > t_o) .or. (Seg_tave_water(i) < te)) then
+                       Seg_tave_water(i) = t_o
+                    endif
+                 endif
               endif
 
-!         if (i == 15955 .or. i == 15959) then 
-!            write(*,*) "#################"
-!            write(*,*) 5,fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i)
-!            write(*,*) 5, Seg_tave_water(i)
-!            write(*,*) "#################"
-!         endif
+!              if (i == 56371 .or. i == 56379) then 
+!                  write(*,*) "#################"
+!                  write(*,*) 5,fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i)
+!                  write(*,*) 5, Seg_tave_water(i)
+!                  write(*,*) "#################"
+!               endif
+            endif
 
+!            if (i == 56371 .or. i == 56379) then 
+!               write(*,*) "#################"
+!               write(*,*) 6, Seg_tave_water(i)
+!               write(*,*) "#################"
+!            endif
 
-          endif
+! Final check to see if seg_tave_water is nan
+            if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
+               write(*,*) "seg_tave_water is nan", i, Nowyear, Nowmonth, Nowday
+            endif
          enddo
       END FUNCTION stream_temp_run
 !
