@@ -20,7 +20,7 @@
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-08-19'
+    character(len=*), parameter :: PRMS_versn = '2020-08-25'
     character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -138,7 +138,7 @@
      &        '      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,', /, &
      &        '                    potet_hs, potet_pt, potet_pm, potet_pm_sta', /, &
      &        '      Interception: intcp', /, &
-     &        'Snow & Glacr Dynam: snowcomp, glacr', /, &
+     &        'Snow & Glacr Dynam: snowcomp, glacr_melt', /, &
      &        '    Surface Runoff: srunoff_smidx, srunoff_carea', /, &
      &        '         Soil Zone: soilzone', /, &
      &        '       Groundwater: gwflow', /, &

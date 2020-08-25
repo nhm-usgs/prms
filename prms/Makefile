@@ -36,7 +36,7 @@ OBJS = \
         ide_dist.o \
         xyz_dist.o \
         precip_1sta_laps.o \
-        precip_temp_grid.o \
+        precip_temp_map.o \
         precip_dist2.o \
         temp_1sta_laps.o \
         temp_dist2.o \
@@ -141,8 +141,8 @@ precip_1sta_laps.o: precip_1sta_laps.f90 prms_module.mod prms_basin.mod prms_cli
 	$(FC) -c $(FFLAGS) precip_1sta_laps.f90
 
 
-precip_temp_grid.o: precip_temp_grid.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod
-	$(FC) -c $(FFLAGS) precip_temp_grid.f90
+precip_temp_map.o: precip_temp_map.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod
+	$(FC) -c $(FFLAGS) precip_temp_map.f90
 
 transp_tindex.o: transp_tindex.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) transp_tindex.f90
