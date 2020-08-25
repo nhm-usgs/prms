@@ -25,7 +25,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2020-08-04'
+      character(len=*), parameter :: Version_snowcomp = '2020-08-25'
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -688,7 +688,7 @@
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE, ATAN, SNGL
+      INTRINSIC :: DBLE, ATAN, SNGL, MIN
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error, snowcomp_restart, sca_deplcrv, glacr_states_to_zero
 ! Local Variables
@@ -782,6 +782,13 @@
             Freeh2o(i) = Pk_ice(i)*Freeh2o_cap(i)
             Ai(i) = Pkwater_equiv(i) ! [inches]
             IF ( Ai(i)>Snarea_thresh(i) ) Ai(i) = DBLE( Snarea_thresh(i) ) ! [inches]
+            IF ( Ai(i)>DNEARZERO ) THEN
+              Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
+              Frac_swe(i) = MIN( 1.0, Frac_swe(i) )
+            ELSE
+!              print *, ai(i), snarea_thresh
+              Frac_swe(i) = 0.0
+            ENDIF
             Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
             CALL sca_deplcrv(Snowcov_area(i), Snarea_curve(1,Hru_deplcrv(i)), Frac_swe(i))
             Basin_snowcov = Basin_snowcov + DBLE(Snowcov_area(i))*Hru_area_dble(i)
