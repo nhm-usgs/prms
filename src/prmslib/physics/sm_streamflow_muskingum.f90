@@ -239,7 +239,6 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
                                groundwater, soil, runoff, model_time, model_solrad, model_obs)
 
       associate(nsegment => model_basin%nsegment, &
-                basin_area_inv => model_basin%basin_area_inv, &
 
                 streamflow_cfs => model_obs%streamflow_cfs, &
 
