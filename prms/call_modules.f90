@@ -7,20 +7,20 @@
    &    RUN, DECL, INIT, SETDIMENS, CLEAN, ON, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
    &    ERROR_modflow, PRMS, GSFLOW, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
    &    CASCADEGW_SAME, CASCADEGW_OFF, &
-   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_grid_module, precip_dist2_module, &
+   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
    &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
    &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
    &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
    &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
    &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
-   &    climate_hru_module, precip_grid_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
+   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
    &    smidx_module, carea_module
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-08-25'
+    character(len=*), parameter :: PRMS_versn = '2020-08-26'
     character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -50,8 +50,8 @@
       INTEGER, SAVE :: Mxsziter
       INTEGER, SAVE, ALLOCATABLE :: Gvr_cell_id(:)
       REAL, SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
-! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_temp_grid
-! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=precip_temp_grid
+! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_map
+! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=temp_map
 ! Control parameters
       INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
@@ -95,7 +95,7 @@
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
       INTEGER, EXTERNAL :: stream_temp, glacr
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_temp_grid
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_temp_map
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
       EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
 ! Local Variables
@@ -129,9 +129,9 @@
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
      &        '   Potet Solar Rad: soltab', /, &
      &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,', /, &
-     &        '                    temp_grid', /, &
+     &        '                    temp_map', /, &
      &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
-     &        '                    climate_hru, precip_grid', /, &
+     &        '                    climate_hru, precip_map', /, &
      &        'Temp & Precip Dist: xyz_dist, ide_dist', /, &
      &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru', /, &
      &        'Transpiration Dist: transp_tindex, climate_hru, transp_frost', /, &
@@ -267,8 +267,8 @@
           call_modules = temp_dist2()
         ELSEIF ( Temp_flag==ide_dist_module ) THEN
           call_modules = ide_dist()
-        ELSE !IF ( Temp_flag==temp_grid_module ) THEN ! may be a problem, temp needs to be first ??? rsr
-          CALL precip_temp_grid()
+        ELSE !IF ( Temp_flag==temp_map_module ) THEN ! may be a problem, temp needs to be first ??? rsr
+          CALL precip_temp_map()
         ENDIF
         IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
@@ -609,8 +609,8 @@
         Climate_precip_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' ) THEN
         Precip_flag = xyz_dist_module
-      ELSEIF ( Precip_module(:15)=='precip_temp_grid' ) THEN
-        Precip_flag = precip_grid_module
+      ELSEIF ( Precip_module(:15)=='precip_temp_map' ) THEN
+        Precip_flag = precip_map_module
       ELSE
         PRINT '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
         Inputerror_flag = 1
@@ -633,8 +633,8 @@
         Temp_flag = xyz_dist_module
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
         Temp_flag = temp_sta_module
-      ELSEIF ( Temp_module(:15)=='precip_temp_grid' ) THEN
-        Temp_flag = temp_grid_module
+      ELSEIF ( Temp_module(:15)=='precip_temp_map' ) THEN
+        Temp_flag = temp_map_module
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
@@ -1096,7 +1096,7 @@
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
-      EXTERNAL :: precip_temp_grid
+      EXTERNAL :: precip_temp_map
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1113,7 +1113,7 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
-      CALL precip_temp_grid()
+      CALL precip_temp_map()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
