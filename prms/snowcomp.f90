@@ -25,7 +25,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2020-08-25'
+      character(len=*), parameter :: Version_snowcomp = '2020-08-28'
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -789,7 +789,6 @@
 !              print *, ai(i), snarea_thresh
               Frac_swe(i) = 0.0
             ENDIF
-            Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
             CALL sca_deplcrv(Snowcov_area(i), Snarea_curve(1,Hru_deplcrv(i)), Frac_swe(i))
             Basin_snowcov = Basin_snowcov + DBLE(Snowcov_area(i))*Hru_area_dble(i)
             Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*Hru_area_dble(i)
