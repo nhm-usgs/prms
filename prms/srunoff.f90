@@ -906,7 +906,7 @@
       hru_flag = 0
       IF ( Hru_type==LAND .OR. Isglacier==ON ) hru_flag = 1 ! land or glacier
 ! compute runoff from cascading Hortonian flow
-      IF ( Cascade_flag>0 ) THEN
+      IF ( Cascade_flag>CASCADE_OFF ) THEN
         avail_water = SNGL( Upslope_hortonian(Ihru) )
         IF ( avail_water>0.0 ) THEN
           Infil = Infil + avail_water
@@ -1264,7 +1264,7 @@
       DOUBLE PRECISION :: seep_open, seep_clos, tmp1
 !***********************************************************************
 !     add the hortonian flow to the depression storage volumes:
-      IF ( Cascade_flag>0 ) THEN
+      IF ( Cascade_flag>OFF ) THEN
         inflow = SNGL( Upslope_hortonian(Ihru) )
       ELSE
         inflow = 0.0
