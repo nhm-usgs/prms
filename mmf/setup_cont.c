@@ -44,7 +44,7 @@ void setup_cont (void) {
 /*
 **	GSFLOW control variables
 */
-        decl_control_string ("model_mode", "PRMS");
+        decl_control_string ("model_mode", "GSFLOW");
         decl_control_string ("modflow_name", "modflow.nam");
         decl_control_string ("precip_module", "precip_1sta");
         decl_control_string ("temp_module", "temp_1sta");
@@ -100,6 +100,10 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dprst_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("PRMS_iteration_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;
@@ -225,6 +229,10 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("canopy_transferON_OFF", 1, lval);
 
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("outputSelectDatesON_OFF", 1, lval);
+
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("seg2hru_flag", 1, lval);
@@ -332,6 +340,7 @@ void setup_cont (void) {
 		decl_control_string ("basinOutBaseFileName", "basinout_path");
 		decl_control_string("nsegmentOutBaseFileName", "nsegmentout_path");
 		decl_control_string("dynamic_param_log_file", "dynamic_parameter.out");
+		decl_control_string("selectDatesFileName", "selectDates.in");
 /*
 **	run start and end times
 */
