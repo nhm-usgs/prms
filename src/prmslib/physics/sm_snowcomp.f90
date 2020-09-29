@@ -18,6 +18,7 @@ contains
     ! integer(i32) :: idx1D
     integer(i32) :: j
     integer(i32) :: jj
+    integer(i32) :: sd
 
     ! real(r32), allocatable :: snarea_curve_2d(:, :)
     ! real(r32), pointer, contiguous :: snarea_curve_2d(:, :)
@@ -158,8 +159,9 @@ contains
       this%deninv = 1.0_dp / dble(this%den_init)
       this%denmaxinv = 1.0_dp / dble(this%den_max)
 
-      allocate(this%snarea_curve_2d(11, nhru))
-      this%snarea_curve_2d = reshape(this%snarea_curve, (/11, nhru/))
+      sd = this%ndeplval / 11
+      allocate(this%snarea_curve_2d(11, sd))
+      this%snarea_curve_2d = reshape(this%snarea_curve, (/11, sd/))
 
       ! this%settle_const_dble = dble(settle_const)
 
@@ -267,8 +269,12 @@ contains
           ! TODO: This is where the daily basin values are linked based on
           !       what was requested in basinOutVar_names.
           select case(outVar_names%values(jj)%s)
+            case('ai')
+              call model_summary%set_summary_var(jj, this%ai)
             case('albedo')
               call model_summary%set_summary_var(jj, this%albedo)
+            case('frac_swe')
+              call model_summary%set_summary_var(jj, this%frac_swe)
             case('freeh2o')
               call model_summary%set_summary_var(jj, this%freeh2o)
             case('pk_def')
@@ -281,6 +287,8 @@ contains
               call model_summary%set_summary_var(jj, this%pk_precip)
             case('pk_temp')
               call model_summary%set_summary_var(jj, this%pk_temp)
+            case('pst')
+              call model_summary%set_summary_var(jj, this%pst)
             case('snow_evap')
               call model_summary%set_summary_var(jj, this%snow_evap)
             case('snowcov_area')
@@ -530,8 +538,12 @@ contains
         ! to the snowpack.
         ! WARNING: pan - wouldn't this be pkwater_equiv > DNEARZERO?
         if ((pkwater_equiv(chru) > 0.0_dp .and. net_ppt(chru) > 0.0) .or. net_snow(chru) > 0.0) then
+          ! DEBUG:
+          ! write(*,*) 'pkwater_equiv, net_ppt, net_snow', pkwater_equiv(chru), net_ppt(chru), net_snow(chru), this%pptmix(chru), this%newsnow(chru)
+          ! write(*,*) 'pst, ai', this%pst(chru), this%ai(chru)
           call this%ppt_to_pack(model_climate, model_precip, curr_month, chru, &
                                 ctl_data, intcp, model_temp)
+          ! write(*,*) 'pst, ai, pkwater_equiv', this%pst(chru), this%ai(chru), pkwater_equiv(chru)
         endif
 
         if (pkwater_equiv(chru) > 0.0_dp) then
@@ -2038,11 +2050,19 @@ contains
       ! Set ai to the maximum packwater equivalent, but no higher than the
       ! threshold for complete snow cover.
       ai = pst  ! [inches]
+      ! DEBUG:
+      ! write(*,*) '   ai, pst', ai, pst
       if (ai > this%snarea_thresh(chru)) ai = dble(this%snarea_thresh(chru))  ! [inches]
 
       ! Calculate the ratio of the current packwater equivalent to the maximum
       ! packwater equivalent for the given snowpack.
-      frac_swe = sngl(pkwater_equiv / ai)  ! [fraction]
+      ! DEBUG:
+      ! write(*,*) chru, pkwater_equiv, ai, dble(this%snarea_thresh(chru))
+      if (ai == 0.0) then
+        frac_swe = 0.0
+      else
+        frac_swe = sngl(pkwater_equiv / ai)  ! [fraction]
+      end if
 
       ! There are 3 potential conditions for the snow area curve:
       ! A. snow is accumulating and the pack is currently at its maximum level.
@@ -2074,7 +2094,7 @@ contains
           ! (2.1) There was new snow...
 
           ! New snow will always reset the snow cover to 100%. However, different
-          ! states changes depending  on whether the previous snow area condition
+          ! states change depending  on whether the previous snow area condition
           ! was on the curve or being interpolated between the curve and 100%.
           ! 2 options below (if-then, else)
           ! if (iasw > 0) then

@@ -11,8 +11,8 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       type(Summary), intent(inout) :: model_summary
 
       ! Local Variables
+      integer(i32) :: cseg
       integer(i32) :: i
-
       integer(i32) :: iseg
       integer(i32) :: isegerr
       integer(i32) :: j
@@ -85,17 +85,17 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         if (any([0, 2] == init_vars_from_file)) then
           this%seg_outflow = this%segment_flow_init
-          ! ~~~~~~~~~~~~~~~~~~~~~~~~
-          ! Initialize from restart
-          call ctl_data%read_restart_variable('seg_outflow', this%seg_outflow)
-        endif
 
-        if (init_vars_from_file == 0) then
-          this%seg_inflow = 0.0_dp
+          do cseg = 1, nsegment
+            if (this%tosegment(cseg) > 0) then
+              this%seg_inflow(this%tosegment(cseg)) = this%seg_outflow(cseg)
+            end if
+          end do
         else
           ! ~~~~~~~~~~~~~~~~~~~~~~~~
           ! Initialize from restart
           call ctl_data%read_restart_variable('seg_inflow', this%seg_inflow)
+          call ctl_data%read_restart_variable('seg_outflow', this%seg_outflow)
         endif
 
         deallocate(this%segment_flow_init)
@@ -430,7 +430,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
         if (cascade_flag == 1) return
 
-        ! Divide solar radiation and PET by sum of HRU area to get avarage
+        ! Divide solar radiation and PET by sum of HRU area to get average
         if (this%noarea_flag) then
           do i=1, nsegment
             ! print *, i, ': ', this%seginc_swrad(i), this%seginc_potet(i), this%segment_hruarea(i)

@@ -21,6 +21,7 @@ module Simulation_class
   use PRMS_SOILZONE, only: Soilzone
   use PRMS_SRUNOFF, only: Srunoff
   use PRMS_STREAMFLOW, only: Streamflow
+  use PRMS_STRMFLOW_IN_OUT, only: Strmflow_in_out
   use PRMS_SUMMARY, only: Summary
   use PRMS_TEMPERATURE, only: Temperature
   use PRMS_TEMPERATURE_HRU, only: Temperature_hru
