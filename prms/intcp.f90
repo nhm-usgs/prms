@@ -7,7 +7,7 @@
       USE PRMS_CONSTANTS, ONLY: ON, OFF, DEBUG_WB, DOCUMENTATION, NEARZERO, DNEARZERO, &
      &    RUN, DECL, INIT, CLEAN, ON, DEBUG_WB, DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
       USE PRMS_MODULE, ONLY: Nhru, Model, Process_flag, Save_vars_to_file, Init_vars_from_file, &
-     &    Print_debug, Water_use_flag, Kkiter, PRMS_iteration_flag
+     &    Print_debug, Water_use_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
@@ -27,9 +27,6 @@
       REAL, SAVE, ALLOCATABLE :: Hru_intcpstor(:), Hru_intcpevap(:), Canopy_covden(:)
       REAL, SAVE, ALLOCATABLE :: Net_apply(:), Intcp_changeover(:)
       DOUBLE PRECISION, SAVE :: Basin_net_apply, Basin_hru_apply
-      INTEGER, SAVE, ALLOCATABLE :: It0_intcp_transp_on(:)
-      REAL, SAVE, ALLOCATABLE :: It0_intcp_stor(:), It0_hru_intcpstor(:)
-      DOUBLE PRECISION, SAVE :: It0_basin_intcp_stor
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Irr_type(:)
       REAL, SAVE, ALLOCATABLE :: Snow_intcp(:), Srain_intcp(:), Wrain_intcp(:)
@@ -77,11 +74,6 @@
 
       CALL print_module(MODDESC, MODNAME, Version_intcp)
 
-      IF ( PRMS_iteration_flag==ON ) THEN
-        ALLOCATE ( It0_intcp_stor(Nhru), It0_intcp_transp_on(Nhru) )
-        ALLOCATE ( It0_hru_intcpstor(Nhru) )
-      ENDIF
-
 ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       Use_transfer_intcp = OFF
       IF ( Water_use_flag==ON .OR. Model==DOCUMENTATION ) THEN
@@ -127,15 +119,15 @@
      &     'inches', Net_ppt)/=0 ) CALL read_error(3, 'net_ppt')
 
       IF ( declvar(MODNAME, 'basin_net_ppt', 'one', 1, 'double', &
-     &     'Basin area-weighted average throughfall', &
+     &     'Basin area-weighted average net precipitation', &
      &     'inches', Basin_net_ppt)/=0 ) CALL read_error(3, 'basin_net_ppt')
 
       IF ( declvar(MODNAME, 'basin_net_snow', 'one', 1, 'double', &
-     &     'Basin area-weighted average snow throughfall', &
+     &     'Basin area-weighted average snow net precipitation', &
      &     'inches', Basin_net_snow)/=0 ) CALL read_error(3, 'basin_net_snow')
 
       IF ( declvar(MODNAME, 'basin_net_rain', 'one', 1, 'double', &
-     &     'Basin area-weighted average rain throughfall', &
+     &     'Basin area-weighted average rain net precipitation', &
      &     'inches', Basin_net_rain)/=0 ) CALL read_error(3, 'basin_net_rain')
 
       ALLOCATE ( Intcp_stor(Nhru) )
@@ -163,7 +155,7 @@
 
       ALLOCATE ( Intcp_form(Nhru) )
       IF ( declvar(MODNAME, 'intcp_form', 'nhru', Nhru, 'integer', &
-     &     'Form (rain or snow) of interception for each HRU', &
+     &     'Form of interception for each HRU (0=rain; 1=snow)', &
      &     'none', Intcp_form)/=0 ) CALL read_error(3, 'intcp_form')
 
       ALLOCATE ( Intcp_on(Nhru) )
@@ -289,19 +281,6 @@
       intrun = 0
 
       ! pkwater_equiv is from last time step
-      IF ( PRMS_iteration_flag==ON ) THEN
-        IF ( Kkiter>1 ) THEN
-          Intcp_stor = It0_intcp_stor
-          Hru_intcpstor = It0_hru_intcpstor
-          Intcp_transp_on = It0_intcp_transp_on
-          Basin_intcp_stor = It0_basin_intcp_stor
-        ELSE
-          It0_intcp_stor = Intcp_stor
-          It0_hru_intcpstor = Hru_intcpstor
-          It0_basin_intcp_stor = Basin_intcp_stor
-          It0_intcp_transp_on = Intcp_transp_on
-        ENDIF
-      ENDIF
 
       IF ( Print_debug==DEBUG_WB ) THEN
         Intcp_stor_ante = Hru_intcpstor

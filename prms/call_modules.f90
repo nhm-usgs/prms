@@ -20,8 +20,8 @@
      &          EQULS = '===================================================================='
     character(len=*), parameter :: MODDESC = 'Computation Order'
     character(len=12), parameter :: MODNAME = 'call_modules'
-    character(len=*), parameter :: PRMS_versn = '2020-09-01'
-    character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 09/01/2020'
+    character(len=*), parameter :: PRMS_versn = '2020-10-10'
+    character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 10/10/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -223,7 +223,7 @@
           call_modules = 0
           RETURN
         ELSE
-          STOP 0
+          STOP
         ENDIF
       ENDIF
 
@@ -301,7 +301,7 @@
         call_modules = frost_date()
         IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
         IF ( Process_flag==RUN ) RETURN
-        IF ( Process_flag==CLEAN ) STOP 0
+        IF ( Process_flag==CLEAN ) STOP
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
@@ -458,11 +458,11 @@
      &          'parameter_check_flag to 1 to verify that those calibration', &
      &          'parameters have valid and compatible values.'
         ENDIF
-        IF ( Parameter_check_flag==2 ) STOP 0
+        IF ( Parameter_check_flag==2 ) STOP
         IF ( Inputerror_flag==1 ) ERROR STOP ERROR_param
         IF ( Model==25 ) THEN
           CALL convert_params()
-          STOP 0
+          STOP
         ENDIF
         IF ( Print_debug>DEBUG_minimum ) &
      &       PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day, EQULS

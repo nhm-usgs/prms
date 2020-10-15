@@ -13,8 +13,7 @@
      &    INCH2M, FEET2METERS, DNEARZERO, DOCUMENTATION, ON, OFF, &
      &    MONTHS_PER_YEAR, DEBUG_less, DAYS_YR, CLOSEZERO, INCH2CM
       USE PRMS_MODULE, ONLY: Model, Process_flag, Nhru, Ndepl, Print_debug, &
-     &    Save_vars_to_file, Init_vars_from_file, Snarea_curve_flag, Glacier_flag, Start_year, &
-     &    PRMS_iteration_flag, Kkiter
+     &    Save_vars_to_file, Init_vars_from_file, Snarea_curve_flag, Glacier_flag, Start_year
       IMPLICIT NONE
       !****************************************************************
       !   Local Constants
@@ -26,7 +25,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2020-09-22'
+      character(len=*), parameter :: Version_snowcomp = '2020-10-07'
       integer, parameter :: not_a_glacier_hru = -1
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
@@ -59,12 +58,6 @@
       REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:),Glacr_delsnow(:), Glacr_freeh2o_capm(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pkwater_ante(:), Glacr_pkwater_equiv(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pk_depth(:), Glacr_pss(:), Glacr_pst(:)
-      INTEGER, SAVE, ALLOCATABLE :: It0_iasw(:), It0_iso(:), It0_mso(:), It0_lso(:), It0_int_alb(:), It0_lst(:)
-      REAL, SAVE, ALLOCATABLE :: It0_snowcov_area(:), It0_snowcov_areasv(:), It0_albedo(:), It0_pk_depth(:)
-      REAL, SAVE, ALLOCATABLE :: It0_pk_temp(:), It0_pk_def(:), It0_pk_ice(:), It0_pk_den(:), It0_freeh2o(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_pkwater_equiv(:), It0_scrv(:), It0_pksv(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_pst(:), It0_pss(:), It0_ai(:)
-       REAL, SAVE, ALLOCATABLE :: It0_snsv(:), It0_salb(:), It0_slst(:)
       !****************************************************************
       !   Declared Parameters
 
@@ -126,14 +119,6 @@
 
       CALL print_module(MODDESC, MODNAME, Version_snowcomp)
 
-      IF ( PRMS_iteration_flag==ON ) THEN
-        ALLOCATE ( It0_snowcov_area(Nhru), It0_snowcov_areasv(Nhru), It0_pkwater_equiv(Nhru) )
-        ALLOCATE ( It0_albedo(Nhru), It0_pk_depth(Nhru), It0_iasw(Nhru), It0_pst(Nhru) )
-        ALLOCATE ( It0_pksv(Nhru), It0_scrv(Nhru), It0_pk_temp(Nhru), It0_pss(Nhru), It0_ai(Nhru) )
-        ALLOCATE ( It0_pk_def(Nhru), It0_pk_ice(Nhru), It0_pk_den(Nhru), It0_freeh2o(Nhru) )
-        ALLOCATE ( It0_iso(Nhru),  It0_mso(Nhru), It0_lso(Nhru), It0_int_alb(Nhru), It0_lst(Nhru) )
-        ALLOCATE ( It0_snsv(Nhru), It0_salb(Nhru), It0_slst(Nhru) )
-      ENDIF
 ! declare variables
       ALLOCATE ( Scrv(Nhru) )
       IF ( declvar(MODNAME, 'scrv', 'nhru', Nhru, 'double', &
@@ -170,7 +155,7 @@
 ! Glacier declares
       IF ( Glacier_flag==ON .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'yrdays5', 'one', 1, 'integer', &
-     &     'Number of days since last 5 year mark', &
+     &     'Number of days since last 5-year mark', &
      &     'none', Yrdays5)/=0 ) CALL read_error(3, 'yrdays5')
 
         ALLOCATE ( Glacr_freeh2o_capm(Nhru) )
@@ -185,37 +170,37 @@
 
         ALLOCATE ( Ann_tempc(Nhru) )
         IF ( declvar(MODNAME, 'ann_tempc', 'nhru', Nhru, 'real', &
-     &       'Current average year air temperature overs HRU', &
+     &       'Current average year air temperature over each HRU', &
      &       'degrees Celsius', Ann_tempc)/=0 ) CALL read_error(3, 'ann_tempc')
 
        ALLOCATE ( Glacr_air_5avtemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_5avtemp', 'nhru', Nhru, 'real', &
-     &       'Current 5-yr average summer (June July Aug) air temperature over glacier or glrette HRU', &
+     &       'Current 5-yr average summer (June July Aug) air temperature over glacier or glacierette HRUs', &
      &       'degrees Celsius', Glacr_air_5avtemp)/=0 ) CALL read_error(3, 'glacr_air_5avtemp')
 
         ALLOCATE ( Glacr_air_5avtemp1(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_5avtemp1', 'nhru', Nhru, 'real', &
-     &       'First 5-yr average summer temperature over glacier or glrette HRU', &
+     &       'First 5-yr average summer temperature over glacier or glacierette HRUs', &
      &       'degrees Celsius', Glacr_air_5avtemp1)/=0 ) CALL read_error(3, 'glacr_air_5avtemp1')
 
         ALLOCATE ( Glacr_air_deltemp(Nhru) )
         IF ( declvar(MODNAME, 'glacr_air_deltemp', 'nhru', Nhru, 'real', &
-     &       'Change in 5-yr average air temperature over glacier or glrette HRU from first', &
+     &       'Change in 5-yr average air temperature over glacier or glacierette HRUs from first', &
      &       'degrees Celsius', Glacr_air_deltemp)/=0 ) CALL read_error(3, 'glacr_air_deltemp')
 
        ALLOCATE ( Glacr_5avsnow(Nhru) )
         IF ( declvar(MODNAME, 'glacr_5avsnow', 'nhru', Nhru, 'real', &
-     &       'Current 5-yr average snow over glacier or glrette HRU', &
+     &       'Current 5-yr average snow over glacier or glacierette HRUs', &
      &       'inches/yr', Glacr_5avsnow)/=0 ) CALL read_error(3, 'glacr_5avsnow')
 
         ALLOCATE ( Glacr_5avsnow1(Nhru) )
         IF ( declvar(MODNAME, 'glacr_5avsnow1', 'nhru', Nhru, 'real', &
-     &       'First 5-yr average snow over glacier or glrette HRU', &
+     &       'First 5-yr average snow over glacier or glacierette HRUs', &
      &       'inches/yr', Glacr_5avsnow1)/=0 ) CALL read_error(3, 'glacr_5avsnow1')
 
         ALLOCATE ( Glacr_delsnow(Nhru) )
         IF ( declvar(MODNAME, 'glacr_delsnow', 'nhru', Nhru, 'real', &
-     &       'Change in 5-yr average snow over glacier or glrette HRU from first', &
+     &       'Change in 5-yr average snow over glacier or glacierette HRUs from first', &
      &       'inches/yr', Glacr_delsnow)/=0 ) CALL read_error(3, 'glacr_delsnow')
 
         ALLOCATE ( Glacr_pk_temp(Nhru) )
@@ -230,7 +215,7 @@
 
         ALLOCATE ( Glacr_pk_den(Nhru) )
         IF ( declvar(MODNAME, 'glacr_pk_den', 'nhru', Nhru, 'real', &
-     &       'Density of the icepack on each glacier HRU, hard-coded to equal 0.917', &
+     &       'Density of the icepack on each glacier HRU, hard coded to equal 0.917', &
      &       'gm/cm3', Glacr_pk_den)/=0 ) CALL read_error(3, 'glacr_pk_den')
 
         ALLOCATE ( Glacr_albedo(Nhru) )
@@ -285,11 +270,11 @@
 
         ALLOCATE ( Glacr_pst(Nhru) )
         IF ( declvar(MODNAME, 'glacr_pst', 'nhru', Nhru, 'double', &
-     &       'While a icepack exists, glacr_pst tracks the maximum ice water equivalent of that icepack', &
+     &       'While an icepack exists, glacr_pst tracks the maximum ice water equivalent of that icepack', &
      &       'inches', Glacr_pst)/=0 ) CALL read_error(3, 'glacr_pst')
 
         IF ( declvar(MODNAME, 'basin_snowicecov', 'one', 1, 'double', &
-     &       'Basin area-weighted average snow and glacier and glrette covered area', &
+     &       'Basin area-weighted average snow and glacier and glacierette covered area', &
      &       'decimal fraction', Basin_snowicecov)/=0 ) CALL read_error(3, 'basin_snowicecov')
 
         ALLOCATE ( Glacr_freeh2o_cap(Nhru) )
@@ -312,8 +297,8 @@
           ALLOCATE ( Glacier_frac_init(Nhru) )
           IF ( declparam(MODNAME, 'glacier_frac_init', 'nhru', 'real', &
      &       '0.0', '0.0', '1.0', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
-     &       'Inital fraction of glaciation (0=none; 1=100%)', &
+     &       'Initial fraction of glaciation (0=none; 1=100%)', &
+     &       'Initial fraction of glaciation (0=none; 1=100%)', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'glacier_frac_init')
 
           ALLOCATE ( Glrette_frac_init(Nhru) )
@@ -818,8 +803,6 @@
           IF ( Ai(i)>DNEARZERO ) THEN
             Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
             Frac_swe(i) = MIN( 1.0, Frac_swe(i) )
-          ELSE
-            Frac_swe(i) = 0.0
           ENDIF
           CALL sca_deplcrv(Snowcov_area(i), Snarea_curve(1,Hru_deplcrv(i)), Frac_swe(i))
           Basin_snowcov = Basin_snowcov + DBLE(Snowcov_area(i))*Hru_area_dble(i)
@@ -931,62 +914,6 @@
       DOUBLE PRECISION :: dpt1, dpt_before_settle
 !***********************************************************************
       snorun = 0
-
-      IF ( PRMS_iteration_flag==ON ) THEN
-        IF ( Kkiter>1 ) THEN
-          DO j = 1, Active_hrus
-            i = Hru_route_order(j)
-            Snowcov_area = It0_snowcov_area(i)
-            Snowcov_areasv = It0_snowcov_areasv(i)
-            Albedo(i) = It0_albedo(i)
-            Pk_depth(i) = It0_pk_depth(i)
-            Iasw(i) = It0_iasw(i)
-            Pst(i) = It0_pst(i)
-            Scrv(i) = It0_scrv(i)
-            Pksv(i) = It0_pksv(i)
-            Pk_temp(i) = It0_pk_temp(i)
-            Pk_def(i) = It0_pk_def(i)
-            Pk_ice(i) = It0_pk_ice(i)
-            Pk_den(i) = It0_pk_den(i)
-            Pss(i) = It0_pss(i)
-            Ai(i) = It0_ai(i)
-            Freeh2o(i) = It0_freeh2o(i)
-            Iso(i) = It0_iso(i)
-            Mso(i) = It0_mso(i)
-            Lso(i) = It0_lso(i)
-            Snsv(i) = It0_snsv(i)
-            Lst(i) = It0_lst(i)
-            Int_alb(i) = It0_int_alb(i)
-            Salb(i) = It0_salb(i)
-            Slst(i) = It0_slst(i)
-          ENDDO
-        ELSE
-          It0_pkwater_equiv = Pkwater_equiv
-          It0_snowcov_area = Snowcov_area
-          It0_albedo = It0_albedo
-          It0_pk_depth = Pk_depth
-          It0_snowcov_areasv = Snowcov_areasv
-          It0_iasw = Iasw
-          It0_pst = Pst
-          It0_scrv = Scrv
-          It0_pksv = Pksv
-          It0_pk_temp = Pk_temp
-          It0_pk_def = Pk_def
-          It0_pk_ice = Pk_ice
-          It0_pk_den = Pk_den
-          It0_pss = Pss
-          It0_ai = Ai
-          It0_freeh2o = Freeh2o
-          It0_iso = Iso
-          It0_mso = Mso
-          It0_iso = Lso
-          It0_snsv = Snsv
-          It0_lst = Lst
-          It0_int_alb = Int_alb
-          It0_salb = Salb
-          It0_slst = Slst
-        ENDIF
-      ENDIF
 
       ! Set the basin totals to 0
       ! (recalculated at the end of the time step)
