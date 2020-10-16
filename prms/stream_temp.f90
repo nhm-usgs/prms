@@ -42,7 +42,7 @@
       REAL, SAVE, ALLOCATABLE :: Vdemx(:), Vhe(:), Voe(:), Vcw(:), Vdwmx(:), Vhw(:), Vow(:)
       REAL, SAVE, ALLOCATABLE :: Vdemn(:), Vdwmn(:)
       INTEGER, SAVE :: Spring_jday, Summer_jday, Autumn_jday, Winter_jday
-!   Shade Parameters needed if stream_temp_shade_flag = 1
+!   Shade Parameters needed if stream_temp_shade_flag = 2
       REAL, SAVE, ALLOCATABLE :: Segshade_sum(:), Segshade_win(:)
       REAL, SAVE:: Albedo, Melt_temp
       ! INTEGER, SAVE :: Shadeflg, now using stream_temp_shade_flag
@@ -212,10 +212,10 @@
 
       ALLOCATE ( width_alpha(Nsegment) )
       IF ( declparam( MODNAME, 'width_alpha', 'nsegment', 'real', &
-     &     '1.0', '0.0001', '1000.0', &
+     &     '0.015', '0.0001', '2.0', &
      &     'Alpha coefficient in power function for width calculation', &
      &     'Alpha coefficient in power function for width calculation', &
-     &     'meters')/=0 ) CALL read_error(1, 'width_alpha')
+     &     'unknown')/=0 ) CALL read_error(1, 'width_alpha')
 
       ALLOCATE ( width_m(Nsegment) )
       IF ( declparam( MODNAME, 'width_m', 'nsegment', 'real', &
@@ -715,12 +715,10 @@
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
-      USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order
+      USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
       USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
-
-      USE PRMS_FLOWVARS, ONLY: Seg_lateral_inflow
 
       IMPLICIT NONE
 ! Functions
@@ -733,9 +731,6 @@
       REAL :: te, ak1, ak2, ccov
       DOUBLE PRECISION :: qlat
       REAL :: t_o, up_temp
-      REAL :: fs_kk
-      real sum_flow
-      real sum_temp
 !***********************************************************************
       stream_temp_run = 0
       Seg_tave_air = 0.0
@@ -762,9 +757,24 @@
       hru_area_sum = 0.0
 
       ! Compute segment lateral inflow temperatures and segment meteorological values
+
       DO k = 1, Active_hrus
          j = Hru_route_order(k)
-         ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
+
+! DANGER HACK
+! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as 
+! this results in divide by 0.0
+         if (Soltab_potsw(jday, j) <= 10.0) then
+            ccov = 1.0 - (Swrad(j) / sngl(10.0) * sngl(Hru_cossl(j)))
+         else
+            ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
+         endif
+
+         if (ccov .ne. ccov) then
+             write(*,*) "ccov is nan", j, Swrad(j), Soltab_potsw(jday, j), Hru_cossl(j)
+         endif
+      
+
          IF ( ccov<NEARZERO ) THEN
             ccov = 0.0
          ELSEIF ( ccov>1.0 ) THEN
@@ -786,6 +796,7 @@
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.
          Seg_ccov(i) = Seg_ccov(i) + ccov*harea
+
          Seg_potet(i) = Seg_potet(i) + DBLE( Potet(j)*harea )
          Seg_melt(i) = Seg_melt(i) + Snowmelt(j)*harea
          Seg_rain(i) = Seg_rain(i) + Hru_rain(j)*harea
@@ -824,7 +835,33 @@
                Seg_humid(i) = Seg_humid(i) * 0.01
             endif
          ENDIF
+
+!         if (Seg_tave_air(i) .ne. Seg_tave_air(i)) then
+!            write(*,*) "Seg_tave_air is nan", i
+!         endif
+!
+!         if (Seg_ccov(i) .ne. Seg_ccov(i)) then
+!            write(*,*) "Seg_ccov is nan", i
+!         endif
+!
+!         if (Seg_potet(i) .ne. Seg_potet(i)) then
+!            write(*,*) "Seg_potet is nan", i
+!         endif
+!
+!         if (Seg_melt(i) .ne. Seg_melt(i)) then
+!            write(*,*) "Seg_melt is nan", i
+!         endif
+!             
+!         if (Seg_rain(i) .ne. Seg_rain(i)) then
+!            write(*,*) "Seg_rain is nan", i
+!         endif
+!             
+!         if (Seg_humid(i) .ne. Seg_humid(i)) then
+!            write(*,*) "Seg_humid is nan", i
+!         endif
+ 
       ENDDO
+
 
 ! Compute the running averages for groundwater and subsurface temperatures.
       if (gw_index >= gw_tau(i)) then
@@ -843,15 +880,31 @@
       ! If the value is something other than -100.0, then I know that it has been computed.
       ! Trying to get at the differece between computed bad values and segments that have not been
       ! computed yet.
-      DO j = 1, Nsegment
-         seg_tave_upstream(j) = -100.0
-         Seg_tave_water(j) = 0.0
-      enddo
+      seg_tave_upstream(i) = -100.0
 
 ! Big do loop
-!      write(*,*) "big do loop ", Nowyear, Nowmonth, Nowday
       DO j = 1, Nsegment
          i = Segment_order(j)
+
+         ! !! LOOP BREAKS HERE !!
+         !
+         ! If the seg_tave_water value has been set to -99.9 (in init), then this is a segment that will
+         ! never have streamflow because it does not have any HRUs connected to it and none of the
+         ! upstream segments (if there are any) have HRUs connected. Because there can never be any
+         ! flow, the temperature calculation will always fail, so don't bother with it.
+         if (Seg_tave_water(i) < -99.0) then
+            cycle
+         endif
+
+         ! !! LOOP BREAKS HERE !!
+         !
+         ! If the seginc_swrad value has been set to -99.9 (route_run), then this segment will
+         ! never have solar radiation because it does not have any HRUs connected to it and none of the
+         ! upstream or downstream segments have HRUs connected.
+         if (seginc_swrad(i) < -99.0) then
+            Seg_tave_water(i) = -99.9
+            cycle
+         endif
 
 ! GW moving average
          gw_sum(i) = gw_sum(i) - gw_silo(i, gw_index)
@@ -865,110 +918,45 @@
          ss_sum(i) = ss_sum(i) + ss_silo(i, ss_index)
          seg_tave_ss(i) = ss_sum(i) / ss_tau(i)
 
-         ! Inputs: seg_tave_gw, Seg_tave_air, seg_tave_ss, seg_tave_upstream, Seg_melt, Seg_rain
-         ! Outputs: qlat (in CMS), seg_tave_lat
-         ! Qlat = Seg_lateral_inflow(id) * CFS2CMS_CONV
-         CALL lat_inflow(qlat, seg_tave_lat(i), i, seg_tave_gw(i), Seg_tave_air(i), seg_tave_ss(i), &
-     &                   Seg_melt(i), Seg_rain(i))
-
-!         if (i == 56371 .or. i == 56379) then 
-!            write(*,*) "####  NEW DATE"
-!            write(*,*) "0", i, Nowyear, Nowmonth, Nowday
-!            write(*,*) "0", qlat, seg_tave_lat(i), seg_tave_gw(i)
-!            write(*,*) Seg_tave_air(i), seg_tave_ss(i)
-!            write(*,*) Seg_melt(i), Seg_rain(i)
-!            write(*,*) "#################"
-!         endif
-
 ! Find upstream intitial inflow temperature for segment i
-! i is the current segm)ent
+! i is the current segment
 ! kk is the upstream segment
          fs = 0.0
          up_temp = 0.0
-
-! Add in the heat from upstream
-
-!         if (i == 56371 .or. i == 56379) then 
-!            write(*,*) 0.5,  i, upstream_count(i)
-!            write(*,*) "#################"
-!         endif
-
          do k = 1, upstream_count(i)
             kk = upstream_idx(i,k)
-            fs_kk = SNGL(Seg_outflow(kk) * CFS2CMS_CONV)
-
-            up_temp = up_temp + (Seg_tave_water(kk) * fs_kk)
-            fs = fs + fs_kk
-!            if (i == 56371 .or. i == 56379) then 
-!               write(*,*) 1, i, k, kk, fs, fs_kk, Seg_tave_water(kk), up_temp
-!            endif
+            if (Seg_tave_water(kk) > -1.0) then
+               up_temp = up_temp + (Seg_tave_water(kk) * SNGL(Seg_outflow(kk)))
+               fs = fs + SNGL(Seg_outflow(kk))
+            ENDIF
          ENDDO
 
-!         if (i == 56371 .or. i == 56379) then 
-!            write(*,*) "#################"
-!            write(*,*) 2, fs, Seg_outflow(kk) * CFS2CMS_CONV,  up_temp
-!            write(*,*) "#################"
-!         endif
-
-!         ! Finish computing seg_tave_upstream
+         ! Finish computing seg_tave_upstream
          IF ( fs > NEARZERO) THEN
             seg_tave_upstream(i) = up_temp / fs
          ELSE
             ! -98.9 is the code for no flow on this timestep
-            seg_tave_upstream(i) = 0.0
+            seg_tave_upstream(i) = -98.9
          ENDIF
 
-!         if (i == 56371 .or. i == 56379) then 
-!            write(*,*) "#################"
-!            write(*,*) 2.5, seg_tave_upstream(i) , fs, Seg_lateral_inflow(i) * CFS2CMS_CONV
-!            write(*,*) "#################"
-!         endif
-
-!!!!
-! Compute t_o
-!
-         sum_flow = 0.0
-         sum_temp = 0.0
-
-        ! seg_lateral_infow is in cfs, so don't include the lateral inflow if is it less than 0.5 cfs
-         if (seg_lateral_inflow(i) >= 0.5) then
-            sum_flow = sum_flow + sngl(seg_lateral_inflow(i) * CFS2CMS_CONV)
-            sum_temp = sum_temp + sngl(seg_tave_lat(i) * seg_lateral_inflow(i) * CFS2CMS_CONV)
+! debug
+         if (seg_tave_upstream(i) > 100.0) then
+            write(*,*) "upstream_temp: i = ", i, " seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", &
+      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
          endif
-
-        ! fs is the sum of the upstream flow in cms, don't include if it is less than 0.5 cfs
-         if ((fs / CFS2CMS_CONV) >= 0.5) then
-            sum_flow = sum_flow + fs
-            sum_temp = sum_temp + seg_tave_upstream(i) * fs
-         endif
-
-         if (sum_flow >= 0.5) then
-            t_o = sum_temp / sum_flow
-         else
-            t_o = -99.9
-         endif
-
-!         if (i == 56371 .or. i == 56379) then 
-!            write(*,*) "#################"
-!            write(*,*) 3, i, t_o, fs, Seg_lateral_inflow(i) * CFS2CMS_CONV
-!            write(*,*)  seg_tave_lat(i),  seg_tave_upstream(i)
-!            write(*,*) "#################"
-!         endif
-
 
          ! Compute flow-dependent water-in-segment width value
          if (seg_outflow(i) > NEARZERO) then
             Seg_width(i) = width_alpha(i) * sngl(Seg_outflow(i)) ** width_m(i)
          else
             Seg_width(i) = 0.0
+            if (Seg_tave_water(i) > -99.0) then
+               ! This segment has upstream HRUs somewhere, but the current day's flow is zero
+               Seg_tave_water(i) = -98.9
+            endif
          endif
 
-
          ! Compute the shade on the segment. Either set by value in the parameter file or computed
-         !
-         ! stream_temp_shade_flag == 0 compute shade from shday using the segment topology and veg shade.
-         ! stream_temp_shade_flag == 1 read the parameter values for segshade_win and segshade_sum.
-         !
          IF ( Stream_temp_shade_flag==1 ) THEN
             IF ( Summer_flag==0 ) THEN
                seg_shade(i) = Segshade_win(i)
@@ -983,98 +971,98 @@
          ENDIF
 
          ! Start working towards the computation of the equilibrium temperature
-!         qlat = 0.0D0
-!         seg_tave_lat(i) = 0.0
+         qlat = 0.0D0
+         seg_tave_lat(i) = 0.0
          ak1 = 0.0
          ak2 = 0.0
+
+         ! Inputs: seg_tave_gw, Seg_tave_air, seg_tave_ss, seg_tave_upstream, Seg_melt, Seg_rain
+         ! Outputs: qlat (in CMS), seg_tave_lat
+         CALL lat_inflow(qlat, seg_tave_lat(i), i, seg_tave_gw(i), Seg_tave_air(i), seg_tave_ss(i), &
+     &                   Seg_melt(i), Seg_rain(i))
+
 
          ! This code does not handle thermodynamics of ice, so temperatures below 0 are not allowed.
          ! The question is when to set temperatures below 0 to 0. If, after computing the running averages
          ! and mixing the different sources of lateral flow, the temperature is less than 0, set the lateral
          ! flow temperature to 0 here.
+         if (seg_tave_lat(i) .lt. NEARZERO) then
+            seg_tave_lat(i) = 0.0
+         endif
+
+! Compute t_o
+! t_o is the temperature of the water at the beginning of the time step (this is To in equation 32)
+         if (Seg_tave_water(i) < -99.0) then
+!            No flow in this segment and there never will be becuase there are no upstream HRUs.
+            t_o = Seg_tave_water(i)
+
+         elseif (Seg_tave_water(i) < -98.0) then
+!            No flow in this segment on this time step, but could be on future time step
+            t_o = Seg_tave_water(i)
+
+         elseif ((fs .le. NEARZERO) .and. (qlat .le. NEARZERO)) then
+             ! If there is no flow, set the temperature to -98.9
+             ! -99.9 means that the segment never has any flow (determined up in init).
+             ! -98.9 means that this a segment that could have flow, but doesn't
+            Seg_tave_water(i) = -98.9
+            t_o = Seg_tave_water(i)
+
+         elseif (fs .le. NEARZERO) then
+             ! if this is true, then there is no flow from upstream, but there is lateral inflow
+            t_o = seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)
+
+         elseif (qlat .le. NEARZERO) then
+             ! if this is true, then there is no lateral flow, but there is flow from upstream
+            t_o = seg_tave_upstream(i)
+
+         else
+             ! if this is true, then there is both lateral flow and flow from upstream
+             !  qlat is in CMS so fs needs to be converted
+            t_o = sngl((seg_tave_upstream(i) * fs * CFS2CMS_CONV) + &
+     &                   (sngl(qlat) * (seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)))) / &
+     &                   sngl((fs * CFS2CMS_CONV) + sngl(qlat))
+         endif
 
 ! debug
          if (t_o .ne. t_o) then
-             write(*,*) "t_o is Nan", i , Nowyear, Nowmonth, Nowday
-             Seg_tave_water(i) = -98.9
+             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
+     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
+             continue
+         endif
 
-         else if (t_o .gt. 50.0) then
-             write(*,*) "t_o = ", t_o, " ted = ", te, " seg_id = ", i
+! debug
+         if (t_o .gt. 100.0) then
+             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
              write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
      &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
              write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
-             Seg_tave_water(i) = -98.9
+             continue
+             exit
+          endif
 
-         else if (t_o .lt. -98.0) then
-            Seg_tave_water(i) = -98.9
-
-         else if (t_o .lt. 0.5) then
-            Seg_tave_water(i) = 0.0
-
-         else
+!         Need a good value of t_o
+          if (t_o .gt. -98.0) then
 !             This block computes the value for seg_tave_water
+
 !             Compute the equilibrium temerature
               ! Out: te, ak1, ak2
               ! In: seg_shade, svi, i, t_o
-            CALL equilb(te, ak1, ak2, seg_shade(i), svi, i, t_o)
+              CALL equilb(te, ak1, ak2, seg_shade(i), svi, i, t_o)
 
-!            if (i == 56371 .or. i == 56379) then 
-!               write(*,*) "#################"
-!               write(*,*) 4,te, ak1, ak2, seg_shade(i), svi, i, t_o
-!               write(*,*) "#################"
-!            endif
+!             Compute the daily mean water temperature
+              ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
+              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
 
-            if (te .ne. te) then
+          else
+              ! bad t_o value
+              Seg_tave_water(i) = -98.9
+          endif
 
-!                te was computed as nan so set water temperature to -98.0
-               Seg_tave_water(i) = -98.9
+          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
+             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
+          endif
 
-               if (i == 56371 .or. i == 56379) then 
-                  write(*,*) "#################"
-                  write(*,*) 4.5, "te is NaN, seg_tave_water set to -98, t_o = ", t_o
-                  write(*,*) "#################"
-               endif
-
-               else
-!                 Compute the daily mean water temperature
-                  ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
-                  Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
-
-! This next block checks to see if the computed water temperature (seg_tave_water) is between the initial
-! temperature (t_o) and the equilibrium temperature (te). If it's not, then set seg_tave_water to t_o
-! In the NHM, there was a case where the stream length was 20m and the stream width was 33 meter, so the
-! length was shorter than the width. A case like this could be outside the valid range of the SNTemp math.
-! Especially if the segment is 20 m long, the outflow temperature is going to be equal to the inflow temperature.
-                 if (t_o < te) then
-                    if ((Seg_tave_water(i) < t_o) .or. (Seg_tave_water(i) > te)) then
-                       Seg_tave_water(i) = t_o
-                    endif
-                 else
-                    if ((Seg_tave_water(i) > t_o) .or. (Seg_tave_water(i) < te)) then
-                       Seg_tave_water(i) = t_o
-                    endif
-                 endif
-              endif
-
-!              if (i == 56371 .or. i == 56379) then 
-!                  write(*,*) "#################"
-!                  write(*,*) 5,fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i)
-!                  write(*,*) 5, Seg_tave_water(i)
-!                  write(*,*) "#################"
-!               endif
-            endif
-
-!            if (i == 56371 .or. i == 56379) then 
-!               write(*,*) "#################"
-!               write(*,*) 6, Seg_tave_water(i)
-!               write(*,*) "#################"
-!            endif
-
-! Final check to see if seg_tave_water is nan
-            if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
-               write(*,*) "seg_tave_water is nan", i, Nowyear, Nowmonth, Nowday
-            endif
-         enddo
+      ENDDO
       END FUNCTION stream_temp_run
 !
 !*********************************************************************************
@@ -1303,6 +1291,12 @@
       Ted = t_o
 
       CALL teak1(A, b, c, d, Ted, Ak1d)
+
+!      if (ted .ne. ted) then
+!         write(*,*) "   ted is NaN in equilib ", seg_id, A, b, c, d, Ted, Ak1d
+!         write(*,*) "   ", seg_id, ha, hv, hf, hs, ltnt_ht, evap, bow_coeff, seg_tave_gw(Seg_id), AKZ
+!         write(*,*) "   ha components ",  Seg_humid(Seg_id), vp_sat, Sh, Seg_ccov(Seg_id), taabs
+!      endif
 
 !
 ! DETERMINE 2ND ORDER THERMAL EXCHANGE COEFFICIENT
