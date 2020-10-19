@@ -665,7 +665,6 @@
       ENDIF
 
       dprst_chk = 0
-      Hortonian_flow = 0.0
       Infil = 0.0
       DO k = 1, Active_hrus
         i = Hru_route_order(k)
@@ -1579,6 +1578,7 @@
 !***********************************************************************
       IF ( In_out==0 ) THEN
         WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Basin_dprst_volop, Basin_dprst_volcl
         WRITE ( Restart_outunit ) Hru_impervstor
         IF ( Dprst_flag==ON ) THEN
           WRITE ( Restart_outunit ) Dprst_area_open
@@ -1594,6 +1594,7 @@
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Basin_dprst_volop, Basin_dprst_volcl
         READ ( Restart_inunit ) Hru_impervstor
         IF ( Dprst_flag==ON ) THEN
           READ ( Restart_inunit ) Dprst_area_open

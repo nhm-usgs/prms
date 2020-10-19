@@ -20,13 +20,13 @@
       INTRINSIC :: ACOS
       INTEGER, PARAMETER :: MAXALB = 15
       REAL, PARAMETER :: PI = ACOS(-1.0)
+      INTEGER, PARAMETER :: not_a_glacier_hru = -1
 
       !****************************************************************
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
       character(len=*), parameter :: Version_snowcomp = '2020-10-07'
-      integer, parameter :: not_a_glacier_hru = -1
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -1109,15 +1109,15 @@
      &            Pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), &
      &            Freeh2o_cap(i), Den_max(i), not_a_glacier_hru)
         IF ( Active_glacier>0 ) THEN
-           IF ( Glacrcov_area(i)>0.0.AND.Glacr_pkwater_ante(i)>0.0D0.AND.Net_ppt(i)>0.0 &
-     &          .AND.Pptmix(i)==0.AND.Net_snow(i)==0.0 ) THEN
-              CALL ppt_to_pack(0, Iasw(i), Tmaxc(i), Tminc(i), Tavgc(i), &
-     &             Ai(i), Frac_swe(i), Pksv(i), Scrv(i), &
-     &             Glacr_Pkwater_equiv(i), Net_rain(i), Glacr_pk_def(i), &
-     &             Glacr_pk_temp(i), Glacr_pk_ice(i), Glacr_freeh2o(i), Glacrcov_area(i), &
-     &             Glacrmelt(i), Glacr_pk_depth(i), Glacr_pss(i), Glacr_pst(i), 0.0, &
-     &             Glacr_pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), &
-     &             Glacr_freeh2o_capm(i), Den_max(i), i)
+          IF ( Glacrcov_area(i)>0.0.AND.Glacr_pkwater_ante(i)>0.0D0.AND.Net_ppt(i)>0.0 &
+     &         .AND.Pptmix(i)==0.AND.Net_snow(i)==0.0 ) THEN
+             CALL ppt_to_pack(0, Iasw(i), Tmaxc(i), Tminc(i), Tavgc(i), &
+     &            Ai(i), Frac_swe(i), Pksv(i), Scrv(i), &
+     &            Glacr_Pkwater_equiv(i), Net_rain(i), Glacr_pk_def(i), &
+     &            Glacr_pk_temp(i), Glacr_pk_ice(i), Glacr_freeh2o(i), Glacrcov_area(i), &
+     &            Glacrmelt(i), Glacr_pk_depth(i), Glacr_pss(i), Glacr_pst(i), 0.0, &
+     &            Glacr_pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), &
+     &            Glacr_freeh2o_capm(i), Den_max(i), i)
           ENDIF
         ENDIF
 
@@ -1385,7 +1385,7 @@
           ENDIF
           IF ( Active_glacier>0 ) THEN
             IF ( Glacrcov_area(i)>0.0 ) &
-     &            CALL snowevap(Potet_sublim(i), Potet(i), Glacrcov_area(i), &
+     &           CALL snowevap(Potet_sublim(i), Potet(i), Glacrcov_area(i), &
      &                         Glacr_evap(i), Glacr_pkwater_equiv(i), Glacr_pk_ice(i), &
      &                         Glacr_pk_def(i), Glacr_freeh2o(i), Glacr_pk_temp(i), Hru_intcpevap(i))
           ENDIF
