@@ -812,6 +812,7 @@
       Basin_pweqv = Basin_pweqv*Basin_area_inv
       Basin_snowcov = Basin_snowcov*Basin_area_inv
       Basin_snowdepth = Basin_snowdepth*Basin_area_inv
+      Pkwater_ante = Pkwater_equiv
       Pss = Pkwater_equiv
       Pst = Pkwater_equiv
       Iasw = 0
@@ -2931,6 +2932,7 @@
         WRITE ( Restart_outunit ) Pst
         WRITE ( Restart_outunit ) Snsv
         WRITE ( Restart_outunit ) Pk_depth
+        WRITE ( Restart_outunit ) Pkwater_ante
         WRITE ( Restart_outunit ) Ai
         IF ( Glacier_flag==ON ) THEN
           WRITE ( Restart_outunit ) Glacr_albedo
@@ -2976,6 +2978,7 @@
         READ ( Restart_inunit ) Pst
         READ ( Restart_inunit ) Snsv
         READ ( Restart_inunit ) Pk_depth
+        READ ( Restart_inunit ) Pkwater_ante
         READ ( Restart_inunit ) Ai
         IF ( Glacier_flag==ON ) THEN
           READ ( Restart_inunit ) Glacr_albedo
