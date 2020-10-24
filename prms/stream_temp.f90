@@ -719,7 +719,7 @@
       USE PRMS_SNOW, ONLY: Snowmelt
       USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
+      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday !, Nowyear, Nowday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
 
       IMPLICIT NONE
