@@ -20,8 +20,8 @@
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2020-12-10'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 12/10/2020'
+      character(len=*), parameter :: PRMS_versn = '2020-12-12'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.0 12/12/2020'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -46,13 +46,7 @@
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
       INTEGER, SAVE :: Lake_transfer_water_use, Lake_add_water_use
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
-!   Declared Variables
       INTEGER, SAVE :: Kkiter
-      REAL, SAVE, ALLOCATABLE :: Agriculture_irrigation(:)    !Ag irrigation added to HRU
-!   Declared Parameters
-      INTEGER, SAVE :: Mxsziter
-      INTEGER, SAVE, ALLOCATABLE :: Gvr_cell_id(:)
-      REAL, SAVE, ALLOCATABLE :: Gvr_cell_pct(:)
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_map
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=temp_map
 ! Control parameters

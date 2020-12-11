@@ -439,7 +439,7 @@
           PRINT *, '       pervious portion is HRU fraction - impervious fraction - depression fraction'
           PRINT *, '       pervious fraction:', Hru_frac_perv(i)
           PRINT *, '       impervious fraction:', Hru_percent_imperv(i)
-          IF ( Dprst_flag==ON ) PRINT *, '       depression storage fraction:', Dprst_frac(i)
+          IF ( Dprst_flag==ACTIVE ) PRINT *, '       depression storage fraction:', Dprst_frac(i)
           basinit = 1
         ENDIF
         Hru_frac_perv(i) = Hru_perv(i)/harea
