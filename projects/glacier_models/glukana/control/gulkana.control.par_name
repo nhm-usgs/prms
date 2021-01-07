@@ -86,6 +86,14 @@ Name  : nlapse
 Value : 3
 Desc  : Number of lapse rates in X, Y, and Z directions
 
+Name  : nmap
+Value : 0
+Desc  : Number of mapped values
+
+Name  : nmap2hru
+Value : 0
+Desc  : Number of intersections between HRUs and input climate map
+
 Name  : nmonths
 Value : 12
 Desc  : Number of months in a year
@@ -362,8 +370,8 @@ Default   : 5.000000
 
 Name      : cfgi_decay
 Module    : srunoff_smidx
-Descr     : CFGI daily decay of index, value of 1.0 is no decay
-Help      : CFGI daily decay of index, value of 1.0 is no decay
+Descr     : CFGI daily decay of index; value of 1.0 is no decay
+Help      : CFGI daily decay of index; value of 1.0 is no decay
 Ndimen    : 1
 Dimensions: one - 1
 Size      : 1
@@ -404,7 +412,7 @@ Default   : 0
 
 Name      : cov_type
 Module    : basin
-Descr     : Cover type designation for HRU
+Descr     : Cover type designation for each HRU
 Help      : Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
 Ndimen    : 1
 Dimensions: nhru - 78
@@ -586,8 +594,8 @@ Default   : 0.050000
 
 Name      : glacier_frac_init
 Module    : snowcomp
-Descr     : Inital fraction of glaciation (0=none; 1=100%)
-Help      : Inital fraction of glaciation (0=none; 1=100%)
+Descr     : Initial fraction of glaciation (0=none; 1=100%) in glacier-capable HRU
+Help      : Initial fraction of glaciation (0=none; 1=100%) in glacier-capable HRU
 Ndimen    : 1
 Dimensions: nhru - 78
 Size      : 78
@@ -629,7 +637,7 @@ Default   : 3.940000
 Name      : glacrva_coef
 Module    : glacr_melt
 Descr     : Volume area scaling coefficient for glaciers with Luthi 2009
-Help      : Volume area scaling coefficient for glaciers make average by region
+Help      : Volume area scaling coefficient for glaciers, average value by region
 Ndimen    : 1
 Dimensions: nhru - 78
 Size      : 78
@@ -643,7 +651,7 @@ Default   : 0.280000
 Name      : glacrva_exp
 Module    : glacr_melt
 Descr     : Volume area exponential coefficient for glaciers
-Help      : Volume area exponential coefficient for glaciers make average by region
+Help      : Volume area exponential coefficient for glaciers, average value by region
 Ndimen    : 1
 Dimensions: nhru - 78
 Size      : 78
@@ -1320,8 +1328,8 @@ Default   : 0
 
 Name      : pref_flow_den
 Module    : soilzone
-Descr     : Fraction of the soil zone in which preferential flow occurs for each HRU
-Help      : Fraction of the soil zone in which preferential flow occurs for each HRU
+Descr     : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
+Help      : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
 Ndimen    : 1
 Dimensions: nhru - 78
 Size      : 78
@@ -2085,8 +2093,8 @@ Size      : 27
 Type      : long
 Units     : none
 Width     : 0
-Max       : 1000000
-Min       : -11
+Max       : 9999999
+Min       : 0
 Default   : 0
 
 Name      : tosegment_nhm
@@ -2120,7 +2128,7 @@ Default   : 1
 Name      : transp_end
 Module    : transp_tindex
 Descr     : Month to stop transpiration period
-Help      : Month to stop transpiration computations; transpiration is computed thru end of previous month
+Help      : Month to stop transpiration computations; transpiration is computed through the end of previous month
 Ndimen    : 1
 Dimensions: nhru - 78
 Size      : 78

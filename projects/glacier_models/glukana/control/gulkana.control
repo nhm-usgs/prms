@@ -38,7 +38,7 @@ dispGraphsBuffSize
 executable_model
 1
 4
-..\..\bin\prms
+..\..\..\bin\prms
 ####
 aniOutON_OFF
 1
@@ -250,6 +250,16 @@ mbInit_flag
 1
 ####
 frozen_flag
+1
+1
+1
+####
+csv_output_file
+1
+4
+./output/prms_summary.csv
+####
+csvON_OFF
 1
 1
 1

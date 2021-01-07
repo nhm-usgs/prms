@@ -47,7 +47,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Current average year air temperature overs HRU
+Desc: Current average year air temperature over each HRU
 Units: degrees Celsius
 
 Name: av_basal_slope
@@ -83,7 +83,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Glacier basal slope down flowline mean over HRU
+Desc: Glacier basal slope down flowline mean over each HRU
 Units: decimal fraction
 
 Name: basin_actet
@@ -290,7 +290,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and glrettes
+Desc: Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and glacierettes
 Units: inches
 
 Name: basin_gl_storage
@@ -326,7 +326,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted glacier surface gain (snow and rain minus evap) for all glaciers and glrettes
+Desc: Basin area-weighted glacier surface gain (snow and rain minus evaporation) for all glaciers and glacierettes
 Units: inches
 
 Name: basin_gl_top_melt
@@ -335,7 +335,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glrettes
+Desc: Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glacierettes
 Units: inches
 
 Name: basin_glacrb_melt
@@ -641,7 +641,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average throughfall
+Desc: Basin area-weighted average net precipitation
 Units: inches
 
 Name: basin_net_ppt_mo
@@ -668,7 +668,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average rain throughfall
+Desc: Basin area-weighted average rain net precipitation
 Units: inches
 
 Name: basin_net_snow
@@ -677,7 +677,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average snow throughfall
+Desc: Basin area-weighted average snow net precipitation
 Units: inches
 
 Name: basin_obs_ppt
@@ -875,7 +875,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average discharge/precipitation
+Desc: Basin area-weighted average discharge/precipitation ratio
 Units: decimal fraction
 
 Name: basin_runoff_ratio_mo
@@ -884,7 +884,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Monthly area-weighted average discharge/precipitation
+Desc: Monthly area-weighted average discharge/precipitation ratio
 Units: decimal fraction
 
 Name: basin_segment_storage
@@ -974,7 +974,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average snow and glacier and glrette covered area
+Desc: Basin area-weighted average snow and glacier and glacierette covered area
 Units: decimal fraction
 
 Name: basin_snowmelt
@@ -1256,6 +1256,15 @@ Type: double
 Desc: Basin area-weighted average storage volume in all water storage reservoirs
 Units: acre-inches
 
+Name: basin_surface_storage
+Module: prms_summary
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in all surface water storage reservoirs
+Units: inches
+
 Name: basin_swale_et
 Module: soilzone
 Ndimen: 1
@@ -1327,6 +1336,15 @@ Size: 1
 Type: double
 Desc: Basin area-weighted average minimum air temperature
 Units: temp_units
+
+Name: basin_total_storage
+Module: prms_summary
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in all water storage reservoirs
+Units: inches
 
 Name: basin_transp_on
 Module: transp_tindex
@@ -1451,7 +1469,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Total flow out into model domain from Great Lakes (segment_type=10)
+Desc: Total flow into model domain from Great Lakes (segment_type=10)
 Units: cfs
 
 Name: flow_in_nation
@@ -1631,7 +1649,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Current 5-yr average snow over glacier or glrette HRU
+Desc: Current 5-yr average snow over glacier or glacierette HRUs
 Units: inches/yr
 
 Name: glacr_5avsnow1
@@ -1640,7 +1658,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: First 5-yr average snow over glacier or glrette HRU
+Desc: First 5-yr average snow over glacier or glacierette HRUs
 Units: inches/yr
 
 Name: glacr_air_5avtemp
@@ -1649,7 +1667,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Current 5-yr average summer (June July Aug) air temperature over glacier or glrette HRU
+Desc: Current 5-yr average summer (June July Aug) air temperature over glacier or glacierette HRUs
 Units: degrees Celsius
 
 Name: glacr_air_5avtemp1
@@ -1658,7 +1676,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: First 5-yr average summer temperature over glacier or glrette HRU
+Desc: First 5-yr average summer temperature over glacier or glacierette HRUs
 Units: degrees Celsius
 
 Name: glacr_air_deltemp
@@ -1667,7 +1685,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Change in 5-yr average air temperature over glacier or glrette HRU from first
+Desc: Change in 5-yr average air temperature over glacier or glacierette HRUs from first
 Units: degrees Celsius
 
 Name: glacr_albedo
@@ -1676,7 +1694,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Ice surface albedo or the fraction of radiation reflected from the icepack surface for each glacier HRU
+Desc: Ice surface albedo or the fraction of radiation reflected from the icepack surface for each glacier or glacierette HRU
 Units: decimal fraction
 
 Name: glacr_delsnow
@@ -1685,7 +1703,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Change in 5-yr average snow over glacier or glrette HRU from first
+Desc: Change in 5-yr average snow over glacier or glacierette HRUs from first
 Units: inches/yr
 
 Name: glacr_elev_init
@@ -1703,7 +1721,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Evaporation and sublimation from icepack on each glacier HRU
+Desc: Evaporation and sublimation from icepack on each glacier or glacierette HRU
 Units: inches
 
 Name: glacr_flow
@@ -1721,7 +1739,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Storage of free liquid water in the icepack on each glacier HRU
+Desc: Storage of free liquid water in the icepack on each glacier or glacierette HRU
 Units: inches
 
 Name: glacr_freeh2o_capm
@@ -1730,7 +1748,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Free-water holding capacity of glacier ice, changes to 0 if active layer melts
+Desc: Free-water holding capacity of glacier or glacierette ice, changes to 0 if active layer melts
 Units: decimal fraction
 
 Name: glacr_pk_def
@@ -1739,7 +1757,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Heat deficit, amount of heat necessary to make the glacier snowpack isothermal at 0 degrees Celsius
+Desc: Heat deficit, amount of heat necessary to make the glacier or or glacierette snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
 Name: glacr_pk_den
@@ -1748,7 +1766,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Density of the icepack on each glacier HRU, hard-coded to equal 0.917
+Desc: Density of the icepack on each glacier or glacierette HRU, hard coded to equal 0.917
 Units: gm/cm3
 
 Name: glacr_pk_depth
@@ -1757,7 +1775,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: Depth of icepack on each glacier HRU, make essentially infinite
+Desc: Depth of icepack on each glacier or glacierette HRU, make essentially infinite
 Units: inches
 
 Name: glacr_pk_ice
@@ -1766,7 +1784,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Storage of frozen water in the icepack on each glacier HRU
+Desc: Storage of frozen water in the icepack on each glacier or glacierette HRU
 Units: inches
 
 Name: glacr_pk_temp
@@ -1775,7 +1793,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Temperature of the glacier on each HRU
+Desc: Temperature of the glacier or glacierette on each HRU
 Units: degrees Celsius
 
 Name: glacr_pkwater_ante
@@ -1784,7 +1802,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: Antecedent icepack water equivalent on each glacier HRU
+Desc: Antecedent icepack water equivalent on each glacier or glacierette HRU
 Units: inches
 
 Name: glacr_pkwater_equiv
@@ -1793,7 +1811,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: Icepack water equivalent on each glacier HRU
+Desc: Icepack water equivalent on each glacier or glacierette HRU
 Units: inches
 
 Name: glacr_pss
@@ -1802,7 +1820,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: Previous glacier pack water equivalent plus new ice
+Desc: Previous glacier or glacierette pack water equivalent plus new ice
 Units: inches
 
 Name: glacr_pst
@@ -1811,7 +1829,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: While a icepack exists, glacr_pst tracks the maximum ice water equivalent of that icepack
+Desc: While an icepack exists, glacr_pst tracks the maximum ice water equivalent of that icepack
 Units: inches
 
 Name: glacr_slope_init
@@ -1829,7 +1847,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: long
-Desc: Identifies which glacier this HRU belongs to
+Desc: Identifies which glacier each HRU belongs to
 Units: none
 
 Name: glacrb_melt
@@ -1838,7 +1856,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Glacier basal melt, goes to soil
+Desc: Glacier or glacierette basal melt, goes to soil
 Units: inches/day
 
 Name: glacrcov_area
@@ -1847,7 +1865,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Ice-covered area on each glacier HRU or HRU with glacierette at start of step
+Desc: Ice-covered area (no snowpack) on each glacier HRU or HRU with glacierette at start of step
 Units: decimal fraction
 
 Name: glacrmelt
@@ -1856,7 +1874,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Melt from icepack on each glacier HRU, includes rain water that does not absorb
+Desc: Melt from icepack on each glacier or glacierette HRU, includes rain water that does not absorb
 Units: inches
 
 Name: glnet_ar_delta
@@ -2207,7 +2225,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
+Desc: Infiltration to the capillary reservoirs for each HRU
 Units: inches
 
 Name: int_alb
@@ -2243,7 +2261,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: long
-Desc: Form (rain or snow) of interception for each HRU
+Desc: Form (0=rain; 1=snow) of interception for each HRU
 Units: none
 
 Name: intcp_on
@@ -2468,7 +2486,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: long
-Desc: Order flowlines belong together as glaciers, Ntp of these
+Desc: Order of flowlines that belong together as glaciers, Ntp of these
 Units: none
 
 Name: perv_actet
@@ -2675,7 +2693,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: double
-Desc: Previous year glacier-covered area above this HRU where all branches of the glacier are included
+Desc: Previous year glacier-covered area above each HRU where all branches of the glacier are included
 Units: inches squared
 
 Name: prev_out
@@ -2747,7 +2765,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU
+Desc: Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU
 Units: inches
 
 Name: runoff
@@ -2891,7 +2909,7 @@ Ndimen: 1
 Dimensions: nsegment - 27
 Size: 27
 Type: double
-Desc: Cummulative flow in minus flow out for each stream segment
+Desc: Cumulative flow in minus flow out for each stream segment
 Units: cfs
 
 Name: slow_flow
@@ -3269,7 +3287,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: long
-Desc: Identifies which glacier top this HRU is fed by. If =-1, then has multiple feeders
+Desc: Identifies which glacier top each HRU is fed by. If =-1, then has multiple feeders
 Units: none
 
 Name: transp_on
@@ -3305,5 +3323,5 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: long
-Desc: Number of days since last 5 year mark
+Desc: Number of days since last 5-year mark
 Units: none

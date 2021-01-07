@@ -51,6 +51,12 @@ nlake_hrus
 nlakeelev
 0
 ####
+nmap
+0
+####
+nmap2hru
+0
+####
 nmonths
 12
 ####
