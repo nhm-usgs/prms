@@ -1,0 +1,21 @@
+INFO: bandit: ========== START 2021-01-21T10:49:00.230606 ==========
+INFO: bandit: Using parameter database from: git@github.com:nhm-params-v11-usgs/paramdb_v11_gridmet_CONUS.git
+INFO: bandit: Repo branch: master
+INFO: bandit: Repo commit: 0d701cd
+DEBUG: bandit: Number of NHM downstream nodes: 59644
+DEBUG: bandit: Number of NHM downstream edges: 58489
+DEBUG: bandit.helper: Number of NHM upstream nodes: 59644
+DEBUG: bandit.helper: Number of NHM upstream edges: 58489
+DEBUG: bandit.helper: Number of NHM upstream nodes (trimmed): 59644
+DEBUG: bandit.helper: Number of NHM upstream edges (trimmed): 58489
+DEBUG: bandit.helper: node_outlets: 43032,43037,43038,43039,43040,43041,43042,43043,43044,43045,43046,43047,43048,43051,43054,43055,43058,43060,43065,43066,43067,43068,43069,43070,43071,43072,43073,43074,43075,43076,43077,43078,43079,43080,43081,43082,43083,43084,43085,43086,43087,43088,43089,43090,43091
+DEBUG: bandit.helper: true_outlets: 43033
+INFO: bandit: Number of segments in subset: 46
+INFO: bandit: Number of NHM hru_segment entries: 114958
+INFO: bandit: Number of HRUs in subset: 92
+INFO: bandit: Size of hru_segment for subset: 92
+INFO: bandit: Size of hru_deplcrv for subset: 92
+INFO: bandit: Size of NHM poi_gage_segment: 8708
+INFO: bandit: Retrieving POIs from local HYDAT and NWIS netcdf files
+INFO: bandit.NWIS: NWIS instance
+INFO: bandit: ========== END 2021-01-21T10:50:10.802022 ==========
