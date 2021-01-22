@@ -19,7 +19,7 @@
      &    ERROR_soilzone, SAND, CLAY, LOAM, CASCADE_OFF, ERROR_param
       USE PRMS_MODULE, ONLY: Model, Nhru, Nssr, Nsegment, Nlake, Nhrucell, Print_debug, Dprst_flag, &
      &    Init_vars_from_file, Cascade_flag, GSFLOW_flag, Parameter_check_flag, Inputerror_flag, &
-     &    Kkiter, Soilzone_aet_flag, Frozen_flag, Diversion2soil_flag, Soilzone_add_water_use, Call_cascade
+     &    Kkiter, Soilzone_aet_flag, Frozen_flag, Soilzone_add_water_use, Call_cascade
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'

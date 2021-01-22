@@ -6,9 +6,9 @@ verified or documented, and are in no way to be used as a representation
 of the water resources in the subject watersheds.
 
                             PRMS Sample Problems
-                                 May 2020
+                                 January 2021
  
-Five sample projects with input data sets are provided in this subdirectory
+Seven sample projects with input data sets are provided in this subdirectory
 to verify that PRMS is correctly installed and running on the user's system.
 The sample projects also may be looked at as examples of how to use various 
 PRMS simulation, input, and ouput options. The Data and Parameter Files can 
@@ -37,10 +37,12 @@ Sample problems:
 
 1. sagehen: This sample model is for the Sagehen Creek Watershed and 
    is described in the original GSFLOW documentation (Markstrom and others,
-   2008, USGS TM 6-D1). This sample includes script files to run two simulations:
+   2008, USGS TM 6-D1). This sample includes script files to run three simulations:
    1) using modules temp_1sta and precip_1sta to distribute temperature and
-   preciptiation, respectively, from observed station data and 2) using module
-   climate_by_hru that reads predistributed climate values. Various output
+   preciptiation, respectively, from observed station data, 2) using module
+   climate_by_hru that reads predistributed climate values, and 3) using module
+   map_results to write mapped output for possible use to loosely couple
+   PRMS to a grid-based model requiring recharge values as input. Various output
    options are selected for each simulation. The new control parameter
    soilzone_aet_flag was set to 1, which computes soil-water ET based on
    the potential evapotranspiration (PET) rate limited by the unsatisfied PET
@@ -80,6 +82,18 @@ Sample problems:
 6. glacier_models: Two models are provided for illustrative purposes of the
    glacier dynamics simulation method (in Van Beusekom and Viger, 2015)and for 
    educational purposes only.
+
+7. sagehen_restart: This is the sagehen model described in sample problem 1
+   to demonstrate the use of the restart option with 16 simulations. The 
+   first simulation runs the entire simulation period from October 1, 1980, 
+   through January 30, 1984. This simulation provides results for the entire
+   simulation period. PRMS is then run 15 additional times to reproduce the
+   restart simulations. The first of these simulations is the 'hindcast' 
+   simulation, which runs from October 1, 1980, through September 1, 1983.
+   Note that for this run, the simulation 'end_time' has been reset to 
+   '1983,9,1,0,0,0' in the batch file; several other input control parameters
+   also are reset on the command lines in prms.bat for this and each of the
+   subsequent runs.
 
 References:
 
