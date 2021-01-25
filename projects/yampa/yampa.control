@@ -33,7 +33,7 @@ executable_model
 model_mode
 1
 4
-PRMS5
+PRMS_AG
 ####
 param_file
 2
@@ -701,6 +701,11 @@ nsegmentOutBaseFileName
 4
 nsegment_summary_
 ####
+agriculture_soil_flag
+1
+1
+1
+####
 dyn_ag_frac_flag
 1
 1
@@ -709,4 +714,4 @@ dyn_ag_frac_flag
 ag_frac_dynamic
 1
 4
-dyn_ag_frac.param
+./input/dyn_ag_frac.param
