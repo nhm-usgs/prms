@@ -179,7 +179,7 @@ csv_output_file
 nhruOutON_OFF
 1
 1
-0
+1
 ####
 nhruOutBaseFileName
 1
@@ -189,12 +189,15 @@ nhruOutBaseFileName
 nhruOutVars
 1
 1
-0
+4
 ####
 nhruOutVar_names
-1
 4
-none
+4
+unused_potet
+ag_irrigation_add
+hru_actet
+potet
 ####
 nhruOut_freq
 1

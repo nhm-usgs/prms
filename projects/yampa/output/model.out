@@ -55,9 +55,11 @@ Groundwater                     gwflow              2020-12-02
 Streamflow Routing Init         routing             2020-12-02
 Streamflow Routing              muskingum           2020-12-02
 Output Summary                  basin_sum           2020-12-02
+Output Summary                  nhru_summary        2020-12-02
+Output Summary                  prms_summary        2020-12-02
 ==============================================================
 
-Using Control File: yampa.control
+Using Control File: .\yampa.control
 
 Using Parameter File: ./input/yampa.param
 
@@ -72,5 +74,5 @@ DPRST area:                1374.30    Fraction DPRST:          0.0014
 Agriculture area:             0.03    Fraction AG:             0.0000
 
 
-Execution elapsed time    0 minutes  6.15 seconds
+Execution elapsed time    0 minutes  5.45 seconds
 
