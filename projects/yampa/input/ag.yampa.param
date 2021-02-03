@@ -610,3 +610,17 @@ nhru
 0.0
 0.0
 0.0
+####
+max_soilzone_ag_iter
+1
+one
+1
+1
+200
+####
+soilzone_aet_converge
+1
+one
+1
+2
+0.1

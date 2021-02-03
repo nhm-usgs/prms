@@ -13,7 +13,7 @@ start_time
 end_time
 6
 1
-2016
+1990
 9
 30
 0
@@ -492,16 +492,6 @@ agriculture_soil_flag
 1
 1
 1
-####
-max_soilzone_ag_iter
-1
-1
-50
-####
-soilzone_aet_converge
-1
-2
-0.0005
 ####
 dyn_ag_frac_flag
 1
