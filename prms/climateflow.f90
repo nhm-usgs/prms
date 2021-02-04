@@ -6,7 +6,7 @@
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
      &    temp_laps_module, temp_sta_module, temp_dist2_module, potet_pan_module, &
-     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE
+     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Ngw, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Model, Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
      &    Strmflow_module, Temp_module, Stream_order_flag, GSFLOW_flag, &
@@ -1118,7 +1118,7 @@
         ENDIF
       ENDDO
 
-      IF ( ierr>0 ) Inputerror_flag = 1
+      IF ( ierr>0 ) STOP ERROR_PARAM
 
       IF ( getparam(Srunoff_module, 'snowinfil_max', Nhru, 'real', Snowinfil_max)/=0 ) CALL read_error(2, 'snowinfil_max')
 
