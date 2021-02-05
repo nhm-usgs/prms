@@ -256,10 +256,10 @@ prms_basin.mod: basin.o
 prms_soltab.mod: soltab.o
 prms_muskingum.mod: muskingum.o
 prms_intcp.mod: intcp.o
-prms_snow.mod: snowcomp.o
 prms_cascade.mod: cascade.o
 prms_srunoff.mod: srunoff.o
 prms_soilzone.mod: soilzone.o
+prms_snowcomp.mod: snowcomp.o
 prms_routing.mod: routing.o
 prms_water_use.mod: water_use_read.o
 prms_set_time.mod: prms_time.o

@@ -16,7 +16,7 @@
       MODULE PRMS_SOILZONE
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim, ACTIVE, OFF, DEBUG_WB, NEARZERO, &
      &    LAND, LAKE, SWALE, INACTIVE, GLACIER, BARESOIL, DEBUG_less, &
-     &    ERROR_soilzone, SAND, CLAY, LOAM, CASCADE_OFF, ERROR_param
+     &    ERROR_soilzone, SAND, CLAY, LOAM, CASCADE_OFF, ERROR_param, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Model, Nhru, Nssr, Nsegment, Nlake, Nhrucell, Print_debug, Dprst_flag, &
      &    Init_vars_from_file, Cascade_flag, GSFLOW_flag, Parameter_check_flag, Inputerror_flag, &
      &    Kkiter, Soilzone_aet_flag, Frozen_flag, Soilzone_add_water_use, Call_cascade
@@ -24,7 +24,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2020-12-11'
+      character(len=*), parameter :: Version_soilzone = '2021-01-11'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
@@ -91,7 +91,7 @@
 !     Main soilzone routine
 !***********************************************************************
       INTEGER FUNCTION soilzone()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
 ! Functions
       INTEGER, EXTERNAL :: szdecl, szinit, szrun
@@ -104,10 +104,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         soilzone = szdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL soilzone_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL soilzone_restart(READ_INIT)
         soilzone = szinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL soilzone_restart(0)
+        IF ( Save_vars_to_file==ACTIVE ) CALL soilzone_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION soilzone
@@ -497,9 +497,19 @@
 
         ALLOCATE ( Gvr_hru_pct_adjusted(Nhrucell), Replenish_frac(Nhru) )
         ALLOCATE ( Hru_gvr_count(Nhru), Hrucheck(Nhru) )
-        ALLOCATE ( It0_pref_flow_stor(Nhru), It0_ssres_stor(Nhru), It0_soil_rechr(Nhru), It0_soil_moist(Nhru) )
-        ALLOCATE ( It0_gravity_stor_res(Nhrucell), It0_sroff(Nhru), It0_slow_stor(Nhru), It0_strm_seg_in(Nsegment) )
+        ALLOCATE ( It0_ssres_stor(Nhru), It0_soil_rechr(Nhru), It0_soil_moist(Nhru) )
+        ALLOCATE ( It0_gravity_stor_res(Nhrucell), It0_sroff(Nhru), It0_slow_stor(Nhru) )
         IF ( Nlake>0 ) ALLOCATE ( It0_potet(Nhru) )
+        IF ( Call_cascade==ACTIVE ) ALLOCATE ( It0_strm_seg_in(Nsegment) )
+! Declare Parameters
+        ALLOCATE ( Gvr_hru_id(Nhrucell) )
+        IF ( Nhru/=Nhrucell .OR. Model==DOCUMENTATION ) THEN
+          IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
+     &         '0', 'bounded', 'nhru', &
+     &         'Corresponding HRU id of each GVR', &
+     &         'Index of the HRU associated with each gravity reservoir', &
+     &         'none')/=0 ) CALL read_error(1, 'gvr_hru_id')
+        ENDIF
       ENDIF
 
 ! Allocate arrays for local and variables from other modules
@@ -510,19 +520,8 @@
       IF ( Print_debug==7 ) CALL PRMS_open_module_file(DBGUNT, 'soilzone.dbg')
 
 ! Declare Parameters
-      IF ( GSFLOW_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-        ALLOCATE ( Gvr_hru_id(Nhrucell) )
-        IF ( Nhru/=Nhrucell ) THEN
-          IF ( declparam(MODNAME, 'gvr_hru_id', 'nhrucell', 'integer', &
-     &         '0', 'bounded', 'nhru', &
-     &         'Corresponding HRU id of each GVR', &
-     &         'Index of the HRU associated with each gravity reservoir', &
-     &         'none')/=0 ) CALL read_error(1, 'gvr_hru_id')
-        ENDIF
-      ENDIF
-
       IF ( Nlake>0 ) THEN
-        ALLOCATE ( Lake_evap_adj(12,Nlake) )
+        ALLOCATE ( Lake_evap_adj(MONTHS_PER_YEAR,Nlake) )
         IF ( declparam(MODNAME, 'lake_evap_adj', 'nmonths,nlake', 'real', &
      &       '1.0', '0.5', '1.5', &
      &       'Monthly potet factor to adjust potet on lakes', &
@@ -605,7 +604,7 @@
 !***********************************************************************
       INTEGER FUNCTION szinit()
       USE PRMS_SOILZONE
-      USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, &
+      USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Active_hrus, Hru_route_order, &
      &    Basin_area_inv, Hru_area, Hru_frac_perv, Numlake_hrus
       USE PRMS_FLOWVARS, ONLY: Soil_moist_max, Soil_rechr_max, &
      &    Ssres_stor, Basin_ssstor, Basin_soil_moist, Slow_stor, &
@@ -617,7 +616,7 @@
       INTEGER, EXTERNAL :: getparam
       INTRINSIC :: MIN, DBLE
 ! Local Variables
-      INTEGER :: i, ii, ihru, icnt
+      INTEGER :: i, ii, ihru, icnt, j
       REAL :: hruarea, perv_area
 !***********************************************************************
       szinit = 0
@@ -632,7 +631,8 @@
       IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type)/=0 ) CALL read_error(2, 'soil_type')
       IF ( getparam(MODNAME, 'soil2gw_max', Nhru, 'real', Soil2gw_max)/=0 ) CALL read_error(2, 'soil2gw_max')
       IF ( Nlake>0 ) THEN
-        IF ( getparam(MODNAME, 'lake_evap_adj', 12*Nlake, 'real', Lake_evap_adj)/=0 ) CALL read_error(2, 'lake_evap_adj')
+        IF ( getparam(MODNAME, 'lake_evap_adj', MONTHS_PER_YEAR*Nlake, 'real', Lake_evap_adj)/=0 ) &
+     &       CALL read_error(2, 'lake_evap_adj')
       ENDIF
 
       IF ( GSFLOW_flag==ACTIVE ) THEN
@@ -779,6 +779,7 @@
       Potet_rechr = 0.0
       Unused_potet = 0.0 ! dimension nhru
       Soil_saturated = OFF
+      IF ( Pref_flag==ACTIVE .AND. GSFLOW_flag==ACTIVE ) ALLOCATE ( It0_pref_flow_stor(Nhru) )
 !      Interflow_max = 0.0
 !      Snowevap_aet_frac = 0.0
 
@@ -791,12 +792,12 @@
         Max_gvrs = 1
         Hrucheck = 1
         Hru_gvr_count = 0
+        Replenish_frac = 0.0
         DO i = 1, Nhrucell
           ihru = Gvr_hru_id(i)
           IF ( Hru_type(ihru)==INACTIVE .OR. Hru_type(ihru)==LAKE ) THEN
             Gravity_stor_res(i) = 0.0
             Hrucheck(ihru) = 0
-            Replenish_frac(ihru) = 0.0
           ELSE
             ! set only for cold start simulations
             IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) &
@@ -807,16 +808,19 @@
           ENDIF
         ENDDO
         ALLOCATE ( Hru_gvr_index(Max_gvrs, Nhru) )
+        Hru_gvr_index = 0
         IF ( Nhru==Nhrucell ) THEN
           IF ( Max_gvrs/=1 ) &
      &         CALL error_stop('nhru=nhrucell, but, gvr_hru_id array specifies more than one GVR for an HRU', ERROR_dim)
-          DO i = 1, Nhru
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            IF ( Hru_type(i)==LAKE ) CYCLE
             Hru_gvr_index(1, i) = i
           ENDDO
         ELSE
-          Hru_gvr_index = 0
-          DO i = 1, Nhru
-            IF ( Hru_type(i)==INACTIVE .OR. Hru_type(i)==LAKE ) CYCLE
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            IF ( Hru_type(i)==LAKE ) CYCLE
             icnt = 0
             DO ii = 1, Nhrucell
               IF ( Gvr_hru_id(ii)==i ) THEN
@@ -901,7 +905,9 @@
           It0_basin_soil_moist = Basin_soil_moist
           It0_basin_ssstor = Basin_ssstor
           IF ( Call_cascade==ACTIVE ) It0_strm_seg_in = Strm_seg_in
+          Gw2sm_grav = 0.0
         ENDIF
+        Sm2gw_grav = 0.0
       ENDIF
 
       IF ( Cascade_flag>CASCADE_OFF ) THEN
@@ -1086,10 +1092,10 @@
      &                          Gvr2sm(i), Soil_to_gw(i), gwin, compute_lateral)
           ! adjust soil moisture with replenish amount
           IF ( Gvr2sm(i)>0.0 ) THEN
-            Soil_moist(i) = Soil_moist(i) + Gvr2sm(i)/perv_frac
+            Soil_moist(i) = Soil_moist(i) + Gvr2sm(i)/perv_frac ! ??? could this be bigger than soil_moist_max ??? (add to Dunnian)
 !            IF ( Soil_moist(i)>Soil_moist_max(i) ) PRINT *, 'CAP sm>max', Soil_moist(i), Soil_moist_max(i), i
             IF ( Soilzone_aet_flag==ACTIVE ) THEN
-              Soil_lower(i) = MIN ( Soil_lower_stor_max(i), Soil_moist(i) - Soil_rechr(i) + Gvr2sm(i)/perv_frac )
+              Soil_lower(i) = MIN( Soil_lower_stor_max(i), Soil_moist(i) - Soil_rechr(i) + Gvr2sm(i)/perv_frac )
               Soil_rechr(i) = Soil_moist(i) - Soil_lower(i)
 !              excess = MAX( 0.0, Soil_lower(i) - Soil_lower_stor_max(i) )
 !              if ( abs(soil_lower(i) + soil_rechr(i) - soil_moist(i))>NEARZERO ) THEN
@@ -1865,6 +1871,7 @@
 !     soilzone_restart - write or read soilzone restart file
 !***********************************************************************
       SUBROUTINE soilzone_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, GSFLOW_flag
       USE PRMS_SOILZONE
       IMPLICIT NONE
@@ -1875,7 +1882,7 @@
       ! Local Variable
       CHARACTER(LEN=8) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Basin_soil_rechr, Basin_slstor, Basin_soil_moist_tot, Basin_pref_stor
         WRITE ( Restart_outunit ) Pref_flow_stor
