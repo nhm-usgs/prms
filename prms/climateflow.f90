@@ -448,7 +448,7 @@
 
       ALLOCATE ( Infil(Nhru) )
       IF ( declvar(Srunoff_module, 'infil', 'nhru', Nhru, 'real', &
-     &     'Infiltration to the capillary and preferential-flow for each HRU', &
+     &     'Infiltration to the capillary and preferential-flow reservoirs for each HRU', &
      &     'inches', Infil)/=0 ) CALL read_error(3, 'infil')
 
       ALLOCATE ( Sroff(Nhru) )
@@ -1043,6 +1043,7 @@
           IF ( getparam(Soilzone_module, 'soil_rechr_init_frac', Nhru, 'real', Soil_rechr)/=0 ) &
      &         CALL read_error(2, 'soil_rechr_init_frac')
           IF ( getparam(Soilzone_module, 'ssstor_init_frac', Nssr, 'real', Ssres_stor)/=0 ) &
+     &         CALL read_error(2, 'ssstor_init_frac')
           Soil_rechr = Soil_rechr*Soil_rechr_max
           Soil_moist = Soil_moist*Soil_moist_max
           Ssres_stor = Ssres_stor*Sat_threshold
