@@ -528,6 +528,10 @@ EXTERN long getuserdirfile (char *, int, char *);
 EXTERN long getvar_ (char *, char *, ftnint *, char *, double *,
 	ftnlen, ftnlen, ftnlen);
 EXTERN long getvar (char *, char *, long, char *, double *);
+EXTERN long getvar_units_ (char *, char *, ftnlen, ftnlen);
+EXTERN char *getvar_units (char *);
+EXTERN long getvar_help_ (char *, char *, ftnlen, ftnlen);
+EXTERN char *getvar_help (char *);
 
 /***  load_param.c  **************************************************/
 #undef EXTERN

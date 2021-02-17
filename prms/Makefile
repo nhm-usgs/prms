@@ -1,7 +1,7 @@
 # PRMS V makefile
 
 include ../makelist
-TARGET 	= ./prms
+TARGET 	= ./prms_hpc
 
 ####################################################
 # Rules for targets
@@ -59,8 +59,10 @@ OBJS = \
         stream_temp.o \
         map_results.o \
         nhru_summary.o \
+        nhru_ncf.o \
         nsub_summary.o \
         nsegment_summary.o \
+        nsegment_ncf.o \
         basin_summary.o \
         write_climate_hru.o \
         prms_summary.o \
@@ -121,11 +123,17 @@ map_results.o: map_results.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 nhru_summary.o: nhru_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) nhru_summary.f90
 
+nhru_ncf.o: nhru_ncf.f90 prms_module.mod prms_basin.mod prms_set_time.mod
+	$(FC) -c $(FFLAGS) nhru_ncf.f90
+
 nsub_summary.o: nsub_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) nsub_summary.f90
 
 nsegment_summary.o: nsegment_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) nsegment_summary.f90
+
+nsegment_ncf.o: nsegment_ncf.f90 prms_module.mod prms_basin.mod prms_set_time.mod
+	$(FC) -c $(FFLAGS) nsegment_ncf.f90
 
 basin_summary.o: basin_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) basin_summary.f90

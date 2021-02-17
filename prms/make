@@ -1,15 +1,13 @@
   module prms_nhru_ncf
   use prms_module, only: MAXFILE_LENGTH
   implicit none
-  integer, save, allocatable :: varid(:), ncid(:), nhm_varid(:), time_varid(:), nc_vars(:), nhm_id(:), fort_type(:)
+  integer, save, allocatable :: varid(:), ncid(:), nhm_varid(:), time_varid(:), nc_vars(:), nhm_id(:)
   integer, save :: start(2), count(2)
   integer, save :: nhruoutvars
   character(len=36), save, allocatable :: nhruoutvar_names(:)
   character(len=12), parameter :: MODNAME = 'nhru_ncf'
   character(len=MAXFILE_LENGTH), save :: nhruoutbasefilename
-  integer, save, allocatable :: int_vals(:)
-  real, save, allocatable :: real_vals(:)
-  double precision, save, allocatable :: double_vals(:)
+  real, save, allocatable :: vals(:)
 
   contains
       subroutine check(status)
@@ -55,9 +53,9 @@
           nhruoutvars = 0
           if (model/=99) call error_stop('ERROR, nhru_ncf requested with nhruOutVars equal 0')
       else
-         allocate(nhruoutvar_names(nhruoutvars), nc_vars(nhruoutvars), fort_type(nhruoutvars))
+         allocate(nhruoutvar_names(nhruoutvars), nc_vars(nhruoutvars))
          allocate(varid(nhruoutvars), ncid(nhruoutvars), nhm_varid(nhruoutvars), time_varid(nhruoutvars))
-         allocate(int_vals(nhru), real_vals(nhru), double_vals(nhru))
+         allocate(vals(nhru))
 
          nhruoutvar_names = ' '
          do ii = 1, nhruoutvars
@@ -81,11 +79,10 @@
   use prms_module, only: nhru, start_year, start_month, start_day
   use netcdf
   implicit none
-  integer :: dimids(2), nhru_dimid, time_dimid, ii, ret
-  character(len=MAXFILE_LENGTH) :: file_name, varunits, varhelp
+  integer :: dimids(2), nhru_dimid, time_dimid, ii
+  character(len=MAXFILE_LENGTH) :: file_name
   character(len=30) :: start_string
   integer, external :: control_string_array, getparam, numchars
-  integer, external :: getvartype, getvar_units, getvar_help
 
       count = (/ nhru, 1 /)
       start = (/ 1, 1 /)
@@ -120,22 +117,11 @@
           ! Define the variable. unidata.ucar.edu/software/netcdf/docs-fortran/f90-variables.html
           ! NF90_BYTE, NF90_CHAR, NF90_SHORT, NF90_INT, NF90_FLOAT, NF90_DOUBLE
 
-          fort_type(ii) = getvartype(nhruoutvar_names(ii)(:nc_vars(ii)))
-          if (fort_type(ii) == 1) then
-              call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_INT, dimids, varid(ii)))
-          elseif (fort_type(ii) == 2) then
-              call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_FLOAT, dimids, varid(ii)))
-          elseif (fort_type(ii) == 3) then
-! here's a switcharoo: double precision values written into float to save space in the output files
-              call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_FLOAT, dimids, varid(ii)))
-          endif
-          
-          ret = getvar_units(varunits, nhruoutvar_names(ii)(:nc_vars(ii)))
-          ret = getvar_help(varhelp, nhruoutvar_names(ii)(:nc_vars(ii)))
-
-!          call check(nf90_put_att(ncid(ii), varid(ii), "standard_name", "get from declvar")) 
-          call check(nf90_put_att(ncid(ii), varid(ii), "long_name", varhelp)) 
-          call check(nf90_put_att(ncid(ii), varid(ii), "units", varunits)) 
+!          call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)) , NF90_FLOAT, dimids, varid(ii)))
+          call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)) , NF90_DOUBLE, dimids, varid(ii)))
+          call check(nf90_put_att(ncid(ii), varid(ii), "standard_name", "get from declvar")) 
+          call check(nf90_put_att(ncid(ii), varid(ii), "long_name", "get from declvar")) 
+          call check(nf90_put_att(ncid(ii), varid(ii), "units", "get from declvar")) 
 
           call check(nf90_enddef(ncid(ii)))
 
@@ -155,28 +141,12 @@
   integer :: bar(1)
 
       do ii = 1, nhruoutvars
-          if (fort_type(ii) == 1) then
-              if (getvar(MODNAME, nhruoutvar_names(ii)(:nc_vars(ii)), nhru, 'integer', int_vals) /=0 ) then
-                  call read_error(4, nhruoutvar_names(ii)(:nc_vars(ii)))
-              endif
-
-              start(2) = timestep
-              call check(nf90_put_var(ncid(ii), varid(ii), int_vals, start = start, count = count))
-          elseif (fort_type(ii) == 2) then
-              if (getvar(MODNAME, nhruoutvar_names(ii)(:nc_vars(ii)), nhru, 'real', real_vals) /=0 ) then
-                  call read_error(4, nhruoutvar_names(ii)(:nc_vars(ii)))
-              endif
-
-              start(2) = timestep
-              call check(nf90_put_var(ncid(ii), varid(ii), real_vals, start = start, count = count))
-          elseif (fort_type(ii) == 3) then
-              if (getvar(MODNAME, nhruoutvar_names(ii)(:nc_vars(ii)), nhru, 'double', double_vals) /=0 ) then
-                  call read_error(4, nhruoutvar_names(ii)(:nc_vars(ii)))
-              endif
-
-              start(2) = timestep
-              call check(nf90_put_var(ncid(ii), varid(ii), double_vals, start = start, count = count))
+          if (getvar(MODNAME, nhruoutvar_names(ii)(:nc_vars(ii)), nhru, 'real', vals) /=0 ) then
+             call read_error(4, nhruoutvar_names(ii)(:nc_vars(ii)))
           endif
+
+          start(2) = timestep
+          call check(nf90_put_var(ncid(ii), varid(ii), vals, start = start, count = count))
 
           foo = timestep - 1.0
           bar(1) = timestep

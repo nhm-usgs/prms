@@ -246,3 +246,92 @@ long getvarsize_ (char *vname, ftnlen vnamelen) {
 
 	return (var->size);
 }
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getvar_units
+ | COMMENT      : returns a pointer to a string variable
+ | PARAMETERS   :
+ | RETURN VALUE :
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+char *getvar_units (char *vname) {
+	char vkey[128];
+	PUBVAR *var;
+  
+    strncpy (vkey, vname, 128);
+/*
+* get pointer to variable with key
+*/
+	if (!(var = var_addr (vkey))) {
+		(void)fprintf(stderr, "ERROR - getvar_units - variable not found.\n");
+		(void)fprintf(stderr, "Key:   '%s'\n", vkey);
+		return(NULL);
+	}
+
+	return (var->units);
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getvar_units_
+ | COMMENT      : called from fortran
+ | PARAMETERS   :
+ | RETURN VALUE :
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+long getvar_units_ (char *retval, char *tag, ftnlen len, ftnlen tlen) {
+    char *foo;
+
+    foo = (char *) umalloc(tlen + 1);
+    strncpy(foo, tag, tlen);
+    foo[tlen] = '\0';
+
+    memset (retval, ' ', len);
+    strncpy (retval, getvar_units(foo), len);
+    return 0;
+}
+
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getvar_help
+ | COMMENT      : returns a pointer to a string variable
+ | PARAMETERS   :
+ | RETURN VALUE :
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+char *getvar_help (char *vname) {
+	char vkey[128];
+	PUBVAR *var;
+  
+    strncpy (vkey, vname, 128);
+/*
+* get pointer to variable with key
+*/
+	if (!(var = var_addr (vkey))) {
+		(void)fprintf(stderr, "ERROR - getvar_help - variable not found.\n");
+		(void)fprintf(stderr, "Key:   '%s'\n", vkey);
+		return(NULL);
+	}
+
+	return (var->help);
+}
+
+/*--------------------------------------------------------------------*\
+ | FUNCTION     : getvar_help_
+ | COMMENT      : called from fortran
+ | PARAMETERS   :
+ | RETURN VALUE :
+ | RESTRICTIONS :
+\*--------------------------------------------------------------------*/
+long getvar_help_ (char *retval, char *tag, ftnlen len, ftnlen tlen) {
+    char *foo;
+
+    foo = (char *) umalloc(tlen + 1);
+    strncpy(foo, tag, tlen);
+    foo[tlen] = '\0';
+
+    memset (retval, ' ', len);
+    strncpy (retval, getvar_help(foo), len);
+    return 0;
+}
+
+
