@@ -1,12 +1,15 @@
   module prms_nhru_ncf
   use prms_module, only: MAXFILE_LENGTH
   implicit none
-  integer, save, allocatable :: varid(:), ncid(:), nhm_varid(:), time_varid(:), nc_vars(:), nhm_id(:), fort_type(:)
+  integer, save, allocatable :: varid(:), ncid(:), nhm_varid(:), time_varid(:), nc_vars(:), nhru_varid(:)
+  integer, save, allocatable :: nhm_id(:), fort_type(:), prms_id(:)
   integer, save :: start(2), count(2)
   integer, save :: nhruoutvars
   character(len=36), save, allocatable :: nhruoutvar_names(:)
   character(len=12), parameter :: MODNAME = 'nhru_ncf'
   character(len=MAXFILE_LENGTH), save :: nhruoutbasefilename
+  real, parameter :: FILLVALR = 9.96921e+36
+  double precision, parameter :: FILLVALD = 9.96921e+36
   integer, save, allocatable :: int_vals(:)
   real, save, allocatable :: real_vals(:)
   double precision, save, allocatable :: double_vals(:)
@@ -57,6 +60,7 @@
       else
          allocate(nhruoutvar_names(nhruoutvars), nc_vars(nhruoutvars), fort_type(nhruoutvars))
          allocate(varid(nhruoutvars), ncid(nhruoutvars), nhm_varid(nhruoutvars), time_varid(nhruoutvars))
+         allocate(nhru_varid(nhruoutvars))
          allocate(int_vals(nhru), real_vals(nhru), double_vals(nhru))
 
          nhruoutvar_names = ' '
@@ -68,11 +72,15 @@
          if (control_string(nhruoutbasefilename, 'nhruOutBaseFileName')/=0 ) call read_error(5, 'nhruOutBaseFileName')
       endif
 
-      allocate(nhm_id(nhru))
+      allocate(nhm_id(nhru), prms_id(nhru))
       if (declparam(MODNAME, 'nhm_id', 'nhru', 'integer', &
      &    '1', '1', '9999999', &
      &    'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
      &    'none') /= 0 ) CALL read_error(1, 'nhm_id')
+
+      do ii = 1, nhru
+          prms_id(ii) = ii
+      enddo
   end subroutine nhru_ncf_decl
 
 !***********************************************************************
@@ -105,15 +113,12 @@
           call check(nf90_def_dim(ncid(ii), "nhru", nhru, nhru_dimid))
           call check(nf90_def_dim(ncid(ii), "time", NF90_UNLIMITED, time_dimid))
 
-          call check(nf90_def_var(ncid(ii), "nhmid", NF90_INT, nhru_dimid, nhm_varid(ii)))
-          call check(nf90_put_att(ncid(ii), nhm_varid(ii), "standard_name", "nhm_id")) 
-          call check(nf90_put_att(ncid(ii), nhm_varid(ii), "long_name", "hru ids to use with CONUS Geospatial Fabric")) 
-          call check(nf90_put_att(ncid(ii), nhm_varid(ii), "units", "hru_id")) 
-
-          call check(nf90_def_var(ncid(ii), "timestep", NF90_INT, time_dimid, time_varid(ii)))
-          call check(nf90_put_att(ncid(ii), time_varid(ii), "standard_name", "time step")) 
-          call check(nf90_put_att(ncid(ii), time_varid(ii), "long_name", "time step of simulated value")) 
+          call check(nf90_def_var(ncid(ii), "time", NF90_FLOAT, time_dimid, time_varid(ii)))
+          call check(nf90_put_att(ncid(ii), time_varid(ii), "calendar", "standard")) 
           call check(nf90_put_att(ncid(ii), time_varid(ii), "units", start_string)) 
+
+          call check(nf90_def_var(ncid(ii), "nhru", NF90_INT, nhru_dimid, nhru_varid(ii)))
+          call check(nf90_put_att(ncid(ii), nhru_varid(ii), "long_name", "Local model Hydrologic Response Unit ID (HRU)")) 
 
           dimids =  (/ nhru_dimid, time_dimid /)
 
@@ -125,9 +130,11 @@
               call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_INT, dimids, varid(ii)))
           elseif (fort_type(ii) == 2) then
               call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_FLOAT, dimids, varid(ii)))
+              call check(nf90_put_att(ncid(ii), varid(ii), "_FillValue", FILLVALR)) 
           elseif (fort_type(ii) == 3) then
 ! here's a switcharoo: double precision values written into float to save space in the output files
               call check(nf90_def_var(ncid(ii), nhruoutvar_names(ii)(:nc_vars(ii)), NF90_FLOAT, dimids, varid(ii)))
+              call check(nf90_put_att(ncid(ii), varid(ii), "_FillValue", FILLVALR)) 
           endif
           
           ret = getvar_units(varunits, nhruoutvar_names(ii)(:nc_vars(ii)))
@@ -137,8 +144,12 @@
           call check(nf90_put_att(ncid(ii), varid(ii), "long_name", varhelp)) 
           call check(nf90_put_att(ncid(ii), varid(ii), "units", varunits)) 
 
+          call check(nf90_def_var(ncid(ii), "nhm_id", NF90_INT, nhru_dimid, nhm_varid(ii)))
+          call check(nf90_put_att(ncid(ii), nhm_varid(ii), "long_name", "NHM Hydrologic Response Unit ID (HRU)")) 
+
           call check(nf90_enddef(ncid(ii)))
 
+          call check(nf90_put_var(ncid(ii), nhru_varid(ii), prms_id))
           call check(nf90_put_var(ncid(ii), nhm_varid(ii), nhm_id))
       enddo
   end subroutine nhru_ncf_init
