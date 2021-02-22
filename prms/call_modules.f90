@@ -14,7 +14,7 @@
    &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
    &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
    &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module
+   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='
@@ -93,8 +93,8 @@
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
       INTEGER, EXTERNAL :: stream_temp, glacr
       EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map
-      EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
-      EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
+      EXTERNAL :: call_modules_restart, water_balance, summary_output
+      EXTERNAL :: prms_summary, module_doc, convert_params, read_error
 ! Local Variables
       INTEGER :: i, iret, nc, ierr
 !***********************************************************************
@@ -160,7 +160,7 @@
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
 
         Timestep = 0
-        IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
 
       ELSEIF ( Process(:4)=='init' ) THEN
         Process_flag = INIT
@@ -205,7 +205,7 @@
         IF ( Save_vars_to_file==ACTIVE ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
           IF ( iret/=0 ) ERROR STOP ERROR_open_out
-          CALL call_modules_restart(0)
+          CALL call_modules_restart(SAVE_INIT)
         ENDIF
       ENDIF
 
@@ -213,7 +213,7 @@
         IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
-          call_modules = 0
+          call_modules = ierr
           RETURN
         ELSE
           STOP
@@ -287,7 +287,10 @@
 
       IF ( Model==CLIMATE ) THEN
         call_modules = ierr
-        IF ( Process_flag==RUN ) RETURN
+        IF ( Process_flag==RUN ) THEN
+          CALL summary_output()
+          RETURN
+        ENDIF
       ENDIF
 
 ! frost_date is a pre-process module
@@ -295,7 +298,10 @@
         ierr = frost_date()
         IF ( ierr/=0 ) CALL module_error('frost_date', Arg, ierr)
         call_modules = ierr
-        IF ( Process_flag==RUN ) RETURN
+        IF ( Process_flag==RUN ) THEN
+          CALL summary_output()
+          RETURN
+        ENDIF
         IF ( Process_flag==CLEAN ) STOP
       ENDIF
 
@@ -317,7 +323,10 @@
 
       IF ( Model==TRANSPIRE ) THEN
         call_modules = ierr
-        IF ( Process_flag==RUN ) RETURN
+        IF ( Process_flag==RUN ) THEN
+          CALL summary_output()
+          RETURN
+        ENDIF
       ENDIF
 
       IF ( Climate_potet_flag==OFF ) THEN
@@ -348,7 +357,10 @@
 
       IF ( Model==POTET ) THEN
         call_modules = ierr
-        IF ( Process_flag==RUN ) RETURN
+        IF ( Process_flag==RUN ) THEN
+          CALL summary_output()
+          RETURN
+        ENDIF
       ENDIF
 
       ierr = intcp()
@@ -408,13 +420,7 @@
         IF ( ierr/=0 ) CALL module_error('subbasin', Arg, ierr)
       ENDIF
 
-      IF ( NhruOutON_OFF>OFF ) CALL nhru_summary()
-
-      IF ( NsubOutON_OFF==ACTIVE ) CALL nsub_summary()
-
-      IF ( BasinOutON_OFF==ACTIVE ) CALL basin_summary()
-
-      IF ( NsegmentOutON_OFF>OFF ) CALL nsegment_summary()
+      CALL summary_output()
 
       IF ( CsvON_OFF>OFF ) CALL prms_summary()
 
@@ -1103,6 +1109,26 @@
       ENDIF
 
       END SUBROUTINE check_dimens
+
+!***********************************************************************
+!     Call output summary routines
+!***********************************************************************
+      SUBROUTINE summary_output()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF
+      USE PRMS_MODULE, ONLY: NhruOutON_OFF, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
+      IMPLICIT NONE
+      ! Functions
+      EXTERNAL :: nhru_summary, nsub_summary, basin_summary, nsegment_summary
+!***********************************************************************
+      IF ( NhruOutON_OFF>OFF ) CALL nhru_summary()
+
+      IF ( NsubOutON_OFF==ACTIVE ) CALL nsub_summary()
+
+      IF ( BasinOutON_OFF==ACTIVE ) CALL basin_summary()
+
+      IF ( NsegmentOutON_OFF>OFF ) CALL nsegment_summary()
+
+      END SUBROUTINE summary_output
 
 !**********************************************************************
 !     Module documentation
