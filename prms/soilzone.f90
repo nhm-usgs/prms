@@ -1369,8 +1369,7 @@
       INTRINSIC :: MIN
 ! Arguments
       REAL, INTENT(IN) :: Perv_frac, Soil_moist_max, Soil_rechr_max, Soil2gw_max
-      REAL, INTENT(INOUT) :: Infil, Soil_moist, Soil_rechr, Soil_to_gw
-      REAL, INTENT(OUT) :: Soil_to_ssr
+      REAL, INTENT(INOUT) :: Infil, Soil_moist, Soil_rechr, Soil_to_gw, Soil_to_ssr
 ! Local Variables
       REAL :: excs
 !***********************************************************************
