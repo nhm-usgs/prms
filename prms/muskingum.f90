@@ -86,7 +86,7 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
-      CHARACTER(LEN=9), SAVE :: MODNAME
+      CHARACTER(LEN=14), SAVE :: MODNAME
       END MODULE PRMS_MUSKINGUM
 
 !***********************************************************************
