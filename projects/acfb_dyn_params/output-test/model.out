@@ -41,7 +41,7 @@ Stream Temperature: stream_temp
 ==============================================================
 Computation Order               call_modules        2021-01-20
 Basin Definition                basin               2020-12-02
-Common States and Fluxes        climateflow         2020-12-16
+Common States and Fluxes        climateflow         2021-01-11
 Potential Solar Radiation       soltab              2020-12-02
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2020-12-02
@@ -53,9 +53,9 @@ Solar Radiation Distribution    climate_hru         2020-12-02
 Potential Evapotranspiration    climate_hru         2020-12-02
 Transpiration Distribution      transp_tindex       2020-12-02
 Canopy Interception             intcp               2020-12-03
-Snow Dynamics                   snowcomp            2020-12-17
-Surface Runoff                  srunoff_smidx       2020-12-10
-Soilzone Computations           soilzone            2020-12-11
+Snow Dynamics                   snowcomp            2021-01-11
+Surface Runoff                  srunoff_smidx       2021-01-11
+Soilzone Computations           soilzone            2021-01-11
 Groundwater                     gwflow              2020-12-02
 Streamflow Routing Init         routing             2020-12-02
 Streamflow Routing              muskingum           2020-12-02
@@ -84,8 +84,8 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
                   (inches) (inches) (inches) (inches) (inches)
  -------------------------------------------------------------
  initial                              31.824
-   1980             50.492   20.572   14.836   46.909   -8.693
-   1981             36.476   24.842    6.166   20.304   -6.454
+   1980             50.492   20.614   14.833   46.869   -8.693
+   1981             36.476   24.842    6.166   20.301   -6.454
    1982             53.278   23.751    8.130   27.563    1.270
    1983             58.857   24.024    8.746   34.218    2.090
    1984             68.655   24.052    8.959   44.390    2.016
@@ -105,7 +105,7 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
    1998             63.457   18.715    6.481   48.008    1.816
    1999             45.071   20.064    5.762   25.726    1.094
  *************************************************************
- Total for run    1110.775  440.179    8.439  693.981   13.445
+ Total for run    1110.775  440.221    8.439  693.939   13.445
  *************************************************************
-Execution elapsed time    0 minutes  1.73 seconds
+Execution elapsed time    0 minutes  1.43 seconds
 

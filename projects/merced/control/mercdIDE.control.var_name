@@ -1487,7 +1487,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: float
-Desc: Infiltration to the capillary reservoirs for each HRU
+Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
 Units: inches
 
 Name: int_alb
