@@ -1,6 +1,6 @@
 
                Precipitation-Runoff Modeling System (PRMS)
-                       Version 5.3.0 01/28/2021
+                       Version 5.3.0 02/26/2021
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -36,28 +36,27 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-PRMS Computation Order          gsflow_prms         2021-01-28
-Basin Definition                basin               2020-12-22
-Common States and Fluxes        climateflow         2021-01-11
+PRMS Computation Order          gsflow_prms         2021-02-26
+Basin Definition                basin               2021-02-26
+Common States and Fluxes        climateflow         2021-02-05
 Potential Solar Radiation       soltab              2020-12-02
 Timestep Control                prms_time           2020-12-02
 Time Series Data                obs                 2020-12-02
+Time Series Data                dynamic_param_read  2021-03-02
 Temperature Distribution        climate_hru         2021-01-08
 Precipitation Distribution      climate_hru         2021-01-08
 Solar Radiation Distribution    ddsolrad            2020-12-02
 Transpiration Distribution      transp_tindex       2020-12-02
 Potential Evapotranspiration    potet_jh            2020-08-03
-Canopy Interception             intcp               2020-12-03
+Canopy Interception             intcp               2021-02-18
 Snow Dynamics                   snowcomp            2021-01-11
-Surface Runoff                  srunoff_smidx       2021-01-11
-Soilzone Computations           soilzone            2021-01-28
+Surface Runoff                  srunoff_smidx       2021-02-03
+Soilzone Computations           soilzone            2021-02-26
 Groundwater                     gwflow              2020-12-02
 Streamflow Routing Init         routing             2020-12-02
 Streamflow Routing              muskingum           2020-12-02
 Output Summary                  basin_sum           2020-12-02
-Water Balance Computations      water_balance       2020-12-02
 Output Summary                  nhru_summary        2020-12-02
-Output Summary                  prms_summary        2020-12-02
 ==============================================================
 
 Using Control File: yampa.control
@@ -66,7 +65,7 @@ Using Parameter File: ./input/yampa.param
 
 
 Start time: 1980/10/01 00:00:00
-End time:   2016/09/30 00:00:00
+End time:   1990/09/30 00:00:00
 
 
 Model domain area:      1006589.79    Active basin area:   1006589.79
@@ -74,4 +73,6 @@ Fraction impervious:        0.0009    Fraction pervious:       0.9978
 DPRST area:                1374.30    Fraction DPRST:          0.0014
 Agriculture area:             0.03    Fraction AG:             0.0000
 
+
+Execution elapsed time    0 minutes 23.55 seconds
 

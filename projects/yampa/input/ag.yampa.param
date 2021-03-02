@@ -616,11 +616,11 @@ max_soilzone_ag_iter
 one
 1
 1
-200
+500
 ####
 soilzone_aet_converge
 1
 one
 1
 2
-0.1
+0.005
