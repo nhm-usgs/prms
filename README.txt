@@ -1,4 +1,4 @@
-
+﻿
 
                       PRMS - Version: 5.2.0
             USGS Precipitation-Runoff Modeling System
@@ -16,20 +16,17 @@ for any damages resulting from its authorized or unauthorized use.
 
 PRMS version 5.2.0 is packaged for personal computers using one of the Linux or 
 Microsoft Windows operating systems. An executable file compiled for 64-bit operating 
-systems is provided. The Linux executable was compiled on a personal computer using
-gfortran and gcc compilers MinGW GCC-8.2.0-3 version. The Windows executable was 
-compiled using the Microsoft Visual Studio 2019 Version 16.3.7, development environment 
-and the Intel® Parallel Studio XE 2019 Update 5 Composer Edition for Fortran Windows* 
-Integration for Microsoft Visual Studio* 2019 and Microsoft Visual C++ 2019 compilers.
-Both executables were compiled on a personal computer with the Intel(R) Xeon(R) E-2186M CPU, 
-running the Microsoft Windows 10 Enterprise, Version 1809, 64-bit operating system
+systems is provided. The Linux executable was compiled using the gfortran and gcc
+compilers (8.3.0 version). The Windows executable was compiled using the Microsoft
+Visual Studio Community 2019, Version 16.3.7 and the Intel Parallel Studio XE 2019
+Update 5 Composer Edition and Microsoft Visual C++ 2019 compilers.
 
 The source code and Linux Makefiles are provided to aid users in compilation
 on other computers. However, no support is provided for compilation.
 
 IMPORTANT: Users should review the file 'Release_notes_prms_5.2.0.pdf' for a 
 description of, and references for, and changes that have been introduced into PRMS
-with each official release; these changes may substantially affect users.
+with each official release; these changes may substantially affect model results.
 
 Instructions for installation, execution, and testing of this version of
 PRMS are provided below.
@@ -99,7 +96,7 @@ installation directory:
    |            |--control     ; Control Files and name files for GUI written here
    |        |--Tazlina         ; scripts for Tazlina glacier example using the
                                  xyz_dist climate distribution module and simulating
- 								 glacier and frozen ground dynamics
+ 				 glacier and frozen ground dynamics
    |            |--input       ; Data and Parameter Files
    |            |--output      ; output files written here
    |            |--output-test ; output files as produced for comparison purposes
@@ -124,8 +121,8 @@ available from the following World Wide Web site: http://www.adobe.com/
 B. INSTALLING
 
 To make the executable version of PRMS accessible from any directory, the 
-directory containing the executable (prms5.1.0/bin on Linux-based computers or 
-prms5.1.0\bin on Windows-based computers) should be included in the PATH
+directory containing the executable (prms5.2.0/bin on Linux-based computers or 
+prms5.2.0\bin on Windows-based computers) should be included in the PATH
 environment variable. Also, if a prior release of PRMS is installed on your 
 system, the directory containing the executable for the prior release should be 
 removed from the PATH environment variable.

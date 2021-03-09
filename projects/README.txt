@@ -1,4 +1,4 @@
-Please Note:
+﻿Please Note:
 
 These examples are for illustrative and educational purposes only
 to demonstrate various simulation options of PRMS. They are not
@@ -79,21 +79,22 @@ Sample problems:
    illustrates running PRMS with a time-series of water-use input to the 
    water_use_read module that is described in Regan and LaFontaine (2017).
 
-6. glacier_models: Two models are provided for illustrative purposes of the
-   glacier dynamics simulation method (in Van Beusekom and Viger, 2015)and for 
-   educational purposes only.
+6. Tazlina: A model of the Tazlina Basin in Alaske is provided for illustrative
+   and educational purposes only. The glacier dynamics simulation method  is
+   described in Van Beusekom and Viger (2015).
 
 7. sagehen_restart: This is the sagehen model described in sample problem 1
-   to demonstrate the use of the restart option with 16 simulations. The 
-   first simulation runs the entire simulation period from October 1, 1980, 
-   through January 30, 1984. This simulation provides results for the entire
-   simulation period. PRMS is then run 15 additional times to reproduce the
-   restart simulations. The first of these simulations is the 'hindcast' 
-   simulation, which runs from October 1, 1980, through September 1, 1983.
-   Note that for this run, the simulation 'end_time' has been reset to 
-   '1983,9,1,0,0,0' in the batch file; several other input control parameters
-   also are reset on the command lines in prms.bat for this and each of the
-   subsequent runs.
+   to demonstrate the use of the restart option with 16 simulations. The
+   restart option is decribe in Regan and LaFontaine (2017) and Regan and 
+   others (2015). The first simulation runs the entire simulation period 
+   from October 1, 1980, through January 30, 1984. This simulation provides
+   results for the entire simulation period. PRMS is then run 15 additional
+   times to reproduce the restart simulations. The first of these simulations
+   is the 'hindcast' simulation, which runs from October 1, 1980, through
+   September 1, 1983. Note that for this run, the simulation 'end_time'
+   has been reset to '1983,9,1,0,0,0' in the batch file; several other 
+   input control parameters also are reset on the command lines in prms.bat
+   for this and each of the subsequent runs.
 
 References:
 
@@ -122,6 +123,11 @@ output modules and updates to surface-depression storage simulation and
 initial conditions specification options with the Precipitation-Runoff 
 Modeling System (PRMS): U.S. Geological Survey Techniques and Methods, 
 book 6, chap. B8, 60 p., https://doi.org/10.3133/tm6B8.
+
+Regan, R.S., Niswonger, R.G., Markstrom, S.L., and Barlow, P.M., 2015,
+Documentation of a restart option for the U.S. Geological Survey coupled
+groundwater and surface-water flow (GSFLOW) model: U.S. Geological Survey
+Techniques and Methods, book 6, chap. D3, 19 p., http://dx.doi.org/10.3133/tm6D3.
 
 Van Beusekom, A.E., and Viger, R.J., 2015, A glacier runoff extension to the
 Precipitation Runoff Modeling System, Journal of Geophysical Research: Earth 
