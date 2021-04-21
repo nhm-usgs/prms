@@ -174,10 +174,10 @@ nhruOutBaseFileName
 nhruOutVars
 1
 1
-6
+7
 ####
 nhruOutVar_names
-6
+7
 4
 unused_potet
 ag_irrigation_add
@@ -185,6 +185,7 @@ hru_actet
 potet
 AET_external
 PET_external
+ag_actet
 ####
 nhruOut_freq
 1
