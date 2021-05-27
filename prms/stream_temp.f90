@@ -10,7 +10,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2020-12-02'
+      character(len=*), parameter :: Version_stream_temp = '2021-05-27'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -207,7 +207,7 @@
 
       ALLOCATE ( Seg_length(Nsegment) )
       IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
-     &     '1000.0', '1.0', '100000.0', &
+     &     '1000.0', '0.001', '200000.0', &
      &     'Length of each segment', &
      &     'Length of each segment', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
@@ -726,7 +726,7 @@
       USE PRMS_SNOW, ONLY: Snowmelt
       USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
-      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday !, Nowyear, Nowday
+      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
 
       IMPLICIT NONE
@@ -948,10 +948,10 @@
          ENDIF
 
 ! debug
-!         if (seg_tave_upstream(i) > 100.0) then
-!            write(*,*) "upstream_temp: i = ", i, " seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", &
-!      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
-!         endif
+         if (seg_tave_upstream(i) > 100.0) then
+            write(*,*) "upstream_temp: i = ", i, " seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", &
+      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
+         endif
 
          ! Compute flow-dependent water-in-segment width value
          if (seg_outflow(i) > NEARZERO) then
@@ -989,6 +989,8 @@
          CALL lat_inflow(qlat, seg_tave_lat(i), i, seg_tave_gw(i), Seg_tave_air(i), seg_tave_ss(i), &
      &                   Seg_melt(i), Seg_rain(i))
 
+! addition of lat_temp_adj moved up here before the ).0 degree cutoff.
+         seg_tave_lat(i) = seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)
 
          ! This code does not handle thermodynamics of ice, so temperatures below 0 are not allowed.
          ! The question is when to set temperatures below 0 to 0. If, after computing the running averages
@@ -1017,7 +1019,8 @@
 
          elseif (fs .le. NEARZERO) then
              ! if this is true, then there is no flow from upstream, but there is lateral inflow
-            t_o = seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)
+!            t_o = seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)
+            t_o = seg_tave_lat(i)
 
          elseif (qlat .le. NEARZERO) then
              ! if this is true, then there is no lateral flow, but there is flow from upstream
@@ -1026,27 +1029,30 @@
          else
              ! if this is true, then there is both lateral flow and flow from upstream
              !  qlat is in CMS so fs needs to be converted
+!            t_o = sngl((seg_tave_upstream(i) * fs * CFS2CMS_CONV) + &
+!     &                   (sngl(qlat) * (seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)))) / &
+!     &                   sngl((fs * CFS2CMS_CONV) + sngl(qlat))
             t_o = sngl((seg_tave_upstream(i) * fs * CFS2CMS_CONV) + &
-     &                   (sngl(qlat) * (seg_tave_lat(i) + lat_temp_adj(i,Nowmonth)))) / &
+     &                   (sngl(qlat) * seg_tave_lat(i))) / &
      &                   sngl((fs * CFS2CMS_CONV) + sngl(qlat))
          endif
 
 ! debug
-!         if (t_o .ne. t_o) then
-!             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
-!     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
-!             continue
-!         endif
+         if (t_o .ne. t_o) then
+             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
+     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
+             continue
+         endif
 
 ! debug
-!         if (t_o .gt. 100.0) then
-!             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
-!             write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
-!     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
-!             write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
-!             continue
-!             exit
-!          endif
+         if (t_o .gt. 100.0) then
+             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
+             write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
+     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
+             write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
+             continue
+             exit
+          endif
 
 !         Need a good value of t_o
           if (t_o .gt. -98.0) then
@@ -1066,9 +1072,9 @@
               Seg_tave_water(i) = NOFLOW_TEMP
           endif
 
-!          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
-!             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
-!          endif
+          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
+             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
+          endif
 
       ENDDO
       END FUNCTION stream_temp_run
