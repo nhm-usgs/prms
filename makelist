@@ -9,7 +9,22 @@ PRMSDIR    = ./prms
 #BINDIR      = ./bin
 MMFLIB      = ../mmf/libmmf.a
 
-HDF5LIB = -L/opt/cray/pe/hdf5/1.10.5.2/GNU/8.2/lib -lhdf5_hl -lhdf5 -lm -lz -ldl
+# NETCDF_DIR should be pre-set on denali
+
+ifndef NC_CPPFLAGS
+NC_CPPFLAGS = -I$(NETCDF_DIR)/include
+endif
+
+ifndef NC_LDFLAGS
+NC_LDFLAGS = -L$(NETCDF_DIR)/lib
+endif
+
+ifndef HDF5_LDFLAGS
+# location on denali
+HDF5_LDFLAGS = -L/opt/cray/pe/hdf5/1.10.5.2/GNU/8.2/lib
+endif
+
+HDF5_LIBS = -lhdf5_hl -lhdf5 -lm -lz -ldl
 
 #########################################################
 # Configure tags for each system
@@ -28,7 +43,7 @@ LDFLAGS		=$(OPTLEVEL)
 # Define the Fortran compile flags
 ##########################################################
 #FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
-FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore -I$(NETCDF_DIR)/include
+FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore $(NC_CPPFLAGS)
 #FFLAGS=$(OPTLEVEL) -Wall -fno-second-underscore
 FC		= gfortran
 
@@ -46,8 +61,7 @@ MATHLIB		= -lm
 
 #GCLIB		= -lgfortran -lgcc $(MATHLIB)
 #GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran
-#GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdf -lnetcdff
-GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf $(HDF5LIB)
+#GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran $(NC_LDFLAGS) -lnetcdf -lnetcdff
 FLIBS    = $(GCLIB)
 
 ##########################################################

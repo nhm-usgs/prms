@@ -71,7 +71,7 @@ OBJS = \
 
 $(TARGET): $(OBJS)
 	$(RM) $(TARGET)
-	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(FLIBS)
+	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) -lnetcdff
 
 clean:
 	$(RM) $(TARGET)
