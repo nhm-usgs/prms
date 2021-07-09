@@ -62,7 +62,6 @@ MATHLIB		= -lm
 #GCLIB		= -lgfortran -lgcc $(MATHLIB)
 #GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran
 #GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran $(NC_LDFLAGS) -lnetcdf -lnetcdff
-GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran $(NC_LDFLAGS) -lnetcdff -lnetcdf $(HDF5_LDFLAGS) $(HDF5_LIBS)
 FLIBS    = $(GCLIB)
 
 ##########################################################
