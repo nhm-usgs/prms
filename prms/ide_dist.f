@@ -9,14 +9,13 @@
 ! Lauren Hay, November 2004
 !***********************************************************************
       MODULE PRMS_IDE
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Nrain, Inputerror_flag
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'ide_dist'
-      character(len=*), parameter :: Version_ide_dist = '2020-12-02'
+      character(len=*), parameter :: Version_ide_dist = '2021-09-07'
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Dalr
@@ -67,6 +66,8 @@
 !     idedecl - set up parameters for temperature computations
 !***********************************************************************
       INTEGER FUNCTION idedecl()
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Nrain
       USE PRMS_IDE
       IMPLICIT NONE
 ! Functions
@@ -253,6 +254,8 @@
 !     ideinit - Initialize ide_dist module - get parameter values,
 !***********************************************************************
       INTEGER FUNCTION ideinit()
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE
+      USE PRMS_MODULE, ONLY: Nhru, Ntemp, Nrain, Inputerror_flag
       USE PRMS_IDE
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Active_hrus, Hru_route_order
@@ -400,8 +403,8 @@
 !               Outputs a daily max and min Temperature by HRU elevation
 !***********************************************************************
       INTEGER FUNCTION iderun()
+      USE PRMS_MODULE, ONLY: Nowmonth
       USE PRMS_IDE
-      USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: ide_temp_run, ide_rain_run
@@ -426,7 +429,7 @@
 !***********************************************************************
       INTEGER FUNCTION ide_temp_run(Temp_wght_dist, Temp_wght_elev)
       USE PRMS_CONSTANTS, ONLY: FEET2METERS, GLACIER, FEET, CELSIUS
-      USE PRMS_MODULE, ONLY: Ntemp, Nrain
+      USE PRMS_MODULE, ONLY: Ntemp, Nrain, Nowmonth
       USE PRMS_IDE, ONLY: Hru_x, Hru_y, Tmax_rain_sta, Solrad_elev,
      +    Tmin_rain_sta, Temp_nuse, Temp_nsta, Tsta_x, Tsta_y, Dist_exp,
      +    Psta_x, Psta_y, Basin_centroid_x, Basin_centroid_y,
@@ -439,7 +442,6 @@
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust,
      +    Tsta_elev_meters, Temp_units, Psta_elev_meters
       USE PRMS_OBS, ONLY: Tmax, Tmin
-      USE PRMS_SET_TIME, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
@@ -605,7 +607,7 @@
       INTEGER FUNCTION ide_rain_run(Prcp_wght_dist, Prcp_wght_elev)
       USE PRMS_CONSTANTS, ONLY: FEET2METERS, MM2INCH, GLACIER, FEET,
      +    CELSIUS, ERROR_data
-      USE PRMS_MODULE, ONLY: Nrain
+      USE PRMS_MODULE, ONLY: Nrain, Nowmonth
       USE PRMS_IDE, ONLY: Hru_x, Hru_y, Psta_x, Psta_y,
      +    Rain_nuse, Rain_nsta, Tmax_rain_sta, Tmin_rain_sta,
      +    Ndist_psta, Dist_exp, Precip_ide, Adjust_snow, Adjust_rain,
@@ -617,7 +619,6 @@
      +    Hru_ppt, Hru_rain, Hru_snow, Basin_rain,
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
      +    Precip_units, Tmax_allsnow_f, Tmax_allrain_f, Adjmix_rain
-      USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
 ! Functions
