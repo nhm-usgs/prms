@@ -3,20 +3,12 @@
 ! from files pre-processed Data Files available for other PRMS modules
 !***********************************************************************
       MODULE PRMS_WATER_USE
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, MAXFILE_LENGTH, ACTIVE, OFF, &
-     &    RUN, DECL, INIT, CLEAN, ERROR_water_use, strmflow_noroute_module, &
-     &    strmflow_muskingum_lake_module
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsegment, Nwateruse, Nexternal, Nconsumed, &
-     &    Segment_transferON_OFF, Gwr_transferON_OFF, Lake_transferON_OFF, &
-     &    External_transferON_OFF, Dprst_transferON_OFF, Dprst_flag, Strmflow_flag, &
-     &    Model, Inputerror_flag, Start_year, Start_month, Start_day, Soilzone_add_water_use, &
-     &    End_year, End_month, End_day, Dprst_transfer_water_use, Dprst_add_water_use, &
-     &    Gwr_transfer_water_use, Gwr_add_water_use, Lake_transfer_water_use, Lake_add_water_use
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
       ! Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'water_use_read'
-      character(len=*), parameter :: Version_water_use_read = '2020-12-02'
+      character(len=*), parameter :: Version_water_use_read = '2021-09-07'
 
       ! transfer type
       integer, parameter :: STREAM = 1
@@ -34,7 +26,7 @@
       DOUBLE PRECISION, SAVE ::  Total_consumed_gain
       REAL, ALLOCATABLE, SAVE :: Consumed_gain(:), Consumed_gain_tot(:)
       DOUBLE PRECISION, SAVE ::  Total_soilzone_gain
-      REAL, ALLOCATABLE, SAVE :: Soilzone_gain(:), Soilzone_gain_tot(:)
+      REAL, ALLOCATABLE, SAVE :: Soilzone_gain(:), Soilzone_gain_tot(:), Soilzone_gain_hru(:)
       DOUBLE PRECISION, SAVE :: Total_dprst_transfer, Total_dprst_gain
       REAL, ALLOCATABLE, SAVE :: Dprst_transfer(:), Dprst_gain(:), Dprst_transfer_tot(:), Dprst_gain_tot(:)
       DOUBLE PRECISION, SAVE :: Total_gwr_transfer, Total_gwr_gain
@@ -52,18 +44,26 @@
       INTEGER, SAVE :: Consumed_transfers_on, Lake_transfers_on, Segment_transfers_on
       INTEGER, SAVE :: External_transfers_on, Dprst_transfers_on, Gwr_transfers_on
       INTEGER, ALLOCATABLE, SAVE :: Source_id(:), Destination_id(:), Source_type(:), Destination_type(:)
+! Control Parameters
+      CHARACTER(LEN=MAXFILE_LENGTH) :: Segment_transfer_file, Gwr_transfer_file, Dprst_transfer_file
+      CHARACTER(LEN=MAXFILE_LENGTH) :: External_transfer_file, Lake_transfer_file
       END MODULE PRMS_WATER_USE
 
       INTEGER FUNCTION water_use_read()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, &
+     &    RUN, DECL, INIT, CLEAN, ERROR_water_use, strmflow_noroute_module, strmflow_muskingum_lake_module
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsegment, Nwateruse, Nexternal, Nconsumed, &
+     &    Segment_transferON_OFF, Gwr_transferON_OFF, Lake_transferON_OFF, &
+     &    External_transferON_OFF, Dprst_transferON_OFF, Dprst_flag, Strmflow_flag, &
+     &    Model, Inputerror_flag, Start_year, Start_month, Start_day, Soilzone_add_water_use, &
+     &    End_year, End_month, End_day, Dprst_transfer_water_use, Dprst_add_water_use, &
+     &    Gwr_transfer_water_use, Gwr_add_water_use, Lake_transfer_water_use, Lake_add_water_use
       USE PRMS_WATER_USE
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: control_string, declvar, decldim, getdim
       EXTERNAL :: read_error, find_header_end, find_current_file_time, read_event, print_module, PRMS_open_module_file, error_stop
-! Control Parameters
-      CHARACTER(LEN=MAXFILE_LENGTH) :: Segment_transfer_file, Gwr_transfer_file, Dprst_transfer_file
-      CHARACTER(LEN=MAXFILE_LENGTH) :: External_transfer_file, Lake_transfer_file
 ! Local Variables
       INTEGER, SAVE :: external_unit, external_next_year, external_next_month, external_next_day
       INTEGER, SAVE :: segment_unit, dprst_unit, gwr_unit, lake_unit
@@ -422,6 +422,10 @@
         IF ( declvar(MODNAME, 'soilzone_gain_tot', 'nhru', Nhru, 'real', &
      &       'Transfer gains to the capillary reservoir within the soilzone for each HRU for the simulation', &
      &       'cfs', Soilzone_gain_tot)/=0 ) CALL read_error(1, 'soilzone_gain_tot')
+        ALLOCATE ( Soilzone_gain_hru(Nhru) )
+        IF ( declvar(MODNAME, 'soilzone_gain_hru', 'nhru', Nhru, 'real', &
+     &       'Irrigation added to soilzone from water-use module for each HRU', &
+     &       'inches', Soilzone_gain_hru)/=0 ) CALL read_error(3, 'soilzone_gain_hru')
         IF ( declvar(MODNAME, 'total_soilzone_gain', 'one', 1, 'double', &
      &       'Transfer gains to all capillary reservoirs for each time step', &
      &       'cfs', Total_soilzone_gain)/=0 ) CALL read_error(1, 'total_soilzone_gain')
@@ -446,7 +450,7 @@
         IF ( declvar(MODNAME, 'transfer_rate', 'nwateruse', nwateruse, 'double', &
      &           'Transfer of each water-use transfer for each time step', &
      &           'cfs', Transfer_rate)/=0 ) CALL read_error(1, 'transfer_rate')
-        
+
       ELSEIF ( Process_flag==INIT ) THEN
         Ndiversions = 0
         year = Start_year
@@ -557,6 +561,7 @@
         ! type CAPILLARY
         Soilzone_gain = 0.0
         Soilzone_gain_tot = 0.0
+        Soilzone_gain_hru = 0.0
         Total_soilzone_gain = 0.0D0
 
         IF ( Consumed_transfers_on==ACTIVE ) THEN ! type CONSUMPTIVE
@@ -586,7 +591,7 @@
       SUBROUTINE read_event(Iunit, Src_type, Next_yr, Next_mo, Next_day)
       USE PRMS_CONSTANTS, ONLY: ERROR_water_use, ACTIVE, OFF
       USE PRMS_WATER_USE, ONLY: CANOPY
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
+      USE PRMS_MODULE, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit, Src_type
@@ -626,8 +631,7 @@
      &    Consumed_transfers_on, External_transfers_on, Gwr_transfers_on, &
      &    STREAM, GROUNDWATER, DPRST, EXTRNAL, LAKE, CAPILLARY, CONSUMPTIVE, CANOPY
       USE PRMS_MODULE, ONLY: Segment_transferON_OFF, Gwr_transferON_OFF, Lake_transferON_OFF, &
-     &    Dprst_transferON_OFF, External_transferON_OFF, Strmflow_flag, Nexternal, Dprst_flag
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
+     &    Dprst_transferON_OFF, External_transferON_OFF, Strmflow_flag, Nexternal, Dprst_flag, Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: error_stop
@@ -725,6 +729,7 @@
 ! reset transfers when new event is found
 ! ****************************
       SUBROUTINE set_transfers(Src_type, Src_id, Dest_type, Dest_id, Diversion)
+      USE PRMS_CONSTANTS, ONLY: ERROR_water_use
       USE PRMS_WATER_USE
       IMPLICIT NONE
 ! Arguments
@@ -804,13 +809,12 @@
       ELSEIF ( Dest_type==CANOPY ) THEN
         WRITE ( Outunit, '(A,1X,I0)' ) 'Canopy storage, HRU:', Dest_id
       ENDIF
-      WRITE ( Outunit, '(A,1X,F0.3)' ) 'Transfer flow rate:', Diversion
+      WRITE ( Outunit, '(A,1X,F0.5)' ) 'Transfer flow rate:', Diversion
       END SUBROUTINE check_transfer
 
       SUBROUTINE nwateruse_error(ctype)
       USE PRMS_CONSTANTS, ONLY: ERROR_water_use
-      USE PRMS_MODULE, ONLY: Nwateruse
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
+      USE PRMS_MODULE, ONLY: Nwateruse, Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
       ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: ctype
