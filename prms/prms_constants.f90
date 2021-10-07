@@ -102,9 +102,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CASCADEGW_SAME = 2
 
     ! model_mode
-    integer, parameter :: GSFLOW = 0
     integer, parameter :: PRMS = 1
-    integer, parameter :: MODFLOW = 2
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1
@@ -114,7 +112,6 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: WRITE_CLIMATE=24, CONVERT=25, CLIMATE=26, POTET=27, TRANSPIRE=28, FROST=29
 
     ! Error Codes
-    integer, parameter :: ERROR_modflow = -5
     integer, parameter :: ERROR_read = -4
     integer, parameter :: ERROR_open_out = -3
     integer, parameter :: ERROR_open_in = -2

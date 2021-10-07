@@ -2,15 +2,11 @@
 ! stream temperature module
 !***********************************************************************
       MODULE PRMS_STRMTEMP
-      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, DOCUMENTATION, ACTIVE, OFF, &
-     &    NEARZERO, ERROR_param, CFS2CMS_CONV, DAYS_YR, DAYS_PER_YEAR, DAYS_YR
-      USE PRMS_MODULE, ONLY: Process_flag, Nsegment, Model, Init_vars_from_file, &
-     &    Print_debug, Strmtemp_humidity_flag, Model, Inputerror_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2021-05-27'
+      character(len=*), parameter :: Version_stream_temp = '2021-08-13'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -94,6 +90,8 @@
 !   Declared Parameters
 !***********************************************************************
       INTEGER FUNCTION stream_temp_decl()
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DOCUMENTATION, ACTIVE, OFF, DAYS_PER_YEAR
+      USE PRMS_MODULE, ONLY: Nsegment, Model, Init_vars_from_file, Strmtemp_humidity_flag, Model
       USE PRMS_STRMTEMP
       IMPLICIT NONE
 ! Functions
@@ -207,7 +205,7 @@
 
       ALLOCATE ( Seg_length(Nsegment) )
       IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
-     &     '1000.0', '0.001', '200000.0', &
+     &     '1000.0', '1.0', '100000.0', &
      &     'Length of each segment', &
      &     'Length of each segment', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_length')
@@ -412,6 +410,8 @@
 !    stream_temp_init - Initialize module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, OFF, NEARZERO, ERROR_param, DAYS_YR
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
@@ -717,16 +717,17 @@
 !     stream_temp_run - Computes stream temperatures
 !***********************************************************************
       INTEGER FUNCTION stream_temp_run()
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, CFS2CMS_CONV
+      USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, Nowmonth !, Nowyear, Nowday
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area
-      USE PRMS_SET_TIME, ONLY: Summer_flag, Nowmonth
+      USE PRMS_SET_TIME, ONLY: Summer_flag, Jday
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Potet, Hru_rain, Swrad
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
       USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
       USE PRMS_OBS, ONLY: Humidity
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Jday
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
 
       IMPLICIT NONE
@@ -948,10 +949,10 @@
          ENDIF
 
 ! debug
-         if (seg_tave_upstream(i) > 100.0) then
-            write(*,*) "upstream_temp: i = ", i, " seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", &
-      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
-         endif
+!         if (seg_tave_upstream(i) > 100.0) then
+!            write(*,*) "upstream_temp: i = ", i, " seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", &
+!      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
+!         endif
 
          ! Compute flow-dependent water-in-segment width value
          if (seg_outflow(i) > NEARZERO) then
@@ -1038,21 +1039,21 @@
          endif
 
 ! debug
-         if (t_o .ne. t_o) then
-             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
-     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
-             continue
-         endif
+!         if (t_o .ne. t_o) then
+!             write(*,*) "t_o is Nan, seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
+!     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
+!             continue
+!         endif
 
 ! debug
-         if (t_o .gt. 100.0) then
-             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
-             write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
-     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
-             write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
-             continue
-             exit
-          endif
+!         if (t_o .gt. 100.0) then
+!             write(*,*) "this is the place: t_o = ", t_o, " ted = ", te, " seg_id = ", i
+!             write(*,*) "   seg_tave_upstream = ", seg_tave_upstream(i), " fs = ", fs, &
+!     &                    " qlat = ", qlat, " seg_tave_lat = ", seg_tave_lat(i), " lat_temp_adj = ", lat_temp_adj(i,Nowmonth)
+!             write(*,*) "   width = ", Seg_width(i), Nowyear, Nowmonth, Nowday
+!             continue
+!             exit
+!          endif
 
 !         Need a good value of t_o
           if (t_o .gt. -98.0) then
@@ -1072,9 +1073,9 @@
               Seg_tave_water(i) = NOFLOW_TEMP
           endif
 
-          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
-             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
-          endif
+!          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
+!             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
+!          endif
 
       ENDDO
       END FUNCTION stream_temp_run
@@ -1333,7 +1334,7 @@
 !           EQUATION BY ITERATING NEWTON'S METHOD
 !        2. TO DETERMINE THE 1ST THERMAL EXCHANGE COEFFICIENT.
       USE PRMS_STRMTEMP, ONLY: ZERO_C, Maxiter_sntemp
-!      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday
+!      USE PRMS_MODULE, ONLY: Nowyear, Nowmonth, Nowday
       IMPLICIT NONE
       INTRINSIC :: ABS
 ! Arguments

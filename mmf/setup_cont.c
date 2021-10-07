@@ -39,13 +39,11 @@ void setup_cont (void) {
 
         static long start_date[] = {2000,10,1,0,0,0};
         static long end_date[] = {2001,9,30,0,0,0};
-		static long modflow0_date[] = {-999,9,30,0,0,0};
 
 /*
 **	GSFLOW control variables
 */
         decl_control_string ("model_mode", "PRMS5");
-        decl_control_string ("modflow_name", "modflow.nam");
         decl_control_string ("precip_module", "precip_1sta");
         decl_control_string ("temp_module", "temp_1sta");
         decl_control_string ("et_module", "potet_jh");
@@ -58,8 +56,6 @@ void setup_cont (void) {
         decl_control_string ("gsflow_output_file", "gsflow.out");
         decl_control_string ("gsflow_csv_file", "gsflow.csv");
 		//decl_control_string ("creator_email", "unknown");
-		decl_control_string ("aet_module", "unknown");
-		decl_control_string ("irrigation_area_module", "unknown");
 
 /*
         cval = (char *)umalloc (sizeof (long));
@@ -99,17 +95,9 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("frozen_flag", 1, lval);
 
-		lval = (long*)umalloc(sizeof(long));
-		lval[0] = 0;
-		decl_control_int_array("agriculture_flag", 1, lval);
-		
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dprst_flag", 1, lval);
-
-		lval = (long*)umalloc(sizeof(long));
-		lval[0] = 0;
-		decl_control_int_array("PRMS_land_iteration_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;
@@ -233,6 +221,13 @@ void setup_cont (void) {
 
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
+		decl_control_int_array ("dprst_transfer_water_use", 1, lval);
+
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
+		decl_control_int_array ("dprst_add_water_use", 1, lval);
+		lval = (long *)umalloc (sizeof (long));
+		lval[0] = 0;
 		decl_control_int_array ("soilzone_transferON_OFF", 1, lval);
 
 		lval = (long *)umalloc (sizeof (long));
@@ -279,6 +274,14 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("windspeed_cbh_flag", 1, lval);
 
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("albedo_cbh_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("cloud_cover_cbh_flag", 1, lval);
+
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("segmentOutON_OFF", 1, lval);
@@ -294,6 +297,11 @@ void setup_cont (void) {
 		lval = (long*)umalloc(sizeof(long));
 		lval[0] = 0;
 		decl_control_int_array("soilzone_aet_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("snow_cloudcover_flag", 1, lval);
+
 /*
 **	file names
 */
@@ -315,7 +323,6 @@ void setup_cont (void) {
         decl_control_string ("transp_day", "transp.day");
         decl_control_string ("windspeed_day", "windspeed.day");
         decl_control_string ("humidity_day", "humidity.day");
-		decl_control_string ("aet_file", "aet.input");
 		decl_control_string ("pkwater_equiv_day", "pkwater_equiv.day");
         decl_control_string ("pk_depth_day", "pk_depth.day");
         decl_control_string ("snow_evap_day", "snow_evap.day");
@@ -325,7 +332,6 @@ void setup_cont (void) {
         decl_control_string ("dprst_area_dynamic", "dyndprst_area");
         decl_control_string ("dprst_depth_dynamic", "dyndprst_depth");
         decl_control_string ("dprst_frac_dynamic", "dyndprst_frac");
-		decl_control_string ("dprst_ag_dynamic", "dynAg_frac");
 		decl_control_string ("snow_intcp_dynamic", "dynsnowintcp");
 		decl_control_string ("srain_intcp_dynamic", "dynsrainintcp");
 		decl_control_string ("wrain_intcp_dynamic", "dynwrainintcp");
@@ -360,7 +366,6 @@ void setup_cont (void) {
 */
         decl_control_int_array("start_time", 6, start_date);
         decl_control_int_array("end_time", 6, end_date);
-        decl_control_int_array("modflow_time_zero", 6, modflow0_date);
 
 /*
 **	flag for initializing vars from file
