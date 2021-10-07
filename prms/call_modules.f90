@@ -99,7 +99,7 @@
 ! Local Variables
       INTEGER :: i, iret, nc, ierr
 !***********************************************************************
-      call_modules = 1
+      call_modules = 0
       ierr = 0
 
       Process = Arg
@@ -1148,6 +1148,8 @@
 !     Module documentation
 !**********************************************************************
       SUBROUTINE module_doc()
+      USE PRMS_CONSTANTS, ONLY: DECL
+      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: basin, climateflow, prms_time
@@ -1221,7 +1223,10 @@
       CALL water_balance()
       test = subbasin()
 
-      PRINT 9001
+      IF ( Process_flag==DECL ) THEN
+        PRINT 9001
+        STOP
+      ENDIF
  9001 FORMAT (//, ' All available modules have been called.', /, &
      &        ' All parameters have been declared.', /, &
      &        ' Note, no simulation was computed.', /)
