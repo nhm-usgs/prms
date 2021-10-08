@@ -1223,10 +1223,8 @@
       CALL water_balance()
       test = subbasin()
 
-      IF ( Process_flag==DECL ) THEN
-        PRINT 9001
-        STOP
-      ENDIF
+      IF ( Process_flag==DECL ) PRINT 9001
+
  9001 FORMAT (//, ' All available modules have been called.', /, &
      &        ' All parameters have been declared.', /, &
      &        ' Note, no simulation was computed.', /)
