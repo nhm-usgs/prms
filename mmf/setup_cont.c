@@ -226,7 +226,8 @@ void setup_cont (void) {
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("dprst_add_water_use", 1, lval);
-		lval = (long *)umalloc (sizeof (long));
+
+		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("soilzone_transferON_OFF", 1, lval);
 
@@ -323,6 +324,8 @@ void setup_cont (void) {
         decl_control_string ("transp_day", "transp.day");
         decl_control_string ("windspeed_day", "windspeed.day");
         decl_control_string ("humidity_day", "humidity.day");
+		decl_control_string ("albedo_day", "albedo.day");
+		decl_control_string ("cloud_cover_day", "cloudcover.day");
 		decl_control_string ("pkwater_equiv_day", "pkwater_equiv.day");
         decl_control_string ("pk_depth_day", "pk_depth.day");
         decl_control_string ("snow_evap_day", "snow_evap.day");
