@@ -214,7 +214,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
       ! SET yesterdays inflows and outflows into temp (past arrays)
       ! values may be 0.0 as initial, > 0.0 for runtime and dynamic initial
-      ! condtions. Then set outlfow and inflow for this time step to 0.0
+      ! condtions. Then set outflow and inflow for this time step to 0.0
       !
       ! upstream_inflow and outflow will vary by hour.
       ! lateral_inflow and everything else will vary by day.
