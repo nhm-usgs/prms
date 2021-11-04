@@ -462,6 +462,10 @@ contains
         if (hru_type(chru) == LAKE) cycle
 
         trd = orad_hru(chru) / soltab_horad_potsw(day_of_year, chru)
+        ! NOTE: 2021-08-27 PAN - below is a change suggested by Steve Regan
+        ! orad_local = SNGL( (DBLE(Swrad(i))*Hru_cossl(i)*Soltab_horad_potsw(Jday,i))/Soltab_potsw(Jday,i) )
+        ! trd = orad_local/SNGL(Soltab_horad_potsw(Jday,i)) ! [dimensionless ratio]
+
 
         ! 2D index to 1D
         idx1D = (curr_month - 1) * nhru + chru
