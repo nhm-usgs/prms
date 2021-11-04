@@ -379,6 +379,9 @@ contains
             write(output_unit, *) 'ERROR: Unsupported output variable type'
           end if
 
+          ! WARNING: 2020-09-29 PAN - var_cache_size as define is currently in bytes,
+          !                           but cache_size in nf90_def_var expects Megabytes.
+
           ! TODO: the number of slots should be a prime number to minimize hash table collisions
           var_cache_slots = cnk_per_domain * 10
           ! DEBUG: PAN
