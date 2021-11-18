@@ -900,7 +900,7 @@
 
       IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_sta_module .OR. Temp_flag==temp_laps_module .OR. &
      &     Temp_flag==temp_dist2_module ) THEN
-        IF ( getparam(Temp_module, 'basin_tsta', 1, Basin_tsta)/=0 ) CALL read_error(2, 'basin_tsta')
+        IF ( getparam(Temp_module, 'basin_tsta', 1, 'integer', Basin_tsta)/=0 ) CALL read_error(2, 'basin_tsta')
         CALL checkdim_param_limits(1, 'basin_tsta', 'ntemp', Basin_tsta, 1, Ntemp, Inputerror_flag)
       ELSE
         Basin_tsta = 0
