@@ -864,6 +864,7 @@
       Basin_sroffi = Basin_sroffi*Basin_area_inv
       Basin_hortonian = Basin_hortonian*Basin_area_inv
       Basin_contrib_fraction = Basin_contrib_fraction*Basin_area_inv
+      Basin_apply_sroff = Basin_apply_sroff*Basin_area_inv
       IF ( Cascade_flag>CASCADE_OFF ) THEN
         Basin_hortonian_lakes = Basin_hortonian_lakes*Basin_area_inv
         Basin_sroff_down = Basin_sroff_down*Basin_area_inv
