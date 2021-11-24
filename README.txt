@@ -1,6 +1,6 @@
 ﻿
 
-                      PRMS - Version: 5.2.0
+                      PRMS - Version: 5.2.1
             USGS Precipitation-Runoff Modeling System
 
 
@@ -14,7 +14,7 @@ shall the fact of release constitute any such warranty. Furthermore, the softwar
 released on condition that neither the USGS nor the U.S. Government shall be held liable 
 for any damages resulting from its authorized or unauthorized use.
 
-PRMS version 5.2.0 is packaged for personal computers using one of the Linux or 
+PRMS version 5.2.1 is packaged for personal computers using one of the Linux or 
 Microsoft Windows operating systems. An executable file compiled for 64-bit operating 
 systems is provided. The Linux executable was compiled using the gfortran and gcc
 compilers (8.3.0 version). The Windows executable was compiled using the Microsoft
@@ -24,7 +24,7 @@ Update 5 Composer Edition and Microsoft Visual C++ 2019 compilers.
 The source code and Linux Makefiles are provided to aid users in compilation
 on other computers. However, no support is provided for compilation.
 
-IMPORTANT: Users should review the file 'Release_notes_prms_5.2.0.pdf' for a 
+IMPORTANT: Users should review the file 'Release_notes_prms_5.1.0.pdf' for a 
 description of, and references for, and changes that have been introduced into PRMS
 with each official release; these changes may substantially affect model results.
 
@@ -46,8 +46,8 @@ A. DISTRIBUTION FILE
 
 The following distribution files are for use on personal computers:
 
-         prms_5.2.0.zip for Windows-based personal computers
-         prms_5.2.0_linux.zip for Linux-based personal computers
+         prms_5.2.1.zip for Windows-based personal computers
+         prms_5.2.1_linux.zip for Linux-based personal computers
 
 The distribution file contains:
 
@@ -60,7 +60,7 @@ several subdirectories. The following directory structure will be created in the
 installation directory:
 
    |
-   |--prms5.2.0                ; This file, release notes, and updated tables
+   |--prms5.2.1                ; This file, release notes, and updated tables
    |    |--bin                 ; Compiled PRMS executable
    |    |--projects            ; Five example application models
    |        |--acf             ; scripts for ACF River using the Climate-by-HRU
@@ -108,7 +108,7 @@ installation directory:
    |    |--dist                ; Java jar files for PRMS GUI
 
 
-It is recommended that no user files be kept in the prms5.2.0 directory
+It is recommended that no user files be kept in the prms5.2.1 directory
 structure.  If you do plan to put your own files in the directory structure, 
 do so only by creating additional subdirectories of the "projects" subdirectory.
 
@@ -121,8 +121,8 @@ available from the following World Wide Web site: http://www.adobe.com/
 B. INSTALLING
 
 To make the executable version of PRMS accessible from any directory, the 
-directory containing the executable (prms5.2.0/bin on Linux-based computers or 
-prms5.2.0\bin on Windows-based computers) should be included in the PATH
+directory containing the executable (prms5.2.1/bin/prms on Linux-based computers or 
+prms5.2.1\bin\prms.exe on Windows-based computers) should be included in the PATH
 environment variable. Also, if a prior release of PRMS is installed on your 
 system, the directory containing the executable for the prior release should be 
 removed from the PATH environment variable.
