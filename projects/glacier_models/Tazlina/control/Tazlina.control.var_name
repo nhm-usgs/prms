@@ -188,8 +188,8 @@ Units: cfs
 Name: basin_changeover
 Module: intcp
 Ndimen: 1
-Dimensions: nhru - 178
-Size: 178
+Dimensions: one - 1
+Size: 1
 Type: double
 Desc: Basin area-weighted average water released from a change over of canopy cover type
 Units: inches
@@ -2003,15 +2003,6 @@ Type: double
 Desc: Yearly area-weighted average actual ET for each HRU
 Units: inches
 
-Name: hru_frac_perv
-Module: basin
-Ndimen: 1
-Dimensions: nhru - 178
-Size: 178
-Type: float
-Desc: Fraction of HRU that is pervious
-Units: decimal fraction
-
 Name: hru_glres_melt
 Module: glacr_melt
 Ndimen: 1
@@ -2166,7 +2157,7 @@ Desc: HRU area-weighted average surface runoff from pervious areas for each HRU
 Units: inches
 
 Name: hru_storage
-Module: gwflow
+Module: basin
 Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
@@ -2225,7 +2216,7 @@ Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
 Type: float
-Desc: Infiltration to the capillary reservoirs for each HRU
+Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
 Units: inches
 
 Name: int_alb
@@ -2765,7 +2756,7 @@ Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
 Type: float
-Desc: Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU
+Desc: Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU
 Units: inches
 
 Name: runoff

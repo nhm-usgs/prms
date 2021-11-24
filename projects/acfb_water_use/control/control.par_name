@@ -761,8 +761,8 @@ Default   : 0.050000
 
 Name      : irr_type
 Module    : intcp
-Descr     : Method of application of water for each application
-Help      : Method of application of water for each application time-series (0=sprinkler (interception applies); 1=furrow/drip (no intercept); 2=ignore)
+Descr     : Application method of irrigation water
+Help      : Application method of irrigation water for each HRU (0 = sprinkler method with interception only; 1=ditch/drip method with no interception; 2=ignore; 3=sprinkler across whole HRU with interception and throughfall; 4=sprinkler method with amount of water applied on the basis of cover density, such as a living filter), for options 1, 2, and 3 irrigation water is specified as an HRU-area weighted average value
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -975,7 +975,7 @@ Bounded   : nsegment
 Name      : poi_type
 Module    : setup_param
 Descr     : Type code for each POI gage
-Help      : Type code for each POI gage
+Help      : Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)
 Ndimen    : 1
 Dimensions: npoigages - 6
 Size      : 6
@@ -1055,6 +1055,20 @@ Width     : 0
 Max       : 0.500000
 Min       : 0.000000
 Default   : 0.000000
+
+Name      : pref_flow_infil_frac
+Module    : soilzone
+Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Ndimen    : 1
+Dimensions: nhru - 27
+Size      : 27
+Type      : float
+Units     : decimal fraction
+Width     : 4
+Max       : 1.000000
+Min       : -1.000000
+Default   : -1.000000
 
 Name      : rad_trncf
 Module    : snowcomp

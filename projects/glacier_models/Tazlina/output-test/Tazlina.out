@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.0 01/20/2021
+                        Version 5.2.1 11/11/2021
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -39,27 +39,27 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2021-01-20
-Basin Definition                basin               2020-12-02
-Common States and Fluxes        climateflow         2021-01-11
-Potential Solar Radiation       soltab              2020-12-02
+Computation Order               call_modules        2021-11-11
+Basin Definition                basin               2021-08-18
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2020-12-02
-Time Series Data                obs                 2020-12-02
-Temp & Precip Distribution      xyz_dist            2020-12-02
-Solar Radiation Distribution    ccsolrad            2020-12-02
-Transpiration Distribution      transp_tindex       2020-12-02
-Potential Evapotranspiration    potet_jh            2020-08-03
-Canopy Interception             intcp               2020-12-03
-Snow Dynamics                   snowcomp            2021-01-11
-Glacier Dynamics                glacr_melt          2020-12-02
-Surface Runoff                  srunoff_smidx       2021-01-11
-Soilzone Computations           soilzone            2021-01-11
-Groundwater                     gwflow              2020-12-02
-Streamflow Routing Init         routing             2020-12-02
-Streamflow Routing              muskingum           2020-12-02
-Output Summary                  basin_sum           2020-12-02
-Output Summary                  prms_summary        2020-12-02
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Temp & Precip Distribution      xyz_dist            2021-08-13
+Solar Radiation Distribution    ccsolrad            2021-08-13
+Transpiration Distribution      transp_tindex       2021-09-07
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2021-09-07
+Snow Dynamics                   snowcomp            2021-09-15
+Glacier Dynamics                glacr_melt          2021-08-13
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
+Groundwater                     gwflow              2021-08-13
+Streamflow Routing Init         routing             2021-08-13
+Streamflow Routing              muskingum           2021-08-13
+Output Summary                  basin_sum           2021-08-13
+Output Summary                  prms_summary        2021-08-13
 ==============================================================
 
 Using Control File: .\control\Tazlina.control
@@ -138,7 +138,7 @@ Fraction impervious:        0.0473    Fraction pervious:       0.9527
    2005             14.113    5.765-1084.562   18.938    0.200
    2006             13.858    5.364-1095.672   19.329   -5.110
    2007             18.799    6.714-1106.870   22.734   -5.110
-   2008             18.374    6.568-1116.487   21.047   -5.124
+   2008             18.374    6.568-1116.486   21.047   -5.124
    2009             17.731    6.631-1128.645   22.895   -5.110
    2010             18.779    7.536-1139.996   21.896   -5.110
    2011             18.026    7.221-1150.992   21.239   -5.110
@@ -149,5 +149,5 @@ Fraction impervious:        0.0473    Fraction pervious:       0.9527
  *************************************************************
  Total for run    1038.569  383.580-1194.676 1839.556 -316.118
  *************************************************************
-Execution elapsed time    0 minutes  4.74 seconds
+Execution elapsed time    0 minutes  4.71 seconds
 

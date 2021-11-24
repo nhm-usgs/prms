@@ -6,7 +6,7 @@ verified or documented, and are in no way to be used as a representation
 of the water resources in the subject watersheds.
 
                             PRMS Sample Problems
-                                 January 2021
+                                 November 2021
  
 Seven sample projects with input data sets are provided in this subdirectory
 to verify that PRMS is correctly installed and running on the user's system.

@@ -80,8 +80,8 @@ Units: cfs
 Name: basin_changeover
 Module: intcp
 Ndimen: 1
-Dimensions: nhru - 27
-Size: 27
+Dimensions: one - 1
+Size: 1
 Type: double
 Desc: Basin area-weighted average water released from a change over of canopy cover type
 Units: inches
@@ -371,7 +371,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average net_apply
+Desc: Basin area-weighted average net application
 Units: inches
 
 Name: basin_net_ppt
@@ -1229,6 +1229,24 @@ Type: float
 Desc: Storage of free liquid water in the snowpack on each HRU
 Units: inches
 
+Name: gain_inches
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Canopy_gain in as depth in canopy
+Units: inches
+
+Name: gain_inches_hru
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Canopy_gain in canopy as depth over the HRU
+Units: inches
+
 Name: gw_in_soil
 Module: gwflow
 Ndimen: 1
@@ -1327,15 +1345,6 @@ Size: 27
 Type: float
 Desc: Actual ET for each HRU
 Units: inches
-
-Name: hru_frac_perv
-Module: basin
-Ndimen: 1
-Dimensions: nhru - 27
-Size: 27
-Type: float
-Desc: Fraction of HRU that is pervious
-Units: decimal fraction
 
 Name: hru_imperv
 Module: basin
@@ -1455,7 +1464,7 @@ Desc: HRU area-weighted average surface runoff from pervious areas for each HRU
 Units: inches
 
 Name: hru_storage
-Module: gwflow
+Module: basin
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
@@ -1505,7 +1514,7 @@ Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
 Type: float
-Desc: Infiltration to the capillary reservoirs for each HRU
+Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
 Units: inches
 
 Name: int_alb
@@ -1874,7 +1883,7 @@ Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
 Type: float
-Desc: Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU
+Desc: Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU
 Units: inches
 
 Name: runoff
@@ -2218,6 +2227,15 @@ Size: 27
 Type: float
 Desc: Transfer gains to the capillary reservoir within the soilzone for each HRU for each time step
 Units: cfs
+
+Name: soilzone_gain_hru
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Irrigation added to soilzone as depth over each HRU
+Units: inches
 
 Name: soilzone_gain_tot
 Module: water_use_read

@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.0 01/20/2021
+                        Version 5.2.1 11/11/2021
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -39,29 +39,29 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2021-01-20
-Basin Definition                basin               2020-12-02
-Cascading Flow                  cascade             2020-12-02
-Common States and Fluxes        climateflow         2020-12-16
-Potential Solar Radiation       soltab              2020-12-02
+Computation Order               call_modules        2021-11-11
+Basin Definition                basin               2021-08-18
+Cascading Flow                  cascade             2021-08-13
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2020-12-02
-Time Series Data                obs                 2020-12-02
-Temperature Distribution        climate_hru         2020-12-02
-Precipitation Distribution      climate_hru         2020-12-02
-Solar Radiation Distribution    ddsolrad            2020-12-02
-Transpiration Distribution      transp_tindex       2020-12-02
-Potential Evapotranspiration    potet_jh            2020-08-03
-Canopy Interception             intcp               2020-12-03
-Snow Dynamics                   snowcomp            2020-12-17
-Surface Runoff                  srunoff_smidx       2020-12-10
-Soilzone Computations           soilzone            2020-12-11
-Groundwater                     gwflow              2020-12-02
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Temperature Distribution        climate_hru         2021-08-13
+Precipitation Distribution      climate_hru         2021-08-13
+Solar Radiation Distribution    ddsolrad            2021-08-13
+Transpiration Distribution      transp_tindex       2021-09-07
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2021-09-07
+Snow Dynamics                   snowcomp            2021-09-15
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
+Groundwater                     gwflow              2021-08-13
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2020-12-02
-Output Summary                  subbasin            2020-12-02
-Output Summary                  basin_summary       2020-12-02
-Output Summary                  prms_summary        2020-12-02
+Output Summary                  basin_sum           2021-08-13
+Output Summary                  subbasin            2021-08-13
+Output Summary                  basin_summary       2021-08-13
+Output Summary                  prms_summary        2021-08-13
 ==============================================================
 
 Using Control File: .\prms.control
@@ -85,10 +85,10 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
  initial                              13.449
    1983   11    4    0.000    0.090   13.330    0.029    0.034   -0.000    0.000
    1983   11    5    0.000    0.072   13.231    0.027    0.031    0.000    0.000
-   1983   11    6    0.288    0.043   13.444    0.032    0.034    0.000    0.000
+   1983   11    6    0.288    0.043   13.444    0.032    0.034   -0.000    0.000
    1983   11    7    0.325    0.038   13.691    0.041    0.035   -0.000    0.000
-   1983   11    8    0.000    0.019   13.644    0.028    0.029   -0.000    0.000
+   1983   11    8    0.000    0.019   13.644    0.028    0.029    0.000    0.000
    1983   11    9    0.281    0.019   13.877    0.029    0.039   -0.000    0.000
    1983   11   10    1.919    0.024   15.693    0.079    0.123    0.000    0.000
-Execution elapsed time    0 minutes  0.12 seconds
+Execution elapsed time    0 minutes  0.11 seconds
 
