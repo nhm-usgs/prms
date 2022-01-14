@@ -1,0 +1,94 @@
+
+
+
+                         U.S. Geological Survey
+               Precipitation-Runoff Modeling System (PRMS)
+                        Version 5.2.1 11/11/2021
+
+        Process            Available Modules
+--------------------------------------------------------------------
+  Basin Definition: basin
+    Cascading Flow: cascade
+  Time Series Data: obs, water_use_read, dynamic_param_read
+   Potet Solar Rad: soltab
+  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
+                    temp_map
+       Precip Dist: precip_1sta, precip_laps, precip_dist2,
+                    climate_hru, precip_map
+Temp & Precip Dist: xyz_dist, ide_dist
+    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru
+Transpiration Dist: transp_tindex, climate_hru, transp_frost
+      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,
+                    potet_hs, potet_pt, potet_pm, potet_pm_sta
+      Interception: intcp
+Snow & Glacr Dynam: snowcomp, glacr_melt
+    Surface Runoff: srunoff_smidx, srunoff_carea
+         Soil Zone: soilzone
+       Groundwater: gwflow
+Streamflow Routing: strmflow, strmflow_in_out, muskingum,
+                    muskingum_lake, muskingum_mann
+Stream Temperature: stream_temp
+    Output Summary: basin_sum, subbasin, map_results, prms_summary,
+                    nhru_summary, nsub_summary, water_balance
+                    basin_summary, nsegment_summary
+     Preprocessing: write_climate_hru, frost_date
+--------------------------------------------------------------------
+
+
+    Active modules listed in the order in which they are called
+
+        Process                    Module         Version Date
+==============================================================
+Computation Order               call_modules        2021-11-11
+Basin Definition                basin               2021-08-18
+Cascading Flow                  cascade             2021-08-13
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
+Parameter Setup                 setup_param         2020-08-03
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Temperature Distribution        climate_hru         2021-08-13
+Precipitation Distribution      climate_hru         2021-08-13
+Solar Radiation Distribution    ddsolrad            2021-08-13
+Transpiration Distribution      transp_tindex       2021-09-07
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2021-09-07
+Snow Dynamics                   snowcomp            2021-09-15
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
+Groundwater                     gwflow              2021-08-13
+Streamflow Routing              strmflow            2020-08-03
+Output Summary                  basin_sum           2021-08-13
+Output Summary                  subbasin            2021-08-13
+Output Summary                  basin_summary       2021-08-13
+Output Summary                  prms_summary        2021-08-13
+==============================================================
+
+Using Control File: .\prms.control
+
+Using Parameter File: ../input/prms.params
+
+
+Start time: 1983/11/04 00:00:00
+End time:   1983/11/10 00:00:00
+
+
+Model domain area:         6782.50    Active basin area:      6782.50
+Fraction impervious:        0.0000    Fraction pervious:       1.0000
+
+
+
+
+   Year Month Day   Precip     ET    Storage S-Runoff M-Runoff   Watbal  WBalSum
+                  (inches) (inches) (inches) (inches) (inches) (inches) (inches)
+ -------------------------------------------------------------------------------
+ initial                              13.449
+   1983   11    4    0.000    0.090   13.330    0.029    0.034   -0.000    0.000
+   1983   11    5    0.000    0.072   13.231    0.027    0.031    0.000    0.000
+   1983   11    6    0.288    0.043   13.444    0.032    0.034   -0.000    0.000
+   1983   11    7    0.325    0.038   13.691    0.041    0.035   -0.000    0.000
+   1983   11    8    0.000    0.019   13.644    0.028    0.029    0.000    0.000
+   1983   11    9    0.281    0.019   13.877    0.029    0.039   -0.000    0.000
+   1983   11   10    1.919    0.024   15.693    0.079    0.123    0.000    0.000
+Execution elapsed time    0 minutes  0.11 seconds
+
