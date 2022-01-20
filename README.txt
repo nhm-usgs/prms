@@ -178,7 +178,7 @@ E. TESTING
 Example problems with PRMS data sets are provided in the "projects" subdirectory
 to verify that PRMS is correctly installed and running on the user's system.
 The example problems also may be looked at as examples of how to use the program. 
-See the 'Readme.txt' file in that subdirectory for a description of the five 
+See the 'Readme.txt' file in that subdirectory for a description of the seven 
 example problems.
 
 
