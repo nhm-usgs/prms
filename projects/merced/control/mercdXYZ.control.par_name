@@ -921,7 +921,7 @@ Bounded   : nsegment
 Name      : poi_type
 Module    : setup_param
 Descr     : Type code for each POI gage
-Help      : Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)
+Help      : Type code for each POI gage
 Ndimen    : 1
 Dimensions: npoigages - 0
 Size      : 1
@@ -1043,20 +1043,6 @@ Width     : 0
 Max       : 0.500000
 Min       : 0.000000
 Default   : 0.000000
-
-Name      : pref_flow_infil_frac
-Module    : soilzone
-Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
-Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
-Ndimen    : 1
-Dimensions: nhru - 90
-Size      : 90
-Type      : float
-Units     : decimal fraction
-Width     : 4
-Max       : 1.000000
-Min       : -1.000000
-Default   : -1.000000
 
 Name      : print_freq
 Module    : basin_sum
