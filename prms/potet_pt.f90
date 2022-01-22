@@ -7,32 +7,31 @@
 !   central Nebraska-USA: Journal of Hydrology, V. 420-421, p. 228-244
 !***********************************************************************
       MODULE PRMS_POTET_PT
-        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
-        USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pt'
-        character(len=*), parameter :: Version_potet = '2020-08-03'
+        character(len=*), parameter :: Version_potet = '2021-11-19'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pt_alpha(:, :)
       END MODULE PRMS_POTET_PT
 
 !***********************************************************************
       INTEGER FUNCTION potet_pt()
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
+      use PRMS_READ_PARAM_FILE, only: declparam, getparam_real
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth
       USE PRMS_POTET_PT
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Basin_humidity, Humidity_percent
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
       USE PRMS_SOLTAB, ONLY: Soltab_potsw
-      USE PRMS_SET_TIME, ONLY: Nowmonth, Jday
+      USE PRMS_SET_TIME, ONLY: Jday
+      use prms_utils, only: print_module, read_error, sat_vapor_press
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, LOG, SNGL
-      INTEGER, EXTERNAL :: declparam, getparam
-      REAL, EXTERNAL :: sat_vapor_press
-      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh, prsr, psycnst, heat_flux, net_rad, satvapor, ratio, eeq
@@ -69,7 +68,7 @@
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
           ! elh = 597.3 - 0.5653*Tavgc(i) ! same as potet_jh
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
-          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184 
+          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184
           ! elh = 2501.0 - 2.361*Tavgc(i)
           ! elh = 2500.8 - 2.36*Tavgc(i) + 0.0016*Tavgc(i)**2 - 0.00006*Tavgc(i)**3
 
@@ -97,8 +96,8 @@
           !A1 = 17.625 !moved outside loop
           !B1 = 243.04 !moved outside loop
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1) 
-          den = A1 - LOG(Humidity_hru(i)/100.0) - t1 
+          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1)
+          den = A1 - LOG(Humidity_hru(i)/100.0) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
@@ -130,7 +129,7 @@
 ! Net radiation (Irmak eqn. 8) MJ / m2 / day
 ! 1 Langley = 0.04184 MJ/m2
           net_rad = Swrad(i)*0.04184 - Lwrad_net(i) - heat_flux
-          
+
 !...COMPUTE EEQ, CM/DAY
 !...net_rad in units of MJ/m2
 !...elh (LATENT HEAT OF VAPORIZATION) in units of JOULES/GRAM:
@@ -164,7 +163,7 @@
 
 !******Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( getparam(MODNAME, 'pt_alpha', Nhru*MONTHS_PER_YEAR, 'real', Pt_alpha)/=0 ) CALL read_error(2, 'pt_alpha')
+        IF ( getparam_real(MODNAME, 'pt_alpha', Nhru*MONTHS_PER_YEAR, Pt_alpha)/=0 ) CALL read_error(2, 'pt_alpha')
 
       ENDIF
 

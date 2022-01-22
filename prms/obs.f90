@@ -2,20 +2,17 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, xyz_dist_module, &
-     &    MONTHS_PER_YEAR, CMS, CFS, CFS2CMS_CONV
-      USE PRMS_MODULE, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, &
-     &    Precip_flag
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2020-12-02'
-      INTEGER, SAVE :: Nsnow, Nlakeelev, Nwind, Nhumid, Rain_flag
+      character(len=*), parameter :: Version_obs = '2022-01-12'
+      INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, nstream_temp
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
       REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
-      REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:)
+      REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:), Stream_temp(:)
       REAL, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
       ! Lake Module Variables
@@ -36,9 +33,8 @@
 !***********************************************************************
       obs = 0
 
-      IF ( Process_flag==RUN ) THEN
-        obs = obsrun()
-      ELSEIF ( Process_flag==SETDIMENS ) THEN
+! obsrun not needed as data file is read in read_data_file and variables are set there
+      IF ( Process_flag==SETDIMENS ) THEN
         obs = obssetdims()
       ELSEIF ( Process_flag==DECL ) THEN
         obs = obsdecl()
@@ -53,18 +49,17 @@
 !***********************************************************************
       INTEGER FUNCTION obssetdims()
       USE PRMS_CONSTANTS, ONLY: MAXDIM
+      use PRMS_READ_PARAM_FILE, only: decldim
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: decldim
-      EXTERNAL read_error
 !***********************************************************************
       obssetdims = 0
 
-      IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
       IF ( decldim('nlakeelev', 0, MAXDIM, &
      &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nlakeelev')
       IF ( decldim('nwind', 0, MAXDIM, 'Number of wind-speed measurement stations')/=0 ) CALL read_error(7, 'nwind')
       IF ( decldim('nhumid', 0, MAXDIM, 'Number of relative humidity measurement stations')/=0 ) CALL read_error(7, 'nhumid')
+      IF ( decldim('nstream_temp', 0, MAXDIM, 'Number of stream temperature replacement segments')/=0 ) CALL read_error(7, 'nstream_temp')
 
       END FUNCTION obssetdims
 
@@ -74,11 +69,13 @@
 !     rain_code
 !***********************************************************************
       INTEGER FUNCTION obsdecl()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, xyz_dist_module
+      use PRMS_MMFAPI, only: declvar_dble, declvar_int, declvar_real
+      use PRMS_READ_PARAM_FILE, only: declparam, getdim
+      USE PRMS_MODULE, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, Precip_flag
       USE PRMS_OBS
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declvar, getdim, declparam
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       obsdecl = 0
 
@@ -87,17 +84,17 @@
 !   Declared Variables
       IF ( Nobs>0 ) THEN
         ALLOCATE ( Runoff(Nobs) )
-        IF ( declvar(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
+        CALL declvar_real(MODNAME, 'runoff', 'nobs', Nobs, &
      &       'Streamflow at each measurement station', &
-     &       'runoff_units', Runoff)/=0 ) CALL read_error(8, 'runoff')
+     &       'runoff_units', Runoff)
         ALLOCATE ( Streamflow_cfs(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cfs', 'nobs', Nobs, 'double', &
+        CALL declvar_dble(MODNAME, 'streamflow_cfs', 'nobs', Nobs, &
      &       'Streamflow at each measurement station', &
-     &       'cfs', Streamflow_cfs)/=0 ) CALL read_error(8, 'streamflow_cfs')
+     &       'cfs', Streamflow_cfs)
         ALLOCATE ( Streamflow_cms(Nobs) )
-        IF ( declvar(MODNAME, 'streamflow_cms', 'nobs', Nobs, 'double', &
+        CALL declvar_dble(MODNAME, 'streamflow_cms', 'nobs', Nobs, &
      &       'Streamflow at each measurement station', &
-     &       'cms', Streamflow_cms)/=0 ) CALL read_error(8, 'streamflow_cms')
+     &       'cms', Streamflow_cms)
         IF ( declparam(MODNAME, 'runoff_units', 'one', 'integer', &
      &       '0', '0', '1', &
      &       'Measured streamflow units', 'Measured streamflow units (0=cfs; 1=cms)', &
@@ -106,27 +103,27 @@
 
       IF ( Nrain>0 ) THEN
         ALLOCATE ( Precip(Nrain) )
-        IF ( declvar(MODNAME, 'precip', 'nrain', Nrain, 'real', &
+        CALL declvar_real(MODNAME, 'precip', 'nrain', Nrain, &
      &       'Precipitation at each measurement station', &
-     &       'precip_units', Precip)/=0 ) CALL read_error(8, 'precip')
+     &       'precip_units', Precip)
       ENDIF
 
       IF ( Ntemp>0 ) THEN
         ALLOCATE ( Tmin(Ntemp) )
-        IF ( declvar(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
+        CALL declvar_real(MODNAME, 'tmin', 'ntemp', Ntemp, &
      &       'Minimum air temperature at each measurement station', &
-     &       'temp_units', Tmin)/=0 ) CALL read_error(8, 'tmin')
+     &       'temp_units', Tmin)
         ALLOCATE ( Tmax(Ntemp) )
-        IF ( declvar(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
+        CALL declvar_real(MODNAME, 'tmax', 'ntemp', Ntemp, &
      &       'Maximum air temperature at each measurement station', &
-     &       'temp_units', Tmax)/=0 ) CALL read_error(8, 'tmax')
+     &       'temp_units', Tmax)
       ENDIF
 
       IF ( Nsol>0 ) THEN
         ALLOCATE ( Solrad(Nsol) )
-        IF ( declvar(MODNAME, 'solrad', 'nsol', Nsol, 'real', &
+        CALL declvar_real(MODNAME, 'solrad', 'nsol', Nsol, &
      &       'Solar radiation at each measurement station', &
-     &       'Langleys', Solrad)/=0 ) CALL read_error(8, 'solrad')
+     &       'Langleys', Solrad)
       ENDIF
 
       Nsnow = getdim('nsnow')
@@ -147,39 +144,46 @@
 
       IF ( Nsnow>0 ) THEN
         ALLOCATE ( Snowdepth(Nsnow) )
-        IF ( declvar(MODNAME, 'snowdepth', 'nsnow', Nsnow, 'real', &
+        CALL declvar_real(MODNAME, 'snowdepth', 'nsnow', Nsnow, &
      &       'Snow depth at each measurement station', &
-     &       'inches', Snowdepth)/=0 ) CALL read_error(8, 'snowdepth')
+     &       'inches', Snowdepth)
       ENDIF
 
       IF ( Nevap>0 ) THEN
         ALLOCATE ( Pan_evap(Nevap) )
-        IF ( declvar(MODNAME, 'pan_evap', 'nevap', Nevap, 'real', &
+        CALL declvar_real(MODNAME, 'pan_evap', 'nevap', Nevap, &
      &       'Pan evaporation at each measurement station', &
-     &       'inches', Pan_evap)/=0 ) CALL read_error(8, 'pan_evap')
+     &       'inches', Pan_evap)
       ENDIF
 
       IF ( Nhumid>0 ) THEN
         ALLOCATE ( Humidity(Nhumid) )
-        IF ( declvar(MODNAME, 'humidity', 'nhumid', Nhumid, 'real', &
+        CALL declvar_real(MODNAME, 'humidity', 'nhumid', Nhumid, &
      &       'Relative humidity at each measurement station', &
-     &       'percentage', Humidity)/=0 ) CALL read_error(8, 'humidity')
+     &       'percentage', Humidity)
       ENDIF
 
       IF ( Nwind>0 ) THEN
         ALLOCATE ( Wind_speed(Nwind) )
-        IF ( declvar(MODNAME, 'wind_speed', 'nwind', Nwind, 'real', &
+        CALL declvar_real(MODNAME, 'wind_speed', 'nwind', Nwind, &
      &       'Wind speed at each measurement station', &
-     &       'meters per second', Wind_speed)/=0 ) CALL read_error(8, 'wind_speed')
+     &       'meters per second', Wind_speed)
+      ENDIF
+
+      IF ( Nstream_temp>0 ) THEN
+        ALLOCATE ( Stream_temp(Nwind) )
+        CALL declvar_real(MODNAME, 'stream_temp', 'nstream_temp', nstream_temp, &
+     &       'Stream temperature for segment replacement in stream_temp', &
+     &       'degrees Celsius', Stream_temp)
       ENDIF
 
 !   Declared Parameters
       Rain_flag = OFF
       IF ( Precip_flag==xyz_dist_module ) Rain_flag = ACTIVE
       IF ( Rain_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-        IF ( declvar(MODNAME, 'rain_day', 'one', 1, 'integer', &
+        CALL declvar_int(MODNAME, 'rain_day', 'one', 1, &
      &       'Flag to set the form of any precipitation to rain (0=determine form; 1=rain)', &
-     &       'none', Rain_day)/=0 ) CALL read_error(8, 'rain_day')
+     &       'none', Rain_day)
         IF ( declparam(MODNAME, 'rain_code', 'nmonths', 'integer', &
      &       '2', '1', '5', &
      &       'Flag indicating rule for precipitation station use', &
@@ -197,16 +201,16 @@
 ! Lake Variables
       IF ( Nratetbl>0 ) THEN
         ALLOCATE ( Gate_ht(Nratetbl) )
-        IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'real', &
+        CALL declvar_real(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, &
      &       'Height of the gate opening at each dam with a gate', &
-     &       'inches', Gate_ht)/=0 ) CALL read_error(8, 'gate_ht')
+     &       'inches', Gate_ht)
       ENDIF
 
       IF ( Nlakeelev>0 ) THEN
         ALLOCATE ( Lake_elev(Nlakeelev) )
-        IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'real', &
+        CALL declvar_real(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, &
      &       'Elevation of each simulated lake surface', &
-     &       'feet', Lake_elev)/=0 ) CALL read_error(8, 'lake_elev')
+     &       'feet', Lake_elev)
       ENDIF
 
       END FUNCTION obsdecl
@@ -215,21 +219,22 @@
 !     obsinit - initializes obs module
 !***********************************************************************
       INTEGER FUNCTION obsinit()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
+      use PRMS_READ_PARAM_FILE, only: getparam_int
+      USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow
       USE PRMS_OBS
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
 !***********************************************************************
       obsinit = 0
 
       Runoff_units = CFS
       IF ( Nobs>0 ) THEN
-        IF ( getparam(MODNAME, 'runoff_units', 1, 'integer', Runoff_units)/=0 ) CALL read_error(2, 'runoff_units')
+        IF ( getparam_int(MODNAME, 'runoff_units', 1, Runoff_units)/=0 ) CALL read_error(2, 'runoff_units')
       ENDIF
 
       IF ( Rain_flag==ACTIVE ) THEN
-        IF ( getparam(MODNAME, 'rain_code', MONTHS_PER_YEAR, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
+        IF ( getparam_int(MODNAME, 'rain_code', MONTHS_PER_YEAR, Rain_code)/=0 ) CALL read_error(2, 'rain_code')
       ENDIF
 
       IF ( Nobs>0 ) THEN
@@ -250,87 +255,6 @@
       IF ( Nratetbl>0 ) Gate_ht = 0.0
       IF ( Nhumid>0 ) Humidity = 0.0
       IF ( Nwind>0 ) Wind_speed = 0.0
+      IF ( nstream_temp>0 ) Stream_temp = 0.0
 
       END FUNCTION obsinit
-
-! **********************************************************************
-!     obsrun - runs obs module
-! **********************************************************************
-      INTEGER FUNCTION obsrun()
-      USE PRMS_OBS
-      USE PRMS_SET_TIME, ONLY: Nowmonth
-      USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
-      IMPLICIT NONE
-! Functions
-      INTRINSIC DBLE
-      INTEGER, EXTERNAL :: readvar
-      EXTERNAL :: read_error
-! Local Variables
-      INTEGER :: i
-! **********************************************************************
-      obsrun = 0
-
-      IF ( Nobs>0 ) THEN
-        IF ( readvar(MODNAME, 'runoff')/=0 ) CALL read_error(9, 'runoff')
-        IF ( Runoff_units==CMS ) THEN
-          DO i = 1, Nobs
-            Streamflow_cms(i) = DBLE( Runoff(i) )
-            Streamflow_cfs(i) = Streamflow_cms(i)/CFS2CMS_CONV
-          ENDDO
-        ELSE
-          DO i = 1, Nobs
-            Streamflow_cfs(i) = DBLE( Runoff(i) )
-            Streamflow_cms(i) = Streamflow_cfs(i)*CFS2CMS_CONV
-          ENDDO
-        ENDIF
-      ENDIF
-
-      IF ( Nrain>0 ) THEN
-        IF ( readvar(MODNAME, 'precip')/=0 ) CALL read_error(9, 'precip')
-        IF ( Ppt_zero_thresh>0.0 ) THEN
-          DO i = 1, Nrain
-            IF ( Precip(i)<Ppt_zero_thresh ) Precip(i) = 0.0
-          ENDDO
-        ENDIF
-      ENDIF
-
-      IF ( Ntemp>0 ) THEN
-        IF ( readvar(MODNAME, 'tmax')/=0 ) CALL read_error(9, 'tmax')
-        IF ( readvar(MODNAME, 'tmin')/=0 ) CALL read_error(9, 'tmin')
-      ENDIF
-
-      IF ( Nsol>0 ) THEN
-        IF ( readvar(MODNAME, 'solrad')/=0 ) CALL read_error(9, 'solrad')
-      ENDIF
-
-      IF ( Nevap>0 ) THEN
-        IF ( readvar(MODNAME, 'pan_evap')/=0 ) CALL read_error(9, 'pan_evap')
-      ENDIF
-
-      IF ( Nsnow>0 ) THEN
-        IF ( readvar(MODNAME, 'snowdepth')/=0 ) CALL read_error(9, 'snowdepth')
-      ENDIF
-
-      IF ( Rain_flag==1 ) THEN
-        IF ( Rain_code(Nowmonth)==4 ) THEN
-          IF ( readvar(MODNAME, 'rain_day')/=0 ) CALL read_error(9, 'rain_day')
-        ENDIF
-      ENDIF
-
-      IF ( Nlakeelev>0 ) THEN
-        IF ( readvar(MODNAME, 'lake_elev')/=0 ) CALL read_error(9, 'lake_elev')
-      ENDIF
-
-      IF ( Nratetbl>0 ) THEN
-        IF ( readvar(MODNAME, 'gate_ht')/=0 ) CALL read_error(9, 'gate_ht')
-      ENDIF
-
-      IF ( Nhumid>0 ) THEN
-        IF ( readvar(MODNAME, 'humidity')/=0 ) CALL read_error(9, 'humidity')
-      ENDIF
-
-      IF ( Nwind>0 ) THEN
-        IF ( readvar(MODNAME, 'wind_speed')/=0 ) CALL read_error(9, 'wind_speed')
-      ENDIF
-
-      END FUNCTION obsrun

@@ -13,14 +13,12 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE, DOCUMENTATION, &
-     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Init_vars_from_file, Glacier_flag
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
       character(len=10), parameter :: MODNAME = 'temp_dist2'
-      character(len=*), parameter :: Version_temp = '2020-12-02'
+      character(len=*), parameter :: Version_temp = '2021-11-19'
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
       REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
@@ -41,7 +39,7 @@
 !     Main temp_dist2 routine
 !***********************************************************************
       INTEGER FUNCTION temp_dist2()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, RUN, DECL, INIT, CLEAN
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, CLEAN, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
@@ -55,10 +53,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         temp_dist2 = t2dist2decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL temp_dist2_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL temp_dist2_restart(READ_INIT)
         temp_dist2 = t2dist2init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL temp_dist2_restart(0)
+        IF ( Save_vars_to_file==ACTIVE ) CALL temp_dist2_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION temp_dist2
@@ -72,12 +70,15 @@
 !     lapsemax_max, tsta_xlong, tsta_ylat, hru_ylat, hru_xlong, dist_max
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim
+      use PRMS_MMFAPI, only: declvar_real
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp
       USE PRMS_TEMP_DIST2
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       t2dist2decl = 0
 
@@ -89,13 +90,13 @@
 ! added by Mastin 5/8/98
       ALLOCATE ( Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp), N_tsta(Nhru) )
 
-      IF ( declvar(MODNAME, 'basin_lapse_max', 'one', 1, 'real', &
+      CALL declvar_real(MODNAME, 'basin_lapse_max', 'one', 1, &
      &     'Basin area-weighted average maximum air temperature lapse rate per 1000 feet', &
-     &     'degrees', Basin_lapse_max)/=0 ) CALL read_error(3, 'basin_lapse_max')
+     &     'degrees', Basin_lapse_max)
 
-      IF ( declvar(MODNAME, 'basin_lapse_min', 'one', 1, 'real', &
+      CALL declvar_real(MODNAME, 'basin_lapse_min', 'one', 1, &
      &     'Basin area-weighted average minimum air temperature lapse rate per 1000 feet', &
-     &     'degrees', Basin_lapse_min)/=0 ) CALL read_error(3, 'basin_lapse_min')
+     &     'degrees', Basin_lapse_min)
 
       IF ( declparam(MODNAME, 'dist_max', 'one', 'real', &
      &     '1.0E9', '0.0', '1.0E9', &
@@ -201,13 +202,15 @@
 !                 - get parameter values, compute elfac, dist
 !***********************************************************************
       INTEGER FUNCTION t2dist2init()
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DNEARZERO, NEARZERO
+      use PRMS_READ_PARAM_FILE, only: getparam_int, getparam_real
+      USE PRMS_MODULE, ONLY:  Nhru, Ntemp, Init_vars_from_file
       USE PRMS_TEMP_DIST2
       USE PRMS_BASIN, ONLY: Hru_elev
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
       INTRINSIC :: DSQRT, ABS, DABS, DBLE
 ! Local Variables
       INTEGER :: i, j, k, n, kk, kkbig
@@ -216,37 +219,37 @@
 !***********************************************************************
       t2dist2init = 0
 
-      IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max)/=0 ) CALL read_error(2, 'dist_max')
+      IF ( getparam_real(MODNAME, 'dist_max', 1, Dist_max)/=0 ) CALL read_error(2, 'dist_max')
 
-      IF ( getparam(MODNAME, 'max_tsta', 1, 'real', Max_tsta)/=0 ) CALL read_error(2, 'max_tsta')
+      IF ( getparam_int(MODNAME, 'max_tsta', 1, Max_tsta)/=0 ) CALL read_error(2, 'max_tsta')
       IF ( Max_tsta==0 ) Max_tsta = Ntemp
 
-      IF ( getparam(MODNAME, 'monmin', MONTHS_PER_YEAR, 'real', Monmin)/=0 ) CALL read_error(2, 'monmin')
+      IF ( getparam_real(MODNAME, 'monmin', MONTHS_PER_YEAR, Monmin)/=0 ) CALL read_error(2, 'monmin')
 
-      IF ( getparam(MODNAME, 'monmax', MONTHS_PER_YEAR, 'real', Monmax)/=0 ) CALL read_error(2, 'monmax')
+      IF ( getparam_real(MODNAME, 'monmax', MONTHS_PER_YEAR, Monmax)/=0 ) CALL read_error(2, 'monmax')
 
-      IF ( getparam(MODNAME, 'lapsemin_min', MONTHS_PER_YEAR, 'real', Lapsemin_min) &
+      IF ( getparam_real(MODNAME, 'lapsemin_min', MONTHS_PER_YEAR, Lapsemin_min) &
      &     /=0 ) CALL read_error(2, 'lapsemin_min')
 
-      IF ( getparam(MODNAME, 'lapsemin_max', MONTHS_PER_YEAR, 'real', Lapsemin_max) &
+      IF ( getparam_real(MODNAME, 'lapsemin_max', MONTHS_PER_YEAR, Lapsemin_max) &
      &     /=0 ) CALL read_error(2, 'lapsemin_max')
 
-      IF ( getparam(MODNAME, 'lapsemax_min', MONTHS_PER_YEAR, 'real', Lapsemax_min) &
+      IF ( getparam_real(MODNAME, 'lapsemax_min', MONTHS_PER_YEAR, Lapsemax_min) &
      &     /=0 ) CALL read_error(2, 'lapsemax_min')
 
-      IF ( getparam(MODNAME, 'lapsemax_max', MONTHS_PER_YEAR, 'real', Lapsemax_max) &
+      IF ( getparam_real(MODNAME, 'lapsemax_max', MONTHS_PER_YEAR, Lapsemax_max) &
      &     /=0 ) CALL read_error(2, 'lapsemax_max')
 
-      IF ( getparam(MODNAME, 'tsta_xlong', Ntemp, 'real', Tsta_xlong) &
+      IF ( getparam_real(MODNAME, 'tsta_xlong', Ntemp, Tsta_xlong) &
      &     /=0 ) CALL read_error(2, 'tsta_xlong')
 
-      IF ( getparam(MODNAME, 'tsta_ylat', Ntemp, 'real', Tsta_ylat) &
+      IF ( getparam_real(MODNAME, 'tsta_ylat', Ntemp, Tsta_ylat) &
      &     /=0 ) CALL read_error(2, 'tsta_ylat')
 
-      IF ( getparam(MODNAME, 'hru_xlong', Nhru, 'real', Hru_xlong) &
+      IF ( getparam_real(MODNAME, 'hru_xlong', Nhru, Hru_xlong) &
      &     /=0 ) CALL read_error(2, 'hru_xlong')
 
-      IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
+      IF ( getparam_real(MODNAME, 'hru_ylat', Nhru, Hru_ylat) &
      &     /=0 ) CALL read_error(2, 'hru_ylat')
 
       Basin_lapse_max = 0.0
@@ -317,16 +320,17 @@
 !                  available period of record
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, DNEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER
+      USE PRMS_MODULE, ONLY: Ntemp, Glacier_flag, Nowmonth, Hru_type
       USE PRMS_TEMP_DIST2
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, &
-     &    Hru_elev_ts, Hru_type
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hru_elev_ts
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tsta_elev
-      USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Tmax, Tmin
+      use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: temp_set, print_date, error_stop
+      EXTERNAL :: temp_set
       INTRINSIC :: FLOAT, DBLE, SNGL
 ! Local Variables
       INTEGER :: j, k, ntotx, ntotn, jj, kk, allmissing
@@ -477,17 +481,17 @@
 !     temp_dist2_restart - write or read temp_dist2 restart file
 !***********************************************************************
       SUBROUTINE temp_dist2_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_TEMP_DIST2
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Function
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=10) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Solrad_tmax_good, Solrad_tmin_good
       ELSE

@@ -45,7 +45,16 @@ nhumid
 nlake
 0
 ####
+nlake_hrus
+0
+####
 nlakeelev
+0
+####
+nmap
+0
+####
+nmap2hru
 0
 ####
 nmonths
@@ -2478,6 +2487,13 @@ nhru
 3.822929859161e-01
 5.212429761887e-01
 ####
+outlet_sta 0
+1
+one
+1
+1
+1
+####
 parent_gw 4
 1
 ngw
@@ -3053,6 +3069,20 @@ nhru
 6.645999848843e-03
 9.541000239551e-03
 2.070000022650e-02
+####
+print_freq 0
+1
+one
+1
+1
+3
+####
+print_type 0
+1
+one
+1
+1
+1
 ####
 rad_trncf 0
 1

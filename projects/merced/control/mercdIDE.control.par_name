@@ -74,6 +74,14 @@ Name  : nlakeelev
 Value : 0
 Desc  : Maximum number of lake elevations for any rating table data set
 
+Name  : nmap
+Value : 0
+Desc  : Number of mapped values
+
+Name  : nmap2hru
+Value : 0
+Desc  : Number of intersections between HRUs and input climate map
+
 Name  : nmonths
 Value : 12
 Desc  : Number of months in a year
@@ -261,7 +269,7 @@ Default   : 5.000000
 
 Name      : cov_type
 Module    : basin
-Descr     : Cover type designation for HRU
+Descr     : Cover type designation for each HRU
 Help      : Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
 Ndimen    : 1
 Dimensions: nhru - 90
@@ -911,7 +919,7 @@ Bounded   : nsegment
 Name      : poi_type
 Module    : setup_param
 Descr     : Type code for each POI gage
-Help      : Type code for each POI gage
+Help      : Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)
 Ndimen    : 1
 Dimensions: npoigages - 0
 Size      : 1
@@ -994,8 +1002,8 @@ Default   : 0
 
 Name      : pref_flow_den
 Module    : soilzone
-Descr     : Fraction of the soil zone in which preferential flow occurs for each HRU
-Help      : Fraction of the soil zone in which preferential flow occurs for each HRU
+Descr     : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
+Help      : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
 Ndimen    : 1
 Dimensions: nhru - 90
 Size      : 90
@@ -1005,6 +1013,20 @@ Width     : 0
 Max       : 0.500000
 Min       : 0.000000
 Default   : 0.000000
+
+Name      : pref_flow_infil_frac
+Module    : soilzone
+Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Ndimen    : 1
+Dimensions: nhru - 90
+Size      : 90
+Type      : float
+Units     : decimal fraction
+Width     : 4
+Max       : 1.000000
+Min       : -1.000000
+Default   : -1.000000
 
 Name      : print_freq
 Module    : basin_sum
@@ -1653,7 +1675,7 @@ Default   : 1
 Name      : transp_end
 Module    : transp_tindex
 Descr     : Month to stop transpiration period
-Help      : Month to stop transpiration computations; transpiration is computed thru end of previous month
+Help      : Month to stop transpiration computations; transpiration is computed through the end of previous month
 Ndimen    : 1
 Dimensions: nhru - 90
 Size      : 90

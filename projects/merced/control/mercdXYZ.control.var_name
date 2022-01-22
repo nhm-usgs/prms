@@ -479,7 +479,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average throughfall
+Desc: Basin area-weighted average net precipitation
 Units: inches
 
 Name: basin_net_ppt_mo
@@ -506,7 +506,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average rain throughfall
+Desc: Basin area-weighted average rain net precipitation
 Units: inches
 
 Name: basin_net_snow
@@ -515,7 +515,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average snow throughfall
+Desc: Basin area-weighted average snow net precipitation
 Units: inches
 
 Name: basin_obs_ppt
@@ -704,7 +704,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average discharge/precipitation
+Desc: Basin area-weighted average discharge/precipitation ratio
 Units: decimal fraction
 
 Name: basin_runoff_ratio_mo
@@ -713,7 +713,7 @@ Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Monthly area-weighted average discharge/precipitation
+Desc: Monthly area-weighted average discharge/precipitation ratio
 Units: decimal fraction
 
 Name: basin_slowflow
@@ -1487,7 +1487,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: float
-Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
+Desc: Infiltration to the capillary reservoirs for each HRU
 Units: inches
 
 Name: int_alb
@@ -1523,7 +1523,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: long
-Desc: Form (rain or snow) of interception for each HRU
+Desc: Form (0=rain; 1=snow) of interception for each HRU
 Units: none
 
 Name: intcp_on
@@ -1955,7 +1955,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: float
-Desc: Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU
+Desc: Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU
 Units: inches
 
 Name: runoff

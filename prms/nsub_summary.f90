@@ -2,16 +2,12 @@
 !     Output a set of declared variables by subbasin in CSV format
 !***********************************************************************
       MODULE PRMS_NSUB_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
-     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, &
-     &    REAL_TYPE, DBLE_TYPE, RUN, DECL, INIT, CLEAN, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nsub, Model, Inputerror_flag, &
-     &    Start_year, Start_month, Start_day, End_year, End_month, End_day, Prms_warmup
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsub_summary'
-      character(len=*), parameter :: Version_nsub_summary = '2020-12-02'
+      character(len=*), parameter :: Version_nsub_summary = '2021-11-23'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsub_var_type(:), Nsub_var_size(:)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -36,6 +32,8 @@
 !     subbasin results module
 !     ******************************************************************
       SUBROUTINE nsub_summary()
+      USE PRMS_CONSTANTS, ONLY: MEAN_MONTHLY, ACTIVE, RUN, DECL, INIT, CLEAN
+      USE PRMS_MODULE, ONLY: Process_flag
       USE PRMS_NSUB_SUMMARY
       IMPLICIT NONE
 ! Functions
@@ -69,11 +67,15 @@
 !     declare parameters and variables
 !***********************************************************************
       SUBROUTINE nsub_summarydecl()
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
+     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, &
+     &    REAL_TYPE, DBLE_TYPE, RUN, DECL, INIT, CLEAN, DOCUMENTATION
+      use PRMS_CONTROL_FILE, only: control_integer, control_string, control_string_array
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Nhru, Nsub, Model
       USE PRMS_NSUB_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -112,13 +114,17 @@
 !     Initialize module values
 !***********************************************************************
       SUBROUTINE nsub_summaryinit()
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
+     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
+      use PRMS_MMFAPI, only: getvartype, getvarsize
+      use PRMS_READ_PARAM_FILE, only: getparam_int
+      USE PRMS_MODULE, ONLY: Nhru, Nsub, Inputerror_flag, Start_year, Prms_warmup
       USE PRMS_NSUB_SUMMARY
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order
+      use prms_utils, only: error_stop, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: read_error, PRMS_open_output_file, error_stop
 ! Local Variables
-      INTEGER :: ios, ierr, dum, jj, j, i, k
+      INTEGER :: ios, ierr, jj, j, i, k
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
 !***********************************************************************
       Begin_results = ACTIVE
@@ -145,13 +151,13 @@
       ierr = 0
       DO jj = 1, NsubOutVars
         Nc_vars(jj) = numchars(NsubOutVar_names(jj))
-        Nsub_var_type(jj) = getvartype(NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub_var_type(jj) )
+        Nsub_var_type(jj) = getvartype(NsubOutVar_names(jj)(:Nc_vars(jj)) )
         IF ( Nsub_var_type(jj)/=REAL_TYPE .AND. Nsub_var_type(jj)/=DBLE_TYPE ) THEN
           PRINT *, 'ERROR, invalid nsub_summary variable:', NsubOutVar_names(jj)(:Nc_vars(jj))
           PRINT *, '       only real or double variables allowed'
           ierr = 1
         ENDIF
-        Nsub_var_size(jj) = getvarsize(NsubOutVar_names(jj)(:Nc_vars(jj)), dum )
+        Nsub_var_size(jj) = getvarsize(NsubOutVar_names(jj)(:Nc_vars(jj)))
         IF ( Nsub_var_size(jj)==Nhru ) THEN
           Nhru_vars = ACTIVE
           IF ( Nsub_var_type(jj)==DBLE_TYPE ) Nhru_double_vars = ACTIVE
@@ -251,7 +257,7 @@
         ENDIF
       ENDDO
 
-      IF ( getparam(MODNAME, 'hru_subbasin', Nhru, 'integer', Hru_subbasin)/=0 ) CALL read_error(2, 'hru_subbasin')
+      IF ( getparam_int(MODNAME, 'hru_subbasin', Nhru, Hru_subbasin)/=0 ) CALL read_error(2, 'hru_subbasin')
       Sub_area = 0.0D0
       DO i = 1, Active_hrus
         j = Hru_route_order(i)
@@ -283,14 +289,16 @@
 !     Output set of declared variables in CSV format
 !***********************************************************************
       SUBROUTINE nsub_summaryrun()
+      USE PRMS_CONSTANTS, ONLY: MEAN_MONTHLY, MEAN_YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
+      use PRMS_MMFAPI, only: getvar_dble, getvar_real
+      USE PRMS_MODULE, ONLY: Nhru, Nsub, Start_month, Start_day, End_year, End_month, End_day, Nowyear, Nowmonth, Nowday
       USE PRMS_NSUB_SUMMARY
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
+      USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
+! FUNCTIONS
       INTRINSIC :: SNGL, DBLE
-      INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day, k
 !***********************************************************************
@@ -307,19 +315,15 @@
       DO jj = 1, NsubOutVars
         IF ( Nsub_var_type(jj)==REAL_TYPE ) THEN
           IF ( Nsub_var_size(jj)==Nhru ) THEN
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(1, jj))/=0 ) &
-     &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
+            CALL getvar_real(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, Nhru_var_daily(:, jj))
           ELSE
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'real', Nsub_var_single(1, jj))/=0 ) &
-     &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
+            CALL getvar_real(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, Nsub_var_single(:, jj))
           ENDIF
         ELSEIF ( Nsub_var_type(jj)==DBLE_TYPE ) THEN
           IF ( Nsub_var_size(jj)==Nhru ) THEN
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
-     &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
+            CALL getvar_dble(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, Nhru_var_dble(:, jj))
           ELSE
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'double', Nsub_var_dble(1, jj))/=0 ) &
-     &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
+            CALL getvar_dble(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, Nsub_var_dble(:, jj))
           ENDIF
         ENDIF
       ENDDO
@@ -441,8 +445,10 @@
         ENDDO
       ENDIF
       DO jj = 1, NsubOutVars
-        IF ( Daily_flag==ACTIVE ) WRITE ( Dailyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, (Nsub_var_dble(j,jj), j=1,Nsub)
-        IF ( write_month==ACTIVE ) WRITE ( Monthlyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, (Nsub_var_monthly(j,jj), j=1,Nsub)
+        IF ( Daily_flag==ACTIVE ) WRITE ( Dailyunit(jj), Output_fmt) Nowyear, &
+     &       Nowmonth, Nowday, (Nsub_var_dble(j,jj), j=1,Nsub)
+        IF ( write_month==ACTIVE ) WRITE ( Monthlyunit(jj), Output_fmt) Nowyear, &
+     &       Nowmonth, Nowday, (Nsub_var_monthly(j,jj), j=1,Nsub)
       ENDDO
       IF ( write_month==ACTIVE ) THEN
         Monthdays = 0.0D0

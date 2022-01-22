@@ -11,13 +11,12 @@
 !   50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
-      USE PRMS_CONSTANTS, ONLY: DAYS_IN_YEAR, MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, OFF
-      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag
+      USE PRMS_CONSTANTS, ONLY: DAYS_IN_YEAR, MAX_DAYS_PER_YEAR
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
       character(len=*), parameter :: MODNAME = 'soltab'
-      character(len=*), parameter :: Version_soltab = '2020-12-02'
+      character(len=*), parameter :: Version_soltab = '2021-09-07'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -65,25 +64,26 @@
 !     hru_aspect, hru_lat, hru_slope
 !***********************************************************************
       INTEGER FUNCTION sthdecl()
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Nhru
       USE PRMS_SOLTAB
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       sthdecl = 0
 
       CALL print_module(MODDESC, MODNAME, Version_soltab)
 
       ALLOCATE ( Soltab_potsw(MAX_DAYS_PER_YEAR, Nhru) )
-!      IF ( declvar(MODNAME, 'soltab_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, 'double', &
+!      CALL declvar_dble(MODNAME, 'soltab_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, &
 !     &     'Potential solar radiation for each Julian Day, for each HRU', &
-!     &     'Langleys', Soltab_potsw)/=0 ) CALL read_error(3, 'soltab_potsw')
+!     &     'Langleys', Soltab_potsw)
 
       ALLOCATE ( Soltab_horad_potsw(MAX_DAYS_PER_YEAR, Nhru) )
-!      IF ( declvar(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, 'double', &
+!      CALL declvar_dble(MODNAME, 'soltab_horad_potsw', 'ndays,nhru', MAX_DAYS_PER_YEAR*Nhru, &
 !     &     'Potential solar radiation on a horizontal plane for each Julian Day, for each HRU', &
-!     &     'Langleys', Soltab_horad_potsw)/=0 ) CALL read_error(3, 'soltab_horad_potsw')
+!     &     'Langleys', Soltab_horad_potsw)
 
       ALLOCATE ( Hru_cossl(Nhru), Soltab_sunhrs(MAX_DAYS_PER_YEAR, Nhru) )
 
@@ -110,14 +110,17 @@
 !               for each HRU for each day of the year.
 !***********************************************************************
       INTEGER FUNCTION sthinit()
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_SOLTAB, OFF
+      use PRMS_READ_PARAM_FILE, only: getparam_real
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag, Hru_type
       USE PRMS_SOLTAB
-      USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Basin_lat, Hru_lat
+      use prms_utils, only: PRMS_open_module_file, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SIN, COS, DBLE
 !     INTRINSIC :: ASIN
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: compute_soltab, read_error, PRMS_open_module_file
+      EXTERNAL :: compute_soltab
 ! Local Variables
       CHARACTER(LEN=12) :: output_path
       INTEGER :: jd, j, n, file_unit, nn
@@ -128,8 +131,8 @@
 !***********************************************************************
       sthinit = 0
 
-      IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
-      IF ( getparam(MODNAME, 'hru_aspect', Nhru, 'real', Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
+      IF ( getparam_real(MODNAME, 'hru_slope', Nhru, Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
+      IF ( getparam_real(MODNAME, 'hru_aspect', Nhru, Hru_aspect)/=0 ) CALL read_error(2, 'hru_aspect')
 
       DO jd = 1, MAX_DAYS_PER_YEAR
         jddbl = DBLE(jd)

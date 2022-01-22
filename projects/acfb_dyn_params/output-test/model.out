@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.0 10/10/2020
+                        Version 5.2.1 11/11/2021
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -39,29 +39,29 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2020-10-10
-Basin Definition                basin               2020-10-09
-Common States and Fluxes        climateflow         2020-09-14
-Potential Solar Radiation       soltab              2020-08-04
+Computation Order               call_modules        2021-11-11
+Basin Definition                basin               2021-08-18
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2020-08-03
-Time Series Data                obs                 2020-08-03
-Time Series Data                dynamic_param_read  2020-09-21
-Temperature Distribution        climate_hru         2020-10-07
-Precipitation Distribution      climate_hru         2020-10-07
-Solar Radiation Distribution    climate_hru         2020-10-07
-Potential Evapotranspiration    climate_hru         2020-10-07
-Transpiration Distribution      transp_tindex       2020-09-14
-Canopy Interception             intcp               2020-09-21
-Snow Dynamics                   snowcomp            2020-10-07
-Surface Runoff                  srunoff_smidx       2020-10-08
-Soilzone Computations           soilzone            2020-10-09
-Groundwater                     gwflow              2020-09-14
-Streamflow Routing Init         routing             2020-09-14
-Streamflow Routing              muskingum           2020-08-03
-Output Summary                  basin_sum           2020-09-14
-Output Summary                  nhru_summary        2020-09-21
-Output Summary                  prms_summary        2020-07-29
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Time Series Data                dynamic_param_read  2021-09-07
+Temperature Distribution        climate_hru         2021-08-13
+Precipitation Distribution      climate_hru         2021-08-13
+Solar Radiation Distribution    climate_hru         2021-08-13
+Potential Evapotranspiration    climate_hru         2021-08-13
+Transpiration Distribution      transp_tindex       2021-09-07
+Canopy Interception             intcp               2021-09-07
+Snow Dynamics                   snowcomp            2021-09-15
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
+Groundwater                     gwflow              2021-08-13
+Streamflow Routing Init         routing             2021-08-13
+Streamflow Routing              muskingum           2021-08-13
+Output Summary                  basin_sum           2021-08-13
+Output Summary                  nhru_summary        2021-08-13
+Output Summary                  prms_summary        2021-08-13
 ==============================================================
 
 Using Control File: .\control\control
@@ -98,7 +98,7 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
    1991             62.933   24.460   10.193   37.128    1.979
    1992             55.188   20.022   12.004   33.355    1.587
    1993             60.054   19.307    5.494   47.257    2.159
-   1994             63.330   18.327   11.051   39.444    1.640
+   1994             63.330   18.327   11.052   39.444    1.640
    1995             53.742   20.538    8.240   36.015    1.522
    1996             68.484   18.458    9.521   48.745    1.877
    1997             55.724   19.088    9.749   36.409    1.762
@@ -107,5 +107,5 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
  *************************************************************
  Total for run    1110.775  440.221    8.439  693.939   13.445
  *************************************************************
-Execution elapsed time    0 minutes  1.34 seconds
+Execution elapsed time    0 minutes  0.82 seconds
 

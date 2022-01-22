@@ -3,14 +3,11 @@
 ! based on a temperature index method.
 !***********************************************************************
       MODULE PRMS_TRANSP_TINDEX
-        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, FAHRENHEIT, MONTHS_PER_YEAR
-        USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, &
-     &      Start_month, Start_day
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
         character(len=13), parameter :: MODNAME = 'transp_tindex'
-        character(len=*), parameter :: Version_transp = '2020-12-02'
+        character(len=*), parameter :: Version_transp = '2021-09-07'
         INTEGER, SAVE, ALLOCATABLE :: Transp_check(:)
         REAL, SAVE, ALLOCATABLE :: Tmax_sum(:), Transp_tmax_f(:)
         ! Declared Parameters
@@ -19,15 +16,16 @@
       END MODULE PRMS_TRANSP_TINDEX
 
       INTEGER FUNCTION transp_tindex()
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, FAHRENHEIT, MONTHS_PER_YEAR, READ_INIT, SAVE_INIT
+      use PRMS_READ_PARAM_FILE, only: declparam, getparam_int, getparam_real
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, Start_month, Start_day, Nowmonth, Nowday
       USE PRMS_TRANSP_TINDEX
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
-      USE PRMS_SET_TIME, ONLY: Nowmonth, Nowday
+      USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on
+      use prms_utils, only: c_to_f, print_module, read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: declparam, getparam
-      REAL, EXTERNAL :: c_to_f
-      EXTERNAL :: read_error, print_module, transp_tindex_restart
+      EXTERNAL :: transp_tindex_restart
 ! Local Variables
       INTEGER :: i, j, motmp
 !***********************************************************************
@@ -104,11 +102,11 @@
 
       ELSEIF ( Process_flag==INIT ) THEN
 
-        IF ( getparam(MODNAME, 'transp_beg', Nhru, 'integer', Transp_beg)/=0 ) CALL read_error(2, 'transp_beg')
-        IF ( getparam(MODNAME, 'transp_end', Nhru, 'integer', Transp_end)/=0 ) CALL read_error(2, 'transp_end')
-        IF ( getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax)/=0 ) CALL read_error(2, 'transp_tmax')
+        IF ( getparam_int(MODNAME, 'transp_beg', Nhru, Transp_beg)/=0 ) CALL read_error(2, 'transp_beg')
+        IF ( getparam_int(MODNAME, 'transp_end', Nhru, Transp_end)/=0 ) CALL read_error(2, 'transp_end')
+        IF ( getparam_real(MODNAME, 'transp_tmax', Nhru, Transp_tmax)/=0 ) CALL read_error(2, 'transp_tmax')
 
-        IF ( Init_vars_from_file>0 ) CALL transp_tindex_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL transp_tindex_restart(READ_INIT)
         IF ( Temp_units==FAHRENHEIT ) THEN
           Transp_tmax_f = Transp_tmax
         ELSE
@@ -142,7 +140,7 @@
         ENDDO
 
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL transp_tindex_restart(0)
+        IF ( Save_vars_to_file==ACTIVE ) CALL transp_tindex_restart(SAVE_INIT)
 
       ENDIF
 
@@ -152,16 +150,17 @@
 !     Write to or read from restart file
 !***********************************************************************
       SUBROUTINE transp_tindex_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_TRANSP_TINDEX
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
       ! Local Variable
       CHARACTER(LEN=13) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Tmax_sum
       ELSE

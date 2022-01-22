@@ -8,7 +8,8 @@
 !     Main setup routine
 !***********************************************************************
       INTEGER FUNCTION setup()
-      USE PRMS_MODULE, ONLY: Process_flag, DECL
+      USE PRMS_CONSTANTS, ONLY: DECL
+      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: setupdecl
@@ -25,13 +26,12 @@
 !     parent_gw, parent_ssr, parent_segment, parent_hru, hru_lon
 !***********************************************************************
       INTEGER FUNCTION setupdecl()
+      use PRMS_READ_PARAM_FILE, only: declparam
+      use prms_utils, only: read_error, print_module
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Parameter Setup'
       character(len=*), parameter :: MODNAME = 'setup_param'
-      character(len=*), parameter :: Version_setup = '2020-08-03'
-! Functions
-      INTEGER, EXTERNAL :: declparam
-      EXTERNAL :: read_error, print_module
+      character(len=*), parameter :: Version_setup = '2021-11-19'
 !***********************************************************************
       setupdecl = 0
 
@@ -52,10 +52,10 @@
      &     'National Hydrologic Model HRU ID', 'National Hydrologic Model HRU ID', &
      &     'none') /= 0 ) CALL read_error(1, 'nhm_id')
 
-      IF ( declparam(MODNAME, 'poi_gage_id', 'npoigages', 'string', &
-     &     '0', '0', '9999999', &
-     &     'POI Gage ID', 'USGS stream gage for each POI gage', &
-     &     'none')/=0 ) CALL read_error(1, 'poi_gage_id')
+!      IF ( declparam(MODNAME, 'poi_gage_id', 'npoigages', 'string', &
+!     &     '0', '0', '9999999', &
+!     &     'POI Gage ID', 'USGS stream gage for each POI gage', &
+!     &     'none')/=0 ) CALL read_error(1, 'poi_gage_id')
 
       IF ( declparam(MODNAME, 'poi_gage_segment', 'npoigages', 'integer', &
      &     '0', 'bounded', 'nsegment', &
@@ -63,14 +63,15 @@
      &     'Segment index for each POI gage', &
      &     'none')/=0 ) CALL read_error(1, 'poi_gage_segment')
 
-      ! Type code for each point-of-interest (POI) gage (1=USGS streamgage; 2=NWS River Forecast Center Node 
+      ! Type code for each point-of-interest (POI) gage (1=USGS streamgage; 2=NWS River Forecast Center Node
       ! (http://water.weather.gov/ahps/download.php); 3=USGS SPARROW node (https://water.usgs.gov/nawqa/sparrow/);
       ! 4=outlet from or inlet to NHD-defined waterbody; 5=confluence of NHDPlus flowlines exceeding a Strahler stream order (Strahler, 1952, 1957) of four;
       ! 6=connectivity segment not in NHDPlus; 7=split segment from NHDPlus flowline because of travel time > 24 hours;
       ! 8=split segment from NHMPlus flowline because of change in elevation > 500 meters)
       IF ( declparam(MODNAME, 'poi_type', 'npoigages', 'integer', &
      &     '1', '1', '1', &
-     &     'Type code for each POI gage', 'Type code for each POI gage', &
+     &     'Type code for each POI gage', &
+     &     'Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)', &
      &     'none')/=0 ) CALL read_error(1, 'poi_type')
 
       IF ( declparam(MODNAME, 'parent_poigages', 'npoigages', 'integer', &

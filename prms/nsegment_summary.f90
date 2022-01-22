@@ -2,16 +2,12 @@
 !     Output a set of declared variables by segment in CSV format
 !***********************************************************************
       MODULE PRMS_NSEGMENT_SUMMARY
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, &
-     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, &
-     &    ACTIVE, OFF, REAL_TYPE, DBLE_TYPE, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: Model, Nsegment, Inputerror_flag, NsegmentOutON_OFF, &
-     &    Start_year, Start_month, Start_day, End_year, End_month, End_day, Prms_warmup
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsegment_summary'
-      character(len=*), parameter :: Version_nsegment_summary = '2020-12-02'
+      character(len=*), parameter :: Version_nsegment_summary = '2021-11-23'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsegment_var_type(:)
       REAL, SAVE, ALLOCATABLE :: Nsegment_var_daily(:, :)
@@ -68,11 +64,13 @@
 !     declare parameters and variables
 !***********************************************************************
       SUBROUTINE nsegment_summarydecl()
+      USE PRMS_CONSTANTS, ONLY: ERROR_control, DAILY, YEARLY, DOCUMENTATION
+      use PRMS_CONTROL_FILE, only: control_integer, control_string, control_string_array
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Model, Nsegment, NsegmentOutON_OFF
       USE PRMS_NSEGMENT_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -100,7 +98,7 @@
 
       IF ( NsegmentOutON_OFF==2 .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Nhm_seg(Nsegment) )
-        IF (declparam(MODNAME, 'nhm_seg', 'nsegment', 'integer', &
+        IF ( declparam(MODNAME, 'nhm_seg', 'nsegment', 'integer', &
      &       '0', '0', '9999999', &
      &       'National Hydrologic Model segment ID', 'National Hydrologic Model segment ID', &
      &       'none')/=0 ) CALL read_error(1, 'nhm_seg')
@@ -112,11 +110,14 @@
 !     Initialize module values
 !***********************************************************************
       SUBROUTINE nsegment_summaryinit()
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, &
+     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
+      use PRMS_MMFAPI, only: getvartype, getvarsize
+      use PRMS_READ_PARAM_FILE, only: getparam_int
+      USE PRMS_MODULE, ONLY: Nsegment, NsegmentOutON_OFF, Start_year, Prms_warmup
       USE PRMS_NSEGMENT_SUMMARY
+      use prms_utils, only: error_stop, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: read_error, PRMS_open_output_file, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -170,11 +171,13 @@
       ENDIF
 
       Monthly_flag = OFF
-      IF ( NsegmentOut_freq==MONTHLY .OR. NsegmentOut_freq==DAILY_MONTHLY .OR. NsegmentOut_freq==MEAN_MONTHLY ) Monthly_flag = ACTIVE
+      IF ( NsegmentOut_freq==MONTHLY .OR. NsegmentOut_freq==DAILY_MONTHLY &
+     &     .OR. NsegmentOut_freq==MEAN_MONTHLY ) Monthly_flag = ACTIVE
 
       IF ( NsegmentOut_freq>MEAN_MONTHLY ) THEN
         Yeardays = 0
-        ALLOCATE ( Nsegment_var_yearly(Nsegment, NsegmentOutVars), Yearlyunit(NsegmentOutVars) )
+        ALLOCATE ( Nsegment_var_yearly(Nsegment, NsegmentOutVars), &
+     &             Yearlyunit(NsegmentOutVars) )
         Nsegment_var_yearly = 0.0D0
         Yearlyunit = 0
         IF ( NsegmentOut_format==1 ) THEN
@@ -197,7 +200,7 @@
       ENDIF
 
       IF ( NsegmentOutON_OFF==2 ) THEN
-        IF ( getparam(MODNAME, 'nhm_seg', Nsegment, 'integer', Nhm_seg)/=0 ) CALL read_error(2, 'nhm_seg')
+        IF ( getparam_int(MODNAME, 'nhm_seg', Nsegment, Nhm_seg)/=0 ) CALL read_error(2, 'nhm_seg')
       ENDIF
       WRITE ( Output_fmt2, 9002 ) Nsegment
       ALLOCATE ( Nsegment_var_daily(Nsegment, NsegmentOutVars) )
@@ -270,13 +273,15 @@
 !     Output set of declared variables in CSV format
 !***********************************************************************
       SUBROUTINE nsegment_summaryrun()
+      USE PRMS_CONSTANTS, ONLY: MEAN_MONTHLY, MEAN_YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
+      use PRMS_MMFAPI, only: getvar_dble, getvar_real
+      USE PRMS_MODULE, ONLY: Nsegment, Start_month, Start_day, End_year, End_month, End_day, Nowyear, Nowmonth, Nowday
       USE PRMS_NSEGMENT_SUMMARY
-      USE PRMS_SET_TIME, ONLY: Nowyear, Nowmonth, Nowday, Modays
+      USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
-      INTRINSIC SNGL, DBLE
-      INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
+! FUNCTIONS
+      INTRINSIC :: SNGL, DBLE
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day
 !***********************************************************************
@@ -292,17 +297,15 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NsegmentOutVars
         IF ( Nsegment_var_type(jj)==REAL_TYPE ) THEN
-          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'real', Nsegment_var_daily(1, jj))/=0 ) &
-     &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
+          CALL getvar_real(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, Nsegment_var_daily(:, jj))
         ELSEIF ( Nsegment_var_type(jj)==DBLE_TYPE ) THEN
-          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'double', Nsegment_var_dble(1, jj))/=0 ) &
-     &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
+          CALL getvar_dble(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, Nsegment_var_dble(:, jj))
           DO i = 1, Nsegment
             Nsegment_var_daily(i, jj) = SNGL( Nsegment_var_dble(i, jj) )
           ENDDO
         ENDIF
         IF ( Daily_flag==ACTIVE ) WRITE ( Dailyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
-     &                                                           (Nsegment_var_daily(j,jj), j=1,Nsegment)
+     &                                                               (Nsegment_var_daily(j,jj), j=1,Nsegment)
       ENDDO
 
       write_month = OFF

@@ -12,7 +12,11 @@ MODULE PRMS_CONSTANTS
     real(REAL64), parameter :: DNEARZERO = EPSILON(0.0D0)
 
     integer, parameter :: MAXFILE_LENGTH = 256
+    integer, parameter :: MAXLINE_LENGTH = 256
+    integer, parameter :: MAXDATALINE_LENGTH = 12000
     integer, parameter :: MAXCONTROL_LENGTH = 32
+    integer, parameter :: MAXDESCRIPTION_LENGTH = 512
+    integer, parameter :: MAXCMDLINE_LENGTH = 512
     integer, parameter :: MAXDIM = 500
     integer, parameter :: MONTHS_PER_YEAR = 12
     integer, parameter :: MAX_DAYS_PER_YEAR = 366
@@ -67,14 +71,43 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CFS = 0
     integer, parameter :: CMS = 1
 
-    ! cov_type
+    ! cov_type and ag_cov_type
     integer, parameter :: BARESOIL = 0
     integer, parameter :: GRASSES = 1
     integer, parameter :: SHRUBS = 2
     integer, parameter :: TREES = 3
     integer, parameter :: CONIFEROUS = 4
+! Vaccaro, J.J., 2007, A deep percolation model for estimating ground-water recharge:
+! Documentation of modules for the modular modeling system of the U.S. Geological Survey: 
+! U.S. Geological Survey Scientific Investigations Report 2006-5318, 30 p.
+    integer, parameter :: WINTER_WHEAT_SUMMER = 5
+    integer, parameter :: WINTER_WHEAT_FALLOW = 5
+    integer, parameter :: ORCHARD = 7
+    integer, parameter :: ALFALFA = 8
+    integer, parameter :: ROW_CROPS = 9
+    integer, parameter :: WATER = 10
+    integer, parameter :: CORN = 11
+    integer, parameter :: POTATO = 12
+    integer, parameter :: LENTIL = 14
+    integer, parameter :: SPRING_WHEAT = 15
+    integer, parameter :: IMPERVIOUS = 16
+    integer, parameter :: VEGETABLES_SMALL = 17
+    integer, parameter :: COTTON = 18
+    integer, parameter :: MINT = 19
+    integer, parameter :: GRAPE_CA = 20
+    integer, parameter :: GRAPE_WA = 21
+    integer, parameter :: HOPS = 22
+    integer, parameter :: OLIVE_TREE = 23
+    integer, parameter :: CITRUS = 24
+    integer, parameter :: SOYBEAN = 25
+    integer, parameter :: APPLE_TREE = 26
+    integer, parameter :: SORGHUM = 27 ! May 20 with 140-day growing season
+    integer, parameter :: PASTURE = 28 ! irrigated April 1 to Sept 15
+    integer, parameter :: BEAN = 29
+    integer, parameter :: PEA = 30
+    integer, parameter :: ASPARAGUS = 31
 
-    ! soil_type
+    ! soil_type and ag_soil_type
     integer, parameter :: SAND = 1
     integer, parameter :: LOAM = 2
     integer, parameter :: CLAY = 3
@@ -101,9 +134,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CASCADEGW_SAME = 2
 
     ! model_mode
-    integer, parameter :: GSFLOW = 0
     integer, parameter :: PRMS = 1
-    integer, parameter :: MODFLOW = 2
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1
@@ -113,7 +144,6 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: WRITE_CLIMATE=24, CONVERT=25, CLIMATE=26, POTET=27, TRANSPIRE=28, FROST=29
 
     ! Error Codes
-    integer, parameter :: ERROR_modflow = -5
     integer, parameter :: ERROR_read = -4
     integer, parameter :: ERROR_open_out = -3
     integer, parameter :: ERROR_open_in = -2
@@ -158,12 +188,15 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
     integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
     integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5, strmflow_noroute_module = 1
-    integer, parameter :: smidx_module = 1, carea_module = 2
+    integer, parameter :: smidx_module = 1, carea_module = 2, ddsolrad_module = 1, ccsolrad_module = 2
 
     integer, parameter :: OFF = 0
     integer, parameter :: ACTIVE = 1
     integer, parameter :: INT_TYPE = 1
     integer, parameter :: REAL_TYPE = 2
     integer, parameter :: DBLE_TYPE = 3
+    integer, parameter :: CHAR_TYPE = 4
+    integer, parameter :: SAVE_INIT = 0
+    integer, parameter :: READ_INIT = 1
 
 END MODULE PRMS_CONSTANTS

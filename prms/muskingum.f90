@@ -81,13 +81,10 @@
 !
 !***********************************************************************
       MODULE PRMS_MUSKINGUM
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, NEARZERO, CFS2CMS_CONV, &
-     &    OUTFLOW_SEGMENT, ERROR_streamflow, strmflow_muskingum_module
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmflow_flag, Glacier_flag
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_mann'
-      character(len=*), parameter :: Version_muskingum = '2020-12-02'
+      character(len=*), parameter :: Version_muskingum = '2021-11-19'
 !   Local Variables
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
@@ -98,7 +95,7 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
@@ -112,10 +109,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         muskingum = muskingum_decl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL muskingum_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL muskingum_restart(READ_INIT)
         muskingum = muskingum_init()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL muskingum_restart(0)
+        IF ( Save_vars_to_file==ACTIVE ) CALL muskingum_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION muskingum
@@ -126,10 +123,11 @@
 !     tosegment, hru_segment, obsin_segment, K_coef, x_coef
 !***********************************************************************
       INTEGER FUNCTION muskingum_decl()
+      USE PRMS_CONSTANTS, ONLY: strmflow_muskingum_module
+      USE PRMS_MODULE, ONLY: Nsegment, Strmflow_flag
       USE PRMS_MUSKINGUM
+      use prms_utils, only: print_module
       IMPLICIT NONE
-! Functions
-      EXTERNAL :: print_module
 !***********************************************************************
       muskingum_decl = 0
 
@@ -149,6 +147,7 @@
 !    muskingum_init - Get and check parameter values and initialize variables
 !***********************************************************************
       INTEGER FUNCTION muskingum_init()
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
       USE PRMS_MUSKINGUM
       USE PRMS_BASIN, ONLY: Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
@@ -175,6 +174,8 @@
 !     muskingum_run - Compute routing summary values
 !***********************************************************************
       INTEGER FUNCTION muskingum_run()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, OUTFLOW_SEGMENT, ERROR_streamflow
+      USE PRMS_MODULE, ONLY: Nsegment, Glacier_flag
       USE PRMS_MUSKINGUM
       USE PRMS_BASIN, ONLY: Basin_area_inv, Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
@@ -188,10 +189,10 @@
      &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_GWFLOW, ONLY: Basin_gwflow
+      use prms_utils, only: error_stop
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: MOD
-      EXTERNAL :: error_stop
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype
       DOUBLE PRECISION :: area_fac, segout, currin
@@ -371,17 +372,17 @@
 !     muskingum_restart - write or read restart file
 !***********************************************************************
       SUBROUTINE muskingum_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_MUSKINGUM
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Function
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=14) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Outflow_ts
       ELSE

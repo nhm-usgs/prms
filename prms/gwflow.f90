@@ -13,16 +13,11 @@
 ! modified 10/1/2008 rsregan to include Vaccaro code
 !***********************************************************************
       MODULE PRMS_GWFLOW
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, DEBUG_less, DNEARZERO, &
-     &    DOCUMENTATION, CASCADEGW_OFF, ERROR_water_use
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ngw, Nlake, Print_debug, Init_vars_from_file, &
-     &    Dprst_flag, Cascadegw_flag, Lake_route_flag, Inputerror_flag, Gwr_swale_flag, &
-     &    Gwr_add_water_use, Gwr_transfer_water_use
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Groundwater'
       character(len=6), parameter :: MODNAME = 'gwflow'
-      character(len=*), parameter :: Version_gwflow = '2020-12-02'
+      character(len=*), parameter :: Version_gwflow = '2022-01-20'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea(:), Gwin_dprst(:)
       DOUBLE PRECISION, SAVE :: Basin_gw_upslope
       INTEGER, SAVE :: Gwminarea_flag
@@ -35,7 +30,7 @@
       REAL, SAVE, ALLOCATABLE :: Gwres_flow(:), Gwres_sink(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gw_upslope(:), Gwres_in(:)
       REAL, SAVE, ALLOCATABLE :: Hru_gw_cascadeflow(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gw_in_soil(:), Gw_in_ssr(:), Hru_storage(:), Hru_lateral_flow(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gw_in_soil(:), Gw_in_ssr(:), Hru_lateral_flow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea_wb(:), Hru_streamflow_out(:), Lakein_gwflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_seepage(:), Gw_seep_lakein(:), Lake_seepage_gwr(:)
       REAL, SAVE, ALLOCATABLE :: Elevlake(:)
@@ -49,7 +44,7 @@
 !     Main gwflow routine
 !***********************************************************************
       INTEGER FUNCTION gwflow()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Init_vars_from_file, Save_vars_to_file
       IMPLICIT NONE
 ! Functions
@@ -63,10 +58,10 @@
       ELSEIF ( Process_flag==DECL ) THEN
         gwflow = gwflowdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>0 ) CALL gwflow_restart(1)
+        IF ( Init_vars_from_file>OFF ) CALL gwflow_restart(READ_INIT)
         gwflow = gwflowinit()
       ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL gwflow_restart(0)
+        IF ( Save_vars_to_file==ACTIVE ) CALL gwflow_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION gwflow
@@ -78,11 +73,13 @@
 !     lake_seep_elev, elevlake_init, gw_seep_coef
 !***********************************************************************
       INTEGER FUNCTION gwflowdecl()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, DOCUMENTATION, CASCADEGW_OFF
+      use PRMS_MMFAPI, only: declvar_real, declvar_dble
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ngw, Nlake, Init_vars_from_file, Dprst_flag, Cascadegw_flag, Lake_route_flag
       USE PRMS_GWFLOW
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       gwflowdecl = 0
 
@@ -91,108 +88,102 @@
 ! cascading variables and parameters
       IF ( Cascadegw_flag>CASCADEGW_OFF .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Gw_upslope(Ngw) )
-        IF ( declvar(MODNAME, 'gw_upslope', 'ngw', Ngw, 'double', &
+        CALL declvar_dble(MODNAME, 'gw_upslope', 'ngw', Ngw, &
      &       'Groundwater flow received from upslope GWRs for each GWR', &
-     &       'acre-inches', Gw_upslope)/=0 ) CALL read_error(3, 'gw_upslope')
+     &       'acre-inches', Gw_upslope)
 
         ALLOCATE ( Hru_gw_cascadeflow(Ngw) )
-        IF ( declvar(MODNAME, 'hru_gw_cascadeflow', 'ngw', Ngw, 'real', &
+        CALL declvar_real(MODNAME, 'hru_gw_cascadeflow', 'ngw', Ngw, &
      &       'Cascading groundwater flow from each GWR', &
-     &       'inches', Hru_gw_cascadeflow)/=0 ) CALL read_error(3, 'hru_gw_cascadeflow')
+     &       'inches', Hru_gw_cascadeflow)
 
         IF ( (Nlake>0.AND.Cascadegw_flag>CASCADEGW_OFF) .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Lakein_gwflow(Nlake) )
-          IF ( declvar(MODNAME, 'lakein_gwflow', 'nlake', Nlake, 'double', &
+          CALL declvar_dble(MODNAME, 'lakein_gwflow', 'nlake', Nlake, &
      &         'Groundwater flow received from upslope GWRs for each Lake GWR', &
-     &         'acre-inches', Lakein_gwflow)/=0 ) CALL read_error(3, 'lakein_gwflow')
+     &         'acre-inches', Lakein_gwflow)
         ENDIF
       ENDIF
 
       ALLOCATE ( Gwres_flow(Ngw) )
-      IF ( declvar(MODNAME, 'gwres_flow', 'ngw', Ngw, 'real', &
+      CALL declvar_real(MODNAME, 'gwres_flow', 'ngw', Ngw, &
      &     'Groundwater discharge from each GWR to the stream network', &
-     &     'inches', Gwres_flow)/=0 ) CALL read_error(3, 'gwres_flow')
+     &     'inches', Gwres_flow)
 
       ALLOCATE ( Gwres_in(Ngw) )
-      IF ( declvar(MODNAME, 'gwres_in', 'ngw', Ngw, 'double', &
+      CALL declvar_dble(MODNAME, 'gwres_in', 'ngw', Ngw, &
      &     'Total inflow to each GWR from associated capillary and gravity reservoirs', &
-     &     'acre-inches', Gwres_in)/=0 ) CALL read_error(3, 'gwres_in')
+     &     'acre-inches', Gwres_in)
 
       ALLOCATE ( Gwres_sink(Ngw) )
-      IF ( declvar(MODNAME, 'gwres_sink', 'ngw', Ngw, 'real', &
-     &     'Outflow from GWRs to the groundwater sink; water is'// &
-     &     ' considered underflow or flow to deep aquifers and does'// &
+      CALL declvar_real(MODNAME, 'gwres_sink', 'ngw', Ngw, &
+     &     'Outflow from GWRs to the groundwater sink; water is considered underflow or flow to deep aquifers and does'// &
      &     ' not flow to the stream network', &
-     &     'inches', Gwres_sink)/=0 ) CALL read_error(3, 'gwres_sink')
+     &     'inches', Gwres_sink)
 
       ALLOCATE ( Gw_in_soil(Ngw) )
-      IF ( declvar(MODNAME, 'gw_in_soil', 'ngw', Ngw, 'double', &
+      CALL declvar_dble(MODNAME, 'gw_in_soil', 'ngw', Ngw, &
      &     'Drainage from capillary reservoir excess water for each GWR', &
-     &     'acre-inches', Gw_in_soil)/=0 ) CALL read_error(3, 'gw_in_soil')
+     &     'acre-inches', Gw_in_soil)
 
       ALLOCATE ( Gw_in_ssr(Ngw) )
-      IF ( declvar(MODNAME, 'gw_in_ssr', 'ngw', Ngw, 'double', &
+      CALL declvar_dble(MODNAME, 'gw_in_ssr', 'ngw', Ngw, &
      &     'Drainage from gravity reservoir excess water for each GWR', &
-     &     'acre-inches', Gw_in_ssr)/=0 ) CALL read_error(3, 'gw_in_ssr')
+     &     'acre-inches', Gw_in_ssr)
 
-      IF ( declvar(MODNAME, 'basin_gwstor', 'one', 1, 'double', &
+      CALL declvar_dble(MODNAME, 'basin_gwstor', 'one', 1, &
      &     'Basin area-weighted average of storage in GWRs', &
-     &     'inches', Basin_gwstor)/=0 ) CALL read_error(3, 'basin_gwstor')
+     &     'inches', Basin_gwstor)
 
-      IF ( declvar(MODNAME, 'basin_gwin', 'one', 1, 'double', &
+      CALL declvar_dble(MODNAME, 'basin_gwin', 'one', 1, &
      &     'Basin area-weighted average of inflow to GWRs', &
-     &     'inches', Basin_gwin)/=0 ) CALL read_error(3, 'basin_gwin')
+     &     'inches', Basin_gwin)
 
-      IF ( declvar(MODNAME, 'basin_gwflow', 'one', 1, 'double', &
+      CALL declvar_dble(MODNAME, 'basin_gwflow', 'one', 1, &
      &     'Basin area-weighted average of groundwater flow to the stream network', &
-     &     'inches', Basin_gwflow)/=0 ) CALL read_error(3, 'basin_gwflow')
+     &     'inches', Basin_gwflow)
 
-      IF ( declvar(MODNAME, 'basin_gwsink', 'one', 1, 'double', &
+      CALL declvar_dble(MODNAME, 'basin_gwsink', 'one', 1, &
      &     'Basin area-weighted average of GWR outflow to the groundwater sink', &
-     &     'inches', Basin_gwsink)/=0 ) CALL read_error(3, 'basin_gwsink')
+     &     'inches', Basin_gwsink)
 
       ALLOCATE ( Hru_streamflow_out(Nhru) )
-      IF ( declvar(MODNAME, 'hru_streamflow_out', 'nhru', Nhru, 'double', &
+      CALL declvar_dble(MODNAME, 'hru_streamflow_out', 'nhru', Nhru, &
      &     'Total flow to stream network from each HRU', &
-     &     'cfs', Hru_streamflow_out)/=0 ) CALL read_error(3, 'Hru_streamflow_out')
+     &     'cfs', Hru_streamflow_out)
 
       ALLOCATE ( Hru_lateral_flow(Nhru) )
-      IF ( declvar(MODNAME, 'hru_lateral_flow', 'nhru', Nhru, 'double', &
+      CALL declvar_dble(MODNAME, 'hru_lateral_flow', 'nhru', Nhru, &
      &     'Lateral flow to stream network from each HRU', &
-     &     'inches', Hru_lateral_flow)/=0 ) CALL read_error(3, 'Hru_lateral_flow')
-
-      ALLOCATE ( Hru_storage(Nhru) )
-      IF ( declvar(MODNAME, 'hru_storage', 'nhru', Nhru, 'double', &
-     &     'Storage for each HRU', &
-     &     'inches', Hru_storage)/=0 ) CALL read_error(3, 'hru_storage')
+     &     'inches', Hru_lateral_flow)
 
       ALLOCATE ( Gwstor_minarea(Ngw) )
       IF ( Dprst_flag==1 ) ALLOCATE ( Gwin_dprst(Ngw) )
 
       IF ( Lake_route_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-        IF ( declvar(MODNAME, 'basin_lake_seep', 'one', 1, 'double', &
+        CALL declvar_dble(MODNAME, 'basin_lake_seep', 'one', 1, &
      &       'Basin area-weighted average of lake-bed seepage to GWRs', &
-     &       'acre-feet', Basin_lake_seep)/=0 ) CALL read_error(3, 'basin_lake_seep')
+     &       'acre-feet', Basin_lake_seep)
 
         ALLOCATE ( Lake_seepage(Nlake), Lake_seepage_max(Nlake) )
-        IF ( declvar(MODNAME, 'lake_seepage', 'nlake', Nlake, 'double', &
+        CALL declvar_dble(MODNAME, 'lake_seepage', 'nlake', Nlake, &
      &       'Lake-bed seepage from each lake to associated GWRs', &
-     &       'acre-feet', Lake_seepage)/=0 ) CALL read_error(3, 'lake_seepage')
+     &       'acre-feet', Lake_seepage)
 
         ALLOCATE ( Gw_seep_lakein(Nlake) )
-        IF ( declvar(MODNAME, 'gw_seep_lakein', 'nlake', Nlake, 'double', &
+        CALL declvar_dble(MODNAME, 'gw_seep_lakein', 'nlake', Nlake, &
      &       'Groundwater discharge to any associated lake for each GWR', &
-     &       'acre-feet', Gw_seep_lakein)/=0 ) CALL read_error(3, 'gw_seep_lakein')
+     &       'acre-feet', Gw_seep_lakein)
 
         ALLOCATE ( Lake_seepage_gwr(Ngw) )
-        IF ( declvar(MODNAME, 'lake_seepage_gwr', 'ngw', Ngw, 'double', &
+        CALL declvar_dble(MODNAME, 'lake_seepage_gwr', 'ngw', Ngw, &
      &       'Net lake-bed seepage to associated GWRs', &
-     &       'inches', Lake_seepage_gwr)/=0 ) CALL read_error(3, 'lake_seepage_gwr')
+     &       'inches', Lake_seepage_gwr)
 
         ALLOCATE ( Elevlake(Nlake) )
-        IF ( declvar(MODNAME, 'elevlake', 'nlake', Nlake, 'real', &
+        CALL declvar_real(MODNAME, 'elevlake', 'nlake', Nlake, &
      &       'Surface elevation of each lake', &
-     &       'feet', Elevlake)/=0 ) CALL read_error(3, 'elevlake')
+     &       'feet', Elevlake)
       ENDIF
 
       IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 ) THEN
@@ -258,13 +249,13 @@
      &     'inches')/=0 ) CALL read_error(1, 'gwstor_min')
 
       ALLOCATE ( Gwstor_minarea_wb(Ngw) )
-      IF ( declvar(MODNAME, 'gwstor_minarea_wb', 'ngw', Ngw, 'double', &
+      CALL declvar_dble(MODNAME, 'gwstor_minarea_wb', 'ngw', Ngw, &
      &     'Storage added to each GWR when storage is less than gwstor_min', &
-     &     'inches', Gwstor_minarea_wb)/=0 ) CALL read_error(3, 'gwstor_minarea_wb')
+     &     'inches', Gwstor_minarea_wb)
 
-      IF ( declvar(MODNAME, 'basin_gwstor_minarea_wb', 'one', 1, 'double', &
+      CALL declvar_dble(MODNAME, 'basin_gwstor_minarea_wb', 'one', 1, &
      &     'Basin area-weighted average storage added to each GWR when storage is less than gwstor_min', &
-     &     'inches', Basin_gwstor_minarea_wb)/=0 ) CALL read_error(3, 'basin_gwstor_minarea_wb')
+     &     'inches', Basin_gwstor_minarea_wb)
 
       END FUNCTION gwflowdecl
 
@@ -273,37 +264,33 @@
 !                  compute initial values.
 !***********************************************************************
       INTEGER FUNCTION gwflowinit()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, DEBUG_less, CASCADEGW_OFF
+      use PRMS_READ_PARAM_FILE, only: getparam_real
+      USE PRMS_MODULE, ONLY: Ngw, Nlake, Print_debug, Init_vars_from_file, Dprst_flag, Inputerror_flag, Gwr_swale_flag
       USE PRMS_GWFLOW
-      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, &
-     &                      Lake_hru_id, Weir_gate_flag
-      USE PRMS_FLOWVARS, ONLY: Gwres_stor, Pkwater_equiv
-      USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Soil_moist_tot
+      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, Lake_hru_id, Weir_gate_flag, Hru_storage
+      USE PRMS_FLOWVARS, ONLY: Gwres_stor
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
       INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: i, j, jjj
 !***********************************************************************
       gwflowinit = 0
 
-      IF ( getparam(MODNAME, 'gwflow_coef', Ngw, 'real', Gwflow_coef)/=0 ) CALL read_error(2, 'gwflow_coef')
-      IF ( getparam(MODNAME, 'gwsink_coef', Ngw, 'real', Gwsink_coef)/=0 ) CALL read_error(2, 'gwsink_coef')
-      IF ( getparam(MODNAME, 'gwstor_min', Ngw, 'real', Gwstor_min)/=0 ) CALL read_error(2, 'gwstor_min')
+      IF ( getparam_real(MODNAME, 'gwflow_coef', Ngw, Gwflow_coef)/=0 ) CALL read_error(2, 'gwflow_coef')
+      IF ( getparam_real(MODNAME, 'gwsink_coef', Ngw, Gwsink_coef)/=0 ) CALL read_error(2, 'gwsink_coef')
+      IF ( getparam_real(MODNAME, 'gwstor_min', Ngw, Gwstor_min)/=0 ) CALL read_error(2, 'gwstor_min')
 
       Gwminarea_flag = OFF
       Gwstor_minarea = 0.0D0
       Gwstor_minarea_wb = 0.0D0
       Basin_gwstor_minarea_wb = 0.0D0
       IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==6 ) THEN
-        IF ( getparam(MODNAME, 'gwstor_init', Ngw, 'real', Gwstor_init)/=0 ) CALL read_error(2, 'gwstor_init')
+        IF ( getparam_real(MODNAME, 'gwstor_init', Ngw, Gwstor_init)/=0 ) CALL read_error(2, 'gwstor_init')
         Gwres_stor = DBLE( Gwstor_init )
         DEALLOCATE ( Gwstor_init )
       ENDIF
-      Hru_storage = 0.0D0
       Basin_gwstor = 0.0D0
       DO j = 1, Active_gwrs
         i = Gwr_route_order(j)
@@ -333,8 +320,7 @@
           ENDIF
         ENDIF
 
-        Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Gwres_stor(i) + Pkwater_equiv(i)
-        IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
+        Hru_storage(i) = Hru_storage(i) + Gwres_stor(i)
       ENDDO
       IF ( Gwminarea_flag==OFF ) DEALLOCATE ( Gwstor_minarea )
       Basin_gwstor = Basin_gwstor*Basin_area_inv
@@ -342,10 +328,10 @@
       IF ( Dprst_flag==ACTIVE ) Gwin_dprst = 0.0D0
 
       IF ( Weir_gate_flag==ACTIVE ) THEN
-        IF ( getparam(MODNAME, 'gw_seep_coef', Ngw, 'real', Gw_seep_coef)/=0 ) CALL read_error(2, 'gw_seep_coef')
-        IF ( getparam(MODNAME, 'lake_seep_elev', Nlake, 'real', Lake_seep_elev)/=0 ) CALL read_error(2, 'lake_seep_elev')
+        IF ( getparam_real(MODNAME, 'gw_seep_coef', Ngw, Gw_seep_coef)/=0 ) CALL read_error(2, 'gw_seep_coef')
+        IF ( getparam_real(MODNAME, 'lake_seep_elev', Nlake, Lake_seep_elev)/=0 ) CALL read_error(2, 'lake_seep_elev')
         IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==4 ) THEN
-          IF ( getparam(MODNAME, 'elevlake_init', Nlake, 'real', Elevlake_init)/=0 ) CALL read_error(2, 'elevlake_init')
+          IF ( getparam_real(MODNAME, 'elevlake_init', Nlake, Elevlake_init)/=0 ) CALL read_error(2, 'elevlake_init')
           Elevlake = Elevlake_init
           DEALLOCATE ( Elevlake_init )
         ENDIF
@@ -372,12 +358,6 @@
       Basin_gw_upslope = 0.0D0
       Basin_dnflow = 0.0D0
       Basin_lake_seep = 0.0D0
-! do only once, so restart uses saved values
-      IF ( Cascadegw_flag>CASCADEGW_OFF ) THEN
-        Gw_upslope = 0.0D0
-        Hru_gw_cascadeflow = 0.0
-        IF ( Nlake>0 ) Lakein_gwflow = 0.0D0
-      ENDIF
       Gwres_flow = 0.0
       Gwres_in = 0.0
       Gwres_sink = 0.0
@@ -393,19 +373,21 @@
 !                 groundwater sink
 !***********************************************************************
       INTEGER FUNCTION gwflowrun()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, LAKE, SWALE, DEBUG_less, CASCADEGW_OFF, ERROR_water_use
+      USE PRMS_MODULE, ONLY: Nlake, Print_debug, Dprst_flag, Cascadegw_flag, Gwr_swale_flag, &
+     &    Gwr_add_water_use, Gwr_transfer_water_use, Nowyear, Nowmonth, Nowday
       USE PRMS_GWFLOW
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Lake_type, &
-     &    Basin_area_inv, Hru_area, Gwr_type, Lake_hru_id, Weir_gate_flag, Hru_area_dble
-      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Ssr_to_gw, Sroff, Ssres_flow, Gwres_stor, Pkwater_equiv, Lake_vol
+     &    Basin_area_inv, Hru_area, Gwr_type, Lake_hru_id, Weir_gate_flag, Hru_area_dble, Hru_storage
+      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Ssr_to_gw, Sroff, Ssres_flow, Gwres_stor, Lake_vol
       USE PRMS_CASCADE, ONLY: Ncascade_gwr
-      USE PRMS_SET_TIME, ONLY: Cfs_conv, Nowyear, Nowmonth, Nowday
-      USE PRMS_SRUNOFF, ONLY: Dprst_seep_hru, Hru_impervstor, Dprst_stor_hru
-      USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SOILZONE, ONLY: Soil_moist_tot
+      USE PRMS_SET_TIME, ONLY: Cfs_conv
+      USE PRMS_SRUNOFF, ONLY: Dprst_seep_hru
       USE PRMS_WATER_USE, ONLY: Gwr_transfer, Gwr_gain
+      use prms_utils, only: print_date
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: rungw_cascade, print_date
+      EXTERNAL :: rungw_cascade
       INTRINSIC :: DBLE, DABS, SNGL, MIN
 ! Local Variables
       INTEGER :: i, j, jj, jjj
@@ -416,6 +398,7 @@
 
       IF ( Cascadegw_flag>CASCADEGW_OFF ) THEN
         Gw_upslope = 0.0D0
+        Hru_gw_cascadeflow = 0.0
         Basin_dnflow = 0.0D0
         Basin_gw_upslope = 0.0D0
         IF ( Nlake>0 ) Lakein_gwflow = 0.0D0
@@ -530,10 +513,10 @@
               PRINT *, '       storage: ', gwstor, '; transfer: ', Gwr_transfer(i)/Cfs_conv
               ERROR STOP ERROR_water_use
             ENDIF
-            gwstor = gwstor - DBLE( Gwr_transfer(i) ) / Cfs_conv 
+            gwstor = gwstor - DBLE( Gwr_transfer(i) ) / Cfs_conv
           ENDIF
         ENDIF
- 
+
         gwsink = 0.0D0
         IF ( gwstor<0.0D0 ) THEN ! could happen with water use
           IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0', gwstor
@@ -582,9 +565,7 @@
         Hru_lateral_flow(i) = DBLE( Gwres_flow(i) + Sroff(i) + Ssres_flow(i) )
         ! Cfs_conv converts acre-inches per timestep to cfs
         Hru_streamflow_out(i) = gwarea*Cfs_conv*Hru_lateral_flow(i)
-        Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Gwres_stor(i) &
-     &                   + Pkwater_equiv(i)
-        IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
+        Hru_storage(i) = Hru_storage(i) + Gwres_stor(i)
       ENDDO
 
       Basin_gwflow = Basin_gwflow*Basin_area_inv
@@ -641,22 +622,22 @@
 !     gwflow_restart - write or read gwflow restart file
 !***********************************************************************
       SUBROUTINE gwflow_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_BASIN, ONLY: Weir_gate_flag
       USE PRMS_GWFLOW
+      use prms_utils, only: check_restart
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Functions
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=6) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
-        IF ( Weir_gate_flag==1 ) WRITE ( Restart_outunit ) Elevlake
+        IF ( Weir_gate_flag==ACTIVE ) WRITE ( Restart_outunit ) Elevlake
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        IF ( Weir_gate_flag==1 ) READ ( Restart_inunit ) Elevlake ! could be error if someone turns off weirs for restart
+        IF ( Weir_gate_flag==ACTIVE ) READ ( Restart_inunit ) Elevlake ! could be error if someone turns off weirs for restart
       ENDIF
       END SUBROUTINE gwflow_restart

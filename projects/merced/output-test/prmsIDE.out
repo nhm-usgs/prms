@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.0 10/10/2020
+                        Version 5.2.1 11/11/2021
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -39,25 +39,25 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2020-10-10
-Basin Definition                basin               2020-10-09
-Common States and Fluxes        climateflow         2020-09-14
-Potential Solar Radiation       soltab              2020-08-04
+Computation Order               call_modules        2021-11-11
+Basin Definition                basin               2021-08-18
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2020-08-03
-Time Series Data                obs                 2020-08-03
-Temp & Precip Distribution      ide_dist            2020-08-19
-Solar Radiation Distribution    ddsolrad            2020-09-14
-Transpiration Distribution      transp_tindex       2020-09-14
-Potential Evapotranspiration    potet_jh            2020-08-03
-Canopy Interception             intcp               2020-09-21
-Snow Dynamics                   snowcomp            2020-10-07
-Surface Runoff                  srunoff_smidx       2020-10-08
-Soilzone Computations           soilzone            2020-10-09
-Groundwater                     gwflow              2020-09-14
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Temp & Precip Distribution      ide_dist            2021-09-07
+Solar Radiation Distribution    ddsolrad            2021-08-13
+Transpiration Distribution      transp_tindex       2021-09-07
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2021-09-07
+Snow Dynamics                   snowcomp            2021-09-15
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
+Groundwater                     gwflow              2021-08-13
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2020-09-14
-Output Summary                  prms_summary        2020-07-29
+Output Summary                  basin_sum           2021-08-13
+Output Summary                  prms_summary        2021-08-13
 ==============================================================
 
 Using Control File: .\control\mercdIDE.control
@@ -82,5 +82,5 @@ Fraction impervious:        0.0001    Fraction pervious:       0.9999
  *************************************************************
  Total for run     100.986   43.325    7.864   57.085   67.341
  *************************************************************
-Execution elapsed time    0 minutes  0.24 seconds
+Execution elapsed time    0 minutes  0.22 seconds
 

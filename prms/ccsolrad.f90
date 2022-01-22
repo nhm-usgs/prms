@@ -9,13 +9,11 @@
 !RSR:          Northern hemisphere and Julian day 265 to 79 in Southern
 !***********************************************************************
       MODULE PRMS_CCSOLRAD
-        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, MONTHS_PER_YEAR, ACTIVE, OFF
-        USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ccsolrad'
-        character(len=*), parameter :: Version_ccsolrad = '2020-12-02'
+        character(len=*), parameter :: Version_ccsolrad = '2021-12-09'
         INTEGER, SAVE :: Observed_flag
         ! Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_radadj, Basin_cloud_cover
@@ -26,19 +24,23 @@
       END MODULE PRMS_CCSOLRAD
 !***********************************************************************
       INTEGER FUNCTION ccsolrad()
+      use PRMS_MMFAPI, only: declvar_real, declvar_dble
+      use PRMS_READ_PARAM_FILE, only: declparam, getparam_real
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, MONTHS_PER_YEAR, ACTIVE, OFF
+      USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol, Cloud_cover_cbh_flag, Nowmonth
       USE PRMS_CCSOLRAD
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, &
      &    Tmax_hru, Tmin_hru, Solsta_flag, Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
+      USE PRMS_CLIMATE_HRU, ONLY: Cloud_cover_cbh
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
-      USE PRMS_SET_TIME, ONLY: Jday, Nowmonth, Summer_flag
+      USE PRMS_SET_TIME, ONLY: Jday, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
+      use prms_utils, only: print_date, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE, SNGL
-      INTEGER, EXTERNAL :: declparam, getparam, declvar
-      EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k
       REAL :: pptadj, radadj, ccov
@@ -46,7 +48,7 @@
       ccsolrad = 0
 
       IF ( Process_flag==RUN ) THEN
-!rsr using julian day as the soltab arrays are filled by julian day
+        !rsr using julian day as the soltab arrays are filled by julian day
         Basin_horad = Soltab_basinpotsw(Jday)
         Basin_swrad = 0.0D0
         Basin_orad = 0.0D0
@@ -66,7 +68,11 @@
             pptadj = 1.0
           ENDIF
 
-          ccov = Ccov_slope(j, Nowmonth)*(Tmax_hru(j)-Tmin_hru(j)) + Ccov_intcp(j, Nowmonth)
+          IF ( Cloud_cover_cbh_flag==OFF ) THEN
+            ccov = Ccov_slope(j, Nowmonth)*(Tmax_hru(j)-Tmin_hru(j)) + Ccov_intcp(j, Nowmonth)
+          ELSE
+            ccov = Cloud_cover_cbh(j)
+          ENDIF
           IF ( ccov<0.0 ) THEN
             ccov = 0.0
           ELSEIF ( ccov>1.0 ) THEN
@@ -116,22 +122,22 @@
         CALL print_module(MODDESC, MODNAME, Version_ccsolrad)
 
         ALLOCATE ( Cloud_radadj(Nhru) )
-        IF ( declvar(MODNAME, 'cloud_radadj', 'nhru', Nhru, 'real', &
+        CALL declvar_real(MODNAME, 'cloud_radadj', 'nhru', Nhru, &
      &       'Radiation adjustment for cloud cover of each HRU', &
-     &       'decimal fraction', Cloud_radadj)/=0 ) CALL read_error(3, 'cloud_radadj')
+     &       'decimal fraction', Cloud_radadj)
 
-        IF ( declvar(MODNAME, 'basin_radadj', 'one', 1, 'double', &
+        CALL declvar_dble(MODNAME, 'basin_radadj', 'one', 1, &
      &       'Basin area-weighted average radiation adjustment for cloud cover', &
-     &       'decimal fraction', Basin_radadj)/=0 ) CALL read_error(3, 'basin_radadj')
+     &       'decimal fraction', Basin_radadj)
 
         ALLOCATE ( Cloud_cover_hru(Nhru) )
-        IF ( declvar(MODNAME, 'cloud_cover_hru', 'nhru', Nhru, 'real', &
+        CALL declvar_real(MODNAME, 'cloud_cover_hru', 'nhru', Nhru, &
      &       'Cloud cover proportion of each HRU', &
-     &       'decimal fraction', Cloud_cover_hru)/=0 ) CALL read_error(3, 'cloud_cover_hru')
+     &       'decimal fraction', Cloud_cover_hru)
 
-        IF ( declvar(MODNAME, 'basin_cloud_cover', 'one', 1, 'double', &
+        CALL declvar_dble(MODNAME, 'basin_cloud_cover', 'one', 1, &
      &       'Basin area-weighted average cloud cover proportion', &
-     &       'decimal fraction', Basin_cloud_cover)/=0 ) CALL read_error(3, 'basin_cloud_cover')
+     &       'decimal fraction', Basin_cloud_cover)
 
         ! Declare Parameters
         ALLOCATE ( Crad_coef(Nhru,MONTHS_PER_YEAR) )
@@ -163,15 +169,13 @@
      &       'none')/=0 ) CALL read_error(1, 'ccov_intcp')
 
       ELSEIF ( Process_flag==INIT ) THEN
-! Get parameters
-        IF ( getparam(MODNAME, 'crad_coef', Nhru*MONTHS_PER_YEAR, 'real', Crad_coef)/=0 ) CALL read_error(2, 'crad_coef')
-        IF ( getparam(MODNAME, 'crad_exp', Nhru*MONTHS_PER_YEAR, 'real', Crad_exp)/=0 ) CALL read_error(2, 'crad_exp')
-        IF ( getparam(MODNAME, 'ccov_slope', Nhru*MONTHS_PER_YEAR, 'real', Ccov_slope)/=0 ) CALL read_error(2, 'ccov_slope')
-        IF ( getparam(MODNAME, 'ccov_intcp', Nhru*MONTHS_PER_YEAR, 'real', Ccov_intcp)/=0 ) CALL read_error(2, 'ccov_intcp')
+        ! Get parameters
+        IF ( getparam_real(MODNAME, 'crad_coef', Nhru*MONTHS_PER_YEAR, Crad_coef)/=0) CALL read_error(2, 'crad_coef')
+        IF ( getparam_real(MODNAME, 'crad_exp', Nhru*MONTHS_PER_YEAR, Crad_exp)/=0) CALL read_error(2, 'crad_exp')
+        IF ( getparam_real(MODNAME, 'ccov_slope', Nhru*MONTHS_PER_YEAR, Ccov_slope)/=0) CALL read_error(2, 'ccov_slope')
+        IF ( getparam_real(MODNAME, 'ccov_intcp', Nhru*MONTHS_PER_YEAR, Ccov_intcp)/=0) CALL read_error(2, 'ccov_intcp')
 
         Cloud_radadj = 0.0
-        Basin_radadj = 0.0D0
-        Basin_cloud_cover = 0.0D0
         Cloud_cover_hru = 0.0
 
         Observed_flag = OFF

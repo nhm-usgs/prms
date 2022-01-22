@@ -13,14 +13,11 @@
 !      adjust total precip
 !***********************************************************************
       MODULE PRMS_PRECIP_DIST2
-        USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, MONTHS_PER_YEAR, ACTIVE, OFF, &
-     &      NEARZERO, DNEARZERO, ERROR_dim, ERROR_data, CELSIUS, INCH2MM
-        USE PRMS_MODULE, ONLY: Model, Nhru, Nrain
         IMPLICIT NONE
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
         character(len=*), parameter :: MODNAME = 'precip_dist2'
-        character(len=*), parameter :: Version_precip = '2020-12-02'
+        character(len=*), parameter :: Version_precip = '2021-11-19'
         INTEGER, SAVE, ALLOCATABLE :: N_psta(:), Nuse_psta(:, :)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist2(:, :)
 !   Declared Parameters
@@ -64,11 +61,12 @@
 !     hru_ylat, hru_xlong, max_psta, dist_max, maxday_prec
 !***********************************************************************
       INTEGER FUNCTION pptdist2decl()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, MONTHS_PER_YEAR, ERROR_dim
+      use PRMS_READ_PARAM_FILE, only: declparam
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nrain
       USE PRMS_PRECIP_DIST2
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
-! Functions
-      INTEGER, EXTERNAL :: declparam
-      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       pptdist2decl = 0
 
@@ -168,12 +166,14 @@
 !     pptdist2init - Initialize precipitation module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION pptdist2init()
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DNEARZERO
+      use PRMS_READ_PARAM_FILE, only: getparam_int, getparam_real
+      USE PRMS_MODULE, ONLY: Nhru, Nrain
       USE PRMS_PRECIP_DIST2
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
       INTRINSIC :: DSQRT, DABS, DBLE
 ! Local Variables
       INTEGER :: i, k, n, kk, kkbig, jj
@@ -183,38 +183,38 @@
       pptdist2init = 0
 
 ! NEW PARAMETERS
-      IF ( getparam(MODNAME, 'maxday_prec', 1, 'real', Maxday_prec) &
+      IF ( getparam_real(MODNAME, 'maxday_prec', 1, Maxday_prec) &
      &     /=0 ) CALL read_error(2, 'maxday_prec')
 
-      IF ( getparam(MODNAME, 'dist_max', 1, 'real', Dist_max) &
+      IF ( getparam_real(MODNAME, 'dist_max', 1, Dist_max) &
      &     /=0 ) CALL read_error(2, 'dist_max')
 
-      IF ( getparam(MODNAME, 'max_psta', 1, 'real', Max_psta) &
+      IF ( getparam_int(MODNAME, 'max_psta', 1, Max_psta) &
      &     /=0 ) CALL read_error(2, 'max_psta')
       IF ( Max_psta==0 ) Max_psta = Nrain
 
-!      IF ( get param(MODNAME, 'maxmon_prec', MONTHS_PER_YEAR, 'real', Maxmon_prec) &
+!      IF ( getparam_real(MODNAME, 'maxmon_prec', MONTHS_PER_YEAR, Maxmon_prec) &
 !           /=0 ) CALL read_error(2, 'maxmon_prec')
 
-      IF ( getparam(MODNAME, 'rain_mon', Nhru*MONTHS_PER_YEAR, 'real', Rain_mon) &
+      IF ( getparam_real(MODNAME, 'rain_mon', Nhru*MONTHS_PER_YEAR, Rain_mon) &
      &     /=0 ) CALL read_error(2, 'rain_mon')
 
-      IF ( getparam(MODNAME, 'snow_mon', Nhru*MONTHS_PER_YEAR, 'real', Snow_mon) &
+      IF ( getparam_real(MODNAME, 'snow_mon', Nhru*MONTHS_PER_YEAR, Snow_mon) &
      &     /=0 ) CALL read_error(2, 'snow_mon')
 
-      IF ( getparam(MODNAME, 'psta_mon', Nrain*MONTHS_PER_YEAR, 'real', Psta_mon) &
+      IF ( getparam_real(MODNAME, 'psta_mon', Nrain*MONTHS_PER_YEAR, Psta_mon) &
      &     /=0 ) CALL read_error(2, 'psta_mon')
 
-      IF ( getparam(MODNAME, 'psta_xlong', Nrain, 'real', Psta_xlong) &
+      IF ( getparam_real(MODNAME, 'psta_xlong', Nrain, Psta_xlong) &
      &     /=0 ) CALL read_error(2, 'psta_xlong')
 
-      IF ( getparam(MODNAME, 'psta_ylat', Nrain, 'real', Psta_ylat) &
+      IF ( getparam_real(MODNAME, 'psta_ylat', Nrain, Psta_ylat) &
      &     /=0 ) CALL read_error(2, 'psta_ylat')
 
-      IF ( getparam(MODNAME, 'hru_xlong', Nhru, 'real', Hru_xlong) &
+      IF ( getparam_real(MODNAME, 'hru_xlong', Nhru, Hru_xlong) &
      &     /=0 ) CALL read_error(2, 'hru_xlong')
 
-      IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
+      IF ( getparam_real(MODNAME, 'hru_ylat', Nhru, Hru_ylat) &
      &     /=0 ) CALL read_error(2, 'hru_ylat')
 ! END NEW
 
@@ -270,18 +270,19 @@
 !                   depth for each HRU, and basin weighted avg. precip
 !***********************************************************************
       INTEGER FUNCTION pptdist2run()
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, ERROR_data, CELSIUS, INCH2MM
+      USE PRMS_MODULE, ONLY: Nowmonth
       USE PRMS_PRECIP_DIST2
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Prmx, Basin_ppt, &
      &    Basin_rain, Basin_snow, Hru_ppt, Hru_rain, Hru_snow, &
      &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
      &    Adjmix_rain, Precip_units
-      USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Precip
+      use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, DBLE, SNGL
-      EXTERNAL :: print_date, error_stop
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
       REAL :: tdiff, pcor, ppt

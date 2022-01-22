@@ -66,9 +66,21 @@ Name  : nlake
 Value : 0
 Desc  : Number of lakes
 
+Name  : nlake_hrus
+Value : 0
+Desc  : Number of lake HRUs
+
 Name  : nlakeelev
 Value : 0
 Desc  : Maximum number of lake elevations for any rating table data set
+
+Name  : nmap
+Value : 0
+Desc  : Number of mapped values
+
+Name  : nmap2hru
+Value : 0
+Desc  : Number of intersections between HRUs and input climate map
 
 Name  : nmonths
 Value : 12
@@ -243,7 +255,7 @@ Default   : 5.000000
 
 Name      : cov_type
 Module    : basin
-Descr     : Cover type designation for HRU
+Descr     : Cover type designation for each HRU
 Help      : Vegetation cover type for each HRU (0=bare soil; 1=grasses; 2=shrubs; 3=trees; 4=coniferous)
 Ndimen    : 1
 Dimensions: nhru - 27
@@ -635,7 +647,7 @@ Min       : -90.000000
 Default   : 40.000000
 
 Name      : hru_lon
-Module    : setup
+Module    : setup_param
 Descr     : HRU longitude
 Help      : Longitude of each HRU
 Ndimen    : 1
@@ -694,19 +706,19 @@ Default   : 0.000000
 Name      : hru_type
 Module    : basin
 Descr     : HRU type
-Help      : Type of each HRU (0=inactive; 1=land; 2=lake; 3=swale)
+Help      : Type of each HRU (0=inactive; 1=land; 2=lake; 3=swale; 4=glacier)
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
 Type      : long
 Units     : none
 Width     : 0
-Max       : 3
+Max       : 4
 Min       : 0
 Default   : 1
 
 Name      : hru_x
-Module    : setup
+Module    : setup_param
 Descr     : X for each HRU (albers)
 Help      : Longitude (X) for each HRU in albers projection
 Ndimen    : 1
@@ -720,7 +732,7 @@ Min       : -10000000.000000
 Default   : 0.000000
 
 Name      : hru_y
-Module    : setup
+Module    : setup_param
 Descr     : Y for each HRU (albers)
 Help      : Latitude (Y) for each HRU in albers projection
 Ndimen    : 1
@@ -776,7 +788,7 @@ Min       : 1
 Default   : 90
 
 Name      : nhm_id
-Module    : setup
+Module    : setup_param
 Descr     : National Hydrologic Model HRU ID
 Help      : National Hydrologic Model HRU ID
 Ndimen    : 1
@@ -790,7 +802,7 @@ Min       : 1
 Default   : 1
 
 Name      : nhm_seg
-Module    : setup
+Module    : setup_param
 Descr     : National Hydrologic Model segment ID
 Help      : National Hydrologic Model segment ID
 Ndimen    : 1
@@ -847,8 +859,23 @@ Max       : 1.000000
 Min       : 0.010000
 Default   : 1.000000
 
+Name      : outlet_sta
+Module    : basin_sum
+Descr     : Index of measurement station to use for basin outlet
+Help      : Index of measured streamflow station corresponding to the basin outlet
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 6
+Min       : 0
+Default   : 0
+Bounded   : nobs
+
 Name      : parent_gw
-Module    : setup
+Module    : setup_param
 Descr     : Lumen index in parent model for each GWR
 Help      : Lumen index in parent model for each GWR
 Ndimen    : 1
@@ -862,7 +889,7 @@ Min       : 1
 Default   : 1
 
 Name      : parent_hru
-Module    : setup
+Module    : setup_param
 Descr     : Lumen index in parent model for each HRU
 Help      : Lumen index in parent model for each HRU
 Ndimen    : 1
@@ -876,7 +903,7 @@ Min       : 1
 Default   : 1
 
 Name      : parent_poigages
-Module    : setup
+Module    : setup_param
 Descr     : Lumen index in parent model for each POI gage
 Help      : Lumen index in parent model for each POI gage
 Ndimen    : 1
@@ -890,7 +917,7 @@ Min       : 0
 Default   : 0
 
 Name      : parent_segment
-Module    : setup
+Module    : setup_param
 Descr     : Lumen index in parent model for each segment
 Help      : Lumen index in parent model for each segment
 Ndimen    : 1
@@ -904,7 +931,7 @@ Min       : 0
 Default   : 0
 
 Name      : parent_ssr
-Module    : setup
+Module    : setup_param
 Descr     : Lumen index in parent model for each SSR
 Help      : Lumen index in parent model  for each SSR
 Ndimen    : 1
@@ -918,7 +945,7 @@ Min       : 1
 Default   : 1
 
 Name      : poi_gage_id
-Module    : setup
+Module    : setup_param
 Descr     : POI Gage ID
 Help      : USGS stream gage for each POI gage
 Ndimen    : 1
@@ -932,7 +959,7 @@ Min       : 0
 Default   : 0
 
 Name      : poi_gage_segment
-Module    : setup
+Module    : setup_param
 Descr     : Segment index for each POI gage
 Help      : Segment index for each POI gage
 Ndimen    : 1
@@ -947,7 +974,7 @@ Default   : 0
 Bounded   : nsegment
 
 Name      : poi_type
-Module    : setup
+Module    : setup_param
 Descr     : Type code for each POI gage
 Help      : Type code for each POI gage
 Ndimen    : 1
@@ -1018,8 +1045,8 @@ Default   : 0
 
 Name      : pref_flow_den
 Module    : soilzone
-Descr     : Fraction of the soil zone in which preferential flow occurs for each HRU
-Help      : Fraction of the soil zone in which preferential flow occurs for each HRU
+Descr     : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
+Help      : Fraction of the gravity reservoir in which preferential flow occurs for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1029,6 +1056,34 @@ Width     : 0
 Max       : 0.500000
 Min       : 0.000000
 Default   : 0.000000
+
+Name      : print_freq
+Module    : basin_sum
+Descr     : Frequency for the output frequency
+Help      : Flag to select the output frequency; for combinations, add index numbers, e.g., daily plus yearly = 10; yearly plus total = 3 (0=none; 1=run totals; 2=yearly; 4=monthly; 8=daily; or additive combinations)
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 15
+Min       : 0
+Default   : 3
+
+Name      : print_type
+Module    : basin_sum
+Descr     : Type of output written to output file
+Help      : Flag to select the type of results written to the output file (0=measured and simulated flow only; 1=water balance table; 2=detailed output)
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 2
+Min       : 0
+Default   : 1
 
 Name      : rad_trncf
 Module    : snowcomp
@@ -1416,9 +1471,9 @@ Ndimen    : 1
 Dimensions: nssr - 27
 Size      : 27
 Type      : float
-Units     : fraction/day
+Units     : inches/day
 Width     : 0
-Max       : 1.000000
+Max       : 999.000000
 Min       : 0.000100
 Default   : 0.100000
 
@@ -1516,12 +1571,12 @@ Size      : 12
 Type      : long
 Units     : none
 Width     : 0
-Max       : 1000000
-Min       : -11
+Max       : 9999999
+Min       : 0
 Default   : 0
 
 Name      : tosegment_nhm
-Module    : setup
+Module    : setup_param
 Descr     : National Hydrologic Model downstream segment ID
 Help      : National Model Hydrologic downstream segment ID
 Ndimen    : 1
@@ -1551,7 +1606,7 @@ Default   : 1
 Name      : transp_end
 Module    : transp_tindex
 Descr     : Month to stop transpiration period
-Help      : Month to stop transpiration computations; transpiration is computed thru end of previous month
+Help      : Month to stop transpiration computations; transpiration is computed through the end of previous month
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27

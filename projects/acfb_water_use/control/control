@@ -1,4 +1,4 @@
-PRMS_IV
+PRMS 5
 ####
 print_debug
 1
@@ -28,7 +28,7 @@ dprst_flag
 parameter_check_flag
 1
 1
-1
+0
 ####
 aniOutON_OFF
 1
@@ -88,7 +88,7 @@ climate_hru
 executable_desc
 1
 4
-PRMS 5.1.0
+PRMS 5.2.0
 ####
 executable_model
 1
