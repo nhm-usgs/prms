@@ -20,9 +20,9 @@
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'PRMS Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-01-23'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 01/23/2022'
-      character(len=*), parameter :: Version_read_control_file = '2022-01-20'
+      character(len=*), parameter :: PRMS_versn = '2022-01-24'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 01/24/2022'
+      character(len=*), parameter :: Version_read_control_file = '2022-01-24'
       character(len=*), parameter :: Version_read_parameter_file = '2022-01-12'
       character(len=*), parameter :: Version_read_data_file = '2022-01-12'
       CHARACTER(len=8), SAVE :: Process
