@@ -417,10 +417,10 @@ contains
     i = i + 1
 
     ! parameters that get allocated if in Control File
-!    Control_parameter_data(i) % name = 'mapOutVar_names'
-!    Control_parameter_data(i) % data_type = CHAR_TYPE
-!    Control_parameter_data(i) % allocate_flag = 1 ! need to allocate
-!    i = i + 1
+    Control_parameter_data(i) % name = 'mapOutVar_names'
+    Control_parameter_data(i) % data_type = CHAR_TYPE
+    Control_parameter_data(i) % allocate_flag = 1 ! need to allocate
+    i = i + 1
     Control_parameter_data(i) % name = 'statVar_element'
     Control_parameter_data(i) % data_type = CHAR_TYPE
     Control_parameter_data(i) % allocate_flag = 1 ! need to allocate
@@ -444,7 +444,7 @@ contains
 !    Control_parameter_data(i) % name = 'dispVar_element'
 !    Control_parameter_data(i) % data_type = CHAR_TYPE
 !    Control_parameter_data(i) % allocate_flag = 1 ! need to allocate
-!    i = i + 1
+    i = i + 1
     Control_parameter_data(i) % name = 'nsubOutVar_names'
     Control_parameter_data(i) % data_type = CHAR_TYPE
     Control_parameter_data(i) % allocate_flag = 1 ! need to allocate
@@ -897,7 +897,7 @@ contains
     Endtime(6) = 0
     Control_parameter_data(i) % values_int = Endtime
     Control_parameter_data(i) % numvals = 6
-    i = i + 1
+!    i = i + 1
 
     Num_control_parameters = i
 

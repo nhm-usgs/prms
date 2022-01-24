@@ -7,7 +7,7 @@
 ! Module Variables
         character(len=*), parameter :: MODDESC = 'Statistics Variables Output'
         character(len=*), parameter :: MODNAME = 'statvar_out'
-        character(len=*), parameter :: Version_statvar_out = '2021-09-08'
+        character(len=*), parameter :: Version_statvar_out = '2022-01-24'
         character(len=*), parameter :: stamp = '(7(I0,1X),'
         character(len=24) :: Output_fmt
         integer, save :: Statvar_unit
@@ -66,6 +66,7 @@
         IF ( control_string_array(statVar_element(i), 'statVar_element', i)/=0 ) CALL read_error(5, 'statVar_element')
         IF ( control_string_array(statVar_names(i), 'statVar_names', i)/=0 ) CALL read_error(5, 'statVar_names')
       ENDDO
+      !print *, statvar_names
 
       ! 1 = ES10.3; 2 = F0.2; 3 = F0.3; 4 = F0.4; 5 = F0.5
       IF ( control_integer(statvarOut_format, 'statvarOut_format')/=0 ) statvarOut_format = 1

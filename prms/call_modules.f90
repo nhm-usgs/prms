@@ -478,7 +478,7 @@
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
       IF ( Model_mode(:4)=='    ' ) Model_mode = 'PRMS5'
       PRMS4_flag = ACTIVE
-      IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:6)=='prms5' ) PRMS4_flag = OFF
+      IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = OFF
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='prms' .OR. Model_mode(:5)=='DAILY' ) THEN
         Model = PRMS
       ELSEIF ( Model_mode(:5)=='FROST' ) THEN
