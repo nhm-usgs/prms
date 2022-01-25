@@ -714,8 +714,6 @@
       Basin_rain = Basin_rain*Basin_area_inv
       Basin_snow = Basin_snow*Basin_area_inv
       Basin_obs_ppt = sum_obs*Basin_area_inv
-      write(432,*) 'precip', Precip_ide
-      write(432,*) 'ppt', hru_ppt
 
       END FUNCTION ide_rain_run
 
