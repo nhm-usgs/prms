@@ -21,11 +21,12 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC_AG = 'Soilzone Computations'
       character(len=11), parameter :: MODNAME_AG = 'soilzone_ag'
-      character(len=*), parameter :: Version_soilzone_ag = '2022-01-21'
+      character(len=*), parameter :: Version_soilzone_ag = '2022-01-25'
       INTEGER, SAVE :: Soil_iter, Iter_aet
       DOUBLE PRECISION, SAVE :: Basin_ag_soil_to_gw, Basin_ag_up_max
       DOUBLE PRECISION, SAVE :: Basin_ag_actet, Last_ag_soil_moist, Basin_ag_soil_rechr, Last_ag_soil_rechr
-      REAL, SAVE, ALLOCATABLE :: It0_ag_soil_rechr(:), It0_ag_soil_moist(:), It0_potet(:)
+      REAL, SAVE, ALLOCATABLE :: It0_ag_soil_rechr(:), It0_ag_soil_moist(:)
+      REAL, SAVE, ALLOCATABLE :: It0_potet(:), It0_sroff(:), It0_strm_seg_in(:)
       !REAL, SAVE, ALLOCATABLE :: Ag_slow_flow(:), Ag_ssres_in(:), Ag_water_maxin(:)
 !   Agriculture Declared Variables
       INTEGER, SAVE, ALLOCATABLE :: Ag_soil_saturated(:)
@@ -99,10 +100,11 @@
       total_iters = 0
 
       CALL print_module(MODDESC_AG, MODNAME_AG, Version_soilzone_ag)
-      
+
       Iter_aet = OFF
       IF ( AG_flag==ACTIVE .OR. iter_aet_flag==ACTIVE ) Iter_aet = ACTIVE
       IF ( Iter_aet==ACTIVE ) THEN
+        ALLOCATE ( It0_sroff(Nhru), It0_strm_seg_in(Nhru) )
         IF ( Nlake>0 ) ALLOCATE ( It0_potet(Nhru) )
       ENDIF
 
@@ -336,15 +338,16 @@
       INTEGER FUNCTION szrun_ag()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, LAND, LAKE, SWALE, GLACIER, &
      &    DEBUG_less, DEBUG_WB, ERROR_param, CASCADE_OFF
-      USE PRMS_MODULE, ONLY: Nlake, Print_debug, Dprst_flag, Cascade_flag, Soilzone_add_water_use, &
-     &    Frozen_flag, Nowmonth, Hru_type, Nowyear, Nowday, Iter_aet_flag
+      USE PRMS_MODULE, ONLY: Nlake, Print_debug, Dprst_flag, Cascade_flag, &
+     &    Frozen_flag, Soilzone_add_water_use, Call_cascade, &
+     &    Nowmonth, Nowyear, Nowday, Iter_aet_flag, Hru_type
       USE PRMS_SOILZONE
       USE PRMS_SOILZONE_AG
       USE PRMS_BASIN, ONLY: Hru_perv, Hru_frac_perv, Hru_storage, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
      &    Lake_hru_id, Cov_type, Numlake_hrus, Hru_area_dble, Ag_frac, Ag_area, Ag_cov_type
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Transp_on, Potet, Basin_potet, Basin_transp_on
-! WARNING!!! Sroff and Basin_sroff can be updated
+! WARNING!!! Sroff, Basin_sroff, and Strm_seg_in can be updated
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_actet, Hru_actet, &
      &    Ssres_flow, Soil_to_gw, Basin_soil_to_gw, Ssr_to_gw, &
      &    Soil_to_ssr, Basin_lakeevap, Basin_perv_et, Basin_swale_et, &
@@ -360,7 +363,7 @@
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_INTCP, ONLY: Hru_intcpevap
-      USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Dprst_seep_hru, Frozen, Infil_ag
+      USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Strm_seg_in, Dprst_evap_hru, Dprst_seep_hru, Frozen, Infil_ag
       use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
@@ -371,7 +374,7 @@
       INTEGER :: i, k, update_potet, compute_lateral, perv_on_flag
       REAL :: dunnianflw, interflow, perv_area, harea
       REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet, hruactet, ag_hruactet
-      REAL :: topfr !, tmp
+      REAL :: topfr !, depth, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow, ag_water_maxin
@@ -382,7 +385,7 @@
 !***********************************************************************
       szrun_ag = 0
 
-! _ante variables to save iteration states.
+! It0 and _ante variables to save iteration states.
       Soil_moist_ante = Soil_moist
       Soil_rechr_ante = Soil_rechr
       Ssres_stor_ante = Ssres_stor
@@ -390,8 +393,10 @@
       IF ( Pref_flag==ACTIVE ) Pref_flow_stor_ante = Pref_flow_stor
       Last_soil_moist = Basin_soil_moist
       Last_ssstor = Basin_ssstor
-
-      IF ( Iter_aet_flag==ACTIVE ) THEN
+      IF ( Iter_aet==ACTIVE ) THEN
+        ! computed in srunoff
+        It0_sroff = Sroff
+        IF ( Call_cascade==ACTIVE ) It0_strm_seg_in = Strm_seg_in
         Ag_irrigation_add = 0.0
         It0_ag_soil_moist = Ag_soil_moist
         It0_ag_soil_rechr = Ag_soil_rechr
@@ -417,6 +422,11 @@
           IF ( Pref_flag==ACTIVE ) Pref_flow_stor(i) = Pref_flow_stor_ante(i)
           IF ( Nlake>0 ) Potet(i) = It0_potet(i)
         ENDDO
+        IF ( Iter_aet_flag==ACTIVE ) THEN
+          ! computed in srunoff
+          Sroff = It0_sroff
+          IF ( Call_cascade==ACTIVE ) Strm_seg_in = It0_strm_seg_in
+        ENDIF
       ENDIF
 
       IF ( Cascade_flag>CASCADE_OFF ) THEN
@@ -656,6 +666,7 @@
           ENDIF
           Basin_soil_to_gw = Basin_soil_to_gw + DBLE( Soil_to_gw(i)*harea )
           Soil_to_ssr(i) = Soil_to_ssr(i) + Ag_soil_to_gvr(i)
+          Basin_sm2gvr_max = Basin_sm2gvr_max + DBLE( Soil_to_ssr(i)*harea )
         ENDIF
 
 ! compute slow interflow and ssr_to_gw
@@ -972,6 +983,7 @@
       Basin_sroff = Basin_sroff*Basin_area_inv
       Basin_dunnian = Basin_dunnian*Basin_area_inv
       Basin_sm2gvr = Basin_sm2gvr*Basin_area_inv
+      Basin_sm2gvr_max = Basin_sm2gvr_max*Basin_area_inv
       Basin_capwaterin = Basin_capwaterin*Basin_area_inv
       Basin_cap_infil_tot = Basin_cap_infil_tot*Basin_area_inv
       Basin_cap_up_max = Basin_cap_up_max*Basin_area_inv

@@ -8,7 +8,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2022-01-20'
+      character(len=*), parameter :: Version_intcp = '2022-01-25'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
@@ -218,7 +218,7 @@
 !               set initial values.
 !***********************************************************************
       INTEGER FUNCTION intinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, MONTHS_PER_YEAR, ERROR_control
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, MONTHS_PER_YEAR
       use PRMS_READ_PARAM_FILE, only: getparam_int, getparam_real
       USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, Print_debug, AG_flag
       USE PRMS_INTCP

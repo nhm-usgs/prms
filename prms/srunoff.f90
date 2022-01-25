@@ -25,7 +25,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Surface Runoff'
       character(LEN=13), save :: MODNAME
-      character(len=*), parameter :: Version_srunoff = '2022-01-21'
+      character(len=*), parameter :: Version_srunoff = '2022-01-25'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -619,7 +619,8 @@
 !***********************************************************************
       INTEGER FUNCTION srunoffrun()
       USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, DEBUG_WB, LAND, LAKE, GLACIER, CASCADE_OFF
-      USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag, AG_flag, Hru_type
+      USE PRMS_MODULE, ONLY: Print_debug, Dprst_flag, Cascade_flag, Call_cascade, &
+     &    Frozen_flag, Glacier_flag, AG_flag, Hru_type
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
@@ -643,6 +644,11 @@
       REAL :: glcrmltb, temp, temp2 ! glaciers
 !***********************************************************************
       srunoffrun = 0
+
+      IF ( Print_debug==DEBUG_WB ) THEN
+        Imperv_stor_ante = Hru_impervstor
+        IF ( Dprst_flag==ACTIVE ) Dprst_stor_ante = Dprst_stor_hru
+      ENDIF
 
       Basin_sroffi = 0.0D0
       Basin_sroffp = 0.0D0

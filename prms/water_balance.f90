@@ -177,7 +177,7 @@
      &    Perv_actet, Cap_infil_tot, Pref_flow_infil, Cap_waterin, Upslope_interflow, &
      &    Upslope_dunnianflow, Pref_flow, Pref_flow_stor, Soil_lower, Gvr2pfr, Basin_ssin, &
      &    Basin_lakeinsz, Basin_dunnian, Pref_flow_max, Pref_flow_den, Pref_flow_thrsh, &
-     &    Basin_cap_infil_tot, Basin_slowflow, &
+     &    Basin_sm2gvr_max, Basin_cap_infil_tot, Basin_slowflow, &
      &    Basin_dunnian_gvr, Basin_pref_flow_infil, Basin_dninterflow, Basin_pref_stor, Basin_dunnian_pfr, &
      &    Basin_dncascadeflow, Basin_capwaterin, Basin_sm2gvr, Basin_prefflow, Basin_slstor, Basin_gvr2pfr, &
      &    Hru_sz_cascadeflow, Pfr_dunnian_flow, Grav_dunnian_flow, Basin_dndunnianflow, &
@@ -466,7 +466,7 @@
 
 ! soilzone
       Basin_capillary_wb = Last_soil_moist - Basin_soil_moist - &
-     &                     Basin_perv_et + Basin_cap_infil_tot - Basin_soil_to_gw
+     &                     Basin_perv_et - Basin_sm2gvr_max + Basin_cap_infil_tot - Basin_soil_to_gw
       Basin_gravity_wb = Last_ssstor - Basin_ssstor + Basin_sm2gvr - Basin_dncascadeflow - &
      &                   Basin_ssflow - Basin_sz2gw - Basin_dunnian + Basin_dunnian_pfr - &
      &                   Basin_swale_et + Basin_pref_flow_infil
@@ -483,7 +483,7 @@
      &     Basin_dunnian_gvr, Basin_slowflow, Basin_prefflow, Basin_gvr2pfr, Nowtime
       IF ( DABS(Basin_capillary_wb)>DTOOSMALL ) WRITE( BALUNT, * ) 'possible basin capillary balance issue', &
      &     Basin_capillary_wb, Last_soil_moist, Basin_soil_moist, Basin_perv_et, &
-     &     Basin_sm2gvr, Basin_cap_infil_tot, Basin_soil_to_gw, Basin_sm2gvr, Basin_capwaterin, Nowtime
+     &     Basin_sm2gvr, Basin_cap_infil_tot, Basin_soil_to_gw, Basin_sm2gvr_max, Basin_capwaterin, Nowtime
       IF ( DABS(Basin_soilzone_wb)>DTOOSMALL ) WRITE ( BALUNT, * ) 'possible basin soil zone rounding issue', &
      &     Basin_soilzone_wb, Basin_capwaterin, Basin_pref_flow_infil, Basin_infil, &
      &     Last_ssstor, Basin_ssstor, Last_soil_moist, Basin_soil_moist, Basin_perv_et, Basin_swale_et, &

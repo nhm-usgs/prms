@@ -17,7 +17,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Groundwater'
       character(len=6), parameter :: MODNAME = 'gwflow'
-      character(len=*), parameter :: Version_gwflow = '2022-01-20'
+      character(len=*), parameter :: Version_gwflow = '2021-12-16'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea(:), Gwin_dprst(:)
       DOUBLE PRECISION, SAVE :: Basin_gw_upslope
       INTEGER, SAVE :: Gwminarea_flag
@@ -266,9 +266,11 @@
       INTEGER FUNCTION gwflowinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, DEBUG_less, CASCADEGW_OFF
       use PRMS_READ_PARAM_FILE, only: getparam_real
-      USE PRMS_MODULE, ONLY: Ngw, Nlake, Print_debug, Init_vars_from_file, Dprst_flag, Inputerror_flag, Gwr_swale_flag
+      USE PRMS_MODULE, ONLY: Ngw, Nlake, Print_debug, Init_vars_from_file, &
+     &    Dprst_flag, Inputerror_flag, Gwr_swale_flag
       USE PRMS_GWFLOW
-      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, Lake_hru_id, Weir_gate_flag, Hru_storage
+      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, &
+     &                      Lake_hru_id, Weir_gate_flag, Hru_storage
       USE PRMS_FLOWVARS, ONLY: Gwres_stor
       use prms_utils, only: read_error
       IMPLICIT NONE

@@ -7,7 +7,7 @@
 ! Module Variables
         character(len=*), parameter :: MODDESC = 'Statistics Variables Output'
         character(len=*), parameter :: MODNAME = 'statvar_out'
-        character(len=*), parameter :: Version_statvar_out = '2022-01-24'
+        character(len=*), parameter :: Version_statvar_out = '2021-09-08'
         character(len=*), parameter :: stamp = '(7(I0,1X),'
         character(len=24) :: Output_fmt
         integer, save :: Statvar_unit

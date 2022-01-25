@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2022-01-12'
+      character(len=*), parameter :: Version_subbasin = '2022-01-25'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -62,7 +62,7 @@
 !     hru_area, subbasin_down, hru_subbasin
 !***********************************************************************
       INTEGER FUNCTION subdecl()
-      USE PRMS_CONSTANTS, ONLY: OFF, DOCUMENTATION, ERROR_dim
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim
       use PRMS_MMFAPI, only: declvar_dble
       use PRMS_READ_PARAM_FILE, only: declparam
       USE PRMS_MODULE, ONLY: Model, Nsub, Nhru
@@ -238,7 +238,7 @@
 !               compute initial values
 !***********************************************************************
       INTEGER FUNCTION subinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, CFS2CMS_CONV, LAKE, DNEARZERO
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, DNEARZERO
       use PRMS_READ_PARAM_FILE, only: getparam_int
       USE PRMS_MODULE, ONLY: Nsub, Nhru, Print_debug, &
      &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag, Hru_type
@@ -408,7 +408,7 @@
 !                  storage and outflows
 !***********************************************************************
       INTEGER FUNCTION subrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, CFS2CMS_CONV, LAKE, CASCADE_OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nsub, Dprst_flag, Lake_route_flag, Cascade_flag, Hru_type
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Hru_frac_perv, Lake_hru_id
@@ -426,8 +426,7 @@
       INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: j, jj, k
-      DOUBLE PRECISION :: harea, srq, ssq, gwq, dmy, dmy1, subarea
-      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2 !, conv
+      DOUBLE PRECISION :: harea, srq, ssq, gwq, subarea, soilstor, snowstor, landstor
 !***********************************************************************
       subrun = 0
 
@@ -516,12 +515,9 @@
       ENDDO
 
       !convert first as subbasins don't have to be in order
-      dmy1 = 0.0D0
       DO j = 1, Nsub
         subarea = Sub_area(j)
         Sub_inq(j) = Qsub(j)*Cfs_conv
-        dmy = Subinc_interflow(j)/subarea
-        dmy2 = Subinc_sroff(j)/subarea
         Subinc_interflow(j) = Subinc_interflow(j)*Cfs_conv
         Subinc_sroff(j) = Subinc_sroff(j)*Cfs_conv
         Subinc_precip(j) = Subinc_precip(j)/subarea
@@ -541,11 +537,10 @@
         Subinc_szstor_frac(j) = Subinc_szstor_frac(j)/subarea
         Subinc_capstor_frac(j) = Subinc_capstor_frac(j)/subarea
         Subinc_deltastor(j) = Laststor(j) - Subinc_stor(j)
-        dmy1 = Subinc_gwflow(j)/subarea
         Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
         ! water balance off if lake or muskingum routing
-        Subinc_wb(j) = Subinc_precip(j) - Subinc_actet(j) - &
-     &                 dmy - dmy1 - dmy2 + Subinc_deltastor(j)
+        Subinc_wb(j) = Subinc_precip(j) + Subinc_deltastor(j) - Subinc_actet(j) - &
+     &                 ( Subinc_interflow(j) + Subinc_sroff(j) + Subinc_gwflow(j) )/subarea
       ENDDO
 
       !get cumulative subbasin flows

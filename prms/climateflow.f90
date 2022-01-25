@@ -1558,7 +1558,8 @@
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
       USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE, OFF
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Glacier_flag, Dprst_flag, Stream_order_flag, Nlake, AG_flag
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Glacier_flag, &
+     &    Dprst_flag, Stream_order_flag, Nlake, AG_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       use prms_utils, only: check_restart
