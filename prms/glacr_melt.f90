@@ -796,7 +796,7 @@
 !                  computations
 !***********************************************************************
       INTEGER FUNCTION glacrrun()
-      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, METERS2FEET, NEARZERO, FEET
+      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, NEARZERO, FEET !, METERS2FEET
       USE PRMS_MODULE, ONLY: Hru_type
       USE PRMS_GLACR
       USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, &
