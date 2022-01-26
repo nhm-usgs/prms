@@ -426,7 +426,8 @@
       INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: j, jj, k
-      DOUBLE PRECISION :: harea, srq, ssq, gwq, subarea, soilstor, snowstor, landstor
+      DOUBLE PRECISION :: harea, srq, ssq, gwq, dmy, dmy1, subarea
+      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2
 !***********************************************************************
       subrun = 0
 
@@ -518,6 +519,8 @@
       DO j = 1, Nsub
         subarea = Sub_area(j)
         Sub_inq(j) = Qsub(j)*Cfs_conv
+        dmy = Subinc_interflow(j)/subarea
+        dmy2 = Subinc_sroff(j)/subarea
         Subinc_interflow(j) = Subinc_interflow(j)*Cfs_conv
         Subinc_sroff(j) = Subinc_sroff(j)*Cfs_conv
         Subinc_precip(j) = Subinc_precip(j)/subarea
@@ -537,10 +540,11 @@
         Subinc_szstor_frac(j) = Subinc_szstor_frac(j)/subarea
         Subinc_capstor_frac(j) = Subinc_capstor_frac(j)/subarea
         Subinc_deltastor(j) = Laststor(j) - Subinc_stor(j)
+        dmy1 = Subinc_gwflow(j)/subarea
         Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
         ! water balance off if lake or muskingum routing
-        Subinc_wb(j) = Subinc_precip(j) + Subinc_deltastor(j) - Subinc_actet(j) - &
-     &                 ( Subinc_interflow(j) + Subinc_sroff(j) + Subinc_gwflow(j) )/subarea
+        Subinc_wb(j) = Subinc_precip(j) - Subinc_actet(j) - &
+     &                 dmy - dmy1 - dmy2 + Subinc_deltastor(j)
       ENDDO
 
       !get cumulative subbasin flows
