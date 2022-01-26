@@ -41,6 +41,33 @@ Type: double
 Desc: Basin area-weighted average actual ET
 Units: inches
 
+Name: basin_actet_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average actual ET
+Units: inches
+
+Name: basin_actet_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average actual ET
+Units: inches
+
+Name: basin_actet_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average actual ET
+Units: inches
+
 Name: basin_cap_infil_tot
 Module: soilzone
 Ndimen: 1
@@ -77,11 +104,38 @@ Type: double
 Desc: Streamflow leaving the basin through the stream network
 Units: cfs
 
+Name: basin_cfs_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly total streamflow to stream network
+Units: cfs
+
+Name: basin_cfs_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average streamflow
+Units: inches
+
+Name: basin_cfs_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly total streamflow to stream network
+Units: cfs
+
 Name: basin_changeover
 Module: intcp
 Ndimen: 1
-Dimensions: nhru - 27
-Size: 27
+Dimensions: one - 1
+Size: 1
 Type: double
 Desc: Basin area-weighted average water released from a change over of canopy cover type
 Units: inches
@@ -221,6 +275,33 @@ Type: double
 Desc: Basin area-weighted average of groundwater flow to the stream network
 Units: cfs
 
+Name: basin_gwflow_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average groundwater discharge
+Units: inches
+
+Name: basin_gwflow_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average groundwater discharge
+Units: inches
+
+Name: basin_gwflow_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average groundwater discharge
+Units: inches
+
 Name: basin_gwin
 Module: gwflow
 Ndimen: 1
@@ -320,6 +401,33 @@ Type: double
 Desc: Basin area-weighted evaporation from the canopy
 Units: inches
 
+Name: basin_intcp_evap_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average interception evaporation
+Units: inches
+
+Name: basin_intcp_evap_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average canopy evaporation
+Units: inches
+
+Name: basin_intcp_evap_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average canopy evaporation
+Units: inches
+
 Name: basin_intcp_stor
 Module: intcp
 Ndimen: 1
@@ -365,13 +473,67 @@ Type: double
 Desc: Basin area-weighted average precipitation on lake HRUs
 Units: inches
 
+Name: basin_max_temp_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average maximum air temperature
+Units: temp_units
+
+Name: basin_max_temp_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average maximum temperature
+Units: temp_units
+
+Name: basin_max_temp_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average maximum temperature
+Units: temp_units
+
+Name: basin_min_temp_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average minimum air temperature
+Units: temp_units
+
+Name: basin_min_temp_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average minimum temperature
+Units: temp_units
+
+Name: basin_min_temp_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average minimum temperature
+Units: temp_units
+
 Name: basin_net_apply
 Module: intcp
 Ndimen: 1
 Dimensions: one - 1
 Size: 1
 Type: double
-Desc: Basin area-weighted average net_apply
+Desc: Basin area-weighted average net application
 Units: inches
 
 Name: basin_net_ppt
@@ -381,6 +543,24 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin area-weighted average net precipitation
+Units: inches
+
+Name: basin_net_ppt_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly area-weighted average net precipitation
+Units: inches
+
+Name: basin_net_ppt_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average net precipitation
 Units: inches
 
 Name: basin_net_rain
@@ -446,6 +626,33 @@ Type: double
 Desc: Basin area-weighted average potential ET
 Units: inches
 
+Name: basin_potet_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average potential ET
+Units: inches
+
+Name: basin_potet_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average potential ET
+Units: inches
+
+Name: basin_potet_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average potential ET
+Units: temp_units
+
 Name: basin_potsw
 Module: climate_hru
 Ndimen: 1
@@ -462,6 +669,33 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin area-weighted average precipitation
+Units: inches
+
+Name: basin_ppt_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average precipitation
+Units: inches
+
+Name: basin_ppt_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average precipitation
+Units: inches
+
+Name: basin_ppt_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average precipitation
 Units: inches
 
 Name: basin_pref_flow_infil
@@ -517,6 +751,24 @@ Size: 1
 Type: double
 Desc: Basin area-weighted average recharge to GWRs
 Units: inches
+
+Name: basin_runoff_ratio
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average discharge/precipitation ratio
+Units: decimal fraction
+
+Name: basin_runoff_ratio_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly area-weighted average discharge/precipitation ratio
+Units: decimal fraction
 
 Name: basin_segment_storage
 Module: routing
@@ -608,6 +860,33 @@ Type: double
 Desc: Basin area-weighted average snowmelt (not on including snow on glacier)
 Units: inches
 
+Name: basin_snowmelt_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average snowmelt
+Units: inches
+
+Name: basin_snowmelt_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average snowmelt
+Units: inches
+
+Name: basin_snowmelt_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average snowmelt
+Units: inches
+
 Name: basin_soil_lower_stor_frac
 Module: soilzone
 Ndimen: 1
@@ -680,6 +959,33 @@ Type: double
 Desc: Basin area-weighted average surface runoff to the stream network
 Units: cfs
 
+Name: basin_sroff_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average surface runoff
+Units: inches
+
+Name: basin_sroff_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average overland flow
+Units: inches
+
+Name: basin_sroff_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average overland runoff
+Units: inches
+
 Name: basin_sroffi
 Module: srunoff_smidx
 Ndimen: 1
@@ -716,6 +1022,33 @@ Type: double
 Desc: Interflow leaving the basin through the stream network
 Units: cfs
 
+Name: basin_ssflow_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average interflow
+Units: inches
+
+Name: basin_ssflow_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average interflow
+Units: inches
+
+Name: basin_ssflow_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average interflow
+Units: inches
+
 Name: basin_ssin
 Module: soilzone
 Ndimen: 1
@@ -743,6 +1076,15 @@ Type: double
 Desc: Basin area-weighted average lateral flow entering the stream network
 Units: inches
 
+Name: basin_stflow_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly basin area-weighted average simulated streamflow
+Units: inches
+
 Name: basin_stflow_out
 Module: muskingum
 Ndimen: 1
@@ -751,6 +1093,42 @@ Size: 1
 Type: double
 Desc: Basin area-weighted average streamflow leaving through the stream network
 Units: inches
+
+Name: basin_stflow_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average streamflow
+Units: inches
+
+Name: basin_stflow_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly basin area-weighted average streamflow
+Units: inches
+
+Name: basin_storage
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in all water storage reservoirs
+Units: inches
+
+Name: basin_storvol
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage volume in all water storage reservoirs
+Units: acre-inches
 
 Name: basin_surface_storage
 Module: prms_summary
@@ -1229,6 +1607,24 @@ Type: float
 Desc: Storage of free liquid water in the snowpack on each HRU
 Units: inches
 
+Name: gain_inches
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Canopy_gain in as depth in canopy
+Units: inches
+
+Name: gain_inches_hru
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Canopy_gain in canopy as depth over the HRU
+Units: inches
+
 Name: gw_in_soil
 Module: gwflow
 Ndimen: 1
@@ -1328,14 +1724,14 @@ Type: float
 Desc: Actual ET for each HRU
 Units: inches
 
-Name: hru_frac_perv
-Module: basin
+Name: hru_et_yr
+Module: basin_sum
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
-Desc: Fraction of HRU that is pervious
-Units: decimal fraction
+Type: double
+Desc: Yearly area-weighted average actual ET for each HRU
+Units: inches
 
 Name: hru_imperv
 Module: basin
@@ -1455,7 +1851,7 @@ Desc: HRU area-weighted average surface runoff from pervious areas for each HRU
 Units: inches
 
 Name: hru_storage
-Module: gwflow
+Module: basin
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
@@ -1505,7 +1901,7 @@ Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
 Type: float
-Desc: Infiltration to the capillary reservoirs for each HRU
+Desc: Infiltration to the capillary and preferential-flow reservoirs for each HRU
 Units: inches
 
 Name: int_alb
@@ -1570,6 +1966,15 @@ Size: 27
 Type: long
 Desc: Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
 Units: none
+
+Name: last_basin_stor
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in all water storage reservoirs from previous time step
+Units: inches
 
 Name: lso
 Module: snowcomp
@@ -1642,6 +2047,69 @@ Size: 27
 Type: long
 Desc: Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
 Units: none
+
+Name: obs_runoff_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly measured streamflow at basin outlet
+Units: cfs
+
+Name: obs_runoff_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation measured streamflow at basin outlet
+Units: cfs
+
+Name: obs_runoff_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly measured streamflow at basin outlet
+Units: cfs
+
+Name: obsq_inches
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Measured streamflow at specified outlet station
+Units: inches
+
+Name: obsq_inches_mo
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Monthly measured streamflow at specified outlet station
+Units: inches
+
+Name: obsq_inches_tot
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Total simulation basin area-weighted average measured streamflow at specified outlet station
+Units: inches
+
+Name: obsq_inches_yr
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Yearly measured streamflow at specified outlet station
+Units: inches
 
 Name: orad
 Module: climate_hru
@@ -1874,7 +2342,7 @@ Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
 Type: float
-Desc: Recharge to the associated GWR as sum of soil_to_gw and ssr_to_gw for each HRU
+Desc: Recharge to the associated GWR as sum of soil_to_gw, ssr_to_gw, and dprst_seep_hru for each HRU
 Units: inches
 
 Name: runoff
@@ -2219,6 +2687,15 @@ Type: float
 Desc: Transfer gains to the capillary reservoir within the soilzone for each HRU for each time step
 Units: cfs
 
+Name: soilzone_gain_hru
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Irrigation added to soilzone as depth over each HRU
+Units: inches
+
 Name: soilzone_gain_tot
 Module: water_use_read
 Ndimen: 1
@@ -2505,4 +2982,13 @@ Dimensions: nhru - 27
 Size: 27
 Type: float
 Desc: Unsatisfied potential evapotranspiration
+Units: inches
+
+Name: watbal_sum
+Module: basin_sum
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Water balance aggregate
 Units: inches

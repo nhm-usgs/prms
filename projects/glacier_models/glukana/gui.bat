@@ -1,6 +1,6 @@
 @ECHO OFF
 
-..\..\..\bin\prms .\control\gulkana.control -print -set print_debug -2
+..\..\..\bin\prms .\control\gulkana.control -print
 
 java -cp ..\..\..\dist\oui4.jar oui.mms.gui.Mms .\control\gulkana.control
 

@@ -761,8 +761,8 @@ Default   : 0.050000
 
 Name      : irr_type
 Module    : intcp
-Descr     : Method of application of water for each application
-Help      : Method of application of water for each application time-series (0=sprinkler (interception applies); 1=furrow/drip (no intercept); 2=ignore)
+Descr     : Application method of irrigation water
+Help      : Application method of irrigation water for each HRU (0 = sprinkler method with interception only; 1=ditch/drip method with no interception; 2=ignore; 3=sprinkler across whole HRU with interception and throughfall; 4=sprinkler method with amount of water applied on the basis of cover density, such as a living filter), for options 1, 2, and 3 irrigation water is specified as an HRU-area weighted average value
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -873,6 +873,21 @@ Max       : 1.000000
 Min       : 0.010000
 Default   : 1.000000
 
+Name      : outlet_sta
+Module    : basin_sum
+Descr     : Index of measurement station to use for basin outlet
+Help      : Index of measured streamflow station corresponding to the basin outlet
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 6
+Min       : 0
+Default   : 0
+Bounded   : nobs
+
 Name      : parent_gw
 Module    : setup_param
 Descr     : Lumen index in parent model for each GWR
@@ -975,7 +990,7 @@ Bounded   : nsegment
 Name      : poi_type
 Module    : setup_param
 Descr     : Type code for each POI gage
-Help      : Type code for each POI gage
+Help      : Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)
 Ndimen    : 1
 Dimensions: npoigages - 6
 Size      : 6
@@ -1055,6 +1070,48 @@ Width     : 0
 Max       : 0.500000
 Min       : 0.000000
 Default   : 0.000000
+
+Name      : pref_flow_infil_frac
+Module    : soilzone
+Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Ndimen    : 1
+Dimensions: nhru - 27
+Size      : 27
+Type      : float
+Units     : decimal fraction
+Width     : 4
+Max       : 1.000000
+Min       : -1.000000
+Default   : -1.000000
+
+Name      : print_freq
+Module    : basin_sum
+Descr     : Frequency for the output frequency
+Help      : Flag to select the output frequency; for combinations, add index numbers, e.g., daily plus yearly = 10; yearly plus total = 3 (0=none; 1=run totals; 2=yearly; 4=monthly; 8=daily; or additive combinations)
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 15
+Min       : 0
+Default   : 3
+
+Name      : print_type
+Module    : basin_sum
+Descr     : Type of output written to output file
+Help      : Flag to select the type of results written to the output file (0=measured and simulated flow only; 1=water balance table; 2=detailed output)
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : long
+Units     : none
+Width     : 0
+Max       : 2
+Min       : 0
+Default   : 1
 
 Name      : rad_trncf
 Module    : snowcomp
