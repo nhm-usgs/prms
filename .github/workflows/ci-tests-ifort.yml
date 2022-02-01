@@ -112,7 +112,7 @@ jobs:
           meson install -C builddir
 
       - name: Test for build success
-        working-directory: ./,github/common
+        working-directory: ./.github/common
         run: |
           python prms_build_check.py
 
