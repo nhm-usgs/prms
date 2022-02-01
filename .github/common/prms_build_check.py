@@ -8,3 +8,5 @@ fpth = os.path.join("..", "..", "bin", exe_name)
 
 assert os.path.isfile(fpth), f"{fpth} does not exist"
 assert os.access(fpth, os.X_OK), f"{fpth} is not executable"
+
+print(f"\nprms executable has been build.\n\tand is located at...'{fpth}'\n")
