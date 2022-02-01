@@ -2,3 +2,13 @@
 *.mod
 *.a
 prms/prms
+
+# meson temporary files
+builddir/
+
+# built executables
+bin/prms
+bin/prms.exe
+
+# pycharm
+.idea/
