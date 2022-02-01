@@ -65,26 +65,19 @@ jobs:
         action: build
         setup-options: builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
 
-    - name: Meson Build (Windows)
-      if: runner.os == 'Windows'
-      uses: BSFishy/meson-build@v1.0.3
-      with:
-        directory: builddir
-        action: build
-        setup-options: builddir -Ddebug=false --prefix=%CD% --libdir=bin
-
-    - name: Meson Install
+    - name: Meson Install (Linux or macOS)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       uses: BSFishy/meson-build@v1.0.3
       with:
         directory: builddir
         action: install
 
-#    - name: Build prms (Windows)
-#      if: runner.os == 'Windows'
-#      shell: cmd
-#      run: |
-#        meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
-#        meson install -C builddir
+    - name: Build and Install (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
+        meson install -C builddir
 
     - name: Test for build success
       working-directory: ./.github/common
