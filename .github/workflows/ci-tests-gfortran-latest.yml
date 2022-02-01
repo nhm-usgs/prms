@@ -55,7 +55,6 @@ jobs:
 
     - name: Build and Install (Linux or macOS)
       if: runner.os == 'Linux' || runner.os == 'macOS'
-      shell: cmd
       run: |
         meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
         meson install -C builddir
