@@ -237,7 +237,9 @@
         Gain_inches = 0.0
         Gain_inches_hru = 0.0
       ELSE
-        Irr_type = 0
+        IF (ALLOCATED(Irr_type)) then
+          Irr_type = 0
+        END IF
       ENDIF
       Net_apply = 0.0
 
