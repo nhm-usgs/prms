@@ -101,7 +101,7 @@ jobs:
 
       - name: Build prms (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: cmd
         run: |
           call ".github/intel-scripts/ifortvars_windows.bat"
           meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
