@@ -59,7 +59,7 @@ jobs:
       with:
         directory: builddir
         action: build
-        setup-options: builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
+        setup-options: -Ddebug=false --prefix=$(pwd) --libdir=bin
 
     - name: Meson Install (Linux or macOS)
       if: runner.os == 'Linux' || runner.os == 'macOS'
@@ -70,7 +70,7 @@ jobs:
 
     - name: Build and Install (Windows)
       if: runner.os == 'Windows'
-      shell: pwsh
+      shell: cmd
       run: |
         meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
         meson install -C builddir
