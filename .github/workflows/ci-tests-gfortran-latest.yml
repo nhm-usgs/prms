@@ -53,26 +53,38 @@ jobs:
       run: |
         .github/common/install-python-std.sh
 
-    - name: Set and print branch name
-      run: |
-        .github/common/git-branch-export.sh
-
     - name: Setup prms
       run: |
         meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
 
-    - name: Meson Build
+    - name: Meson Build (Linux or macOS)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       uses: BSFishy/meson-build@v1.0.3
       with:
         directory: builddir
         action: build
         setup-options: builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
 
+    - name: Meson Build (Windows)
+      if: runner.os == 'Windows'
+      uses: BSFishy/meson-build@v1.0.3
+      with:
+        directory: builddir
+        action: build
+        setup-options: builddir -Ddebug=false --prefix=%CD% --libdir=bin
+
     - name: Meson Install
       uses: BSFishy/meson-build@v1.0.3
       with:
         directory: builddir
         action: install
+
+#    - name: Build prms (Windows)
+#      if: runner.os == 'Windows'
+#      shell: cmd
+#      run: |
+#        meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
+#        meson install -C builddir
 
     - name: Test for build success
       working-directory: ./.github/common

@@ -92,20 +92,16 @@ jobs:
         run: |
           .github/common/install-python-std.sh
 
-      - name: Set and print branch name
-        run: |
-          .github/common/git-branch-export.sh
-
-      - name: Build MODFLOW 6 (Linux or macOS)
+      - name: Build prms (Linux or macOS)
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           source /opt/intel/oneapi/setvars.sh
           meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
 
-      - name: Build MODFLOW 6 (Windows)
+      - name: Build prms (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: pwsh
         run: |
           call ".github/intel-scripts/ifortvars_windows.bat"
           meson setup builddir -Ddebug=false --prefix=%CD% --libdir=bin
