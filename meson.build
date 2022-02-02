@@ -1,6 +1,7 @@
 project(
-  'PRMS 5',
+  'PRMS',
   'fortran',
+  version: '5.3.0',
   meson_version: '>= 0.59.0',
   default_options : [
     'b_vscrt=static_from_buildtype', # Link runtime libraries statically on Windows
