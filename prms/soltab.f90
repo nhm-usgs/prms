@@ -1,4 +1,4 @@
-﻿!***********************************************************************
+﻿!************************************************************************
 ! Compute potential solar radiation and sunlight hours for each HRU for
 ! each day of year; modification of soltab_prms
 !
@@ -6,9 +6,9 @@
 !   Swift, L.W., Jr., 1976, Algorithm for solar radiation on mountain
 !   slopes: Water Resources Research, v. 12, no. 1, p. 108-112.
 !
-!   Lee, R., 1963, Evaluation of solar beam irradiation as a climatic parameter
-!   of mountain watersheds, Colorado State University Hydrology Papers, 2,
-!   50 pp.
+!   Lee, R., 1963, Evaluation of solar beam irradiation as a climatic 
+!   parameter of mountain watersheds, Colorado State University 
+!   Hydrology Papers, 2, 50 pp.
 !***********************************************************************
       MODULE PRMS_SOLTAB
       USE PRMS_CONSTANTS, ONLY: DAYS_IN_YEAR, MAX_DAYS_PER_YEAR
