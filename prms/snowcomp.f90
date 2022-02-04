@@ -1,4 +1,4 @@
-﻿!***********************************************************************
+!***********************************************************************
 ! Initiates development of a snowpack and simulates snow accumulation
 ! and depletion processes using an energy-budget approach
 !
@@ -1026,14 +1026,18 @@
               ELSE
                 Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)+300.0)/200.0 )
               ENDIF
-            ELSE !IF ( Active_glacier==2 ) 
+            ELSE !IF ( Active_glacier==2 )
               Glacr_albedo(i) = Albedo_ice(i) !glacr_albedo doesn't change if glacierette but could get zeroed out
             ENDIF
           ENDIF
           IF ( isglacier==ACTIVE ) THEN
             IF (Nowyear >= Start_year+10 .AND. MOD(Nowyear-Start_year,5)==0 ) THEN
               Glacr_air_deltemp(i) = Glacr_air_5avtemp1(i) - Glacr_air_5avtemp(i) !need 5 years of data
-              Glacr_delsnow(i) = 10.0*(Glacr_5avsnow1(i) - Glacr_5avsnow(i))/Glacr_5avsnow1(i) !number of 10 percent (*100.0/10.0) changes
+              IF ( Glacr_5avsnow1(i)>0.0 ) THEN
+                Glacr_delsnow(i) = 10.0*(Glacr_5avsnow1(i) - Glacr_5avsnow(i))/Glacr_5avsnow1(i) !number of 10 percent (*100.0/10.0) changes
+              ELSE
+                Glacr_delsnow(i) = 0.0
+              ENDIF
             ENDIF
             !keep before restart
             IF ( MOD(Nowyear-Start_year,5)==0 ) THEN
@@ -1929,7 +1933,7 @@
         IF ( Active_glacier>OFF ) THEN
           IF ( pmlt>apk_ice ) THEN
             !fractionate density with snow/active layer melting vs extra ice underneath melting
-            Pk_den = Pk_den*SNGL(apk_ice/pmlt) + 0.917*SNGL((pmlt-apk_ice)/pmlt)
+            Pk_den = Pk_den*SNGL(apk_ice/pmlt) + 0.917*((pmlt-apk_ice)/pmlt)
             apk_ice = pmlt
             Pk_ice =  apmlt
             Pkwater_equiv = apmlt
