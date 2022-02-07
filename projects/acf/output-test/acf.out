@@ -382,7 +382,7 @@ runoff 58
  Data File time period: 1988/10/01 00:00:00 to 1990/09/30 00:00:00
 Simulation time period: 1988/10/01 00:00:00 to 1990/09/30 00:00:00
 ====================================================================
-Basin Definition                basin               2022-01-25
+Basin Definition                basin               2022-02-04
 Common States and Fluxes        climateflow         2022-01-20
 Potential Solar Radiation       soltab              2021-09-07
 Time Series Data                obs                 2022-01-12
@@ -393,12 +393,12 @@ Precipitation Distribution      climate_hru         2021-11-19
 Solar Radiation Distribution    climate_hru         2021-11-19
 Potential Evapotranspiration    climate_hru         2021-11-19
 Transpiration Distribution      transp_tindex       2021-09-07
-Canopy Interception             intcp               2022-01-25
-Snow Dynamics                   snowcomp            2022-01-21
-Surface Runoff                  srunoff_smidx       2022-01-25
+Canopy Interception             intcp               2022-02-03
+Snow Dynamics                   snowcomp            2022-02-04
+Surface Runoff                  srunoff_smidx       2022-02-04
 Soilzone Computations           soilzone            2022-01-25
 Groundwater                     gwflow              2021-12-16
-Streamflow Routing Init         routing             2021-11-19
+Streamflow Routing Init         routing             2022-02-04
 Streamflow Routing              muskingum           2021-11-19
 Output Summary                  basin_sum           2022-01-12
 Output Summary                  nhru_summary        2021-11-23
