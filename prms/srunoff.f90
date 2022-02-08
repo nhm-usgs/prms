@@ -1451,12 +1451,12 @@
 
       Dprst_in = 0.0D0
       IF ( Dprst_area_open_max>0.0 ) THEN
-        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! inch-acres
+        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! acre-inches
         Dprst_vol_open = Dprst_vol_open + Dprst_in
       ENDIF
 
       IF ( Dprst_area_clos_max>0.0 ) THEN
-        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! inch-acres
+        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! acre-inches
         Dprst_vol_clos = Dprst_vol_clos + tmp1
         Dprst_in = Dprst_in + tmp1
       ENDIF
