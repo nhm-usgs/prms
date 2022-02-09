@@ -26,7 +26,8 @@
       DOUBLE PRECISION, SAVE :: Basin_ag_soil_to_gw, Basin_ag_up_max
       DOUBLE PRECISION, SAVE :: Basin_ag_actet, Last_ag_soil_moist, Basin_ag_soil_rechr, Last_ag_soil_rechr
       REAL, SAVE, ALLOCATABLE :: It0_ag_soil_rechr(:), It0_ag_soil_moist(:)
-      REAL, SAVE, ALLOCATABLE :: It0_potet(:), It0_sroff(:), It0_strm_seg_in(:)
+      REAL, SAVE, ALLOCATABLE :: It0_potet(:), It0_sroff(:)
+	  DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_strm_seg_in(:)
       !REAL, SAVE, ALLOCATABLE :: Ag_slow_flow(:), Ag_ssres_in(:), Ag_water_maxin(:)
 !   Agriculture Declared Variables
       INTEGER, SAVE, ALLOCATABLE :: Ag_soil_saturated(:)
@@ -89,7 +90,7 @@
       USE PRMS_CONSTANTS, ONLY: OFF, ACTIVE, DOCUMENTATION, MONTHS_PER_YEAR
       use PRMS_MMFAPI, only: declvar_dble, declvar_int, declvar_real
       use PRMS_READ_PARAM_FILE, only: declparam, getdim
-      USE PRMS_MODULE, ONLY: Nhru, Nlake, AG_flag, iter_aet_flag !, Cascade_flag
+      USE PRMS_MODULE, ONLY: Nhru, Nlake, Nsegment, AG_flag, iter_aet_flag !, Cascade_flag
       USE PRMS_SOILZONE
       USE PRMS_SOILZONE_AG
       use prms_utils, only: error_stop, print_module, PRMS_open_module_file, read_error
@@ -104,7 +105,7 @@
       Iter_aet = OFF
       IF ( AG_flag==ACTIVE .OR. iter_aet_flag==ACTIVE ) Iter_aet = ACTIVE
       IF ( Iter_aet==ACTIVE ) THEN
-        ALLOCATE ( It0_sroff(Nhru), It0_strm_seg_in(Nhru) )
+        ALLOCATE ( It0_sroff(Nhru), It0_strm_seg_in(Nsegment) )
         IF ( Nlake>0 ) ALLOCATE ( It0_potet(Nhru) )
       ENDIF
 
