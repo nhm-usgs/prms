@@ -130,8 +130,8 @@ module Control_class
     type(sArray) :: solrad_module
     type(sArray) :: springfrost_dynamic
     type(sArray) :: srain_intcp_dynamic
-    type(sArray) :: sro2dprst_imperv_dyn
-    type(sArray) :: sro2dprst_perv_dyn
+    type(sArray) :: sro2dprst_imperv_dynamic
+    type(sArray) :: sro2dprst_perv_dynamic
     type(sArray) :: srunoff_module
     type(iArray) :: start_time
     type(sArray) :: statVar_element

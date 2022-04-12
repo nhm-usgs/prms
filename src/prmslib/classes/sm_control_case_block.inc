@@ -440,13 +440,13 @@ select case(buf)
     this%srain_intcp_dynamic%name = last
     call this%srain_intcp_dynamic%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
-  case('sro2dprst_imperv_dyn')
-    this%sro2dprst_imperv_dyn%name = last
-    call this%sro2dprst_imperv_dyn%read(iUnit)
+  case('sro2dprst_imperv_dynamic')
+    this%sro2dprst_imperv_dynamic%name = last
+    call this%sro2dprst_imperv_dynamic%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
-  case('sro2dprst_perv_dyn')
-    this%sro2dprst_perv_dyn%name = last
-    call this%sro2dprst_perv_dyn%read(iUnit)
+  case('sro2dprst_perv_dynamic')
+    this%sro2dprst_perv_dynamic%name = last
+    call this%sro2dprst_perv_dynamic%read(iUnit)
     line = line + 1 + ENTRY_OFFSET
   case('srunoff_module')
     this%srunoff_module%name = last
