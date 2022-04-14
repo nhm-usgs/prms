@@ -52,213 +52,215 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
           call this%print_module_info()
         endif
 
-        ! Parameters
-        allocate(this%hru_segment(nhru))
-        call param_hdl%get_variable('hru_segment', this%hru_segment)
-
-        allocate(this%obsin_segment(nsegment))
-        call param_hdl%get_variable('obsin_segment', this%obsin_segment)
-
-        if (param_hdl%var_exists('obsout_segment')) then
-          allocate(this%obsout_segment(nsegment))
-          call param_hdl%get_variable('obsout_segment', this%obsout_segment)
-        end if
-
-        allocate(this%segment_flow_init(nsegment))
-        call param_hdl%get_variable('segment_flow_init', this%segment_flow_init)
-
-        allocate(this%segment_type(nsegment))
-        call param_hdl%get_variable('segment_type', this%segment_type)
-
-        allocate(this%tosegment(nsegment))
-        call param_hdl%get_variable('tosegment', this%tosegment)
-
-        ! Other variables
+        ! hru_outflow is needed even for non-routed models (e.g. single-HRU)
         allocate(this%hru_outflow(nhru))
         this%hru_outflow = 0.0_dp
 
-        allocate(this%seg_lateral_inflow(nsegment))
-        this%seg_lateral_inflow = 0.0_dp
+        if (nsegment > 0) then
+          ! Parameters
+          allocate(this%hru_segment(nhru))
+          call param_hdl%get_variable('hru_segment', this%hru_segment)
 
-        allocate(this%seg_inflow(nsegment))
-        allocate(this%seg_outflow(nsegment))
+          allocate(this%obsin_segment(nsegment))
+          call param_hdl%get_variable('obsin_segment', this%obsin_segment)
 
-        if (any([0, 2] == init_vars_from_file)) then
-          this%seg_outflow = this%segment_flow_init
+          if (param_hdl%var_exists('obsout_segment')) then
+            allocate(this%obsout_segment(nsegment))
+            call param_hdl%get_variable('obsout_segment', this%obsout_segment)
+          end if
 
-          do cseg = 1, nsegment
-            if (this%tosegment(cseg) > 0) then
-              this%seg_inflow(this%tosegment(cseg)) = this%seg_outflow(cseg)
-            end if
-          end do
-        else
-          ! ~~~~~~~~~~~~~~~~~~~~~~~~
-          ! Initialize from restart
-          call ctl_data%read_restart_variable('seg_inflow', this%seg_inflow)
-          call ctl_data%read_restart_variable('seg_outflow', this%seg_outflow)
-        endif
+          allocate(this%segment_flow_init(nsegment))
+          call param_hdl%get_variable('segment_flow_init', this%segment_flow_init)
 
-        deallocate(this%segment_flow_init)
+          allocate(this%segment_type(nsegment))
+          call param_hdl%get_variable('segment_type', this%segment_type)
 
-        if (cascade_flag == 0) then
-          allocate(this%seg_gwflow(nsegment))
-          this%seg_gwflow = 0.0_dp
-          allocate(this%seg_sroff(nsegment))
-          this%seg_sroff = 0.0_dp
-          allocate(this%seg_ssflow(nsegment))
-          this%seg_ssflow = 0.0_dp
-          allocate(this%seginc_gwflow(nsegment))
-          this%seginc_gwflow = 0.0_dp
-          allocate(this%seginc_potet(nsegment))
-          this%seginc_potet = 0.0_dp
-          allocate(this%seginc_sroff(nsegment))
-          this%seginc_sroff = 0.0_dp
-          allocate(this%seginc_ssflow(nsegment))
-          this%seginc_ssflow = 0.0_dp
-          allocate(this%seginc_swrad(nsegment))
-          this%seginc_swrad = 0.0_dp
-        endif
+          allocate(this%tosegment(nsegment))
+          call param_hdl%get_variable('tosegment', this%tosegment)
 
-        allocate(this%segment_delta_flow(nsegment))
-        allocate(this%segment_hruarea(nsegment))
-        allocate(this%segment_order(nsegment))
-        allocate(this%segment_up(nsegment))
+          ! Other variables
+          allocate(this%seg_lateral_inflow(nsegment))
+          this%seg_lateral_inflow = 0.0_dp
 
-        ! Streamflow
-        ! if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
-        !     ctl_data%strmflow_module%values(1)%s == 'muskingum_lake' .or. &
-        !     ctl_data%strmflow_module%values(1)%s == 'strmflow_in_out') then
-        !   if (nsegment < 1) then
-        !     write(output_unit, *) 'ERROR: streamflow and cascade routing require nsegment > 0, specified as:', nsegment
-        !     stop
-        !   endif
+          allocate(this%seg_inflow(nsegment))
+          allocate(this%seg_outflow(nsegment))
 
-          allocate(this%seg_upstream_inflow(nsegment))
-          this%seg_upstream_inflow = 0.0_dp
-        ! endif
+          if (any([0, 2] == init_vars_from_file)) then
+            this%seg_outflow = this%segment_flow_init
 
-        ! Now initialize everything
+            do cseg = 1, nsegment
+              if (this%tosegment(cseg) > 0) then
+                this%seg_inflow(this%tosegment(cseg)) = this%seg_outflow(cseg)
+              end if
+            end do
+          else
+            ! ~~~~~~~~~~~~~~~~~~~~~~~~
+            ! Initialize from restart
+            call ctl_data%read_restart_variable('seg_inflow', this%seg_inflow)
+            call ctl_data%read_restart_variable('seg_outflow', this%seg_outflow)
+          endif
 
-        ! TODO: Uncomment once water_use_flag is added
-        ! this%use_transfer_segment = 0
-        ! if (water_use_flag == 1 .and. segment_transferON_OFF == 1) then
-        !   this%use_transfer_segment = 1
-        ! endif
+          deallocate(this%segment_flow_init)
 
-        if (init_vars_from_file == 0) then
-          this%segment_delta_flow = 0.0_dp
-        else
-          ! ~~~~~~~~~~~~~~~~~~~~~~~~
-          ! Initialize from restart
-          call ctl_data%read_restart_variable('segment_delta_flow', this%segment_delta_flow)
-        endif
+          if (cascade_flag == 0) then
+            allocate(this%seg_gwflow(nsegment))
+            this%seg_gwflow = 0.0_dp
+            allocate(this%seg_sroff(nsegment))
+            this%seg_sroff = 0.0_dp
+            allocate(this%seg_ssflow(nsegment))
+            this%seg_ssflow = 0.0_dp
+            allocate(this%seginc_gwflow(nsegment))
+            this%seginc_gwflow = 0.0_dp
+            allocate(this%seginc_potet(nsegment))
+            this%seginc_potet = 0.0_dp
+            allocate(this%seginc_sroff(nsegment))
+            this%seginc_sroff = 0.0_dp
+            allocate(this%seginc_ssflow(nsegment))
+            this%seginc_ssflow = 0.0_dp
+            allocate(this%seginc_swrad(nsegment))
+            this%seginc_swrad = 0.0_dp
+          endif
 
-        this%flow_out = 0.0_dp
-        this%flow_headwater = 0.0_dp
-        this%flow_in_great_lakes = 0.0_dp
-        this%flow_in_nation = 0.0_dp
-        this%flow_in_region = 0.0_dp
-        this%flow_out_NHM = 0.0_dp
-        this%flow_out_region = 0.0_dp
-        this%flow_replacement = 0.0_dp
-        this%flow_terminus = 0.0_dp
-        this%flow_to_great_lakes = 0.0_dp
-        this%flow_to_lakes = 0.0_dp
-        this%flow_to_ocean = 0.0_dp
-        this%hru_outflow = 0.0_dp
+          allocate(this%segment_delta_flow(nsegment))
+          allocate(this%segment_hruarea(nsegment))
+          allocate(this%segment_order(nsegment))
+          allocate(this%segment_up(nsegment))
 
-        ! NOTE: This belongs in muskingum_lake
-        ! this%cfs2acft = Timestep_seconds / FT2_PER_ACRE
+          ! Streamflow
+          ! if (ctl_data%strmflow_module%values(1)%s == 'muskingum' .or. &
+          !     ctl_data%strmflow_module%values(1)%s == 'muskingum_lake' .or. &
+          !     ctl_data%strmflow_module%values(1)%s == 'strmflow_in_out') then
+          !   if (nsegment < 1) then
+          !     write(output_unit, *) 'ERROR: streamflow and cascade routing require nsegment > 0, specified as:', nsegment
+          !     stop
+          !   endif
 
-        ! WARNING: parameter data is read-only
-        ! do i=1, nsegment
-        !   segment_type(i) = mod(segment_type(i), 100)
-        ! enddo
+            allocate(this%seg_upstream_inflow(nsegment))
+            this%seg_upstream_inflow = 0.0_dp
+          ! endif
 
-        ! If cascades are active then ignore hru_segment
-        if (cascade_flag == 0) then
-          this%segment_hruarea = 0.0_dp
+          ! Now initialize everything
 
-          do j=1, active_hrus
-            i = hru_route_order(j)
-            iseg = this%hru_segment(i)
+          ! TODO: Uncomment once water_use_flag is added
+          ! this%use_transfer_segment = 0
+          ! if (water_use_flag == 1 .and. segment_transferON_OFF == 1) then
+          !   this%use_transfer_segment = 1
+          ! endif
 
-            if (iseg > 0) then
-              this%segment_hruarea(iseg) = this%segment_hruarea(iseg) + hru_area_dble(i)
+          if (init_vars_from_file == 0) then
+            this%segment_delta_flow = 0.0_dp
+          else
+            ! ~~~~~~~~~~~~~~~~~~~~~~~~
+            ! Initialize from restart
+            call ctl_data%read_restart_variable('segment_delta_flow', this%segment_delta_flow)
+          endif
+
+          this%flow_out = 0.0_dp
+          this%flow_headwater = 0.0_dp
+          this%flow_in_great_lakes = 0.0_dp
+          this%flow_in_nation = 0.0_dp
+          this%flow_in_region = 0.0_dp
+          this%flow_out_NHM = 0.0_dp
+          this%flow_out_region = 0.0_dp
+          this%flow_replacement = 0.0_dp
+          this%flow_terminus = 0.0_dp
+          this%flow_to_great_lakes = 0.0_dp
+          this%flow_to_lakes = 0.0_dp
+          this%flow_to_ocean = 0.0_dp
+
+          ! NOTE: This belongs in muskingum_lake
+          ! this%cfs2acft = Timestep_seconds / FT2_PER_ACRE
+
+          ! WARNING: parameter data is read-only
+          ! do i=1, nsegment
+          !   segment_type(i) = mod(segment_type(i), 100)
+          ! enddo
+
+          ! If cascades are active then ignore hru_segment
+          if (cascade_flag == 0) then
+            this%segment_hruarea = 0.0_dp
+
+            do j=1, active_hrus
+              i = hru_route_order(j)
+              iseg = this%hru_segment(i)
+
+              if (iseg > 0) then
+                this%segment_hruarea(iseg) = this%segment_hruarea(iseg) + hru_area_dble(i)
+              endif
+            enddo
+
+            this%segment_area = sum(this%segment_hruarea)
+            this%noarea_flag = any(this%segment_hruarea < DNEARZERO)
+          endif
+
+          print *, 'segment_hruarea'
+          print *, this%segment_hruarea
+
+          isegerr = 0
+          this%segment_up = 0
+
+          ! Begin the loops for ordering segments
+          do j=1, nsegment
+            toseg = this%tosegment(j)
+
+            if (toseg == j) then
+              print *, 'ERROR, tosegment value (', toseg, ') equals itself for segment:', j
+              isegerr = 1
+            elseif (toseg > 0) then
+              ! Load segment_up with last stream segment that flows into a segment
+              this%segment_up(toseg) = j
             endif
           enddo
 
-          this%segment_area = sum(this%segment_hruarea)
-          this%noarea_flag = any(this%segment_hruarea < DNEARZERO)
-        endif
-
-        print *, 'segment_hruarea'
-        print *, this%segment_hruarea
-
-        isegerr = 0
-        this%segment_up = 0
-
-        ! Begin the loops for ordering segments
-        do j=1, nsegment
-          toseg = this%tosegment(j)
-
-          if (toseg == j) then
-            print *, 'ERROR, tosegment value (', toseg, ') equals itself for segment:', j
-            isegerr = 1
-          elseif (toseg > 0) then
-            ! Load segment_up with last stream segment that flows into a segment
-            this%segment_up(toseg) = j
+          if (isegerr == 1) then
+            ! TODO: How to handle error condition?
+            ! Inputerror_flag = 1
+            return
           endif
-        enddo
 
-        if (isegerr == 1) then
-          ! TODO: How to handle error condition?
-          ! Inputerror_flag = 1
-          return
-        endif
+          ! Begin the loops for ordering segments
+          allocate(x_off(nsegment))
+          x_off = 0
+          this%segment_order = 0
+          lval = 0
 
-        ! Begin the loops for ordering segments
-        allocate(x_off(nsegment))
-        x_off = 0
-        this%segment_order = 0
-        lval = 0
+          do while (lval < nsegment)
+            do i=1, nsegment
+              ! If segment "i" has not been crossed out consider it, else continue
+              if (x_off(i) /= 1) then
+                ! Test to see if segment "i" is the to-segment from other segments
+                test = 1
 
-        do while (lval < nsegment)
-          do i=1, nsegment
-            ! If segment "i" has not been crossed out consider it, else continue
-            if (x_off(i) /= 1) then
-              ! Test to see if segment "i" is the to-segment from other segments
-              test = 1
-
-              do j=1, nsegment
-                if (this%tosegment(j) == i) then
-                  ! If segment "i" is a to-segment, test to see if the originating
-                  ! segment has been crossed off the list.  If all have been, then
-                  ! put the segment in as an ordered segment.
-                  if (x_off(j) == 0) then
-                    test = 0
-                    exit
+                do j=1, nsegment
+                  if (this%tosegment(j) == i) then
+                    ! If segment "i" is a to-segment, test to see if the originating
+                    ! segment has been crossed off the list.  If all have been, then
+                    ! put the segment in as an ordered segment.
+                    if (x_off(j) == 0) then
+                      test = 0
+                      exit
+                    end if
                   end if
+                end do
+
+                if (test == 1) then
+                  lval = lval + 1
+                  this%segment_order(lval) = i
+                  x_off(i) = 1
                 end if
-              end do
-
-              if (test == 1) then
-                lval = lval + 1
-                this%segment_order(lval) = i
-                x_off(i) = 1
               end if
-            end if
+            end do
           end do
-        end do
 
-        deallocate(x_off)
+          deallocate(x_off)
 
-        if (save_vars_to_file == 1) then
-          ! Create restart variables
-          ! call ctl_data%add_variable('flow_out', this%flow_out, 'one', 'cfs')
-          call ctl_data%add_variable('seg_inflow', this%seg_inflow, 'nsegment', 'cfs')
-          call ctl_data%add_variable('seg_outflow', this%seg_outflow, 'nsegment', 'cfs')
-          call ctl_data%add_variable('segment_delta_flow', this%segment_delta_flow, 'nsegment', 'cfs')
+          if (save_vars_to_file == 1) then
+            ! Create restart variables
+            ! call ctl_data%add_variable('flow_out', this%flow_out, 'one', 'cfs')
+            call ctl_data%add_variable('seg_inflow', this%seg_inflow, 'nsegment', 'cfs')
+            call ctl_data%add_variable('seg_outflow', this%seg_outflow, 'nsegment', 'cfs')
+            call ctl_data%add_variable('segment_delta_flow', this%segment_delta_flow, 'nsegment', 'cfs')
+          end if
         end if
 
         ! Connect summary variables that need to be output
@@ -267,67 +269,75 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             select case(outVar_names%values(jj)%s)
               case('hru_outflow')
                 call model_summary%set_summary_var(jj, this%hru_outflow)
-              case('seg_gwflow')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seg_gwflow)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seg_inflow')
-                call model_summary%set_summary_var(jj, this%seg_inflow)
-              case('seg_lateral_inflow')
-                call model_summary%set_summary_var(jj, this%seg_lateral_inflow)
-              case('seg_outflow')
-                call model_summary%set_summary_var(jj, this%seg_outflow)
-              case('seg_sroff')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seg_sroff)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seg_ssflow')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seg_ssflow)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seg_upstream_inflow')
-                call model_summary%set_summary_var(jj, this%seg_upstream_inflow)
-              case('seginc_gwflow')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seginc_gwflow)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seginc_potet')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seginc_potet)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seginc_sroff')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seginc_sroff)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seginc_ssflow')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seginc_ssflow)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('seginc_swrad')
-                if (cascade_flag == 0) then
-                  call model_summary%set_summary_var(jj, this%seginc_swrad)
-                else
-                  write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
-                end if
-              case('segment_delta_flow')
-                call model_summary%set_summary_var(jj, this%segment_delta_flow)
               case default
                 ! pass
             end select
+
+            ! Clunky way to avoid segment-related output variables for non-routed models
+            if (nsegment > 0) then
+              select case(outVar_names%values(jj)%s)
+                case('seg_gwflow')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seg_gwflow)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seg_inflow')
+                  call model_summary%set_summary_var(jj, this%seg_inflow)
+                case('seg_lateral_inflow')
+                  call model_summary%set_summary_var(jj, this%seg_lateral_inflow)
+                case('seg_outflow')
+                  call model_summary%set_summary_var(jj, this%seg_outflow)
+                case('seg_sroff')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seg_sroff)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seg_ssflow')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seg_ssflow)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seg_upstream_inflow')
+                  call model_summary%set_summary_var(jj, this%seg_upstream_inflow)
+                case('seginc_gwflow')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seginc_gwflow)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seginc_potet')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seginc_potet)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seginc_sroff')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seginc_sroff)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seginc_ssflow')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seginc_ssflow)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('seginc_swrad')
+                  if (cascade_flag == 0) then
+                    call model_summary%set_summary_var(jj, this%seginc_swrad)
+                  else
+                    write(output_unit, *) MODNAME, "%constructor() WARNING:", outVar_names%values(jj)%s, " is not available when cascade module is active"
+                  end if
+                case('segment_delta_flow')
+                  call model_summary%set_summary_var(jj, this%segment_delta_flow)
+                case default
+                  ! pass
+              end select
+            end if
           enddo
         endif
       end associate
@@ -383,83 +393,92 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         ! NOTE: This belongs in muskingum_lake
         ! this%cfs2acft = Timestep_seconds / FT2_PER_ACRE
 
-        ! seg variables are not computed if cascades are active as hru_segment is ignored
-        if (cascade_flag == 0) then
-          ! Add hru_ppt, hru_actet
-          this%seginc_gwflow = 0.0_dp
-          this%seginc_ssflow = 0.0_dp
-          this%seginc_sroff = 0.0_dp
-          this%seginc_swrad = 0.0_dp
-          this%seginc_potet = 0.0_dp
-          this%seg_gwflow = 0.0_dp
-          this%seg_sroff = 0.0_dp
-          this%seg_ssflow = 0.0_dp
-          this%seg_lateral_inflow = 0.0_dp
-        else
-          this%seg_lateral_inflow = strm_seg_in
-        endif
-
+        ! hru_outflow is always computed whether streamflow is routed or not
         do jj = 1, active_hrus
           j = hru_route_order(jj)
           tocfs = dble(hru_area(j)) * cfs_conv
           this%hru_outflow(j) = dble(sroff(j) + ssres_flow(j) + gwres_flow(j)) * tocfs
+        end do
 
+        if (nsegment > 0) then
+          ! seg variables are not computed if cascades are active as hru_segment is ignored
           if (cascade_flag == 0) then
-            i = this%hru_segment(j)
-
-            if (i > 0) then
-              this%seg_gwflow(i) = this%seg_gwflow(i) + gwres_flow(j)
-              this%seg_sroff(i) = this%seg_sroff(i) + sroff(j)
-              this%seg_ssflow(i) = this%seg_ssflow(i) + ssres_flow(j)
-              this%seg_lateral_inflow(i) = this%seg_lateral_inflow(i) + this%hru_outflow(j)
-              this%seginc_sroff(i) = this%seginc_sroff(i) + dble(sroff(j)) * tocfs
-              this%seginc_ssflow(i) = this%seginc_ssflow(i) + dble(ssres_flow(j)) * tocfs
-              this%seginc_gwflow(i) = this%seginc_gwflow(i) + dble(gwres_flow(j)) * tocfs
-              this%seginc_swrad(i) = this%seginc_swrad(i) + dble(swrad(j) * hru_area(j))
-              this%seginc_potet(i) = this%seginc_potet(i) + dble(potet(j) * hru_area(j))
-            endif
+            ! Add hru_ppt, hru_actet
+            this%seginc_gwflow = 0.0_dp
+            this%seginc_ssflow = 0.0_dp
+            this%seginc_sroff = 0.0_dp
+            this%seginc_swrad = 0.0_dp
+            this%seginc_potet = 0.0_dp
+            this%seg_gwflow = 0.0_dp
+            this%seg_sroff = 0.0_dp
+            this%seg_ssflow = 0.0_dp
+            this%seg_lateral_inflow = 0.0_dp
+          else
+            this%seg_lateral_inflow = strm_seg_in
           endif
-        enddo
 
-        ! TODO: Uncomment once water_use module is converted
-        ! if (this%use_transfer_segment == 1) then
-        !   do i=1, nsegment
-        !     this%seg_lateral_inflow(i) = this%seg_lateral_inflow(i) + dble(segment_gain(i) - segment_transfer(i))
-        !   enddo
-        ! endif
+          do jj = 1, active_hrus
+            j = hru_route_order(jj)
+            tocfs = dble(hru_area(j)) * cfs_conv
+            ! this%hru_outflow(j) = dble(sroff(j) + ssres_flow(j) + gwres_flow(j)) * tocfs
 
-        if (cascade_flag == 1) return
+            if (cascade_flag == 0) then
+              i = this%hru_segment(j)
 
-        ! Divide solar radiation and PET by sum of HRU area to get average
-        if (this%noarea_flag) then
-          do i=1, nsegment
-            ! print *, i, ': ', this%seginc_swrad(i), this%seginc_potet(i), this%segment_hruarea(i)
-            if (this%segment_hruarea(i) > DNEARZERO) then
-              this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
-              this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
-            end if
-          enddo
-        else
-          ! If there are no HRUs associated with a segment, then figure out some
-          ! other way to get the solar radiation, the following is not great.
-          do i=1, nsegment
-            if (this%segment_hruarea(i) > DNEARZERO) then
-              this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
-              this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
-            elseif (this%tosegment(i) > 0) then
-              this%seginc_swrad(i) = this%seginc_swrad(this%tosegment(i))
-              this%seginc_potet(i) = this%seginc_potet(this%tosegment(i))
-            elseif (i > 1) then
-              ! Set to next segment id
-              this%seginc_swrad(i) = this%seginc_swrad(i-1)
-              this%seginc_potet(i) = this%seginc_potet(i-1)
-            else
-              ! Assume at least 2 segments
-              this%seginc_swrad(i) = this%seginc_swrad(i+1)
-              this%seginc_potet(i) = this%seginc_potet(i+1)
+              if (i > 0) then
+                this%seg_gwflow(i) = this%seg_gwflow(i) + gwres_flow(j)
+                this%seg_sroff(i) = this%seg_sroff(i) + sroff(j)
+                this%seg_ssflow(i) = this%seg_ssflow(i) + ssres_flow(j)
+                this%seg_lateral_inflow(i) = this%seg_lateral_inflow(i) + this%hru_outflow(j)
+                this%seginc_sroff(i) = this%seginc_sroff(i) + dble(sroff(j)) * tocfs
+                this%seginc_ssflow(i) = this%seginc_ssflow(i) + dble(ssres_flow(j)) * tocfs
+                this%seginc_gwflow(i) = this%seginc_gwflow(i) + dble(gwres_flow(j)) * tocfs
+                this%seginc_swrad(i) = this%seginc_swrad(i) + dble(swrad(j) * hru_area(j))
+                this%seginc_potet(i) = this%seginc_potet(i) + dble(potet(j) * hru_area(j))
+              endif
             endif
           enddo
-        endif
+
+          ! TODO: Uncomment once water_use module is converted
+          ! if (this%use_transfer_segment == 1) then
+          !   do i=1, nsegment
+          !     this%seg_lateral_inflow(i) = this%seg_lateral_inflow(i) + dble(segment_gain(i) - segment_transfer(i))
+          !   enddo
+          ! endif
+
+          if (cascade_flag == 1) return
+
+          ! Divide solar radiation and PET by sum of HRU area to get average
+          if (this%noarea_flag) then
+            do i=1, nsegment
+              ! print *, i, ': ', this%seginc_swrad(i), this%seginc_potet(i), this%segment_hruarea(i)
+              if (this%segment_hruarea(i) > DNEARZERO) then
+                this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
+                this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+              end if
+            enddo
+          else
+            ! If there are no HRUs associated with a segment, then figure out some
+            ! other way to get the solar radiation, the following is not great.
+            do i=1, nsegment
+              if (this%segment_hruarea(i) > DNEARZERO) then
+                this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
+                this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+              elseif (this%tosegment(i) > 0) then
+                this%seginc_swrad(i) = this%seginc_swrad(this%tosegment(i))
+                this%seginc_potet(i) = this%seginc_potet(this%tosegment(i))
+              elseif (i > 1) then
+                ! Set to next segment id
+                this%seginc_swrad(i) = this%seginc_swrad(i-1)
+                this%seginc_potet(i) = this%seginc_potet(i-1)
+              else
+                ! Assume at least 2 segments
+                this%seginc_swrad(i) = this%seginc_swrad(i+1)
+                this%seginc_potet(i) = this%seginc_potet(i+1)
+              endif
+            enddo
+          endif
+        end if
       end associate
     end subroutine
 
@@ -472,9 +491,17 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
         if (save_vars_to_file == 1) then
           ! Write out this module's restart variables
           ! call ctl_data%write_restart_variable('flow_out', this%flow_out)
-          call ctl_data%write_restart_variable('seg_inflow', this%seg_inflow)
-          call ctl_data%write_restart_variable('seg_outflow', this%seg_outflow)
-          call ctl_data%write_restart_variable('segment_delta_flow', this%segment_delta_flow)
+          if (associated(this%seg_inflow)) then
+            call ctl_data%write_restart_variable('seg_inflow', this%seg_inflow)
+          end if
+
+          if (associated(this%seg_outflow)) then
+            call ctl_data%write_restart_variable('seg_outflow', this%seg_outflow)
+          end if
+
+          if (associated(this%segment_delta_flow)) then
+            call ctl_data%write_restart_variable('segment_delta_flow', this%segment_delta_flow)
+          end if
         end if
       end associate
     end subroutine

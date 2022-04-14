@@ -78,8 +78,10 @@ contains
       allocate(this%nhm_id(this%nhru))
       call param_hdl%get_variable('nhm_id', this%nhm_id)
 
-      allocate(this%nhm_seg(this%nsegment))
-      call param_hdl%get_variable('nhm_seg', this%nhm_seg)
+      if (this%nsegment > 0) then
+        allocate(this%nhm_seg(this%nsegment))
+        call param_hdl%get_variable('nhm_seg', this%nhm_seg)
+      end if
 
       ! TODO: parameters that aren't coded yet
       ! hru_elev

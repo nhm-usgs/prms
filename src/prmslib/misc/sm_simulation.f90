@@ -119,9 +119,14 @@ submodule (Simulation_class) sm_simulation
           allocate(Muskingum::this%model_streamflow)
         case('strmflow_in_out')
           allocate(Strmflow_in_out::this%model_streamflow)
+        case default
+          allocate(Streamflow::this%model_streamflow)
       end select
-      ! TODO: Should there be a default case?
-      call this%model_streamflow%init(ctl_data, this%model_basin, this%model_time, this%model_summary)
+
+      if (allocated(this%model_streamflow)) then
+        ! TODO: Should there be a default case?
+        call this%model_streamflow%init(ctl_data, this%model_basin, this%model_time, this%model_summary)
+      end if
       ! this%model_muskingum = Muskingum(ctl_data, this%model_basin, this%model_time, this%model_summary)
 
       if (ctl_data%print_debug%value == 1) then
@@ -190,9 +195,9 @@ submodule (Simulation_class) sm_simulation
 
         ! print *, '10'
         call this%model_streamflow%run(ctl_data, this%model_basin, &
-                                       this%potet, this%groundwater, this%soil, &
-                                       this%runoff, this%model_time, this%solrad, &
-                                       this%model_obs)
+                                      this%potet, this%groundwater, this%soil, &
+                                      this%runoff, this%model_time, this%solrad, &
+                                      this%model_obs)
 
         if (ctl_data%outVarON_OFF%value == 1) then
           call this%model_summary%run(ctl_data, this%model_time, this%model_basin)
@@ -230,7 +235,9 @@ submodule (Simulation_class) sm_simulation
       call this%soil%cleanup(ctl_data)
       call this%groundwater%cleanup(ctl_data)
 
-      call this%model_streamflow%cleanup(ctl_data)
+      if (allocated(this%model_streamflow)) then
+        call this%model_streamflow%cleanup(ctl_data)
+      end if
 
       call this%model_waterbal%cleanup()
 
