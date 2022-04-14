@@ -216,14 +216,12 @@ module UTILS_CBH
       real(r32), allocatable :: time_1D(:)
         !! Array of time values
 
-      character(len=4), dimension(2) :: dimnames
+      character(len=5), dimension(2) :: dimnames = (/ 'hruid', 'time ' /)
         !! Dimensions to read from the netcdf file
       character(len=:), allocatable :: units_txt
         !! Temporary for the units attribute
 
       ! ------------------------------------------------------------------------
-      dimnames = (/ 'hru ', 'time' /)
-
       ! Open netcdf file as read only
       call check(nf90_open(filename, NF90_NOWRITE, iunit))
 
@@ -232,7 +230,7 @@ module UTILS_CBH
         call check(nf90_inq_dimid(iunit, dimnames(ii), dimid))
 
         select case(dimnames(ii))
-          case('hru')
+          case('hruid')
             call check(nf90_inquire_dimension(iunit, dimid, len=nhru))
           case('time')
             call check(nf90_inquire_dimension(iunit, dimid, len=ntime))
