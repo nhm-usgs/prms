@@ -117,6 +117,8 @@ submodule (Simulation_class) sm_simulation
       select case(ctl_data%strmflow_module%values(1)%s)
         case('muskingum')
           allocate(Muskingum::this%model_streamflow)
+        case('muskingum_mann')
+          allocate(Muskingum_mann::this%model_streamflow)
         case('strmflow_in_out')
           allocate(Strmflow_in_out::this%model_streamflow)
         case default

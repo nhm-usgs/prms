@@ -10,6 +10,7 @@ module Simulation_class
   use PRMS_HUMIDITY_STA, only: Humidity_sta
   use PRMS_INTCP, only: Interception
   use PRMS_MUSKINGUM, only: Muskingum
+  use PRMS_MUSKINGUM_MANN, only: Muskingum_mann
   use PRMS_OBS, only: Obs
   use PRMS_POTET, only: Potential_ET
   use PRMS_POTET_JH, only: Potet_jh
