@@ -4,7 +4,7 @@ use prms_constants, only: dp
 
 contains
   !**************************************************************************
-  ! Climateflow constructor
+  ! Summary constructor
   module function constructor_Summary(ctl_data, model_basin, model_time) result(this)
     use prms_constants, only: MAXFILE_LENGTH
     use UTILS_PRMS, only: print_module_info
@@ -138,12 +138,17 @@ contains
                               start=[days_since_start+1])
       do jj=1, noutvars
         ! Write daily values to netcdf file
-        if (this%outvar_size(jj) == 1) then
+        if (nhru == 1) then
+          ! NOTE: hack for single-HRU runs
+          rcount = (/ this%outvar_size(jj), 1 /)
           call this%write_netcdf(this%file_hdl, this%outvar_id(jj), &
-                                  this%var_daily(jj), &
-                                  start=[days_since_start+1])
+                                 this%var_daily(jj), start=start, ocount=rcount)
+        else if (this%outvar_size(jj) == 1) then
+          call this%write_netcdf(this%file_hdl, this%outvar_id(jj), &
+                                 this%var_daily(jj), start=[days_since_start+1])
         else
           rcount = (/ this%outvar_size(jj), 1 /)
+
           ! write(output_unit, *) 'start: ', start, '  ocount: ', rcount
           ! if (jj == 10) then
           !   write(output_unit, *) 'before write_netcdf call'
@@ -151,7 +156,7 @@ contains
           ! end if
 
           call this%write_netcdf(this%file_hdl, this%outvar_id(jj), &
-                                  this%var_daily(jj), start=start, ocount=rcount)
+                                 this%var_daily(jj), start=start, ocount=rcount)
         end if
       end do
     end associate
@@ -262,6 +267,7 @@ contains
       !       results in faster writing but larger file sizes (file sizes are
       !       still smaller than ASCII files).
       !       NF90_64BIT_OFFSET
+
       ! write(*, *) 'Create output netcdf'
       call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl))
       ! call this%err_check(nf90_create(filename, NF90_NETCDF4, this%file_hdl, &
@@ -275,11 +281,13 @@ contains
       ! call this%err_check(nf90_def_dim(this%file_hdl, 'time', NF90_UNLIMITED, time_dimid))
       call this%err_check(nf90_def_dim(this%file_hdl, 'time', days_in_model, time_dimid))
 
-      ! TODO: Also add dimensions for nsegment and possibly nsub
       ! write(*, *) '  add nhru dimension'
       call this%err_check(nf90_def_dim(this%file_hdl, "nhru", nhru, nhru_dimid))
-      ! write(*, *) '  add nsegment dimension'
-      call this%err_check(nf90_def_dim(this%file_hdl, "nsegment", nsegment, nsegment_dimid))
+
+      if (nsegment > 0) then
+        ! write(*, *) '  add nsegment dimension'
+        call this%err_check(nf90_def_dim(this%file_hdl, "nsegment", nsegment, nsegment_dimid))
+      end if
 
       if (nsub > 0) then
         ! write(*, *) '  add nsub dimension'
@@ -309,14 +317,16 @@ contains
       call this%err_check(nf90_put_att(this%file_hdl, nhm_id_varid, &
                                        'units', 'none'))
 
-      ! Always include nhm_seg as a variable
-      ! write(*, *) '  add nhm_seg dimension'
-      call this%err_check(nf90_def_var(this%file_hdl, &
-                                       'nhm_seg', NF90_INT, nsegment_dimid, nhm_seg_varid))
-      call this%err_check(nf90_put_att(this%file_hdl, nhm_seg_varid, &
-                                       'long_name', 'NHM segment id'))
-      call this%err_check(nf90_put_att(this%file_hdl, nhm_seg_varid, &
-                                       'units', 'none'))
+      if (nsegment > 0) then
+        ! Include nhm_seg as a variable if nsegment > 0
+        ! write(*, *) '  add nhm_seg dimension'
+        call this%err_check(nf90_def_var(this%file_hdl, &
+                                        'nhm_seg', NF90_INT, nsegment_dimid, nhm_seg_varid))
+        call this%err_check(nf90_put_att(this%file_hdl, nhm_seg_varid, &
+                                        'long_name', 'NHM segment id'))
+        call this%err_check(nf90_put_att(this%file_hdl, nhm_seg_varid, &
+                                        'units', 'none'))
+      end if
 
       ! TODO: Add nsub-related variable
 
@@ -426,8 +436,10 @@ contains
       ! Write the nhm_id values to the file
       call this%err_check(nf90_put_var(this%file_hdl, nhm_id_varid, nhm_id))
 
-      ! Write the nhm_seg values to the file
-      call this%err_check(nf90_put_var(this%file_hdl, nhm_seg_varid, nhm_seg))
+      if (nsegment > 0) then
+        ! Write the nhm_seg values to the file
+        call this%err_check(nf90_put_var(this%file_hdl, nhm_seg_varid, model_basin%nhm_seg))
+      end if
 
       ! Close the file. This frees up any internal netCDF resources
       ! associated with the file, and flushes any buffers.
