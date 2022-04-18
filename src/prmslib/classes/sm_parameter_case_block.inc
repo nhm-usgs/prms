@@ -471,6 +471,10 @@ select case(buf)
     this%lat_temp_adj%name = last
     call this%lat_temp_adj%read(iUnit)
     line = line + this%lat_temp_adj%size() + this%lat_temp_adj%dim_names%size() + ENTRY_OFFSET
+  case('mann_n')
+    this%mann_n%name = last
+    call this%mann_n%read(iUnit)
+    line = line + this%mann_n%size() + this%mann_n%dim_names%size() + ENTRY_OFFSET
   case('mapvars_freq')
     this%mapvars_freq%name = last
     call this%mapvars_freq%read(iUnit)
@@ -735,6 +739,10 @@ select case(buf)
     this%sat_threshold%name = last
     call this%sat_threshold%read(iUnit)
     line = line + this%sat_threshold%size() + this%sat_threshold%dim_names%size() + ENTRY_OFFSET
+  case('seg_depth')
+    this%seg_depth%name = last
+    call this%seg_depth%read(iUnit)
+    line = line + this%seg_depth%size() + this%seg_depth%dim_names%size() + ENTRY_OFFSET
   case('seg_elev')
     this%seg_elev%name = last
     call this%seg_elev%read(iUnit)
