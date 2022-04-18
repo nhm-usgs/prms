@@ -193,8 +193,9 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             this%noarea_flag = any(this%segment_hruarea < DNEARZERO)
           endif
 
-          print *, 'segment_hruarea'
-          print *, this%segment_hruarea
+          ! DEBUG: PAN
+          ! print *, 'segment_hruarea'
+          ! print *, this%segment_hruarea
 
           isegerr = 0
           this%segment_up = 0
@@ -346,7 +347,7 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
     module subroutine run_Streamflow(this, ctl_data, model_basin, &
                                     model_potet, groundwater, soil, runoff, &
                                     model_time, model_solrad, model_obs)
-      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, DNEARZERO
+      use prms_constants, only: dp, CFS2CMS_CONV, ONE_24TH, DNEARZERO, NEARZERO
       implicit none
 
       class(Streamflow), intent(inout) :: this
@@ -361,7 +362,11 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
       type(Obs), intent(in) :: model_obs
 
       ! Local Variables
-      integer(i32) :: i
+      logical :: found
+      integer(i32) :: cseg
+        !! Current segment for loops
+      integer(i32) :: cseg_us
+        !! Used for searching upstream segments
       integer(i32) :: j
       integer(i32) :: jj
       real(r64) :: tocfs
@@ -423,18 +428,18 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
             ! this%hru_outflow(j) = dble(sroff(j) + ssres_flow(j) + gwres_flow(j)) * tocfs
 
             if (cascade_flag == 0) then
-              i = this%hru_segment(j)
+              cseg = this%hru_segment(j)
 
-              if (i > 0) then
-                this%seg_gwflow(i) = this%seg_gwflow(i) + gwres_flow(j)
-                this%seg_sroff(i) = this%seg_sroff(i) + sroff(j)
-                this%seg_ssflow(i) = this%seg_ssflow(i) + ssres_flow(j)
-                this%seg_lateral_inflow(i) = this%seg_lateral_inflow(i) + this%hru_outflow(j)
-                this%seginc_sroff(i) = this%seginc_sroff(i) + dble(sroff(j)) * tocfs
-                this%seginc_ssflow(i) = this%seginc_ssflow(i) + dble(ssres_flow(j)) * tocfs
-                this%seginc_gwflow(i) = this%seginc_gwflow(i) + dble(gwres_flow(j)) * tocfs
-                this%seginc_swrad(i) = this%seginc_swrad(i) + dble(swrad(j) * hru_area(j))
-                this%seginc_potet(i) = this%seginc_potet(i) + dble(potet(j) * hru_area(j))
+              if (cseg > 0) then
+                this%seg_gwflow(cseg) = this%seg_gwflow(cseg) + gwres_flow(j)
+                this%seg_sroff(cseg) = this%seg_sroff(cseg) + sroff(j)
+                this%seg_ssflow(cseg) = this%seg_ssflow(cseg) + ssres_flow(j)
+                this%seg_lateral_inflow(cseg) = this%seg_lateral_inflow(cseg) + this%hru_outflow(j)
+                this%seginc_sroff(cseg) = this%seginc_sroff(cseg) + dble(sroff(j)) * tocfs
+                this%seginc_ssflow(cseg) = this%seginc_ssflow(cseg) + dble(ssres_flow(j)) * tocfs
+                this%seginc_gwflow(cseg) = this%seginc_gwflow(cseg) + dble(gwres_flow(j)) * tocfs
+                this%seginc_swrad(cseg) = this%seginc_swrad(cseg) + dble(swrad(j) * hru_area(j))
+                this%seginc_potet(cseg) = this%seginc_potet(cseg) + dble(potet(j) * hru_area(j))
               endif
             endif
           enddo
@@ -448,36 +453,99 @@ submodule (PRMS_STREAMFLOW) sm_streamflow
 
           if (cascade_flag == 1) return
 
+          ! TODO: 2022-04-14 PAN - incorporate changes by Markstrom (route: 730-795)
           ! Divide solar radiation and PET by sum of HRU area to get average
-          if (this%noarea_flag) then
-            do i=1, nsegment
-              ! print *, i, ': ', this%seginc_swrad(i), this%seginc_potet(i), this%segment_hruarea(i)
-              if (this%segment_hruarea(i) > DNEARZERO) then
-                this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
-                this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+          if (.not. this%noarea_flag) then
+            do cseg=1, nsegment
+              ! print *, cseg, ': ', this%seginc_swrad(cseg), this%seginc_potet(cseg), this%segment_hruarea(cseg)
+              if (this%segment_hruarea(cseg) > DNEARZERO) then
+                this%seginc_swrad(cseg) = this%seginc_swrad(cseg) / this%segment_hruarea(cseg)
+                this%seginc_potet(cseg) = this%seginc_potet(cseg) / this%segment_hruarea(cseg)
               end if
             enddo
           else
             ! If there are no HRUs associated with a segment, then figure out some
             ! other way to get the solar radiation, the following is not great.
-            do i=1, nsegment
-              if (this%segment_hruarea(i) > DNEARZERO) then
-                this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
-                this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
-              elseif (this%tosegment(i) > 0) then
-                this%seginc_swrad(i) = this%seginc_swrad(this%tosegment(i))
-                this%seginc_potet(i) = this%seginc_potet(this%tosegment(i))
-              elseif (i > 1) then
-                ! Set to next segment id
-                this%seginc_swrad(i) = this%seginc_swrad(i-1)
-                this%seginc_potet(i) = this%seginc_potet(i-1)
+            do cseg = 1, nsegment
+              ! This reworked by markstrom
+              if (this%segment_hruarea(cseg) > NEARZERO) then
+                this%seginc_swrad(cseg) = this%seginc_swrad(cseg) / this%segment_hruarea(cseg)
+                this%seginc_potet(cseg) = this%seginc_potet(cseg) / this%segment_hruarea(cseg)
               else
-                ! Assume at least 2 segments
-                this%seginc_swrad(i) = this%seginc_swrad(i+1)
-                this%seginc_potet(i) = this%seginc_potet(i+1)
-              endif
-            enddo
-          endif
+                ! Segment does not have any HRUs, check upstream segments.
+                cseg_us = cseg
+                found = .false.
+                do
+                  if (this%segment_hruarea(cseg_us) <= NEARZERO) then
+
+                    ! Hit the headwater segment without finding any HRUs (i.e. sources of streamflow)
+                    if (this%segment_up(cseg_us) == 0) then
+                      found = .false.
+                      exit
+                    end if
+
+                    ! There is an upstream segment, check that segment for HRUs
+                    cseg_us = this%segment_up(cseg_us)
+                  else
+                    ! This segment has HRUs so there will be swrad and potet
+                    this%seginc_swrad(cseg) = this%seginc_swrad(cseg_us) / this%segment_hruarea(cseg_us)
+                    this%seginc_potet(cseg) = this%seginc_potet(cseg_us) / this%segment_hruarea(cseg_us)
+                    found = .true.
+                    exit
+                  end if
+                end do
+
+                if (.not. found) then
+                  ! Segment does not have any upstream segments with HRUs, check downstream segments.
+                  cseg_us = cseg
+                  found = .false.
+                  do
+                    if (this%segment_hruarea(cseg_us) <= NEARZERO) then
+                      ! Hit the terminal segment without finding any HRUs (i.e. sources of streamflow)
+                      if (this%tosegment(cseg_us) .eq. 0) then
+                        found = .false.
+                        exit
+                      end if
+
+                      ! There is a downstream segment, check that segment for HRUs
+                      cseg_us = this%tosegment(cseg_us)
+                    else
+                      ! This segment has HRUs so there will be swrad and potet
+                      this%seginc_swrad(cseg) = this%seginc_swrad(cseg_us) / this%segment_hruarea(cseg_us)
+                      this%seginc_potet(cseg) = this%seginc_potet(cseg_us) / this%segment_hruarea(cseg_us)
+                      found = .true.
+                      exit
+                    end if
+                  end do
+
+                  if (.not. found) then
+                    ! write(*,*) "route_run: no upstream or downstream HRU found for segment ", cseg
+                    ! write(*,*) "    no values for seginc_swrad and seginc_potet"
+                    this%seginc_swrad(cseg) = -99.9
+                    this%seginc_potet(cseg) = -99.9
+                  end if
+                end if
+              end if
+            end do
+          end if
+          !   do i=1, nsegment
+          !     if (this%segment_hruarea(i) > DNEARZERO) then
+          !       this%seginc_swrad(i) = this%seginc_swrad(i) / this%segment_hruarea(i)
+          !       this%seginc_potet(i) = this%seginc_potet(i) / this%segment_hruarea(i)
+          !     elseif (this%tosegment(i) > 0) then
+          !       this%seginc_swrad(i) = this%seginc_swrad(this%tosegment(i))
+          !       this%seginc_potet(i) = this%seginc_potet(this%tosegment(i))
+          !     elseif (i > 1) then
+          !       ! Set to next segment id
+          !       this%seginc_swrad(i) = this%seginc_swrad(i-1)
+          !       this%seginc_potet(i) = this%seginc_potet(i-1)
+          !     else
+          !       ! Assume at least 2 segments
+          !       this%seginc_swrad(i) = this%seginc_swrad(i+1)
+          !       this%seginc_potet(i) = this%seginc_potet(i+1)
+          !     endif
+          !   enddo
+          ! endif
         end if
       end associate
     end subroutine

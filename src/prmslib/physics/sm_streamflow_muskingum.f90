@@ -67,9 +67,14 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
         do cseg=1, nsegment
           ! WARNING: parameter data is read-only
           ! if (segment_type(cseg) == 2 .and. K_coef(cseg) < 24.0) then
+          !   write(*, *) 'WARNING, K_coef must be equal to 24.0 for lake segments'
           !   ! For lakes K_coef must be equal to 24
           !   K_coef(cseg) = 24.0
           ! endif
+
+          ! WARNING: This block exists in 5.2.0
+          ! if (K_coef(cseg) < 0.01) K_coef(cseg) = 0.01   ! Make compliant with old version of K_coef
+          ! if (K_coef(cseg) > 24.0) K_coef(cseg) = 24.0
 
           k = this%K_coef(cseg)
           x = this%x_coef(cseg)
@@ -119,6 +124,7 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
           d = k - (k * x) + (0.5 * this%ts(cseg))
 
           if (abs(d) < NEARZERO) then
+            ! write(*, *) 'WARNING, segment ', cseg, ' computed value d <', NEARZERO, ', set to 0.0001'
             d = 0.0001
           endif
 
@@ -139,12 +145,18 @@ submodule (PRMS_MUSKINGUM) sm_muskingum
 
           ! SHORT travel time
           if (this%c2(cseg) < 0.0_dp) then
+            ! PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
+            ! PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
+            ! PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
             this%c1(cseg) = this%c1(cseg) + this%c2(cseg)
             this%c2(cseg) = 0.0_dp
           endif
 
           ! LONG travel time
           if (this%c0(cseg) < 0.0_dp) then
+            ! PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
+            ! PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
+            ! PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
             this%c1(cseg) = this%c1(cseg) + this%c0(cseg)
             this%c0(cseg) = 0.0_dp
           endif
