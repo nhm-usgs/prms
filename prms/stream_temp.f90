@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2021-09-07'
+      character(len=*), parameter :: Version_stream_temp = '2022-09-07'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -33,12 +33,12 @@
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 !   Segment Parameters
       REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_slope(:), Width_values(:, :)
+      REAL, SAVE, ALLOCATABLE :: Seg_slope(:)
       REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:), Stream_tave_init(:)
-      INTEGER, SAVE:: Width_dim, Maxiter_sntemp
+      INTEGER, SAVE:: Maxiter_sntemp
       REAL, SAVE, ALLOCATABLE :: Seg_humidity(:, :)
       REAL, SAVE, ALLOCATABLE :: lat_temp_adj(:, :)
-      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:)
+      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:), tempIN_segment(:)
 !   Shade Parameters needed if stream_temp_shade_flag = 0
       REAL, SAVE, ALLOCATABLE :: Azrh(:), Alte(:), Altw(:), Vce(:)
       REAL, SAVE, ALLOCATABLE :: Vdemx(:), Vhe(:), Voe(:), Vcw(:), Vdwmx(:), Vhw(:), Vow(:)
@@ -366,6 +366,13 @@
      &     'Maximum number of Newton-Raphson iterations to compute stream temperature', &
      &     'none')/=0 ) CALL read_error(1, 'maxiter_sntemp')
 
+      ALLOCATE ( tempIN_segment(Nsegment) )
+      IF ( declparam(MODNAME, 'tempIN_segment', 'nsegment', 'integer', &
+     &     '0', 'bounded', 'nstreamtemp', &
+     &     'Index of streamflow temperature in Data File that replaces temperature in a segment', &
+     &     'Index of streamflow temperature in Data File that replaces temperature in a segment', &
+     &     'none')/=0 ) CALL read_error(1, 'tempIN_segment')
+
       IF ( Strmtemp_humidity_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN  ! specified constant
          ALLOCATE ( Seg_humidity(Nsegment, MONTHS_PER_YEAR) )
          IF ( declparam( MODNAME, 'seg_humidity', 'nsegment,nmonths', 'real', &
@@ -410,8 +417,8 @@
 !    stream_temp_init - Initialize module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
-      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, OFF, NEARZERO, ERROR_param, DAYS_YR
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, OFF, NEARZERO, ERROR_param, DAYS_YR, DEBUG_LESS
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag, Print_debug
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
@@ -535,6 +542,10 @@
          IF ( Seg_length(i)<NEARZERO ) THEN
             PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
             ierr = 1
+         ENDIF
+         IF ( Seg_slope(i)<0.00001 ) THEN
+            IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.00001, set to 0.00001', i, Seg_slope(i)
+            Seg_slope(i) = 0.00001
          ENDIF
       ENDDO
 
@@ -727,7 +738,7 @@
       USE PRMS_FLOWVARS, ONLY: Seg_outflow
       USE PRMS_SNOW, ONLY: Snowmelt
       USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
-      USE PRMS_OBS, ONLY: Humidity
+      USE PRMS_OBS, ONLY: Humidity, Stream_temp
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
 
       IMPLICIT NONE
@@ -1007,9 +1018,11 @@
 !            No flow in this segment and there never will be becuase there are no upstream HRUs.
             t_o = Seg_tave_water(i)
 
-         elseif (Seg_tave_water(i) < -98.0) then
+! markstro bug fix comment this check out because all cases are
+! correctly caught below.
+!         elseif (Seg_tave_water(i) < -98.0) then
 !            No flow in this segment on this time step, but could be on future time step
-            t_o = Seg_tave_water(i)
+!            t_o = Seg_tave_water(i)
 
          elseif ((fs .le. NEARZERO) .and. (qlat .le. NEARZERO)) then
              ! If there is no flow, set the temperature to -98.9
@@ -1072,6 +1085,7 @@
               ! bad t_o value
               Seg_tave_water(i) = NOFLOW_TEMP
           endif
+          if ( tempIN_segment(i)>0 ) Seg_tave_water(i) = Stream_temp(tempIN_segment(i))
 
 !          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
 !             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
@@ -1142,7 +1156,7 @@
       USE PRMS_CONSTANTS, ONLY: NEARZERO, CFS2CMS_CONV
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: ABS, EXP, ALOG, SNGL, SIGN
+      INTRINSIC :: ABS, EXP, SNGL, SIGN
 ! Arguments
       REAL, INTENT(IN) :: T0, Tl_avg, Te, Ak1, Ak2, width, length, qup
       DOUBLE PRECISION, INTENT(IN) :: Qlat
@@ -1447,6 +1461,7 @@
 !      Voe    = OFFSET, EAST SIDE VEGETATION
 !      Vow    = OFFSET, WEST SIDE VEGETATION
 !
+      USE PRMS_CONSTANTS, ONLY: NEARZERO
       USE PRMS_SET_TIME, ONLY: Jday
       USE PRMS_STRMTEMP, ONLY: Azrh, Alte, Altw, Seg_daylight, Seg_width, &
      &    PI, HALF_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
@@ -1468,6 +1483,14 @@
 ! PARAMETER
       REAL, PARAMETER :: RADTOHOUR = 24.0/(2.0 * PI)
 !*********************************************************************************
+
+! if the segment has no width (no flow) set the return values to 0.0
+! and return to avoid dividing by 0.0
+      if (seg_width(seg_id) <= NEARZERO) then
+         shade = 0.0
+         svi = 0.0
+         return
+      endif
 
 !  LATITUDE TRIGONOMETRIC PARAMETERS
       coso = Cos_seg_lat(Seg_id)

@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2021-08-13'
+      character(len=*), parameter :: Version_subbasin = '2022-09-07'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -62,8 +62,8 @@
 !     hru_area, subbasin_down, hru_subbasin
 !***********************************************************************
       INTEGER FUNCTION subdecl()
-      USE PRMS_CONSTANTS, ONLY: OFF, DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru, GSFLOW_flag
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim
+      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru
       USE PRMS_SUBBASIN
       IMPLICIT NONE
 ! Functions
@@ -85,16 +85,14 @@
      &     'Area-weighted average interflow to each subbasin from associated HRUs and from upstream subbasins', &
      &     'cfs', Sub_interflow)/=0 ) CALL read_error(3, 'sub_interflow')
 
-      IF ( GSFLOW_flag==OFF .OR. Model==DOCUMENTATION ) THEN
-        ALLOCATE ( Sub_gwflow(Nsub) )
-        IF ( declvar(MODNAME, 'sub_gwflow', 'nsub', Nsub, 'double', &
-     &       'Area-weighted average groundwater discharge from associated GWRs to each subbasin and from upstream subbasins', &
-     &       'cfs', Sub_gwflow)/=0 ) CALL read_error(3, 'sub_gwflow')
-        ALLOCATE ( Subinc_gwflow(Nsub) )
-        IF ( declvar(MODNAME, 'subinc_gwflow', 'nsub', Nsub, 'double', &
-     &       'Area-weighted average groundwater discharge from associated GWRs to each subbasin', &
-     &       'cfs', Subinc_gwflow)/=0 ) CALL read_error(3, 'subinc_gwflow')
-      ENDIF
+      ALLOCATE ( Sub_gwflow(Nsub) )
+      IF ( declvar(MODNAME, 'sub_gwflow', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average groundwater discharge from associated GWRs to each subbasin and from upstream subbasins', &
+     &     'cfs', Sub_gwflow)/=0 ) CALL read_error(3, 'sub_gwflow')
+      ALLOCATE ( Subinc_gwflow(Nsub) )
+      IF ( declvar(MODNAME, 'subinc_gwflow', 'nsub', Nsub, 'double', &
+     &     'Area-weighted average groundwater discharge from associated GWRs to each subbasin', &
+     &     'cfs', Subinc_gwflow)/=0 ) CALL read_error(3, 'subinc_gwflow')
 
       ALLOCATE ( Sub_sroff(Nsub) )
       IF ( declvar(MODNAME, 'sub_sroff', 'nsub', Nsub, 'double', &
@@ -240,8 +238,8 @@
 !               compute initial values
 !***********************************************************************
       INTEGER FUNCTION subinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, CFS2CMS_CONV, LAKE, DNEARZERO
-      USE PRMS_MODULE, ONLY: Nsub, Nhru, Print_debug, GSFLOW_flag, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, DNEARZERO
+      USE PRMS_MODULE, ONLY: Nsub, Nhru, Print_debug, &
      &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
@@ -279,10 +277,8 @@
       Sub_cms = 0.0D0
       Sub_inq = 0.0D0
       Subinc_interflow = 0.0D0
-      IF ( GSFLOW_flag==OFF ) THEN
-        Subinc_gwflow = 0.0D0
-        Sub_gwflow = 0.0D0
-      ENDIF
+      Subinc_gwflow = 0.0D0
+      Sub_gwflow = 0.0D0
       Subinc_sroff = 0.0D0
       Subinc_precip = 0.0D0
       Subinc_rain = 0.0D0
@@ -356,10 +352,8 @@
         k = Hru_subbasin(j)
         IF ( k>0 ) THEN
           harea = Hru_area_dble(j)
-          IF ( GSFLOW_flag==OFF ) THEN
-            gwstor = Gwres_stor(j)*harea
-            gwq = DBLE(Gwres_flow(j))*harea
-          ENDIF
+          gwstor = Gwres_stor(j)*harea
+          gwq = DBLE(Gwres_flow(j))*harea
           IF ( Hru_type(j)/=LAKE ) THEN
             srq = DBLE(Sroff(j))*harea
             ssq = DBLE(Ssres_flow(j))*harea
@@ -387,7 +381,7 @@
           Qsub(k) = Qsub(k) + srq + ssq + gwq
           Subinc_interflow(k) = Subinc_interflow(k) + ssq
           Subinc_sroff(k) = Subinc_sroff(k) + srq
-          IF ( GSFLOW_flag==OFF ) Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
+          Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
           Subinc_stor(k) = Subinc_stor(k) + soilstor + gwstor + snowstor + landstor
           Sub_area(k) = Sub_area(k) + harea
         ENDIF
@@ -402,7 +396,7 @@
         ENDIF
         Sub_inq(i) = Qsub(i)*Cfs_conv
         Subinc_interflow(i) = Subinc_interflow(i)*Cfs_conv
-        IF ( GSFLOW_flag==OFF ) Subinc_gwflow(i) = Subinc_gwflow(i)*Cfs_conv
+        Subinc_gwflow(i) = Subinc_gwflow(i)*Cfs_conv
         Subinc_sroff(i) = Subinc_sroff(i)*Cfs_conv
         ! water balance off if lake or muskingum routing
       ENDDO
@@ -410,13 +404,13 @@
 ! allow for possible restart
       !get cumulative subbasin flows
       DO j = 1, Nsub
-        IF ( GSFLOW_flag==OFF ) Sub_gwflow(j) = Subinc_gwflow(j)
+        Sub_gwflow(j) = Subinc_gwflow(j)
         Sub_sroff(j) = Subinc_sroff(j)
         Sub_interflow(j) = Subinc_interflow(j)
         Sub_cfs(j) = Sub_inq(j)
         DO k = 1, Nsub
           IF ( Tree(j,k)/=0 ) THEN
-            IF ( GSFLOW_flag==OFF ) Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
+            Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
             Sub_sroff(j) = Sub_sroff(j) + Subinc_sroff(k)
             Sub_interflow(j) = Sub_interflow(j) + Subinc_interflow(k)
             Sub_cfs(j) = Sub_cfs(j) + Sub_inq(k)
@@ -438,8 +432,8 @@
 !                  storage and outflows
 !***********************************************************************
       INTEGER FUNCTION subrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, CFS2CMS_CONV, LAKE, CASCADE_OFF
-      USE PRMS_MODULE, ONLY: Nsub, GSFLOW_flag, Dprst_flag, Lake_route_flag, Cascade_flag
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, CASCADE_OFF
+      USE PRMS_MODULE, ONLY: Nsub, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, Lake_hru_id
@@ -486,7 +480,7 @@
       Subinc_deltastor = 0.0D0
       Subinc_szstor_frac = 0.0D0
       Subinc_capstor_frac = 0.0D0
-      IF ( GSFLOW_flag==OFF ) Subinc_gwflow = 0.0D0
+      Subinc_gwflow = 0.0D0
 
       Laststor = Subinc_stor
       Subinc_stor = 0.0D0
@@ -540,12 +534,10 @@
           Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_tot(j)/Soil_zone_max(j)*harea
           Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Soil_moist(j)/Soil_moist_max(j)*harea
           Subinc_stor(k) = Subinc_stor(k) + soilstor + snowstor + landstor
-          IF ( GSFLOW_flag==OFF ) THEN
-            gwq = DBLE(Gwres_flow(j))*harea
-            Qsub(k) = Qsub(k) + gwq
-            Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
-            Subinc_stor(k) = Subinc_stor(k) + Gwres_stor(j)*harea
-          ENDIF
+          gwq = DBLE(Gwres_flow(j))*harea
+          Qsub(k) = Qsub(k) + gwq
+          Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
+          Subinc_stor(k) = Subinc_stor(k) + Gwres_stor(j)*harea
         ENDIF
       ENDDO
 
@@ -575,23 +567,21 @@
         Subinc_szstor_frac(j) = Subinc_szstor_frac(j)/subarea
         Subinc_capstor_frac(j) = Subinc_capstor_frac(j)/subarea
         Subinc_deltastor(j) = Laststor(j) - Subinc_stor(j)
-        IF ( GSFLOW_flag==OFF ) THEN
-          dmy1 = Subinc_gwflow(j)/subarea
-          Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
-        ENDIF
+        dmy1 = Subinc_gwflow(j)/subarea
+        Subinc_gwflow(j) = Subinc_gwflow(j)*Cfs_conv
         ! water balance off if lake or muskingum routing
         Subinc_wb(j) = Subinc_precip(j) - Subinc_actet(j) - &
      &                 dmy - dmy1 - dmy2 + Subinc_deltastor(j)
       ENDDO
 
       !get cumulative subbasin flows
-      IF ( GSFLOW_flag==OFF ) Sub_gwflow = Subinc_gwflow
+      Sub_gwflow = Subinc_gwflow
       DO j = 1, Nsub
         Sub_sroff(j) = Subinc_sroff(j)
         Sub_interflow(j) = Subinc_interflow(j)
         DO k = 1, Nsub
           IF ( Tree(j,k)/=0 ) THEN
-            IF ( GSFLOW_flag==OFF ) Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
+            Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
             Sub_sroff(j) = Sub_sroff(j) + Subinc_sroff(k)
             Sub_interflow(j) = Sub_interflow(j) + Subinc_interflow(k)
           ENDIF

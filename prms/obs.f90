@@ -7,12 +7,12 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2021-08-13'
-      INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag
+      character(len=*), parameter :: Version_obs = '2022-09-07'
+      INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, nstream_temp
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
       REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
-      REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:)
+      REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:), Stream_temp(:)
       REAL, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
       ! Lake Module Variables
@@ -61,6 +61,8 @@
      &     'Maximum number of lake elevations for any rating table data set')/=0 ) CALL read_error(7, 'nlakeelev')
       IF ( decldim('nwind', 0, MAXDIM, 'Number of wind-speed measurement stations')/=0 ) CALL read_error(7, 'nwind')
       IF ( decldim('nhumid', 0, MAXDIM, 'Number of relative humidity measurement stations')/=0 ) CALL read_error(7, 'nhumid')
+      IF ( decldim('nstream_temp', 0, MAXDIM, 'Number of stream temperature replacement segments')/=0 ) &
+     &     CALL read_error(7, 'nstream_temp')
 
       END FUNCTION obssetdims
 
@@ -171,6 +173,13 @@
      &       'meters per second', Wind_speed)/=0 ) CALL read_error(8, 'wind_speed')
       ENDIF
 
+      IF ( nstream_temp>0 ) THEN
+        ALLOCATE ( Stream_temp(Nwind) )
+        IF ( declvar(MODNAME, 'stream_temp', 'nstream_temp', nstream_temp, &
+     &       'Stream temperature for segment replacement in stream_temp', &
+     &       'degrees Celsius', Stream_temp)/=0 ) CALL read_error(8, 'stream_temp')
+      ENDIF
+
 !   Declared Parameters
       Rain_flag = OFF
       IF ( Precip_flag==xyz_dist_module ) Rain_flag = ACTIVE
@@ -250,6 +259,7 @@
       IF ( Nratetbl>0 ) Gate_ht = 0.0
       IF ( Nhumid>0 ) Humidity = 0.0
       IF ( Nwind>0 ) Wind_speed = 0.0
+      IF ( nstream_temp>0 ) Stream_temp = 0.0
 
       END FUNCTION obsinit
 
@@ -332,6 +342,10 @@
 
       IF ( Nwind>0 ) THEN
         IF ( readvar(MODNAME, 'wind_speed')/=0 ) CALL read_error(9, 'wind_speed')
+      ENDIF
+
+      IF ( nstream_temp>0 ) THEN
+        IF ( readvar(MODNAME, 'stream_temp')/=0 ) CALL read_error(9, 'stream_temp')
       ENDIF
 
       END FUNCTION obsrun

@@ -50,7 +50,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Glacier Dynamics'
       character(len=10), parameter :: MODNAME = 'glacr_melt'
-      character(len=*), parameter :: Version_glacr = '2021-08-13'
+      character(len=*), parameter :: Version_glacr = '2022-09-07'
       ! Ngl - Number of glaciers counted by termini
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
       ! Nhrugl - Number of at least partially glacierized hrus at initiation
@@ -1784,8 +1784,8 @@
           Soltab_sunhrs(1, n) = 0.0
           Soltab_potsw(1, n) = 0.0
           CALL compute_soltab(obliquity, Solar_declination, Hru_slope_ts(n), Hru_aspect(n), &
-     &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(1, n), &
-     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
+     &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(:, n), &
+     &                      Soltab_sunhrs(:, n), Hru_type(n), n)
           ENDIF
       ENDDO
 !

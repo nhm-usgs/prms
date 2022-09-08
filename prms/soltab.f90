@@ -16,7 +16,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Potential Solar Radiation'
       character(len=*), parameter :: MODNAME = 'soltab'
-      character(len=*), parameter :: Version_soltab = '2021-08-13'
+      character(len=*), parameter :: Version_soltab = '2022-09-07'
       DOUBLE PRECISION, PARAMETER :: PI=3.1415926535898D0
       DOUBLE PRECISION, PARAMETER :: RADIANS=PI/180.0D0, TWOPI=2.0D0*PI
       DOUBLE PRECISION, PARAMETER :: PI_12=12.0D0/PI
@@ -173,10 +173,10 @@
         n = Hru_route_order(nn)
         CALL compute_soltab(obliquity, Solar_declination, 0.0, 0.0, Hru_lat(n), &
      &                      Hru_cossl(n), Soltab_horad_potsw(1, n), &
-     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
+     &                      Soltab_sunhrs(:, n), Hru_type(n), n)
         CALL compute_soltab(obliquity, Solar_declination, Hru_slope(n), Hru_aspect(n), &
      &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(1, n), &
-     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
+     &                      Soltab_sunhrs(:, n), Hru_type(n), n)
       ENDDO
 
       lat = SNGL( Basin_lat )

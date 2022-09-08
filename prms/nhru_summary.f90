@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nhru_summary'
-      character(len=*), parameter :: Version_nhru_summary = '2021-08-13'
+      character(len=*), parameter :: Version_nhru_summary = '2022-09-07'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nhru_var_type(:), Nhru_var_int(:, :)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -136,7 +136,7 @@
       Lastyear = Begyr
 
       IF ( outputSelectDatesON_OFF==ACTIVE ) THEN
-        CALL find_header_end(selectDates_unit, selectDatesFileName, 'selectDatesFileName', ierr, 0, 0)
+        CALL find_header_end(selectDates_unit, selectDatesFileName, ierr)
         IF ( ierr==0 ) THEN
           CALL find_current_file_time(selectDates_unit, Start_year, Start_month, Start_day, &
      &                                dates_next_year, dates_next_month, dates_next_day)
@@ -335,17 +335,17 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NhruOutVars
         IF ( Nhru_var_type(jj)==REAL_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Nhru_var_type(jj)==DBLE_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             Nhru_var_daily(i, jj) = SNGL( Nhru_var_dble(i, jj) )
           ENDDO
         ELSEIF ( Nhru_var_type(jj)==INT_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'integer', Nhru_var_int(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'integer', Nhru_var_int(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
           IF ( NhruOut_freq>DAILY ) THEN
             DO j = 1, Active_hrus
@@ -383,6 +383,15 @@
         IF ( Daily_flag==ACTIVE ) THEN
           IF ( write_date==1 ) CALL read_event_date(selectDates_unit, dates_next_year, dates_next_month, dates_next_day)
         ENDIF
+      ENDIF
+
+      IF ( NhruOut_freq>MEAN_MONTHLY ) THEN
+        DO jj = 1, NhruOutVars
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) + DBLE( Nhru_var_daily(i, jj) )
+          ENDDO
+        ENDDO
       ENDIF
 
       write_month = OFF
@@ -435,15 +444,7 @@
         Monthdays = Monthdays + 1.0D0
       ENDIF
 
-      IF ( NhruOut_freq>MEAN_MONTHLY ) THEN
-        DO jj = 1, NhruOutVars
-          DO j = 1, Active_hrus
-            i = Hru_route_order(j)
-            Nhru_var_yearly(i, jj) = Nhru_var_yearly(i, jj) + DBLE( Nhru_var_daily(i, jj) )
-          ENDDO
-        ENDDO
-        RETURN
-      ENDIF
+      IF ( NhruOut_freq>MEAN_MONTHLY ) RETURN
 
       IF ( Monthly_flag==ACTIVE ) THEN
         DO jj = 1, NhruOutVars

@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2021-08-18'
+      character(len=*), parameter :: Version_basin = '2022-09-07'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -29,7 +29,7 @@
       INTEGER, SAVE, ALLOCATABLE :: Hru_type(:), Cov_type(:)
       INTEGER, SAVE, ALLOCATABLE :: Lake_hru_id(:), Lake_type(:) !not needed if no lakes
       REAL, SAVE, ALLOCATABLE :: Hru_area(:), Hru_percent_imperv(:), Hru_elev(:), Hru_lat(:)
-      REAL, SAVE, ALLOCATABLE :: Covden_sum(:), Covden_win(:)
+      REAL, SAVE, ALLOCATABLE :: Covden_sum(:,:), Covden_win(:,:)
       REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:), Dprst_frac(:)
       END MODULE PRMS_BASIN
 
@@ -61,9 +61,9 @@
 !     lake_hru_id
 !***********************************************************************
       INTEGER FUNCTION basdecl()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DOCUMENTATION
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DOCUMENTATION, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Model, Dprst_flag, Lake_route_flag, &
-     &    PRMS4_flag, GSFLOW_flag, Glacier_flag
+     &    PRMS4_flag, Glacier_flag
       USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
@@ -160,9 +160,7 @@
 
       ! local arrays
       ALLOCATE ( Hru_route_order(Nhru) )
-! gwflow inactive for GSFLOW mode so arrays not allocated
-! when GSFLOW can run in multi-mode will need these arrays
-      IF ( GSFLOW_flag==OFF ) ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
+      ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
 !      ALLOCATE ( Hru_elev_feet(Nhru) )
       ALLOCATE ( Hru_elev_meters(Nhru) )
 
@@ -211,15 +209,15 @@
      &     ' 1=grasses; 2=shrubs; 3=trees; 4=coniferous)', &
      &     'none')/=0 ) CALL read_error(1, 'cov_type')
 
-      ALLOCATE ( Covden_sum(Nhru) )
-      IF ( declparam(MODNAME, 'covden_sum', 'nhru', 'real', &
+      ALLOCATE ( Covden_sum(Nhru,MONTHS_PER_YEAR) )
+      IF ( declparam(MODNAME, 'covden_sum', 'nhru,nmonths', 'real', &
      &     '0.5', '0.0', '1.0', &
      &     'Summer vegetation cover density for major vegetation type', &
      &     'Summer vegetation cover density for the major vegetation type in each HRU', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'covden_sum')
 
-      ALLOCATE ( Covden_win(Nhru) )
-      IF ( declparam(MODNAME, 'covden_win', 'nhru', 'real', &
+      ALLOCATE ( Covden_win(Nhru,MONTHS_PER_YEAR) )
+      IF ( declparam(MODNAME, 'covden_win', 'nhru,nmonths', 'real', &
      &     '0.5', '0.0', '1.0', &
      &     'Winter vegetation cover density for major vegetation type', &
      &     'Winter vegetation cover density for the major vegetation type in each HRU', &
@@ -236,7 +234,7 @@
      &       'Identification number of the lake associated with an HRU;'// &
      &       ' more than one HRU can be associated with each lake', &
      &       'none')/=0 ) CALL read_error(1, 'lake_hru_id')
-        IF ( (Lake_route_flag==ACTIVE .AND. GSFLOW_flag==OFF ) .OR. Model==DOCUMENTATION ) THEN
+        IF ( Lake_route_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Lake_type(Nlake) )
           IF ( declparam(MODNAME, 'lake_type', 'nlake', 'integer', &
      &         '1', '1', '6', &
@@ -258,9 +256,9 @@
       INTEGER FUNCTION basinit()
       USE PRMS_CONSTANTS, ONLY: DEBUG_less, ACTIVE, OFF, &
      &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
-     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO
+     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
-     &    Dprst_flag, Lake_route_flag, PRMS4_flag, GSFLOW_flag, Frozen_flag, PRMS_VERSION, &
+     &    Dprst_flag, Lake_route_flag, PRMS4_flag, Frozen_flag, PRMS_VERSION, &
      &    Starttime, Endtime, Parameter_check_flag
       USE PRMS_BASIN
       IMPLICIT NONE
@@ -282,8 +280,8 @@
       IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
       IF ( getparam(MODNAME, 'hru_type', Nhru, 'integer', Hru_type)/=0 ) CALL read_error(2, 'hru_type')
       IF ( getparam(MODNAME, 'cov_type', Nhru, 'integer', Cov_type)/=0 ) CALL read_error(2, 'cov_type')
-      IF ( getparam(MODNAME, 'covden_sum', Nhru, 'real', Covden_sum)/=0 ) CALL read_error(2, 'covden_sum')
-      IF ( getparam(MODNAME, 'covden_win', Nhru, 'real', Covden_win)/=0 ) CALL read_error(2, 'covden_win')
+      IF ( getparam(MODNAME, 'covden_sum', Nhru*MONTHS_PER_YEAR, 'real', Covden_sum)/=0 ) CALL read_error(2, 'covden_sum')
+      IF ( getparam(MODNAME, 'covden_win', Nhru*MONTHS_PER_YEAR, 'real', Covden_win)/=0 ) CALL read_error(2, 'covden_win')
       IF ( getparam(MODNAME, 'elev_units', 1, 'integer', Elev_units)/=0 ) CALL read_error(2, 'elev_units')
       IF ( getparam(MODNAME, 'hru_percent_imperv', Nhru, 'real', Hru_percent_imperv)/=0 ) CALL read_error(2, 'hru_percent_imperv')
 
@@ -312,7 +310,7 @@
       IF ( Nlake>0 ) THEN
         IF ( getparam(MODNAME, 'lake_hru_id', Nhru, 'integer', Lake_hru_id)/=0 ) CALL read_error(1, 'lake_hru_id')
         IF ( Parameter_check_flag>0 ) CALL checkdim_bounded_limits('lake_hru_id', 'nlake', Lake_hru_id, Nhru, 0, Nlake, basinit)
-        IF ( Lake_route_flag==ACTIVE ) THEN ! Lake_route_flag set to 0 for GSFLOW mode and if muskingum_lake and nlake = 1
+        IF ( Lake_route_flag==ACTIVE ) THEN
           IF ( getparam(MODNAME, 'lake_type', Nlake, 'integer', Lake_type)/=0 ) CALL read_error(2, 'lake_type')
           DO i = 1, Nlake
             IF ( Lake_type(i)==4 .OR. Lake_type(i)==5 ) THEN
@@ -470,10 +468,8 @@
       Active_area = Land_area + Water_area
 
       Active_gwrs = Active_hrus
-      IF ( GSFLOW_flag==OFF ) THEN
-        Gwr_type = Hru_type
-        Gwr_route_order = Hru_route_order
-      ENDIF
+      Gwr_type = Hru_type
+      Gwr_route_order = Hru_route_order
 
       Basin_area_inv = 1.0D0/Active_area
       Basin_lat = Basin_lat*Basin_area_inv

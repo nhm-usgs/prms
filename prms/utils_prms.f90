@@ -2,10 +2,10 @@
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
-      SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret, Cbh_binary_flag)
+      SUBROUTINE find_current_time(Iunit, Year, Month, Day, Iret)
       IMPLICIT NONE
 ! Argument
-      INTEGER, INTENT(IN) :: Iunit, Year, Month, Day, Cbh_binary_flag
+      INTEGER, INTENT(IN) :: Iunit, Year, Month, Day
       INTEGER, INTENT(OUT) :: Iret
 ! Local Variables
       INTEGER :: yr, mo, dy
@@ -13,11 +13,7 @@
 !***********************************************************************
       Iret = 0
       DO
-        IF ( Cbh_binary_flag==0 ) THEN
-          READ ( Iunit, *, IOSTAT=Iret ) yr, mo, dy
-        ELSE
-          READ ( Iunit, IOSTAT=Iret ) yr, mo, dy
-        ENDIF
+        READ ( Iunit, *, IOSTAT=Iret ) yr, mo, dy
         IF ( Iret==-1 ) PRINT fmt1, 'ERROR, end-of-file found reading input file for date:', Year, Month, Day
         IF ( Iret/=0 ) RETURN
         IF ( yr==Year .AND. mo==Month .AND. dy==Day ) EXIT
@@ -91,94 +87,115 @@
       END SUBROUTINE find_current_file_time
 
 !***********************************************************************
-!     Read File to line before data starts in file
+!   Read CBH File to line before data starts
 !***********************************************************************
-      SUBROUTINE find_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag, Cbh_binary_flag)
-      USE PRMS_CONSTANTS, ONLY: DEBUG_less
-      USE PRMS_MODULE, ONLY: Nhru, Orad_flag, Print_debug
-      IMPLICIT NONE
-! Argument
-      INTEGER, INTENT(IN) :: Cbh_flag, Cbh_binary_flag
-      INTEGER, INTENT(OUT) :: Iunit
-      INTEGER, INTENT(INOUT) :: Iret
-      CHARACTER(LEN=*), INTENT(IN) :: Fname, Paramname
-! Functions
-      INTRINSIC :: trim
-      INTEGER, EXTERNAL :: get_ftnunit
-! Local Variables
-      INTEGER :: i, ios, dim
-      CHARACTER(LEN=4) :: dum
-      CHARACTER(LEN=80) :: dum2
-!***********************************************************************
-      IF ( Iret/=2 ) Iret = 0
-      Iunit = get_ftnunit(7777)
-      IF ( Cbh_binary_flag==0 ) THEN
-        OPEN ( Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios )
-      ELSE
-        OPEN ( Iunit, FILE=trim(Fname), STATUS='OLD', FORM='UNFORMATTED', IOSTAT=ios, ACCESS='STREAM' )
-      ENDIF
-      IF ( ios/=0 ) THEN
-        IF ( Iret==2 ) THEN ! this signals climate_hru to ignore the Humidity CBH file, could add other files
-          Iret = 0
-          IF ( Print_debug>DEBUG_less ) &
-     &         WRITE ( *, '(/,A,/,A,/,A)' ) 'WARNING, optional CBH file not found, will use associated parameter values'
-        ELSE
-          WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure the input file exists'
+    subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
+    use PRMS_CONSTANTS, only: DEBUG_less
+    use PRMS_MODULE, only: Nhru, Orad_flag, Print_debug
+    implicit none
+    ! Argument
+    integer, intent(IN) :: Cbh_flag
+    integer, intent(OUT) :: Iunit
+    integer, intent(INOUT) :: Iret
+    character(LEN=*), intent(IN) :: Fname, Paramname
+    ! Functions
+    intrinsic :: trim
+    integer, external :: get_ftnunit
+    ! Local Variables
+    integer :: i, ios, dim
+    character(LEN=4) :: dum
+    !***********************************************************************
+    if (Iret /= 2) Iret = 0
+    Iunit = get_ftnunit(7777)
+    open (Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios)
+    if (ios /= 0) then
+      if (Iret == 2) then ! this signals climate_hru to ignore the Humidity CBH file, could add other files
+        Iret = 0
+        if (Print_debug > DEBUG_less) &
+   &         write (*, '(/,A,/,A,/,A)') 'WARNING, optional CBH file not found, will use associated parameter values'
+      else
+        write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure the input file exists'
+        Iret = 1
+      end if
+    else
+      ! read to line before data starts in each file
+      i = 0
+      do while (i == 0)
+        read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+        if (ios /= 0) then
+          write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
           Iret = 1
-        ENDIF
-      ELSE
-! read to line before data starts in each file
-        i = 0
-        DO WHILE ( i==0 )
-          IF ( Cbh_binary_flag==0 ) THEN
-            READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
-          ELSE
-            READ ( Iunit, IOSTAT=ios ) dum2
-            READ ( dum2, '(A4)' ) dum
-          ENDIF
-          IF ( ios/=0 ) THEN
-            WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
+          exit
+        elseif (dum == '####') then
+          if (Cbh_flag == 0) exit
+          backspace Iunit
+          backspace Iunit
+          if (Orad_flag == 1 .and. Paramname(:5) == 'swrad') backspace Iunit ! backspace again as swrad CBH file contains orad as last column
+          read (Iunit, *, IOSTAT=ios) dum, dim
+          if (ios /= 0) then
+            write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
             Iret = 1
-            EXIT
-          ELSEIF ( dum=='####' ) THEN
-            IF ( Cbh_flag==0 ) EXIT
-            BACKSPACE Iunit
-            BACKSPACE Iunit
-            IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) BACKSPACE Iunit ! backspace again as swrad CBH file contains orad as last column
-            IF ( Cbh_binary_flag==0 ) THEN
-              READ ( Iunit, *, IOSTAT=ios ) dum, dim
-            ELSE
-              READ ( Iunit, IOSTAT=ios ) dum2
-              READ ( dum2, * ) dum, dim
-            ENDIF
-            IF ( ios/=0 ) THEN
-              WRITE ( *, '(/,A,/,A,/,A)' ) 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
-              Iret = 1
-              EXIT
-            ENDIF
-            IF ( dim/=Nhru ) THEN
-              PRINT '(/,2(A,I0))', '***CBH file dimension incorrect*** nhru= ', Nhru, ' CBH dimension= ', dim, ' File: '//Fname
-              PRINT *, 'ERROR: update Control File with correct CBH files'
-              Iret = 1
-              EXIT
-            ENDIF
-            IF ( Cbh_binary_flag==0 ) THEN
-              READ ( Iunit, FMT='(A4)', IOSTAT=ios ) dum
-            ELSE
-              READ ( Iunit, IOSTAT=ios ) dum
-            ENDIF
-            IF ( ios/=0 ) THEN
-              WRITE ( *, '(/,A,/,A,/)' ) 'ERROR reading file:', Fname
-              Iret = 1
-              EXIT
-            ENDIF
-            IF ( Orad_flag==1 .AND. Paramname(:5)=='swrad' ) READ ( Iunit, FMT='(A4)' ) dum ! read again as swrad CBH file contains orad as last column
-            i = 1
-          ENDIF
-        ENDDO
-      ENDIF
+            exit
+          end if
+          if (dim /= Nhru) then
+            print '(/,2(A,I0))', '***CBH file dimension incorrect*** nhru= ', Nhru, ' CBH dimension= ', dim, ' File: '//Fname
+            print *, 'ERROR: update Control File with correct CBH files'
+            Iret = 1
+            exit
+          end if
+          read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+          if (ios /= 0) then
+            write (*, '(/,A,/,A,/)') 'ERROR reading file:', Fname
+            Iret = 1
+            exit
+          end if
+          if (Orad_flag == 1 .and. Paramname(:5) == 'swrad') read (Iunit, FMT='(A4)') dum ! read again as swrad CBH file contains orad as last column
+          i = 1
+        end if
+      end do
+    end if
 
-      END SUBROUTINE find_header_end
+    end subroutine find_cbh_header_end
+
+!***********************************************************************
+! Read file to line before data starts
+!***********************************************************************
+    subroutine find_header_end( Iunit, Fname, Iret )
+    use PRMS_CONSTANTS, only: DEBUG_less
+    implicit none
+    ! Argument
+    integer, intent(OUT) :: Iunit
+    integer, intent(INOUT) :: Iret
+    character(LEN=*), intent(IN) :: Fname
+    ! Functions
+    intrinsic :: trim
+    integer, external :: get_ftnunit
+    ! Local Variables
+    integer :: i, ios
+    character(LEN=4) :: dum
+    !***********************************************************************
+    Iret = 0
+    Iunit = get_ftnunit(6777)
+    open (Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios)
+    if (ios /= 0) then
+      PRINT '(/,A,/,A,/,A)', 'ERROR reading file:', Fname, 'check to be sure the input file exists'
+      Iret = 1
+    else
+      ! read to line before data starts in each file
+      i = 0
+      do while (i == 0)
+        read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+        if (ios /= 0) then
+          write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
+          Iret = 1
+          exit
+        elseif (dum == '####') then
+          exit
+        end if
+      end do
+    end if
+
+  end subroutine find_header_end
 
 !**********************
 ! Check for end of file

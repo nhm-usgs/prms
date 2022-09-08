@@ -20,11 +20,11 @@
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-02-08'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1 02/08/2022'
+      character(len=*), parameter :: PRMS_versn = '2022-09-07'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 09/07/2022'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
-      INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
+      INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw, Nstreamtemp
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
       INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval, Nmap2hru, Nmap, Nsnow
 ! Global
@@ -37,7 +37,7 @@
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag, Albedo_cbh_flag, Cloud_cover_cbh_flag
-      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag, PRMS4_flag
+      INTEGER, SAVE :: PRMS_flag, PRMS4_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Soilzone_add_water_use
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
@@ -45,7 +45,6 @@
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
       INTEGER, SAVE :: Lake_transfer_water_use, Lake_add_water_use
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
-      INTEGER, SAVE :: Kkiter
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_map
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=temp_map
 ! Control parameters
@@ -53,7 +52,7 @@
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
-      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
+      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag, forcing_check_flag
       INTEGER, SAVE :: Prms_warmup !, statsON_OFF
       INTEGER, SAVE :: Snow_cbh_flag, Gwflow_cbh_flag, Frozen_flag, Glacier_flag
       INTEGER, SAVE :: Dprst_add_water_use, Dprst_transfer_water_use
@@ -190,7 +189,6 @@
 
       ELSEIF ( Process(:7)=='setdims' ) THEN
         Process_flag = SETDIMENS
-        Kkiter = 1 ! set for PRMS-only mode
         Soilzone_add_water_use = OFF
         Dprst_add_water_use = OFF
         Dprst_transfer_water_use = OFF
@@ -491,11 +489,11 @@
 ! Functions
       INTEGER, EXTERNAL :: decldim, declfix, call_modules, control_integer_array, control_file_name
       INTEGER, EXTERNAL :: control_string, control_integer, compute_julday
-      EXTERNAL :: read_error, PRMS_open_output_file, PRMS_open_input_file, check_module_names
+      EXTERNAL :: read_error, PRMS_open_output_file, PRMS_open_input_file, check_module_names, error_stop
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
-      INTEGER :: idim, iret, j, Number_timesteps, startday, endday
+      INTEGER :: iret, j, Number_timesteps, startday, endday
 !***********************************************************************
       setdims = 1
 
@@ -514,7 +512,6 @@
       IF ( Model_mode(:4)=='    ' ) Model_mode = 'PRMS5'
       PRMS4_flag = OFF
       PRMS_flag = ACTIVE
-      GSFLOW_flag = OFF
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='prms' .OR. Model_mode(:5)=='DAILY' ) THEN
         Model = PRMS
         PRMS4_flag = ACTIVE
@@ -573,6 +570,7 @@
 
       startday = compute_julday(Start_year, Start_month, Start_day)
       endday = compute_julday(End_year, End_month, End_day)
+      IF ( endday<startday ) CALL error_stop('end_time is specified < start_time', ERROR_control)
       Number_timesteps = endday - startday + 1
 
       IF ( control_integer(Init_vars_from_file, 'init_vars_from_file')/=0 ) Init_vars_from_file = 0
@@ -783,6 +781,9 @@
 ! nsegment dimension
       IF ( decldim('nsegment', 0, MAXDIM, 'Number of stream-channel segments')/=0 ) CALL read_error(7, 'nsegment')
 
+      IF ( decldim('nstreamtemp', 0, MAXDIM, 'Number of stream temperature replacement setments')/=0 ) &
+           CALL read_error(7, 'nstreamtemp')
+
 ! subbasin dimensions
       IF ( control_integer(Subbasin_flag, 'subbasin_flag')/=0 ) Subbasin_flag = ACTIVE
       IF ( decldim('nsub', 0, MAXDIM, 'Number of internal subbasins')/=0 ) CALL read_error(7, 'nsub')
@@ -795,13 +796,6 @@
 
 ! map results dimensions
       IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = OFF
-      idim = 0
-      IF ( MapOutON_OFF>OFF ) idim = 1
-      IF ( decldim('nhrucell', idim, MAXDIM, &
-     &     'Number of unique intersections between HRUs and spatial units of a target map for mapped results')/=0 ) &
-     &     CALL read_error(7, 'nhrucell')
-      IF ( decldim('ngwcell', 0, MAXDIM, &
-     &     'Number of spatial units in the target map for mapped results')/=0 ) CALL read_error(7, 'ngwcell')
 
 ! declare precip_map and temp_map module specific dimensions
       IF ( decldim('nmap2hru', 0, MAXDIM, 'Number of intersections between HRUs and input climate map')/=0 ) &
@@ -977,11 +971,16 @@
       IF ( Nlake_hrus==-1 ) CALL read_error(7, 'nlake_hrus')
       IF ( Nlake>0 .AND. Nlake_hrus==0 ) Nlake_hrus = Nlake
 
-      Ndepl = getdim('ndepl')
-      IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')
+      IF ( Snarea_curve_flag==ACTIVE ) THEN
+        Ndepl = Nhru
+        Ndeplval = Ndepl * 11
+      ELSE
+        Ndepl = getdim('ndepl')
+        IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')
 
-      Ndeplval = getdim('ndeplval')
-      IF ( Ndeplval==-1 ) CALL read_error(7, 'ndeplval')
+        Ndeplval = getdim('ndeplval')
+        IF ( Ndeplval==-1 ) CALL read_error(7, 'ndeplval')
+      ENDIF
 
       Nsub = getdim('nsub')
       IF ( Nsub==-1 ) CALL read_error(7, 'nsub')

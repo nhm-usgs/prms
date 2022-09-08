@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2021-08-13'
+      character(len=*), parameter :: Version_climateflow = '2022-09-07'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -128,7 +128,7 @@
      &    ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Model, Init_vars_from_file, Temp_flag, Precip_flag, Glacier_flag, &
-     &    Strmflow_module, Temp_module, Stream_order_flag, GSFLOW_flag, &
+     &    Strmflow_module, Temp_module, Stream_order_flag, &
      &    Precip_module, Solrad_module, Transp_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Call_cascade, Et_flag, Dprst_flag, Solrad_flag
       USE PRMS_CLIMATEVARS
@@ -424,12 +424,10 @@
      &     'inches', Basin_soil_to_gw)/=0 ) CALL read_error(3, 'basin_soil_to_gw')
 
 ! gwflow
-      IF ( GSFLOW_flag==OFF .OR. Model==DOCUMENTATION ) THEN
-        ALLOCATE ( Gwres_stor(Nhru) )
-        IF ( declvar('gwflow', 'gwres_stor', 'ngw', Nhru, 'double', &
-     &       'Storage in each GWR', &
-     &       'inches', Gwres_stor)/=0 ) CALL read_error(3, 'gwres_stor')
-      ENDIF
+      ALLOCATE ( Gwres_stor(Nhru) )
+      IF ( declvar('gwflow', 'gwres_stor', 'ngw', Nhru, 'double', &
+     &     'Storage in each GWR', &
+     &     'inches', Gwres_stor)/=0 ) CALL read_error(3, 'gwres_stor')
 
 ! srunoff
       ALLOCATE ( Imperv_stor(Nhru) )
@@ -858,7 +856,7 @@
      &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM, ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
-     &    Temp_module, Stream_order_flag, GSFLOW_flag, &
+     &    Temp_module, Stream_order_flag, &
      &    Precip_module, Solrad_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Et_flag, Dprst_flag, Solrad_flag, &
      &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag
@@ -1224,7 +1222,7 @@
       Imperv_stor = 0.0
       Pkwater_equiv = 0.0D0
       Slow_stor = 0.0
-      IF ( GSFLOW_flag==OFF ) Gwres_stor = 0.0D0 ! not needed for GSFLOW
+      Gwres_stor = 0.0D0
       IF ( Dprst_flag==ACTIVE ) THEN
         Dprst_vol_open = 0.0D0
         Dprst_vol_clos = 0.0D0
@@ -1256,17 +1254,36 @@
 !***********************************************************************
       SUBROUTINE temp_set(Ihru, Tmax, Tmin, Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, Hru_area)
       USE PRMS_CLIMATEVARS, ONLY: Basin_temp, Basin_tmax, Basin_tmin, Temp_units, Tmax_hru, Tmin_hru
-      USE PRMS_CONSTANTS, ONLY: MINTEMP, MAXTEMP, ERROR_temp
+      USE PRMS_CONSTANTS, ONLY: MINTEMP, MAXTEMP, ERROR_temp, DEBUG_less, ACTIVE
+      USE PRMS_MODULE, ONLY: forcing_check_flag, Print_debug
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
       REAL, INTENT(IN) :: Tmax, Tmin, Hru_area
+!      REAL, INTENT(INOUT) :: Tmax, Tmin
+!      REAL, INTENT(IN) :: Hru_area
       REAL, INTENT(OUT) :: Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc
 ! Functions
       INTRINSIC :: DBLE
       REAL, EXTERNAL :: c_to_f, f_to_c
       EXTERNAL :: print_date
+! Local Variable
+!      INTEGER :: foo
 !***********************************************************************
+      IF ( forcing_check_flag == ACTIVE ) THEN
+        IF ( Tmax < Tmin ) THEN
+          IF ( Print_debug > DEBUG_less ) THEN
+            PRINT '(A,I0)', 'Warning, adjusted tmax value < adjusted tmin value for HRU: ', Ihru
+            PRINT '(4(A,F0.4))', '         tmax: ', Tmax, ' tmin: ', Tmin, ', Difference: ', Tmin-Tmax
+!            PRINT '(A)',         '         values swapped'
+            CALL print_date(0)
+          ENDIF
+!          foo = Tmax
+!          Tmax = Tmin
+!          Tmin = foo
+        ENDIF
+      ENDIF
+
       IF ( Temp_units==0 ) THEN
 !       degrees Fahrenheit
         Tmaxf = Tmax
@@ -1287,10 +1304,12 @@
         Basin_temp = Basin_temp + DBLE( Tavgc*Hru_area )
       ENDIF
 
-      IF ( Tminf<MINTEMP .OR. Tmaxf>MAXTEMP ) THEN
-        PRINT '(A,I0,1X,F0.4,1X,F0.4,/)', ' ERROR, invalid temperature value for HRU: ', Ihru, Tminf, Tmaxf
-        CALL print_date(1)
-        ERROR STOP ERROR_temp
+      IF ( forcing_check_flag == ACTIVE ) THEN
+        IF ( Tminf<MINTEMP .OR. Tmaxf>MAXTEMP ) THEN
+          PRINT '(A,I0,1X,F0.4,1X,F0.4,/)', ' ERROR, invalid temperature value for HRU: ', Ihru, Tminf, Tmaxf
+          CALL print_date(1)
+          ERROR STOP ERROR_temp
+        ENDIF
       ENDIF
       Tmax_hru(Ihru) = Tmax ! in units temp_units
       Tmin_hru(Ihru) = Tmin ! in units temp_units
@@ -1305,14 +1324,16 @@
 !***********************************************************************
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
-     &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f)
-      USE PRMS_CONSTANTS, ONLY: NEARZERO
+     &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, DEBUG_less
+      USE PRMS_MODULE, ONLY: forcing_check_flag, Print_debug
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, DBLE
       EXTERNAL :: print_date
 ! Arguments
+      INTEGER, INTENT(IN) :: Ihru
       REAL, INTENT(IN) :: Tmax_allrain_f, Tmax_allsnow_f, Rain_adj, Snow_adj
       REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Hru_area
       DOUBLE PRECISION, INTENT(INOUT) :: Sum_obs
@@ -1369,14 +1390,24 @@
       Basin_rain = Basin_rain + DBLE( Hru_rain*Hru_area )
       Basin_snow = Basin_snow + DBLE( Hru_snow*Hru_area )
 
+      IF ( forcing_check_flag == ACTIVE ) THEN
+        IF ( Hru_ppt < 0.0 .OR. Hru_rain < 0.0 .OR. Hru_ppt < 0.0 ) THEN
+          IF ( Print_debug > DEBUG_less ) THEN
+            PRINT '(A,I0)', 'Warning, adjusted precipitation value(s) < 0.0 for HRU: ', Ihru
+            PRINT '(A,F0.4,A,F0.4,A)', '         hru_ppt: ', Hru_ppt, ' hru_rain: ', Hru_rain, ' hru_snow: ', Hru_snow
+            CALL print_date(0)
+          ENDIF
+        ENDIF
+      ENDIF
+
       END SUBROUTINE precip_form
 
 !***********************************************************************
 !     Write or read restart file
 !***********************************************************************
       SUBROUTINE climateflow_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE, OFF
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Glacier_flag, GSFLOW_flag, &
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Glacier_flag, &
      &    Dprst_flag, Stream_order_flag, Nlake
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
@@ -1403,7 +1434,7 @@
         WRITE ( Restart_outunit ) Ssres_stor
         WRITE ( Restart_outunit ) Soil_rechr
         WRITE ( Restart_outunit ) Imperv_stor
-        IF ( GSFLOW_flag==OFF ) WRITE ( Restart_outunit ) Gwres_stor
+        WRITE ( Restart_outunit ) Gwres_stor
         IF ( Dprst_flag==ACTIVE ) THEN
           WRITE ( Restart_outunit ) Dprst_vol_open
           WRITE ( Restart_outunit ) Dprst_vol_clos
@@ -1429,7 +1460,7 @@
         READ ( Restart_inunit ) Ssres_stor
         READ ( Restart_inunit ) Soil_rechr
         READ ( Restart_inunit ) Imperv_stor
-        IF ( GSFLOW_flag==OFF ) READ ( Restart_inunit ) Gwres_stor
+        READ ( Restart_inunit ) Gwres_stor
         IF ( Dprst_flag==ACTIVE ) THEN
           READ ( Restart_inunit ) Dprst_vol_open
           READ ( Restart_inunit ) Dprst_vol_clos
