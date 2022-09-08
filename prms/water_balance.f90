@@ -394,7 +394,7 @@
           IF ( Cascade_flag>CASCADE_OFF ) WRITE ( BALUNT, * ) 'cascade', &
                Hru_sz_cascadeflow(i), Upslope_dunnianflow(i), Upslope_interflow(i), &
                Upslope_hortonian(i), Hru_hortn_cascflow(i)
-          IF ( Cascadegw_flag>CASCADEGW_OFF ) WRITE ( BALUNT, * ) 'cascade gw', Gw_upslope(i)/harea_dble, Hru_gw_cascadeflow(i)
+          IF ( Cascadegw_flag>CASCADEGW_OFF ) WRITE ( BALUNT, * ) 'cascade gw', Gw_upslope(i)/harea, Hru_gw_cascadeflow(i)
           !CALL print_date(0)
           WRITE ( BALUNT, FMT1 ) '   Date:', Nowyear, Nowmonth, Nowday
         ENDIF
