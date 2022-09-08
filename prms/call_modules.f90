@@ -14,7 +14,7 @@
    &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
    &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
    &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
+   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT, ERROR_control
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='

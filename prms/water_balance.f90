@@ -196,7 +196,7 @@
       REAL :: last_sm, last_ss, soilbal, perv_frac, gvrbal, test, waterin, waterout, hrubal
       REAL :: delstor, robal, gmelt
       DOUBLE PRECISION :: basin_bal, bsmbal, soil_in, gwbal, gwup, basin_robal, bsnobal
-      DOUBLE PRECISION :: hru_out, hru_in, wbal, delta_stor, pptbal, brobal, dprst_hru_wb, harea_dble
+      DOUBLE PRECISION :: hru_out, hru_in, wbal, delta_stor, pptbal, brobal, dprst_hru_wb, harea
       CHARACTER(LEN=24), PARAMETER :: fmt1 = '(A, I5, 2("/",I2.2), /)'
 !***********************************************************************
       Basin_capillary_wb = 0.0D0
