@@ -493,7 +493,7 @@
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
-      INTEGER :: iret, j, Number_timesteps, startday, endday
+      INTEGER :: idim, iret, j, Number_timesteps, startday, endday
 !***********************************************************************
       setdims = 1
 
@@ -796,6 +796,13 @@
 
 ! map results dimensions
       IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = OFF
+      idim = 0
+      IF ( MapOutON_OFF>OFF ) idim = 1
+      IF ( decldim('nhrucell', idim, MAXDIM, &
+     &     'Number of unique intersections between HRUs and spatial units of a target map for mapped results')/=0 ) &
+     &     CALL read_error(7, 'nhrucell')
+      IF ( decldim('ngwcell', 0, MAXDIM, &
+     &     'Number of spatial units in the target map for mapped results')/=0 ) CALL read_error(7, 'ngwcell')
 
 ! declare precip_map and temp_map module specific dimensions
       IF ( decldim('nmap2hru', 0, MAXDIM, 'Number of intersections between HRUs and input climate map')/=0 ) &
