@@ -947,7 +947,7 @@
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Gwr_type
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: up_tree
+      EXTERNAL :: up_tree, PRMS_open_module_file
 !     Arguments
       INTEGER, INTENT(OUT) :: Iret
 !     Local Variables

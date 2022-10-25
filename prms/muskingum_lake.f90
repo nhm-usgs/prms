@@ -97,7 +97,7 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       character(len=*), parameter :: MODDESC = 'Streamflow & Lake Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_lake'
-      character(len=*), parameter :: Version_muskingum_lake = '2021-08-13'
+      character(len=*), parameter :: Version_muskingum_lake = '2022-10-24'
       INTEGER, SAVE :: Obs_flag, Linear_flag, Weir_flag, Gate_flag, Puls_flag
       INTEGER, SAVE :: Secondoutflow_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
@@ -983,7 +983,7 @@
         ENDIF
         Lake_outflow(lakeid) = Lake_evap(lakeid)
         IF ( Lake_transfer_water_use==ACTIVE ) THEN
-          IF ( Lake_transfer(lakeid)>0.0 ) Lake_outflow(lakeid) = Lake_outflow(lakeid) - Lake_transfer(lakeid)
+          IF ( Lake_transfer(lakeid)>0.0 ) Lake_outflow(lakeid) = Lake_outflow(lakeid) + Lake_transfer(lakeid)
         ENDIF
         IF ( Weir_gate_flag==ACTIVE ) THEN
           tocfs = Lake_area(lakeid)*Cfs_conv
@@ -1185,7 +1185,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, DBLE, SNGL, DABS
-      EXTERNAL :: table_comp
+      EXTERNAL :: table_comp, error_stop
 ! Arguments
       INTEGER, INTENT(IN) :: Lakeid, Laketype
       DOUBLE PRECISION, INTENT(IN) :: Lake_area, Lake_in_ts
