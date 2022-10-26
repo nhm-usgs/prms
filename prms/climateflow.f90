@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2022-09-07'
+      character(len=*), parameter :: Version_climateflow = '2022-10-24'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -70,7 +70,7 @@
       REAL, SAVE, ALLOCATABLE :: Hru_actet(:), Soil_moist(:)
       REAL, SAVE, ALLOCATABLE :: Soil_to_gw(:), Slow_flow(:)
       REAL, SAVE, ALLOCATABLE :: Soil_to_ssr(:), Ssres_in(:)
-      REAL, SAVE, ALLOCATABLE :: Ssr_to_gw(:), Slow_stor(:)
+      REAL, SAVE, ALLOCATABLE :: Ssr_to_gw(:), Slow_stor(:), Pref_flow_stor(:)
       REAL, SAVE, ALLOCATABLE :: Ssres_stor(:), Ssres_flow(:), Soil_rechr(:)
       ! srunoff
       REAL, SAVE, ALLOCATABLE :: Sroff(:), Imperv_stor(:), Infil(:)
@@ -386,6 +386,11 @@
       IF ( declvar(Soilzone_module, 'soil_moist', 'nhru', Nhru, 'real', &
      &     'Storage of capillary reservoir for each HRU', &
      &     'inches', Soil_moist)/=0 ) CALL read_error(3, 'soil_moist')
+
+      ALLOCATE ( Pref_flow_stor(Nhru) )
+      IF ( declvar(Soilzone_module, 'pref_flow_stor', 'nhru', Nhru, 'real', &
+     &     'Storage in preferential-flow reservoir for each HRU', &
+     &     'inches', Pref_flow_stor)/=0 ) CALL read_error(3, 'pref_flow_stor')
 
       ALLOCATE ( Hru_actet(Nhru) )
       IF ( declvar(Soilzone_module, 'hru_actet', 'nhru', Nhru, 'real', &

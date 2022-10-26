@@ -894,7 +894,7 @@
       USE PRMS_SNOW
       USE PRMS_SOLTAB, ONLY: Soltab_horad_potsw, Soltab_potsw, Hru_cossl
       USE PRMS_CLIMATE_HRU, ONLY: Albedo_hru
-      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_type, &
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_type, &
      &    Basin_area_inv, Hru_route_order, Cov_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
      &    Hru_ppt, Prmx, Tmaxc, Tminc, Tavgc, Swrad, Potet, Transp_on, Tmax_allsnow_c
@@ -909,7 +909,7 @@
       INTEGER :: i, j, k, niteda, isglacier
       REAL :: trd, sw, effk, cst, temp, cals, emis, esv, swn, cec
       REAL :: ieffk, icst, icals, isw, iswn, frac, orad_local
-      DOUBLE PRECISION :: dpt1, dpt_before_settle
+      DOUBLE PRECISION :: dpt1, dpt_before_settle, hruarea_dble
 !***********************************************************************
       snorun = 0
 
@@ -951,6 +951,8 @@
 
         ! Skip the HRU if it is a lake
         IF ( Hru_type(i)==LAKE ) CYCLE
+
+        hruarea_dble = Hru_area_dble(i)
 
         Active_glacier = OFF
         isglacier = OFF
@@ -1130,6 +1132,10 @@
           IF ( Active_glacier==1 ) Glacrb_melt(i) = 12.0*0.03937/DAYS_YR*Glacier_frac(i)
           IF ( Active_glacier==2 ) Glacrb_melt(i) = 12.0*0.03937/DAYS_YR*Glrette_frac(i) !since not moving much, maybe =0
         ENDIF
+
+! don't call ppt_to_pack for glacier--
+! if rains on ice, directly runs off in glacier module
+! if snows on ice, goes to snow comps
 
         ! If there is still a snowpack
         IF ( Pkwater_equiv(i)>0.0D0 ) THEN
@@ -1472,20 +1478,20 @@
           ELSE
             CALL glacr_states_to_zero(i,0)
           ENDIF
-          Basin_glacrb_melt = Basin_glacrb_melt + DBLE( Glacrb_melt(i)*Hru_area(i) )
-          Basin_glacrevap = Basin_glacrevap + DBLE( Glacr_evap(i)*Hru_area(i) )
+          Basin_glacrb_melt = Basin_glacrb_melt + DBLE( Glacrb_melt(i) )*hruarea_dble
+          Basin_glacrevap = Basin_glacrevap + DBLE( Glacr_evap(i) )*hruarea_dble
           IF ( Active_glacier==1 ) frac = (1.0 - Glacier_frac(i))
           IF ( Active_glacier==2 ) frac = (1.0 - Glrette_frac(i))
         ENDIF
 
         ! Sum volumes for basin totals
-        Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*Hru_area(i)*frac ) !don't include stuff melting into glacier
-        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*DBLE( Hru_area(i) )
-        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i)*Hru_area(i) )
-        Basin_snowcov = Basin_snowcov + DBLE( Snowcov_area(i)*Hru_area(i) )
-        Basin_pk_precip = Basin_pk_precip + DBLE( Pk_precip(i)*Hru_area(i) )
-        Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*DBLE( Hru_area(i) )
-        Basin_tcal = Basin_tcal + DBLE( Tcal(i)*Hru_area(i) )
+        Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*frac )*hruarea_dble !don't include stuff melting into glacier
+        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*hruarea_dble
+        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i) )*hruarea_dble
+        Basin_snowcov = Basin_snowcov + DBLE( Snowcov_area(i) )*hruarea_dble
+        Basin_pk_precip = Basin_pk_precip + DBLE( Pk_precip(i) )*hruarea_dble
+        Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*hruarea_dble
+        Basin_tcal = Basin_tcal + DBLE( Tcal(i) )*hruarea_dble
 
       ENDDO
 

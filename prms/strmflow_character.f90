@@ -48,12 +48,11 @@
       INTEGER FUNCTION strmflow_character_decl()
       USE PRMS_MODULE, ONLY: Nsegment
       USE PRMS_STRMFLOW_CHARACTER
-      use PRMS_MMFAPI, only: declvar_real
-      use PRMS_READ_PARAM_FILE, only: declparam
-      use prms_utils, only: read_error, print_module
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
+      INTEGER, EXTERNAL :: declvar, declparam
+      EXTERNAL :: read_error, print_module
  !***********************************************************************
       strmflow_character_decl = 0
 
@@ -61,24 +60,24 @@
 
 ! Declared Variables
       ALLOCATE ( Seg_width(Nsegment) )
-      CALL declvar_real( MODNAME, 'seg_width', 'nsegment', Nsegment, &
+      IF ( declvar( MODNAME, 'seg_width', 'nsegment', Nsegment, 'real', &
      &     'Width of flow in each segment', &
-     &     'meters', Seg_width )
+     &     'meters', Seg_width )/=0 ) CALL read_error(3, 'seg_width')
 
       ALLOCATE ( Seg_depth(Nsegment) )
-      CALL declvar_real( MODNAME, 'seg_depth', 'nsegment', Nsegment, &
+      IF ( declvar( MODNAME, 'seg_depth', 'nsegment', Nsegment, 'real', &
      &     'Depth of flow in each segment', &
-     &     'meters', Seg_depth )
+     &     'meters', Seg_depth )/=0 ) CALL read_error(3, 'seg_depth')
 
       ALLOCATE ( Seg_area(Nsegment) )
-      CALL declvar_real( MODNAME, 'seg_area', 'nsegment', Nsegment, &
+      IF ( declvar( MODNAME, 'seg_area', 'nsegment', Nsegment, 'real', &
      &     'Cross sectional area of flow in each segment', &
-     &     'square meters', Seg_area )
+     &     'square meters', Seg_area )/=0 ) CALL read_error(3, 'seg_area')
 
       ALLOCATE ( Seg_velocity(Nsegment) )
-      CALL declvar_real( MODNAME, 'seg_velocity', 'nsegment', Nsegment, &
+      IF ( declvar( MODNAME, 'seg_velocity', 'nsegment', Nsegment, 'real', &
      &     'Mean velocity of flow in each segment', &
-     &     'meters per second', Seg_velocity )
+     &     'meters per second', Seg_velocity )/=0 ) CALL read_error(3, 'seg_velocity')
 
       ALLOCATE ( width_alpha(Nsegment) )
       IF ( declparam( MODNAME, 'width_alpha', 'nsegment', 'real', &
@@ -116,16 +115,17 @@
       INTEGER FUNCTION strmflow_character_init()
       USE PRMS_MODULE, ONLY: Nsegment
       USE PRMS_STRMFLOW_CHARACTER
-      use PRMS_READ_PARAM_FILE, only: getparam_real
-      use prms_utils, only: read_error
       IMPLICIT NONE
+      ! Functions
+      INTEGER, EXTERNAL :: getparam
+      EXTERNAL :: read_error
 !***********************************************************************
       strmflow_character_init = 0
 
-      IF ( getparam_real( MODNAME, 'width_alpha', Nsegment, width_alpha)/=0 ) CALL read_error(2, 'width_alpha')
-      IF ( getparam_real( MODNAME, 'width_m', Nsegment, width_m)/=0 ) CALL read_error(2, 'width_m')
-      IF ( getparam_real( MODNAME, 'depth_alpha', Nsegment, depth_alpha)/=0 ) CALL read_error(2, 'depth_alpha')
-      IF ( getparam_real( MODNAME, 'depth_m', Nsegment, depth_m)/=0 ) CALL read_error(2, 'depth_m')
+      IF ( getparam( MODNAME, 'width_alpha', Nsegment, 'real', width_alpha)/=0 ) CALL read_error(2, 'width_alpha')
+      IF ( getparam( MODNAME, 'width_m', Nsegment, 'real', width_m)/=0 ) CALL read_error(2, 'width_m')
+      IF ( getparam( MODNAME, 'depth_alpha', Nsegment, 'real', depth_alpha)/=0 ) CALL read_error(2, 'depth_alpha')
+      IF ( getparam( MODNAME, 'depth_m', Nsegment, 'real', depth_m)/=0 ) CALL read_error(2, 'depth_m')
 
 ! Initialize declared variables
       Seg_width = 0.0

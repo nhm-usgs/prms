@@ -3,25 +3,14 @@
 !***********************************************************************
       MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ACTIVE, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
-   &    PRMS, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
-   &    CASCADEGW_SAME, CASCADEGW_OFF, CLIMATE, FROST, TRANSPIRE, WRITE_CLIMATE, POTET, CONVERT, &
-   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
-   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
-   &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
-   &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
-   &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
-   &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
-   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT, ERROR_control
+    USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-09-07'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 09/07/2022'
+      character(len=*), parameter :: PRMS_versn = '2022-10-25'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2.2 10/25/2022'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw, Nstreamtemp
@@ -39,7 +28,7 @@
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag, Albedo_cbh_flag, Cloud_cover_cbh_flag
       INTEGER, SAVE :: PRMS_flag, PRMS4_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
-      INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Soilzone_add_water_use
+      INTEGER, SAVE :: Dynamic_flag, Dynamic_soil_flag, Water_use_flag, Soilzone_add_water_use
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
       INTEGER, SAVE :: Nowyear, Nowmonth, Nowday
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
@@ -91,7 +80,7 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp, glacr
+      INTEGER, EXTERNAL :: stream_temp, glacr, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
@@ -125,6 +114,7 @@
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
+     &        '                    dynamic_soil_param_read', /, &
      &        '   Potet Solar Rad: soltab', /, &
      &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,', /, &
      &        '                    temp_map', /, &
@@ -142,6 +132,7 @@
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
      &        '                    muskingum_lake, muskingum_mann', /, &
+     &        'Streamflow Charact: strmflow_character', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
@@ -222,43 +213,27 @@
 ! All modules must be called for setdims, declare, initialize, and cleanup
       IF ( Process_flag/=RUN ) THEN
         ierr = basin()
-        IF ( ierr/=0 ) CALL module_error('basin', Arg, ierr)
 
-        IF ( Call_cascade==ACTIVE ) THEN
-          ierr = cascade()
-          IF ( ierr/=0 ) CALL module_error('cascade', Arg, ierr)
-        ENDIF
+        IF ( Call_cascade==ACTIVE ) ierr = cascade()
 
         ierr = climateflow()
-        IF ( ierr/=0 ) CALL module_error('climateflow', Arg, ierr)
 
         ierr = soltab()
-        IF ( ierr/=0 ) CALL module_error('soltab', Arg, ierr)
 
         ierr = setup()
-        IF ( ierr/=0 ) CALL module_error('setup', Arg, ierr)
       ENDIF
 
       ierr = prms_time()
-      IF ( ierr/=0 ) CALL module_error('prms_time', Arg, ierr)
 
       ierr = obs()
-      IF ( ierr/=0 ) CALL module_error('obs', Arg, ierr)
 
-      IF ( Water_use_flag==ACTIVE ) THEN
-        ierr = water_use_read()
-        IF ( ierr/=0 ) CALL module_error('water_use_read', Arg, ierr)
-      ENDIF
+      IF ( Water_use_flag==ACTIVE ) ierr = water_use_read()
 
-      IF ( Dynamic_flag==ACTIVE ) THEN
-        ierr = dynamic_param_read()
-        IF ( ierr/=0 ) CALL module_error('dynamic_param_read', Arg, ierr)
-      ENDIF
+      IF ( Dynamic_flag==ACTIVE ) ierr = dynamic_param_read()
 
-      IF ( Climate_hru_flag==ACTIVE ) THEN
-        ierr = climate_hru()
-        IF ( ierr/=0 ) CALL module_error('climate_hru', Arg, ierr)
-      ENDIF
+      IF ( Dynamic_soil_flag==ACTIVE ) ierr = dynamic_soil_param_read()
+
+      IF ( Climate_hru_flag==ACTIVE ) ierr = climate_hru()
 
       IF ( Climate_temp_flag==OFF ) THEN
         IF ( Temp_combined_flag==ACTIVE ) THEN
@@ -272,7 +247,6 @@
         ELSE !IF ( Temp_flag==temp_map_module )
           CALL temp_map()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Temp_module, Arg, ierr)
       ENDIF
 
       IF ( Climate_precip_flag==OFF ) THEN
@@ -281,7 +255,6 @@
         ELSEIF ( Precip_flag==precip_dist2_module ) THEN
           ierr = precip_dist2()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Precip_module, Arg, ierr)
       ENDIF
 
       IF ( Model==CLIMATE ) THEN
@@ -290,18 +263,17 @@
           CALL summary_output()
           RETURN
         ENDIF
+        IF ( Process_flag==CLEAN ) RETURN
       ENDIF
 
 ! frost_date is a pre-process module
       IF ( Model==FROST ) THEN
         ierr = frost_date()
-        IF ( ierr/=0 ) CALL module_error('frost_date', Arg, ierr)
-        call_modules = ierr
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
           RETURN
         ENDIF
-        IF ( Process_flag==CLEAN ) STOP
+        IF ( Process_flag==CLEAN ) RETURN
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
@@ -310,7 +282,6 @@
         ELSE !IF ( Solrad_flag==ccsolrad_module ) THEN
           ierr = ccsolrad()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Solrad_module, Arg, ierr)
       ENDIF
 
       IF ( Transp_flag==1 ) THEN
@@ -318,14 +289,13 @@
       ELSEIF ( Transp_flag==2 ) THEN
         ierr = transp_frost()
       ENDIF
-      IF ( ierr/=0 ) CALL module_error(Transp_module, Arg, ierr)
 
       IF ( Model==TRANSPIRE ) THEN
-        call_modules = ierr
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
           RETURN
         ENDIF
+        IF ( Process_flag==CLEAN ) RETURN
       ENDIF
 
       IF ( Climate_potet_flag==OFF ) THEN
@@ -344,50 +314,36 @@
         ELSE !IF ( Et_flag==potet_hs_module ) THEN
           ierr = potet_hs()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Et_module, Arg, ierr)
       ENDIF
 
       IF ( Model==WRITE_CLIMATE ) THEN
         ierr = write_climate_hru()
-        IF ( ierr/=0 ) CALL module_error('write_climate_hru', Arg, ierr)
-        call_modules = ierr
         IF ( Process_flag==RUN ) RETURN
       ENDIF
 
       IF ( Model==POTET ) THEN
-        IF ( ierr/=0 ) CALL module_error('POTET', Arg, ierr)
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
           RETURN
         ENDIF
+        IF ( Process_flag==CLEAN ) STOP
       ENDIF
 
       ierr = intcp()
-      IF ( ierr/=0 ) CALL module_error('intcp', Arg, ierr)
 
       ! rsr, need to do something if snow_cbh_flag=1
       ierr = snowcomp()
-      IF ( ierr/=0 ) CALL module_error('snowcomp', Arg, ierr)
 
-      IF ( Glacier_flag==ACTIVE ) THEN
-        ierr = glacr()
-        IF ( ierr/=0 ) CALL module_error('glacr', Arg, ierr)
-      ENDIF
+      IF ( Glacier_flag==ACTIVE ) ierr = glacr()
 
       ierr = srunoff()
-      IF ( ierr/=0 ) CALL module_error(Srunoff_module, Arg, ierr)
 
       ierr = soilzone()
-      IF ( ierr/=0 ) CALL module_error(Soilzone_module, Arg, ierr)
 
       ! rsr, need to do something if gwflow_cbh_flag=1
       ierr = gwflow()
-      IF ( ierr/=0 ) CALL module_error('gwflow', Arg, ierr)
 
-      IF ( Stream_order_flag==ACTIVE ) THEN
-        ierr = routing()
-        IF ( ierr/=0 ) CALL module_error('routing', Arg, ierr)
-      ENDIF
+      IF ( Stream_order_flag==ACTIVE ) ierr = routing()
 
       IF ( Strmflow_flag==strmflow_noroute_module ) THEN
         ierr = strmflow()
@@ -398,26 +354,18 @@
       ELSEIF ( Strmflow_flag==strmflow_muskingum_lake_module ) THEN
         ierr = muskingum_lake()
       ENDIF
-      IF ( ierr/=0 ) CALL module_error(Strmflow_module, Arg, ierr)
+
+      IF ( Stream_order_flag==ACTIVE ) ierr = strmflow_character()
 
       IF ( Stream_temp_flag==ACTIVE ) ierr = stream_temp()
 
-      IF ( Print_debug>DEBUG_minimum ) THEN
-        ierr = basin_sum()
-        IF ( ierr/=0 ) CALL module_error('basin_sum', Arg, ierr)
-      ENDIF
+      IF ( Print_debug>DEBUG_minimum ) ierr = basin_sum()
 
       IF ( Print_debug==DEBUG_WB ) CALL water_balance()
 
-      IF ( MapOutON_OFF>OFF ) THEN
-        ierr = map_results()
-        IF ( ierr/=0 ) CALL module_error('map_results', Arg, ierr)
-      ENDIF
+      IF ( MapOutON_OFF>OFF ) ierr = map_results()
 
-      IF ( Subbasin_flag==ACTIVE ) THEN
-        ierr = subbasin()
-        IF ( ierr/=0 ) CALL module_error('subbasin', Arg, ierr)
-      ENDIF
+      IF ( Subbasin_flag==ACTIVE ) ierr = subbasin()
 
       CALL summary_output()
 
@@ -507,6 +455,7 @@
       IF ( control_integer(Print_debug, 'print_debug')/=0 ) Print_debug = 0
 
       IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
+      IF ( control_integer(forcing_check_flag, 'forcing_check_flag')/=0 ) forcing_check_flag = OFF
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
       IF ( Model_mode(:4)=='    ' ) Model_mode = 'PRMS5'
@@ -825,12 +774,14 @@
       IF ( control_integer(Dyn_springfrost_flag, 'dyn_springfrost_flag')/=0 ) Dyn_springfrost_flag = OFF
       IF ( control_integer(Dyn_snareathresh_flag, 'dyn_snareathresh_flag')/=0 ) Dyn_snareathresh_flag = OFF
       IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = OFF
-      Dynamic_flag = 0
-      IF ( Dyn_imperv_flag/=OFF .OR. Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. Dyn_dprst_flag/=OFF .OR. &
-     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. Dyn_soil_flag /=OFF .OR. &
+      Dynamic_flag = OFF
+      Dynamic_soil_flag = OFF
+      IF ( Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. &
+     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. &
      &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
      &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
      &     Dyn_transp_on_flag/=OFF ) Dynamic_flag = ACTIVE
+      IF ( Dyn_imperv_flag/=OFF .OR. Dyn_dprst_flag/=OFF .OR. Dyn_soil_flag/=OFF ) Dynamic_soil_flag = ACTIVE
       IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = OFF
       IF ( control_integer(External_transferON_OFF, 'external_transferON_OFF')/=0 ) External_transferON_OFF = OFF
       IF ( control_integer(Dprst_transferON_OFF, 'dprst_transferON_OFF')/=0 ) Dprst_transferON_OFF = OFF
@@ -1169,7 +1120,7 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
-      INTEGER, EXTERNAL :: stream_temp
+      INTEGER, EXTERNAL :: stream_temp, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
       EXTERNAL :: precip_map, temp_map
@@ -1185,6 +1136,7 @@
       test = obs()
       test = water_use_read()
       test = dynamic_param_read()
+      test = dynamic_soil_param_read()
       test = temp_1sta_laps()
       test = temp_dist2()
       test = xyz_dist()
@@ -1218,6 +1170,7 @@
       test = strmflow_in_out()
       test = muskingum()
       test = muskingum_lake()
+      test = strmflow_character()
       test = stream_temp()
       test = basin_sum()
       test = map_results()
