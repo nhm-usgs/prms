@@ -40,9 +40,6 @@ void setup_cont (void) {
         static long start_date[] = {2000,10,1,0,0,0};
         static long end_date[] = {2001,9,30,0,0,0};
 
-/*
-**	GSFLOW control variables
-*/
         decl_control_string ("model_mode", "PRMS5");
         decl_control_string ("precip_module", "precip_1sta");
         decl_control_string ("temp_module", "temp_1sta");
@@ -53,9 +50,6 @@ void setup_cont (void) {
 		decl_control_string ("capillary_module", "soilzone");
 		decl_control_string ("strmflow_module", "strmflow");
         decl_control_string ("transp_module", "transp_tindex");
-        decl_control_string ("gsflow_output_file", "gsflow.out");
-        decl_control_string ("gsflow_csv_file", "gsflow.csv");
-		//decl_control_string ("creator_email", "unknown");
 
 /*
         cval = (char *)umalloc (sizeof (long));
@@ -109,7 +103,7 @@ void setup_cont (void) {
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
-		decl_control_int_array ("cbh_binary_flag", 1, lval);		
+		decl_control_int_array ("forcing_check_flag", 1, lval);		
 
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;

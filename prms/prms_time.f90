@@ -62,7 +62,7 @@
           Jday = julian_day('start', 'calendar')
           Jsol = julian_day('start', 'solar')
           Julwater = julian_day('start', 'water')
-          startday = compute_julday(Starttime(1), Starttime(2), Starttime(3))
+          startday = compute_julday(Starttime(YEAR), Starttime(MONTH), Starttime(DAY))
           Julian_day_absolute = startday
         ENDIF
 

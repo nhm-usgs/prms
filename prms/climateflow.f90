@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2022-10-24'
+      character(len=*), parameter :: Version_climateflow = '2022-11-02'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -76,6 +76,8 @@
       REAL, SAVE, ALLOCATABLE :: Sroff(:), Imperv_stor(:), Infil(:)
       ! Surface-Depression Storage
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open(:), Dprst_vol_clos(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_total_open_in(:), Dprst_total_open_out(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_total_clos_in(:), Dprst_total_clos_out(:)
       ! gwflow
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwres_stor(:)
       ! lakes
@@ -536,6 +538,20 @@
         IF ( declvar(Srunoff_module, 'dprst_vol_clos', 'nhru', Nhru, 'double', &
      &       'Storage volume in closed surface depressions for each HRU', &
      &       'acre-inches', Dprst_vol_clos)/=0 ) CALL read_error(3, 'dprst_vol_clos')
+        ALLOCATE ( Dprst_total_open_in(Nhru), Dprst_total_open_out(Nhru) )
+        ALLOCATE ( Dprst_total_clos_in(Nhru), Dprst_total_clos_out(Nhru) )
+        IF ( declvar(Srunoff_module, 'dprst_total_open_in', 'nhru', Nhru, 'double', &
+     &       'Storage volume in closed surface depressions for each HRU', &
+     &       'acre-inches', Dprst_total_open_in)/=0 ) CALL read_error(3, 'dprst_total_open_in')
+        IF ( declvar(Srunoff_module, 'dprst_total_open_out', 'nhru', Nhru, 'double', &
+     &       'Storage volume in closed surface depressions for each HRU', &
+     &       'acre-inches', Dprst_total_open_out)/=0 ) CALL read_error(3, 'dprst_total_open_out')
+        IF ( declvar(Srunoff_module, 'dprst_total_clos_in', 'nhru', Nhru, 'double', &
+     &       'Storage volume in closed surface depressions for each HRU', &
+     &       'acre-inches', Dprst_total_clos_in)/=0 ) CALL read_error(3, 'dprst_total_clos_in')
+        IF ( declvar(Srunoff_module, 'dprst_total_clos_out', 'nhru', Nhru, 'double', &
+     &       'Storage volume in closed surface depressions for each HRU', &
+     &       'acre-inches', Dprst_total_clos_out)/=0 ) CALL read_error(3, 'dprst_total_clos_out')
       ENDIF
 
       ALLOCATE ( Pkwater_equiv(Nhru) )

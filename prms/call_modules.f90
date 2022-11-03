@@ -10,7 +10,7 @@
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
       character(len=*), parameter :: PRMS_versn = '2022-10-25'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2.2 10/25/2022'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 11/11/2022'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw, Nstreamtemp
@@ -355,9 +355,12 @@
         ierr = muskingum_lake()
       ENDIF
 
-      IF ( Stream_order_flag==ACTIVE ) ierr = strmflow_character()
+      !IF ( Stream_order_flag==ACTIVE ) ierr = strmflow_character()
 
-      IF ( Stream_temp_flag==ACTIVE ) ierr = stream_temp()
+      IF ( Stream_temp_flag==ACTIVE ) THEN
+           ierr = strmflow_character()
+           ierr = stream_temp()
+      ENDIF
 
       IF ( Print_debug>DEBUG_minimum ) ierr = basin_sum()
 

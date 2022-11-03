@@ -185,7 +185,7 @@
      &    Hru_area_dble, Dprst_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
-     &    Slow_stor, Pref_flow_stor, Ssres_stor, Basin_soil_moist, Basin_ssstor
+     &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
      &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Hru_impervstor, Dprst_stor_hru
       USE PRMS_SOILZONE, ONLY: Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
