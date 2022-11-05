@@ -208,7 +208,7 @@
      &                         Solar_declination(80), Solar_declination(94), Solar_declination(109), &
      &                         Solar_declination(123), Solar_declination(138), Solar_declination(152), &
      &                         Solar_declination(173)
-        CLOSE ( file_unit )
+        CLOSE ( file_unit)
 ! from original soltab
 !     data obliquity/2.06699,2.06317,2.05582,2.04520,2.03243,2.01706,2.00080,
 !    +1.98553,1.96990,1.95714,1.94689,1.94005,1.93616/

@@ -33,7 +33,7 @@
 ! Functions
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
-      EXTERNAL :: read_error, temp_set, find_cbh_header_end, find_current_time
+      EXTERNAL :: read_error, temp_set, find_header_end, find_current_time
       EXTERNAL :: print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
@@ -126,7 +126,7 @@
      &       CALL read_error(2, 'tmin_map_adj')
         IF ( control_string(Tmax_map_file, 'tmax_map_file')/=0 ) CALL read_error(5, 'tmax_map_file')
         IF ( control_string(Tmin_map_file, 'tmin_map_file')/=0 ) CALL read_error(5, 'tmin_map_file')
-        CALL find_cbh_header_end(Tmax_unit, Tmax_map_file, 'tmax_map_file', ierr, 0)
+        CALL find_header_end(Tmax_unit, Tmax_map_file, ierr)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE
@@ -136,7 +136,7 @@
             istop = 1
           ENDIF
         ENDIF
-        CALL find_cbh_header_end(Tmin_unit, Tmin_map_file, 'tmin_map_file', ierr, 0)
+        CALL find_header_end(Tmin_unit, Tmin_map_file, ierr)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE

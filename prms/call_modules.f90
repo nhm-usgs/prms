@@ -3,13 +3,24 @@
 !***********************************************************************
       MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS
+    USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
+   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ACTIVE, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
+   &    PRMS, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
+   &    CASCADEGW_SAME, CASCADEGW_OFF, CLIMATE, FROST, TRANSPIRE, WRITE_CLIMATE, POTET, CONVERT, &
+   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
+   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, ERROR_control, &
+   &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
+   &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
+   &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
+   &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
+   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
+   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-10-25'
+      character(len=*), parameter :: PRMS_versn = '2022-11-11'
       character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 11/11/2022'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -326,7 +337,7 @@
           CALL summary_output()
           RETURN
         ENDIF
-        IF ( Process_flag==CLEAN ) STOP
+        IF ( Process_flag==CLEAN ) RETURN
       ENDIF
 
       ierr = intcp()

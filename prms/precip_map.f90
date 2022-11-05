@@ -34,7 +34,7 @@
 ! Functions
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, control_string
-      EXTERNAL :: read_error, precip_form, find_cbh_header_end, find_current_time
+      EXTERNAL :: read_error, precip_form, find_header_end, find_current_time
       EXTERNAL :: print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
@@ -128,7 +128,7 @@
         IF ( getparam(MODNAME, 'precip_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Precip_map_adj)/=0 ) &
      &       CALL read_error(2, 'precip_map_adj')
         IF ( control_string(Precip_map_file, 'precip_map_file')/=0 ) CALL read_error(5, 'precip_map_file')
-        CALL find_cbh_header_end(Precip_unit, Precip_map_file, 'precip_map_file', ierr, 0)
+        CALL find_header_end(Precip_unit, Precip_map_file, ierr)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE
