@@ -81,7 +81,6 @@ $(TARGET): $(OBJS)
 	$(FC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(MMFLIB) $(FLIBS)
 
 clean:
-	$(RM) $(TARGET)
 	$(RM) *.o *.mod *~
 
 #
@@ -141,7 +140,7 @@ nsub_summary.o: nsub_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mo
 
 nsegment_summary.o: nsegment_summary.f90 prms_module.mod prms_basin.mod prms_set_time.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) nsegment_summary.f90
-	
+
 nsegment_ncf.o: nsegment_ncf.f90 prms_module.mod prms_basin.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) nsegment_ncf.f90
 

@@ -5,8 +5,8 @@
 
 MMFDIR      = ./mmf
 LIBDIR      = ./
-PRMSDIR    = ./prms
-#BINDIR      = ./bin
+PRMSDIR    	= ./prms
+BINDIR      = ../bin
 MMFLIB      = ../mmf/libmmf.a
 NETCDF_DIR = /opt/conda
 # HDF5LIB = -L/opt/cray/pe/hdf5/1.10.5.2/GNU/8.2/lib -lhdf5_hl -lhdf5 -lm -lz -ldl
@@ -30,7 +30,7 @@ LDFLAGS		=$(OPTLEVEL)
 # FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
 FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore -I$(NETCDF_DIR)/include
 # FFLAGS=$(OPTLEVEL) -Wall -fno-second-underscore
-FFLAGS=$(OPTLEVEL) -fno-second-underscore
+# FFLAGS=$(OPTLEVEL) -fno-second-underscore
 FC		= gfortran
 
 ##########################################################
