@@ -2,62 +2,51 @@
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
       MODULE PRMS_MODULE
-    USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ACTIVE, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
-   &    PRMS, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
-   &    CASCADEGW_SAME, CASCADEGW_OFF, CLIMATE, FROST, TRANSPIRE, WRITE_CLIMATE, POTET, CONVERT, &
-   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
-   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
-   &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
-   &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
-   &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
-   &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
-   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
       IMPLICIT NONE
-      character(LEN=*), parameter :: &
-     &          EQULS = '===================================================================='
-      character(len=*), parameter :: MODDESC = 'Computation Order'
-      character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-02-08'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1 02/08/2022'
+      INTEGER, PARAMETER :: MAXFILE_LENGTH = 256, MAXCONTROL_LENGTH = 32
+      INTEGER, PARAMETER :: MAXDIM = 500
+      CHARACTER(LEN=68), PARAMETER :: &
+     &  EQULS = '===================================================================='
+      CHARACTER(LEN=12), PARAMETER :: MODNAME = 'call_modules'
+      CHARACTER(LEN=24), PARAMETER :: PRMS_VERSION = 'Version 5.1.0 05/01/2020'
       CHARACTER(LEN=8), SAVE :: Process
+      !     Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
+      INTEGER, PARAMETER :: GSFLOW = 0, PRMS = 1, MODFLOW = 2
+      INTEGER, PARAMETER :: DOCUMENTATION = 99
+      CHARACTER(LEN=80), SAVE :: PRMS_versn
 ! Dimensions
-      INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
+      INTEGER, SAVE :: Ncascade, Ncascdgw
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
-      INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval, Nmap2hru, Nmap, Nsnow
+      INTEGER, SAVE :: Ntemp, Nrain, Nsol, Nsegment, Ndepl, Nobs, Nevap, Ndeplval
 ! Global
       INTEGER, SAVE :: Model, Process_flag, Call_cascade
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
       INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
-      INTEGER, SAVE :: Lake_route_flag, Strmflow_flag, Stream_order_flag
+      INTEGER, SAVE :: Lake_route_flag, Nratetbl, Strmflow_flag, Stream_order_flag
       INTEGER, SAVE :: Temp_flag, Precip_flag, Climate_hru_flag, Climate_swrad_flag
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
-      INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag, Albedo_cbh_flag, Cloud_cover_cbh_flag
-      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag, PRMS4_flag
+      INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag
+      INTEGER, SAVE :: Grid_flag, Logunt
+      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
-      INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Soilzone_add_water_use
+      INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Nwateruse, Nexternal, Nconsumed, Npoigages, Prms_warmup
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      INTEGER, SAVE :: Nowyear, Nowmonth, Nowday
-      INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
-      INTEGER, SAVE :: Lake_transfer_water_use, Lake_add_water_use
+      INTEGER, SAVE :: PRMS4_flag
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
+!   Declared Variables
       INTEGER, SAVE :: Kkiter
-! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_map
-! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=temp_map
+!   Declared Parameters
+! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru
+! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta
 ! Control parameters
       INTEGER, SAVE :: Starttime(6), Endtime(6)
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
       INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
-      INTEGER, SAVE :: Prms_warmup !, statsON_OFF
-      INTEGER, SAVE :: Snow_cbh_flag, Gwflow_cbh_flag, Frozen_flag, Glacier_flag
-      INTEGER, SAVE :: Dprst_add_water_use, Dprst_transfer_water_use
-      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, snow_cloudcover_flag
+      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, statsON_OFF
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file, Param_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
@@ -92,31 +81,34 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp, glacr
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map
-      EXTERNAL :: call_modules_restart, water_balance, summary_output
-      EXTERNAL :: prms_summary, module_doc, convert_params, read_error
+      INTEGER, EXTERNAL :: stream_temp
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file
+      EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
+      EXTERNAL :: prms_summary, nhru_ncf, nsegment_ncf, module_doc, convert_params, read_error, nsub_summary
 ! Local Variables
-      INTEGER :: i, iret, nc, ierr
+      INTEGER :: i, iret, nc
+      external :: inquire
+      logical :: itsopen
 !***********************************************************************
-      call_modules = 0
-      ierr = 0
+      call_modules = 1
 
       Process = Arg
 
       IF ( Process(:3)=='run' ) THEN
-        Process_flag = RUN !(0=run, 1=declare, 2=init, 3=clean, 4=setdims)
+        Process_flag = 0 !(0=run, 1=declare, 2=init, 3=clean, 4=setdims)
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
         Execution_time_start = Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
      &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
 
-        Process_flag = DECL
+        Process_flag = 1
 
-        IF ( check_dims()/=0 ) ERROR STOP ERROR_dim
+        PRMS_versn = 'call_modules.f90 2020-05-01 10:10:00Z'
 
-        IF ( Print_debug>DEBUG_minimum ) THEN
+        IF ( check_dims()/=0 ) ERROR STOP -1
+
+        IF ( Print_debug>-2 ) THEN
           PRINT 10, PRMS_VERSION
           WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION
         ENDIF
@@ -127,17 +119,16 @@
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
      &        '   Potet Solar Rad: soltab', /, &
-     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,', /, &
-     &        '                    temp_map', /, &
+     &        '  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru', /, &
      &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
-     &        '                    climate_hru, precip_map', /, &
+     &        '                    climate_hru', /, &
      &        'Temp & Precip Dist: xyz_dist, ide_dist', /, &
      &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru', /, &
      &        'Transpiration Dist: transp_tindex, climate_hru, transp_frost', /, &
      &        '      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,', /, &
      &        '                    potet_hs, potet_pt, potet_pm, potet_pm_sta', /, &
      &        '      Interception: intcp', /, &
-     &        'Snow & Glacr Dynam: snowcomp, glacr_melt', /, &
+     &        '     Snow Dynamics: snowcomp', /, &
      &        '    Surface Runoff: srunoff_smidx, srunoff_carea', /, &
      &        '         Soil Zone: soilzone', /, &
      &        '       Groundwater: gwflow', /, &
@@ -145,314 +136,301 @@
      &        '                    muskingum_lake, muskingum_mann', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
-     &        '                    nhru_summary, nsub_summary, water_balance', /, &
-     &        '                    basin_summary, nsegment_summary', /, &
+     &        '                    nhru_ncf, nsub_summary, water_balance', /, &
+     &        '                    basin_summary, nsegment_ncf', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'))
-  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
-     &        'Module', 9X, 'Version Date', /, A)
-
-        IF ( Print_debug>DEBUG_minimum ) THEN
+  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 19X, &
+     &        'Module', 16X, 'Version Date', /, A)
+        IF ( Print_debug>-2 ) THEN
           PRINT 15
           PRINT 9002
           WRITE ( PRMS_output_unit, 15 )
-          PRINT 16, EQULS(:62)
-          WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
+          PRINT 16, EQULS
+          WRITE ( PRMS_output_unit, 16 ) EQULS
         ENDIF
-        CALL print_module(MODDESC, MODNAME, PRMS_versn)
+        CALL print_module(PRMS_versn, 'Computation Order           ', 90)
+
+        Kkiter = 1 ! set for PRMS-only mode
 
         Timestep = 0
-        IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
+        IF ( Init_vars_from_file>0 ) CALL call_modules_restart(1)
 
       ELSEIF ( Process(:4)=='init' ) THEN
-        Process_flag = INIT
+        Process_flag = 2
+
+        Grid_flag = 0
+        IF ( Nhru==Nhrucell ) Grid_flag = 1
 
         nc = numchars(Model_control_file)
-        IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
-        IF ( Print_debug>DEBUG_minimum ) WRITE ( PRMS_output_unit, 9004 ) 'Using Control File: ', Model_control_file(:nc)
+        IF ( Print_debug>-1 ) PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
+        IF ( Print_debug>-2 ) WRITE ( PRMS_output_unit, 9004 ) 'Using Control File: ', Model_control_file(:nc)
 
         nc = numchars(Param_file)
-        IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using Parameter File: ', Param_file(:nc)
-        IF ( Print_debug>DEBUG_minimum ) WRITE ( PRMS_output_unit, 9004 ) 'Using Parameter File: ', Param_file(:nc)
+        IF ( Print_debug>-1 ) PRINT 9004, 'Using Parameter File: ', Param_file(:nc)
+        IF ( Print_debug>-2 ) WRITE ( PRMS_output_unit, 9004 ) 'Using Parameter File: ', Param_file(:nc)
 
         IF ( Init_vars_from_file>0 ) THEN
           nc = numchars(Var_init_file)
-          IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using var_init_file: ', Var_init_file(:nc)
+          IF ( Print_debug>-1 ) PRINT 9004, 'Using var_init_file: ', Var_init_file(:nc)
         ENDIF
-        IF ( Save_vars_to_file==ACTIVE ) THEN
+        IF ( Save_vars_to_file==1 ) THEN
           nc = numchars(Var_save_file)
-          IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Writing var_save_file: ', Var_save_file(:nc)
+          IF ( Print_debug>-1 ) PRINT 9004, 'Using var_save_file: ', Var_save_file(:nc)
         ENDIF
 
-        IF ( Print_debug>DEBUG_minimum ) THEN
+        IF ( Print_debug>-2 ) THEN
           nc = numchars(Model_output_file)
           PRINT 9004, 'Writing PRMS Water Budget File: ', Model_output_file(:nc)
         ENDIF
 
       ELSEIF ( Process(:7)=='setdims' ) THEN
-        Process_flag = SETDIMENS
-        Kkiter = 1 ! set for PRMS-only mode
-        Soilzone_add_water_use = OFF
-        Dprst_add_water_use = OFF
-        Dprst_transfer_water_use = OFF
-        Gwr_add_water_use = OFF
-        Gwr_transfer_water_use = OFF
-        Lake_add_water_use = OFF
-        Lake_transfer_water_use = OFF
+        Process_flag = 4
 
       ELSE  !IF ( Process(:5)=='clean' ) THEN
-        Process_flag = CLEAN
+        Process_flag = 3
 
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
-        IF ( Save_vars_to_file==ACTIVE ) THEN
+        IF ( Save_vars_to_file==1 ) THEN
           CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
-          IF ( iret/=0 ) ERROR STOP ERROR_open_out
-          CALL call_modules_restart(SAVE_INIT)
+          IF ( iret/=0 ) ERROR STOP -1
+          CALL call_modules_restart(0)
         ENDIF
       ENDIF
 
       IF ( Model==DOCUMENTATION ) THEN
-        IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
+        IF ( Process_flag==4 .OR. Process_flag<2 ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
-          IF ( ierr/=0 ) CALL module_error('DOCUMENTATION', Arg, ierr)
+          call_modules = 0
           RETURN
         ELSE
-          STOP
+          STOP 0
         ENDIF
       ENDIF
 
 ! All modules must be called for setdims, declare, initialize, and cleanup
-      IF ( Process_flag/=RUN ) THEN
-        ierr = basin()
-        IF ( ierr/=0 ) CALL module_error('basin', Arg, ierr)
+      IF ( Process_flag/=0 ) THEN
+        call_modules = basin()
+        IF ( call_modules/=0 ) CALL module_error('basin', Arg, call_modules)
 
-        IF ( Call_cascade==ACTIVE ) THEN
-          ierr = cascade()
-          IF ( ierr/=0 ) CALL module_error('cascade', Arg, ierr)
+        IF ( Call_cascade==1 ) THEN
+          call_modules = cascade()
+          IF ( call_modules/=0 ) CALL module_error('cascade', Arg, call_modules)
         ENDIF
 
-        ierr = climateflow()
-        IF ( ierr/=0 ) CALL module_error('climateflow', Arg, ierr)
+        call_modules = climateflow()
+        IF ( call_modules/=0 ) CALL module_error('climateflow', Arg, call_modules)
 
-        ierr = soltab()
-        IF ( ierr/=0 ) CALL module_error('soltab', Arg, ierr)
+        call_modules = soltab()
+        IF ( call_modules/=0 ) CALL module_error('soltab', Arg, call_modules)
 
-        ierr = setup()
-        IF ( ierr/=0 ) CALL module_error('setup', Arg, ierr)
+        call_modules = setup()
+        IF ( call_modules/=0 ) CALL module_error('setup', Arg, call_modules)
       ENDIF
 
-      ierr = prms_time()
-      IF ( ierr/=0 ) CALL module_error('prms_time', Arg, ierr)
+      call_modules = prms_time()
+      IF ( call_modules/=0 ) CALL module_error('prms_time', Arg, call_modules)
 
-      ierr = obs()
-      IF ( ierr/=0 ) CALL module_error('obs', Arg, ierr)
+      call_modules = obs()
+      IF ( call_modules/=0 ) CALL module_error('obs', Arg, call_modules)
 
-      IF ( Water_use_flag==ACTIVE ) THEN
-        ierr = water_use_read()
-        IF ( ierr/=0 ) CALL module_error('water_use_read', Arg, ierr)
+      IF ( Water_use_flag==1 ) THEN
+        call_modules = water_use_read()
+        IF ( call_modules/=0 ) CALL module_error('water_use_read', Arg, call_modules)
       ENDIF
 
-      IF ( Dynamic_flag==ACTIVE ) THEN
-        ierr = dynamic_param_read()
-        IF ( ierr/=0 ) CALL module_error('dynamic_param_read', Arg, ierr)
+      IF ( Dynamic_flag==1 ) THEN
+        call_modules = dynamic_param_read()
+        IF ( call_modules/=0 ) CALL module_error('dynamic_param_read', Arg, call_modules)
       ENDIF
 
-      IF ( Climate_hru_flag==ACTIVE ) THEN
-        ierr = climate_hru()
-        IF ( ierr/=0 ) CALL module_error('climate_hru', Arg, ierr)
+      IF ( Climate_hru_flag==1 ) THEN
+        call_modules = climate_hru()
+        IF ( call_modules/=0 ) CALL module_error('climate_hru', Arg, call_modules)
       ENDIF
 
-      IF ( Climate_temp_flag==OFF ) THEN
-        IF ( Temp_combined_flag==ACTIVE ) THEN
-          ierr = temp_1sta_laps()
-        ELSEIF ( Temp_flag==xyz_dist_module ) THEN
-          ierr = xyz_dist()
-        ELSEIF ( Temp_flag==temp_dist2_module ) THEN
-          ierr = temp_dist2()
-        ELSEIF ( Temp_flag==ide_dist_module ) THEN
-          ierr = ide_dist()
-        ELSE !IF ( Temp_flag==temp_map_module )
-          CALL temp_map()
+      IF ( Climate_temp_flag==0 ) THEN
+        IF ( Temp_combined_flag==1 ) THEN
+          call_modules = temp_1sta_laps()
+        ELSEIF ( Temp_flag==6 ) THEN
+          call_modules = xyz_dist()
+        ELSEIF ( Temp_flag==3 ) THEN
+          call_modules = temp_dist2()
+        ELSE !IF ( Temp_flag==5 ) THEN
+          call_modules = ide_dist()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Temp_module, Arg, ierr)
+        IF ( call_modules/=0 ) CALL module_error(Temp_module, Arg, call_modules)
       ENDIF
 
-      IF ( Climate_precip_flag==OFF ) THEN
-        IF ( Precip_combined_flag==ACTIVE ) THEN
-          ierr = precip_1sta_laps()
-        ELSEIF ( Precip_flag==precip_dist2_module ) THEN
-          ierr = precip_dist2()
+      IF ( Climate_precip_flag==0 ) THEN
+        IF ( Precip_combined_flag==1 ) THEN
+          call_modules = precip_1sta_laps()
+        ELSEIF ( Precip_flag==3 ) THEN
+          call_modules = precip_dist2()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Precip_module, Arg, ierr)
+        IF ( call_modules/=0 ) CALL module_error(Precip_module, Arg, call_modules)
       ENDIF
 
-      IF ( Model==CLIMATE ) THEN
-        IF ( ierr/=0 ) CALL module_error('CLIMATE', Arg, ierr)
-        IF ( Process_flag==RUN ) THEN
-          CALL summary_output()
-          RETURN
-        ENDIF
+      IF ( Model==26 ) THEN
+        IF ( Process_flag==0 ) RETURN
       ENDIF
 
 ! frost_date is a pre-process module
-      IF ( Model==FROST ) THEN
-        ierr = frost_date()
-        IF ( ierr/=0 ) CALL module_error('frost_date', Arg, ierr)
-        call_modules = ierr
-        IF ( Process_flag==RUN ) THEN
-          CALL summary_output()
-          RETURN
-        ENDIF
-        IF ( Process_flag==CLEAN ) STOP
+      IF ( Model==29 ) THEN
+        call_modules = frost_date()
+        IF ( call_modules/=0 ) CALL module_error('frost_date', Arg, call_modules)
+        IF ( Process_flag==0 ) RETURN
+        IF ( Process_flag==3 ) STOP 0
       ENDIF
 
       IF ( Climate_swrad_flag==0 ) THEN
-        IF ( Solrad_flag==ddsolrad_module ) THEN
-          ierr = ddsolrad()
-        ELSE !IF ( Solrad_flag==ccsolrad_module ) THEN
-          ierr = ccsolrad()
+        IF ( Solrad_flag==1 ) THEN
+          call_modules = ddsolrad()
+        ELSE !IF ( Solrad_flag==2 ) THEN
+          call_modules = ccsolrad()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Solrad_module, Arg, ierr)
+        IF ( call_modules/=0 ) CALL module_error(Solrad_module, Arg, call_modules)
       ENDIF
 
       IF ( Transp_flag==1 ) THEN
-        ierr = transp_tindex()
+        call_modules = transp_tindex()
       ELSEIF ( Transp_flag==2 ) THEN
-        ierr = transp_frost()
+        call_modules = transp_frost()
       ENDIF
-      IF ( ierr/=0 ) CALL module_error(Transp_module, Arg, ierr)
+      IF ( call_modules/=0 ) CALL module_error(Transp_module, Arg, call_modules)
 
-      IF ( Model==TRANSPIRE ) THEN
-        call_modules = ierr
-        IF ( Process_flag==RUN ) THEN
-          CALL summary_output()
-          RETURN
+      IF ( Model==28 ) THEN
+        IF ( Process_flag==0 ) RETURN
+      ENDIF
+
+      IF ( Climate_potet_flag==0 ) THEN
+        IF ( Et_flag==1 ) THEN
+          call_modules = potet_jh()
+        ELSEIF ( Et_flag==2 ) THEN
+          call_modules = potet_hamon()
+        ELSEIF ( Et_flag==4 ) THEN
+          call_modules = potet_pan()
+        ELSEIF ( Et_flag==5 ) THEN
+          call_modules = potet_pt()
+        ELSEIF ( Et_flag==6 ) THEN
+          call_modules = potet_pm_sta()
+        ELSEIF ( Et_flag==11 ) THEN
+          call_modules = potet_pm()
+        ELSE !IF ( Et_flag==10 ) THEN
+          call_modules = potet_hs()
         ENDIF
+        IF ( call_modules/=0 ) CALL module_error(Et_module, Arg, call_modules)
       ENDIF
 
-      IF ( Climate_potet_flag==OFF ) THEN
-        IF ( Et_flag==potet_jh_module ) THEN
-          ierr = potet_jh()
-        ELSEIF ( Et_flag==potet_hamon_module ) THEN
-          ierr = potet_hamon()
-        ELSEIF ( Et_flag==potet_pan_module ) THEN
-          ierr = potet_pan()
-        ELSEIF ( Et_flag==potet_pt_module ) THEN
-          ierr = potet_pt()
-        ELSEIF ( Et_flag==potet_pm_sta_module ) THEN
-          ierr = potet_pm_sta()
-        ELSEIF ( Et_flag==potet_pm_module ) THEN
-          ierr = potet_pm()
-        ELSE !IF ( Et_flag==potet_hs_module ) THEN
-          ierr = potet_hs()
-        ENDIF
-        IF ( ierr/=0 ) CALL module_error(Et_module, Arg, ierr)
+      IF ( Model==24 ) THEN
+        call_modules = write_climate_hru()
+        IF ( call_modules/=0 ) CALL module_error('write_climate_hru', Arg, call_modules)
+        IF ( Process_flag==0 ) RETURN
       ENDIF
 
-      IF ( Model==WRITE_CLIMATE ) THEN
-        ierr = write_climate_hru()
-        IF ( ierr/=0 ) CALL module_error('write_climate_hru', Arg, ierr)
-        call_modules = ierr
-        IF ( Process_flag==RUN ) RETURN
+      IF ( Model==27 ) THEN
+        IF ( Process_flag==0 ) RETURN
       ENDIF
 
-      IF ( Model==POTET ) THEN
-        IF ( ierr/=0 ) CALL module_error('POTET', Arg, ierr)
-        IF ( Process_flag==RUN ) THEN
-          CALL summary_output()
-          RETURN
-        ENDIF
+      call_modules = intcp()
+      IF ( call_modules/=0 ) CALL module_error('intcp', Arg, call_modules)
+
+      call_modules = snowcomp()
+      IF ( call_modules/=0 ) CALL module_error('snowcomp', Arg, call_modules)
+
+      call_modules = srunoff()
+      IF ( call_modules/=0 ) CALL module_error(Srunoff_module, Arg, call_modules)
+
+      call_modules = soilzone()
+      IF ( call_modules/=0 ) CALL module_error(Soilzone_module, Arg, call_modules)
+
+      call_modules = gwflow()
+      IF ( call_modules/=0 ) CALL module_error('gwflow', Arg, call_modules)
+
+      IF ( Stream_order_flag==1 ) THEN
+        call_modules = routing()
+        IF ( call_modules/=0 ) CALL module_error('routing', Arg, call_modules)
       ENDIF
 
-      ierr = intcp()
-      IF ( ierr/=0 ) CALL module_error('intcp', Arg, ierr)
+      IF ( Strmflow_flag==1 ) THEN
+        call_modules = strmflow()
+      ELSEIF ( Muskingum_flag==1 ) THEN ! muskingum = 4; muskingum_mann = 7
+        call_modules = muskingum()
+      ELSEIF ( Strmflow_flag==5 ) THEN
+        call_modules = strmflow_in_out()
+      ELSEIF ( Strmflow_flag==3 ) THEN
+        call_modules = muskingum_lake()
+      ENDIF
+      IF ( call_modules/=0 ) CALL module_error(Strmflow_module, Arg, call_modules)
 
-      ! rsr, need to do something if snow_cbh_flag=1
-      ierr = snowcomp()
-      IF ( ierr/=0 ) CALL module_error('snowcomp', Arg, ierr)
+      IF ( Stream_temp_flag==1 ) call_modules = stream_temp()
 
-      IF ( Glacier_flag==ACTIVE ) THEN
-        ierr = glacr()
-        IF ( ierr/=0 ) CALL module_error('glacr', Arg, ierr)
+      IF ( Print_debug>-2 ) THEN
+        call_modules = basin_sum()
+        IF ( call_modules/=0 ) CALL module_error('basin_sum', Arg, call_modules)
       ENDIF
 
-      ierr = srunoff()
-      IF ( ierr/=0 ) CALL module_error(Srunoff_module, Arg, ierr)
+      IF ( Print_debug==1 ) CALL water_balance()
 
-      ierr = soilzone()
-      IF ( ierr/=0 ) CALL module_error(Soilzone_module, Arg, ierr)
-
-      ! rsr, need to do something if gwflow_cbh_flag=1
-      ierr = gwflow()
-      IF ( ierr/=0 ) CALL module_error('gwflow', Arg, ierr)
-
-      IF ( Stream_order_flag==ACTIVE ) THEN
-        ierr = routing()
-        IF ( ierr/=0 ) CALL module_error('routing', Arg, ierr)
+      IF ( MapOutON_OFF>0 ) THEN
+        call_modules = map_results()
+        IF ( call_modules/=0 ) CALL module_error('map_results', Arg, call_modules)
       ENDIF
 
-      IF ( Strmflow_flag==strmflow_noroute_module ) THEN
-        ierr = strmflow()
-      ELSEIF ( Muskingum_flag==ACTIVE ) THEN ! muskingum = 4; muskingum_mann = 7
-        ierr = muskingum()
-      ELSEIF ( Strmflow_flag==strmflow_in_out_module ) THEN
-        ierr = strmflow_in_out()
-      ELSEIF ( Strmflow_flag==strmflow_muskingum_lake_module ) THEN
-        ierr = muskingum_lake()
-      ENDIF
-      IF ( ierr/=0 ) CALL module_error(Strmflow_module, Arg, ierr)
-
-      IF ( Stream_temp_flag==ACTIVE ) ierr = stream_temp()
-
-      IF ( Print_debug>DEBUG_minimum ) THEN
-        ierr = basin_sum()
-        IF ( ierr/=0 ) CALL module_error('basin_sum', Arg, ierr)
+      IF ( Subbasin_flag==1 ) THEN
+        call_modules = subbasin()
+        IF ( call_modules/=0 ) CALL module_error('subbasin', Arg, call_modules)
       ENDIF
 
-      IF ( Print_debug==DEBUG_WB ) CALL water_balance()
+!      IF ( NhruOutON_OFF>0 ) CALL nhru_summary()
+      IF ( NhruOutON_OFF>0 ) CALL nhru_ncf()
 
-      IF ( MapOutON_OFF>OFF ) THEN
-        ierr = map_results()
-        IF ( ierr/=0 ) CALL module_error('map_results', Arg, ierr)
-      ENDIF
+      IF ( NsubOutON_OFF==1 ) CALL nsub_summary()
 
-      IF ( Subbasin_flag==ACTIVE ) THEN
-        ierr = subbasin()
-        IF ( ierr/=0 ) CALL module_error('subbasin', Arg, ierr)
-      ENDIF
+      IF ( BasinOutON_OFF==1 ) CALL basin_summary()
 
-      CALL summary_output()
+!      IF ( NsegmentOutON_OFF>0 ) CALL nsegment_summary()
+      IF ( NsegmentOutON_OFF>0 ) CALL nsegment_ncf()
 
-      IF ( CsvON_OFF>OFF ) CALL prms_summary()
+      IF ( CsvON_OFF>0 ) CALL prms_summary()
 
-      call_modules = ierr ! set in case of the following RETURNs
-      IF ( Process_flag==RUN ) THEN
+      IF ( Process_flag==0 ) THEN
         RETURN
-      ELSEIF ( Process_flag==CLEAN ) THEN
+      ELSEIF ( Process_flag==3 ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
         Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
      &                       Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
         Elapsed_time = Execution_time_end - Execution_time_start
         Elapsed_time_minutes = INT(Elapsed_time/60.0)
-        IF ( Print_debug>DEBUG_less ) THEN
+        IF ( Print_debug>-1 ) THEN
           PRINT 9001
           PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
           PRINT 9003, 'end  ', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
           PRINT '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
      &                               Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
         ENDIF
-        IF ( Print_debug>DEBUG_minimum ) &
+        IF ( Print_debug>-2 ) &
      &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
      &                                                     Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
-        IF ( Print_debug>DEBUG_minimum ) CLOSE ( PRMS_output_unit )
-        IF ( Save_vars_to_file==ACTIVE ) CLOSE ( Restart_outunit )
-      ELSEIF ( Process_flag==DECL ) THEN
-        IF ( Print_debug>DEBUG_minimum ) THEN
-          PRINT '(A)', EQULS(:62)
-          WRITE ( PRMS_output_unit, '(A)' ) EQULS(:62)
+
+!marks        IF ( Print_debug>-2 ) CLOSE ( PRMS_output_unit )
+
+        IF (Print_debug>-2) then
+           inquire(unit=prms_output_unit, opened=itsopen) 
+           if (itsopen) then
+!marks don't know what is up with closing this file. just comment out for now
+!               close(PRMS_output_unit)
+           endif
+        endif
+
+        IF ( Save_vars_to_file>0 ) CLOSE ( Restart_outunit )
+      ELSEIF ( Process_flag==1 ) THEN
+        IF ( Print_debug>-2 ) THEN
+          PRINT '(A)', EQULS
+          WRITE ( PRMS_output_unit, '(A)' ) EQULS
         ENDIF
-        IF ( Model==CONVERT ) CALL convert_params()
-      ELSEIF ( Process_flag==INIT ) THEN
+        IF ( Model==25 ) CALL convert_params()
+      ELSEIF ( Process_flag==2 ) THEN
         IF ( Inputerror_flag==1 ) THEN
           PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
      &          '  Set control parameter parameter_check_flag to 0 after', &
@@ -464,13 +442,13 @@
      &          'parameter_check_flag to 1 to verify that those calibration', &
      &          'parameters have valid and compatible values.'
         ENDIF
-        IF ( Parameter_check_flag==2 ) STOP
-        IF ( Inputerror_flag==1 ) ERROR STOP ERROR_param
-        IF ( Model==CONVERT ) THEN
+        IF ( Parameter_check_flag==2 ) STOP 0
+        IF ( Inputerror_flag==1 ) ERROR STOP -1
+        IF ( Model==25 ) THEN
           CALL convert_params()
-          STOP
+          STOP 0
         ENDIF
-        IF ( Print_debug>DEBUG_minimum ) &
+        IF ( Print_debug>-2 ) &
      &       PRINT 4, 'Simulation time period:', Start_year, Start_month, Start_day, ' -', End_year, End_month, End_day, EQULS
       ENDIF
 
@@ -490,19 +468,19 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: decldim, declfix, call_modules, control_integer_array, control_file_name
-      INTEGER, EXTERNAL :: control_string, control_integer, compute_julday
+      INTEGER, EXTERNAL :: control_string, control_integer
       EXTERNAL :: read_error, PRMS_open_output_file, PRMS_open_input_file, check_module_names
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
-      INTEGER :: idim, iret, j, Number_timesteps, startday, endday
+      INTEGER :: idim, iret, j
 !***********************************************************************
       setdims = 1
 
       Inputerror_flag = 0
 
       ! debug print flag:
-      ! -1=quiet - reduced screen output (DEBUG_less)
+      ! -1=quiet - reduced screen output
       ! 0=none; 1=water balances; 2=basin;
       ! 4=basin_sum; 5=soltab; 7=soil zone;
       ! 9=snowcomp; 13=cascade; 14=subbasin tree
@@ -511,26 +489,25 @@
       IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
-      IF ( Model_mode(:4)=='    ' ) Model_mode = 'PRMS5'
-      PRMS4_flag = OFF
-      PRMS_flag = ACTIVE
-      GSFLOW_flag = OFF
-      IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='prms' .OR. Model_mode(:5)=='DAILY' ) THEN
-        Model = PRMS
-        PRMS4_flag = ACTIVE
-        IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = OFF
+      PRMS4_flag = 1
+      IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = 0
+      PRMS_flag = 1
+      GSFLOW_flag = 0
+      ! Model (0=GSFLOW; 1=PRMS; 2=MODFLOW)
+      IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='    ' .OR. Model_mode(:5)=='DAILY' ) THEN
+        Model = 1
       ELSEIF ( Model_mode(:5)=='FROST' ) THEN
-        Model = FROST
+        Model = 29
       ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
-        Model = WRITE_CLIMATE
+        Model = 24
       ELSEIF ( Model_mode(:7)=='CLIMATE' ) THEN
-        Model = CLIMATE
+        Model = 26
       ELSEIF ( Model_mode(:5)=='POTET' ) THEN
-        Model = POTET
+        Model = 27
       ELSEIF ( Model_mode(:9)=='TRANSPIRE' ) THEN
-        Model = TRANSPIRE
+        Model = 28
       ELSEIF ( Model_mode(:7)=='CONVERT' ) THEN ! can be CONVERT4 or CONVERT5 or CONVERT (=CONVERT5)
-        Model = CONVERT
+        Model = 25
       ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
         Model = DOCUMENTATION
       ELSE
@@ -553,9 +530,6 @@
       ENDIF
       Start_month = Starttime(2)
       Start_day = Starttime(3)
-      Nowyear = Start_year
-      Nowmonth = Start_month
-      Nowday = Start_day
       Endtime = -1
       DO j = 1, 6
         IF ( control_integer_array(Endtime(j), j, 'end_time')/=0 ) THEN
@@ -571,16 +545,12 @@
       End_month = Endtime(2)
       End_day = Endtime(3)
 
-      startday = compute_julday(Start_year, Start_month, Start_day)
-      endday = compute_julday(End_year, End_month, End_day)
-      Number_timesteps = endday - startday + 1
-
       IF ( control_integer(Init_vars_from_file, 'init_vars_from_file')/=0 ) Init_vars_from_file = 0
       IF ( control_integer(Save_vars_to_file, 'save_vars_to_file')/=0 ) Save_vars_to_file = 0
 
       ! Open PRMS module output file
       IF ( control_string(Model_output_file, 'model_output_file')/=0 ) CALL read_error(5, 'model_output_file')
-      IF ( Print_debug>DEBUG_minimum ) THEN
+      IF ( Print_debug>-2 ) THEN
         CALL PRMS_open_output_file(PRMS_output_unit, Model_output_file, 'model_output_file', 0, iret)
         IF ( iret/=0 ) Inputerror_flag = 1
       ENDIF
@@ -593,7 +563,7 @@
         CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
         IF ( iret/=0 ) Inputerror_flag = 1
       ENDIF
-      IF ( Save_vars_to_file==ACTIVE ) THEN
+      IF ( Save_vars_to_file==1 ) THEN
         IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
       ENDIF
 
@@ -612,59 +582,55 @@
       Strmflow_module = 'strmflow'
       IF ( control_string(Strmflow_module, 'strmflow_module')/=0 ) CALL read_error(5, 'strmflow_module')
 
-      IF ( Parameter_check_flag>0 ) CALL check_module_names()
+      IF ( Parameter_check_flag>0 ) CALL check_module_names(Inputerror_flag)
 
-      Climate_precip_flag = OFF
-      Climate_temp_flag = OFF
-      Climate_transp_flag = OFF
-      Climate_potet_flag = OFF
-      Climate_swrad_flag = OFF
+      Climate_precip_flag = 0
+      Climate_temp_flag = 0
+      Climate_transp_flag = 0
+      Climate_potet_flag = 0
+      Climate_swrad_flag = 0
 
       IF ( Precip_module(:11)=='precip_1sta' .OR. Precip_module(:11)=='precip_prms') THEN
-        Precip_flag = precip_1sta_module
+        Precip_flag = 1
       ELSEIF ( Precip_module(:11)=='precip_laps' ) THEN
-        Precip_flag = precip_laps_module
+        Precip_flag = 2
       ELSEIF ( Precip_module(:12)=='precip_dist2' ) THEN
-        Precip_flag = precip_dist2_module
+        Precip_flag = 3
       ELSEIF ( Precip_module(:8)=='ide_dist' ) THEN
-        Precip_flag = ide_dist_module
+        Precip_flag = 5
       ELSEIF ( Precip_module(:11)=='climate_hru' ) THEN
-        Precip_flag = climate_hru_module
+        Precip_flag = 7
         Climate_precip_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' ) THEN
-        Precip_flag = xyz_dist_module
-      ELSEIF ( Precip_module(:15)=='precip_map' ) THEN
-        Precip_flag = precip_map_module
+        Precip_flag = 6
       ELSE
         PRINT '(/,2A)', 'ERROR: invalid precip_module value: ', Precip_module
         Inputerror_flag = 1
       ENDIF
-      Precip_combined_flag = OFF
-      IF ( Precip_flag==precip_1sta_module .OR. Precip_flag==precip_laps_module ) Precip_combined_flag = 1
+      Precip_combined_flag = 0
+      IF ( Precip_flag==1 .OR. Precip_flag==2 ) Precip_combined_flag = 1
 
       IF ( Temp_module(:9)=='temp_1sta' ) THEN
-        Temp_flag = temp_1sta_module
+        Temp_flag = 1
       ELSEIF ( Temp_module(:9)=='temp_laps' ) THEN
-        Temp_flag = temp_laps_module
+        Temp_flag = 2
       ELSEIF ( Temp_module(:10)=='temp_dist2' ) THEN
-        Temp_flag = temp_dist2_module
+        Temp_flag = 3
       ELSEIF ( Temp_module(:8)=='ide_dist' ) THEN
-        Temp_flag = ide_dist_module
+        Temp_flag = 5
       ELSEIF ( Temp_module(:11)=='climate_hru' ) THEN
-        Temp_flag = climate_hru_module
-        Climate_temp_flag = ACTIVE
+        Temp_flag = 7
+        Climate_temp_flag = 1
       ELSEIF ( Temp_module(:8)=='xyz_dist' ) THEN
-        Temp_flag = xyz_dist_module
+        Temp_flag = 6
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
-        Temp_flag = temp_sta_module
-      ELSEIF ( Temp_module(:15)=='temp_map' ) THEN
-        Temp_flag = temp_map_module
+        Temp_flag = 8
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid temp_module value: ', Temp_module
         Inputerror_flag = 1
       ENDIF
-      Temp_combined_flag = OFF
-      IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_sta_module ) Temp_combined_flag = 1
+      Temp_combined_flag = 0
+      IF ( Temp_flag==1 .OR. Temp_flag==2 .OR. Temp_flag==8 ) Temp_combined_flag = 1
 
       IF ( Transp_module(:13)=='transp_tindex' ) THEN
         Transp_flag = 1
@@ -679,48 +645,44 @@
       ENDIF
 
       IF ( Et_module(:8)=='potet_jh' ) THEN
-        Et_flag = potet_jh_module
+        Et_flag = 1
       ELSEIF ( Et_module(:11)=='potet_hamon' ) THEN
-        Et_flag = potet_hamon_module
+        Et_flag = 2
       ELSEIF ( Et_module(:11)=='climate_hru' ) THEN
-        Et_flag = climate_hru_module
-        Climate_potet_flag = ACTIVE
+        Et_flag = 7
+        Climate_potet_flag = 1
       ELSEIF ( Et_module(:8)=='potet_hs' ) THEN
-        Et_flag = potet_hs_module
+        Et_flag = 10
       ELSEIF ( Et_module(:12)=='potet_pm_sta' ) THEN
-        Et_flag = potet_pm_sta_module
+        Et_flag = 6
       ELSEIF ( Et_module(:8)=='potet_pm' ) THEN
-        Et_flag = potet_pm_module
+        Et_flag = 11
       ELSEIF ( Et_module(:8)=='potet_pt' ) THEN
-        Et_flag = potet_pt_module
+        Et_flag = 5
       ELSEIF ( Et_module(:9)=='potet_pan' ) THEN
-        Et_flag = potet_pan_module
+        Et_flag = 4
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid et_module value: ', Et_module
         Inputerror_flag = 1
       ENDIF
 
       ! stream_temp
-      IF ( control_integer(Stream_temp_flag, 'stream_temp_flag')/=0 ) Stream_temp_flag = OFF
+      IF ( control_integer(Stream_temp_flag, 'stream_temp_flag')/=0 ) Stream_temp_flag = 0
       ! 0 = CBH File; 1 = specified constant; 2 = Stations
-      IF ( control_integer(Strmtemp_humidity_flag, 'strmtemp_humidity_flag')/=0 ) Strmtemp_humidity_flag = OFF
+      IF ( control_integer(Strmtemp_humidity_flag, 'strmtemp_humidity_flag')/=0 ) Strmtemp_humidity_flag = 0
 
-      IF ( control_integer(Snarea_curve_flag, 'snarea_curve_flag')/=0 ) Snarea_curve_flag = OFF
-      IF ( control_integer(Soilzone_aet_flag, 'soilzone_aet_flag')/=0 ) Soilzone_aet_flag = OFF
-      IF ( control_integer(snow_cloudcover_flag, 'snow_cloudcover_flag')/=0 ) snow_cloudcover_flag = OFF
+      IF ( control_integer(Snarea_curve_flag, 'snarea_curve_flag')/=0 ) Snarea_curve_flag = 0
+      IF ( control_integer(Soilzone_aet_flag, 'soilzone_aet_flag')/=0 ) Soilzone_aet_flag = 0
 
-      IF ( control_integer(Humidity_cbh_flag, 'humidity_cbh_flag')/=0 ) Humidity_cbh_flag = OFF
-      IF ( control_integer(Windspeed_cbh_flag, 'windspeed_cbh_flag')/=0 ) Windspeed_cbh_flag = OFF
-      IF ( control_integer(Albedo_cbh_flag, 'albedo_cbh_flag')/=0 ) Albedo_cbh_flag = OFF
-      IF ( control_integer(Cloud_cover_cbh_flag, 'cloud_cover_cbh_flag')/=0 ) Cloud_cover_cbh_flag = OFF
-      IF ( Et_flag==potet_pm_module .OR. Et_flag==potet_pt_module .OR. &
-     &     (Stream_temp_flag==ACTIVE .AND. Strmtemp_humidity_flag==OFF) ) Humidity_cbh_flag = ACTIVE
-      IF ( Et_flag==potet_pm_module ) Windspeed_cbh_flag = ACTIVE
+      Humidity_cbh_flag = 0
+      Windspeed_cbh_flag = 0
+      IF ( Et_flag==11 .OR. Et_flag==5 .OR. (Stream_temp_flag==1 .AND. Strmtemp_humidity_flag==0) ) Humidity_cbh_flag = 1
+      IF ( Et_flag==11 ) Windspeed_cbh_flag = 1
 
       IF ( Srunoff_module(:13)=='srunoff_smidx' ) THEN
-        Sroff_flag = smidx_module
+        Sroff_flag = 1
       ELSEIF ( Srunoff_module(:13)=='srunoff_carea' ) THEN
-        Sroff_flag = carea_module
+        Sroff_flag = 2
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid srunoff_module value: ', Srunoff_module
         Inputerror_flag = 1
@@ -728,47 +690,40 @@
 
       Soilzone_module = 'soilzone'
 
-      IF ( control_integer(Orad_flag, 'orad_flag')/=0 ) Orad_flag = OFF
+      IF ( control_integer(Orad_flag, 'orad_flag')/=0 ) Orad_flag = 0
       IF ( Solrad_module(:8)=='ddsolrad' ) THEN
-        Solrad_flag = ddsolrad_module
+        Solrad_flag = 1
       ELSEIF ( Solrad_module(:11)=='climate_hru' ) THEN
-        Solrad_flag = climate_hru_module
-        Climate_swrad_flag = ACTIVE
+        Solrad_flag = 7
+        Climate_swrad_flag = 1
       ELSEIF ( Solrad_module(:8)=='ccsolrad' ) THEN
-        Solrad_flag = ccsolrad_module
+        Solrad_flag = 2
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
         Inputerror_flag = 1
       ENDIF
 
-      IF ( control_integer(Snow_cbh_flag, 'snow_cbh_flag')/=0 ) Snow_cbh_flag = OFF
-      IF ( control_integer(Gwflow_cbh_flag, 'gwflow_cbh_flag')/=0 ) Gwflow_cbh_flag = OFF
-      Snow_cbh_flag = OFF ! not implemented yet
-      Gwflow_cbh_flag = OFF ! not implemented yet
+      Climate_hru_flag = 0
+      IF ( Climate_temp_flag==1 .OR. Climate_precip_flag==1 .OR. Climate_potet_flag==1 .OR. &
+     &     Climate_swrad_flag==1 .OR. Climate_transp_flag==1 .OR. &
+     &     Humidity_cbh_flag==1 .OR. Windspeed_cbh_flag==1 ) Climate_hru_flag = 1
 
-      Climate_hru_flag = OFF
-      IF ( Climate_temp_flag==ACTIVE .OR. Climate_precip_flag==ACTIVE .OR. Climate_potet_flag==ACTIVE .OR. &
-     &     Climate_swrad_flag==ACTIVE .OR. Climate_transp_flag==ACTIVE .OR. &
-     &     Humidity_cbh_flag==ACTIVE .OR. Windspeed_cbh_flag==ACTIVE .OR. &
-     &     Albedo_cbh_flag==ACTIVE .OR. Cloud_cover_cbh_flag==ACTIVE .OR. &
-     &     Gwflow_cbh_flag==ACTIVE .OR. Snow_cbh_flag==ACTIVE ) Climate_hru_flag = ACTIVE
-
-      Muskingum_flag = OFF
+      Muskingum_flag = 0
       IF ( Strmflow_module(:15)=='strmflow_in_out' ) THEN
-        Strmflow_flag = strmflow_in_out_module
+        Strmflow_flag = 5
       ELSEIF ( Strmflow_module(:14)=='muskingum_lake' ) THEN
-        Strmflow_flag = strmflow_muskingum_lake_module
+        Strmflow_flag = 3
       ELSEIF ( Strmflow_module(:13)=='strmflow_lake' ) THEN
         PRINT '(/,2A)', 'ERROR, invalid strmflow_module value: ', Strmflow_module
         Inputerror_flag = 1
       ELSEIF ( Strmflow_module(:8)=='strmflow' ) THEN
-        Strmflow_flag = strmflow_noroute_module
+        Strmflow_flag = 1
       ELSEIF ( Strmflow_module(:14)=='muskingum_mann' ) THEN
-        Strmflow_flag = strmflow_muskingum_mann_module
-        Muskingum_flag = ACTIVE
+        Strmflow_flag = 7
+        Muskingum_flag = 1
       ELSEIF ( Strmflow_module(:9)=='muskingum' ) THEN
-        Strmflow_flag = strmflow_muskingum_module
-        Muskingum_flag = ACTIVE
+        Strmflow_flag = 4
+        Muskingum_flag = 1
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid strmflow_module value: ', Strmflow_module
         Inputerror_flag = 1
@@ -784,58 +739,50 @@
       IF ( decldim('nsegment', 0, MAXDIM, 'Number of stream-channel segments')/=0 ) CALL read_error(7, 'nsegment')
 
 ! subbasin dimensions
-      IF ( control_integer(Subbasin_flag, 'subbasin_flag')/=0 ) Subbasin_flag = ACTIVE
+      IF ( control_integer(Subbasin_flag, 'subbasin_flag')/=0 ) Subbasin_flag = 1
       IF ( decldim('nsub', 0, MAXDIM, 'Number of internal subbasins')/=0 ) CALL read_error(7, 'nsub')
 
-      IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = OFF
-      IF ( control_integer(Dprst_transfer_water_use, 'dprst_transfer_water_use')/=0 ) Dprst_transfer_water_use = OFF
-      IF ( control_integer(Dprst_add_water_use, 'dprst_add_water_use')/=0 ) Dprst_add_water_use = OFF
+      IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = 0
       ! 0 = off, 1 = on, 2 = lauren version
-      IF ( control_integer(CsvON_OFF, 'csvON_OFF')/=0 ) CsvON_OFF = OFF
+      IF ( control_integer(CsvON_OFF, 'csvON_OFF')/=0 ) CsvON_OFF = 0
 
 ! map results dimensions
-      IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = OFF
+      IF ( control_integer(MapOutON_OFF, 'mapOutON_OFF')/=0 ) MapOutON_OFF = 0
       idim = 0
-      IF ( MapOutON_OFF>OFF ) idim = 1
+      IF ( GSFLOW_flag==1 .OR. MapOutON_OFF==1 ) idim = 1
       IF ( decldim('nhrucell', idim, MAXDIM, &
      &     'Number of unique intersections between HRUs and spatial units of a target map for mapped results')/=0 ) &
      &     CALL read_error(7, 'nhrucell')
       IF ( decldim('ngwcell', 0, MAXDIM, &
      &     'Number of spatial units in the target map for mapped results')/=0 ) CALL read_error(7, 'ngwcell')
 
-! declare precip_map and temp_map module specific dimensions
-      IF ( decldim('nmap2hru', 0, MAXDIM, 'Number of intersections between HRUs and input climate map')/=0 ) &
-     &     CALL read_error(7, 'nmap2hru')
-      IF ( decldim('nmap', 0, MAXDIM, 'Number of mapped values')/=0 ) CALL read_error(7, 'nmap')
-      IF ( control_integer(Glacier_flag, 'glacier_flag')/=0 ) Glacier_flag = OFF
-      IF ( control_integer(Frozen_flag, 'frozen_flag')/=0 ) Frozen_flag = OFF
-      IF ( control_integer(Dyn_imperv_flag, 'dyn_imperv_flag')/=0 ) Dyn_imperv_flag = OFF
-      IF ( control_integer(Dyn_intcp_flag, 'dyn_intcp_flag')/=0 ) Dyn_intcp_flag = OFF
-      IF ( control_integer(Dyn_covden_flag, 'dyn_covden_flag')/=0 ) Dyn_covden_flag = OFF
-      IF ( control_integer(Dyn_dprst_flag, 'dyn_dprst_flag')/=0 ) Dyn_dprst_flag = OFF
-      IF ( control_integer(Dyn_potet_flag, 'dyn_potet_flag')/=0 ) Dyn_potet_flag = OFF
-      IF ( control_integer(Dyn_covtype_flag, 'dyn_covtype_flag')/=0 ) Dyn_covtype_flag = OFF
-      IF ( control_integer(Dyn_transp_flag, 'dyn_transp_flag')/=0 ) Dyn_transp_flag = OFF
-      IF ( control_integer(Dyn_soil_flag, 'dyn_soil_flag')/=0 ) Dyn_soil_flag = OFF
-      IF ( control_integer(Dyn_radtrncf_flag, 'dyn_radtrncf_flag')/=0 ) Dyn_radtrncf_flag = OFF
-      IF ( control_integer(Dyn_sro2dprst_perv_flag, 'dyn_sro2dprst_perv_flag')/=0 ) Dyn_sro2dprst_perv_flag = OFF
-      IF ( control_integer(Dyn_sro2dprst_imperv_flag, 'dyn_sro2dprst_imperv_flag')/=0 ) Dyn_sro2dprst_imperv_flag = OFF
-      IF ( control_integer(Dyn_fallfrost_flag, 'dyn_fallfrost_flag')/=0 ) Dyn_fallfrost_flag = OFF
-      IF ( control_integer(Dyn_springfrost_flag, 'dyn_springfrost_flag')/=0 ) Dyn_springfrost_flag = OFF
-      IF ( control_integer(Dyn_snareathresh_flag, 'dyn_snareathresh_flag')/=0 ) Dyn_snareathresh_flag = OFF
-      IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = OFF
+      IF ( control_integer(Dyn_imperv_flag, 'dyn_imperv_flag')/=0 ) Dyn_imperv_flag = 0
+      IF ( control_integer(Dyn_intcp_flag, 'dyn_intcp_flag')/=0 ) Dyn_intcp_flag = 0
+      IF ( control_integer(Dyn_covden_flag, 'dyn_covden_flag')/=0 ) Dyn_covden_flag = 0
+      IF ( control_integer(Dyn_dprst_flag, 'dyn_dprst_flag')/=0 ) Dyn_dprst_flag = 0
+      IF ( control_integer(Dyn_potet_flag, 'dyn_potet_flag')/=0 ) Dyn_potet_flag = 0
+      IF ( control_integer(Dyn_covtype_flag, 'dyn_covtype_flag')/=0 ) Dyn_covtype_flag = 0
+      IF ( control_integer(Dyn_transp_flag, 'dyn_transp_flag')/=0 ) Dyn_transp_flag = 0
+      IF ( control_integer(Dyn_soil_flag, 'dyn_soil_flag')/=0 ) Dyn_soil_flag = 0
+      IF ( control_integer(Dyn_radtrncf_flag, 'dyn_radtrncf_flag')/=0 ) Dyn_radtrncf_flag = 0
+      IF ( control_integer(Dyn_sro2dprst_perv_flag, 'dyn_sro2dprst_perv_flag')/=0 ) Dyn_sro2dprst_perv_flag = 0
+      IF ( control_integer(Dyn_sro2dprst_imperv_flag, 'dyn_sro2dprst_imperv_flag')/=0 ) Dyn_sro2dprst_imperv_flag = 0
+      IF ( control_integer(Dyn_fallfrost_flag, 'dyn_fallfrost_flag')/=0 ) Dyn_fallfrost_flag = 0
+      IF ( control_integer(Dyn_springfrost_flag, 'dyn_springfrost_flag')/=0 ) Dyn_springfrost_flag = 0
+      IF ( control_integer(Dyn_snareathresh_flag, 'dyn_snareathresh_flag')/=0 ) Dyn_snareathresh_flag = 0
+      IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = 0
       Dynamic_flag = 0
-      IF ( Dyn_imperv_flag/=OFF .OR. Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. Dyn_dprst_flag/=OFF .OR. &
-     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. Dyn_soil_flag /=OFF .OR. &
-     &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
-     &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
-     &     Dyn_transp_on_flag/=OFF ) Dynamic_flag = ACTIVE
-      IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = OFF
-      IF ( control_integer(External_transferON_OFF, 'external_transferON_OFF')/=0 ) External_transferON_OFF = OFF
-      IF ( control_integer(Dprst_transferON_OFF, 'dprst_transferON_OFF')/=0 ) Dprst_transferON_OFF = OFF
-      IF ( control_integer(Segment_transferON_OFF, 'segment_transferON_OFF')/=0 ) Segment_transferON_OFF = OFF
-      IF ( control_integer(Lake_transferON_OFF, 'lake_transferON_OFF')/=0 ) Lake_transferON_OFF = OFF
-      IF ( control_integer(Gwr_swale_flag, 'gwr_swale_flag')/=0 ) Gwr_swale_flag = OFF
+      IF ( Dyn_imperv_flag/=0 .OR. Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. Dyn_dprst_flag/=0 .OR. &
+     &     Dyn_potet_flag/=0 .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. Dyn_soil_flag /=0 .OR. &
+     &     Dyn_radtrncf_flag/=0 .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=0 .OR. &
+     &     Dyn_fallfrost_flag/=0 .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
+     &     Dyn_transp_on_flag/=0 ) Dynamic_flag = 1
+      IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = 0
+      IF ( control_integer(External_transferON_OFF, 'external_transferON_OFF')/=0 ) External_transferON_OFF = 0
+      IF ( control_integer(Dprst_transferON_OFF, 'dprst_transferON_OFF')/=0 ) Dprst_transferON_OFF = 0
+      IF ( control_integer(Segment_transferON_OFF, 'segment_transferON_OFF')/=0 ) Segment_transferON_OFF = 0
+      IF ( control_integer(Lake_transferON_OFF, 'lake_transferON_OFF')/=0 ) Lake_transferON_OFF = 0
+      IF ( control_integer(Gwr_swale_flag, 'gwr_swale_flag')/=0 ) Gwr_swale_flag = 0
 
 ! nhru_summary
       IF ( control_integer(NhruOutON_OFF, 'nhruOutON_OFF')/=0 ) NhruOutON_OFF = 0
@@ -858,16 +805,17 @@
       ENDIF
 
 ! cascade
-      ! if cascade_flag = 2 (CASCADE_HRU_SEGMENT), use hru_segment parameter for cascades, ncascade=ncascdgw=nhru (typical polygon HRUs)
-      IF ( control_integer(Cascade_flag, 'cascade_flag')/=0 ) Cascade_flag = CASCADE_NORMAL
-      ! if cascadegw_flag = 2 (CASCADEGW_SAME), use same cascades as HRUs
-      IF ( control_integer(Cascadegw_flag, 'cascadegw_flag')/=0 ) Cascadegw_flag = CASCADE_NORMAL
+      ! if cascade_flag = 2, use hru_segment parameter for cascades, ncascade=ncascdgw=nhru (typical polygon HRUs)
+      IF ( control_integer(Cascade_flag, 'cascade_flag')/=0 ) Cascade_flag = 1
+      ! if cascadegw_flag = 2, use same cascades as HRUs
+      IF ( control_integer(Cascadegw_flag, 'cascadegw_flag')/=0 ) Cascadegw_flag = 1
 
 ! spatial units
       IF ( decldim('ngw', 1, MAXDIM, 'Number of GWRs')/=0 ) CALL read_error(7, 'ngw')
       IF ( decldim('nhru', 1, MAXDIM, 'Number of HRUs')/=0 ) CALL read_error(7, 'nhru')
       IF ( decldim('nssr', 1, MAXDIM, 'Number of subsurface reservoirs')/=0 ) CALL read_error(7, 'nssr')
       IF ( decldim('nlake', 0, MAXDIM, 'Number of lakes')/=0 ) CALL read_error(7, 'nlake')
+      ! nlake_hrus to be added in 5.0.1
       IF ( decldim('nlake_hrus', 0, MAXDIM, 'Number of lake HRUs')/=0 ) CALL read_error(7, 'nlake_hrus')
       IF ( decldim('npoigages', 0, MAXDIM, 'Number of POI gages')/=0 ) CALL read_error(7, 'npoigages')
 
@@ -879,7 +827,6 @@
       IF ( decldim('nevap', 0, MAXDIM, 'Number of pan-evaporation data sets')/=0 ) CALL read_error(7, 'nevap')
       IF ( decldim('nratetbl', 0, MAXDIM, 'Number of rating-table data sets for lake elevations') &
      &     /=0 ) CALL read_error(7, 'nratetbl')
-      IF ( decldim('nsnow', 0, MAXDIM, 'Number of snow-depth-measurement stations')/=0 ) CALL read_error(7, 'nsnow')
 
 ! depletion curves
       IF ( decldim('ndepl', 1, MAXDIM, 'Number of snow-depletion curves')/=0 ) CALL read_error(7, 'ndelp')
@@ -893,8 +840,7 @@
       IF ( decldim('nconsumed', 0, MAXDIM, 'Number of consumptive water-use destinations')/=0 ) CALL read_error(7, 'nconsumed')
 
 ! fixed dimensions
-      IF ( declfix('ndays', MAX_DAYS_PER_YEAR, MAX_DAYS_PER_YEAR, 'Maximum number of days in a year ')/=0 ) &
-     &     CALL read_error(7, 'ndays')
+      IF ( declfix('ndays', 366, 366, 'Maximum number of days in a year ')/=0 ) CALL read_error(7, 'ndays')
       IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
       IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
 
@@ -945,17 +891,17 @@
       IF ( Ncascade==-1 ) CALL read_error(7, 'ncascade')
       Ncascdgw = getdim('ncascdgw')
       IF ( Ncascdgw==-1 ) CALL read_error(7, 'ncascdgw')
-      IF ( Cascade_flag==CASCADE_HRU_SEGMENT ) THEN
+      IF ( Cascade_flag==2 ) THEN
         Ncascade = Nhru
-        Cascadegw_flag = CASCADEGW_SAME
+        Cascadegw_flag = 2
       ENDIF
-      IF ( Cascadegw_flag==CASCADEGW_SAME ) Ncascdgw = Ncascade
-      IF ( Ncascade==0 ) Cascade_flag = CASCADE_OFF
-      IF ( Ncascdgw==0 ) Cascadegw_flag = CASCADEGW_OFF
-      IF ( (Cascade_flag>CASCADE_OFF .OR. Cascadegw_flag>CASCADEGW_OFF) .AND. Model/=CONVERT ) THEN ! don't call if model_mode = CONVERT
-        Call_cascade = ACTIVE
+      IF ( Cascadegw_flag==2 ) Ncascdgw = Ncascade
+      IF ( Ncascade==0 ) Cascade_flag = 0
+      IF ( Ncascdgw==0 .OR. GSFLOW_flag==1 .OR. Model==MODFLOW ) Cascadegw_flag = 0
+      IF ( (Cascade_flag>0 .OR. Cascadegw_flag>0) .AND. Model/=25 ) THEN ! don't call if model_mode = CONVERT
+        Call_cascade = 1
       ELSE
-        Call_cascade = OFF
+        Call_cascade = 0
       ENDIF
 
       Nwateruse = getdim('nwateruse')
@@ -1000,28 +946,19 @@
       Nratetbl = getdim('nratetbl')
       IF ( Nratetbl==-1 ) CALL read_error(6, 'nratetbl')
 
-      Nmap2hru = getdim('nmap2hru')
-      IF ( Nmap2hru==-1 ) CALL read_error(6, 'nmap2hru')
-      Nmap = getdim('nmap')
-      IF ( Nmap==-1 ) CALL read_error(6, 'nmap')
-
-      Water_use_flag = OFF
+      Water_use_flag = 0
       IF ( Nwateruse>0 ) THEN
-        IF ( Segment_transferON_OFF==ACTIVE .OR. Gwr_transferON_OFF==ACTIVE .OR. External_transferON_OFF==ACTIVE .OR. &
-     &       Dprst_transferON_OFF==ACTIVE .OR. Lake_transferON_OFF==ACTIVE ) Water_use_flag = ACTIVE
-        IF ( Water_use_flag==OFF ) THEN
-          PRINT *, 'WARNING, nwateruse specified > 0 without transfers active'
-          Nwateruse = 0
-        ENDIF
+        IF ( Segment_transferON_OFF==1 .OR. Gwr_transferON_OFF==1 .OR. External_transferON_OFF==1 .OR. &
+     &       Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 .OR. Nwateruse>0 ) Water_use_flag = 1
       ENDIF
 
-      IF ( Segment_transferON_OFF==ACTIVE .OR. Gwr_transferON_OFF==ACTIVE .OR. External_transferON_OFF==ACTIVE .OR. &
-     &     Dprst_transferON_OFF==ACTIVE .OR. Lake_transferON_OFF==ACTIVE .OR. Nconsumed>0 ) THEN
-        IF ( Dprst_transferON_OFF==ACTIVE .AND. Dprst_flag==OFF ) THEN
+      IF ( Segment_transferON_OFF==1 .OR. Gwr_transferON_OFF==1 .OR. External_transferON_OFF==1 .OR. &
+     &     Dprst_transferON_OFF==1 .OR. Lake_transferON_OFF==1 .OR. Nconsumed>0 ) THEN
+        IF ( Dprst_transferON_OFF==1 .AND. Dprst_flag==0 ) THEN
           PRINT *, 'ERROR, specified water-use event based dprst input and have dprst inactive'
           Inputerror_flag = 1
         ENDIF
-        IF ( Lake_transferON_OFF==ACTIVE .AND. Strmflow_flag==strmflow_muskingum_lake_module ) THEN
+        IF ( Lake_transferON_OFF==1 .AND. Strmflow_flag/=3 ) THEN
           PRINT *, 'ERROR, specified water-use event based lake input and have lake simulation inactive'
           Inputerror_flag = 1
         ENDIF
@@ -1039,8 +976,8 @@
         ENDIF
       ENDIF
 
-      Lake_route_flag = OFF
-      IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = ACTIVE ! muskingum_lake
+      Lake_route_flag = 0
+      IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = 1 ! muskingum_lake
 
       IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'
@@ -1050,12 +987,12 @@
 
       IF ( NsubOutON_OFF==1 .AND. Nsub==0 ) THEN
         NsubOutON_OFF = 0
-        IF ( Print_debug>DEBUG_less ) PRINT *, 'WARNING, nsubOutON_OFF = 1 and nsub = 0, thus nsub_summary not used'
+        IF ( Print_debug>-1 ) PRINT *, 'WARNING, nsubOutON_OFF = 1 and nsub = 0, thus nsub_summary not used'
       ENDIF
 
       IF ( NsegmentOutON_OFF==1 .AND. Nsegment==0 ) THEN
         NsegmentOutON_OFF = 0
-        IF ( Print_debug>DEBUG_less ) PRINT *, 'WARNING, nsegmentOutON_OFF = 1 and nsegment = 0, thus nsegment_summary not used'
+        IF ( Print_debug>-1 ) PRINT *, 'WARNING, nsegmentOutON_OFF = 1 and nsegment = 0, thus nsegment_summary not used'
       ENDIF
 
       IF ( Model==DOCUMENTATION .OR. Parameter_check_flag>0 ) CALL check_dimens()
@@ -1105,51 +1042,27 @@
         IF ( Nexternal==0 ) Nexternal = 1
         IF ( Nconsumed==0 ) Nconsumed = 1
         IF ( Npoigages==0 ) Npoigages = 1
-        IF ( Nmap2hru==0 ) Nmap2hru = 1
-        IF ( Nmap==0 ) Nmap = 1
-        Subbasin_flag = ACTIVE
-        Cascade_flag = CASCADE_NORMAL
-        Cascadegw_flag = CASCADE_NORMAL
-        Call_cascade = ACTIVE
-        Stream_order_flag = ACTIVE
-        Climate_hru_flag = ACTIVE
-        Lake_route_flag = ACTIVE
-        Water_use_flag = ACTIVE
-        Segment_transferON_OFF = ACTIVE
-        Gwr_transferON_OFF = ACTIVE
-        External_transferON_OFF = ACTIVE
-        Dprst_transferON_OFF = ACTIVE
-        Lake_transferON_OFF = ACTIVE
+        Subbasin_flag = 1
+        Cascade_flag = 1
+        Cascadegw_flag = 1
+        Call_cascade = 1
+        Stream_order_flag = 1
+        Climate_hru_flag = 1
+        Lake_route_flag = 1
+        Water_use_flag = 1
+        Segment_transferON_OFF = 1
+        Gwr_transferON_OFF = 1
+        External_transferON_OFF = 1
+        Dprst_transferON_OFF = 1
+        Lake_transferON_OFF = 1
       ENDIF
 
       END SUBROUTINE check_dimens
-
-!***********************************************************************
-!     Call output summary routines
-!***********************************************************************
-      SUBROUTINE summary_output()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF
-      USE PRMS_MODULE, ONLY: NhruOutON_OFF, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
-      IMPLICIT NONE
-      ! Functions
-      EXTERNAL :: nhru_summary, nsub_summary, basin_summary, nsegment_summary
-!***********************************************************************
-      IF ( NhruOutON_OFF>OFF ) CALL nhru_summary()
-
-      IF ( NsubOutON_OFF==ACTIVE ) CALL nsub_summary()
-
-      IF ( BasinOutON_OFF==ACTIVE ) CALL basin_summary()
-
-      IF ( NsegmentOutON_OFF>OFF ) CALL nsegment_summary()
-
-      END SUBROUTINE summary_output
 
 !**********************************************************************
 !     Module documentation
 !**********************************************************************
       SUBROUTINE module_doc()
-      USE PRMS_CONSTANTS, ONLY: DECL
-      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: basin, climateflow, prms_time
@@ -1164,9 +1077,8 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
-      EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
-      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
-      EXTERNAL :: precip_map, temp_map
+      EXTERNAL :: nhru_ncf, nsegment_ncf, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
+      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1183,8 +1095,6 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
-      CALL temp_map()
-      CALL precip_map()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
@@ -1204,7 +1114,6 @@
       test = intcp()
       test = snowcomp()
       test = srunoff()
-      test = glacr()
       test = soilzone()
       test = gwflow()
       test = routing()
@@ -1215,16 +1124,17 @@
       test = stream_temp()
       test = basin_sum()
       test = map_results()
-      CALL nhru_summary()
+!      CALL nhru_summary()
+      CALL nhru_ncf()
       CALL nsub_summary()
       CALL basin_summary()
+!      CALL nsegment_summary()
       CALL nsegment_summary()
       CALL prms_summary()
       CALL water_balance()
       test = subbasin()
 
-      IF ( Process_flag==DECL ) PRINT 9001
-
+      PRINT 9001
  9001 FORMAT (//, ' All available modules have been called.', /, &
      &        ' All parameters have been declared.', /, &
      &        ' Note, no simulation was computed.', /)
@@ -1234,15 +1144,13 @@
 !***********************************************************************
 !     check module names
 !***********************************************************************
-      SUBROUTINE check_module_names()
-      USE PRMS_CONSTANTS, ONLY: ERROR_control
+      SUBROUTINE check_module_names(Inputerror_flag)
       USE PRMS_MODULE, ONLY: Temp_module, Precip_module, Et_module, Solrad_module, &
      &    Transp_module, Srunoff_module, Strmflow_module
       IMPLICIT NONE
-! Local Variables
-      INTEGER :: ierr
+! Arguments
+      INTEGER, INTENT(INOUT) :: Inputerror_flag
 !***********************************************************************
-      ierr = 0
       IF ( Temp_module(:14)=='temp_1sta_prms' ) THEN
         PRINT *, 'WARNING, deprecated temp_module value, change temp_1sta_prms to temp_1sta'
         Temp_module = 'temp_1sta'
@@ -1254,7 +1162,7 @@
         Temp_module = 'temp_dist2'
       ELSEIF ( Temp_module(:9)=='temp_2sta' ) THEN
         PRINT *, 'ERROR, module temp_2sta_prms not available, use a different temp_module'
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
 
       IF ( Precip_module(:11)=='precip_prms' ) THEN
@@ -1271,19 +1179,19 @@
       IF ( Temp_module(:8)=='ide_dist' .AND. Precip_module(:8)/='ide_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if ide_dist is specified for temp_module,', &
      &        'it also must be specified for precip_module: ', Precip_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Precip_module(:8)=='ide_dist' .AND. Temp_module(:8)/='ide_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if ide_dist is specified for precip_module,', &
      &        'it also must be specified for temp_module: ', Temp_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Temp_module(:8)=='xyz_dist' .AND. Precip_module(:8)/='xyz_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if xyz_dist is specified for temp_module,', &
      &        'it also must be specified for precip_module: ', Precip_module
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' .AND. Temp_module(:8)/='xyz_dist') THEN
         PRINT '(/,A,/,2A)', 'ERROR, if xyz_dist is specified for precip_module,', &
      &        'it also must be specified for temp_module: ', Temp_module
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
 
       IF ( Transp_module(:18)=='transp_tindex_prms' ) THEN
@@ -1299,7 +1207,7 @@
         Et_module = 'potet_pan'
       ELSEIF ( Et_module(:15)=='potet_epan_prms' ) THEN
         PRINT *, 'ERROR, deprecated et_module value, change potet_epan_prms to potet_pan'
-        ierr = 1
+        Inputerror_flag = 1
       ELSEIF ( Et_module(:20)=='potet_hamon_hru_prms' ) THEN
         PRINT *, 'WARNING, deprecated et_module value, change potet_hamon_hru_prms to potet_hamon_hru'
         Et_module = 'potet_hamon'
@@ -1335,9 +1243,8 @@
         Strmflow_module = 'strmflow'
       ELSEIF ( Strmflow_module(:13)=='strmflow_lake' ) THEN
         PRINT *, 'ERROR, module strmflow_lake not available, use a different strmflow_module, such as muskingum_lake'
-        ierr = 1
+        Inputerror_flag = 1
       ENDIF
-      IF ( ierr==1 ) ERROR STOP ERROR_control
 
       END SUBROUTINE check_module_names
 
@@ -1370,7 +1277,7 @@
         READ ( Restart_inunit ) time_step, nhru_test, dprst_test, nsegment_test, temp_test, et_test, &
      &         cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, model_test
         READ ( Restart_inunit ) start_time, end_time
-        IF ( Print_debug>DEBUG_minimum ) PRINT 4, EQULS, 'Simulation time period of Restart File:', &
+        IF ( Print_debug>-2 ) PRINT 4, EQULS, 'Simulation time period of Restart File:', &
      &       start_time(1), start_time(2), start_time(3), ' -', end_time(1), end_time(2), end_time(3), &
      &       'Last time step of simulation: ', time_step, EQULS
     4   FORMAT (/, A, /, 2(A, I5, 2('/',I2.2)), /, A, I0, /, A, /)
@@ -1418,6 +1325,6 @@
             ierr = 1
           ENDIF
         ENDIF
-        IF ( ierr==1 ) ERROR STOP ERROR_restart
+        IF ( ierr==1 ) ERROR STOP -3
       ENDIF
       END SUBROUTINE call_modules_restart
