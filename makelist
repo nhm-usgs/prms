@@ -8,7 +8,7 @@ LIBDIR      = ./
 PRMSDIR    = ./prms
 #BINDIR      = ./bin
 MMFLIB      = ../mmf/libmmf.a
-
+NETCDF_DIR = /opt/conda
 # HDF5LIB = -L/opt/cray/pe/hdf5/1.10.5.2/GNU/8.2/lib -lhdf5_hl -lhdf5 -lm -lz -ldl
 
 #########################################################
@@ -45,7 +45,7 @@ CC		= gcc
 ##########################################################
 MATHLIB		= -lm
 
-GCLIB		= -lgfortran -lgcc $(MATHLIB)
+GCLIB		= -lgfortran -lgcc $(MATHLIB) -L/opt/conda/lib -lnetcdf -lnetcdff
 #GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran
 #GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdf -lnetcdff
 # GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf $(HDF5LIB)
