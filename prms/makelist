@@ -1,0 +1,63 @@
+
+#-------------------------------------------------------------------
+# $Id: makelist 8328 2016-06-13 20:36:12Z rsregan $
+#-------------------------------------------------------------------
+
+MMFDIR      = ./mmf
+LIBDIR      = ./
+PRMSDIR    = ./prms
+#BINDIR      = ./bin
+MMFLIB      = ../mmf/libmmf.a
+
+# HDF5LIB = -L/opt/cray/pe/hdf5/1.10.5.2/GNU/8.2/lib -lhdf5_hl -lhdf5 -lm -lz -ldl
+
+#########################################################
+# Configure tags for each system
+##########################################################
+ARC		= LINUX
+
+#OPTLEVEL	= -g
+OPTLEVEL	= -O -Bstatic
+
+#OPTLEVEL	= -O --static
+# OPTLEVEL	= -O
+#OPTLEVEL	= -g
+LDFLAGS		=$(OPTLEVEL)
+
+##########################################################
+# Define the Fortran compile flags
+##########################################################
+FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
+# FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore -I$(NETCDF_DIR)/include
+#FFLAGS=$(OPTLEVEL) -Wall -fno-second-underscore
+FC		= gfortran
+
+##########################################################
+# Define the C compile flags
+# -D_UF defines UNIX naming conventions for mixed language compilation.
+##########################################################
+CFLAGS		= $(OPTLEVEL) -D$(ARC) -D_UF -Wall
+CC		= gcc
+
+##########################################################
+# Define the libraries
+##########################################################
+MATHLIB		= -lm
+
+GCLIB		= -lgfortran -lgcc $(MATHLIB)
+#GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran
+#GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdf -lnetcdff
+# GCLIB		= -L/opt/gcc/8.3.0/snos/lib64/ -lgfortran -L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf $(HDF5LIB)
+FLIBS    = $(GCLIB)
+
+##########################################################
+# Unix system commands
+##########################################################
+RM		= rm -f
+AR  		= ar ruv
+RANLIB		= ranlib
+MAKE		= make
+LN		= ln -s
+CD		= cd
+CP		= cp
+
