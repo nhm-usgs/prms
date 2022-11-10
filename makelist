@@ -28,7 +28,7 @@ LDFLAGS		=$(OPTLEVEL)
 # Define the Fortran compile flags
 ##########################################################
 # FFLAGS= $(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore
-# FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore -I$(NETCDF_DIR)/include
+FFLAGS=	$(OPTLEVEL) -fbounds-check -Wall -fno-second-underscore -I$(NETCDF_DIR)/include
 # FFLAGS=$(OPTLEVEL) -Wall -fno-second-underscore
 FFLAGS=$(OPTLEVEL) -fno-second-underscore
 FC		= gfortran
