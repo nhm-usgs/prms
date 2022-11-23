@@ -375,6 +375,10 @@
               PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
               ierr = 1
            ENDIF
+           IF ( Seg_slope(i)<0.0000001 ) THEN
+             IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
+             Seg_slope(i) = 0.0000001
+           ENDIF
         ENDDO
 ! exit if there are any segments that are too short
         IF ( ierr==1 ) THEN
@@ -403,7 +407,7 @@
      &       CALL read_error(2,'segment_flow_init')
         DO i = 1, Nsegment
           Seg_outflow(i) = Segment_flow_init(i)
-          IF ( tosegment(i)>0 ) Seg_inflow(tosegment(i)) = Seg_outflow(i)
+          IF ( Tosegment(i)>0 ) Seg_inflow(Tosegment(i)) = Seg_outflow(i)
         ENDDO
         DEALLOCATE ( Segment_flow_init )
       ENDIF
@@ -527,10 +531,6 @@
       ierr = 0
       DO i = 1, Nsegment
         IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
-          IF ( Seg_slope(i)<0.0000001 ) THEN
-            IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
-            Seg_slope(i) = 0.0000001
-          ENDIF
           velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say width>>depth
           K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped length
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
@@ -777,13 +777,13 @@
                 if (Segment_hruarea(this_seg) <= NEARZERO) then
 
                    ! Hit the terminal segment without finding any HRUs (i.e. sources of streamflow)
-                   if (tosegment(this_seg) == OUTFLOW_SEGMENT) then
+                   if (Tosegment(this_seg) == OUTFLOW_SEGMENT) then
                      found = .false.
                      exit
                    endif
 
                    ! There is a downstream segment, check that segment for HRUs
-                   this_seg = tosegment(this_seg)
+                   this_seg = Tosegment(this_seg)
                 else
                     ! This segment has HRUs so there will be swrad and potet
                     Seginc_swrad(i) = Seginc_swrad(this_seg)/Segment_hruarea(this_seg)

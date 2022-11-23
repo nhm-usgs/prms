@@ -20,8 +20,8 @@
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-11-11'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 11/11/2022'
+      character(len=*), parameter :: PRMS_versn = '2022-12-01'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 12/01/2022'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw, Nstreamtemp
