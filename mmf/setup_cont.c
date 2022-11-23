@@ -333,7 +333,7 @@ void setup_cont (void) {
 		decl_control_string ("srain_intcp_dynamic", "dynsrainintcp");
 		decl_control_string ("wrain_intcp_dynamic", "dynwrainintcp");
 		decl_control_string ("imperv_frac_dynamic", "dynimperv");
-		decl_control_string ("imperv_stor_dynamic", "dynimperv");
+		decl_control_string ("imperv_stor_dynamic", "dynimpervstor");
 		decl_control_string ("covtype_dynamic", "dyncovtype");
 		decl_control_string ("covden_sum_dynamic", "dyncovden_sum");
 		decl_control_string ("covden_win_dynamic", "dyncovden_win");
