@@ -355,6 +355,7 @@ void setup_cont (void) {
 		decl_control_string ("basinOutBaseFileName", "basinout_path");
 		decl_control_string("nsegmentOutBaseFileName", "nsegmentout_path");
 		decl_control_string("dynamic_param_log_file", "dynamic_parameter.out");
+		decl_control_string("dynamic_soil_param_log_file", "dynamic_soil_parameter.out");
 		decl_control_string("selectDatesFileName", "selectDates.in");
 		decl_control_string("precip_map_file", "precip_map.dat");
 		decl_control_string("temp_map_file", "temp_map.dat");
