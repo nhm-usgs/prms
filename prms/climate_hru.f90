@@ -10,7 +10,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Climate Input'
         character(len=*), parameter :: MODNAME = 'climate_hru'
-        character(len=*), parameter :: Version_climate_hru = '2022-09-07'
+        character(len=*), parameter :: Version_climate_hru = '2023-03-16'
         INTEGER, SAVE :: Precip_unit, Tmax_unit, Tmin_unit, Et_unit, Swrad_unit, Transp_unit
         INTEGER, SAVE :: Humidity_unit, Windspeed_unit
         INTEGER, SAVE :: Albedo_unit, Cloud_cover_unit
@@ -469,12 +469,9 @@
 
         IF ( Humidity_cbh_flag==ACTIVE ) THEN
           IF ( control_string(Humidity_day, 'humidity_day')/=0 ) CALL read_error(5, 'humidity_day')
-          ierr = 2 ! signals routine to ignore CBH file requirement and use a parameter
           CALL find_cbh_header_end(Humidity_unit, Humidity_day, 'humidity_day', ierr, 1)
           IF ( ierr==1 ) THEN
             istop = 1
-          ELSEIF ( ierr==2 ) THEN
-            Humidity_cbh_flag = 0
           ELSE
             CALL find_current_time(Humidity_unit, Start_year, Start_month, Start_day, ierr)
             IF ( ierr==-1 ) THEN
@@ -552,7 +549,7 @@
       right_day = 1
       IF ( Year/=Nowyear .OR. Month/=Nowmonth .OR. Day/=Nowday ) right_day = 0
       IF ( Ios/=0 .OR. right_day==0 ) THEN
-        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios 
+        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
         IF ( Ios==-1 ) THEN
           PRINT *, '       End-of-File found'
         ELSEIF ( right_day==0 ) THEN

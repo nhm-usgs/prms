@@ -174,7 +174,7 @@
       ENDIF
 
       IF ( nstream_temp>0 ) THEN
-        ALLOCATE ( Stream_temp(Nwind) )
+        ALLOCATE ( Stream_temp(nstream_temp) )
         IF ( declvar(MODNAME, 'stream_temp', 'nstream_temp', nstream_temp, &
      &       'Stream temperature at each measurement station', &
      &       'degrees Celsius', Stream_temp)/=0 ) CALL read_error(8, 'stream_temp')

@@ -123,14 +123,14 @@
         ALLOCATE ( Rain_adj_lapse(Nhru, MONTHS_PER_YEAR), Snow_adj_lapse(Nhru, MONTHS_PER_YEAR) )
         IF ( Precip_flag==precip_1sta_module .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'rain_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '10.0', &
+     &         '1.0', '0.2', '10.0', &
      &         'Monthly rain adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured rain on each HRU'// &
      &         ' to account for differences in elevation, and so forth', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'rain_adj')
 
           IF ( declparam(MODNAME, 'snow_adj', 'nhru,nmonths', 'real', &
-     &         '1.0', '0.5', '2.5', &
+     &         '1.0', '0.2', '5.0', &
      &         'Monthly snow adjustment factor for each HRU', &
      &         'Monthly (January to December) factor to adjust measured snow on each HRU'// &
      &         ' to account for differences in elevation, and so forth', &

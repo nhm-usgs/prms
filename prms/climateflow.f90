@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2022-11-02'
+      character(len=*), parameter :: Version_climateflow = '2023-03-16'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -76,8 +76,6 @@
       REAL, SAVE, ALLOCATABLE :: Sroff(:), Imperv_stor(:), Infil(:)
       ! Surface-Depression Storage
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open(:), Dprst_vol_clos(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_total_open_in(:), Dprst_total_open_out(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_total_clos_in(:), Dprst_total_clos_out(:)
       ! gwflow
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwres_stor(:)
       ! lakes
@@ -328,12 +326,14 @@
      &         'Saturation vapor pressure for each HRU', &
      &         'kilopascals', Vp_sat)/=0 ) CALL read_error(3, 'vp_sat')
         ENDIF
-        ALLOCATE ( Humidity_percent(Nhru,MONTHS_PER_YEAR) )
-        IF ( declparam(Et_module, 'humidity_percent', 'nhru,nmonths', 'real', &
-     &       '0.0', '0.0', '100.0', &
-     &       'Monthy humidity for each HRU', &
-     &       'Monthy humidity for each HRU', &
-     &       'percentage')/=0 ) CALL read_error(1, 'humidity_percent')
+        IF ( Et_flag==potet_pm_module .OR. Et_flag==potet_pt_module .OR. Model==DOCUMENTATION ) THEN
+          ALLOCATE ( Humidity_percent(Nhru,MONTHS_PER_YEAR) )
+          IF ( declparam(Et_module, 'humidity_percent', 'nhru,nmonths', 'real', &
+     &         '0.0', '0.0', '100.0', &
+     &         'Monthy humidity for each HRU', &
+     &         'Monthy humidity for each HRU', &
+     &         'percentage')/=0 ) CALL read_error(1, 'humidity_percent')
+        ENDIF
       ENDIF
 
 ! Soilzone variables
@@ -538,20 +538,6 @@
         IF ( declvar(Srunoff_module, 'dprst_vol_clos', 'nhru', Nhru, 'double', &
      &       'Storage volume in closed surface depressions for each HRU', &
      &       'acre-inches', Dprst_vol_clos)/=0 ) CALL read_error(3, 'dprst_vol_clos')
-        ALLOCATE ( Dprst_total_open_in(Nhru), Dprst_total_open_out(Nhru) )
-        ALLOCATE ( Dprst_total_clos_in(Nhru), Dprst_total_clos_out(Nhru) )
-        IF ( declvar(Srunoff_module, 'dprst_total_open_in', 'nhru', Nhru, 'double', &
-     &       'Storage volume in closed surface depressions for each HRU', &
-     &       'acre-inches', Dprst_total_open_in)/=0 ) CALL read_error(3, 'dprst_total_open_in')
-        IF ( declvar(Srunoff_module, 'dprst_total_open_out', 'nhru', Nhru, 'double', &
-     &       'Storage volume in closed surface depressions for each HRU', &
-     &       'acre-inches', Dprst_total_open_out)/=0 ) CALL read_error(3, 'dprst_total_open_out')
-        IF ( declvar(Srunoff_module, 'dprst_total_clos_in', 'nhru', Nhru, 'double', &
-     &       'Storage volume in closed surface depressions for each HRU', &
-     &       'acre-inches', Dprst_total_clos_in)/=0 ) CALL read_error(3, 'dprst_total_clos_in')
-        IF ( declvar(Srunoff_module, 'dprst_total_clos_out', 'nhru', Nhru, 'double', &
-     &       'Storage volume in closed surface depressions for each HRU', &
-     &       'acre-inches', Dprst_total_clos_out)/=0 ) CALL read_error(3, 'dprst_total_clos_out')
       ENDIF
 
       ALLOCATE ( Pkwater_equiv(Nhru) )
@@ -774,7 +760,7 @@
 
       ALLOCATE ( Sat_threshold(Nhru) )
       IF ( declparam(Soilzone_module, 'sat_threshold', 'nhru', 'real', &
-     &     '999.0', '0.00001', '999.0', &
+     &     '999.0', '0.0', '999.0', &
      &     'Soil saturation threshold, above field-capacity threshold', &
      &     'Water holding capacity of the gravity and preferential-'// &
      &     'flow reservoirs; difference between field capacity and total soil saturation for each HRU', &
@@ -782,7 +768,7 @@
 
       ALLOCATE ( Soil_moist_max(Nhru) )
       IF ( declparam(Soilzone_module, 'soil_moist_max', 'nhru', 'real', &
-     &     '2.0', '0.00001', '20.0', &
+     &     '2.0', '0.00001', '30.0', &
      &     'Maximum value of water for soil zone', &
      &     'Maximum available water holding capacity of capillary'// &
      &     ' reservoir from land surface to rooting depth of the major vegetation type of each HRU', &
@@ -800,7 +786,7 @@
       ENDIF
       IF ( PRMS4_flag==OFF .OR. Model==DOCUMENTATION ) THEN
         IF ( declparam(Soilzone_module, 'soil_rechr_max_frac', 'nhru', 'real', &
-     &       '1.0', '0.00001', '1.0', &
+     &       '1.0', '0.0', '1.0', &
      &       'Fraction of capillary reservoir where losses occur as both evaporation and transpiration (soil recharge zone)', &
      &       'Fraction of the capillary reservoir water-holding capacity (soil_moist_max) where losses occur as both'// &
      &       ' evaporation and transpiration (upper zone of capillary reservoir) for each HRU', &
@@ -880,7 +866,7 @@
      &    Temp_module, Stream_order_flag, &
      &    Precip_module, Solrad_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Et_flag, Dprst_flag, Solrad_flag, &
-     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag
+     &    Parameter_check_flag, Inputerror_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type
@@ -1181,11 +1167,9 @@
         Lwrad_net = 0.0
         Vp_slope = 0.0
         IF ( Et_flag==potet_pm_module .OR. Et_flag==potet_pm_sta_module ) Vp_sat = 0.0
-        IF ( Humidity_cbh_flag==OFF ) THEN
+        IF ( Et_flag==potet_pt_module .OR. Et_flag==potet_pm_module ) THEN
           IF ( getparam(Et_module, 'humidity_percent', Nhru*MONTHS_PER_YEAR, 'real', Humidity_percent)/=0 ) &
      &         CALL read_error(2, 'humidity_percent')
-        ELSE
-          Humidity_percent = 1.0
         ENDIF
       ENDIF
 ! initialize arrays (dimensioned Nsegment)
@@ -1282,7 +1266,6 @@
       INTEGER, INTENT(IN) :: Ihru
       REAL, INTENT(IN) :: Tmax, Tmin, Hru_area
 !      REAL, INTENT(INOUT) :: Tmax, Tmin
-!      REAL, INTENT(IN) :: Hru_area
       REAL, INTENT(OUT) :: Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc
 ! Functions
       INTRINSIC :: DBLE
@@ -1346,8 +1329,8 @@
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, DEBUG_less
-      USE PRMS_MODULE, ONLY: forcing_check_flag, Print_debug
+      USE PRMS_CONSTANTS, ONLY: NEARZERO !, ACTIVE, DEBUG_minimum
+!      USE PRMS_MODULE, ONLY: Print_debug, forcing_check_flag
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions
@@ -1411,15 +1394,15 @@
       Basin_rain = Basin_rain + DBLE( Hru_rain*Hru_area )
       Basin_snow = Basin_snow + DBLE( Hru_snow*Hru_area )
 
-      IF ( forcing_check_flag == ACTIVE ) THEN
-        IF ( Hru_ppt < 0.0 .OR. Hru_rain < 0.0 .OR. Hru_ppt < 0.0 ) THEN
-          IF ( Print_debug > DEBUG_less ) THEN
+!      IF ( forcing_check_flag == ACTIVE ) THEN
+        IF ( Hru_ppt < 0.0 .OR. Hru_rain < 0.0 .OR. Hru_snow < 0.0 ) THEN
+!          IF ( Print_debug > DEBUG_minimum ) THEN
             PRINT '(A,I0)', 'Warning, adjusted precipitation value(s) < 0.0 for HRU: ', Ihru
             PRINT '(A,F0.4,A,F0.4,A)', '         hru_ppt: ', Hru_ppt, ' hru_rain: ', Hru_rain, ' hru_snow: ', Hru_snow
             CALL print_date(0)
-          ENDIF
+!          ENDIF
         ENDIF
-      ENDIF
+!      ENDIF
 
       END SUBROUTINE precip_form
 

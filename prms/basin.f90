@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2022-09-07'
+      character(len=*), parameter :: Version_basin = '2023-01-11'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -256,7 +256,7 @@
       INTEGER FUNCTION basinit()
       USE PRMS_CONSTANTS, ONLY: DEBUG_less, ACTIVE, OFF, &
      &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
-     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO
+     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO !, METERS2FEET
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
      &    Dprst_flag, Lake_route_flag, PRMS4_flag, Frozen_flag, PRMS_VERSION, &
      &    Starttime, Endtime, Parameter_check_flag
@@ -297,8 +297,10 @@
             IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
           ENDIF
         ELSE
-          IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'Dprst_frac')
+          IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac')
         ENDIF
+      ELSE
+        Dprst_frac = 0.0
       ENDIF
 
       Weir_gate_flag = OFF

@@ -246,10 +246,10 @@ xyz_dist.o: xyz_dist.f prms_module.mod prms_basin.mod prms_set_time.mod prms_cli
 muskingum_lake.o: muskingum_lake.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_obs.mod prms_routing.mod prms_srunoff.mod prms_gwflow.mod prms_soilzone.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) muskingum_lake.f90
 
-dynamic_param_read.o: dynamic_param_read.f90 prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_flowvars.mod prms_potet_jh.mod prms_potet_pm.mod prms_potet_hs.mod prms_potet_pt.mod prms_potet_hamon.mod transp_tindex.o transp_frost.o prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_climate_hru.mod prms_constants.mod
+dynamic_param_read.o: dynamic_param_read.f90 prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_flowvars.mod prms_potet_jh.mod prms_potet_pm.mod prms_potet_hs.mod prms_potet_pt.mod prms_potet_hamon.mod transp_tindex.o transp_frost.o prms_intcp.mod prms_snow.mod prms_climate_hru.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) dynamic_param_read.f90
 
-dynamic_soil_param_read.o: dynamic_soil_param_read.f90 prms_module.mod prms_control_file.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_flowvars.mod prms_potet_jh.mod prms_potet_pm.mod prms_potet_hs.mod prms_potet_pt.mod prms_potet_hamon.mod prms_transp_tindex.mod prms_transp_frost.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_soilzone.mod prms_soilzone_ag.mod prms_climate_hru.mod prms_constants.mod
+dynamic_soil_param_read.o: dynamic_soil_param_read.f90 prms_module.mod prms_basin.mod prms_set_time.mod prms_climatevars.mod prms_flowvars.mod prms_potet_jh.mod prms_srunoff.mod prms_soilzone.mod prms_climate_hru.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) dynamic_soil_param_read.f90
 
 water_use_read.o: water_use_read.f90 prms_module.mod prms_basin.mod prms_set_time.mod prms_flowvars.mod prms_constants.mod
