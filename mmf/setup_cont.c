@@ -47,7 +47,6 @@ void setup_cont (void) {
         decl_control_string ("srunoff_module", "srunoff_smidx");
         decl_control_string ("solrad_module", "ddsolrad");
 		decl_control_string ("soilzone_module", "soilzone");
-		decl_control_string ("capillary_module", "soilzone");
 		decl_control_string ("strmflow_module", "strmflow");
         decl_control_string ("transp_module", "transp_tindex");
 
@@ -173,10 +172,6 @@ void setup_cont (void) {
 		lval[0] = 0;
 		decl_control_int_array ("dyn_dprst_flag", 1, lval);
 
-		lval = (long*)umalloc(sizeof(long));
-		lval[0] = 0;
-		decl_control_int_array("dyn_ag_flag", 1, lval);
-
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("stream_temp_flag", 1, lval);
@@ -247,19 +242,7 @@ void setup_cont (void) {
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
-		decl_control_int_array ("musroute_flag", 1, lval);
-
-        lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
 		decl_control_int_array ("orad_flag", 1, lval);
-
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("snow_cbh_flag", 1, lval);
-
-		lval = (long *)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("gwflow_cbh_flag", 1, lval);
 
 		lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -326,7 +309,6 @@ void setup_cont (void) {
         decl_control_string ("snowcov_area_day", "snowcov_area.day");
         decl_control_string ("snowmelt_day", "snowmelt.day");
         decl_control_string ("gwres_flow_day", "gwres_flow.day");
-        decl_control_string ("dprst_area_dynamic", "dyndprst_area");
         decl_control_string ("dprst_depth_dynamic", "dyndprst_depth");
         decl_control_string ("dprst_frac_dynamic", "dyndprst_frac");
 		decl_control_string ("snow_intcp_dynamic", "dynsnowintcp");
@@ -337,7 +319,6 @@ void setup_cont (void) {
 		decl_control_string ("covtype_dynamic", "dyncovtype");
 		decl_control_string ("covden_sum_dynamic", "dyncovden_sum");
 		decl_control_string ("covden_win_dynamic", "dyncovden_win");
-		decl_control_string ("jhcoef_dynamic", "dynjhcoef");
 		decl_control_string ("potet_coef_dynamic", "dynpotetcoef");
 		decl_control_string ("transpbeg_dynamic", "dyntranspbeg");
 		decl_control_string ("transpend_dynamic", "dyntranspend");
@@ -346,6 +327,7 @@ void setup_cont (void) {
 		decl_control_string ("soilrechr_dynamic", "dynsoilrechr");
 		decl_control_string ("soilmoist_dynamic", "dynsoilmoist");
 		decl_control_string ("radtrncf_dynamic", "dynradtrncf");
+		decl_control_string ("snareathresh_dynamic", "snareathresh_dynamic");
 		decl_control_string ("sro2dprst_perv_dynamic", "dynsro2dprst_perv");
 		decl_control_string ("sro2dprst_imperv_dynamic", "dynsro2dprst_imperv");
 		decl_control_string ("transp_on_dynamic", "dyntranspon");
