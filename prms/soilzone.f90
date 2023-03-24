@@ -661,7 +661,8 @@
           Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*hruarea )
 !          Pfr_stor_frac(i) = Pref_flow_stor(i)/Pref_flow_max(i)
 !          Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( Pfr_stor_frac(i)*hruarea )
-          IF ( Pref_flow_max(i)>0.0 ) Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( (Pref_flow_stor(i)/Pref_flow_max(i))*hruarea )
+          IF ( Pref_flow_max(i)>0.0 ) Basin_pfr_stor_frac = Basin_pfr_stor_frac + &
+               DBLE( (Pref_flow_stor(i)/Pref_flow_max(i))*hruarea )
           IF ( Pref_flow_thrsh(i)>0.0 ) THEN
 !            Gvr_stor_frac(i) = Slow_stor(i)/Pref_flow_thrsh(i)
             Basin_gvr_stor_frac = Basin_gvr_stor_frac + DBLE( (Slow_stor(i)/Pref_flow_thrsh(i))*hruarea )
