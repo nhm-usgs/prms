@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsub_summary'
-      character(len=*), parameter :: Version_nsub_summary = '2021-08-13'
+      character(len=*), parameter :: Version_nsub_summary = '2021-11-23'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsub_var_type(:), Nsub_var_size(:)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -72,10 +72,10 @@
      &    REAL_TYPE, DBLE_TYPE, RUN, DECL, INIT, CLEAN, DOCUMENTATION
       USE PRMS_MODULE, ONLY: Nhru, Nsub, Model
       USE PRMS_NSUB_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -119,9 +119,9 @@
       USE PRMS_MODULE, ONLY: Nhru, Nsub, Inputerror_flag, Start_year, Prms_warmup
       USE PRMS_NSUB_SUMMARY
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order
+      use prms_utils, only: error_stop, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: read_error, PRMS_open_output_file, error_stop
+      INTEGER, EXTERNAL :: getvartype, getvarsize, getparam
 ! Local Variables
       INTEGER :: ios, ierr, dum, jj, j, i, k
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -293,11 +293,11 @@
       USE PRMS_NSUB_SUMMARY
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble
       USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
+! FUNCTIONS
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day, k
 !***********************************************************************
@@ -314,18 +314,18 @@
       DO jj = 1, NsubOutVars
         IF ( Nsub_var_type(jj)==REAL_TYPE ) THEN
           IF ( Nsub_var_size(jj)==Nhru ) THEN
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(1, jj))/=0 ) &
+            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(:, jj))/=0 ) &
      &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
           ELSE
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'real', Nsub_var_single(1, jj))/=0 ) &
+            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'real', Nsub_var_single(:, jj))/=0 ) &
      &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
           ENDIF
         ELSEIF ( Nsub_var_type(jj)==DBLE_TYPE ) THEN
           IF ( Nsub_var_size(jj)==Nhru ) THEN
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
+            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(:, jj))/=0 ) &
      &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
           ELSE
-            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'double', Nsub_var_dble(1, jj))/=0 ) &
+            IF ( getvar(MODNAME, NsubOutVar_names(jj)(:Nc_vars(jj)), Nsub, 'double', Nsub_var_dble(:, jj))/=0 ) &
      &           CALL read_error(4, NsubOutVar_names(jj)(:Nc_vars(jj)))
           ENDIF
         ENDIF

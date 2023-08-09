@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsegment_summary'
-      character(len=*), parameter :: Version_nsegment_summary = '2021-08-13'
+      character(len=*), parameter :: Version_nsegment_summary = '2021-11-23'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsegment_var_type(:)
       REAL, SAVE, ALLOCATABLE :: Nsegment_var_daily(:, :)
@@ -67,10 +67,10 @@
       USE PRMS_CONSTANTS, ONLY: ERROR_control, DAILY, YEARLY, DOCUMENTATION
       USE PRMS_MODULE, ONLY: Model, Nsegment, NsegmentOutON_OFF
       USE PRMS_NSEGMENT_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -114,10 +114,10 @@
      &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
       USE PRMS_MODULE, ONLY: Nsegment, NsegmentOutON_OFF, Start_year, Prms_warmup
       USE PRMS_NSEGMENT_SUMMARY
+      use prms_utils, only: error_stop, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: read_error, PRMS_open_output_file, error_stop
+      INTEGER, EXTERNAL :: getvartype, getvarsize, getparam
 ! Local Variables
       INTEGER :: ios, ierr, size, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -277,11 +277,11 @@
       USE PRMS_MODULE, ONLY: Nsegment, Start_month, Start_day, End_year, End_month, End_day, Nowyear, Nowmonth, Nowday
       USE PRMS_NSEGMENT_SUMMARY
       USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
-      INTRINSIC SNGL, DBLE
+! FUNCTIONS
+      INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day
 !***********************************************************************
@@ -297,10 +297,10 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NsegmentOutVars
         IF ( Nsegment_var_type(jj)==REAL_TYPE ) THEN
-          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'real', Nsegment_var_daily(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'real', Nsegment_var_daily(:, jj))/=0 ) &
      &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Nsegment_var_type(jj)==DBLE_TYPE ) THEN
-          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'double', Nsegment_var_dble(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'double', Nsegment_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
           DO i = 1, Nsegment
             Nsegment_var_daily(i, jj) = SNGL( Nsegment_var_dble(i, jj) )

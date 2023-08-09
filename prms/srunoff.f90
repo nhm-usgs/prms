@@ -25,7 +25,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Surface Runoff'
       character(LEN=13), save :: MODNAME
-      character(len=*), parameter :: Version_srunoff = '2021-08-18'
+      character(len=*), parameter :: Version_srunoff = '2022-04-04'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -67,6 +67,12 @@
 !   Declared Variables for Frozen Ground
       REAL, SAVE, ALLOCATABLE :: Cfgi(:), Cfgi_prev(:)
       INTEGER, SAVE, ALLOCATABLE :: Frozen(:)
+!   Declared Variables for simple glaciers
+      DOUBLE PRECISION, SAVE :: Basin_glacr_melt
+      REAL, SAVE, ALLOCATABLE :: Glacr2_melt(:)
+!   Declared Parameters for simple glaciers
+      REAL, SAVE :: Glacr_btemp
+      REAL, SAVE, ALLOCATABLE :: Glacr_coef(:)
       END MODULE PRMS_SRUNOFF
 
 !***********************************************************************
@@ -100,12 +106,12 @@
 !   Declared Parameters
 !     smidx_coef, smidx_exp, carea_max, imperv_stor_max, snowinfil_max
 !     hru_area, soil_moist_max, soil_rechr_max, carea_min
-!     cfgi_thrshld, cfgi_decay
+!     glacier, glacr_btemp, glacr_coef, cfgi_thrshld, cfgi_decay
 !***********************************************************************
       INTEGER FUNCTION srunoffdecl()
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, DEBUG_WB, smidx_module, carea_module, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Nlake, Print_debug, Init_vars_from_file, &
-     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, PRMS4_flag, Frozen_flag
+     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, PRMS4_flag, Frozen_flag, Glacier_flag
       USE PRMS_SRUNOFF
       IMPLICIT NONE
 ! Functions
@@ -303,6 +309,28 @@
      &       'cfs', Strm_seg_in)/=0 ) CALL read_error(3,'strm_seg_in')
       ENDIF
 
+! Vaccaro glacier declares
+      IF ( Glacier_flag==2 .OR. Model==99 ) THEN
+        IF ( declvar(MODNAME, 'basin_glacr_melt', 'one', 1, 'double', &
+     &       'Basin area-weighted average of glacier melt that enters'// &
+     &       ' soil recharge zone (melt: NEW SOURCE water to basin)', &
+     &       'inches', Basin_glacr_melt)/=0 ) CALL read_error(3, 'basin_glacr_melt')
+        ALLOCATE ( Glacr2_melt(Nhru) )
+        IF ( declvar(MODNAME, 'glacr2_melt', 'nhru', Nhru, 'real', &
+     &       'Amount of glacier melt from an HRU that enters soil recharge zone (melt: NEW SOURCE water to basin)', &
+     &       'inches', Glacr2_melt)/=0 ) CALL read_error(3, 'glacr2_melt')
+        IF ( declparam(MODNAME, 'glacr_btemp', 'one', 'real', &
+     &       '32.0', '30.0', '40.0', &
+     &       'Base temperature for glacier MELT', &
+     &       'Base temperature of melt computations of glaciers average temperature must be higher for melt', &
+     &       'degrees F')/=0 ) CALL read_error(1, 'glacr_btemp')
+        ALLOCATE ( Glacr_coef(Nhru) )
+        IF ( declparam(MODNAME, 'glacr_coef', 'nhru', 'real', &
+     &       '0.004', '0.001', '0.1', &
+     &       'Glacier melt factor for each HRU', 'Glacier melt factor for each HRU', &
+     &       'inches/degrees F')/=0 ) CALL read_error(1, 'glacr_coef')
+      ENDIF
+
 ! frozen ground variables and parameters
       ALLOCATE ( Frozen(Nhru) )
       IF ( Frozen_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
@@ -488,7 +516,7 @@
       INTEGER FUNCTION srunoffinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, smidx_module, carea_module, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Init_vars_from_file, &
-     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
+     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag, Glacier_flag !, Parameter_check_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Basin_sroff
@@ -602,6 +630,12 @@
         IF ( getparam(MODNAME, 'cfgi_decay', 1, 'real', Cfgi_decay)/=0 ) CALL read_error(2, 'cfgi_decay')
       ENDIF
 
+      ! Vaccaro glacier
+      IF ( Glacier_flag==2 ) THEN
+        IF ( getparam('srunoff', 'glacr_btemp', 1, 'real', Glacr_btemp)/=0 ) CALL read_error(2, 'glacr_btemp')
+        IF ( getparam('srunoff', 'glacr_coef', Nhru, 'real', Glacr_coef)/=0 ) CALL read_error(2, 'glacr_coef')
+      ENDIF
+      Basin_glacr_melt = 0.0D0
       END FUNCTION srunoffinit
 
 !***********************************************************************
@@ -616,10 +650,11 @@
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
-      USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
+      USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc, Tavgf
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
      &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac
       USE PRMS_CASCADE, ONLY: Ncascade_hru
+      USE PRMS_SET_TIME, ONLY: Timestep_days
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover, Use_transfer_intcp
       USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt
       IMPLICIT NONE
@@ -631,7 +666,7 @@
       REAL :: srunoff, avail_et, perv_area, sra, availh2o
       DOUBLE PRECISION :: hru_sroff_down, runoff, apply_sroff, cfgi_sroff, upslope
       REAL :: cfgi_k, depth_cm !frozen ground
-      REAL :: glcrmltb, temp, temp2 ! glaciers
+      REAL :: glcrmltb, temp, temp2, glacrmelt, glcrmltv, tsur ! glaciers
 !***********************************************************************
       srunoffrun = 0
 
@@ -666,6 +701,11 @@
         Basin_dprst_volcl = 0.0D0
       ENDIF
 
+      IF ( Glacier_flag==2 ) THEN
+        Glacr2_melt = 0.0
+        Basin_glacr_melt = 0.0D0
+      ENDIF
+
       dprst_chk = 0
       Infil = 0.0
       DO k = 1, Active_hrus
@@ -677,12 +717,14 @@
         IF ( Cascade_flag>CASCADE_OFF ) upslope = Upslope_hortonian(i)
         Ihru = i
         runoff = 0.0D0
-        glcrmltb = 0.0 ! glacier
+        glacrmelt = 0.0
         Isglacier = 0
         active_glacier = -1 ! not an glacier
-        IF ( Glacier_flag==ACTIVE ) THEN
+        IF ( Glacier_flag>0 ) THEN
           IF ( Hru_type(i)==GLACIER ) THEN
-            IF ( Glacier_flag==ACTIVE ) THEN ! glacier
+            glcrmltb = 0.0 ! Ashley glacier
+            glcrmltv = 0.0D0 ! Vaccaro glacier
+            IF ( Glacier_flag==1 ) THEN
               Isglacier = 1
               glcrmltb = Glacrb_melt(i)
               IF ( Glacier_frac(i)>0.0 ) THEN
@@ -690,7 +732,20 @@
               ELSE
                 active_glacier = OFF  ! glacier capable HRU, but not glaciated
               ENDIF
+            ELSE !IF ( Glacier_flag==2 ) THEN
+! check if glacier HRU, no snow, and ave temp > galcier_tempbase
+              IF ( Snowcov_area(i)<NEARZERO ) THEN
+                tsur = Tavgf(i) - Glacr_btemp
+                IF ( tsur>NEARZERO ) THEN
+                  glcrmltv = Glacr_coef(i)*tsur*Timestep_days
+                  Basin_glacr_melt = Basin_glacr_melt + DBLE( glcrmltv*Hruarea )
+                  Glacr2_melt(i) = glcrmltv
+! Add glacier melt directly to sroff(i) component
+                  runoff = runoff + DBLE( glcrmltv*Hruarea )
+                ENDIF
+              ENDIF
             ENDIF
+            glacrmelt = glcrmltb + glcrmltv
           ENDIF
         ENDIF
 
@@ -738,7 +793,7 @@
           IF ( Cfgi(i)>=Cfgi_thrshld ) THEN
             frzen = 1
             ! depression storage states are not changed if frozen
-            cfgi_sroff = (Snowmelt(i) + availh2o + SNGL(upslope) + glcrmltb)*Hruarea
+            cfgi_sroff = (Snowmelt(i) + availh2o + SNGL(upslope) + glacrmelt)*Hruarea
             IF ( Use_transfer_intcp==ACTIVE ) cfgi_sroff = cfgi_sroff + Net_apply(i)*Hruarea
             runoff = runoff + cfgi_sroff
             Basin_cfgi_sroff = Basin_cfgi_sroff + cfgi_sroff
@@ -765,7 +820,7 @@
           IF ( Isglacier==OFF ) THEN
             CALL compute_infil(Net_rain(i), Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
      &                         Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), Intcp_changeover(i))
-          ELSE ! glacier
+          ELSE ! Ashley glacier
             temp = Snowmelt(i) + glcrmltb !Snowmelt or 0.0
             temp2 = availh2o*(1.0-Glacier_frac(i))
             CALL compute_infil(temp2, Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), temp, &
@@ -1292,7 +1347,7 @@
      &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Dprst_stor_hru, Hruarea_dble
       USE PRMS_BASIN, ONLY: Dprst_frac_open, Dprst_frac_clos
       USE PRMS_WATER_USE, ONLY: Dprst_transfer, Dprst_gain
-      USE PRMS_SET_TIME, ONLY: Cfs_conv
+      USE PRMS_SET_TIME, ONLY: Cfs_conv, Timestep_days
       USE PRMS_INTCP, ONLY: Net_snow
       USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
@@ -1507,7 +1562,7 @@
       ! compute seepage
       Dprst_seep_hru = 0.0D0
       IF ( Dprst_vol_open>0.0D0 ) THEN
-        seep_open = Dprst_vol_open*DBLE( Dprst_seep_rate_open(Ihru) )
+        seep_open = Dprst_vol_open*DBLE( Dprst_seep_rate_open(Ihru)*Timestep_days )
         Dprst_vol_open = Dprst_vol_open - seep_open
         IF ( Dprst_vol_open<0.0D0 ) THEN
 !          IF ( Dprst_vol_open<-DNEARZERO ) PRINT *, 'negative dprst_vol_open:', Dprst_vol_open, ' HRU:', Ihru
@@ -1521,8 +1576,8 @@
       Dprst_sroff_hru = 0.0D0
       IF ( Dprst_vol_open>0.0D0 ) THEN
         Dprst_sroff_hru = MAX( 0.0D0, Dprst_vol_open-Dprst_vol_open_max )
-        Dprst_sroff_hru = Dprst_sroff_hru + &
-     &                    MAX( 0.0D0, (Dprst_vol_open-Dprst_sroff_hru-Dprst_vol_thres_open(Ihru))*DBLE(Dprst_flow_coef(Ihru)) )
+        Dprst_sroff_hru = Dprst_sroff_hru + MAX( 0.0D0, &
+      &                   (Dprst_vol_open-Dprst_sroff_hru-Dprst_vol_thres_open(Ihru))*DBLE(Dprst_flow_coef(Ihru)*Timestep_days) )
         Dprst_vol_open = Dprst_vol_open - Dprst_sroff_hru
         Dprst_sroff_hru = Dprst_sroff_hru/Hruarea_dble
         ! sanity checks
@@ -1534,7 +1589,7 @@
 
       IF ( Dprst_area_clos_max>0.0 ) THEN
         IF ( Dprst_area_clos>NEARZERO ) THEN
-          seep_clos = Dprst_vol_clos*DBLE( Dprst_seep_rate_clos(Ihru) )
+          seep_clos = Dprst_vol_clos*DBLE( Dprst_seep_rate_clos(Ihru)*Timestep_days )
           Dprst_vol_clos = Dprst_vol_clos - seep_clos
           IF ( Dprst_vol_clos<0.0D0 ) THEN
 !            IF ( Dprst_vol_clos<-DNEARZERO ) PRINT *, 'issue, dprst_vol_clos<0.0', Dprst_vol_clos
@@ -1559,6 +1614,149 @@
       Dprst_stor_hru(Ihru) = (Dprst_vol_open+Dprst_vol_clos)/Hruarea_dble
 
       END SUBROUTINE dprst_comp
+
+!***********************************************************************
+!     Compute Green-Ampt Infiltration
+!***********************************************************************
+      SUBROUTINE greenampt(Ihru, Hru_type, Hru_area, Hperv, Himperv, Imperv_stor_max, &
+     &                     Hru_ppt, Avail_et, Availh2o, Sat_moist_stor, Bms, Hru_pptexc, &
+     &                     Infil, Imperv_stor, Imperv_frac, Hru_frac_perv)
+      USE PRMS_SRUNOFF, ONLY: Hru_rain_int, Ppt_exc, Psp, Rgf, Coef, Ppt_exc_imp, &
+     &    Ncdels, Srp, Sri, Basin_pptexc, Kpar24_drn, Infil_dt, Kpar, Hru_greenampt_et, Glacier_active
+      USE PRMS_BASIN, ONLY: NEARZERO
+      USE PRMS_SET_TIME, ONLY: Timestep_minutes, Timestep_days, Nowtime
+      USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr_max, Soil_rechr
+      IMPLICIT NONE
+! Functions
+      INTRINSIC NINT, MIN
+! Arguments
+      INTEGER, INTENT(IN) :: Ihru, Hru_type
+      REAL, INTENT(IN) :: Hperv, Himperv, Imperv_stor_max, Hru_area, Hru_ppt, Imperv_frac, Hru_frac_perv
+      REAL, INTENT(INOUT) :: Availh2o, Avail_et, Infil, Sat_moist_stor, Bms, Imperv_stor
+      REAL, INTENT(OUT) :: Hru_pptexc
+! Local Variables
+      INTEGER :: j, icdels
+      REAL :: srn, ps, fr, ksat, qrp, fin, cdels, soil_et, bms_save, drn, dth, delp, pt
+!***********************************************************************
+      Bms = Soil_rechr(Ihru)
+      Sat_moist_stor = 0.0
+
+! get timestep dth=time in hours=Timestep_hours (dtd=time in days=Timestep_days)
+!     pt = precip time { = min(Timestep_minutes,5) }
+!     cdels = number of pt intervals in a dt interval
+!     delp = fraction representing pt portion of dt interval
+      pt = Infil_dt(Ihru)
+      IF ( pt<MIN(Timestep_minutes,4.999) ) THEN
+        PRINT *, 'ERROR, infil_dt must be >= miniumum of simulation time step in minutes or 5, HRU:', Ihru, pt
+        PRINT *, 'Date:', Nowtime, ', Timestep in minutes:', Timestep_minutes, ', Infiltration dt:', Infil_dt(Ihru)
+        STOP
+      ENDIF
+      cdels = Timestep_minutes/pt ! number of infiltration steps in current timestep
+      IF ( cdels<1.0 ) THEN
+        PRINT *, 'ERROR, simulation timestep < Green-Ampt infiltration time step for HRU:', Ihru
+        PRINT *, 'Date:', Nowtime, ', Timestep in minutes:', Timestep_minutes, ', Infiltration dt:', Infil_dt(Ihru)
+        STOP
+      ENDIF
+      dth = pt/60.0           !ghl1198
+      delp = 1.0/cdels        !ghl1198
+      icdels = NINT(cdels)    !ghl1198
+      IF ( icdels>Ncdels ) THEN
+        PRINT *, 'ERROR, Green-Ampt infiltration time step for HRU:', Ihru, ' > dimension ncdels'
+        PRINT *, 'Date:', Nowtime, 'icdels:', icdels, ' ncdels:', Ncdels
+        STOP
+      ENDIF
+
+      Hru_pptexc = 0.0
+      ksat = Kpar(Ihru)*dth
+      drn = Kpar24_drn(Ihru)*Timestep_days
+      ps = 0.0
+      Hru_rain_int(Ihru) = 0.0
+
+      DO j = 1, Ncdels
+        Ppt_exc(j, Ihru) = 0.0
+        Ppt_exc_imp(j, Ihru) = 0.0
+      ENDDO
+
+      IF ( Availh2o>0.0 ) THEN
+        srn = Availh2o/cdels
+        Hru_rain_int(Ihru) = Hru_ppt/cdels
+        fr = 0.0
+        IF ( Sat_moist_stor>0.0 ) THEN
+          ! rsr?? should ps have a value, why is it in the equation, is it from last time step
+          fr = ksat*(1.0+ps/Sat_moist_stor)
+        ELSE
+          ps = Psp(Ihru)*(Rgf(Ihru)-Coef(Ihru)*Bms)
+          fr = ksat*(1.0+ps/srn)
+        ENDIF
+
+        DO j = 1, Icdels
+          qrp = srn - 0.5*fr
+          IF ( srn<fr .AND. fr/=0.0 ) qrp = 0.5*srn*srn/fr
+          fin = srn - qrp
+          Infil = Infil + fin
+
+          Sat_moist_stor = Sat_moist_stor + fin !???rsr, what if this is > soil_moist_max
+
+          fr = 0.0
+          IF ( ksat>0.0 .AND. Sat_moist_stor>0.0 ) fr = ksat*(1.0+ps/Sat_moist_stor)
+
+          IF ( Hru_type==1 .OR. Glacier_active==0 ) THEN ! can be Ashley glacier, but no ice
+            Ppt_exc(j, Ihru) = qrp
+            Hru_pptexc = qrp*Hperv
+            Srp = Srp + Hru_pptexc
+          ELSE   ! IF ( Hru_type==3 ) THEN
+            Infil = Infil + qrp
+          ENDIF
+
+          IF ( Himperv>0.0 ) THEN
+            Imperv_stor = Imperv_stor + srn
+            IF ( Hru_type==1 .OR. Glacier_active==0 ) THEN
+              IF ( Imperv_stor>Imperv_stor_max ) THEN
+                Ppt_exc_imp(j, Ihru) = Imperv_stor - Imperv_stor_max
+                Imperv_stor = Imperv_stor_max
+                Hru_pptexc = Hru_pptexc + Ppt_exc_imp(j, Ihru)*Himperv
+                Sri = Sri + Ppt_exc_imp(j, Ihru)
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDDO
+        Basin_pptexc = Basin_pptexc + Hru_pptexc
+        Hru_pptexc = Hru_pptexc/Hru_area
+      ENDIF
+
+      ! no ET if precipitation
+      IF ( Hru_ppt<NEARZERO ) THEN
+        ! allow maximum available ET to be available minus possible impervious storage
+        soil_et = (Avail_et - Imperv_stor*Imperv_frac)/Hru_frac_perv
+        IF ( Sat_moist_stor<soil_et ) THEN
+          bms_save = Bms
+          Bms = Bms + Sat_moist_stor - soil_et
+          IF ( Bms<0.0 ) THEN
+            soil_et = bms_save + Sat_moist_stor
+            Bms = 0.0
+          ENDIF
+          Sat_moist_stor = 0.0
+        ELSE
+          Sat_moist_stor = Sat_moist_stor - soil_et
+        ENDIF
+        Hru_greenampt_et(Ihru) = soil_et*Hru_frac_perv
+        Avail_et = Avail_et - Hru_greenampt_et(Ihru)
+        ! need to keep track of ET removed to reduce unsatisfied for later processes
+
+        IF ( Sat_moist_stor>drn ) THEN
+          Sat_moist_stor = Sat_moist_stor - drn
+          Bms = Bms + drn
+        ELSE
+          Bms = Bms + Sat_moist_stor
+          Sat_moist_stor = 0.0
+        ENDIF
+        IF ( Bms>Soil_rechr_max(Ihru) ) Bms = Soil_rechr_max(Ihru)
+        ! CAUTION, changes soil_moist and soil_rechr, should this be taking out of Infil instead ??
+        Soil_moist(Ihru) = Soil_moist(Ihru) - soil_et  !?? what if negative??
+        Soil_rechr(Ihru) = Bms
+      ENDIF
+
+      END SUBROUTINE greenampt
 
 !***********************************************************************
 !     srunoff_restart - write or read srunoff restart file

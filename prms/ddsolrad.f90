@@ -14,7 +14,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ddsolrad'
-        character(len=*), parameter :: Version_ddsolrad = '2021-08-13'
+        character(len=*), parameter :: Version_ddsolrad = '2021-11-19'
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
@@ -33,11 +33,11 @@
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
+      use prms_utils, only: print_date, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INT, FLOAT, DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
       REAL :: pptadj, radadj, dday, ddayi
@@ -94,10 +94,9 @@
 
           ! https://www.omnicalculator.com/physics/cloud-base
 !         cloud base = (temperature - dew point) / 4.4 * 1000 + elevation, altitude of clouds
-!In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet. 
+!In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet.
 !Make sure to adjust the result afterwards if you're using the SI units!
-          
-          
+
           IF ( Solsta_flag==1 ) THEN
             k = Hru_solsta(j)
             IF ( k>0 ) THEN

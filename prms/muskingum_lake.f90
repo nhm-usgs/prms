@@ -97,7 +97,7 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       character(len=*), parameter :: MODDESC = 'Streamflow & Lake Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_lake'
-      character(len=*), parameter :: Version_muskingum_lake = '2021-08-13'
+      character(len=*), parameter :: Version_muskingum_lake = '2021-11-19'
       INTEGER, SAVE :: Obs_flag, Linear_flag, Weir_flag, Gate_flag, Puls_flag
       INTEGER, SAVE :: Secondoutflow_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
@@ -157,10 +157,10 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_setdims()
       USE PRMS_CONSTANTS, ONLY: MAXDIM
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: decldim
-      EXTERNAL :: read_error
 !***********************************************************************
       muskingum_lake_setdims = 0
 
@@ -206,10 +206,10 @@
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, CASCADE_OFF, ERROR_dim
       USE PRMS_MODULE, ONLY: Model, Nsegment, Nratetbl, Nlake, Init_vars_from_file, Cascade_flag
       USE PRMS_MUSKINGUM_LAKE
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar, getdim
-      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       muskingum_lake_decl = 0
 
@@ -622,10 +622,10 @@
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Basin_lake_stor, Lake_vol
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_ROUTING, ONLY: Basin_segment_storage, Segment_type, Hru_segment
+      use prms_utils, only: error_stop, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, NINT, DBLE, DABS
-      EXTERNAL :: read_error, error_stop
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: i, ierr, j, jj, kk, ii, jjj
@@ -878,10 +878,10 @@
       INTEGER FUNCTION muskingum_lake_run()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, OUTFLOW_SEGMENT, LAKE, ERROR_water_use, ERROR_streamflow, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nsegment, Nlake, Cascade_flag, Glacier_flag, Lake_transfer_water_use, Lake_add_water_use, &
-     &    Nowyear, Nowmonth, Nowday
+     &    Nowyear, Nowmonth, Nowday, Hru_type
       USE PRMS_MUSKINGUM_LAKE
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_route_order, Active_hrus, &
-     &    Lake_area, Lake_type, Hru_area_dble, Lake_hru_id, Hru_type, Weir_gate_flag, &
+     &    Lake_area, Lake_type, Hru_area_dble, Lake_hru_id, Weir_gate_flag, &
      &    Basin_gl_cfs, Basin_gl_ice_cfs
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_cms, Basin_gwflow_cfs, Basin_ssflow_cfs, &
@@ -898,10 +898,11 @@
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
       USE PRMS_GWFLOW, ONLY: Basin_gwflow, Lake_seepage, Gw_seep_lakein, Gw_upslope
+      use prms_utils, only: error_stop
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: MOD, DBLE
-      EXTERNAL :: route_lake, error_stop
+      EXTERNAL :: route_lake
 ! Local Variables
       INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj
       DOUBLE PRECISION :: area_fac, segout, currin, tocfs, lake_in_ts
@@ -1152,7 +1153,7 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
-      IF ( Glacier_flag==ACTIVE ) THEN
+      IF ( Glacier_flag==1 ) THEN
         Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
         Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
         Basin_gl_cfs = Basin_gl_top_melt*area_fac
@@ -1182,6 +1183,7 @@
       USE PRMS_OBS, ONLY: Gate_ht, Streamflow_cfs
       USE PRMS_ROUTING, ONLY: Cfs2acft
       USE PRMS_GWFLOW, ONLY: Elevlake
+      use prms_utils, only: error_stop
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, DBLE, SNGL, DABS
@@ -1449,32 +1451,50 @@
 !     muskingum_lake_restart - write or read restart file
 !***********************************************************************
       SUBROUTINE muskingum_lake_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_BASIN, ONLY: Puls_lin_flag
       USE PRMS_MUSKINGUM_LAKE
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Function
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=14) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Outflow_ts
-        IF ( Puls_lin_flag==ACTIVE ) THEN
-          WRITE ( Restart_outunit ) Din1
-          WRITE ( Restart_outunit ) Lake_sto
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Outflow_ts
+          IF ( Puls_lin_flag==ACTIVE ) THEN
+            WRITE ( Restart_outunit ) Din1
+            WRITE ( Restart_outunit ) Lake_sto
+          ENDIF
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Outflow_ts
+          IF ( Puls_lin_flag==ACTIVE ) THEN
+            WRITE ( Restart_outunit, * ) Din1
+            WRITE ( Restart_outunit, * ) Lake_sto
+          ENDIF
         ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Outflow_ts
-        IF ( Puls_lin_flag==ACTIVE ) THEN
-          READ ( Restart_inunit ) Din1
-          READ ( Restart_inunit ) Lake_sto
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Outflow_ts
+          IF ( Puls_lin_flag==ACTIVE ) THEN
+            READ ( Restart_inunit ) Din1
+            READ ( Restart_inunit ) Lake_sto
+          ENDIF
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Outflow_ts
+          IF ( Puls_lin_flag==ACTIVE ) THEN
+            READ ( Restart_inunit, * ) Din1
+            READ ( Restart_inunit, * ) Lake_sto
+          ENDIF
         ENDIF
       ENDIF
       END SUBROUTINE muskingum_lake_restart

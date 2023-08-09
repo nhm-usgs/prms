@@ -8,7 +8,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_jh'
-        character(len=*), parameter :: Version_potet = '2021-08-13'
+        character(len=*), parameter :: Version_potet = '2021-11-19'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
       END MODULE PRMS_POTET_JH
@@ -19,11 +19,11 @@
       USE PRMS_POTET_JH
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Tavgf, Swrad
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: elh
@@ -32,7 +32,7 @@
 
       IF ( Process_flag==RUN ) THEN
 !***********************************************************************
-! 597.3 cal/gm at 0 C is the energy required to change the state of 
+! 597.3 cal/gm at 0 C is the energy required to change the state of
 ! water to vapor
 ! elh is the latent heat of vaporization (not including the *2.54)
         Basin_potet = 0.0D0

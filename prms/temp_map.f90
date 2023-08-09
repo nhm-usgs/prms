@@ -2,7 +2,7 @@
 ! Maximum, minimum, average temperatures, and precipitation are distributed to each HRU
 ! using temperature and/or precipitation data input as a time series of gridded
 ! or other spatial units using an area-weighted method and correction factors to
-! account for differences in altitude, spatial variation, topography, and 
+! account for differences in altitude, spatial variation, topography, and
 ! measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_TEMP_MAP
@@ -11,7 +11,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=*), parameter :: MODNAME = 'temp_map'
-        character(len=*), parameter :: Version_temp_map = '2021-08-13'
+        character(len=*), parameter :: Version_temp_map = '2023-06-02'
         INTEGER, SAVE :: Tmax_unit, Tmin_unit
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
@@ -30,11 +30,11 @@
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc
+      use prms_utils, only: find_current_time, find_cbh_header_end, print_module, read_error
 ! Functions
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
-      EXTERNAL :: read_error, precip_form, temp_set, find_header_end, find_current_time
-      EXTERNAL :: read_cbh_date, print_module, print_date
+      EXTERNAL :: temp_set, read_cbh_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       REAL :: tmax_hru, tmin_hru, harea
@@ -126,21 +126,21 @@
      &       CALL read_error(2, 'tmin_map_adj')
         IF ( control_string(Tmax_map_file, 'tmax_map_file')/=0 ) CALL read_error(5, 'tmax_map_file')
         IF ( control_string(Tmin_map_file, 'tmin_map_file')/=0 ) CALL read_error(5, 'tmin_map_file')
-        CALL find_header_end(Tmax_unit, Tmax_map_file, 'tmax_map_file', ierr, 1, 0)
+        CALL find_cbh_header_end(Tmax_unit, Tmax_map_file, 'tmax_map_file', ierr, 1)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE
-          CALL find_current_time(Tmax_unit, Start_year, Start_month, Start_day, ierr, 0)
+          CALL find_current_time(Tmax_unit, Start_year, Start_month, Start_day, ierr)
           IF ( ierr==-1 ) THEN
             PRINT *, 'for first time step, Tmax Map File: ', Tmax_map_file
             istop = 1
           ENDIF
         ENDIF
-        CALL find_header_end(Tmin_unit, Tmin_map_file, 'tmin_map_file', ierr, 1, 0)
+        CALL find_cbh_header_end(Tmin_unit, Tmin_map_file, 'tmin_map_file', ierr, 1)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE
-          CALL find_current_time(Tmin_unit, Start_year, Start_month, Start_day, ierr, 0)
+          CALL find_current_time(Tmin_unit, Start_year, Start_month, Start_day, ierr)
           IF ( ierr==-1 ) THEN
             PRINT *, 'for first time step, Tmin Map File: ', Tmin_map_file
             istop = 1

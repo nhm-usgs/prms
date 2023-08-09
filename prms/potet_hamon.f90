@@ -7,7 +7,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_hamon'
-        character(len=*), parameter :: Version_potet = '2021-08-13'
+        character(len=*), parameter :: Version_potet = '2021-11-19'
         DOUBLE PRECISION, PARAMETER :: ONE_12TH = 1.0D0/12.0D0
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hamon_coef(:, :)
@@ -21,11 +21,11 @@
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc
       USE PRMS_SOLTAB, ONLY: Soltab_sunhrs
       USE PRMS_SET_TIME, ONLY: Jday
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
       REAL :: dyl, vpsat, vdsat

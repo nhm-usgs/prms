@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2021-09-07'
+      character(len=*), parameter :: Version_stream_temp = '2022-02-03'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -33,12 +33,12 @@
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 !   Segment Parameters
       REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
-      REAL, SAVE, ALLOCATABLE :: Seg_slope(:), Width_values(:, :)
+      REAL, SAVE, ALLOCATABLE :: Seg_slope(:)
       REAL, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:), Stream_tave_init(:)
-      INTEGER, SAVE:: Width_dim, Maxiter_sntemp
+      INTEGER, SAVE:: Maxiter_sntemp
       REAL, SAVE, ALLOCATABLE :: Seg_humidity(:, :)
       REAL, SAVE, ALLOCATABLE :: lat_temp_adj(:, :)
-      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:)
+      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:), tempIN_segment(:)
 !   Shade Parameters needed if stream_temp_shade_flag = 0
       REAL, SAVE, ALLOCATABLE :: Azrh(:), Alte(:), Altw(:), Vce(:)
       REAL, SAVE, ALLOCATABLE :: Vdemx(:), Vhe(:), Voe(:), Vcw(:), Vdwmx(:), Vhw(:), Vow(:)
@@ -93,11 +93,11 @@
       USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DOCUMENTATION, ACTIVE, OFF, DAYS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nsegment, Model, Init_vars_from_file, Strmtemp_humidity_flag, Model
       USE PRMS_STRMTEMP
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       stream_temp_decl = 0
 
@@ -366,6 +366,13 @@
      &     'Maximum number of Newton-Raphson iterations to compute stream temperature', &
      &     'none')/=0 ) CALL read_error(1, 'maxiter_sntemp')
 
+      ALLOCATE ( tempIN_segment(Nsegment) )
+      IF ( declparam(MODNAME, 'tempIN_segment', 'nsegment', 'integer', &
+     &     '0', 'bounded', 'nstreamtemp', &
+     &     'Index of streamflow temperature in Data File that replaces temperature in a segment', &
+     &     'Index of streamflow temperature in Data File that replaces temperature in a segment', &
+     &     'none')/=0 ) CALL read_error(1, 'tempIN_segment')
+
       IF ( Strmtemp_humidity_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN  ! specified constant
          ALLOCATE ( Seg_humidity(Nsegment, MONTHS_PER_YEAR) )
          IF ( declparam( MODNAME, 'seg_humidity', 'nsegment,nmonths', 'real', &
@@ -416,12 +423,12 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
       USE PRMS_ROUTING, ONLY: Hru_segment, Tosegment, Segment_order, Segment_up
+      use prms_utils, only: checkdim_param_limits, error_stop, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: COS, SIN, ABS, SIGN, ASIN, maxval
       INTEGER, EXTERNAL :: getparam
       REAL, EXTERNAL :: solalt
-      EXTERNAL :: read_error, checkdim_param_limits, error_stop
 ! Local Variables
       INTEGER :: i, j, k, iseg, ierr, ii, this_seg
       REAL :: tan_d, tano, sinhro, temp, decl, cos_d, tanod, alrs
@@ -724,10 +731,9 @@
       USE PRMS_SET_TIME, ONLY: Summer_flag, Jday
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Potet, Hru_rain, Swrad
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
-      USE PRMS_FLOWVARS, ONLY: Seg_outflow
-      USE PRMS_SNOW, ONLY: Snowmelt
+      USE PRMS_FLOWVARS, ONLY: Seg_outflow, Snowmelt
       USE PRMS_ROUTING, ONLY: Hru_segment, Segment_order, Seginc_swrad
-      USE PRMS_OBS, ONLY: Humidity
+      USE PRMS_OBS, ONLY: Humidity, Stream_temp
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Hru_cossl
 
       IMPLICIT NONE
@@ -1072,6 +1078,7 @@
               ! bad t_o value
               Seg_tave_water(i) = NOFLOW_TEMP
           endif
+          if ( tempIN_segment(i)>0 ) Seg_tave_water(i) = Stream_temp(tempIN_segment(i))
 
 !          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
 !             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
@@ -1234,11 +1241,11 @@
      &    Seg_ccov, Seg_potet, Albedo, seg_tave_gw, Seg_slope
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
       USE PRMS_ROUTING, ONLY: Seginc_swrad
+      use prms_utils, only: sat_vapor_press_poly
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, SQRT, ABS, SNGL, DBLE
       EXTERNAL :: teak1
-      REAL, EXTERNAL :: sat_vapor_press_poly
 ! Arguments:
       REAL, INTENT(OUT) :: Ted
       REAL, INTENT(OUT) :: Ak1d, Ak2d
@@ -1909,34 +1916,58 @@
 !     stream_temp_restart - write or read stream_temp restart file
 !***********************************************************************
       SUBROUTINE stream_temp_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_STRMTEMP
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
       ! Functions
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=11) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
-         WRITE ( Restart_outunit ) MODNAME
-         WRITE ( Restart_outunit ) Seg_tave_water
-         WRITE ( Restart_outunit ) gw_silo
-         WRITE ( Restart_outunit ) ss_silo
-         WRITE ( Restart_outunit ) gw_sum
-         WRITE ( Restart_outunit ) ss_sum
-         WRITE ( Restart_outunit ) gw_index
-         WRITE ( Restart_outunit ) ss_index
+      IF ( In_out==SAVE_INIT ) THEN
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Seg_tave_water
+          WRITE ( Restart_outunit ) gw_silo
+          WRITE ( Restart_outunit ) ss_silo
+          WRITE ( Restart_outunit ) gw_sum
+          WRITE ( Restart_outunit ) ss_sum
+          WRITE ( Restart_outunit ) gw_index
+          WRITE ( Restart_outunit ) ss_index
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Seg_tave_water
+          WRITE ( Restart_outunit, * ) gw_silo
+          WRITE ( Restart_outunit, * ) ss_silo
+          WRITE ( Restart_outunit, * ) gw_sum
+          WRITE ( Restart_outunit, * ) ss_sum
+          WRITE ( Restart_outunit, * ) gw_index
+          WRITE ( Restart_outunit, * ) ss_index
+        ENDIF
       ELSE
-         READ ( Restart_inunit ) module_name
-         CALL check_restart(MODNAME, module_name)
-         READ ( Restart_inunit ) Seg_tave_water
-         READ ( Restart_inunit ) gw_silo
-         READ ( Restart_inunit ) ss_silo
-         READ ( Restart_inunit ) gw_sum
-         READ ( Restart_inunit ) ss_sum
-         READ ( Restart_inunit ) gw_index
-         READ ( Restart_inunit ) ss_index
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Seg_tave_water
+          READ ( Restart_inunit ) gw_silo
+          READ ( Restart_inunit ) ss_silo
+          READ ( Restart_inunit ) gw_sum
+          READ ( Restart_inunit ) ss_sum
+          READ ( Restart_inunit ) gw_index
+          READ ( Restart_inunit ) ss_index
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Seg_tave_water
+          READ ( Restart_inunit, * ) gw_silo
+          READ ( Restart_inunit, * ) ss_silo
+          READ ( Restart_inunit, * ) gw_sum
+          READ ( Restart_inunit, * ) ss_sum
+          READ ( Restart_inunit, * ) gw_index
+          READ ( Restart_inunit, * ) ss_index
+        ENDIF
       ENDIF
       END SUBROUTINE stream_temp_restart

@@ -17,14 +17,14 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Groundwater'
       character(len=6), parameter :: MODNAME = 'gwflow'
-      character(len=*), parameter :: Version_gwflow = '2021-08-13'
+      character(len=*), parameter :: Version_gwflow = '2022-04-21'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea(:), Gwin_dprst(:)
       DOUBLE PRECISION, SAVE :: Basin_gw_upslope
       INTEGER, SAVE :: Gwminarea_flag
       DOUBLE PRECISION, SAVE :: Basin_dnflow
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_seepage_max(:)
 !   Declared Variables
-      DOUBLE PRECISION, SAVE :: Basin_gwstor, Basin_gwflow, Basin_gwsink
+      DOUBLE PRECISION, SAVE :: Basin_gwflow, Basin_gwsink
       DOUBLE PRECISION, SAVE :: Basin_gwin, Basin_lake_seep
       DOUBLE PRECISION, SAVE :: Basin_gwstor_minarea_wb
       REAL, SAVE, ALLOCATABLE :: Gwres_flow(:), Gwres_sink(:)
@@ -76,10 +76,10 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, DOCUMENTATION, CASCADEGW_OFF
       USE PRMS_MODULE, ONLY: Model, Nhru, Ngw, Nlake, Init_vars_from_file, Dprst_flag, Cascadegw_flag, Lake_route_flag
       USE PRMS_GWFLOW
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       gwflowdecl = 0
 
@@ -130,10 +130,6 @@
       IF ( declvar(MODNAME, 'gw_in_ssr', 'ngw', Ngw, 'double', &
      &     'Drainage from gravity reservoir excess water for each GWR', &
      &     'acre-inches', Gw_in_ssr)/=0 ) CALL read_error(3, 'gw_in_ssr')
-
-      IF ( declvar(MODNAME, 'basin_gwstor', 'one', 1, 'double', &
-     &     'Basin area-weighted average of storage in GWRs', &
-     &     'inches', Basin_gwstor)/=0 ) CALL read_error(3, 'basin_gwstor')
 
       IF ( declvar(MODNAME, 'basin_gwin', 'one', 1, 'double', &
      &     'Basin area-weighted average of inflow to GWRs', &
@@ -270,11 +266,11 @@
       USE PRMS_GWFLOW
       USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, &
      &                      Lake_hru_id, Weir_gate_flag, Hru_storage
-      USE PRMS_FLOWVARS, ONLY: Gwres_stor
+      USE PRMS_FLOWVARS, ONLY: Gwres_stor, Basin_gwstor
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
       INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: i, j, jjj
@@ -382,14 +378,15 @@
       USE PRMS_GWFLOW
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Lake_type, &
      &    Basin_area_inv, Hru_area, Gwr_type, Lake_hru_id, Weir_gate_flag, Hru_area_dble, Hru_storage
-      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Ssr_to_gw, Sroff, Ssres_flow, Gwres_stor, Lake_vol
+      USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Ssr_to_gw, Sroff, Ssres_flow, Gwres_stor, Lake_vol, Basin_gwstor
       USE PRMS_CASCADE, ONLY: Ncascade_gwr
-      USE PRMS_SET_TIME, ONLY: Cfs_conv
+      USE PRMS_SET_TIME, ONLY: Cfs_conv, Timestep_days
       USE PRMS_SRUNOFF, ONLY: Dprst_seep_hru
       USE PRMS_WATER_USE, ONLY: Gwr_transfer, Gwr_gain
+      use prms_utils, only: print_date
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: rungw_cascade, print_date
+      EXTERNAL :: rungw_cascade
       INTRINSIC :: DBLE, DABS, SNGL, MIN
 ! Local Variables
       INTEGER :: i, j, jj, jjj
@@ -417,7 +414,7 @@
           jjj = Lake_hru_id(j)
           ! what happens when lake goes dry? need lake bottom elevation ?
           IF ( Lake_type(jjj)==4 .OR. Lake_type(jjj)==5 ) &
-     &         Lake_seepage_max(jjj) = DBLE( (Elevlake(jjj)-Lake_seep_elev(jjj))*12.0*Gw_seep_coef(j) ) ! units = inches
+     &         Lake_seepage_max(jjj) = DBLE( (Elevlake(jjj)-Lake_seep_elev(jjj))*12.0*Gw_seep_coef(j)*Timestep_days ) ! units = inches
         ENDDO
         DO jj = 1, Active_gwrs
           j = Gwr_route_order(jj)
@@ -527,13 +524,13 @@
         ELSE
 
 ! Compute groundwater discharge
-          gwflow = gwstor*DBLE( Gwflow_coef(i) )
+          gwflow = gwstor*DBLE( Gwflow_coef(i)*Timestep_days )
 
 ! Reduce storage by outflow
           gwstor = gwstor - gwflow
 
           IF ( Gwsink_coef(i)>0.0 ) THEN
-            gwsink = MIN( gwstor*DBLE( Gwsink_coef(i) ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
+            gwsink = MIN( gwstor*DBLE( Gwsink_coef(i)*Timestep_days ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
             gwstor = gwstor - gwsink
           ENDIF
 ! if gwr_swale_flag = 1 swale GWR flow goes to sink, 2 included in stream network and cascades
@@ -561,7 +558,7 @@
         ENDIF
         Basin_gwflow = Basin_gwflow + DBLE(Gwres_flow(i))*gwarea
 
-        ! leave gwin in inch-acres
+        ! leave gwin in acre-inches
         Gwres_in(i) = gwin
         Gwres_stor(i) = gwstor/gwarea
         Hru_lateral_flow(i) = DBLE( Gwres_flow(i) + Sroff(i) + Ssres_flow(i) )
@@ -584,7 +581,7 @@
 !     Compute cascading GW flow
 !***********************************************************************
       SUBROUTINE rungw_cascade(Igwr, Ncascade_gwr, Gwres_flow, Dnflow)
-      USE PRMS_SRUNOFF, ONLY: Strm_seg_in
+      USE PRMS_FLOWVARS, ONLY: Strm_seg_in, strm_seg_gwflow_in
       USE PRMS_GWFLOW, ONLY: Gw_upslope
       USE PRMS_CASCADE, ONLY: Gwr_down, Gwr_down_frac, Cascade_gwr_area
       ! Cfs_conv converts acre-inches per timestep to cfs
@@ -598,6 +595,7 @@
       REAL, INTENT(OUT) :: Dnflow
 ! Local variables
       INTEGER :: j, k
+      DOUBLE PRECISION :: gwflow_in
 !***********************************************************************
       Dnflow = 0.0
       DO k = 1, Ncascade_gwr
@@ -610,7 +608,9 @@
 ! if gwr_down(k, Igwr) < 0, cascade contributes to a stream
         ELSEIF ( j<0 ) THEN
           j = IABS( j )
-          Strm_seg_in(j) = Strm_seg_in(j) + DBLE( Gwres_flow*Cascade_gwr_area(k, Igwr) )*Cfs_conv
+          gwflow_in = DBLE( Gwres_flow*Cascade_gwr_area(k, Igwr) )*Cfs_conv
+          strm_seg_gwflow_in(j) = strm_seg_gwflow_in(j) + gwflow_in
+          Strm_seg_in(j) = Strm_seg_in(j) + gwflow_in
         ENDIF
       ENDDO
 
@@ -624,23 +624,33 @@
 !     gwflow_restart - write or read gwflow restart file
 !***********************************************************************
       SUBROUTINE gwflow_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_BASIN, ONLY: Weir_gate_flag
       USE PRMS_GWFLOW
+      use prms_utils, only: check_restart
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Functions
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=6) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        IF ( Weir_gate_flag==ACTIVE ) WRITE ( Restart_outunit ) Elevlake
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          IF ( Weir_gate_flag==ACTIVE ) WRITE ( Restart_outunit ) Elevlake
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          IF ( Weir_gate_flag==ACTIVE ) WRITE ( Restart_outunit, * ) Elevlake
+        ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        IF ( Weir_gate_flag==ACTIVE ) READ ( Restart_inunit ) Elevlake ! could be error if someone turns off weirs for restart
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          IF ( Weir_gate_flag==ACTIVE ) READ ( Restart_inunit ) Elevlake ! could be error if someone turns off weirs for restart
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          IF ( Weir_gate_flag==ACTIVE ) READ ( Restart_inunit, * ) Elevlake ! could be error if someone turns off weirs for restart
+        ENDIF
       ENDIF
       END SUBROUTINE gwflow_restart

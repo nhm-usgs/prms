@@ -50,7 +50,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Glacier Dynamics'
       character(len=10), parameter :: MODNAME = 'glacr_melt'
-      character(len=*), parameter :: Version_glacr = '2021-08-13'
+      character(len=*), parameter :: Version_glacr = '2022-01-12'
       ! Ngl - Number of glaciers counted by termini
       ! Ntp - Number of tops of glaciers, so max glaciers that could ever split in two
       ! Nhrugl - Number of at least partially glacierized hrus at initiation
@@ -121,10 +121,10 @@
 !***********************************************************************
       INTEGER FUNCTION glacrsetdims()
       USE PRMS_GLACR, ONLY: Nglres, Seven, Four, MbInit_flag
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declfix, control_integer
-      EXTERNAL :: read_error
 !***********************************************************************
       glacrsetdims = 0
 
@@ -145,11 +145,11 @@
       INTEGER FUNCTION glacrdecl()
       USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file
+      use prms_utils, only: print_module, read_error
       USE PRMS_GLACR
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       glacrdecl = 0
 
@@ -341,12 +341,12 @@
       IF ( Init_vars_from_file==0 ) THEN
         ALLOCATE ( Glacr_elev_init(Nhru) )
         IF ( declvar(MODNAME, 'glacr_elev_init', 'nhru', Nhru, 'real',    &
-     &     'Glacier surface elevation mean over HRU at initiation extrapolating to 100% glacierized HRU', &
+     &       'Glacier surface elevation mean over HRU at initiation extrapolating to 100% glacierized HRU', &
      &     'elev_units', Glacr_elev_init)/=0 ) CALL read_error(3, 'glacr_elev_init')
 
         ALLOCATE ( Glacr_slope_init(Nhru) )
         IF ( declvar(MODNAME, 'glacr_slope_init', 'nhru', Nhru, 'real',    &
-     &     'Glacier surface slope mean over HRU at initiation extrapolating to 100% glacierized HRU', &
+     &       'Glacier surface slope mean over HRU at initiation extrapolating to 100% glacierized HRU', &
      &     'elev_units', Glacr_slope_init)/=0 ) CALL read_error(3, 'glacr_slope_init')
       ENDIF
 
@@ -438,16 +438,17 @@
 !***********************************************************************
       INTEGER FUNCTION glacrinit()
       USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, GLACIER, LAND
-      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file
+      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, Hru_type
       USE PRMS_GLACR
       USE PRMS_BASIN, ONLY: Hru_area, Hru_elev_ts, Active_hrus, Hru_route_order, &
-     &    Hru_type, Basin_area_inv, Hru_elev_meters
+     &    Basin_area_inv, Hru_elev_meters
       USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
+      use prms_utils, only: get_ftnunit, read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getparam, get_ftnunit, compute_ela_aar
+      INTEGER, EXTERNAL :: getparam, compute_ela_aar
       INTRINSIC :: ABS, SQRT, SNGL, REAL
-      EXTERNAL :: read_error, tag_count, sort5, glacr_restart
+      EXTERNAL :: tag_count, sort5, glacr_restart
 ! Local Variables
       INTEGER :: i, j, ii, jj, o, p, hru_flowline(Nhru), toflowline(Nhru), doela, termh, len_str
       INTEGER :: iwksp(Nhru), is(Nhru), ie(Nhru), n_inline(Nhru), cell_id(Nhru), str_id(Nhru), prev
@@ -794,10 +795,11 @@
 !                  computations
 !***********************************************************************
       INTEGER FUNCTION glacrrun()
-      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, NEARZERO, FEET
+      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, NEARZERO, FEET !, METERS2FEET
+      USE PRMS_MODULE, ONLY: Hru_type
       USE PRMS_GLACR
-      USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, Hru_type, &
-     &    Elev_units, Hru_elev_meters !, Hru_elev_feet
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, &
+     &    Elev_units, Hru_elev_meters, Hru_elev_feet
       USE PRMS_FLOWVARS, ONLY: Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
@@ -856,11 +858,11 @@
         IF ( Hru_type(i)==GLACIER ) THEN
           IF ( Ngl==0 ) Hru_elev_ts(i) = Basal_elev(i)
           IF ( Elev_units==FEET ) THEN
-            !Hru_elev_feet(i) = Hru_elev_ts(i)
+            Hru_elev_feet(i) = Hru_elev_ts(i)
             Hru_elev_meters(i) = Hru_elev_ts(i)*FEET2METERS
           ELSE
             Hru_elev_meters(i) = Hru_elev_ts(i)
-            !Hru_elev_feet(i) = Hru_elev_ts(i)*METERS2FEET
+            Hru_elev_feet(i) = Hru_elev_ts(i)*METERS2FEET
           ENDIF
         ENDIF
       ENDDO
@@ -873,18 +875,18 @@
 !***********************************************************************
       INTEGER FUNCTION comp_glsurf(glacr_exist, glrette_exist)
       USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, METERS2FEET, DNEARZERO, NEARZERO, FEET, METERS
-      USE PRMS_MODULE, ONLY: Nhru, Start_year, Nowyear, Nowmonth
+      USE PRMS_MODULE, ONLY: Nhru, Start_year, Nowyear, Nowmonth, Hru_type
       USE PRMS_GLACR
-      USE PRMS_BASIN, ONLY: Hru_type, Hru_elev_ts, Basin_area_inv, Active_hrus, &
-     &    Hru_route_order, Elev_units, Hru_elev
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Basin_area_inv, Active_hrus, Hru_route_order, Elev_units, Hru_elev
       USE PRMS_SET_TIME, ONLY: Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow
-      USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt, Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
-     &    Glrette_frac_init, Snowcov_area, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
-      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
+      USE PRMS_SNOW, ONLY: Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
+     &    Glrette_frac_init, Basin_snowicecov, Glacr_evap, Basin_glacrb_melt
+      USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac, Snowcov_area, Snowmelt, Snow_evap
+      use prms_utils, only: get_ftnunit
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: get_ftnunit, compute_ela_mb, compute_ela_aar, recompute_soltab
+      INTEGER, EXTERNAL :: compute_ela_mb, compute_ela_aar, recompute_soltab
       INTRINSIC :: ABS, EXP, SUM, SQRT, ISNAN, SNGL, DBLE
       EXTERNAL :: tag_count, bottom
 ! Local Variables
@@ -902,7 +904,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: glacr_exist, glrette_exist
 !***********************************************************************
-      comp_glsurf = 1
+      comp_glsurf = 0
       dobot = 1 ! 1 calls bottom calcs, 0 doesn't: Set to 0 for calibrating, then run one extra step with it on
       ! Should change so that saves the basal elevations (or reads in as parameter) and then recalibrating does not change
       botwrite = 0 ! 1 writes bottom calcs, 0 doesn't: Set to 0 for calibrating
@@ -1611,8 +1613,6 @@
       Basin_gl_storage = Basin_gl_storage + Basin_gl_top_gain - Basin_glacrb_melt - Basin_gl_top_melt
       Basin_gl_storvol = Basin_gl_storage/Basin_area_inv
 !
-      comp_glsurf = 0
-!
       END FUNCTION comp_glsurf
 
 !***********************************************************************
@@ -1621,9 +1621,9 @@
 !***********************************************************************
       INTEGER FUNCTION compute_ela_mb()
       USE PRMS_CONSTANTS, ONLY: GLACIER
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Hru_type
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Hru_mb_yrend, Ela
-      USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS
@@ -1631,7 +1631,7 @@
       INTEGER :: i, j, ii, o, p, ela2(Nhru)
       REAL :: elamin0(Nhru), elamin20(Nhru), elamin(Nhru), elamin2(Nhru)
 !***********************************************************************
-      compute_ela_mb = 1
+      compute_ela_mb = 0
 ! initialize
       ela2 = 0
       elamin0 = 1.0E15
@@ -1671,8 +1671,6 @@
         ENDDO
       ENDDO
 !
-      compute_ela_mb = 0
-!
       END FUNCTION compute_ela_mb
 
 !***********************************************************************
@@ -1681,9 +1679,9 @@
 !***********************************************************************
       INTEGER FUNCTION compute_ela_aar()
       USE PRMS_CONSTANTS, ONLY: GLACIER
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Hru_type
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Prev_area, Ela
-      USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, SNGL
@@ -1693,7 +1691,7 @@
       REAL :: aar, elaarea
       REAL, PARAMETER :: Convert_units = (39.37*1000)**2
 !***********************************************************************
-      compute_ela_aar = 1
+      compute_ela_aar = 0
 ! initialize
       ela2 = 0
       elamin0 = 1.0E15
@@ -1741,8 +1739,6 @@
           ENDDO
         ENDDO
       ENDDO
-!
-      compute_ela_aar = 0
 
       END FUNCTION compute_ela_aar
 
@@ -1752,10 +1748,11 @@
 !***********************************************************************
       INTEGER FUNCTION recompute_soltab()
       USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, GLACIER
+      USE PRMS_MODULE, ONLY: Hru_type
       USE PRMS_GLACR, ONLY: Hru_slope_ts
-      USE PRMS_SOLTAB, ONLY: Hru_aspect, Hru_cossl, PI, RADIANS, &
+      USE PRMS_SOLTAB, ONLY: Hru_aspect, Hru_cossl, PI, RADIANS, Sunset_angle, &
      &    Soltab_potsw, Soltab_sunhrs, Solar_declination, ECCENTRICY, DEGDAY, DEGDAYRAD
-      USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Hru_lat
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_lat
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SIN, COS, FLOAT, SNGL
@@ -1784,9 +1781,9 @@
           Soltab_sunhrs(1, n) = 0.0
           Soltab_potsw(1, n) = 0.0
           CALL compute_soltab(obliquity, Solar_declination, Hru_slope_ts(n), Hru_aspect(n), &
-     &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(1, n), &
-     &                      Soltab_sunhrs(1, n), Hru_type(n), n)
-          ENDIF
+     &                      Hru_lat(n), Hru_cossl(n), Soltab_potsw(:, n), &
+     &                      Soltab_sunhrs(:, n), Sunset_angle(:, n), Hru_type(n), n)
+        ENDIF
       ENDDO
 !
       END FUNCTION recompute_soltab
@@ -1801,9 +1798,9 @@
 !***********************************************************************
       SUBROUTINE tag_count(do_init, hru_flowline, toflowline, glacier_frac_use)
       USE PRMS_CONSTANTS, ONLY: GLACIER
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Hru_type
       USE PRMS_GLACR, ONLY: Ntp, Ngl, Glacr_tag, Term, Top, Top_tag, Tohru
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: do_init
@@ -2462,10 +2459,10 @@
 !***********************************************************************
       SUBROUTINE yearly_ca_coef(Frawt, Ela_elevt)
       USE PRMS_CONSTANTS, ONLY: GLACIER
-      USE PRMS_MODULE, ONLY: Nhru
+      USE PRMS_MODULE, ONLY: Nhru, Hru_type
       USE PRMS_GLACR, ONLY: Ntp, Nhrugl, Ngl, Order_flowline, Keep_gl, Ikeep_gl, &
      &    Hru_length, Av_basal_slope, Av_fgrad, Glacr_tag, Term, Glacr_slope_init
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: Glacier_frac
       IMPLICIT NONE
 ! Functions
@@ -3030,16 +3027,18 @@
 !     glacr_restart- write or read glacrrestart file
 !***********************************************************************
       SUBROUTINE glacr_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_GLACR
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=10) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+    IF ( In_out==SAVE_INIT ) THEN
+      IF ( text_restart_flag==OFF ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
         WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
@@ -3068,6 +3067,36 @@
         WRITE ( Restart_outunit ) Hru_mb_yrcumul
         WRITE ( Restart_outunit ) Hru_slope_ts
       ELSE
+        WRITE ( Restart_outunit, * ) MODNAME
+        WRITE ( Restart_outunit, * ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
+        WRITE ( Restart_outunit, * ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
+        WRITE ( Restart_outunit, * ) Basin_gl_top_gain
+        WRITE ( Restart_outunit, * ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
+        WRITE ( Restart_outunit, * ) Hru_glres_melt, Basin_gl_storstart
+        WRITE ( Restart_outunit, * ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
+        WRITE ( Restart_outunit, * ) Basal_elev
+        WRITE ( Restart_outunit, * ) Keep_gl
+        WRITE ( Restart_outunit, * ) Ikeep_gl
+        WRITE ( Restart_outunit, * ) Basal_slope
+        WRITE ( Restart_outunit, * ) Av_basal_slope
+        WRITE ( Restart_outunit, * ) Av_fgrad
+        WRITE ( Restart_outunit, * ) Prev_out, Prev_outi
+        WRITE ( Restart_outunit, * ) Hru_mb_yrend
+        WRITE ( Restart_outunit, * ) Glacr_flow
+        WRITE ( Restart_outunit, * ) Gl_ice_melt
+        WRITE ( Restart_outunit, * ) Top
+        WRITE ( Restart_outunit, * ) Term
+        WRITE ( Restart_outunit, * ) Ela
+        WRITE ( Restart_outunit, * ) Order_flowline
+        WRITE ( Restart_outunit, * ) Ode_glacrva_coef
+        WRITE ( Restart_outunit, * ) Top_tag
+        WRITE ( Restart_outunit, * ) Glacr_tag
+        WRITE ( Restart_outunit, * ) Delta_volyr
+        WRITE ( Restart_outunit, * ) Hru_mb_yrcumul
+        WRITE ( Restart_outunit, * ) Hru_slope_ts
+      ENDIF
+    ELSE
+      IF ( text_restart_flag==OFF ) THEN
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
@@ -3096,5 +3125,35 @@
         READ ( Restart_inunit ) Delta_volyr
         READ ( Restart_inunit ) Hru_mb_yrcumul
         READ ( Restart_inunit ) Hru_slope_ts
+      ELSE
+        READ ( Restart_inunit, * ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit, * ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
+        READ ( Restart_inunit, * ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
+        READ ( Restart_inunit, * ) Basin_gl_top_gain
+        READ ( Restart_inunit, * ) Basin_gl_area, Gl_area, Basin_gl_ice_melt
+        READ ( Restart_inunit, * ) Hru_glres_melt, Basin_gl_storstart
+        READ ( Restart_inunit, * ) Gl_top_melt, Basin_gl_storage, Basin_gl_storvol
+        READ ( Restart_inunit, * ) Basal_elev
+        READ ( Restart_inunit, * ) Keep_gl
+        READ ( Restart_inunit, * ) Ikeep_gl
+        READ ( Restart_inunit, * ) Basal_slope
+        READ ( Restart_inunit, * ) Av_basal_slope
+        READ ( Restart_inunit, * ) Av_fgrad
+        READ ( Restart_inunit, * ) Prev_out, Prev_outi
+        READ ( Restart_inunit, * ) Hru_mb_yrend
+        READ ( Restart_inunit, * ) Glacr_flow
+        READ ( Restart_inunit, * ) Gl_ice_melt
+        READ ( Restart_inunit, * ) Top
+        READ ( Restart_inunit, * ) Term
+        READ ( Restart_inunit, * ) Ela
+        READ ( Restart_inunit, * ) Order_flowline
+        READ ( Restart_inunit, * ) Ode_glacrva_coef
+        READ ( Restart_inunit, * ) Top_tag
+        READ ( Restart_inunit, * ) Glacr_tag
+        READ ( Restart_inunit, * ) Delta_volyr
+        READ ( Restart_inunit, * ) Hru_mb_yrcumul
+        READ ( Restart_inunit, * ) Hru_slope_ts
       ENDIF
-      END SUBROUTINE glacr_restart
+    ENDIF
+    END SUBROUTINE glacr_restart

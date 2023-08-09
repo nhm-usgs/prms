@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2021-08-13'
+      character(len=*), parameter :: Version_routing = '2022-04-21'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades
@@ -64,10 +64,10 @@
      &    strmflow_muskingum_module, CASCADE_OFF, CASCADE_HRU_SEGMENT
       USE PRMS_MODULE, ONLY: Nhru, Nsegment, Model, Init_vars_from_file, Strmflow_flag, Cascade_flag
       USE PRMS_ROUTING
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       routingdecl = 0
 
@@ -312,11 +312,11 @@
       USE PRMS_SET_TIME, ONLY: Timestep_seconds
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble !, Active_area
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
+      use prms_utils, only: read_error, write_outfile
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: MOD
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: i, j, test, lval, toseg, iseg, isegerr, ierr, eseg
       REAL :: k, x, d, x_max, velocity
@@ -403,7 +403,7 @@
      &       CALL read_error(2,'segment_flow_init')
         DO i = 1, Nsegment
           Seg_outflow(i) = Segment_flow_init(i)
-          IF ( tosegment(i)>0 ) Seg_inflow(tosegment(i)) = Seg_outflow(i)
+          IF ( Tosegment(i)>0 ) Seg_inflow(Tosegment(i)) = Seg_outflow(i)
         ENDDO
         DEALLOCATE ( Segment_flow_init )
       ENDIF
@@ -661,10 +661,9 @@
       USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
-      USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow !, Seg_outflow
+      USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow, Strm_seg_in !, Seg_outflow
       USE PRMS_WATER_USE, ONLY: Segment_transfer, Segment_gain
       USE PRMS_GWFLOW, ONLY: Gwres_flow
-      USE PRMS_SRUNOFF, ONLY: Strm_seg_in
       USE PRMS_GLACR, ONLY: Glacr_flow
       IMPLICIT NONE
 ! Functions
@@ -702,7 +701,7 @@
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-        IF ( Glacier_flag==ACTIVE ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
+        IF ( Glacier_flag==1 ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
         IF ( Hru_seg_cascades==ACTIVE ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
@@ -811,27 +810,41 @@
 !***********************************************************************
       SUBROUTINE routing_restart(In_out)
       USE PRMS_CONSTANTS, ONLY: SAVE_INIT, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_muskingum_mann_module
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Strmflow_flag
+     &    strmflow_muskingum_module, strmflow_muskingum_mann_module, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Strmflow_flag, text_restart_flag
       USE PRMS_ROUTING
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Functions
-      EXTERNAL :: check_restart
       ! Local Variables
       CHARACTER(LEN=7) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Basin_segment_storage
-        IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
-     &       Strmflow_flag==strmflow_muskingum_mann_module ) WRITE ( Restart_outunit ) Segment_delta_flow
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Basin_segment_storage
+          IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
+     &         Strmflow_flag==strmflow_muskingum_mann_module ) WRITE ( Restart_outunit ) Segment_delta_flow
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Basin_segment_storage
+          IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
+     &         Strmflow_flag==strmflow_muskingum_mann_module ) WRITE ( Restart_outunit, * ) Segment_delta_flow
+        ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Basin_segment_storage
-        IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
-     &     Strmflow_flag==strmflow_muskingum_mann_module ) READ ( Restart_inunit ) Segment_delta_flow
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Basin_segment_storage
+          IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
+     &         Strmflow_flag==strmflow_muskingum_mann_module ) READ ( Restart_inunit ) Segment_delta_flow
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Basin_segment_storage
+          IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module .OR. &
+     &         Strmflow_flag==strmflow_muskingum_mann_module ) READ ( Restart_inunit, * ) Segment_delta_flow
+        ENDIF
       ENDIF
       END SUBROUTINE routing_restart

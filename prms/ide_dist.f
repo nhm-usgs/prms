@@ -15,7 +15,7 @@
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'ide_dist'
-      character(len=*), parameter :: Version_ide_dist = '2021-09-07'
+      character(len=*), parameter :: Version_ide_dist = '2022-01-25'
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Dalr
@@ -69,10 +69,10 @@
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION
       USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Nrain
       USE PRMS_IDE
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       idedecl = 0
 
@@ -259,11 +259,11 @@
       USE PRMS_IDE
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
      +    Active_hrus, Hru_route_order
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER i, ii, ierr
 !***********************************************************************
@@ -440,11 +440,11 @@
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust,
      +    Tsta_elev_meters, Temp_units, Psta_elev_meters
       USE PRMS_OBS, ONLY: Tmax, Tmin
+      use prms_utils, only: c_to_f
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
       EXTERNAL :: temp_set, compute_inv, compute_elv
-      REAL, EXTERNAL :: c_to_f
 ! Arguments
       REAL, INTENT(IN) :: Temp_wght_dist, Temp_wght_elev
 ! Local Variables
@@ -475,10 +475,10 @@
         x = Hru_x(n)
         y = Hru_y(n)
         z = Hru_elev_meters(n)
-        IF ( Temp_wght_dist.GT.0.0 )
+        IF ( Temp_wght_dist>0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +       Tsta_y, y, Tmax, dat_dist, Ndist_tsta, Dist_exp)
-        IF ( Temp_wght_elev.GT.0.0 )
+        IF ( Temp_wght_elev>0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmax, dat_elev, itype)
         tmax_hru = (Temp_wght_dist*dat_dist) + (Temp_wght_elev*dat_elev)
@@ -490,10 +490,10 @@
         itype = -1
         dat_elev = 0.0
         dat_dist = 0.0
-        IF ( Temp_wght_dist.GT.0.0 )
+        IF ( Temp_wght_dist>0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +       Tsta_y, y, Tmin, dat_dist, Ndist_tsta, Dist_exp)
-        IF ( Temp_wght_elev.GT.0.0 )
+        IF ( Temp_wght_elev>0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmin, dat_elev, itype)
         tmin_hru = (Temp_wght_dist*dat_dist) + (Temp_wght_elev*dat_elev)
@@ -539,20 +539,20 @@
       dat_dist = 0.0
       centroid_x = SNGL( Basin_centroid_x )
       centroid_y = SNGL( Basin_centroid_y )
-      IF ( Temp_wght_dist.GT.0.0 )
+      IF ( Temp_wght_dist>0.0 )
      +     CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x,
      +          centroid_x, Tsta_y, centroid_y, Tmax,
      +          dat_dist, Ndist_tsta, Dist_exp)
-      IF ( Temp_wght_elev.GT.0.0 )
+      IF ( Temp_wght_elev>0.0 )
      +     CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +          Tsta_elev_meters, Solrad_elev, Tmax, dat_elev, itype)
       Solrad_tmax = (Temp_wght_dist*dat_dist)
      +              + (Temp_wght_elev*dat_elev)
-      IF ( Temp_wght_dist.GT.0.0 )
+      IF ( Temp_wght_dist>0.0 )
      +     CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x,
      +          centroid_x, Tsta_y, centroid_y, Tmin,
      +          dat_dist, Ndist_tsta, Dist_exp)
-      IF ( Temp_wght_elev.GT.0.0 )
+      IF ( Temp_wght_elev>0.0 )
      +     CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +          Tsta_elev_meters, Solrad_elev, Tmin, dat_elev, itype)
       Solrad_tmin = (Temp_wght_dist*dat_dist)
@@ -567,10 +567,10 @@
         x = Psta_x(n)
         y = Psta_y(n)
         z = Psta_elev_meters(n)
-        IF ( Temp_wght_dist.GT.0.0 )
+        IF ( Temp_wght_dist>0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +       Tsta_y, y, Tmax, dat_dist, Ndist_tsta, Dist_exp)
-        IF ( Temp_wght_elev.GT.0.0 )
+        IF ( Temp_wght_elev>0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmax, dat_elev, itype)
         Tmax_rain_sta(n) = (Temp_wght_dist*dat_dist)
@@ -578,10 +578,10 @@
         itype = -1
         dat_elev = 0.0
         dat_dist = 0.0
-        IF ( Temp_wght_dist.GT.0.0 )
+        IF ( Temp_wght_dist>0.0 )
      +       CALL compute_inv(Ntemp, Temp_nsta, Temp_nuse, Tsta_x, x,
      +            Tsta_y, y, Tmin, dat_dist, Ndist_tsta, Dist_exp)
-        IF ( Temp_wght_elev.GT.0.0 )
+        IF ( Temp_wght_elev>0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmin, dat_elev, itype)
         Tmin_rain_sta(n) = (Temp_wght_dist*dat_dist)
@@ -610,10 +610,10 @@
      +    Basin_ppt, Prmx, Basin_snow, Psta_elev_meters, Basin_obs_ppt,
      +    Precip_units, Tmax_allsnow_f, Tmax_allrain_f, Adjmix_rain
       USE PRMS_OBS, ONLY: Precip
+      use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: precip_form, compute_inv, compute_elv, print_date
-      EXTERNAL :: error_stop
+      EXTERNAL :: precip_form, compute_inv, compute_elv
 ! Arguments
       REAL, INTENT(IN) :: Prcp_wght_dist, Prcp_wght_elev
 ! Local variables
@@ -704,7 +704,7 @@
      +         Tmaxf(n), Tminf(n), Pptmix(n), Newsnow(n), Prmx(n),
      +         Tmax_allrain_f(n,Nowmonth), 1.0, 1.0,
      +         Adjmix_rain(n,Nowmonth), Hru_area(n), sum_obs,
-     +         Tmax_allsnow_f(n,Nowmonth))
+     +         Tmax_allsnow_f(n,Nowmonth), i)
         ENDIF
 !----------------
 !----------------
@@ -725,10 +725,11 @@
       SUBROUTINE compute_inv(Imax, Nsta, Nuse, Sta_x, X, Sta_y, Y, Dat,
      +                       Dat_dist, Ndist, Dist_exp)
       USE PRMS_CONSTANTS, ONLY: ERROR_data
+      use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SQRT, DBLE, SNGL
-      EXTERNAL :: SORT2I, print_date, error_stop
+      EXTERNAL :: SORT2I
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, Ndist, Nsta
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse

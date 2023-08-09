@@ -8,7 +8,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=9), parameter :: MODNAME = 'potet_pan'
-        character(len=*), parameter :: Version_potet = '2021-09-07'
+        character(len=*), parameter :: Version_potet = '2021-11-19'
         REAL, SAVE, ALLOCATABLE :: Last_pan_evap(:)
       END MODULE PRMS_POTET_PAN
 
@@ -19,10 +19,11 @@
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_OBS, ONLY: Pan_evap
+      use prms_utils, only: error_stop, print_date, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
-      EXTERNAL :: read_error, print_module, potet_pan_restart, print_date, error_stop
+      EXTERNAL :: potet_pan_restart
 ! Local Variables
       INTEGER :: i, j, k
 !***********************************************************************
@@ -75,21 +76,33 @@
 !     Write to or read from restart file
 !***********************************************************************
       SUBROUTINE potet_pan_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_POTET_PAN, ONLY: MODNAME, Last_pan_evap
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Last_pan_evap
+      IF ( In_out==SAVE_INIT ) THEN
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Last_pan_evap
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Last_pan_evap
+        ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Last_pan_evap
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Last_pan_evap
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Last_pan_evap
+        ENDIF
       ENDIF
       END SUBROUTINE potet_pan_restart

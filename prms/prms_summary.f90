@@ -6,7 +6,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
         character(len=*), parameter :: MODNAME = 'prms_summary'
-        character(len=*), parameter :: Version_prms_summary = '2021-08-13'
+        character(len=*), parameter :: Version_prms_summary = '2022-04-21'
         INTEGER, PARAMETER :: NVARS = 51
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
@@ -29,24 +29,24 @@
      &    Csv_output_file, Inputerror_flag, Parameter_check_flag, CsvON_OFF, Nowyear, Nowmonth, Nowday
       USE PRMS_PRMS_SUMMARY
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
-      USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
-     &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
-     &    Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, Basin_cfs, Basin_stflow_in, &
-     &    Basin_stflow_out, Seg_outflow
+      USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, Basin_intcp_stor, &
+     &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, Basin_pk_precip, &
+     &    Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, Basin_cfs, Basin_stflow_in, Basin_gwstor, &
+     &    Basin_stflow_out, Seg_outflow, Basin_pweqv, Basin_snowevap, Basin_snowmelt, Basin_snowcov
       USE PRMS_OBS, ONLY: Streamflow_cfs
-      USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor
-      USE PRMS_SNOW, ONLY: Basin_pweqv, Basin_snowevap, Basin_snowmelt, Basin_snowcov, Basin_pk_precip
+      USE PRMS_INTCP, ONLY: Basin_intcp_evap
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_dprst_evap, Basin_imperv_evap, Basin_dprst_seep, &
      &    Basin_dprst_volop, Basin_dprst_volcl, Basin_hortonian
       USE PRMS_SOILZONE, ONLY: Basin_capwaterin, Basin_pref_flow_infil, Basin_prefflow, Basin_recharge, Basin_slowflow, &
      &    Basin_pref_stor, Basin_slstor, Basin_soil_rechr, Basin_sz2gw, Basin_dunnian
-      USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
+      USE PRMS_GWFLOW, ONLY: Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
+      use prms_utils, only: checkdim_bounded_limits, print_module, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: CHAR, INDEX, MAX
       INTEGER, EXTERNAL :: declparam, declvar, getparam !, control_integer
-      EXTERNAL :: read_error, PRMS_open_output_file, print_module, statvar_to_csv, checkdim_bounded_limits
+      EXTERNAL :: statvar_to_csv
       INTEGER, EXTERNAL :: getparamstring, control_string
 ! Local Variables
       INTEGER :: i, ios, foo, idim !, statsON_OFF
@@ -245,10 +245,10 @@
       SUBROUTINE statvar_to_csv()
       USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_open_in, ERROR_open_out, ERROR_read
       USE PRMS_PRMS_SUMMARY
+      use prms_utils, only: error_stop, numchars, PRMS_open_input_file, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: control_string, numchars
-      EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
+      INTEGER, EXTERNAL :: control_string
       ! Local Variable
       INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)

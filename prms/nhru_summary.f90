@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nhru_summary'
-      character(len=*), parameter :: Version_nhru_summary = '2021-08-13'
+      character(len=*), parameter :: Version_nhru_summary = '2021-11-23'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nhru_var_type(:), Nhru_var_int(:, :)
       REAL, SAVE, ALLOCATABLE :: Nhru_var_daily(:, :)
@@ -22,7 +22,7 @@
 ! Paramters
       INTEGER, SAVE, ALLOCATABLE :: Nhm_id(:)
 ! Control Parameters
-      INTEGER, SAVE :: NhruOutVars, NhruOut_freq, NhruOut_format, NhruOutNcol, outputSelectDatesON_OFF 
+      INTEGER, SAVE :: NhruOutVars, NhruOut_freq, NhruOut_format, NhruOutNcol, outputSelectDatesON_OFF
       CHARACTER(LEN=36), SAVE, ALLOCATABLE :: NhruOutVar_names(:)
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: NhruOutBaseFileName, selectDatesFileName
       END MODULE PRMS_NHRU_SUMMARY
@@ -69,10 +69,10 @@
       USE PRMS_CONSTANTS, ONLY: ERROR_control, DAILY, YEARLY, ACTIVE, OFF, DOCUMENTATION
       USE PRMS_MODULE, ONLY: Model, Nhru, NhruOutON_OFF
       USE PRMS_NHRU_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -122,10 +122,10 @@
      &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE, INT_TYPE
       USE PRMS_MODULE, ONLY: Nhru, NhruOutON_OFF, Prms_warmup, Start_year, Start_month, Start_day
       USE PRMS_NHRU_SUMMARY
+      use prms_utils, only: error_stop, find_current_file_time, find_header_end, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file, find_header_end, find_current_file_time
+      INTEGER, EXTERNAL :: getvartype, getvarsize, getparam
 ! Local Variables
       INTEGER :: ios, ierr, size, dim, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -136,7 +136,7 @@
       Lastyear = Begyr
 
       IF ( outputSelectDatesON_OFF==ACTIVE ) THEN
-        CALL find_header_end(selectDates_unit, selectDatesFileName, 'selectDatesFileName', ierr, 0, 0)
+        CALL find_header_end(selectDates_unit, selectDatesFileName, ierr)
         IF ( ierr==0 ) THEN
           CALL find_current_file_time(selectDates_unit, Start_year, Start_month, Start_day, &
      &                                dates_next_year, dates_next_month, dates_next_day)
@@ -187,6 +187,7 @@
           ierr = 1
         ENDIF
       ENDDO
+
       IF ( ierr==1 ) ERROR STOP ERROR_control
       IF ( Double_vars==ACTIVE ) THEN
         ALLOCATE ( Nhru_var_dble(Nhru, NhruOutVars) )
@@ -315,11 +316,11 @@
       USE PRMS_NHRU_SUMMARY
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
+! Functions
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day, write_date
 !***********************************************************************
@@ -335,17 +336,17 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NhruOutVars
         IF ( Nhru_var_type(jj)==REAL_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Nhru_var_daily(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Nhru_var_type(jj)==DBLE_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Nhru_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             Nhru_var_daily(i, jj) = SNGL( Nhru_var_dble(i, jj) )
           ENDDO
         ELSEIF ( Nhru_var_type(jj)==INT_TYPE ) THEN
-          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'integer', Nhru_var_int(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, NhruOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'integer', Nhru_var_int(:, jj))/=0 ) &
      &         CALL read_error(4, NhruOutVar_names(jj)(:Nc_vars(jj)))
           IF ( NhruOut_freq>DAILY ) THEN
             DO j = 1, Active_hrus
@@ -490,12 +491,13 @@
       SUBROUTINE read_event_date(Iunit, Next_yr, Next_mo, Next_day)
       USE PRMS_MODULE, ONLY: Nowyear, Nowmonth, Nowday
       USE PRMS_CONSTANTS, ONLY: ERROR_water_use, ACTIVE, OFF
+      use prms_utils, only: is_eof
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit
       INTEGER, INTENT (INOUT) :: Next_yr, Next_mo, Next_day
 ! Funcions
-      EXTERNAL :: check_event, set_transfers, is_eof
+      EXTERNAL :: check_event, set_transfers
 ! Local Variables
       INTEGER keep_reading
 !*******************************************************************************

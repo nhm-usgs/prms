@@ -68,14 +68,14 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CFS = 0
     integer, parameter :: CMS = 1
 
-    ! cov_type
+    ! cov_type and ag_cov_type
     integer, parameter :: BARESOIL = 0
     integer, parameter :: GRASSES = 1
     integer, parameter :: SHRUBS = 2
     integer, parameter :: TREES = 3
     integer, parameter :: CONIFEROUS = 4
 
-    ! soil_type
+    ! soil_type and ag_soil_type
     integer, parameter :: SAND = 1
     integer, parameter :: LOAM = 2
     integer, parameter :: CLAY = 3
@@ -103,6 +103,7 @@ MODULE PRMS_CONSTANTS
 
     ! model_mode
     integer, parameter :: PRMS = 1
+    integer, parameter :: STORM = 22
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1
@@ -134,6 +135,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: ERROR_module = 16
     integer, parameter :: ERROR_lake = 17
     integer, parameter :: ERROR_soilzone = 18
+    integer, parameter :: ERROR_precip = 19
 
       ! debug print flag:
       ! -2=DEBUG_minimum
@@ -151,8 +153,8 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: precip_1sta_module = 1, precip_laps_module = 2, precip_dist2_module = 3
     integer, parameter :: ide_dist_module = 5, xyz_dist_module = 6, precip_map_module = 9, climate_hru_module = 7
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
-    integer, parameter :: temp_map_module = 9, temp_sta_module = 8
-    integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
+    integer, parameter :: temp_map_module = 9, temp_sta_module = 8, mm_dist_module = 10
+    integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4, potet_jh_warm_module = 12
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
     integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
     integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5, strmflow_noroute_module = 1

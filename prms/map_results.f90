@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'map_results'
-      character(len=*), parameter :: Version_map_results = '2021-08-13'
+      character(len=*), parameter :: Version_map_results = '2022-04-22'
       INTEGER, SAVE :: Mapflg, Numvalues, Lastyear, Totdays
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
       INTEGER, SAVE :: Begin_results, Begyr, Dailyresults
@@ -65,10 +65,10 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DOCUMENTATION, ERROR_dim
       USE PRMS_MODULE, ONLY: Model, Nhru, Nhrucell, Ngwcell, MapOutON_OFF
       USE PRMS_MAP_RESULTS
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, control_string_array, control_integer
-      EXTERNAL :: read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -166,11 +166,11 @@
       USE PRMS_MODULE, ONLY: Nhru, Nhrucell, Ngwcell, MapOutON_OFF, &
      &    Print_debug, Inputerror_flag, Start_year, Start_month, Start_day, Parameter_check_flag, Prms_warmup
       USE PRMS_MAP_RESULTS
+      use prms_utils, only: checkdim_bounded_limits, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
-      INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
-      EXTERNAL :: read_error, PRMS_open_output_file, checkdim_bounded_limits
+      INTEGER, EXTERNAL :: getparam, getvartype, getvarsize
 ! Local Variables
       INTEGER :: i, jj, is, ios, ierr, size, dim
       REAL, ALLOCATABLE, DIMENSION(:) :: map_frac
@@ -371,11 +371,12 @@
       USE PRMS_MAP_RESULTS
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_SET_TIME, ONLY: Modays
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error, write_results
+      EXTERNAL :: write_results
 ! Local Variables
       INTEGER :: j, i, k, jj, last_day
       DOUBLE PRECISION :: factor, map_var_double
@@ -391,11 +392,11 @@
       ENDIF
 
 ! check for last day of simulation
-      last_day = 0
+      last_day = OFF
       IF ( Nowyear==End_year ) THEN
         IF ( Nowmonth==End_month ) THEN
           IF ( Nowday==End_day ) THEN
-            last_day = 1
+            last_day = ACTIVE
             Prevyr = Nowyear
             Prevmo = Nowmonth
             Prevday = Nowday
@@ -405,8 +406,8 @@
 
       IF ( Yrresults==ACTIVE ) THEN
 ! check for first time step of the next year
-        IF ( Lastyear/=Nowyear .OR. last_day==1 ) THEN
-          IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==1 ) THEN
+        IF ( Lastyear/=Nowyear .OR. last_day==ACTIVE ) THEN
+          IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==ACTIVE ) THEN
             Lastyear = Nowyear
             factor = Conv_fac/DBLE(Yrdays)
             Basin_var_yr = 0.0D0
@@ -448,12 +449,10 @@
 ! need getvars for each variable (only can have short string)
       DO jj = 1, NmapOutVars
         IF ( Map_var_type(jj)==REAL_TYPE ) THEN
-          IF ( getvar(MODNAME, MapOutVar_names(jj)(:Nc_vars(jj)), &
-     &         Nhru, 'real', Map_var(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, MapOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'real', Map_var(:, jj))/=0 ) &
      &         CALL read_error(4, MapOutVar_names(jj)(:Nc_vars(jj)))
         ELSEIF ( Map_var_type(jj)==DBLE_TYPE ) THEN
-          IF ( getvar(MODNAME, MapOutVar_names(jj)(:Nc_vars(jj)), &
-     &         Nhru, 'double', Map_var_dble(1, jj))/=0 ) &
+          IF ( getvar(MODNAME, MapOutVar_names(jj)(:Nc_vars(jj)), Nhru, 'double', Map_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, MapOutVar_names(jj)(:Nc_vars(jj)))
         ENDIF
       ENDDO
@@ -549,7 +548,7 @@
       IF ( Monresults==ACTIVE ) THEN
         Mondays = Mondays + 1
 ! check for last day of current month
-        IF ( Nowday==Modays(Nowmonth) .OR. last_day==1 ) THEN
+        IF ( Nowday==Modays(Nowmonth) .OR. last_day==ACTIVE ) THEN
           factor = Conv_fac/DBLE(Mondays)
           Basin_var_mon = 0.0D0
           DO jj = 1, NmapOutVars
@@ -584,7 +583,7 @@
       IF ( Totresults==ACTIVE ) THEN
         Totdays = Totdays + 1
 ! check for last day of simulation
-        IF ( last_day==1 ) THEN
+        IF ( last_day==ACTIVE ) THEN
           factor = Conv_fac/DBLE(Totdays)
           Basin_var_tot = 0.0D0
           DO jj = 1, NmapOutVars

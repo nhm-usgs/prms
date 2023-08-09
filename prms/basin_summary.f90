@@ -4,19 +4,19 @@
       MODULE PRMS_BASIN_SUMMARY
       USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
       IMPLICIT NONE
-! Module Variables
+      ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'basin_summary'
-      character(len=*), parameter :: Version_basin_summary = '2021-08-13'
+      character(len=*), parameter :: Version_basin_summary = '2021-11-19'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear, Dailyunit, Monthlyunit, Yearlyunit, Basin_var_type
       INTEGER, SAVE, ALLOCATABLE :: Nc_vars(:)
       CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
       INTEGER, SAVE :: Daily_flag, Yeardays, Monthly_flag
       DOUBLE PRECISION, SAVE :: Monthdays
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Basin_var_daily(:), Basin_var_monthly(:), Basin_var_yearly(:)
-! Paramters
+      ! Parameters
       INTEGER, SAVE, ALLOCATABLE :: Nhm_id(:)
-! Control Parameters
+      ! Control Parameters
       INTEGER, SAVE :: BasinOutVars, BasinOut_freq
       CHARACTER(LEN=36), SAVE, ALLOCATABLE :: BasinOutVar_names(:)
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: BasinOutBaseFileName
@@ -54,10 +54,10 @@
       USE PRMS_CONSTANTS, ONLY: DAILY, YEARLY, DOCUMENTATION, ERROR_control
       USE PRMS_MODULE, ONLY: Model, BasinOutON_OFF, Nhru
       USE PRMS_BASIN_SUMMARY
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string_array, control_integer, control_string, declparam
-      EXTERNAL read_error, print_module, error_stop
 ! Local Variables
       INTEGER :: i
 !***********************************************************************
@@ -98,9 +98,9 @@
      &    DBLE_TYPE, ERROR_control, ERROR_open_out
       USE PRMS_MODULE, ONLY: Start_year, Prms_warmup, BasinOutON_OFF, Nhru
       USE PRMS_BASIN_SUMMARY
+      use prms_utils, only: error_stop, numchars, PRMS_open_output_file, read_error
       IMPLICIT NONE
-      INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: PRMS_open_output_file, error_stop, read_error
+      INTEGER, EXTERNAL :: getvartype, getvarsize, getparam
 ! Local Variables
       INTEGER :: ios, ierr, size, dum, jj
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName

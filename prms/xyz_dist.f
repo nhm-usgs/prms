@@ -24,7 +24,7 @@
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'xyz_dist'
-      character(len=*), parameter :: Version_xyz_dist = '2021-08-13'
+      character(len=*), parameter :: Version_xyz_dist = '2022-05-09'
       INTEGER, SAVE :: Nlapse, Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
@@ -100,10 +100,10 @@
 !***********************************************************************
       INTEGER FUNCTION xyzsetdims()
       USE PRMS_XYZ_DIST, ONLY: Nlapse
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declfix
-      EXTERNAL read_error
 !***********************************************************************
       xyzsetdims = 0
 
@@ -130,10 +130,10 @@
       INTEGER FUNCTION xyzdecl()
       USE PRMS_MODULE, ONLY: Nhru, Nrain, Ntemp
       USE PRMS_XYZ_DIST
+      use prms_utils, only: print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module
 !***********************************************************************
       xyzdecl = 0
 
@@ -463,13 +463,14 @@
       USE PRMS_MODULE, ONLY: Nhru, Nrain, Ntemp, Inputerror_flag
       USE PRMS_XYZ_DIST
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv,
-     +    Hru_elev, Active_hrus, Hru_route_order
+     +    Hru_elev_meters, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Psta_elev, Tsta_elev
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: mean_by_month, read_error
+      EXTERNAL :: mean_by_month
 ! Local Variables
       INTEGER :: i, m, ii, ierr
 !***********************************************************************
@@ -599,9 +600,6 @@
 ! convert elevations from feet to meters
 !
       IF ( Conv_flag==ACTIVE ) THEN
-        DO i = 1, Nhru
-          MRUelev(i) = Hru_elev(i)*FEET2METERS
-        ENDDO
         DO i = 1, Ntemp
           Temp_STAelev(i) = Tsta_elev(i)*FEET2METERS
         ENDDO
@@ -610,11 +608,11 @@
         ENDDO
         Solradelev = Solrad_elev*FEET2METERS
       ELSE
-        MRUelev = Hru_elev
         Temp_STAelev = Tsta_elev
         Pstaelev = Psta_elev
         Solradelev = Solrad_elev
       ENDIF
+      MRUelev = Hru_elev_meters
 !
 ! transform Z, X and Y
 !
@@ -716,20 +714,19 @@
 !***********************************************************************
       SUBROUTINE xyz_temp_run(Max_lapse, Min_lapse, Meantmax, Meantmin,
      +                        Temp_meanx, Temp_meany, Temp_meanz)
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, DNEARZERO, ACTIVE, GLACIER
-      USE PRMS_MODULE, ONLY: Glacier_flag, Nrain
+      USE PRMS_CONSTANTS, ONLY: DNEARZERO, GLACIER
+      USE PRMS_MODULE, ONLY: Glacier_flag, Nrain, Hru_type, Nowmonth
       USE PRMS_XYZ_DIST, ONLY: MRUx, MRUy, Tmax_rain_sta, Solradelev,
      +    Tmin_rain_sta, Temp_nuse, Tmin_add, Tmin_div, Tmax_add,
      +    Tmax_div, Temp_nsta, X_div, Y_div, Z_div, X_add, Y_add, Z_add,
      +    Temp_STAx, Temp_STAy, Basin_centroid_y, Basin_centroid_x,
      +    MAXLAPSE, Pstaelev, Pstax, Pstay, MRUelev, Temp_STAelev
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_area, Active_hrus,
-     +    Hru_route_order, Hru_type, Hru_elev_meters
+     +    Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp,
      +    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf,
      +    Tavgc, Tmin_aspect_adjust, Tmax_aspect_adjust
       USE PRMS_OBS, ONLY: Tmax, Tmin
-      USE PRMS_MODULE, ONLY: Nowmonth
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, SNGL, DBLE
@@ -904,7 +901,7 @@
 
       DO ii = 1, Active_hrus
         i = Hru_route_order(ii)
-        IF ( Glacier_flag==ACTIVE ) THEN
+        IF ( Glacier_flag==1 ) THEN
           ! glacier module may have changed Hru_elev_meters
           IF ( Hru_type(i)==GLACIER )
      +         MRUelev(i) = (Hru_elev_meters(i)+Z_add)/Z_div
@@ -1157,7 +1154,7 @@
      +           Hru_snow(i), Tmaxf(i), Tminf(i), Pptmix(i),
      +           Newsnow(i), Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0,
      +           1.0, Adjmix_rain(i,Nowmonth), Hru_area(i), sum_obs,
-     +           Tmax_allsnow_f(i,Nowmonth))
+     +           Tmax_allsnow_f(i,Nowmonth), i)
 
           ENDIF
         ENDIF

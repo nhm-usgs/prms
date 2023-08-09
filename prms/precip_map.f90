@@ -2,7 +2,7 @@
 ! Maximum, minimum, average temperatures, and precipitation are distributed to each HRU
 ! using temperature and/or precipitation data input as a time series of gridded
 ! or other spatial units using an area-weighted method and correction factors to
-! account for differences in altitude, spatial variation, topography, and 
+! account for differences in altitude, spatial variation, topography, and
 ! measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_PRECIP_MAP
@@ -11,7 +11,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
         character(len=*), parameter :: MODNAME = 'precip_map'
-        character(len=*), parameter :: Version_precip_map = '2021-08-13'
+        character(len=*), parameter :: Version_precip_map = '2022-06-02'
         INTEGER, SAVE :: Precip_unit
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
@@ -31,11 +31,11 @@
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Hru_rain, Hru_snow, Prmx, Pptmix, Newsnow, &
      &    Precip_units, Tmax_allrain_f, Adjmix_rain, Tmaxf, Tminf, &
      &    Basin_ppt, Basin_snow, Basin_rain, Basin_obs_ppt, Tmax_allsnow_f
+      use prms_utils, only: find_current_time, find_cbh_header_end, print_date, print_module, read_error
 ! Functions
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, control_string
-      EXTERNAL :: read_error, precip_form, find_header_end, find_current_time
-      EXTERNAL :: read_cbh_date, print_module, print_date
+      EXTERNAL :: precip_form, read_cbh_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       REAL :: ppt, harea
@@ -69,7 +69,7 @@
             CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
      &                       Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
      &                       Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0, 1.0, &
-     &                       Adjmix_rain(i,Nowmonth), harea, Basin_obs_ppt, Tmax_allsnow_f(i,Nowmonth))
+     &                       Adjmix_rain(i,Nowmonth), harea, Basin_obs_ppt, Tmax_allsnow_f(i,Nowmonth), i)
           ELSEIF ( Hru_ppt(i)<0.0 ) THEN
             PRINT *, 'WARNING, negative precipitation value entered in precipitation map file and set to 0.0, HRU:', i
             CALL print_date(0)
@@ -128,11 +128,11 @@
         IF ( getparam(MODNAME, 'precip_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Precip_map_adj)/=0 ) &
      &       CALL read_error(2, 'precip_map_adj')
         IF ( control_string(Precip_map_file, 'precip_map_file')/=0 ) CALL read_error(5, 'precip_map_file')
-        CALL find_header_end(Precip_unit, Precip_map_file, 'precip_map_file', ierr, 1, 0)
+        CALL find_cbh_header_end(Precip_unit, Precip_map_file, 'precip_map_file', ierr, 1)
         IF ( ierr==1 ) THEN
           istop = 1
         ELSE
-          CALL find_current_time(Precip_unit, Start_year, Start_month, Start_day, ierr, 0)
+          CALL find_current_time(Precip_unit, Start_year, Start_month, Start_day, ierr)
           IF ( ierr==-1 ) THEN
             PRINT *, 'for first time step, Precip Map File: ', Precip_map_file
             istop = 1

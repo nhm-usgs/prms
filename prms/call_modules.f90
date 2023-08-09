@@ -1,28 +1,16 @@
 !***********************************************************************
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
-      MODULE PRMS_MODULE
+  MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ACTIVE, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
-   &    PRMS, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
-   &    CASCADEGW_SAME, CASCADEGW_OFF, CLIMATE, FROST, TRANSPIRE, WRITE_CLIMATE, POTET, CONVERT, &
-   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
-   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, &
-   &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
-   &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
-   &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
-   &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
-   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
+    USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-02-08'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1 02/08/2022'
-      CHARACTER(LEN=8), SAVE :: Process
+      character(len=*), parameter :: PRMS_versn = '2022-06-25'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1 06/25/2022'
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
       INTEGER, SAVE :: Nhru, Nssr, Ngw, Nsub, Nhrucell, Nlake, Ngwcell, Nlake_hrus
@@ -30,22 +18,23 @@
 ! Global
       INTEGER, SAVE :: Model, Process_flag, Call_cascade
       INTEGER, SAVE :: Start_year, Start_month, Start_day, End_year, End_month, End_day
-      INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag
+      INTEGER, SAVE :: Transp_flag, Sroff_flag, Solrad_flag, Et_flag, AG_flag
       INTEGER, SAVE :: Climate_temp_flag, Climate_precip_flag, Climate_potet_flag, Climate_transp_flag
       INTEGER, SAVE :: Lake_route_flag, Strmflow_flag, Stream_order_flag
       INTEGER, SAVE :: Temp_flag, Precip_flag, Climate_hru_flag, Climate_swrad_flag
       INTEGER, SAVE :: Precip_combined_flag, Temp_combined_flag, Muskingum_flag
       INTEGER, SAVE :: Inputerror_flag, Timestep
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag, Albedo_cbh_flag, Cloud_cover_cbh_flag
-      INTEGER, SAVE :: PRMS_flag, GSFLOW_flag, PRMS4_flag
+      INTEGER, SAVE :: PRMS_flag, PRMS4_flag, Preprocess_unit, Cloud_flag, Subdaily_flag
+      INTEGER, SAVE :: Agriculture_flag, Canopy_iter
+      INTEGER, SAVE :: irrigated_area_flag, AET_cbh_flag, PET_cbh_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Soilzone_add_water_use
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      INTEGER, SAVE :: Nowyear, Nowmonth, Nowday
+      INTEGER, SAVE :: Nowyear, Nowmonth, Nowday, Number_timesteps
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
       INTEGER, SAVE :: Lake_transfer_water_use, Lake_add_water_use
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
-      INTEGER, SAVE :: Kkiter
 ! Precip_flag (1=precip_1sta; 2=precip_laps; 3=precip_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 9=precip_map
 ! Temp_flag (1=temp_1sta; 2=temp_laps; 3=temp_dist2; 5=ide_dist; 6=xyz_dist; 7=climate_hru; 8=temp_sta; 9=temp_map
 ! Control parameters
@@ -53,66 +42,78 @@
       INTEGER, SAVE :: Print_debug, MapOutON_OFF, CsvON_OFF, Dprst_flag, Subbasin_flag, Parameter_check_flag
       INTEGER, SAVE :: Init_vars_from_file, Save_vars_to_file, Orad_flag, Cascade_flag, Cascadegw_flag
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
-      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
-      INTEGER, SAVE :: Prms_warmup !, statsON_OFF
-      INTEGER, SAVE :: Snow_cbh_flag, Gwflow_cbh_flag, Frozen_flag, Glacier_flag
+      INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag, forcing_check_flag
+      INTEGER, SAVE :: Prms_warmup, Iter_aet_flag, text_restart_flag !, statsON_OFF
+      INTEGER, SAVE :: Snow_cbh_flag, Gwflow_cbh_flag, Frozen_flag, Glacier_flag, no_snow_flag
+      INTEGER, SAVE :: Dyn_ag_frac_flag, Dyn_ag_soil_flag, Ag_gravity_flag
       INTEGER, SAVE :: Dprst_add_water_use, Dprst_transfer_water_use
-      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, snow_cloudcover_flag
-      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
+      INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, statsON_OFF, outputSelectDatesON_OFF, snow_cloudcover_flag
+      INTEGER, SAVE :: channel_loss_flag, Seg2hru_flag
+      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: selectDatesFileName      CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file, Param_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Strmflow_module, Transp_module
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Model_mode, Precip_module, Solrad_module
-      CHARACTER(LEN=8), SAVE :: Soilzone_module
+      CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: irrigated_area_module, AET_module, PET_ag_module
+      CHARACTER(LEN=11), SAVE :: Soilzone_module
       INTEGER, SAVE :: Dyn_imperv_flag, Dyn_intcp_flag, Dyn_covden_flag, Dyn_covtype_flag, Dyn_transp_flag, Dyn_potet_flag
       INTEGER, SAVE :: Dyn_soil_flag, Dyn_radtrncf_flag, Dyn_dprst_flag,  Dprst_transferON_OFF
       INTEGER, SAVE :: Dyn_snareathresh_flag, Dyn_transp_on_flag
       INTEGER, SAVE :: Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Dyn_fallfrost_flag, Dyn_springfrost_flag
       INTEGER, SAVE :: Gwr_transferON_OFF, External_transferON_OFF, Segment_transferON_OFF, Lake_transferON_OFF
-      END MODULE PRMS_MODULE
+    END MODULE PRMS_MODULE
 
 !***********************************************************************
       INTEGER FUNCTION call_modules(Arg)
+      USE PRMS_CONSTANTS, ONLY: ERROR_control
       USE PRMS_MODULE
+      use PRMS_SET_TIME, only: prms_time
+      use prms_utils, only: module_error, numchars, print_module, PRMS_open_output_file, read_error
       IMPLICIT NONE
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Arg
 ! Functions
       INTRINSIC :: DATE_AND_TIME, INT
-      INTEGER, EXTERNAL :: check_dims, basin, climateflow, prms_time, setup
+      INTEGER, EXTERNAL :: check_dims, basin, climateflow, setup
       INTEGER, EXTERNAL :: cascade, obs, soltab, transp_tindex
       INTEGER, EXTERNAL :: transp_frost, frost_date, routing
       INTEGER, EXTERNAL :: temp_1sta_laps, temp_dist2
       INTEGER, EXTERNAL :: precip_1sta_laps, climate_hru
-      INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist
+      INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist, mm_dist
       INTEGER, EXTERNAL :: ddsolrad, ccsolrad
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow
-      INTEGER, EXTERNAL :: srunoff, soilzone
+      INTEGER, EXTERNAL :: srunoff, soilzone, soilzone_ag
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
-      INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
+      INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
       INTEGER, EXTERNAL :: stream_temp, glacr
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map
+      EXTERNAL :: precip_map, temp_map, segment_to_hru
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
+      INTEGER, EXTERNAL :: grnampt_infil, krout_ofpl, krout_chan, potet_jh_warm, cloud_cover
 ! Local Variables
       INTEGER :: i, iret, nc, ierr
 !***********************************************************************
       call_modules = 0
       ierr = 0
 
-      Process = Arg
-
-      IF ( Process(:3)=='run' ) THEN
+      IF ( Arg(:3)=='run' ) THEN
         Process_flag = RUN !(0=run, 1=declare, 2=init, 3=clean, 4=setdims)
+      ELSEIF ( Arg(:4)=='decl' ) THEN
+        Process_flag = DECL
+      ELSEIF ( Arg(:4)=='init' ) THEN
+        Process_flag = INIT
+      ELSEIF ( Arg(:7)=='setdims' ) THEN
+        Process_flag = SETDIMENS
+      ELSE  !IF ( Arg(:5)=='clean' ) THEN
+        Process_flag = CLEAN
+      ENDIF
 
-      ELSEIF ( Process(:4)=='decl' ) THEN
+      IF ( Process_flag==DECL ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
         Execution_time_start = Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
      &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
-
-        Process_flag = DECL
 
         IF ( check_dims()/=0 ) ERROR STOP ERROR_dim
 
@@ -120,9 +121,10 @@
           PRINT 10, PRMS_VERSION
           WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION
         ENDIF
+        Preprocess_unit = 841
   10  FORMAT (///, 25X, 'U.S. Geological Survey', /, 15X, &
      &        'Precipitation-Runoff Modeling System (PRMS)', /, 24X, A)
-  15  FORMAT (/, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
+     15  FORMAT (/, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
@@ -131,18 +133,20 @@
      &        '                    temp_map', /, &
      &        '       Precip Dist: precip_1sta, precip_laps, precip_dist2,', /, &
      &        '                    climate_hru, precip_map', /, &
-     &        'Temp & Precip Dist: xyz_dist, ide_dist', /, &
-     &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru', /, &
+     &        'Temp & Precip Dist: xyz_dist, ide_dist, mm_dist', /, &
+     &        '    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru, cloud_cover', /, &
      &        'Transpiration Dist: transp_tindex, climate_hru, transp_frost', /, &
      &        '      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,', /, &
-     &        '                    potet_hs, potet_pt, potet_pm, potet_pm_sta', /, &
+     &        '                    potet_hs, potet_pt, potet_pm, potet_pm_sta,', /, &
+     &        '                    potet_jh_warm', /, &
      &        '      Interception: intcp', /, &
-     &        'Snow & Glacr Dynam: snowcomp, glacr_melt', /, &
+     &        'Snow & Glacr Dynam: snowcomp, glacr_melt, snow_17', /, &
      &        '    Surface Runoff: srunoff_smidx, srunoff_carea', /, &
-     &        '         Soil Zone: soilzone', /, &
+     &        '         Soil Zone: soilzone, soilzone_ag, krout_ofpl, grnampt_infil', /, &
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
-     &        '                    muskingum_lake, muskingum_mann', /, &
+     &        '                    muskingum_lake, muskingum_mann, segment_to_hru', /, &
+     &        '                    krout_chan', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
@@ -163,8 +167,7 @@
         Timestep = 0
         IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
 
-      ELSEIF ( Process(:4)=='init' ) THEN
-        Process_flag = INIT
+      ELSEIF ( Process_flag==INIT ) THEN
 
         nc = numchars(Model_control_file)
         IF ( Print_debug>DEBUG_less ) PRINT 9004, 'Using Control File: ', Model_control_file(:nc)
@@ -188,9 +191,7 @@
           PRINT 9004, 'Writing PRMS Water Budget File: ', Model_output_file(:nc)
         ENDIF
 
-      ELSEIF ( Process(:7)=='setdims' ) THEN
-        Process_flag = SETDIMENS
-        Kkiter = 1 ! set for PRMS-only mode
+      ELSEIF ( Process_flag==SETDIMENS ) THEN
         Soilzone_add_water_use = OFF
         Dprst_add_water_use = OFF
         Dprst_transfer_water_use = OFF
@@ -199,12 +200,15 @@
         Lake_add_water_use = OFF
         Lake_transfer_water_use = OFF
 
-      ELSE  !IF ( Process(:5)=='clean' ) THEN
-        Process_flag = CLEAN
+      ELSE  !IF ( Process_flag==CLEAN ) THEN
 
         IF ( Init_vars_from_file>0 ) CLOSE ( Restart_inunit )
         IF ( Save_vars_to_file==ACTIVE ) THEN
-          CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
+          IF ( text_restart_flag==OFF ) THEN
+            CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 1, iret)
+          ELSE
+            CALL PRMS_open_output_file(Restart_outunit, Var_save_file, 'var_save_file', 0, iret)
+          ENDIF
           IF ( iret/=0 ) ERROR STOP ERROR_open_out
           CALL call_modules_restart(SAVE_INIT)
         ENDIF
@@ -214,7 +218,7 @@
         IF ( Process_flag==SETDIMENS .OR. Process_flag==DECL ) THEN
           Init_vars_from_file = 0 ! make sure this is set so all variables and parameters are declared
           CALL module_doc()
-          IF ( ierr/=0 ) CALL module_error('DOCUMENTATION', Arg, ierr)
+          call_modules = ierr
           RETURN
         ELSE
           STOP
@@ -226,41 +230,24 @@
         ierr = basin()
         IF ( ierr/=0 ) CALL module_error('basin', Arg, ierr)
 
-        IF ( Call_cascade==ACTIVE ) THEN
-          ierr = cascade()
-          IF ( ierr/=0 ) CALL module_error('cascade', Arg, ierr)
-        ENDIF
+        IF ( Call_cascade==ACTIVE ) ierr = cascade()
 
         ierr = climateflow()
-        IF ( ierr/=0 ) CALL module_error('climateflow', Arg, ierr)
 
         ierr = soltab()
-        IF ( ierr/=0 ) CALL module_error('soltab', Arg, ierr)
 
         ierr = setup()
-        IF ( ierr/=0 ) CALL module_error('setup', Arg, ierr)
       ENDIF
 
       ierr = prms_time()
-      IF ( ierr/=0 ) CALL module_error('prms_time', Arg, ierr)
 
       ierr = obs()
-      IF ( ierr/=0 ) CALL module_error('obs', Arg, ierr)
 
-      IF ( Water_use_flag==ACTIVE ) THEN
-        ierr = water_use_read()
-        IF ( ierr/=0 ) CALL module_error('water_use_read', Arg, ierr)
-      ENDIF
+      IF ( Water_use_flag==ACTIVE ) ierr = water_use_read()
 
-      IF ( Dynamic_flag==ACTIVE ) THEN
-        ierr = dynamic_param_read()
-        IF ( ierr/=0 ) CALL module_error('dynamic_param_read', Arg, ierr)
-      ENDIF
+      IF ( Dynamic_flag==ACTIVE ) ierr = dynamic_param_read()
 
-      IF ( Climate_hru_flag==ACTIVE ) THEN
-        ierr = climate_hru()
-        IF ( ierr/=0 ) CALL module_error('climate_hru', Arg, ierr)
-      ENDIF
+      IF ( Climate_hru_flag==ACTIVE ) ierr = climate_hru()
 
       IF ( Climate_temp_flag==OFF ) THEN
         IF ( Temp_combined_flag==ACTIVE ) THEN
@@ -271,10 +258,11 @@
           ierr = temp_dist2()
         ELSEIF ( Temp_flag==ide_dist_module ) THEN
           ierr = ide_dist()
+        ELSEIF ( Temp_flag==mm_dist_module ) THEN
+          ierr = mm_dist()
         ELSE !IF ( Temp_flag==temp_map_module )
           CALL temp_map()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Temp_module, Arg, ierr)
       ENDIF
 
       IF ( Climate_precip_flag==OFF ) THEN
@@ -283,22 +271,19 @@
         ELSEIF ( Precip_flag==precip_dist2_module ) THEN
           ierr = precip_dist2()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Precip_module, Arg, ierr)
       ENDIF
 
       IF ( Model==CLIMATE ) THEN
-        IF ( ierr/=0 ) CALL module_error('CLIMATE', Arg, ierr)
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
+          call_modules = ierr
           RETURN
         ENDIF
       ENDIF
 
 ! frost_date is a pre-process module
       IF ( Model==FROST ) THEN
-        ierr = frost_date()
-        IF ( ierr/=0 ) CALL module_error('frost_date', Arg, ierr)
-        call_modules = ierr
+        call_modules = frost_date()
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
           RETURN
@@ -306,13 +291,14 @@
         IF ( Process_flag==CLEAN ) STOP
       ENDIF
 
+      IF ( Cloud_flag==ACTIVE ) CALL cloud_cover()
+
       IF ( Climate_swrad_flag==0 ) THEN
         IF ( Solrad_flag==ddsolrad_module ) THEN
           ierr = ddsolrad()
         ELSE !IF ( Solrad_flag==ccsolrad_module ) THEN
           ierr = ccsolrad()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Solrad_module, Arg, ierr)
       ENDIF
 
       IF ( Transp_flag==1 ) THEN
@@ -320,12 +306,11 @@
       ELSEIF ( Transp_flag==2 ) THEN
         ierr = transp_frost()
       ENDIF
-      IF ( ierr/=0 ) CALL module_error(Transp_module, Arg, ierr)
 
       IF ( Model==TRANSPIRE ) THEN
-        call_modules = ierr
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
+          call_modules = ierr
           RETURN
         ENDIF
       ENDIF
@@ -343,83 +328,87 @@
           ierr = potet_pm_sta()
         ELSEIF ( Et_flag==potet_pm_module ) THEN
           ierr = potet_pm()
-        ELSE !IF ( Et_flag==potet_hs_module ) THEN
+        ELSEIF ( Et_flag==potet_hs_module ) THEN
           ierr = potet_hs()
+        ELSE ! potet_jh_warm
+          CALL potet_jh_warm()
         ENDIF
-        IF ( ierr/=0 ) CALL module_error(Et_module, Arg, ierr)
       ENDIF
 
       IF ( Model==WRITE_CLIMATE ) THEN
-        ierr = write_climate_hru()
-        IF ( ierr/=0 ) CALL module_error('write_climate_hru', Arg, ierr)
-        call_modules = ierr
+        call_modules = write_climate_hru()
         IF ( Process_flag==RUN ) RETURN
       ENDIF
 
       IF ( Model==POTET ) THEN
-        IF ( ierr/=0 ) CALL module_error('POTET', Arg, ierr)
         IF ( Process_flag==RUN ) THEN
           CALL summary_output()
+          call_modules = ierr
           RETURN
         ENDIF
       ENDIF
 
       ierr = intcp()
-      IF ( ierr/=0 ) CALL module_error('intcp', Arg, ierr)
 
-      ! rsr, need to do something if snow_cbh_flag=1
-      ierr = snowcomp()
-      IF ( ierr/=0 ) CALL module_error('snowcomp', Arg, ierr)
+      IF ( no_snow_flag==OFF ) THEN
+        ! rsr, need to do something if snow_cbh_flag=1
+        ierr = snowcomp()
 
-      IF ( Glacier_flag==ACTIVE ) THEN
-        ierr = glacr()
-        IF ( ierr/=0 ) CALL module_error('glacr', Arg, ierr)
+        IF ( Glacier_flag==1 ) ierr = glacr()
       ENDIF
 
-      ierr = srunoff()
-      IF ( ierr/=0 ) CALL module_error(Srunoff_module, Arg, ierr)
+      IF ( Subdaily_flag == OFF ) ierr = srunoff()
 
-      ierr = soilzone()
-      IF ( ierr/=0 ) CALL module_error(Soilzone_module, Arg, ierr)
+      IF ( Model == STORM ) THEN
+        IF ( Process_flag /= RUN .OR. Subdaily_flag == ACTIVE ) THEN
+          ierr = grnampt_infil()
+          IF ( ierr/=0 ) CALL module_error('grnampt_infil', Arg, ierr)
+          ierr = krout_ofpl()
+          IF ( ierr/=0 ) CALL module_error('krout_ofpl', Arg, ierr)
+        ENDIF
+      ENDIF
 
-      ! rsr, need to do something if gwflow_cbh_flag=1
+      IF ( Subdaily_flag == OFF ) THEN
+        IF ( AG_flag == OFF ) THEN
+          ierr = soilzone()
+        ELSE
+          ierr = soilzone_ag()
+        ENDIF
+      ENDIF
+
       ierr = gwflow()
-      IF ( ierr/=0 ) CALL module_error('gwflow', Arg, ierr)
 
-      IF ( Stream_order_flag==ACTIVE ) THEN
-        ierr = routing()
-        IF ( ierr/=0 ) CALL module_error('routing', Arg, ierr)
+      IF ( Stream_order_flag==ACTIVE ) ierr = routing()
+
+      IF ( Model == STORM ) THEN
+        IF ( Process_flag /= RUN  .OR. Subdaily_flag == ACTIVE ) THEN
+          ierr = krout_chan() ! if muskingum need to use water in segments
+          IF ( ierr/=0 ) CALL module_error('krout_chan', Arg, ierr)
+        ENDIF
       ENDIF
 
-      IF ( Strmflow_flag==strmflow_noroute_module ) THEN
-        ierr = strmflow()
-      ELSEIF ( Muskingum_flag==ACTIVE ) THEN ! muskingum = 4; muskingum_mann = 7
-        ierr = muskingum()
-      ELSEIF ( Strmflow_flag==strmflow_in_out_module ) THEN
-        ierr = strmflow_in_out()
-      ELSEIF ( Strmflow_flag==strmflow_muskingum_lake_module ) THEN
-        ierr = muskingum_lake()
+      IF ( Subdaily_flag == OFF ) THEN
+        IF ( Strmflow_flag==strmflow_noroute_module ) THEN
+          ierr = strmflow()
+        ELSEIF ( Muskingum_flag==ACTIVE ) THEN ! muskingum = 4; muskingum_mann = 7
+          ierr = muskingum()
+        ELSEIF ( Strmflow_flag==strmflow_in_out_module ) THEN
+          ierr = strmflow_in_out()
+        ELSEIF ( Strmflow_flag==strmflow_muskingum_lake_module ) THEN
+          ierr = muskingum_lake()
+        ENDIF
+        IF ( Seg2hru_flag == ACTIVE ) CALL segment_to_hru()
       ENDIF
-      IF ( ierr/=0 ) CALL module_error(Strmflow_module, Arg, ierr)
 
       IF ( Stream_temp_flag==ACTIVE ) ierr = stream_temp()
 
-      IF ( Print_debug>DEBUG_minimum ) THEN
-        ierr = basin_sum()
-        IF ( ierr/=0 ) CALL module_error('basin_sum', Arg, ierr)
-      ENDIF
+      IF ( Print_debug>DEBUG_minimum ) ierr = basin_sum()
 
       IF ( Print_debug==DEBUG_WB ) CALL water_balance()
 
-      IF ( MapOutON_OFF>OFF ) THEN
-        ierr = map_results()
-        IF ( ierr/=0 ) CALL module_error('map_results', Arg, ierr)
-      ENDIF
+      IF ( MapOutON_OFF>OFF ) ierr = map_results()
 
-      IF ( Subbasin_flag==ACTIVE ) THEN
-        ierr = subbasin()
-        IF ( ierr/=0 ) CALL module_error('subbasin', Arg, ierr)
-      ENDIF
+      IF ( Subbasin_flag==ACTIVE ) ierr = subbasin()
 
       CALL summary_output()
 
@@ -486,6 +475,7 @@
 !     declare the dimensions
 !***********************************************************************
       INTEGER FUNCTION setdims()
+      USE PRMS_CONSTANTS, ONLY: ERROR_control
       USE PRMS_MODULE
       IMPLICIT NONE
 ! Functions
@@ -495,7 +485,7 @@
 ! Local Variables
       ! Maximum values are no longer limits
 ! Local Variables
-      INTEGER :: idim, iret, j, Number_timesteps, startday, endday
+      INTEGER :: idim, iret, j, startday, endday
 !***********************************************************************
       setdims = 1
 
@@ -508,34 +498,42 @@
       ! 9=snowcomp; 13=cascade; 14=subbasin tree
       IF ( control_integer(Print_debug, 'print_debug')/=0 ) Print_debug = 0
 
-      IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 1
+      IF ( control_integer(Parameter_check_flag, 'parameter_check_flag')/=0 ) Parameter_check_flag = 0
+      IF ( control_integer(forcing_check_flag, 'forcing_check_flag')/=0 ) forcing_check_flag = OFF
+      IF ( control_integer(channel_loss_flag, 'channel_loss_flag')/=0 ) channel_loss_flag = OFF
 
       IF ( control_string(Model_mode, 'model_mode')/=0 ) CALL read_error(5, 'model_mode')
       IF ( Model_mode(:4)=='    ' ) Model_mode = 'PRMS5'
       PRMS4_flag = OFF
       PRMS_flag = ACTIVE
-      GSFLOW_flag = OFF
+      Subdaily_flag = OFF
       IF ( Model_mode(:4)=='PRMS' .OR. Model_mode(:4)=='prms' .OR. Model_mode(:5)=='DAILY' ) THEN
         Model = PRMS
         PRMS4_flag = ACTIVE
         IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = OFF
-      ELSEIF ( Model_mode(:5)=='FROST' ) THEN
-        Model = FROST
-      ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
-        Model = WRITE_CLIMATE
-      ELSEIF ( Model_mode(:7)=='CLIMATE' ) THEN
-        Model = CLIMATE
-      ELSEIF ( Model_mode(:5)=='POTET' ) THEN
-        Model = POTET
-      ELSEIF ( Model_mode(:9)=='TRANSPIRE' ) THEN
-        Model = TRANSPIRE
-      ELSEIF ( Model_mode(:7)=='CONVERT' ) THEN ! can be CONVERT4 or CONVERT5 or CONVERT (=CONVERT5)
-        Model = CONVERT
-      ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
-        Model = DOCUMENTATION
       ELSE
-        PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
-        Inputerror_flag = 1
+        PRMS_flag = ACTIVE
+        PRMS4_flag = OFF
+        IF ( Model_mode(:5)=='FROST' ) THEN
+          Model = FROST
+        ELSEIF ( Model_mode(:13)=='WRITE_CLIMATE' ) THEN
+          Model = WRITE_CLIMATE
+        ELSEIF ( Model_mode(:7)=='CLIMATE' ) THEN
+          Model = CLIMATE
+        ELSEIF ( Model_mode(:5)=='POTET' ) THEN
+          Model = POTET
+        ELSEIF ( Model_mode(:9)=='TRANSPIRE' ) THEN
+          Model = TRANSPIRE
+        ELSEIF ( Model_mode(:7)=='CONVERT' ) THEN ! can be CONVERT4 or CONVERT5 or CONVERT (=CONVERT5)
+          Model = CONVERT
+        ELSEIF ( Model_mode(:13)=='DOCUMENTATION' ) THEN
+          Model = DOCUMENTATION
+        ELSEIF ( Model_mode(:8)=='SUBDAILY' .OR. Model_mode(:5)=='STORM' ) THEN
+          Model = STORM
+        ELSE
+          PRINT '(/,2A)', 'ERROR, invalid model_mode value: ', Model_mode
+          Inputerror_flag = 1
+        ENDIF
       ENDIF
 
       ! get simulation start_time and end_time
@@ -573,10 +571,12 @@
 
       startday = compute_julday(Start_year, Start_month, Start_day)
       endday = compute_julday(End_year, End_month, End_day)
+      IF ( endday<startday ) CALL error_stop('end_time is specified < start_time', ERROR_control)
       Number_timesteps = endday - startday + 1
 
       IF ( control_integer(Init_vars_from_file, 'init_vars_from_file')/=0 ) Init_vars_from_file = 0
       IF ( control_integer(Save_vars_to_file, 'save_vars_to_file')/=0 ) Save_vars_to_file = 0
+      IF ( control_integer(text_restart_flag, 'text_restart_flag')/=0 ) text_restart_flag = OFF
 
       ! Open PRMS module output file
       IF ( control_string(Model_output_file, 'model_output_file')/=0 ) CALL read_error(5, 'model_output_file')
@@ -590,27 +590,39 @@
       ! Check for restart files
       IF ( Init_vars_from_file>0 ) THEN
         IF ( control_string(Var_init_file, 'var_init_file')/=0 ) CALL read_error(5, 'var_init_file')
-        CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
+        IF ( text_restart_flag==OFF ) THEN
+          CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 1, iret)
+        ELSE
+          CALL PRMS_open_input_file(Restart_inunit, Var_init_file, 'var_init_file', 0, iret)
+        ENDIF
         IF ( iret/=0 ) Inputerror_flag = 1
       ENDIF
       IF ( Save_vars_to_file==ACTIVE ) THEN
         IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
       ENDIF
 
-      Temp_module = ' '
+      Temp_module = 'temp_1sta'
       IF ( control_string(Temp_module, 'temp_module')/=0 ) CALL read_error(5, 'temp_module')
-      Precip_module = ' '
+      Precip_module = 'precip_1sta'
       IF ( control_string(Precip_module, 'precip_module')/=0 ) CALL read_error(5, 'precip_module')
-      Transp_module = ' '
+      Transp_module = 'transp_index'
       IF ( control_string(Transp_module, 'transp_module')/=0 ) CALL read_error(5, 'transp_module')
-      Et_module = ' '
+      Et_module = 'potet_jh'
       IF ( control_string(Et_module, 'et_module')/=0 ) CALL read_error(5, 'et_module')
-      Srunoff_module = ' '
+      Srunoff_module = 'srunoff_smidx'
       IF ( control_string(Srunoff_module, 'srunoff_module')/=0 ) CALL read_error(5, 'srunoff_module')
-      Solrad_module = ' '
+      Solrad_module = 'ddsolrad'
       IF ( control_string(Solrad_module, 'solrad_module')/=0 ) CALL read_error(5, 'solrad_module')
+      Soilzone_module = 'soilzone'
+      IF ( control_string(Soilzone_module, 'soilzone_module')/=0 ) CALL read_error(5, 'soilzone_module')
       Strmflow_module = 'strmflow'
       IF ( control_string(Strmflow_module, 'strmflow_module')/=0 ) CALL read_error(5, 'strmflow_module')
+      IF ( control_string(irrigated_area_module, 'irrigated_area_module')/=0 ) CALL read_error(5, 'irrigated_area_module')
+      IF ( control_string(AET_module, 'AET_module')/=0 ) CALL read_error(5, 'AET_module')
+      IF ( control_string(PET_ag_module, 'PET_ag_module')/=0 ) CALL read_error(5, 'PET_ag_module')
+      IF ( irrigated_area_module(:11)=='climate_hru' ) irrigated_area_flag = ACTIVE
+      IF ( AET_module(:11)=='climate_hru' ) AET_cbh_flag = ACTIVE
+      IF ( PET_ag_module(:11)=='climate_hru' ) PET_cbh_flag = ACTIVE
 
       IF ( Parameter_check_flag>0 ) CALL check_module_names()
 
@@ -633,6 +645,8 @@
         Climate_precip_flag = 1
       ELSEIF ( Precip_module(:8)=='xyz_dist' ) THEN
         Precip_flag = xyz_dist_module
+      ELSEIF ( Precip_module(:7)=='mm_dist' ) THEN
+        Precip_flag = mm_dist_module
       ELSEIF ( Precip_module(:15)=='precip_map' ) THEN
         Precip_flag = precip_map_module
       ELSE
@@ -655,6 +669,8 @@
         Climate_temp_flag = ACTIVE
       ELSEIF ( Temp_module(:8)=='xyz_dist' ) THEN
         Temp_flag = xyz_dist_module
+      ELSEIF ( Temp_module(:7)=='mm_dist' ) THEN
+        Temp_flag = mm_dist_module
       ELSEIF ( Temp_module(:8)=='temp_sta' ) THEN
         Temp_flag = temp_sta_module
       ELSEIF ( Temp_module(:15)=='temp_map' ) THEN
@@ -678,7 +694,9 @@
         Inputerror_flag = 1
       ENDIF
 
-      IF ( Et_module(:8)=='potet_jh' ) THEN
+      IF ( Et_module(:13)=='potet_jh_warm' ) THEN
+        Et_flag = potet_jh_warm_module
+      ELSEIF ( Et_module(:8)=='potet_jh' ) THEN
         Et_flag = potet_jh_module
       ELSEIF ( Et_module(:11)=='potet_hamon' ) THEN
         Et_flag = potet_hamon_module
@@ -707,6 +725,7 @@
 
       IF ( control_integer(Snarea_curve_flag, 'snarea_curve_flag')/=0 ) Snarea_curve_flag = OFF
       IF ( control_integer(Soilzone_aet_flag, 'soilzone_aet_flag')/=0 ) Soilzone_aet_flag = OFF
+      IF ( control_integer(Iter_aet_flag, 'iter_aet_flag')/=0 ) Iter_aet_flag = OFF
       IF ( control_integer(snow_cloudcover_flag, 'snow_cloudcover_flag')/=0 ) snow_cloudcover_flag = OFF
 
       IF ( control_integer(Humidity_cbh_flag, 'humidity_cbh_flag')/=0 ) Humidity_cbh_flag = OFF
@@ -726,15 +745,15 @@
         Inputerror_flag = 1
       ENDIF
 
-      Soilzone_module = 'soilzone'
-
       IF ( control_integer(Orad_flag, 'orad_flag')/=0 ) Orad_flag = OFF
+      Cloud_flag = OFF
       IF ( Solrad_module(:8)=='ddsolrad' ) THEN
         Solrad_flag = ddsolrad_module
       ELSEIF ( Solrad_module(:11)=='climate_hru' ) THEN
         Solrad_flag = climate_hru_module
         Climate_swrad_flag = ACTIVE
       ELSEIF ( Solrad_module(:8)=='ccsolrad' ) THEN
+        Cloud_flag = ACTIVE
         Solrad_flag = ccsolrad_module
       ELSE
         PRINT '(/,2A)', 'ERROR, invalid solrad_module value: ', Solrad_module
@@ -742,7 +761,7 @@
       ENDIF
 
       IF ( control_integer(Snow_cbh_flag, 'snow_cbh_flag')/=0 ) Snow_cbh_flag = OFF
-      IF ( control_integer(Gwflow_cbh_flag, 'gwflow_cbh_flag')/=0 ) Gwflow_cbh_flag = OFF
+!      IF ( control_integer(Gwflow_cbh_flag, 'gwflow_cbh_flag')/=0 ) Gwflow_cbh_flag = OFF
       Snow_cbh_flag = OFF ! not implemented yet
       Gwflow_cbh_flag = OFF ! not implemented yet
 
@@ -750,6 +769,7 @@
       IF ( Climate_temp_flag==ACTIVE .OR. Climate_precip_flag==ACTIVE .OR. Climate_potet_flag==ACTIVE .OR. &
      &     Climate_swrad_flag==ACTIVE .OR. Climate_transp_flag==ACTIVE .OR. &
      &     Humidity_cbh_flag==ACTIVE .OR. Windspeed_cbh_flag==ACTIVE .OR. &
+     &     irrigated_area_flag==ACTIVE .OR. AET_cbh_flag==ACTIVE .OR. PET_cbh_flag==ACTIVE .OR. &
      &     Albedo_cbh_flag==ACTIVE .OR. Cloud_cover_cbh_flag==ACTIVE .OR. &
      &     Gwflow_cbh_flag==ACTIVE .OR. Snow_cbh_flag==ACTIVE ) Climate_hru_flag = ACTIVE
 
@@ -807,7 +827,9 @@
       IF ( decldim('nmap2hru', 0, MAXDIM, 'Number of intersections between HRUs and input climate map')/=0 ) &
      &     CALL read_error(7, 'nmap2hru')
       IF ( decldim('nmap', 0, MAXDIM, 'Number of mapped values')/=0 ) CALL read_error(7, 'nmap')
-      IF ( control_integer(Glacier_flag, 'glacier_flag')/=0 ) Glacier_flag = OFF
+      IF ( control_integer(Glacier_flag, 'glacier_flag')/=0 ) Glacier_flag = OFF ! 1 = glacr; 2 = Vacarro simple
+      IF ( control_integer(Seg2hru_flag, 'seg2hru_flag')/=0 ) Seg2hru_flag = OFF
+      IF ( control_integer(no_snow_flag, 'no_snow_flag')/=0 ) no_snow_flag = OFF
       IF ( control_integer(Frozen_flag, 'frozen_flag')/=0 ) Frozen_flag = OFF
       IF ( control_integer(Dyn_imperv_flag, 'dyn_imperv_flag')/=0 ) Dyn_imperv_flag = OFF
       IF ( control_integer(Dyn_intcp_flag, 'dyn_intcp_flag')/=0 ) Dyn_intcp_flag = OFF
@@ -824,12 +846,14 @@
       IF ( control_integer(Dyn_springfrost_flag, 'dyn_springfrost_flag')/=0 ) Dyn_springfrost_flag = OFF
       IF ( control_integer(Dyn_snareathresh_flag, 'dyn_snareathresh_flag')/=0 ) Dyn_snareathresh_flag = OFF
       IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = OFF
-      Dynamic_flag = 0
+      IF ( control_integer(Dyn_ag_frac_flag, 'dyn_ag_frac_flag')/=0 ) Dyn_ag_frac_flag = OFF
+      IF ( control_integer(Dyn_ag_soil_flag, 'dyn_ag_soil_flag')/=0 ) Dyn_ag_soil_flag = OFF
+      Dynamic_flag = OFF
       IF ( Dyn_imperv_flag/=OFF .OR. Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. Dyn_dprst_flag/=OFF .OR. &
      &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. Dyn_soil_flag /=OFF .OR. &
      &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
      &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
-     &     Dyn_transp_on_flag/=OFF ) Dynamic_flag = ACTIVE
+     &     Dyn_transp_on_flag/=OFF .OR. Dyn_ag_frac_flag==ACTIVE .OR. Dyn_ag_soil_flag==ACTIVE ) Dynamic_flag = ACTIVE
       IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = OFF
       IF ( control_integer(External_transferON_OFF, 'external_transferON_OFF')/=0 ) External_transferON_OFF = OFF
       IF ( control_integer(Dprst_transferON_OFF, 'dprst_transferON_OFF')/=0 ) Dprst_transferON_OFF = OFF
@@ -897,6 +921,7 @@
      &     CALL read_error(7, 'ndays')
       IF ( declfix('nmonths', 12, 12, 'Number of months in a year')/=0 ) CALL read_error(7, 'nmonths')
       IF ( declfix('one', 1, 1, 'Number of values for scaler array')/=0 ) CALL read_error(7, 'one')
+      IF ( declfix('five', 5, 5, 'Number of values for objective functions')/=0 ) CALL read_error(7, 'five')
 
       IF ( call_modules('setdims')/=0 ) Inputerror_flag = 1
 
@@ -926,6 +951,10 @@
       Ngw = getdim('ngw')
       IF ( Ngw==-1 ) CALL read_error(7, 'ngw')
 
+      IF ( Nssr /= Nhru .OR. Ngw /= Nhru) THEN
+        PRINT *, 'ERROR, nhru, nssr, and ngw must be equal nssr=', Nssr, ' nhru=', Nhru, ' ngw=', Ngw
+        Inputerror_flag = 1
+      ENDIF
       Ntemp = getdim('ntemp')
       IF ( Ntemp==-1 ) CALL read_error(6, 'ntemp')
 
@@ -977,11 +1006,15 @@
       IF ( Nlake_hrus==-1 ) CALL read_error(7, 'nlake_hrus')
       IF ( Nlake>0 .AND. Nlake_hrus==0 ) Nlake_hrus = Nlake
 
-      Ndepl = getdim('ndepl')
-      IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')
-
-      Ndeplval = getdim('ndeplval')
-      IF ( Ndeplval==-1 ) CALL read_error(7, 'ndeplval')
+      IF ( Snarea_curve_flag==ACTIVE ) THEN
+        Ndepl = Nhru
+        Ndeplval = Ndepl * 11
+      ELSE
+        Ndepl = getdim('ndepl')
+        IF ( Ndepl==-1 ) CALL read_error(7, 'ndepl')
+        Ndeplval = getdim('ndeplval')
+        IF ( Ndeplval==-1 ) CALL read_error(7, 'ndeplval')
+      ENDIF
 
       Nsub = getdim('nsub')
       IF ( Nsub==-1 ) CALL read_error(7, 'nsub')
@@ -1150,23 +1183,25 @@
       SUBROUTINE module_doc()
       USE PRMS_CONSTANTS, ONLY: DECL
       USE PRMS_MODULE, ONLY: Process_flag
+      use PRMS_SET_TIME, only: prms_time
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: basin, climateflow, prms_time
+      INTEGER, EXTERNAL :: basin, climateflow
       INTEGER, EXTERNAL :: cascade, obs, soltab, transp_tindex
       INTEGER, EXTERNAL :: transp_frost, frost_date, routing
       INTEGER, EXTERNAL :: temp_1sta_laps, temp_dist2
       INTEGER, EXTERNAL :: precip_1sta_laps, climate_hru
-      INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist
+      INTEGER, EXTERNAL :: precip_dist2, xyz_dist, ide_dist, mm_dist
       INTEGER, EXTERNAL :: ddsolrad, ccsolrad
       INTEGER, EXTERNAL :: potet_pan, potet_jh, potet_hamon, potet_hs, potet_pt, potet_pm
-      INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
+      INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone_ag
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
-      EXTERNAL :: precip_map, temp_map
+      EXTERNAL :: precip_map, temp_map, segment_to_hru, cloud_cover, potet_jh_warm
+      INTEGER, EXTERNAL :: grnampt_infil, krout_ofpl, krout_chan
 ! Local variable
       INTEGER :: test
 !**********************************************************************
@@ -1183,17 +1218,20 @@
       test = temp_dist2()
       test = xyz_dist()
       test = ide_dist()
+      test = mm_dist
       CALL temp_map()
       CALL precip_map()
       test = climate_hru()
       test = precip_1sta_laps()
       test = precip_dist2()
       test = ddsolrad()
+      CALL cloud_cover()
       test = ccsolrad()
       test = transp_tindex()
       test = frost_date()
       test = transp_frost()
       test = potet_jh()
+      CALL potet_jh_warm()
       test = potet_hamon()
       test = potet_pan()
       test = potet_hs()
@@ -1205,14 +1243,18 @@
       test = snowcomp()
       test = srunoff()
       test = glacr()
-      test = soilzone()
+      test = grnampt_infil()
+      test = krout_ofpl()
+      test = soilzone_ag()
       test = gwflow()
       test = routing()
+      CALL segment_to_hru()
       test = strmflow()
       test = strmflow_in_out()
       test = muskingum()
       test = muskingum_lake()
       test = stream_temp()
+      test = krout_chan()
       test = basin_sum()
       test = map_results()
       CALL nhru_summary()
@@ -1346,12 +1388,12 @@
 !***********************************************************************
       SUBROUTINE call_modules_restart(In_out)
       USE PRMS_MODULE
+      use prms_utils, only: check_restart, check_restart_dimen
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart, check_restart_dimen
       ! Functions
-      INTRINSIC TRIM
+      INTRINSIC :: TRIM
       ! Local Variables
       INTEGER :: nhru_test, dprst_test, nsegment_test, temp_test, et_test, ierr, time_step
       INTEGER :: cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, start_time(6), end_time(6)
@@ -1359,17 +1401,32 @@
       CHARACTER(LEN=12) :: module_name
 !***********************************************************************
       IF ( In_out==0 ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Timestep, Nhru, Dprst_flag, Nsegment, Temp_flag, Et_flag, &
-     &          Cascade_flag, Cascadegw_flag, Nhrucell, Nlake, Transp_flag, Model_mode
-        WRITE ( Restart_outunit ) Starttime, Endtime
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Timestep, Nhru, Dprst_flag, Nsegment, Temp_flag, Et_flag, &
+                  Cascade_flag, Cascadegw_flag, Nhrucell, Nlake, Transp_flag, Model_mode
+          WRITE ( Restart_outunit ) Starttime, Endtime
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Timestep, Nhru, Dprst_flag, Nsegment, Temp_flag, Et_flag, &
+                  Cascade_flag, Cascadegw_flag, Nhrucell, Nlake, Transp_flag, Model_mode
+          WRITE ( Restart_outunit, * ) Starttime, Endtime
+        ENDIF
       ELSE
         ierr = 0
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) time_step, nhru_test, dprst_test, nsegment_test, temp_test, et_test, &
-     &         cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, model_test
-        READ ( Restart_inunit ) start_time, end_time
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) time_step, nhru_test, dprst_test, nsegment_test, temp_test, et_test, &
+                 cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, model_test
+          READ ( Restart_inunit ) start_time, end_time
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) time_step, nhru_test, dprst_test, nsegment_test, temp_test, et_test, &
+                 cascade_test, cascdgw_test, nhrucell_test, nlake_test, transp_test, model_test
+          READ ( Restart_inunit, * ) start_time, end_time
+        ENDIF
         IF ( Print_debug>DEBUG_minimum ) PRINT 4, EQULS, 'Simulation time period of Restart File:', &
      &       start_time(1), start_time(2), start_time(3), ' -', end_time(1), end_time(2), end_time(3), &
      &       'Last time step of simulation: ', time_step, EQULS

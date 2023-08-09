@@ -17,7 +17,7 @@
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Precipitation Distribution'
         character(len=*), parameter :: MODNAME = 'precip_dist2'
-        character(len=*), parameter :: Version_precip = '2021-09-07'
+        character(len=*), parameter :: Version_precip = '2021-11-19'
         INTEGER, SAVE, ALLOCATABLE :: N_psta(:), Nuse_psta(:, :)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist2(:, :)
 !   Declared Parameters
@@ -64,10 +64,10 @@
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, MONTHS_PER_YEAR, ERROR_dim
       USE PRMS_MODULE, ONLY: Model, Nhru, Nrain
       USE PRMS_PRECIP_DIST2
+      use prms_utils, only: error_stop, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam
-      EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       pptdist2decl = 0
 
@@ -171,10 +171,10 @@
       USE PRMS_MODULE, ONLY: Nhru, Nrain
       USE PRMS_PRECIP_DIST2
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
+      use prms_utils, only: read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
       INTRINSIC :: DSQRT, DABS, DBLE
 ! Local Variables
       INTEGER :: i, k, n, kk, kkbig, jj
@@ -280,10 +280,10 @@
      &    Basin_obs_ppt, Tmaxf, Tminf, Tmax_allsnow_f, Tmax_allrain_f, &
      &    Adjmix_rain, Precip_units
       USE PRMS_OBS, ONLY: Precip
+      use prms_utils, only: error_stop, print_date
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, DBLE, SNGL
-      EXTERNAL :: print_date, error_stop
 ! Local Variables
       INTEGER :: i, iform, k, j, kk, allmissing
       REAL :: tdiff, pcor, ppt

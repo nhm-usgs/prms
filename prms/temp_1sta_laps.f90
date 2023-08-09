@@ -19,7 +19,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=9), SAVE :: MODNAME
-        character(len=*), parameter :: Version_temp = '2021-08-13'
+        character(len=*), parameter :: Version_temp = '2022-03-25'
         INTEGER, SAVE, ALLOCATABLE :: Tmax_cnt(:), Tmin_cnt(:), Nuse_tsta(:)
         REAL, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
         REAL, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
@@ -31,25 +31,26 @@
       END MODULE PRMS_TEMP_1STA_LAPS
 
       INTEGER FUNCTION temp_1sta_laps()
-        USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, &
-     &      GLACIER, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
-     &      MINTEMP, MAXTEMP, NEARZERO, temp_1sta_module, temp_laps_module, READ_INIT, SAVE_INIT
-        USE PRMS_MODULE, ONLY: Process_flag, Nhru, Ntemp, Model, Print_debug, Init_vars_from_file, Save_vars_to_file, &
-     &      Temp_flag, Inputerror_flag, Start_month, Glacier_flag, Nowmonth, Nowday
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, &
+     &    GLACIER, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
+     &    MINTEMP, MAXTEMP, NEARZERO, temp_1sta_module, temp_laps_module, READ_INIT, SAVE_INIT
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Ntemp, Model, Print_debug, Init_vars_from_file, Save_vars_to_file, &
+     &    Temp_flag, Inputerror_flag, Start_month, Glacier_flag, Nowmonth, Nowday, Hru_type
       USE PRMS_TEMP_1STA_LAPS
-      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
      &    Hru_tsta, Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, &
      &    Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tmax_allrain
       USE PRMS_OBS, ONLY: Tmax, Tmin
+      use prms_utils, only: checkdim_param_limits, print_date, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX, ABS
       INTEGER, EXTERNAL :: declparam, getparam
-      EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
+      EXTERNAL :: temp_set, temp_1sta_laps_restart
       EXTERNAL :: compute_temp_laps
 ! Local Variables
-      INTEGER :: j, k, jj, i, kk, kkk, l, ierr
+      INTEGER :: j, k, jj, i, kk, kkk, l, ierr, nchar
       REAL :: tmx, tmn
 !***********************************************************************
       temp_1sta_laps = 0
@@ -109,7 +110,7 @@
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             IF ( Nowday==1 ) THEN
-              IF ( Glacier_flag==ACTIVE ) THEN
+              IF ( Glacier_flag==1 ) THEN
                 ! Hru_elev_ts is the antecedent glacier elevation
                 IF ( Hru_type(j)==GLACIER ) Elfac(j) = (Hru_elev_ts(j) - Tsta_elev(k))/1000.0
               ENDIF
@@ -126,7 +127,7 @@
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             l = Hru_tlaps(j)
-            IF ( Glacier_flag==ACTIVE ) THEN
+            IF ( Glacier_flag==1 ) THEN
               ! Hru_elev_ts is the antecedent glacier elevation
               IF ( Hru_type(j)==GLACIER ) CALL compute_temp_laps(Elfac(j), Hru_elev_ts(j), Tsta_elev(l), Tsta_elev(k))
             ENDIF
@@ -170,14 +171,16 @@
         ENDIF
 
       ELSEIF ( Process_flag==DECL ) THEN
+        nchar = 9
         IF ( Temp_flag==temp_1sta_module ) THEN
           MODNAME = 'temp_1sta'
         ELSEIF ( Temp_flag==temp_laps_module ) THEN
           MODNAME = 'temp_laps'
         ELSE ! Temp_flag = temp_sta_module
           MODNAME = 'temp_sta '
+          nchar = 8
         ENDIF
-        CALL print_module(MODDESC, MODNAME, Version_temp)
+        CALL print_module(MODDESC, MODNAME(:nchar), Version_temp)
 
         ALLOCATE ( Elfac(Nhru), Nuse_tsta(Ntemp) )
         ALLOCATE ( Tmin_cnt(Ntemp), Tmax_cnt(Ntemp), Tmax_prev(Ntemp), Tmin_prev(Ntemp) )
@@ -313,30 +316,49 @@
 !     Write to or read from restart file
 !***********************************************************************
       SUBROUTINE temp_1sta_laps_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_TEMP_1STA_LAPS
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Solrad_tmax_good, Solrad_tmin_good
-        WRITE ( Restart_outunit ) Tmax_cnt
-        WRITE ( Restart_outunit ) Tmin_cnt
-        WRITE ( Restart_outunit ) Tmax_prev
-        WRITE ( Restart_outunit ) Tmin_prev
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Solrad_tmax_good, Solrad_tmin_good
+          WRITE ( Restart_outunit ) Tmax_cnt
+          WRITE ( Restart_outunit ) Tmin_cnt
+          WRITE ( Restart_outunit ) Tmax_prev
+          WRITE ( Restart_outunit ) Tmin_prev
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Solrad_tmax_good, Solrad_tmin_good
+          WRITE ( Restart_outunit, * ) Tmax_cnt
+          WRITE ( Restart_outunit, * ) Tmin_cnt
+          WRITE ( Restart_outunit, * ) Tmax_prev
+          WRITE ( Restart_outunit, * ) Tmin_prev
+        ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Solrad_tmax_good, Solrad_tmin_good
-        READ ( Restart_inunit ) Tmax_cnt
-        READ ( Restart_inunit ) Tmin_cnt
-        READ ( Restart_inunit ) Tmax_prev
-        READ ( Restart_inunit ) Tmin_prev
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Solrad_tmax_good, Solrad_tmin_good
+          READ ( Restart_inunit ) Tmax_cnt
+          READ ( Restart_inunit ) Tmin_cnt
+          READ ( Restart_inunit ) Tmax_prev
+          READ ( Restart_inunit ) Tmin_prev
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Solrad_tmax_good, Solrad_tmin_good
+          READ ( Restart_inunit, * ) Tmax_cnt
+          READ ( Restart_inunit, * ) Tmin_cnt
+          READ ( Restart_inunit, * ) Tmax_prev
+          READ ( Restart_inunit, * ) Tmin_prev
+        ENDIF
       ENDIF
       END SUBROUTINE temp_1sta_laps_restart

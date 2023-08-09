@@ -20,12 +20,12 @@
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, Start_month, Start_day, Nowmonth, Nowday
       USE PRMS_TRANSP_TINDEX
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
+      USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on
+      use prms_utils, only: c_to_f, print_module, read_error
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, getparam
-      REAL, EXTERNAL :: c_to_f
-      EXTERNAL :: read_error, print_module, transp_tindex_restart
+      EXTERNAL :: transp_tindex_restart
 ! Local Variables
       INTEGER :: i, j, motmp
 !***********************************************************************
@@ -150,22 +150,33 @@
 !     Write to or read from restart file
 !***********************************************************************
       SUBROUTINE transp_tindex_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_TRANSP_TINDEX
+      use prms_utils, only: check_restart
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
       ! Local Variable
       CHARACTER(LEN=13) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Tmax_sum
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Tmax_sum
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Tmax_sum
+        ENDIF
       ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Tmax_sum
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Tmax_sum
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Tmax_sum
+        ENDIF
       ENDIF
       END SUBROUTINE transp_tindex_restart
