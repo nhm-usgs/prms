@@ -1,19 +1,8 @@
 ﻿
 
-                      PRMS - Version: 5.2.1
+                      PRMS - Version: 5.2.2
             USGS Precipitation-Runoff Modeling System
 
-
-Any use of trade, product, or firm names is for descriptive purposes only and 
-does not imply endorsement by the U.S. Government. This software has been 
-approved for release by the U.S. Geological Survey (USGS). Although the 
-software has been subjected to rigorous review, the USGS reserves the right to 
-update the software as needed pursuant to further analysis and review. No 
-warranty, expressed or implied, is made by the USGS or the U.S. Government as 
-to the functionality of the software and related material nor shall the fact of 
-release constitute any such warranty. Furthermore, the software is released on 
-condition that neither the USGS nor the U.S. Government shall be held liable 
-for any damages resulting from its authorized or unauthorized use.
 
 PRMS is packaged for personal computers using one of the Linux or Microsoft 
 Windows operating systems. An executable file compiled for 64-bit operating 
@@ -25,10 +14,37 @@ Studio XE 2019 Update 5 Composer Edition and Microsoft Visual C++ 2019 compilers
 The source code and Linux Makefiles are provided to aid users in compilation
 on other computers. However, no support is provided for compilation.
 
-IMPORTANT: Users should review the file 'Release_notes_prms_5.2.1.pdf' for a 
+IMPORTANT: Users should review the file 'Release_notes_prms_5.2.2.pdf' for a 
 description of, and references for, and changes that have been introduced into 
 PRMS with each official release; these changes may substantially affect model 
 results.
+
+This software has been approved for release by the U.S. Geological Survey (USGS).
+Although the software has been subjected to rigorous review, the USGS reserves 
+the right to update the software as needed pursuant to further analysis and 
+review. No warranty, expressed or implied, is made by the USGS or the U.S. 
+Government as to the functionality of the software and related material nor shall 
+the fact of release constitute any such warranty. Furthermore, the software is 
+released on condition that neither the USGS nor the U.S. Government shall be held 
+liable for any damages resulting from its authorized or unauthorized use. Also 
+refer to the USGS Water Resources Software User Rights Notice 
+(https://water.usgs.gov/software/help/notice/) for complete use, copyright, and 
+distribution information. Notices related to this software are as follows: 
+•	This software is a product of the U.S. Geological Survey, which is part of 
+    the U.S. Government. 
+•	This software is freely distributed. There is no fee to download and (or) 
+    use this software. 
+•	Users do not need a license or permission from the USGS to use this software. 
+    Users can download and install as many copies of the software as they need. 
+•	As a work of the United States Government, this USGS product is in the 
+    public domain within the United States. You can copy, modify, distribute, 
+	and perform the work, even for commercial purposes, all without asking 
+	permission. Additionally, USGS waives copyright and related rights in the 
+	work worldwide through CC0 1.0 Universal Public Domain Dedication 
+	(https://creativecommons.org/publicdomain/zero/ 1.0/).
+
+Any use of trade, product, or firm names is for descriptive purposes only and 
+does not imply endorsement by the U.S. Government. 
 
 Instructions for installation, execution, and testing of this version of
 PRMS are provided below.
@@ -48,8 +64,8 @@ A. DISTRIBUTION FILE
 
 The following distribution files are for use on personal computers:
 
-         prms_5.2.1.zip for Windows-based personal computers
-         prms_5.2.1_linux.zip for Linux-based personal computers
+         prms_5.2.2.zip for Windows-based personal computers
+         prms_5.2.2_linux.zip for Linux-based personal computers
 
 The distribution file contains:
 
@@ -62,7 +78,7 @@ several subdirectories. The following directory structure will be created in
 the installation directory:
 
    |
-   |--prms5.2.1                ; This file, release notes, and updated tables
+   |--prms_5.2.2               ; This file, release notes, and updated tables
    |    |--bin                 ; Compiled PRMS executable
    |    |--projects            ; Example application models
    |        |--acf             ; scripts for ACF River using the Climate-by-HRU
@@ -110,7 +126,7 @@ the installation directory:
    |    |--dist                ; Java jar files for PRMS GUI
 
 
-It is recommended that no user files be kept in the prms5.2.1 directory
+It is recommended that no user files be kept in the prms_5.2.2 directory
 structure.  If you do plan to put your own files in the directory structure, 
 do so only by creating additional subdirectories of the "projects" subdirectory.
 
@@ -123,8 +139,8 @@ available from the following World Wide Web site: http://www.adobe.com/
 B. INSTALLING
 
 To make the executable version of PRMS accessible from any directory, the 
-directory containing the executable (prms5.2.1/bin/prms on Linux-based computers 
-or prms5.2.1\bin\prms.exe on Windows-based computers) should be included in the 
+directory containing the executable (prms_5.2.2/bin/prms on Linux-based computers 
+or prms_5.2.2\bin\prms.exe on Windows-based computers) should be included in the 
 PATH environment variable. Also, if a prior release of PRMS is installed on your 
 system, the directory containing the executable for the prior release should be 
 removed from the PATH environment variable.

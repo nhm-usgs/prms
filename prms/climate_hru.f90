@@ -83,12 +83,15 @@
           IF ( ios/=0 ) THEN
             ierr = 1
           ELSE
-            IF ( Ppt_zero_thresh>0.0 ) THEN
-              DO i = 1, Nhru
-                IF ( Hru_ppt(i)<Ppt_zero_thresh ) Hru_ppt(i) = 0.0
-              ENDDO
-            ENDIF
             IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'Hru_ppt', ios, ierr)
+            IF ( ierr == 0 ) THEN
+              IF ( Ppt_zero_thresh>0.0 ) THEN
+                DO j = 1, Active_hrus
+                   i = Hru_route_order(j)
+                 IF ( Hru_ppt(i)<Ppt_zero_thresh ) Hru_ppt(i) = 0.0
+               ENDDO
+              ENDIF
+            ENDIF
           ENDIF
           Basin_ppt = 0.0D0
           Basin_rain = 0.0D0
@@ -132,18 +135,30 @@
 
         IF ( Humidity_cbh_flag==ACTIVE ) THEN
           READ ( Humidity_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Humidity_hru(i), i=1,Nhru)
-          IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'humidity_hru', ios, ierr)
+          IF ( ios/=0 ) THEN
+            ierr = 1
+          ELSE
+            IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'humidity_hru', ios, ierr)
+          ENDIF
           Basin_humidity = 0.0D0
         ENDIF
 
         IF ( Albedo_cbh_flag==ACTIVE ) THEN
           READ ( Albedo_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Albedo_hru(i), i=1,Nhru)
-          IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'albedo_hru', ios, ierr)
+          IF ( ios/=0 ) THEN
+            ierr = 1
+          ELSE
+            IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'albedo_hru', ios, ierr)
+          ENDIF
         ENDIF
 
         IF ( Cloud_cover_cbh_flag==ACTIVE ) THEN
           READ ( Cloud_cover_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Cloud_cover_cbh(i), i=1,Nhru)
-          IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'cloud_cover_cbh', ios, ierr)
+          IF ( ios/=0 ) THEN
+            ierr = 1
+          ELSE
+            IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'cloud_cover_cbh', ios, ierr)
+          ENDIF
         ENDIF
 
         IF ( Windspeed_cbh_flag==ACTIVE ) THEN
