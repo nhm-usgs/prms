@@ -1,4 +1,4 @@
-      ! utils_prms.f90 2020-07-30
+! utils_prms.f90 2022-06-02
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -89,7 +89,7 @@
 !***********************************************************************
 !   Read CBH File to line before data starts
 !***********************************************************************
-    subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
+  subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
     use PRMS_CONSTANTS, only: DEBUG_less
     use PRMS_MODULE, only: Nhru, Orad_flag, Print_debug
     implicit none
@@ -158,7 +158,7 @@
     end subroutine find_cbh_header_end
 
 !***********************************************************************
-! Read file to line before data starts
+!   Read file to line before data starts
 !***********************************************************************
     subroutine find_header_end( Iunit, Fname, Iret )
     use PRMS_CONSTANTS, only: DEBUG_less
