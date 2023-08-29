@@ -244,10 +244,11 @@
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, Lake_hru_id
-      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol, &
+     &    Hru_impervstor, Dprst_stor_hru
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
+      USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
       USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
@@ -272,33 +273,6 @@
         kk = Subbasin_down(j)
         IF ( kk/=0 ) Tree(kk, j) = 1
       ENDDO
-
-      Sub_cfs = 0.0D0
-      Sub_cms = 0.0D0
-      Sub_inq = 0.0D0
-      Subinc_interflow = 0.0D0
-      Subinc_gwflow = 0.0D0
-      Sub_gwflow = 0.0D0
-      Subinc_sroff = 0.0D0
-      Subinc_precip = 0.0D0
-      Subinc_rain = 0.0D0
-      Subinc_snow = 0.0D0
-      Subinc_snowmelt = 0.0D0
-      Subinc_pkweqv = 0.0D0
-      Subinc_actet = 0.0D0
-      Subinc_snowcov = 0.0D0
-      Subinc_swrad = 0.0D0
-      Subinc_tminc = 0.0D0
-      Subinc_tmaxc = 0.0D0
-      Subinc_tavgc = 0.0D0
-      Subinc_potet = 0.0D0
-      Subinc_wb = 0.0D0
-      Subinc_deltastor = 0.0D0
-      Subinc_recharge = 0.0D0
-      Subinc_szstor_frac = 0.0D0
-      Subinc_capstor_frac = 0.0D0
-      Sub_interflow = 0.0D0
-      Sub_sroff = 0.0D0
 
       IF ( Print_debug==14 ) THEN
         CALL PRMS_open_module_file(TREEUNIT, 'tree_structure')
@@ -341,6 +315,10 @@
       ENDIF
 
 ! added some code to allow for restart, but not climate states and fluxes and subinc_deltastor
+
+      Subinc_interflow = 0.0D0
+      Subinc_gwflow = 0.0D0
+      Subinc_sroff = 0.0D0
       Subinc_stor = 0.0D0
       Sub_area = 0.0D0
       gwstor = 0.0D0
@@ -441,10 +419,11 @@
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
-     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist, Soil_moist_max
+     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist_max, &
+     &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru
       USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge, Soil_moist_tot, Soil_zone_max
+      USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
+      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
@@ -453,7 +432,7 @@
 ! Local Variables
       INTEGER :: j, jj, k
       DOUBLE PRECISION :: harea, srq, ssq, gwq, dmy, dmy1, subarea
-      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2 !, conv
+      DOUBLE PRECISION :: soilstor, snowstor, landstor, dmy2
 !***********************************************************************
       subrun = 0
 
