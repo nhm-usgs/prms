@@ -7,7 +7,7 @@
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Timestep Control'
         character(len=*), parameter :: MODNAME = 'prms_time'
-        character(len=*), parameter :: Version_prms_time = '2021-08-13'
+        character(len=*), parameter :: Version_prms_time = '2023-08-10'
         INTEGER, SAVE :: Modays(MONTHS_PER_YEAR), Yrdays, Summer_flag, Jday, Jsol, Julwater
         INTEGER, SAVE :: Nowtime(6), Nowhour, Nowminute, Julian_day_absolute
         REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes
@@ -19,9 +19,14 @@
       INTEGER FUNCTION prms_time()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, YEAR, MONTH, DAY, HOUR, MINUTE, MAX_DAYS_PER_YEAR, DAYS_PER_YEAR, &
      &    ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time
-      USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday
+      USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday, Dprst_flag
       USE PRMS_SET_TIME
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
+      USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Ssres_stor, Basin_ssstor, &
+                               Basin_soil_moist, Dprst_stor_hru, Dprst_vol_open, Dprst_vol_clos, Hru_impervstor
+      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_soil_rechr, It0_ssres_stor, &
+                               It0_basin_ssstor, It0_basin_soil_moist, It0_dprst_stor_hru, &
+                               It0_hru_impervstor, It0_dprst_vol_open, It0_dprst_vol_clos
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
@@ -44,6 +49,17 @@
           Jsol = julian_day('now', 'solar')
           Julwater = julian_day('now', 'water')
           Julian_day_absolute = Julian_day_absolute + 1
+          It0_basin_soil_moist = Basin_soil_moist
+          It0_basin_ssstor = Basin_ssstor
+          It0_soil_moist = Soil_moist
+          It0_soil_rechr = Soil_rechr
+          It0_ssres_stor = Ssres_stor
+          It0_hru_impervstor = Hru_impervstor
+          IF ( Dprst_flag==ACTIVE ) THEN
+            It0_dprst_vol_open = Dprst_vol_open
+            It0_dprst_vol_clos = Dprst_vol_clos
+            It0_dprst_stor_hru = Dprst_stor_hru
+          ENDIF
 
         ELSE ! initialize
           Modays(1) = 31

@@ -63,6 +63,7 @@ OBJS = \
         strmflow_in_out.o \
         muskingum.o \
         muskingum_lake.o \
+        segment_to_hru.o \
         strmflow_character.o \
         subbasin.o \
         stream_temp.o \
@@ -260,6 +261,9 @@ convert_params.o: convert_params.f90 prms_module.mod
 
 glacr_melt.o: glacr_melt.f90 prms_snow.mod prms_intcp.mod prms_soltab.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) glacr_melt.f90
+
+segment_to_hru.o: segment_to_hru.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_constants.mod prms_soilzone.mod
+	$(FC) -c $(FFLAGS) segment_to_hru.f90
 
 prms_climatevars.mod: climateflow.o
 prms_flowvars.mod: climateflow.o

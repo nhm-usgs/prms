@@ -34,8 +34,8 @@
       USE PRMS_DYNAMIC_SOIL_PARAM_READ, ONLY: MODDESC, MODNAME, Version_dynamic_soil_param_read
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: print_module
       INTEGER, EXTERNAL :: dynsoilparamrun, dynsoilparaminit
+      EXTERNAL :: print_module
 !***********************************************************************
       dynamic_soil_param_read = 0
 
@@ -53,10 +53,10 @@
 !     dynsoilparaminit - open files, read to start time, initialize flags and arrays
 !***********************************************************************
       INTEGER FUNCTION dynsoilparaminit()
-        USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
-        USE PRMS_MODULE, ONLY: Nhru, Print_debug, Start_year, Start_month, Start_day, &
-     &      Dyn_imperv_flag, Dyn_dprst_flag, Dyn_soil_flag, Dprst_flag, PRMS4_flag
-        USE PRMS_DYNAMIC_SOIL_PARAM_READ
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Start_year, Start_month, Start_day, &
+     &    Dyn_imperv_flag, Dyn_dprst_flag, Dyn_soil_flag, Dprst_flag, PRMS4_flag
+      USE PRMS_DYNAMIC_SOIL_PARAM_READ
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
@@ -75,7 +75,7 @@
       ! dyn_soil_flag: 1 or 3, soil_moist_max; 2 or 3, soil_rechr_max
       ALLOCATE ( Temp(Nhru), Updated_hrus(Nhru) )
       IF ( Dyn_imperv_flag==1 .OR. Dyn_imperv_flag==3 .OR. Dyn_dprst_flag==1 .OR. Dyn_dprst_flag==3 ) THEN
-        ALLOCATE ( Temp_imperv_frac(Nhru) )
+        ALLOCATE ( temp_imperv_frac(Nhru) )
         IF ( Dprst_flag==ACTIVE ) ALLOCATE ( temp_dprst_frac(Nhru) )
       ENDIF
 
@@ -184,10 +184,10 @@
      &    Hru_area_dble, Dprst_area, Active_hrus, Hru_route_order, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
-     &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor
+     &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor, Hru_impervstor, Dprst_stor_hru, &
+     &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
-     &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Hru_impervstor, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
+     &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
@@ -267,7 +267,7 @@
               PRINT 9001, 'soil_moist_max', 0.00001, i, Soil_moist_max(i), 0.00001
               Soil_moist_max(i) = 0.00001
             ENDIF
-            IF ( PRMS4_flag==0 ) Soil_rechr_max(i) = Soil_moist_max(i)*Soil_rechr_max_frac(i)
+            IF ( PRMS4_flag==OFF ) Soil_rechr_max(i) = Soil_moist_max(i)*Soil_rechr_max_frac(i)
             IF ( Soil_rechr_max(i)<0.00001 ) THEN
               PRINT 9001, 'soil_rechr_max', 0.00001, i, Soil_rechr_max(i), 0.00001
               Soil_rechr_max(i) = 0.00001
@@ -426,22 +426,12 @@
 
           frac_perv = 1.0 - (frac_imperv + frac_dprst)
 
-          IF ( frac_perv>0.0 ) THEN
-            ! adjust pervious area and capillary storage for dynamic parameters
-            IF ( Hru_frac_perv(i) /= frac_perv ) THEN
-              tmp = Hru_frac_perv(i)/frac_perv
-              Soil_moist(i) = Soil_moist(i)*tmp
-              Soil_rechr(i) = Soil_rechr(i)*tmp
-              it0_sm_flag = ACTIVE
-            ENDIF
-          ELSE
-            IF ( Hru_frac_perv(i) > 0.0 ) THEN
-              to_slow_stor = to_slow_stor + Soil_moist(i) * Hru_frac_perv(i)
-              Soil_moist(i) = 0.0
-              Soil_rechr(i) = 0.0
-              it0_sm_flag = ACTIVE
-            ENDIF
-            frac_perv = 0.0
+          ! adjust pervious area and capillary storage for dynamic parameters
+          IF ( Hru_frac_perv(i) /= frac_perv ) THEN
+            tmp = Hru_frac_perv(i)/frac_perv
+            Soil_moist(i) = Soil_moist(i)*tmp
+            Soil_rechr(i) = Soil_rechr(i)*tmp
+            it0_sm_flag = ACTIVE
           ENDIF
           Hru_frac_perv(i) = frac_perv
           Hru_perv(i) = harea * frac_perv

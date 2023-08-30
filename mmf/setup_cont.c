@@ -93,8 +93,16 @@ void setup_cont (void) {
 		decl_control_int_array ("dprst_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
-		lval[0] = 1;
+		lval[0] = 0;
 		decl_control_int_array ("parameter_check_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("no_snow_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("cbh_active_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;

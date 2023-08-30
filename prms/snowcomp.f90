@@ -22,7 +22,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2023-03-16'
+      character(len=*), parameter :: Version_snowcomp = '2023-08-14'
       INTEGER, SAVE :: Active_glacier
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -744,17 +744,11 @@
       IF ( getparam(MODNAME, 'tstorm_mo', Nhru*MONTHS_PER_YEAR, 'integer', Tstorm_mo)/=0 ) CALL read_error(2, 'tstorm_mo')
 
       Pk_precip = 0.0
-      Snowmelt = 0.0
-      Snow_evap = 0.0
       Pptmix_nopack = OFF
       Tcal = 0.0
       Frac_swe = 0.0
       Acum = acum_init
       Amlt = amlt_init
-      Basin_tcal = 0.0D0
-      Basin_snowmelt = 0.0D0
-      Basin_snowevap = 0.0D0
-      Basin_pk_precip = 0.0D0
       Basin_glacrb_melt = 0.0D0
       Basin_glacrevap = 0.0D0
       IF ( Glacier_flag==ACTIVE ) THEN
@@ -790,7 +784,7 @@
               Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
               Frac_swe(i) = MIN( 1.0, Frac_swe(i) )
             ENDIF
-            CALL sca_deplcrv(Snowcov_area(i), Snarea_curve(1,Hru_deplcrv(i)), Frac_swe(i))
+            CALL sca_deplcrv(Snowcov_area(i), Snarea_curve(:,Hru_deplcrv(i)), Frac_swe(i))
             Basin_snowcov = Basin_snowcov + DBLE(Snowcov_area(i))*Hru_area_dble(i)
             Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*Hru_area_dble(i)
           ENDIF
@@ -942,6 +936,8 @@
       Snow_evap = 0.0 ! [inches]
       Tcal = 0.0
       Ai = 0.0D0
+      ! By default, there has not been a mixed event without a snowpack
+      Pptmix_nopack = OFF ! [flag]
       ! Keep track of the pack water equivalent before it is changed
       ! by precipitation during this time step
       Pkwater_ante = Pkwater_equiv
@@ -1012,7 +1008,7 @@
               ! if terminus glacier, and has snow will disappear off glacier but that is likely anyhow
               CALL snow_states_to_zero(Lst(i), Iasw(i), Snsv(i), Albedo(i), Pk_den(i), Snowcov_area(i), &
                                        Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), Snowcov_areasv(i), &
-                                       Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i))
+                                       Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i), Scrv(i), Pksv(i))
               IF ( Elev_units==FEET ) THEN !from Oerlemans 1992
                 Glacr_albedo(i) = Albedo_ice(i) +(Albedo_coef(i)/PI)*ATAN( (Alt_above_ela(i)*FEET2METERS+300.0)/200.0 )
               ELSE
@@ -1059,10 +1055,6 @@
         !              CONDITIONS FOR THIS TIME PERIOD
         !**************************************************************
 
-        ! By default, there has not been a mixed event without a
-        ! snowpack
-        Pptmix_nopack(i) = OFF ! [flag]
-
         ! If the day of the water year is beyond the forced melt day
         ! indicated by the parameter, then set the flag indicating
         ! melt season
@@ -1081,12 +1073,12 @@
 
         ! Skip the HRU if there is no snowpack and no new snow and not a glacier
         IF ( Active_glacier==OFF ) THEN
-          IF ( Pkwater_equiv(i)<TINY_SNOWPACK .AND. Newsnow(i)==0 ) THEN
-            IF ( Pkwater_equiv(i)<DNEARZERO ) THEN ! reset to be sure it is zero if snowpack melted on last timestep
+          IF ( Pkwater_equiv(i)<TINY_SNOWPACK .AND. Newsnow(i)==0 ) THEN ! reset to be sure it is zero if snowpack melted on last timestep
+            !IF ( Pkwater_equiv(i)<DNEARZERO ) THEN
               CALL snow_states_to_zero(Lst(i), Iasw(i), Snsv(i), Albedo(i), Pk_den(i), Snowcov_area(i), &
                                        Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), Snowcov_areasv(i), &
-                                       Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i))
-            ENDIF
+                                       Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i), Scrv(i), Pksv(i))
+            !ENDIF
             CYCLE
           ENDIF
         ENDIF
@@ -1140,7 +1132,7 @@
           k = Hru_deplcrv(i)
           ! calculate the new snow covered area
           CALL snowcov(Iasw(i), Newsnow(i), Snowcov_area(i), &
-     &                 Snarea_curve(1, k), Pkwater_equiv(i), Pst(i), &
+     &                 Snarea_curve(:, k), Pkwater_equiv(i), Pst(i), &
      &                 Snarea_thresh(i), Net_snow(i), Scrv(i), &
      &                 Pksv(i), Snowcov_areasv(i), Ai(i), Frac_swe(i))
 
@@ -1438,14 +1430,15 @@
         ENDIF
 
 ! LAST check to clear out all arrays if packwater is gone
-        IF ( .not.(Pkwater_equiv(i)>DNEARZERO) ) THEN
+        !IF ( .not.(Pkwater_equiv(i)>DNEARZERO) ) THEN
+        IF ( Pkwater_equiv(i)<TINY_SNOWPACK ) THEN ! reset to be sure it is zero if snowpack melted on last timestep
           IF ( Print_debug>DEBUG_less ) THEN
             IF ( Pkwater_equiv(i)<-DNEARZERO ) &
      &           PRINT *, 'Snowpack problem, pkwater_equiv negative, HRU:', i, ' value:', Pkwater_equiv(i)
           ENDIF
           CALL snow_states_to_zero(Lst(i), Iasw(i), Snsv(i), Albedo(i), Pk_den(i), Snowcov_area(i), &
                                    Pk_def(i), Pk_temp(i), Pk_ice(i), Freeh2o(i), Snowcov_areasv(i), &
-                                   Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i))
+                                   Frac_swe(i), Pkwater_equiv(i), Pk_depth(i), Pss(i), Pst(i), Ai(i), Scrv(i), Pksv(i))
         ENDIF
         frac = 1.0
         IF ( Active_glacier>OFF ) THEN
@@ -2906,19 +2899,21 @@
 !***********************************************************************
     SUBROUTINE snow_states_to_zero(Lst, Iasw, Snsv, Albedo, Pk_den, Snowcov_area, &
                                    Pk_def, Pk_temp, Pk_ice, Freeh2o, Snowcov_areasv, &
-                                   Frac_swe, Pkwater_equiv, Pk_depth, Pss, Pst, Ai)
+                                   Frac_swe, Pkwater_equiv, Pk_depth, Pss, Pst, Ai, Scrv, Pksv)
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(OUT) :: Iasw, Lst
       REAL, INTENT(OUT) :: Snsv, Albedo, Pk_den, Snowcov_area, Pk_def, Pk_temp, Pk_ice
       REAL, INTENT(OUT) :: Freeh2o, Snowcov_areasv, Frac_swe
-      DOUBLE PRECISION, INTENT(OUT) :: Pkwater_equiv, Pk_depth, Pss, Pst, Ai
+      DOUBLE PRECISION, INTENT(OUT) :: Pkwater_equiv, Pk_depth, Pss, Pst, Ai, Scrv, Pksv
 !***********************************************************************
       Pkwater_equiv = 0.0D0
       Pk_depth = 0.0D0
       Pss = 0.0D0
       Pst = 0.0D0
       Ai = 0.0D0
+      Scrv = 0.0D0
+      Pksv = 0.0D0
       Iasw = 0
       Lst = 0
       Snsv = 0.0
