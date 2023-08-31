@@ -9,6 +9,9 @@ ncascade
 ncascdgw
 0
 ####
+ncbh
+0
+####
 nconsumed
 0
 ####
@@ -83,6 +86,9 @@ nsol
 ####
 nssr
 258
+####
+nstreamtemp
+0
 ####
 nsub
 0

@@ -109,7 +109,7 @@
       IF ( declvar(MODNAME, 'hru_storage', 'nhru', Nhru, 'double', &
      &     'Storage for each HRU', &
      &     'inches', Hru_storage)/=0 ) CALL read_error(3, 'hru_storage')
-
+      ALLOCATE ( Dprst_frac(Nhru) )
       IF ( Dprst_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Dprst_area_max(Nhru) )
         IF ( declvar(MODNAME, 'dprst_area_max', 'nhru', Nhru, 'real', &
@@ -126,7 +126,6 @@
      &       'Aggregate sum of closed surface-depression storage areas of each HRU', &
      &       'acres', Dprst_area_clos_max)/=0 ) CALL read_error(1, 'dprst_area_clos_max')
 
-        ALLOCATE ( Dprst_frac(Nhru) )
         IF ( PRMS4_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Dprst_area(Nhru) )
           IF ( declparam(MODNAME, 'dprst_area', 'nhru', 'real', &
@@ -299,6 +298,8 @@
         ELSE
           IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac')
         ENDIF
+      ELSE
+        Dprst_frac = 0.0
       ENDIF
 
       Weir_gate_flag = OFF

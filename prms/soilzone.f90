@@ -98,7 +98,7 @@
 !     hru_area, slowcoef_sq, gvr_hru_id
 !***********************************************************************
       INTEGER FUNCTION szdecl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, DEBUG_WB, &
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, &
      &    CASCADE_OFF, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Model, Nhru, Nlake, Print_debug, Cascade_flag
       USE PRMS_SOILZONE
@@ -579,13 +579,11 @@
         Basin_slstor = Basin_slstor + DBLE( Slow_stor(i)*hruarea )
         Basin_ssstor = Basin_ssstor + DBLE( Ssres_stor(i)*hruarea )
         Basin_soil_rechr = Basin_soil_rechr + DBLE( Soil_rechr(i)*perv_area )
-        IF ( Pref_flow_den(i)>0.0 ) THEN
+        IF ( Pref_flow_thrsh(i)>0.0 ) THEN
           Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*hruarea )
           IF ( Pref_flow_max(i)>0.0 ) Basin_pfr_stor_frac = Basin_pfr_stor_frac + &
                DBLE( (Pref_flow_stor(i)/Pref_flow_max(i))*hruarea )
-          IF ( Pref_flow_thrsh(i)>0.0 ) THEN
-            Basin_gvr_stor_frac = Basin_gvr_stor_frac + DBLE( (Slow_stor(i)/Pref_flow_thrsh(i))*hruarea )
-          ENDIF
+          Basin_gvr_stor_frac = Basin_gvr_stor_frac + DBLE( (Slow_stor(i)/Pref_flow_thrsh(i))*hruarea )
         ENDIF
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
@@ -638,7 +636,7 @@
 !***********************************************************************
       INTEGER FUNCTION szrun()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, LAND, LAKE, SWALE, GLACIER, &
-     &    DEBUG_less, DEBUG_WB, ERROR_param, CASCADE_OFF, CLOSEZERO
+     &    DEBUG_less, ERROR_param, CASCADE_OFF, CLOSEZERO
       USE PRMS_MODULE, ONLY: Nlake, Print_debug, Dprst_flag, Cascade_flag, &
      &    Frozen_flag, Soilzone_add_water_use, Nowmonth !, Nowyear, Nowday
       USE PRMS_SOILZONE
@@ -979,7 +977,7 @@
               dnslowflow = 0.0
               dnpreflow = 0.0
               dndunn = 0.0
-              IF ( interflow+dunnianflw>0.0 ) THEN
+              IF ( interflow+dunnianflw>CLOSEZERO ) THEN
                 CALL compute_cascades(i, Ncascade_hru(i), Slow_flow(i), &
      &                                prefflow, Dunnian_flow(i), dnslowflow, &
      &                                dnpreflow, dndunn)
@@ -1367,15 +1365,13 @@
         Inter_flow = 0.0
       ENDIF
 
-      IF ( Inter_flow>0.0 ) THEN
-        IF ( Inter_flow>Storage ) THEN
-          Inter_flow = Storage
-        ELSE
-          Storage = Storage - Inter_flow
-        ENDIF
-      ELSE
+      IF ( Inter_flow<0.0 ) THEN
+!        IF ( Inter_flow<-NEARZERO ) PRINT *, 'interflow<0', Inter_flow, Ssres_in, Storage
         Inter_flow = 0.0
+      ELSEIF ( Inter_flow>Storage ) THEN
+        Inter_flow = Storage
       ENDIF
+      Storage = Storage - Inter_flow
 
 ! sanity check
 !      IF ( Storage<0.0 ) THEN
@@ -1430,21 +1426,8 @@
 
 ! reset Slowflow, Preflow, and Dunnian_flow as they accumulate flow to streams
       Slowflow = Slowflow - Dnslowflow
-      IF ( .not.(Slowflow > 0.0) ) THEN
-        Slowflow = 0.0
-        Dnslowflow = 0.0
-      ENDIF
       Preflow = Preflow - Dnpreflow
-      IF ( .not.(Preflow > 0.0) ) THEN
-        Preflow = 0.0
-        Dnpreflow = 0.0
-      ENDIF
-      IF ( .not.(Preflow > 0.0 ) ) Preflow = 0.0
       Dunnian = Dunnian - Dndunnflow
-      IF ( .not.(Dunnian > 0.0) ) THEN
-        Dunnian = 0.0
-        Dndunnflow = 0.0
-      ENDIF
 
       END SUBROUTINE compute_cascades
 

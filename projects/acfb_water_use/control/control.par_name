@@ -18,6 +18,10 @@ Name  : ncascdgw
 Value : 0
 Desc  : Number of GWR links for cascading flow
 
+Name  : ncbh
+Value : 0
+Desc  : Number of values in each CBH File (active HRUs)
+
 Name  : nconsumed
 Value : 0
 Desc  : Number of consumptive water-use destinations
@@ -117,6 +121,10 @@ Desc  : Number of solar-radiation measurement stations
 Name  : nssr
 Value : 27
 Desc  : Number of subsurface reservoirs
+
+Name  : nstreamtemp
+Value : 0
+Desc  : Number of stream temperature replacement segments
 
 Name  : nsub
 Value : 0
@@ -487,7 +495,7 @@ Size      : 27
 Type      : float
 Units     : fraction/day
 Width     : 0
-Max       : 1.000000
+Max       : 1.500000
 Min       : 0.000000
 Default   : 0.100000
 
@@ -1073,8 +1081,8 @@ Default   : 0.000000
 
 Name      : pref_flow_infil_frac
 Module    : soilzone
-Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
-Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Descr     : Fraction of the soilwater infiltration partitioned to the preferential for each HRU
+Help      : Fraction of the soilwater infiltration partitioned to the preferential for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1353,8 +1361,8 @@ Default   : 0.000000
 
 Name      : soil2gw_max
 Module    : soilzone
-Descr     : Maximum value for capillary reservoir excess to GWR
-Help      : Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
+Descr     : Maximum value for capillary reservoir excess to groundwater storage
+Help      : Maximum amount of the capillary reservoir excess that is routed directly to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1389,7 +1397,7 @@ Size      : 27
 Type      : float
 Units     : inches
 Width     : 0
-Max       : 20.000000
+Max       : 30.000000
 Min       : 0.000010
 Default   : 2.000000
 
@@ -1479,8 +1487,8 @@ Default   : 0.200000
 
 Name      : ssr2gw_exp
 Module    : soilzone
-Descr     : Coefficient to route water from subsurface to groundwater
-Help      : Non-linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
+Descr     : Coefficient to route water from subsurface to groundwater storage
+Help      : Non-linear coefficient in equation used to route water from the gravity reservoir groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 27
 Size      : 27
@@ -1493,8 +1501,8 @@ Default   : 1.000000
 
 Name      : ssr2gw_rate
 Module    : soilzone
-Descr     : Coefficient to route water from gravity reservoir to GWR
-Help      : Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
+Descr     : Coefficient to route water from gravity reservoir to groundwater storage
+Help      : Linear coefficient in equation used to route water from the gravity reservoir to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 27
 Size      : 27

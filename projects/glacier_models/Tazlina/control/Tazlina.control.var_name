@@ -33,7 +33,7 @@ Desc: Snow surface albedo or the fraction of radiation reflected from the snowpa
 Units: decimal fraction
 
 Name: alt_above_ela
-Module: climateflow
+Module: glacr_melt
 Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
@@ -1635,7 +1635,7 @@ Desc: Amount of glacier surface melt (snow, ice, rain) coming out of terminus of
 Units: inches
 
 Name: glacier_frac
-Module: climateflow
+Module: glacr_melt
 Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
@@ -1887,7 +1887,7 @@ Desc: Sum of area change of each glacier since start year, indexed by Glacr_tag
 Units: acres
 
 Name: glrette_frac
-Module: climateflow
+Module: glacr_melt
 Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
@@ -2101,6 +2101,15 @@ Size: 178
 Type: float
 Desc: Area of HRU that is pervious
 Units: acres
+
+Name: hru_perv_actet
+Module: soilzone
+Ndimen: 1
+Dimensions: nhru - 178
+Size: 178
+Type: float
+Desc: Actual ET from the capillary reservoir as HRU value
+Units: inches
 
 Name: hru_ppt
 Module: xyz_dist
@@ -2658,6 +2667,15 @@ Dimensions: nhru - 178
 Size: 178
 Type: float
 Desc: Maximum storage of the preferential-flow reservoir for each HRU
+Units: inches
+
+Name: pref_flow_max_in
+Module: soilzone
+Ndimen: 1
+Dimensions: nhru - 178
+Size: 178
+Type: float
+Desc: Maximum infiltration to the preferential-flow reservoir storage for each HRU
 Units: inches
 
 Name: pref_flow_stor

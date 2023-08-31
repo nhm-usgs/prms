@@ -3,7 +3,7 @@ PRMS 5 CONTROL FILE
 print_debug
 1
 1
-0
+1
 ####
 stream_temp_flag
 1

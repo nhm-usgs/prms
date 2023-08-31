@@ -188,6 +188,8 @@
      &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
      &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
+      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_dprst_stor_hru, It0_hru_impervstor, &
+     &                         It0_basin_ssstor, It0_ssres_stor
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
@@ -454,6 +456,8 @@
             Basin_soil_moist = Basin_soil_moist + DBLE( Soil_moist(i)*Hru_perv(i) )
           ENDDO
           Basin_soil_moist = Basin_soil_moist * Basin_area_inv
+          It0_soil_moist = Soil_moist
+          It0_basin_soil_moist = Basin_soil_moist
         ENDIF
         IF ( it0_grav_flag == ACTIVE ) THEN
           Basin_ssstor = 0.0D0
@@ -463,8 +467,14 @@
             Basin_ssstor = Basin_ssstor + DBLE( Ssres_stor(i)*Hru_area(i) )
           ENDDO
           Basin_ssstor = Basin_ssstor * Basin_area_inv
+          It0_ssres_stor = Ssres_stor
+          It0_basin_ssstor = Basin_ssstor
         ENDIF
-        IF ( it0_dprst_flag==ACTIVE ) Dprst_stor_hru = (Dprst_vol_open+Dprst_vol_clos) / Hru_area_dble
+        IF ( it0_dprst_flag==ACTIVE ) THEN
+          Dprst_stor_hru = (Dprst_vol_open+Dprst_vol_clos) / Hru_area_dble
+          It0_dprst_stor_hru = Dprst_stor_hru
+        ENDIF
+        IF ( check_imperv==ACTIVE ) It0_hru_impervstor = Hru_impervstor
       ENDIF
 
       IF ( check_sm_max_flag==ACTIVE .OR. check_fractions==ACTIVE ) THEN
