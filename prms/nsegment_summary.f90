@@ -17,7 +17,7 @@
       DOUBLE PRECISION, SAVE :: Monthdays
       INTEGER, SAVE, ALLOCATABLE :: Monthlyunit(:), Yearlyunit(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nsegment_var_monthly(:, :), Nsegment_var_yearly(:, :)
-! Paramters
+! Parameters
       INTEGER, SAVE, ALLOCATABLE :: Nhm_seg(:)
 ! Control Parameters
       INTEGER, SAVE :: NsegmentOutVars, NsegmentOut_freq, NsegmentOut_format
@@ -279,7 +279,7 @@
       USE PRMS_SET_TIME, ONLY: Modays
       IMPLICIT NONE
 ! FUNCTIONS AND SUBROUTINES
-      INTRINSIC SNGL, DBLE
+      INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error
 ! Local Variables

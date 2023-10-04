@@ -127,6 +127,7 @@
                 Hru_ppt = -999.0
                 DO i = i, Ncbh
                   Hru_ppt(cbh_hru_id(i)) = values(i)
+                  IF ( Hru_ppt(i)<Ppt_zero_thresh ) Hru_ppt(i) = 0.0
                 ENDDO
               ENDIF
             ENDIF
@@ -517,7 +518,7 @@
           IF ( Ncbh==-1 ) CALL read_error(7, 'ncbh')
           ALLOCATE ( cbh_hru_id(Ncbh) )
           IF ( declparam(MODNAME, 'cbh_hru_id', 'ncbh', 'integer', &
-     &         '0', 'bounded', 'nhru', &
+     &         '1', 'bounded', 'nhru', &
      &         'HRU id for each value in CBH File', &
      &         'HRU id for each value in CBH File', &
      &         'none')/=0 ) CALL read_error(1, 'cbh_hru_id')

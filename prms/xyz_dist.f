@@ -103,7 +103,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declfix
-      EXTERNAL read_error
+      EXTERNAL :: read_error
 !***********************************************************************
       xyzsetdims = 0
 
@@ -693,7 +693,7 @@
       USE PRMS_OBS, ONLY: Rain_code
       IMPLICIT NONE
 ! Functions
-      EXTERNAL xyz_temp_run, xyz_rain_run
+      EXTERNAL :: xyz_temp_run, xyz_rain_run
 !***********************************************************************
       xyzrun = 0
 

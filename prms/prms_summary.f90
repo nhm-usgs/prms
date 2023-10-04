@@ -248,7 +248,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
-      EXTERNAL PRMS_open_input_file, PRMS_open_output_file, error_stop
+      EXTERNAL :: PRMS_open_input_file, PRMS_open_output_file, error_stop
       ! Local Variable
       INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)

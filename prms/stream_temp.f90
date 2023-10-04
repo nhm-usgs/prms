@@ -1726,7 +1726,7 @@
       USE PRMS_STRMTEMP, ONLY: HALF_PI, Maxiter_sntemp
       IMPLICIT NONE
 ! Functions
-      INTRINSIC ASIN, ABS, COS, SIN
+      INTRINSIC :: ASIN, ABS, COS, SIN
 ! Arguments
       REAL, INTENT(IN):: Coso, Sino, Sin_d, Az, Almn, Almx
 ! Local Variables

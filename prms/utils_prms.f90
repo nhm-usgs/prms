@@ -22,7 +22,7 @@
       END SUBROUTINE find_current_time
 
 !***********************************************************************
-!     Read File dynamic paramter file to current time
+!     Read File dynamic parameter file to current time
 !***********************************************************************
       SUBROUTINE find_current_file_time(Iunit, Year, Month, Day, Year_file, Month_file, Day_file)
       IMPLICIT NONE
@@ -501,7 +501,7 @@
       ! Arguments
       INTEGER, INTENT(IN) :: Year
       ! Functions
-      INTRINSIC MOD
+      INTRINSIC :: MOD
 !***********************************************************************
       leap_day = 0
       ! Check if leapyear - Start by identifying all years not divisible by 4
@@ -700,7 +700,7 @@
       INTEGER, INTENT(OUT) :: Year, Month, Day
       INTEGER, INTENT(IN) :: Julday
       ! Functions
-      INTRINSIC FLOOR, NINT
+      INTRINSIC :: FLOOR, NINT
       ! Local Variables
       INTEGER m, n
 !***********************************************************************
@@ -853,7 +853,7 @@
 ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: String
 ! Functions
-      INTRINSIC INDEX, CHAR, LEN_TRIM
+      INTRINSIC :: INDEX, CHAR, LEN_TRIM
 !***********************************************************************
       numchars = INDEX( String, CHAR(0) )
       IF ( numchars==0 ) numchars = INDEX( String, ' ' )
@@ -878,7 +878,7 @@
       ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Description, Modname, Versn
       ! Functions
-      INTRINSIC TRIM, LEN_TRIM, MAX
+      INTRINSIC :: TRIM, LEN_TRIM, MAX
       ! Local Variables
       INTEGER nvers, nmod, nblanks, nblanks2
       CHARACTER(LEN=24) :: blanks

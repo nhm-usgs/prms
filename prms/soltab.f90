@@ -208,7 +208,7 @@
      &                         Solar_declination(80), Solar_declination(94), Solar_declination(109), &
      &                         Solar_declination(123), Solar_declination(138), Solar_declination(152), &
      &                         Solar_declination(173)
-        CLOSE ( file_unit)
+        CLOSE ( file_unit )
 ! from original soltab
 !     data obliquity/2.06699,2.06317,2.05582,2.04520,2.03243,2.01706,2.00080,
 !    +1.98553,1.96990,1.95714,1.94689,1.94005,1.93616/
@@ -234,10 +234,10 @@
       USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DNEARZERO
       USE PRMS_SOLTAB, ONLY: PI, TWOPI, RADIANS, PI_12
       IMPLICIT NONE
-      EXTERNAL compute_t
+      EXTERNAL :: compute_t
 !     Functions
       DOUBLE PRECISION, EXTERNAL :: func3
-      INTRINSIC ASIN, SIN, COS, ATAN, ABS
+      INTRINSIC :: ASIN, SIN, COS, ATAN, ABS
 !     Arguments
       INTEGER, INTENT(IN) :: Hru_type, Id
       DOUBLE PRECISION, INTENT(IN), DIMENSION(MAX_DAYS_PER_YEAR) :: Obliquity, Solar_declination
@@ -375,7 +375,7 @@
       SUBROUTINE compute_t(Lat, Solar_declination, T)
       USE PRMS_SOLTAB, ONLY: PI
       IMPLICIT NONE
-      INTRINSIC TAN, ACOS
+      INTRINSIC :: TAN, ACOS
 ! Arguments
       DOUBLE PRECISION, INTENT(IN) :: Lat, Solar_declination
       DOUBLE PRECISION, INTENT(OUT) :: T
@@ -410,7 +410,7 @@
       DOUBLE PRECISION FUNCTION func3(V, W, X, Y, R1, Solar_declination)
       USE PRMS_SOLTAB, ONLY: PI_12
       IMPLICIT NONE
-      INTRINSIC SIN, COS
+      INTRINSIC :: SIN, COS
 ! Arguments
       DOUBLE PRECISION, INTENT(IN) :: V, W, X, Y, R1, Solar_declination
 !***********************************************************************

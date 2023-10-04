@@ -275,7 +275,7 @@
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
       IMPLICIT NONE
 ! Functions
-      INTRINSIC DBLE
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: readvar
       EXTERNAL :: read_error
 ! Local Variables

@@ -80,7 +80,7 @@
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      EXTERNAL check_restart
+      EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************

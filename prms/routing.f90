@@ -314,7 +314,7 @@
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: MOD
+      INTRINSIC :: MOD, ABS
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
 ! Local Variables

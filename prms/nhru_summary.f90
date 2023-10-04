@@ -19,7 +19,7 @@
       DOUBLE PRECISION, SAVE :: Monthdays
       INTEGER, SAVE, ALLOCATABLE :: Monthlyunit(:), Yearlyunit(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nhru_var_monthly(:, :), Nhru_var_yearly(:, :)
-! Paramters
+! Parameters
       INTEGER, SAVE, ALLOCATABLE :: Nhm_id(:)
 ! Control Parameters
       INTEGER, SAVE :: NhruOutVars, NhruOut_freq, NhruOut_format, NhruOutNcol, outputSelectDatesON_OFF 
@@ -125,7 +125,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL read_error, PRMS_open_output_file, find_header_end, find_current_file_time
+      EXTERNAL :: read_error, PRMS_open_output_file, find_header_end, find_current_file_time
 ! Local Variables
       INTEGER :: ios, ierr, size, dim, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -490,13 +490,13 @@
 !*****************************
       SUBROUTINE read_event_date(Iunit, Next_yr, Next_mo, Next_day)
       USE PRMS_MODULE, ONLY: Nowyear, Nowmonth, Nowday
-      USE PRMS_CONSTANTS, ONLY: ERROR_water_use, ACTIVE, OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit
       INTEGER, INTENT (INOUT) :: Next_yr, Next_mo, Next_day
 ! Funcions
-      EXTERNAL :: check_event, set_transfers, is_eof
+      EXTERNAL :: is_eof
 ! Local Variables
       INTEGER keep_reading
 !*******************************************************************************

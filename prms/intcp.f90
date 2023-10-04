@@ -255,11 +255,6 @@
         Hru_intcpstor = 0.0
         Basin_intcp_stor = 0.0D0
       ENDIF
-      Basin_changeover = 0.0D0
-      Basin_net_ppt = 0.0D0
-      Basin_net_snow = 0.0D0
-      Basin_net_rain = 0.0D0
-      Basin_intcp_evap = 0.0D0
       Basin_net_apply = 0.0D0
       Basin_hru_apply = 0.0D0
       IF ( Print_debug==DEBUG_WB ) ALLOCATE ( Intcp_stor_ante(Nhru) )

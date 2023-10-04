@@ -432,7 +432,7 @@
         Hru_frac_perv(i) = perv_area/harea
         IF ( Hru_frac_perv(i)<0.00099 ) THEN
           PRINT *, 'ERROR, pervious fraction must be >= 0.001 for HRU:', i
-          PRINT *, '       pervious portion is HRU fraction - impervious fraction - depression fraction'
+          PRINT *, '       pervious fraction is 1.0 - hru_percent_imperv - dprst_frac'
           PRINT *, '       pervious fraction:', Hru_frac_perv(i)
           PRINT *, '       impervious fraction:', Hru_percent_imperv(i)
           IF ( Dprst_flag==ACTIVE ) PRINT *, '       depression storage fraction:', Dprst_frac(i)
