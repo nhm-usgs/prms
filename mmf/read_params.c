@@ -986,9 +986,9 @@ static char *READ_param_values (long size, long type, char *name,
 	}
 
 	if (i < size) {
-		return error_string("too few values read for paramter");
+		return error_string("too few values read for parameter");
 	} else if (i > size && !done) {
-		return error_string("too many values read for paramter");
+		return error_string("too many values read for parameter");
 	}
 	return NULL;
 } // READ_param_values
