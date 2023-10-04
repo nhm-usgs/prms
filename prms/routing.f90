@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2021-08-13'
+      character(len=*), parameter :: Version_routing = '2022-09-07'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades
@@ -314,7 +314,7 @@
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: MOD
+      INTRINSIC :: MOD, ABS
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
 ! Local Variables
@@ -375,6 +375,10 @@
               PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
               ierr = 1
            ENDIF
+           IF ( Seg_slope(i)<0.0000001 ) THEN
+             IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
+             Seg_slope(i) = 0.0000001
+           ENDIF
         ENDDO
 ! exit if there are any segments that are too short
         IF ( ierr==1 ) THEN
@@ -403,7 +407,7 @@
      &       CALL read_error(2,'segment_flow_init')
         DO i = 1, Nsegment
           Seg_outflow(i) = Segment_flow_init(i)
-          IF ( tosegment(i)>0 ) Seg_inflow(tosegment(i)) = Seg_outflow(i)
+          IF ( Tosegment(i)>0 ) Seg_inflow(Tosegment(i)) = Seg_outflow(i)
         ENDDO
         DEALLOCATE ( Segment_flow_init )
       ENDIF
@@ -528,10 +532,6 @@
       DO i = 1, Nsegment
         IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
           velocity = (1./Mann_n(i))*SQRT(Seg_slope(i))*Seg_depth(i)**(2./3.) ! simplify if say width>>depth
-          IF ( Seg_slope(i)<0.0000001 ) THEN
-            IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0001', i, Seg_slope(i)
-            Seg_slope(i) = 0.0001
-          ENDIF
           K_coef(i) = Seg_length(i)/(velocity*60.*60.) !want in hours, length should include sloped length
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
         ENDIF
@@ -652,7 +652,7 @@
 !     route_run - Computes segment flow states and fluxes
 !***********************************************************************
       INTEGER FUNCTION route_run()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, FT2_PER_ACRE, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, FT2_PER_ACRE, &
      &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
      &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT
@@ -777,13 +777,13 @@
                 if (Segment_hruarea(this_seg) <= NEARZERO) then
 
                    ! Hit the terminal segment without finding any HRUs (i.e. sources of streamflow)
-                   if (tosegment(this_seg) == OUTFLOW_SEGMENT) then
+                   if (Tosegment(this_seg) == OUTFLOW_SEGMENT) then
                      found = .false.
                      exit
                    endif
 
                    ! There is a downstream segment, check that segment for HRUs
-                   this_seg = tosegment(this_seg)
+                   this_seg = Tosegment(this_seg)
                 else
                     ! This segment has HRUs so there will be swrad and potet
                     Seginc_swrad(i) = Seginc_swrad(this_seg)/Segment_hruarea(this_seg)

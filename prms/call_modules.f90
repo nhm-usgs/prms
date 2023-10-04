@@ -20,8 +20,8 @@
      &          EQULS = '===================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2022-02-08'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1 02/08/2022'
+      character(len=*), parameter :: PRMS_versn = '2023-10-04'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.1.1 10/04/2023'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -92,7 +92,7 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp, glacr
+      INTEGER, EXTERNAL :: stream_temp, glacr, strmflow_character
       EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
@@ -143,6 +143,7 @@
      &        '       Groundwater: gwflow', /, &
      &        'Streamflow Routing: strmflow, strmflow_in_out, muskingum,', /, &
      &        '                    muskingum_lake, muskingum_mann', /, &
+     &        'Streamflow Charact: strmflow_character', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
@@ -402,7 +403,10 @@
       ENDIF
       IF ( ierr/=0 ) CALL module_error(Strmflow_module, Arg, ierr)
 
-      IF ( Stream_temp_flag==ACTIVE ) ierr = stream_temp()
+      IF ( Stream_temp_flag==ACTIVE ) THEN
+           ierr = strmflow_character()
+           ierr = stream_temp()
+      ENDIF
 
       IF ( Print_debug>DEBUG_minimum ) THEN
         ierr = basin_sum()
@@ -1163,7 +1167,7 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
-      INTEGER, EXTERNAL :: stream_temp
+      INTEGER, EXTERNAL :: stream_temp, strmflow_character
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
       EXTERNAL :: precip_map, temp_map
@@ -1212,6 +1216,7 @@
       test = strmflow_in_out()
       test = muskingum()
       test = muskingum_lake()
+      test = strmflow_character()
       test = stream_temp()
       test = basin_sum()
       test = map_results()

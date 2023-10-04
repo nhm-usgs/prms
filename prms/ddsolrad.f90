@@ -14,7 +14,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ddsolrad'
-        character(len=*), parameter :: Version_ddsolrad = '2021-08-13'
+        character(len=*), parameter :: Version_ddsolrad = '2023-10-04'
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
@@ -96,8 +96,7 @@
 !         cloud base = (temperature - dew point) / 4.4 * 1000 + elevation, altitude of clouds
 !In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet. 
 !Make sure to adjust the result afterwards if you're using the SI units!
-          
-          
+
           IF ( Solsta_flag==1 ) THEN
             k = Hru_solsta(j)
             IF ( k>0 ) THEN
@@ -113,7 +112,19 @@
               ENDIF
             ENDIF
           ENDIF
-          Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+
+! markstro
+! in Alaska, there are HRUs on certain days when the sun never rises, so this equation doesn't work
+! when soltab_potsw, soltab_horad_potsw, or orad_hru are 0.0
+
+!          Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+          if ( Soltab_potsw(jday, j) > 0.0 .and. Soltab_horad_potsw(jday, j) > 0.0 .and. Orad_hru(j) > 0.0 ) then
+             Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+          else
+             Swrad(j) = 0.0
+          endif
+! markstro
+
           Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv

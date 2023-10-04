@@ -48,9 +48,9 @@ OBJS = \
         transp_frost.o \
         transp_tindex.o \
         frost_date.o \
-        glacr_melt.o \
         intcp.o \
         snowcomp.o \
+        glacr_melt.o \
         srunoff.o \
         soilzone.o \
         gwflow.o \
@@ -62,6 +62,7 @@ OBJS = \
         strmflow_in_out.o \
         muskingum.o \
         muskingum_lake.o \
+        strmflow_character.o \
         subbasin.o \
         stream_temp.o \
         map_results.o \
@@ -175,8 +176,11 @@ strmflow.o: strmflow.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowva
 strmflow_in_out.o: strmflow_in_out.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_gwflow.mod prms_srunoff.mod prms_set_time.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) strmflow_in_out.f90
 
-stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_routing.mod prms_set_time.mod prms_snow.mod prms_soltab.mod prms_constants.mod
+stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_routing.mod prms_set_time.mod prms_snow.mod prms_soltab.mod prms_constants.mod prms_strmflow_character.mod
 	$(FC) -c $(FFLAGS) stream_temp.f90
+
+strmflow_character.o: strmflow_character.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_gwflow.mod prms_srunoff.mod prms_set_time.mod prms_constants.mod
+	$(FC) -c $(FFLAGS) strmflow_character.f90
 
 potet_jh.o: potet_jh.f90 prms_module.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) potet_jh.f90
@@ -277,4 +281,5 @@ prms_potet_pm.mod: potet_pm.o
 prms_potet_pt.mod: potet_pt.o
 prms_potet_hs.mod: potet_hs.o
 prms_potet_hamon.mod: potet_hamon.o
+prms_strmflow_character.mod: strmflow_character.o
 
