@@ -178,7 +178,7 @@ strmflow.o: strmflow.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowva
 strmflow_in_out.o: strmflow_in_out.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_gwflow.mod prms_srunoff.mod prms_set_time.mod prms_constants.mod
 	$(FC) -c $(FFLAGS) strmflow_in_out.f90
 
-stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_routing.mod prms_set_time.mod prms_snow.mod prms_soltab.mod prms_constants.mod
+stream_temp.o: stream_temp.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_routing.mod prms_set_time.mod prms_snow.mod prms_soltab.mod prms_constants.mod prms_strmflow_character.mod
 	$(FC) -c $(FFLAGS) stream_temp.f90
 
 strmflow_character.o: strmflow_character.f90 prms_module.mod prms_basin.mod prms_obs.mod prms_flowvars.mod prms_gwflow.mod prms_srunoff.mod prms_set_time.mod prms_constants.mod
@@ -289,4 +289,5 @@ prms_potet_pm.mod: potet_pm.o
 prms_potet_pt.mod: potet_pt.o
 prms_potet_hs.mod: potet_hs.o
 prms_potet_hamon.mod: potet_hamon.o
+prms_strmflow_character.mod: strmflow_character.o
 

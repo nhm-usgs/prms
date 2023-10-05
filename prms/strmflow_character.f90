@@ -53,7 +53,7 @@
       INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declvar, declparam
       EXTERNAL :: read_error, print_module
- !***********************************************************************
+!***********************************************************************
       strmflow_character_decl = 0
 
       CALL print_module(MODDESC, MODNAME, Version_strmflow_character)
