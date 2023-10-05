@@ -23,9 +23,7 @@
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       DOUBLE PRECISION, SAVE :: Basin_pref_flow_max_in
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
-      REAL, SAVE, ALLOCATABLE :: Soil_moist_ante(:), Ssres_stor_ante(:)
       REAL, SAVE, ALLOCATABLE :: Grav_dunnian_flow(:), Pfr_dunnian_flow(:)
-      DOUBLE PRECISION, SAVE :: Last_soil_moist, Last_ssstor
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_sz2gw, Basin_cap_infil_tot
       DOUBLE PRECISION, SAVE :: Basin_interflow_max, Basin_sm2gvr_max ! this is the same as basin_sm2gvr

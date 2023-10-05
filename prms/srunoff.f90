@@ -29,8 +29,7 @@
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
-      REAL, SAVE, ALLOCATABLE :: Carea_dif(:), Imperv_stor_ante(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_stor_ante(:)
+      REAL, SAVE, ALLOCATABLE :: Carea_dif(:)
       REAL, SAVE :: Srp, Sri, Perv_frac, Imperv_frac, Hruarea_imperv, Hruarea
       DOUBLE PRECISION, SAVE :: Hruarea_dble, Basin_apply_sroff, Basin_cfgi_sroff
       INTEGER, SAVE :: Isglacier
@@ -103,8 +102,8 @@
 !     cfgi_thrshld, cfgi_decay
 !***********************************************************************
       INTEGER FUNCTION srunoffdecl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, DEBUG_WB, smidx_module, carea_module, CASCADE_OFF
-      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Nlake, Print_debug, Init_vars_from_file, &
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, smidx_module, carea_module, CASCADE_OFF
+      USE PRMS_MODULE, ONLY: Model, Nhru, Nsegment, Nlake, Init_vars_from_file, &
      &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, PRMS4_flag, Frozen_flag
       USE PRMS_SRUNOFF
       IMPLICIT NONE
@@ -465,11 +464,6 @@
      &       'none')/=0 ) CALL read_error(1, 'va_clos_exp')
       ENDIF
 
-      IF ( Print_debug==DEBUG_WB ) THEN
-        ALLOCATE ( Imperv_stor_ante(Nhru) )
-        IF ( Dprst_flag==ACTIVE ) ALLOCATE ( Dprst_stor_ante(Nhru) )
-      ENDIF
-
       END FUNCTION srunoffdecl
 
 !***********************************************************************
@@ -481,7 +475,7 @@
      &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_FLOWVARS, ONLY: Basin_sroff, Hru_impervstor, Soil_moist_max
+      USE PRMS_FLOWVARS, ONLY: Hru_impervstor
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -505,21 +499,12 @@
         IF ( Nlake>0 ) Hortonian_lakes = 0.0D0
       ENDIF
 
-      Basin_sroffi = 0.0D0
-      Basin_sroffp = 0.0D0
-      Basin_infil = 0.0D0
-      Basin_sroff = 0.0D0
-      Basin_imperv_evap = 0.0D0
-      Basin_hortonian = 0.0D0
       Basin_dprst_sroff = 0.0D0
       Basin_dprst_evap = 0.0D0
       Basin_dprst_seep = 0.0D0
       Basin_sroff_upslope = 0.0D0
       Basin_sroff_down = 0.0D0
       Basin_hortonian_lakes = 0.0D0
-      Basin_contrib_fraction = 0.0D0
-      Srp = 0.0
-      Sri = 0.0
 
       IF ( Init_vars_from_file==OFF ) THEN
         Basin_imperv_stor = 0.0D0
@@ -599,8 +584,8 @@
 !                  computations using antecedent soil moisture.
 !***********************************************************************
       INTEGER FUNCTION srunoffrun()
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, DEBUG_WB, LAND, LAKE, GLACIER, CASCADE_OFF
-      USE PRMS_MODULE, ONLY: Print_debug, Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, LAND, LAKE, GLACIER, CASCADE_OFF
+      USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
      &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
@@ -625,10 +610,6 @@
 !***********************************************************************
       srunoffrun = 0
 
-      IF ( Print_debug==DEBUG_WB ) THEN
-        Imperv_stor_ante = Hru_impervstor
-        IF ( Dprst_flag==ACTIVE ) Dprst_stor_ante = Dprst_stor_hru
-      ENDIF
       Basin_sroffi = 0.0D0
       Basin_sroffp = 0.0D0
       Basin_sroff = 0.0D0
@@ -689,7 +670,7 @@
 !     eventually add code for lake area less than hru_area
 !     that includes soil_moist for fraction of hru_area that is dry bank
           Hortonian_lakes(i) = upslope
-          Basin_hortonian_lakes = Basin_hortonian_lakes + Hortonian_lakes(i)*Hruarea_dble
+          Basin_hortonian_lakes = Basin_hortonian_lakes + upslope*Hruarea_dble
           CYCLE
         ENDIF
 
@@ -751,7 +732,6 @@
               runoff = runoff + apply_sroff
             ENDIF
           ENDIF
-
           IF ( Isglacier==OFF ) THEN
             CALL compute_infil(Net_rain(i), Net_ppt(i), Imperv_stor(i), Imperv_stor_max(i), Snowmelt(i), &
      &                         Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), Intcp_changeover(i))
