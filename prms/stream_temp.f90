@@ -737,7 +737,7 @@
          ENDDO
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
          DO i = 1, Nsegment
-            Seg_humid(i) = Humidity(Seg_humidity_sta(i))
+            Seg_humid(i) = Humidity(Seg_humidity_sta(i)) * 0.01
          ENDDO
       ELSE
          Seg_humid = 0.0
@@ -783,7 +783,7 @@
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
-            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)/100.0*harea
+            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)*harea
          endif
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.
