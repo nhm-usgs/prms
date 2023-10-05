@@ -39,7 +39,7 @@
       INTEGER, SAVE :: Humidity_cbh_flag, Windspeed_cbh_flag, Albedo_cbh_flag, Cloud_cover_cbh_flag
       INTEGER, SAVE :: PRMS_flag, PRMS4_flag
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
-      INTEGER, SAVE :: Dynamic_flag, Water_use_flag, Soilzone_add_water_use
+      INTEGER, SAVE :: Dynamic_flag, Dynamic_soil_flag, Water_use_flag, Soilzone_add_water_use
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
       INTEGER, SAVE :: Nowyear, Nowmonth, Nowday
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
@@ -92,7 +92,7 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, write_climate_hru
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
-      INTEGER, EXTERNAL :: stream_temp, glacr, strmflow_character
+      INTEGER, EXTERNAL :: stream_temp, glacr, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
@@ -244,7 +244,7 @@
 
       IF ( Dynamic_flag==ACTIVE ) ierr = dynamic_param_read()
 
-!      IF ( Dynamic_soil_flag==ACTIVE ) ierr = dynamic_soil_param_read()
+      IF ( Dynamic_soil_flag==ACTIVE ) ierr = dynamic_soil_param_read()
 
       IF ( Climate_hru_flag==ACTIVE ) ierr = climate_hru()
 
@@ -779,11 +779,13 @@
       IF ( control_integer(Dyn_snareathresh_flag, 'dyn_snareathresh_flag')/=0 ) Dyn_snareathresh_flag = OFF
       IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = OFF
       Dynamic_flag = OFF
-      IF ( Dyn_imperv_flag/=OFF .OR. Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. Dyn_dprst_flag/=OFF .OR. &
-     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. Dyn_soil_flag /=OFF .OR. &
+      Dynamic_soil_flag = OFF
+      IF ( Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. &
+     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. &
      &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
      &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
      &     Dyn_transp_on_flag/=OFF ) Dynamic_flag = ACTIVE
+      IF ( Dyn_imperv_flag/=OFF .OR. Dyn_dprst_flag/=OFF .OR. Dyn_soil_flag/=OFF ) Dynamic_soil_flag = ACTIVE
       IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = OFF
       IF ( control_integer(External_transferON_OFF, 'external_transferON_OFF')/=0 ) External_transferON_OFF = OFF
       IF ( control_integer(Dprst_transferON_OFF, 'dprst_transferON_OFF')/=0 ) Dprst_transferON_OFF = OFF
@@ -1122,7 +1124,7 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
-      INTEGER, EXTERNAL :: stream_temp, strmflow_character
+      INTEGER, EXTERNAL :: stream_temp, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
       EXTERNAL :: precip_map, temp_map, segment_to_hru
@@ -1138,6 +1140,7 @@
       test = obs()
       test = water_use_read()
       test = dynamic_param_read()
+      test = dynamic_soil_param_read()
       test = temp_1sta_laps()
       test = temp_dist2()
       test = xyz_dist()

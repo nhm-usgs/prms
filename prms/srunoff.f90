@@ -472,17 +472,17 @@
       INTEGER FUNCTION srunoffinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, smidx_module, carea_module, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Init_vars_from_file, &
-     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
+     &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag, Parameter_check_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_FLOWVARS, ONLY: Hru_impervstor
+      USE PRMS_FLOWVARS, ONLY: Hru_impervstor, Soil_moist_max
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error
 ! Local Variables
-      INTEGER :: i, j !, k, num_hrus
-!      REAL :: frac
+      INTEGER :: i, j, k, num_hrus
+      REAL :: frac
 !***********************************************************************
       srunoffinit = 0
 
@@ -494,7 +494,6 @@
       Hru_impervevap = 0.0
       IF ( Call_cascade==ACTIVE ) Strm_seg_in = 0.0D0
       IF ( Cascade_flag>CASCADE_OFF ) THEN
-        Upslope_hortonian = 0.0D0
         Hru_hortn_cascflow = 0.0D0
         IF ( Nlake>0 ) Hortonian_lakes = 0.0D0
       ENDIF
@@ -524,6 +523,32 @@
 ! Smidx parameters
         IF ( getparam(MODNAME, 'smidx_coef', Nhru, 'real', Smidx_coef)/=0 ) CALL read_error(2, 'smidx_coef')
         IF ( getparam(MODNAME, 'smidx_exp', Nhru, 'real', Smidx_exp)/=0 ) CALL read_error(2, 'smidx_exp')
+
+        IF ( Parameter_check_flag>0 ) THEN
+          num_hrus = 0
+          DO i = 1, Nhru
+            frac = Smidx_coef(i)*10**(Soil_moist_max(i)*Smidx_exp(i))
+            k = 0
+            IF ( frac>2.0 ) k = 1
+            IF ( frac>Carea_max(i)*2.0 ) k = k + 2
+            IF ( k>0 ) THEN
+              num_hrus = num_hrus + 1
+              WRITE (*, '(/,A,F10.4)') 'WARNING, Contributing area based on smidx parameters and soil_moist_max:', frac
+              IF ( k==1 .OR. k==3 ) PRINT *, 'Maximum contributing area > 200%'
+              IF ( k>1 ) PRINT *, 'Maximum contributing area > carea_max:', Carea_max(i)
+              PRINT *, 'HRU:', i, '; soil_moist_max:', Soil_moist_max(i)
+              PRINT *, 'smidx_coef:', Smidx_coef(i), '; smidx_exp:', Smidx_exp(i)
+            ENDIF
+          ENDDO
+          IF ( num_hrus>0 ) THEN
+            WRITE (*, '(/,A,/,9X,A,/,9X,A,I7,/,9X,A,/,9X,A,/)') &
+     &             'WARNING, maximum contributing area based on smidx coefficents and', &
+     &             'soil_moist_max are > 200% of the HRU area and/or > 2*carea_max', &
+     &             'number of HRUs for which this condition exists:', num_hrus, &
+     &             'This means the smidx parameters are insensitive and', &
+     &             'carea_max very sensitive for those HRUs'
+          ENDIF
+        ENDIF
       ELSE !IF ( Sroff_flag==carea_module ) THEN
 ! Carea parameters
         IF ( getparam(MODNAME, 'carea_min', Nhru, 'real', Carea_min)/=0 ) CALL read_error(2, 'carea_min')
@@ -653,14 +678,12 @@
         active_glacier = -1 ! not an glacier
         IF ( Glacier_flag==ACTIVE ) THEN
           IF ( Hru_type(i)==GLACIER ) THEN
-            IF ( Glacier_flag==ACTIVE ) THEN ! glacier
-              Isglacier = 1
-              glcrmltb = Glacrb_melt(i)
-              IF ( Glacier_frac(i)>0.0 ) THEN
-                active_glacier = ACTIVE
-              ELSE
-                active_glacier = OFF  ! glacier capable HRU, but not glaciated
-              ENDIF
+            Isglacier = 1
+            glcrmltb = Glacrb_melt(i)
+            IF ( Glacier_frac(i)>0.0 ) THEN ! should frozen ground be triggered if glacier_frac > 0.75 (maybe a parameter)?
+              active_glacier = ACTIVE
+            ELSE
+              active_glacier = OFF  ! glacier capable HRU, but not glaciated
             ENDIF
           ENDIF
         ENDIF
