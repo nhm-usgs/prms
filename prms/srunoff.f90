@@ -25,7 +25,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Surface Runoff'
       character(LEN=13), save :: MODNAME
-      character(len=*), parameter :: Version_srunoff = '2021-08-18'
+      character(len=*), parameter :: Version_srunoff = '2023-09-13'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -43,7 +43,7 @@
       REAL, SAVE, ALLOCATABLE :: Hru_sroffp(:), Hru_sroffi(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Upslope_hortonian(:)
       REAL, SAVE, ALLOCATABLE :: Hortonian_flow(:)
-      REAL, SAVE, ALLOCATABLE :: Hru_impervevap(:), Hru_impervstor(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_impervevap(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Strm_seg_in(:), Hortonian_lakes(:), Hru_hortn_cascflow(:)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Smidx_coef(:), Smidx_exp(:)
@@ -57,7 +57,7 @@
 !   Declared Variables for Depression Storage
       DOUBLE PRECISION, SAVE :: Basin_dprst_sroff, Basin_dprst_evap, Basin_dprst_seep
       DOUBLE PRECISION, SAVE :: Basin_dprst_volop, Basin_dprst_volcl !, Basin_dprst_hortonian_lakes
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_stor_hru(:), Dprst_sroff_hru(:), Dprst_seep_hru(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_sroff_hru(:), Dprst_seep_hru(:)
 !      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Upslope_dprst_hortonian(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_open(:), Dprst_area_clos(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_insroff_hru(:), Dprst_evap_hru(:)
@@ -151,11 +151,6 @@
      &     'HRU area-weighted average evaporation from impervious area for each HRU', &
      &     'inches', Hru_impervevap)/=0 ) CALL read_error(3, 'hru_impervevap')
 
-      ALLOCATE ( Hru_impervstor(Nhru) )
-      IF ( declvar(MODNAME, 'hru_impervstor', 'nhru', Nhru, 'real', &
-     &     'HRU area-weighted average storage on impervious area for each HRU', &
-     &     'inches', Hru_impervstor)/=0 ) CALL read_error(3, 'hru_impervstor')
-
       ALLOCATE ( Imperv_evap(Nhru) )
       IF ( declvar(MODNAME, 'imperv_evap', 'nhru', Nhru, 'real', &
      &     'Evaporation from impervious area for each HRU', &
@@ -225,11 +220,6 @@
 !        IF ( declvar(MODNAME, 'upslope_dprst_hortonian', 'nhru', Nhru, 'double', &
 !     &       'Upslope surface-depression spillage and interflow for each HRU',   &
 !     &       'inches', Upslope_dprst_hortonian)/=0 ) CALL read_error(3, 'upslope_dprst_hortonian')
-
-        ALLOCATE ( Dprst_stor_hru(Nhru) )
-        IF ( declvar(MODNAME, 'dprst_stor_hru', 'nhru', Nhru, 'double', &
-     &       'Surface-depression storage for each HRU', &
-     &       'inches', Dprst_stor_hru)/=0 ) CALL read_error(3, 'dprst_stor_hru')
 
         ALLOCATE ( Dprst_seep_hru(Nhru) )
         IF ( declvar(MODNAME, 'dprst_seep_hru', 'nhru', Nhru, 'double', &
@@ -491,7 +481,7 @@
      &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_FLOWVARS, ONLY: Basin_sroff
+      USE PRMS_FLOWVARS, ONLY: Basin_sroff, Hru_impervstor, Soil_moist_max
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -618,7 +608,7 @@
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
       USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
-     &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac
+     &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac, Hru_impervstor, Dprst_stor_hru
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover, Use_transfer_intcp
       USE PRMS_SNOW, ONLY: Snow_evap, Snowcov_area, Snowmelt, Pk_depth, Glacrb_melt
@@ -1145,11 +1135,12 @@
       USE PRMS_BASIN, ONLY: Dprst_clos_flag, Dprst_frac, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Basin_area_inv, &
      &    Hru_area_dble, Active_hrus, Hru_route_order, Dprst_open_flag
-      USE PRMS_FLOWVARS, ONLY: Dprst_vol_open, Dprst_vol_clos
+      USE PRMS_FLOWVARS, ONLY: Dprst_vol_open, Dprst_vol_clos, Dprst_stor_hru
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: EXP, LOG, DBLE, SNGL
       INTEGER, EXTERNAL :: getparam
+      EXTERNAL :: read_error
 ! Local Variables
       INTEGER :: i, j
       REAL :: frac_op_ar, frac_cl_ar, open_vol_r, clos_vol_r
@@ -1289,13 +1280,13 @@
      &    Dprst_seep_rate_open, Dprst_seep_rate_clos, Va_clos_exp, Va_open_exp, Dprst_flow_coef, &
      &    Dprst_vol_thres_open, Dprst_vol_clos_max, Dprst_insroff_hru, Upslope_hortonian, &
      &    Basin_dprst_volop, Basin_dprst_volcl, Basin_dprst_evap, Basin_dprst_seep, Basin_dprst_sroff, &
-     &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Dprst_stor_hru, Hruarea_dble
+     &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Hruarea_dble
       USE PRMS_BASIN, ONLY: Dprst_frac_open, Dprst_frac_clos
       USE PRMS_WATER_USE, ONLY: Dprst_transfer, Dprst_gain
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_INTCP, ONLY: Net_snow
       USE PRMS_CLIMATEVARS, ONLY: Potet
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
+      USE PRMS_FLOWVARS, ONLY: Dprst_stor_hru, Pkwater_equiv
       USE PRMS_SNOW, ONLY: Snowmelt, Pptmix_nopack, Snowcov_area
       IMPLICIT NONE
 ! Functions
@@ -1347,14 +1338,15 @@
         IF ( Dprst_gain(Ihru)>0.0 ) inflow = inflow + Dprst_gain(Ihru) / SNGL( Cfs_conv )
       ENDIF
 
+!     add the hortonian flow to the depression storage volumes:
       Dprst_in = 0.0D0
       IF ( Dprst_area_open_max>0.0 ) THEN
-        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! inch-acres
+        Dprst_in = DBLE( inflow*Dprst_area_open_max ) ! acre-inches
         Dprst_vol_open = Dprst_vol_open + Dprst_in
       ENDIF
 
       IF ( Dprst_area_clos_max>0.0 ) THEN
-        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! inch-acres
+        tmp1 = DBLE( inflow*Dprst_area_clos_max ) ! acre-inches
         Dprst_vol_clos = Dprst_vol_clos + tmp1
         Dprst_in = Dprst_in + tmp1
       ENDIF
@@ -1567,6 +1559,7 @@
       USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, Dprst_flag, Frozen_flag
       USE PRMS_SRUNOFF
+      USE PRMS_FLOWVARS, ONLY: Dprst_stor_hru, Hru_impervstor
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out

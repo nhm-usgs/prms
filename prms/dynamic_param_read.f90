@@ -416,7 +416,8 @@
      &    Cov_type, Basin_area_inv, Covden_win, Covden_sum
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Epan_coef
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
-     &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor
+     &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
+     &    Soil_moist_tot, Soil_lower_stor_max, Hru_impervstor, Soil_zone_max
       USE PRMS_POTET_JH, ONLY: Jh_coef, Jh_coef_hru
       USE PRMS_POTET_PM, ONLY: Pm_n_coef, Pm_d_coef
       USE PRMS_POTET_PT, ONLY: Pt_alpha
@@ -429,9 +430,8 @@
       USE PRMS_SNOW, ONLY: Rad_trncf, Snarea_thresh
       USE PRMS_SRUNOFF, ONLY: Sro_to_dprst_perv, Sro_to_dprst_imperv, Dprst_depth_avg, &
      &    Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, Dprst_vol_thres_open, &
-     &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac, Hru_impervstor
-      USE PRMS_SOILZONE, ONLY: Basin_soil_rechr, Soil_zone_max, Soil_moist_tot, &
-     &    Soil_lower_stor_max
+     &    Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
+      USE PRMS_SOILZONE, ONLY: Basin_soil_rechr
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
