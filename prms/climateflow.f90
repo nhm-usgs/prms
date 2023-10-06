@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2023-08-10'
+      character(len=*), parameter :: Version_climateflow = '2023-09-13'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -904,7 +904,7 @@ end module PRMS_IT0_VARS
      &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
-      USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type
+      USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type, Hru_perv, Hru_area, Basin_area_inv
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -1211,49 +1211,23 @@ end module PRMS_IT0_VARS
           ENDIF
         ENDIF
       ENDIF
-! initialize arrays (dimensioned Nsegment)
-      IF ( Stream_order_flag==ACTIVE ) THEN
-        Seg_upstream_inflow = 0.0D0
-        Seg_lateral_inflow = 0.0D0
-      ENDIF
 
 ! initialize scalers
-      Basin_temp = 0.0D0
-      Basin_tmax = 0.0D0
-      Basin_tmin = 0.0D0
-      Basin_ppt = 0.0D0
-      Basin_obs_ppt = 0.0D0
-      Basin_rain = 0.0D0
-      Basin_snow = 0.0D0
-      Basin_horad = 0.0D0
-      Basin_potsw = 0.0D0
-      Basin_swrad = 0.0D0
-      Basin_potet = 0.0D0
       Basin_humidity = 0.0D0
-      Basin_orad = 0.0D0
-      Basin_perv_et = 0.0D0
-      Basin_actet = 0.0D0
       Basin_lakeevap = 0.0D0
-      Basin_swale_et = 0.0D0
-      Basin_soil_to_gw = 0.0D0
-      Basin_ssflow = 0.0D0
-      Basin_sroff = 0.0D0
-      Solrad_tmax = 0.0
-      Solrad_tmin = 0.0
-      Basin_cfs = 0.0D0
-      Basin_cms = 0.0D0
-      Basin_stflow_in = 0.0D0
-      Basin_stflow_out = 0.0D0
-      Basin_ssflow_cfs = 0.0D0
-      Basin_sroff_cfs = 0.0D0
-      Basin_gwflow_cfs = 0.0D0
       Flow_out = 0.0D0
-      Orad = 0.0
 
       IF ( Init_vars_from_file>0 .OR. ierr>0 ) RETURN
 
-      Basin_soil_moist = 0.0D0
+      Basin_soil_moist = 0.0D0 ! set because these are saved in It0 variables in prms_time
       Basin_ssstor = 0.0D0
+      DO i = 1, Nhru
+        Basin_soil_moist = Basin_soil_moist + Soil_moist(i) * Hru_perv(i)
+        Basin_ssstor = Basin_ssstor + Ssres_stor(i) * Hru_area(i)
+      ENDDO
+      Basin_soil_moist = Basin_soil_moist * Basin_area_inv
+      Basin_ssstor = Basin_ssstor * Basin_area_inv
+
       Basin_lake_stor = 0.0D0
       Basin_transp_on = OFF
 ! initialize arrays (dimensioned Nsegment)

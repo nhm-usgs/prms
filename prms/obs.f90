@@ -7,7 +7,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2023-08-30'
+      character(len=*), parameter :: Version_obs = '2023-10-06'
       INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, Nstreamtemp
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
@@ -225,7 +225,7 @@
 !***********************************************************************
       INTEGER FUNCTION obsinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
-      USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow
+      USE PRMS_MODULE, ONLY: Nobs
       USE PRMS_OBS
       IMPLICIT NONE
 ! Functions
@@ -243,25 +243,7 @@
         IF ( getparam(MODNAME, 'rain_code', MONTHS_PER_YEAR, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
       ENDIF
 
-      IF ( Nobs>0 ) THEN
-        Runoff = 0.0
-        Streamflow_cfs = 0.0D0
-        Streamflow_cms = 0.0D0
-      ENDIF
-      IF ( Nrain>0 ) Precip = 0.0
       Rain_day = OFF
-      IF ( Ntemp>0 ) THEN
-        Tmax = 0.0
-        Tmin = 0.0
-      ENDIF
-      IF ( Nsol>0 ) Solrad = 0.0
-      IF ( Nevap>0 ) Pan_evap = 0.0
-      IF ( Nsnow>0 ) Snowdepth = 0.0
-      IF ( Nlakeelev>0 ) Lake_elev = 0.0
-      IF ( Nratetbl>0 ) Gate_ht = 0.0
-      IF ( Nhumid>0 ) Humidity = 0.0
-      IF ( Nwind>0 ) Wind_speed = 0.0
-      IF ( Nstreamtemp>0 ) Stream_temp = 0.0
 
       END FUNCTION obsinit
 

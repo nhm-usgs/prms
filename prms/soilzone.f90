@@ -995,8 +995,8 @@
           Basin_slowflow = Basin_slowflow + DBLE( Slow_flow(i)*harea )
 
 ! treat dunnianflw as surface runoff to streams
+          adjust_hortonian = ACTIVE
           Sroff(i) = Sroff(i) + Dunnian_flow(i)
-          Basin_sroff = Basin_sroff + DBLE( Sroff(i)*harea )
           Basin_dunnian = Basin_dunnian + DBLE( Dunnian_flow(i)*harea )
           Ssres_stor(i) = Slow_stor(i) + Pref_flow_stor(i)
 

@@ -84,7 +84,7 @@
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_mann'
-      character(len=*), parameter :: Version_muskingum = '2021-08-13'
+      character(len=*), parameter :: Version_muskingum = '2023-10-06'
 !   Local Variables
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
@@ -95,12 +95,11 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
-      USE PRMS_MODULE, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN
+      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
-      EXTERNAL :: muskingum_restart
+      INTEGER, EXTERNAL :: muskingum_decl, muskingum_run
 !***********************************************************************
       muskingum = 0
 
@@ -108,11 +107,6 @@
         muskingum = muskingum_run()
       ELSEIF ( Process_flag==DECL ) THEN
         muskingum = muskingum_decl()
-      ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL muskingum_restart(READ_INIT)
-        muskingum = muskingum_init()
-      ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL muskingum_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION muskingum
@@ -143,33 +137,6 @@
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
 
       END FUNCTION muskingum_decl
-
-!***********************************************************************
-!    muskingum_init - Get and check parameter values and initialize variables
-!***********************************************************************
-      INTEGER FUNCTION muskingum_init()
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file
-      USE PRMS_MUSKINGUM
-      USE PRMS_BASIN, ONLY: Basin_area_inv
-      USE PRMS_FLOWVARS, ONLY: Seg_outflow
-      USE PRMS_SET_TIME, ONLY: Cfs_conv
-      USE PRMS_ROUTING, ONLY: Basin_segment_storage
-      IMPLICIT NONE
-! Local Variables
-      INTEGER :: i
-!***********************************************************************
-      muskingum_init = 0
-
-      !Seg_outflow will have been initialized to Segment_flow_init in PRMS_ROUTING
-      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
-
-      Basin_segment_storage = 0.0D0
-      DO i = 1, Nsegment
-        Basin_segment_storage = Basin_segment_storage + Seg_outflow(i)
-      ENDDO
-      Basin_segment_storage = Basin_segment_storage*Basin_area_inv/Cfs_conv
-
-      END FUNCTION muskingum_init
 
 !***********************************************************************
 !     muskingum_run - Compute routing summary values
@@ -227,6 +194,7 @@
       Seg_inflow = 0.0D0
       Seg_outflow = 0.0D0
       Inflow_ts = 0.0D0
+      Outflow_ts = 0.0D0
       Currinsum = 0.0D0
 
 ! 24 hourly timesteps per day
@@ -368,28 +336,3 @@
       Basin_segment_storage = Basin_segment_storage/area_fac
 
       END FUNCTION muskingum_run
-
-!***********************************************************************
-!     muskingum_restart - write or read restart file
-!***********************************************************************
-      SUBROUTINE muskingum_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
-      USE PRMS_MUSKINGUM
-      IMPLICIT NONE
-      ! Argument
-      INTEGER, INTENT(IN) :: In_out
-      ! Function
-      EXTERNAL :: check_restart
-      ! Local Variable
-      CHARACTER(LEN=14) :: module_name
-!***********************************************************************
-      IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Outflow_ts
-      ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Outflow_ts
-      ENDIF
-      END SUBROUTINE muskingum_restart

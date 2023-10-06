@@ -6,7 +6,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
         character(len=*), parameter :: MODNAME = 'prms_summary'
-        character(len=*), parameter :: Version_prms_summary = '2021-08-13'
+        character(len=*), parameter :: Version_prms_summary = '2023-09-13'
         INTEGER, PARAMETER :: NVARS = 51
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
@@ -137,9 +137,6 @@
         ELSE
           Cfs_strings = ' cfs'
         ENDIF
-
-        Basin_total_storage = 0.0D0
-        Basin_surface_storage = 0.0D0
 
         IF ( Npoigages>0 ) THEN
 !          IF ( getparam(MODNAME, 'parent_poigages', Npoigages, 'integer', Parent_poigages)/=0 ) &
