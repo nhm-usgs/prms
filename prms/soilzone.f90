@@ -609,7 +609,6 @@
         Hru_sz_cascadeflow = 0.0
         IF ( Numlake_hrus>0 ) Lakein_sz = 0.0D0
       ENDIF
-      Cap_infil_tot = 0.0
       Pref_flow_infil = 0.0
       Pref_flow_in = 0.0
       Pref_flow = 0.0
@@ -619,11 +618,7 @@
       Perv_actet = 0.0
       hru_perv_actet = 0.0
       Recharge = 0.0
-      Cap_waterin = 0.0
-      Potet_lower = 0.0
-      Potet_rechr = 0.0
       Unused_potet = 0.0 ! dimension nhru
-      Soil_saturated = OFF
 
       END FUNCTION szinit
 
@@ -1049,11 +1044,8 @@
         Basin_actet = Basin_actet + DBLE( Hru_actet(i)*harea )
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
-        IF ( Pref_flow_max(i)>0.0 ) THEN
-          Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*harea )
-          Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( (Pref_flow_stor(i)/Pref_flow_max(i))*harea )
-        ENDIF
-
+        Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*harea )
+        IF ( Pref_flow_max(i)>0.0 ) Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( (Pref_flow_stor(i)/Pref_flow_max(i))*harea )
       ENDDO
       Basin_actet = Basin_actet*Basin_area_inv
       Basin_perv_et = Basin_perv_et*Basin_area_inv

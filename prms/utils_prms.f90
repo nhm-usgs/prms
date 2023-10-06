@@ -89,12 +89,11 @@
 !***********************************************************************
 !   Read CBH File to line before data starts
 !***********************************************************************
-  subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret, Cbh_flag)
+  subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret)
     use PRMS_CONSTANTS, only: DEBUG_less
     use PRMS_MODULE, only: Nhru, Orad_flag, Print_debug
     implicit none
     ! Argument
-    integer, intent(IN) :: Cbh_flag
     integer, intent(OUT) :: Iunit
     integer, intent(INOUT) :: Iret
     character(LEN=*), intent(IN) :: Fname, Paramname
@@ -127,7 +126,6 @@
           Iret = 1
           exit
         elseif (dum == '####') then
-          if (Cbh_flag == 0) exit
           backspace Iunit
           backspace Iunit
           if (Orad_flag == 1 .and. Paramname(:5) == 'swrad') backspace Iunit ! backspace again as swrad CBH file contains orad as last column

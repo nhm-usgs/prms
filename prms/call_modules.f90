@@ -410,7 +410,7 @@
      &          '  Set control parameter parameter_check_flag to 0 after', &
      &          '  all parameter values are valid.'
           PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
-     &          'If input errors are related to paramters used for automated', &
+     &          'If input errors are related to parameters used for automated', &
      &          'calibration processes, with CAUTION, set control parameter', &
      &          'parameter_check_flag to 0. After calibration set the', &
      &          'parameter_check_flag to 1 to verify that those calibration', &
@@ -995,7 +995,7 @@
 
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
         IF ( Stream_order_flag==ACTIVE .OR. Call_cascade==1 ) THEN
-          PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
+          PRINT *, 'ERROR, streamflow and cascade routing requires nsegment > 0, specified as:', Nsegment
           Inputerror_flag = 1
         ENDIF
       ENDIF
