@@ -548,7 +548,7 @@
         ELSE ! land or glacier
           Pref_flow_thrsh(i) = Sat_threshold(i)*(1.0-Pref_flow_den(i))
           Pref_flow_max(i) = Sat_threshold(i) - Pref_flow_thrsh(i)
-          IF ( Pref_flow_thrsh(i)>0.0 ) Pref_flag = ACTIVE ! ??? what if pref_flow_infil_frac > 0 and pref_flow_den = 0 ??
+          IF ( Pref_flow_thrsh(i)>0.0 ) Pref_flag = ACTIVE
         ENDIF
 
         ! hru_type = land, swale, or glacier

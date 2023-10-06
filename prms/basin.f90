@@ -109,6 +109,7 @@
       IF ( declvar(MODNAME, 'hru_storage', 'nhru', Nhru, 'double', &
      &     'Storage for each HRU', &
      &     'inches', Hru_storage)/=0 ) CALL read_error(3, 'hru_storage')
+
       ALLOCATE ( Dprst_frac(Nhru) )
       IF ( Dprst_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Dprst_area_max(Nhru) )
