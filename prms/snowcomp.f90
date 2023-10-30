@@ -16,6 +16,7 @@
       INTEGER, PARAMETER :: MAXALB = 15
       REAL, PARAMETER :: PI = ACOS(-1.0)
       DOUBLE PRECISION, PARAMETER :: TINY_SNOWPACK = EPSILON(0.0D0)
+      !DOUBLE PRECISION, PARAMETER :: TINY_SNOWPACK = 1.0D-12
       INTEGER, PARAMETER :: not_a_glacier_hru = -1
 
       !****************************************************************
@@ -49,7 +50,7 @@
       DOUBLE PRECISION, SAVE :: Basin_glacrevap, Basin_snowicecov, Basin_glacrb_melt
       REAL, SAVE, ALLOCATABLE :: Glacrmelt(:), Glacr_evap(:), Glacr_albedo(:), Glacr_pk_den(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_pk_ice(:), Glacr_freeh2o(:), Glacrcov_area(:)
-      REAL, SAVE, ALLOCATABLE :: Glacrb_melt(:), Glacr_pk_def(:), Glacr_pk_temp(:), Ann_tempc(:)
+      REAL, SAVE, ALLOCATABLE :: Glacr_pk_def(:), Glacr_pk_temp(:), Ann_tempc(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_air_5avtemp1(:), Glacr_air_deltemp(:), Glacr_air_5avtemp(:)
       REAL, SAVE, ALLOCATABLE :: Glacr_5avsnow1(:), Glacr_5avsnow(:), Glacr_delsnow(:), Glacr_freeh2o_capm(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Glacr_pkwater_ante(:), Glacr_pkwater_equiv(:)
@@ -163,11 +164,6 @@
         IF ( declvar(MODNAME, 'glacr_freeh2o_capm', 'nhru', Nhru, 'real', &
      &       'Free-water holding capacity of glacier or glacierette ice, changes to 0 if active layer melts', &
      &       'decimal fraction', Glacr_freeh2o_capm)/=0 ) CALL read_error(3, 'glacr_freeh2o_capm')
-
-        ALLOCATE ( Glacrb_melt(Nhru) )
-        IF ( declvar(MODNAME, 'glacrb_melt', 'nhru', Nhru, 'real', &
-             'Glacier or glacierette basal melt, goes to soil', &
-             'inches/day', Glacrb_melt)/=0 ) CALL read_error(3, 'glacrb_melt')
 
         ALLOCATE ( Ann_tempc(Nhru) )
         IF ( declvar(MODNAME, 'ann_tempc', 'nhru', Nhru, 'real', &
@@ -676,7 +672,7 @@
 !               compute initial values
 !***********************************************************************
       INTEGER FUNCTION snoinit()
-      USE PRMS_CONSTANTS, ONLY: LAND, GLACIER, FEET, FEET2METERS, DNEARZERO, ACTIVE, OFF, MONTHS_PER_YEAR, DEBUG_less
+      USE PRMS_CONSTANTS, ONLY: LAND, GLACIER, FEET, FEET2METERS, ACTIVE, OFF, MONTHS_PER_YEAR, DEBUG_less
       USE PRMS_MODULE, ONLY: Nhru, Ndepl, Print_debug, Init_vars_from_file, Glacier_flag, Snarea_curve_flag
       USE PRMS_SNOW
       USE PRMS_BASIN, ONLY: Basin_area_inv, Hru_route_order, Active_hrus, Hru_area_dble, Elev_units, Hru_type
@@ -743,16 +739,12 @@
       IF ( getparam(MODNAME, 'freeh2o_cap', Nhru, 'real', Freeh2o_cap)/=0 ) CALL read_error(2, 'freeh2o_cap')
       IF ( getparam(MODNAME, 'tstorm_mo', Nhru*MONTHS_PER_YEAR, 'integer', Tstorm_mo)/=0 ) CALL read_error(2, 'tstorm_mo')
 
-      Pk_precip = 0.0
-      Pptmix_nopack = OFF
-      Tcal = 0.0
       Frac_swe = 0.0
       Acum = acum_init
       Amlt = amlt_init
       Basin_glacrb_melt = 0.0D0
       Basin_glacrevap = 0.0D0
       IF ( Glacier_flag==ACTIVE ) THEN
-        Glacrb_melt = 0.0
         Glacrmelt = 0.0
         Glacr_evap = 0.0
       ENDIF
@@ -780,7 +772,7 @@
             Freeh2o(i) = Pk_ice(i)*Freeh2o_cap(i)
             Ai(i) = Pkwater_equiv(i) ! [inches]
             IF ( Ai(i)>Snarea_thresh(i) ) Ai(i) = DBLE( Snarea_thresh(i) ) ! [inches]
-            IF ( Ai(i)>DNEARZERO ) THEN
+            IF ( Ai(i)>0.0D0 ) THEN
               Frac_swe(i) = SNGL( Pkwater_equiv(i)/Ai(i) ) ! [fraction]
               Frac_swe(i) = MIN( 1.0, Frac_swe(i) )
             ENDIF
@@ -896,7 +888,7 @@
      &    Basin_area_inv, Hru_route_order, Cov_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
      &    Hru_ppt, Prmx, Tmaxc, Tminc, Tavgc, Swrad, Potet, Transp_on, Tmax_allsnow_c
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela
+      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela, Glacrb_melt
       USE PRMS_SET_TIME, ONLY: Jday, Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Canopy_covden, Hru_intcpevap
       IMPLICIT NONE
@@ -1494,6 +1486,9 @@
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, &
      &           Freeh2o_cap, Den_max, Ihru_gl)
       USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE !, DNEARZERO
+      USE PRMS_CLIMATEVARS, ONLY: Newsnow
+      use PRMS_SNOW, only: Pkwater_ante, ihru
+      use PRMS_SET_TIME, only: nowtime
       IMPLICIT NONE
 ! Functions
       REAL, EXTERNAL :: f_to_c
@@ -1680,6 +1675,7 @@
         ! If this subroutine is called when there is an all-rain day
         ! on no existing snowpack (currently, it will not),
         ! then the flag here will be set inappropriately.
+  write(998,'(3i5,3(1x,F12.5),2(1x,F17.15),2i7)') nowtime(1),nowtime(2), nowtime(3), net_rain, net_snow, Snowcov_area, pkwater_equiv, Pkwater_ante(ihru), Newsnow(ihru), ihru
         Pptmix_nopack = ACTIVE ! [flag]
       ENDIF
 
@@ -2571,6 +2567,7 @@
 !RAPCOMMENT - CHANGED TO CHECK FOR NEGATIVE PACK ICE
           ! If all pack ice is removed, then there cannot be a
           ! heat deficit
+          Freeh2o = Freeh2o + pk_ice ! bug fix found by James 9/21/23
           Pk_ice = 0.0
           Pk_def = 0.0
           Pk_temp = 0.0
@@ -2584,6 +2581,13 @@
         ENDIF
         ! Remove the evaporated water from the pack water equivalent
         Pkwater_equiv = Pkwater_equiv - ez
+        !! JLM: if pk_ice < 0, that difference should be taken from freeh2o
+        !! JLM: taking ez from pkwater_equiv is inconsistent with only taking
+        !! JLM: min(ez, pk_ice) from pack_ice while taking ez from pkwater
+        !! JLM: the fix is: freeh2o = freeh2o - (ez - pk_ice)
+        !! JLM: or, since pk_ice has become pk_ice - ez
+        !! JLM: the fix is: freeh2o = freeh2o + pk_ice when pk_ice is < zero
+        !! JLM: before it is set to zero
         Snow_evap = ez
       ENDIF
       IF ( Snow_evap<0.0 ) THEN

@@ -33,7 +33,7 @@
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, MAXDIM, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MONTHS_PER_YEAR, DEBUG_less
+     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MM, MONTHS_PER_YEAR, DEBUG_less
       USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
@@ -202,7 +202,7 @@
             IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'transp_on', ios, ierr)
             IF ( ierr == 0 ) THEN
               IF ( cbh_active_flag == ACTIVE ) THEN
-                Transp_on = -999.0
+                Transp_on = -999
                 DO i = i, Ncbh
                   Transp_on(cbh_hru_id(i)) = ivalues(i)
                 ENDDO
@@ -361,7 +361,7 @@
 
           IF ( Climate_precip_flag==ACTIVE ) THEN
             IF ( Hru_ppt(i)>0.0 ) THEN
-              IF ( Precip_units==CELSIUS ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
+              IF ( Precip_units==MM ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
      &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &

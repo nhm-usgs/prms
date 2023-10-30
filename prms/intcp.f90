@@ -8,8 +8,8 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2021-09-07'
-      INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
+      character(len=*), parameter :: Version_intcp = '2023-10-25'
+      INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:), Apply_irr_in_srunoff(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
       INTEGER, SAVE :: Use_transfer_intcp
@@ -79,6 +79,7 @@
       Use_transfer_intcp = OFF
       IF ( Water_use_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         Use_transfer_intcp = ACTIVE
+        ALLOCATE ( Apply_irr_in_srunoff(Nhru) )
         ALLOCATE ( Gain_inches(Nhru) )
         IF ( declvar(MODNAME, 'gain_inches', 'nhru', Nhru, 'real', &
      &       'Canopy_gain in as depth in canopy', &
@@ -311,6 +312,7 @@
         Net_apply = 0.0
         Gain_inches = 0.0
         Gain_inches_hru = 0.0
+        Apply_irr_in_srunoff = OFF
       ENDIF
 
       DO j = 1, Active_hrus
@@ -467,6 +469,7 @@
      &                                                   i, ', application water:', Canopy_gain(i)
               Canopy_gain(i) = 0.0 ! remove ignored canopy gain from water budget
             ELSEIF ( irrigation_type==1 .OR. .NOT.(cov>0.0) ) THEN ! irr_type = 1 or (0 or 3 and cov=0) bare ground
+              Apply_irr_in_srunoff(i) = ACTIVE
               Net_apply(i) = ag_water_maxin
             ELSE
               CALL error_stop('irrigation specified and irr_type and/or cover density invalid', ERROR_param)

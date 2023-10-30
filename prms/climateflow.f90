@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2023-09-13'
+      character(len=*), parameter :: Version_climateflow = '2023-10-11'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -88,7 +88,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_upstream_inflow(:), Seg_lateral_inflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_outflow(:), Seg_inflow(:)
       ! glacr
-      REAL, SAVE, ALLOCATABLE :: Glacier_frac(:), Alt_above_ela(:), Glrette_frac(:)
+      REAL, SAVE, ALLOCATABLE :: Glacier_frac(:), Alt_above_ela(:), Glrette_frac(:), Glacrb_melt(:)
 !   Declared Parameters
       REAL, SAVE, ALLOCATABLE :: Soil_moist_max(:), Soil_rechr_max(:), Sat_threshold(:)
       REAL, SAVE, ALLOCATABLE :: Snowinfil_max(:), Imperv_stor_max(:), Ssstor_init_frac(:)
@@ -592,6 +592,11 @@ end module PRMS_IT0_VARS
         IF ( declvar('glacr_melt', 'alt_above_ela', 'nhru', Nhru, 'real', &
      &       'Altitude above equilibrium line altitude (ELA)', &
      &       'elev_units', Alt_above_ela)/=0 ) CALL read_error(3, 'alt_above_ela')
+
+        ALLOCATE ( Glacrb_melt(Nhru) )
+        IF ( declvar('glacr_melt', 'glacrb_melt', 'nhru', Nhru, 'real', &
+             'Glacier or glacierette basal melt, goes to soil', &
+             'inches/day', Glacrb_melt)/=0 ) CALL read_error(3, 'glacrb_melt')
       ENDIF
 
       ! Allocate local variables
@@ -898,10 +903,9 @@ end module PRMS_IT0_VARS
      &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM, ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
-     &    Temp_module, Stream_order_flag, &
-     &    Precip_module, Solrad_module, Et_module, PRMS4_flag, &
+     &    Temp_module, Precip_module, Solrad_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Et_flag, Dprst_flag, Solrad_flag, &
-     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag
+     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag, Glacier_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type, Hru_perv, Hru_area, Basin_area_inv
@@ -1065,7 +1069,7 @@ end module PRMS_IT0_VARS
       ELSE
         IF ( getparam(Soilzone_module, 'soil_rechr_max_frac', Nhru, 'real', Soil_rechr_max_frac)/=0 ) &
      &       CALL read_error(2, 'soil_rechr_max_frac')
-        Soil_rechr_max = Soil_rechr_max_frac*Soil_moist_max
+        Soil_rechr_max = Soil_rechr_max_frac * Soil_moist_max
         DEALLOCATE ( Soil_rechr_max_frac )
       ENDIF
 
@@ -1096,6 +1100,8 @@ end module PRMS_IT0_VARS
       ENDIF
 
       ! check parameters
+      Basin_soil_moist = 0.0D0 ! set because these are saved in It0 variables in prms_time
+      Basin_ssstor = 0.0D0
       DO i = 1, Nhru
         IF ( Hru_type(i)==INACTIVE .OR. Hru_type(i)==LAKE ) CYCLE
         ! hru_type = land or swale or glacier
@@ -1162,7 +1168,11 @@ end module PRMS_IT0_VARS
             Ssres_stor(i) = Sat_threshold(i)
           ENDIF
         ENDIF
+        Basin_soil_moist = Basin_soil_moist + Soil_moist(i) * Hru_perv(i)
+        Basin_ssstor = Basin_ssstor + Ssres_stor(i) * Hru_area(i)
       ENDDO
+      Basin_soil_moist = Basin_soil_moist * Basin_area_inv
+      Basin_ssstor = Basin_ssstor * Basin_area_inv
 
       IF ( ierr>0 ) STOP ERROR_PARAM
 
@@ -1219,26 +1229,18 @@ end module PRMS_IT0_VARS
 
       IF ( Init_vars_from_file>0 .OR. ierr>0 ) RETURN
 
-      Basin_soil_moist = 0.0D0 ! set because these are saved in It0 variables in prms_time
-      Basin_ssstor = 0.0D0
-      DO i = 1, Nhru
-        Basin_soil_moist = Basin_soil_moist + Soil_moist(i) * Hru_perv(i)
-        Basin_ssstor = Basin_ssstor + Ssres_stor(i) * Hru_area(i)
-      ENDDO
-      Basin_soil_moist = Basin_soil_moist * Basin_area_inv
-      Basin_ssstor = Basin_ssstor * Basin_area_inv
-
       Basin_lake_stor = 0.0D0
       Basin_transp_on = OFF
-! initialize arrays (dimensioned Nsegment)
-      IF ( Stream_order_flag==ACTIVE ) THEN
-        Seg_inflow = 0.0D0
-        Seg_outflow = 0.0D0
-      ENDIF
       Transp_on = OFF
 ! initialize storage variables
       Imperv_stor = 0.0
       Pkwater_equiv = 0.0D0
+      IF ( Glacier_flag==1 ) THEN
+        Glacrb_melt = 0.0
+        Glacier_frac = 0.0
+        Alt_above_ela = 0.0
+        Glrette_frac = 0.0
+      ENDIF
       Slow_stor = 0.0
       Gwres_stor = 0.0D0
       IF ( Dprst_flag==ACTIVE ) THEN

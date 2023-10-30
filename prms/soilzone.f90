@@ -18,7 +18,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2023-09-01'
+      character(len=*), parameter :: Version_soilzone = '2023-10-25'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       DOUBLE PRECISION, SAVE :: Basin_pref_flow_max_in
@@ -1075,7 +1075,6 @@
       Basin_sz2gw = Basin_sz2gw*Basin_area_inv
       Basin_ssin = Basin_ssin*Basin_area_inv
       Basin_slstor = Basin_slstor*Basin_area_inv
-      Basin_sroff = Basin_sroff*Basin_area_inv
       Basin_dunnian = Basin_dunnian*Basin_area_inv
       Basin_sm2gvr = Basin_sm2gvr*Basin_area_inv
       Basin_sm2gvr_max = Basin_sm2gvr_max*Basin_area_inv
