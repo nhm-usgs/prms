@@ -355,9 +355,6 @@
         ENDDO
       ENDIF
 
-      Basin_gwflow = 0.0D0
-      Basin_gwsink = 0.0D0
-      Basin_gwin = 0.0D0
       Basin_gw_upslope = 0.0D0
       Basin_dnflow = 0.0D0
       Basin_lake_seep = 0.0D0
@@ -521,8 +518,8 @@
 
         gwsink = 0.0D0
         IF ( gwstor<0.0D0 ) THEN ! could happen with water use
-          IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0', gwstor
-          gwflow = 0.0D0
+          IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0, set to 0.0', gwstor
+          gwstor = 0.0D0
           Gwres_sink(i) = 0.0
         ELSE
 

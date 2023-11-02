@@ -1235,7 +1235,7 @@ end module PRMS_IT0_VARS
 ! initialize storage variables
       Imperv_stor = 0.0
       Pkwater_equiv = 0.0D0
-      IF ( Glacier_flag==1 ) THEN
+      IF ( Glacier_flag==ACTIVE ) THEN
         Glacrb_melt = 0.0
         Glacier_frac = 0.0
         Alt_above_ela = 0.0

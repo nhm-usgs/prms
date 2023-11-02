@@ -15,8 +15,6 @@
       INTRINSIC :: ACOS
       INTEGER, PARAMETER :: MAXALB = 15
       REAL, PARAMETER :: PI = ACOS(-1.0)
-      DOUBLE PRECISION, PARAMETER :: TINY_SNOWPACK = EPSILON(0.0D0)
-      !DOUBLE PRECISION, PARAMETER :: TINY_SNOWPACK = 1.0D-12
       INTEGER, PARAMETER :: not_a_glacier_hru = -1
 
       !****************************************************************
@@ -878,19 +876,19 @@
 !***********************************************************************
       INTEGER FUNCTION snorun()
       USE PRMS_CONSTANTS, ONLY: LAKE, LAND, GLACIER, SHRUBS, FEET, &
-     &    INCH2M, FEET2METERS, DNEARZERO, ACTIVE, OFF, DEBUG_less, DAYS_YR
+     &    INCH2M, FEET2METERS, ACTIVE, OFF, DEBUG_less, DAYS_YR, TINY_SNOWPACK
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag, Start_year, &
      &    Nowyear, Nowmonth, Albedo_cbh_flag, snow_cloudcover_flag
       USE PRMS_SNOW
       USE PRMS_SOLTAB, ONLY: Soltab_horad_potsw, Soltab_potsw, Hru_cossl
       USE PRMS_CLIMATE_HRU, ONLY: Albedo_hru
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_type, &
+      USE PRMS_BASIN, ONLY: Hru_area, Active_hrus, Hru_type, &
      &    Basin_area_inv, Hru_route_order, Cov_type, Elev_units
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Orad, Basin_horad, Potet_sublim, &
      &    Hru_ppt, Prmx, Tmaxc, Tminc, Tavgc, Swrad, Potet, Transp_on, Tmax_allsnow_c
       USE PRMS_FLOWVARS, ONLY: Pkwater_equiv, Glacier_frac, Glrette_frac, Alt_above_ela, Glacrb_melt
       USE PRMS_SET_TIME, ONLY: Jday, Julwater
-      USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Canopy_covden, Hru_intcpevap
+      USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Canopy_covden, Hru_intcpevap, Intcp_changeover
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: ppt_to_pack, snowcov, snalbedo, snowbal, snowevap, glacr_states_to_zero, snow_states_to_zero
@@ -898,8 +896,8 @@
 ! Local Variables
       INTEGER :: i, j, k, niteda, isglacier
       REAL :: trd, sw, effk, cst, temp, cals, emis, esv, swn, cec
-      REAL :: ieffk, icst, icals, isw, iswn, frac, orad_local
-      DOUBLE PRECISION :: dpt1, dpt_before_settle, hruarea_dble
+      REAL :: ieffk, icst, icals, isw, iswn, frac, orad_local, avail_h2o
+      DOUBLE PRECISION :: dpt1, dpt_before_settle
 !***********************************************************************
       snorun = 0
 
@@ -945,7 +943,7 @@
         ! Skip the HRU if it is a lake
         IF ( Hru_type(i)==LAKE ) CYCLE
 
-        hruarea_dble = Hru_area_dble(i)
+        avail_h2o = Net_rain(i) + Intcp_changeover(i)
 
         Active_glacier = OFF
         isglacier = OFF
@@ -1068,8 +1066,7 @@
         ! Skip the HRU if there is no snowpack and no new snow and not a glacier
         IF ( Active_glacier==OFF ) THEN
           IF ( Pkwater_equiv(i)<TINY_SNOWPACK .AND. Newsnow(i)==0 ) THEN
-          !  Snowcov_area(i) = 0.0 ! reset to be sure it is zero if snowpack melted on last timestep
-            CALL snow_states_to_zero() ! reset to be sure it is zero if snowpack melted on last timestep, shouldn't need
+            Snowcov_area(i) = 0.0 ! reset to be sure it is zero if snowpack melted on last timestep
             CYCLE
           ENDIF
         ENDIF
@@ -1089,7 +1086,7 @@
         ! heat (or heat deficit) to the snowpack
         IF ( (Pkwater_equiv(i)>0.0D0.AND.Net_ppt(i)>0.0) .OR. Net_snow(i)>0.0 ) &
      &       CALL ppt_to_pack(Pptmix(i), Iasw(i), Tmaxc(i), Tminc(i), Tavgc(i), &
-     &                        Pkwater_equiv(i), Net_rain(i), Pk_def(i), &
+     &                        Pkwater_equiv(i), avail_h2o, Pk_def(i), &
      &                        Pk_temp(i), Pk_ice(i), Freeh2o(i), Snowcov_area(i), &
      &                        Snowmelt(i), Pk_depth(i), Pss(i), Pst(i), Net_snow(i), &
      &                        Pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), &
@@ -1102,7 +1099,7 @@
 ! if snows on ice, goes to snow comps
 
              CALL ppt_to_pack(0, Iasw(i), Tmaxc(i), Tminc(i), Tavgc(i), &
-     &                        Glacr_Pkwater_equiv(i), Net_rain(i), Glacr_pk_def(i), &
+     &                        Glacr_Pkwater_equiv(i), avail_h2o, Glacr_pk_def(i), &
      &                        Glacr_pk_temp(i), Glacr_pk_ice(i), Glacr_freeh2o(i), Glacrcov_area(i), &
      &                        Glacrmelt(i), Glacr_pk_depth(i), Glacr_pss(i), Glacr_pst(i), 0.0, &
      &                        Glacr_pk_den(i), Pptmix_nopack(i), Pk_precip(i), Tmax_allsnow_c(i,Nowmonth), &
@@ -1378,7 +1375,7 @@
      &                         Pk_def(i), Freeh2o(i), Pk_temp(i), Hru_intcpevap(i))
           ELSEIF ( Pkwater_equiv(i)<0.0D0 ) THEN
             IF ( Print_debug>DEBUG_less ) THEN
-              IF ( Pkwater_equiv(i)<-DNEARZERO ) PRINT *, 'snowpack issue 3, negative pkwater_equiv, &
+              IF ( Pkwater_equiv(i)<-TINY_SNOWPACK ) PRINT *, 'snowpack issue 3, negative pkwater_equiv, &
      &             HRU:', i, ' value:', Pkwater_equiv(i)
             ENDIF
             Pkwater_equiv(i) = 0.0D0 ! just to be sure negative values are ignored
@@ -1421,10 +1418,9 @@
         ENDIF
 
 ! LAST check to clear out all arrays if packwater is gone
-        IF ( .not.(Pkwater_equiv(i)>0.0D0) ) THEN
-        !IF ( Pkwater_equiv(i)<TINY_SNOWPACK ) THEN ! reset to be sure it is zero if snowpack melted on last timestep
+        IF ( Pkwater_equiv(i)<=0.0D0 ) THEN
           IF ( Print_debug>DEBUG_less ) THEN
-            IF ( Pkwater_equiv(i)<-DNEARZERO ) &
+            IF ( Pkwater_equiv(i)<-TINY_SNOWPACK ) &
      &           PRINT *, 'Snowpack problem, pkwater_equiv negative, HRU:', i, ' value:', Pkwater_equiv(i)
           ENDIF
           CALL snow_states_to_zero()
@@ -1436,20 +1432,20 @@
           ELSE
             CALL glacr_states_to_zero(i,0)
           ENDIF
-          Basin_glacrb_melt = Basin_glacrb_melt + DBLE( Glacrb_melt(i) )*hruarea_dble
-          Basin_glacrevap = Basin_glacrevap + DBLE( Glacr_evap(i) )*hruarea_dble
+          Basin_glacrb_melt = Basin_glacrb_melt + DBLE( Glacrb_melt(i)*Hru_area(i) )
+          Basin_glacrevap = Basin_glacrevap + DBLE( Glacr_evap(i)*Hru_area(i) )
           IF ( Active_glacier==1 ) frac = (1.0 - Glacier_frac(i))
           IF ( Active_glacier==2 ) frac = (1.0 - Glrette_frac(i))
         ENDIF
 
         ! Sum volumes for basin totals
-        Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*frac )*hruarea_dble !don't include stuff melting into glacier
-        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*hruarea_dble
-        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i) )*hruarea_dble
-        Basin_snowcov = Basin_snowcov + DBLE( Snowcov_area(i) )*hruarea_dble
-        Basin_pk_precip = Basin_pk_precip + DBLE( Pk_precip(i) )*hruarea_dble
-        Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*hruarea_dble
-        Basin_tcal = Basin_tcal + DBLE( Tcal(i) )*hruarea_dble
+        Basin_snowmelt = Basin_snowmelt + DBLE( Snowmelt(i)*Hru_area(i)*frac ) !don't include stuff melting into glacier
+        Basin_pweqv = Basin_pweqv + Pkwater_equiv(i)*DBLE( Hru_area(i) )
+        Basin_snowevap = Basin_snowevap + DBLE( Snow_evap(i)*Hru_area(i) )
+        Basin_snowcov = Basin_snowcov + DBLE( Snowcov_area(i)*Hru_area(i) )
+        Basin_pk_precip = Basin_pk_precip + DBLE( Pk_precip(i)*Hru_area(i) )
+        Basin_snowdepth = Basin_snowdepth + Pk_depth(i)*DBLE( Hru_area(i) )
+        Basin_tcal = Basin_tcal + DBLE( Tcal(i)*Hru_area(i) )
 
       ENDDO
 
@@ -1485,10 +1481,7 @@
      &           Freeh2o, Snowcov_area, Snowmelt, Pk_depth, Pss, Pst, &
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, &
      &           Freeh2o_cap, Den_max, Ihru_gl)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE !, DNEARZERO
-      USE PRMS_CLIMATEVARS, ONLY: Newsnow
-      use PRMS_SNOW, only: Pkwater_ante, ihru
-      use PRMS_SET_TIME, only: nowtime
+      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE !, TINY_SNOWPACK
       IMPLICIT NONE
 ! Functions
       REAL, EXTERNAL :: f_to_c
@@ -1530,7 +1523,7 @@
         ! If there is no existing snowpack, snow temperature is the
         ! average temperature for the day
         ELSEIF ( Pkwater_equiv<0.0D0 ) THEN
-!          IF ( Pkwater_equiv<-DNEARZERO ) &
+!          IF ( Pkwater_equiv<-TINY_SNOWPACK ) &
 !     &         PRINT *, 'snowpack issue in ppt_to_pack, negative pkwater_equiv', Pkwater_equiv
           Pkwater_equiv = 0.0D0 ! to be sure negative snowpack is ignored
         ENDIF
@@ -1675,7 +1668,6 @@
         ! If this subroutine is called when there is an all-rain day
         ! on no existing snowpack (currently, it will not),
         ! then the flag here will be set inappropriately.
-  write(998,'(3i5,3(1x,F12.5),2(1x,F17.15),2i7)') nowtime(1),nowtime(2), nowtime(3), net_rain, net_snow, Snowcov_area, pkwater_equiv, Pkwater_ante(ihru), Newsnow(ihru), ihru
         Pptmix_nopack = ACTIVE ! [flag]
       ENDIF
 
@@ -1738,7 +1730,7 @@
 !        heat energy has occurred.
 !***********************************************************************
       SUBROUTINE caloss(Cal, Pkwater_equiv, Pk_def, Pk_temp, Pk_ice, Freeh2o, Ihru_gl)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO !, DNEARZERO
+      USE PRMS_CONSTANTS, ONLY: CLOSEZERO !, TINY_SNOWPACK
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
@@ -1804,7 +1796,7 @@
         Pk_temp = -Pk_def/SNGL(Pkwater_equiv*1.27D0)  ! [degrees C]
       ELSE
         IF ( Pkwater_equiv<0.0D0 ) THEN
-!          IF ( Pkwater_equiv<-DNEARZERO ) &
+!          IF ( Pkwater_equiv<-TINY_SNOWPACK ) &
 !     &         PRINT *, 'snowpack issue 4, negative pkwater_equiv', Pkwater_equiv
           Pkwater_equiv = 0.0D0
         ENDIF
@@ -1835,7 +1827,7 @@
       DOUBLE PRECISION, INTENT(INOUT) :: Pss, Pst, Pk_depth
 ! Functions
       INTRINSIC :: SNGL, DBLE
-      EXTERNAL :: print_date, snow_states_to_zero, glacr_states_to_zero
+      EXTERNAL :: print_date, glacr_states_to_zero
 ! Local Variables
       REAL :: dif, pmlt, apmlt, apk_ice, pwcap
       DOUBLE PRECISION :: dif_dble
@@ -1979,8 +1971,7 @@
         Pk_temp = 0.0 ! [degrees C]
         Pk_def = 0.0 ! [cal/cm^2]
       ENDIF
-!      IF ( .NOT.(Pkwater_equiv>0.0D0) ) Pk_den = 0.0
-      IF ( .NOT.(Pkwater_equiv>0.0D0) ) CALL snow_states_to_zero()
+      IF ( .NOT.(Pkwater_equiv>0.0D0) ) Pk_den = 0.0
       ! If on melting glacier ice/firn, Ihru_gl >0, so melted active layer (won't melt infinite ice layer)
       IF ( Ihru_gl>0) THEN
         IF ( .NOT.(Pkwater_equiv>0.0D0) ) CALL glacr_states_to_zero(Ihru_gl,0)
@@ -2510,7 +2501,7 @@
 !***********************************************************************
       SUBROUTINE snowevap(Potet_sublim, Potet, Snowcov_area, Snow_evap, &
      &                    Pkwater_equiv, Pk_ice, Pk_def, Freeh2o, Pk_temp, Hru_intcpevap)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, DNEARZERO, DEBUG_less, OFF
+      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, TINY_SNOWPACK, DEBUG_less, OFF
       USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_SNOW, ONLY: Active_glacier
       IMPLICIT NONE
@@ -2594,7 +2585,7 @@
         Pkwater_equiv = Pkwater_equiv - DBLE(Snow_evap)
         IF ( Pkwater_equiv<0.0D0 ) THEN
           IF ( Print_debug>DEBUG_less ) THEN
-            IF ( Pkwater_equiv<-DNEARZERO ) &
+            IF ( Pkwater_equiv<-TINY_SNOWPACK ) &
      &           PRINT *, 'snowpack issue, negative pkwater_equiv in snowevap', Pkwater_equiv
             Pkwater_equiv = 0.0D0
           ENDIF
@@ -2610,7 +2601,7 @@
           Pkwater_equiv = Pkwater_equiv - Snow_evap
           IF ( Pkwater_equiv<0.0D0 ) THEN
             IF ( Print_debug>DEBUG_less ) THEN
-              IF ( Pkwater_equiv<-DNEARZERO ) &
+              IF ( Pkwater_equiv<-TINY_SNOWPACK ) &
      &           PRINT *, 'snowpack issue 2, negative pkwater_equiv in snowevap', Pkwater_equiv
             ENDIF
             Pkwater_equiv = 0.0D0 ! to be sure negative snowpack is ignored

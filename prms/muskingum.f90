@@ -95,11 +95,12 @@
 !     Main muskingum routine
 !***********************************************************************
       INTEGER FUNCTION muskingum()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN
-      USE PRMS_MODULE, ONLY: Process_flag
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
+      USE PRMS_MODULE, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: muskingum_decl, muskingum_run
+      INTEGER, EXTERNAL :: muskingum_decl, muskingum_init, muskingum_run
+      EXTERNAL :: muskingum_restart
 !***********************************************************************
       muskingum = 0
 
@@ -107,6 +108,11 @@
         muskingum = muskingum_run()
       ELSEIF ( Process_flag==DECL ) THEN
         muskingum = muskingum_decl()
+      ELSEIF ( Process_flag==INIT ) THEN
+        IF ( Init_vars_from_file>OFF ) CALL muskingum_restart(READ_INIT)
+        muskingum = muskingum_init()
+      ELSEIF ( Process_flag==CLEAN ) THEN
+        IF ( Save_vars_to_file==ACTIVE ) CALL muskingum_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION muskingum
@@ -137,6 +143,20 @@
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
 
       END FUNCTION muskingum_decl
+
+!***********************************************************************
+!    muskingum_init - Get and check parameter values and initialize variables
+!***********************************************************************
+      INTEGER FUNCTION muskingum_init()
+      USE PRMS_MODULE, ONLY: Init_vars_from_file
+      USE PRMS_MUSKINGUM
+      IMPLICIT NONE
+!***********************************************************************
+      muskingum_init = 0
+
+      IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
+
+      END FUNCTION muskingum_init
 
 !***********************************************************************
 !     muskingum_run - Compute routing summary values
@@ -194,7 +214,6 @@
       Seg_inflow = 0.0D0
       Seg_outflow = 0.0D0
       Inflow_ts = 0.0D0
-      Outflow_ts = 0.0D0
       Currinsum = 0.0D0
 
 ! 24 hourly timesteps per day
@@ -336,3 +355,28 @@
       Basin_segment_storage = Basin_segment_storage/area_fac
 
       END FUNCTION muskingum_run
+
+!***********************************************************************
+!     muskingum_restart - write or read restart file
+!***********************************************************************
+      SUBROUTINE muskingum_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_MUSKINGUM
+      IMPLICIT NONE
+      ! Argument
+      INTEGER, INTENT(IN) :: In_out
+      ! Function
+      EXTERNAL :: check_restart
+      ! Local Variable
+      CHARACTER(LEN=14) :: module_name
+!***********************************************************************
+      IF ( In_out==SAVE_INIT ) THEN
+        WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Outflow_ts
+      ELSE
+        READ ( Restart_inunit ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Outflow_ts
+      ENDIF
+      END SUBROUTINE muskingum_restart

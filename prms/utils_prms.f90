@@ -89,14 +89,14 @@
 !***********************************************************************
 !   Read CBH File to line before data starts
 !***********************************************************************
-  subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret)
+  subroutine find_cbh_header_end(Iunit, Fname, Iret)
     use PRMS_CONSTANTS, only: DEBUG_less
     use PRMS_MODULE, only: Nhru, Orad_flag, Print_debug
     implicit none
     ! Argument
     integer, intent(OUT) :: Iunit
     integer, intent(INOUT) :: Iret
-    character(LEN=*), intent(IN) :: Fname, Paramname
+    character(LEN=*), intent(IN) :: Fname
     ! Functions
     intrinsic :: trim
     integer, external :: get_ftnunit

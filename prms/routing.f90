@@ -361,7 +361,7 @@
 
       IF ( getparam(MODNAME, 'segment_type', Nsegment, 'integer', Segment_type)/=0 ) CALL read_error(2, 'segment_type')
       DO i = 1, Nsegment
-        Segment_type(i) = MOD( Segment_type(i), 100 )
+        IF ( Segment_type(i)>99 ) Segment_type(i) = MOD( Segment_type(i), 100 )
       ENDDO
 
       IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN

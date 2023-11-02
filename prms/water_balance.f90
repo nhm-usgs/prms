@@ -148,7 +148,7 @@
 !     water_balance_run - Computes balance for each HRU and model domain
 !***********************************************************************
       SUBROUTINE water_balance_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, NEARZERO, DNEARZERO, LAKE, CASCADE_OFF, CASCADEGW_OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, NEARZERO, TINY_SNOWPACK, LAKE, CASCADE_OFF, CASCADEGW_OFF
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag, Dprst_flag, Glacier_flag, Nowyear, Nowmonth, Nowday
       USE PRMS_WATER_BALANCE
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_frac_perv, Hru_area_dble, Hru_perv, &
@@ -236,7 +236,7 @@
         ENDIF
 
         ! Skip the HRU if there is no snowpack and no new snow
-        IF ( Pkwater_ante(i)>DNEARZERO .OR. Newsnow(i)==ACTIVE ) THEN
+        IF ( Pkwater_ante(i)>TINY_SNOWPACK .OR. Newsnow(i)==ACTIVE ) THEN
           hrubal = SNGL( Pkwater_ante(i) - Pkwater_equiv(i) ) - Snow_evap(i) - Snowmelt(i)
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             hrubal = hrubal + Net_snow(i)
@@ -245,7 +245,7 @@
           ENDIF
           IF ( ABS(hrubal)>TOOSMALL ) THEN
             IF ( ABS(hrubal)>SMALL ) THEN
-              WRITE ( BALUNT, * ) 'Possible snow water balance error'
+              WRITE ( BALUNT, * ) 'Possible HRU snow water balance error'
             ELSE
               WRITE ( BALUNT, * ) 'Possible HRU snow rounding issue'
             ENDIF
@@ -264,7 +264,7 @@
         IF ( Net_ppt(i)>0.0 ) THEN
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             robal = robal + Net_rain(i)
-          ELSEIF ( Snowmelt(i)<NEARZERO .AND. Pkwater_equiv(i)<DNEARZERO) THEN
+          ELSEIF ( Snowmelt(i)<NEARZERO .AND. Pkwater_equiv(i)<TINY_SNOWPACK) THEN
             IF ( Snow_evap(i)<NEARZERO ) THEN
               robal = robal + Net_ppt(i)
             ELSEIF ( Net_snow(i)<NEARZERO ) THEN

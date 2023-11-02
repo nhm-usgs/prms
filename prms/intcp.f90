@@ -267,12 +267,12 @@
 !              and evaporation for each HRU
 !***********************************************************************
       INTEGER FUNCTION intrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, NEARZERO, DNEARZERO, &
-     &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, NEARZERO, &
+     &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param, TINY_SNOWPACK
       USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
-     &    Hru_route_order, Hru_area, Cov_type
+     &    Hru_route_order, Hru_area, Cov_type, Hru_perv
       USE PRMS_WATER_USE, ONLY: Canopy_gain
 ! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
@@ -410,7 +410,7 @@
               ELSEIF ( Cov_type(i)==GRASSES ) THEN ! cov_type = 1
                 !rsr, 03/24/2008 intercept rain on snow-free grass,
                 !rsr             when not a mixed event
-                IF ( Pkwater_equiv(i)<DNEARZERO .AND. netsnow<NEARZERO ) THEN
+                IF ( Pkwater_equiv(i)<TINY_SNOWPACK .AND. netsnow<NEARZERO ) THEN
                   CALL intercept(Hru_rain(i), stor_max_rain, cov, intcpstor, netrain)
                   !rsr 03/24/2008
                   !it was decided to leave the water in intcpstor rather
@@ -470,7 +470,7 @@
               Canopy_gain(i) = 0.0 ! remove ignored canopy gain from water budget
             ELSEIF ( irrigation_type==1 .OR. .NOT.(cov>0.0) ) THEN ! irr_type = 1 or (0 or 3 and cov=0) bare ground
               Apply_irr_in_srunoff(i) = ACTIVE
-              Net_apply(i) = ag_water_maxin
+              Net_apply(i) = ag_water_maxin/Hru_perv(i) ! assumes ag_water_maxin is depth/pervious area
             ELSE
               CALL error_stop('irrigation specified and irr_type and/or cover density invalid', ERROR_param)
             ENDIF
