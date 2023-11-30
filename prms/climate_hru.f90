@@ -33,7 +33,7 @@
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, MAXDIM, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, CELSIUS, MM, MONTHS_PER_YEAR, DEBUG_less
+     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, DEBUG_less
       USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
@@ -54,7 +54,7 @@
       INTRINSIC :: DBLE, SNGL
       INTEGER, EXTERNAL :: declparam, control_integer, getparam, control_string, declvar, getdim, decldim
       EXTERNAL :: read_error, precip_form, temp_set, find_cbh_header_end, find_current_time
-      EXTERNAL :: read_cbh_date, check_cbh_value, check_cbh_intvalue, print_module
+      EXTERNAL :: read_cbh_date, check_cbh_value, check_cbh_intvalue, print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, jj, ierr, istop, missing, ios !, write_tmin_tmax
       DOUBLE PRECISION :: sum_obs
@@ -525,15 +525,9 @@
         ENDIF
 
       ELSEIF ( Process_flag==INIT ) THEN
-        Basin_humidity = 0.0D0
-        Basin_windspeed = 0.0D0
-        IF ( Humidity_cbh_flag==ACTIVE ) Humidity_hru = 0.0
-        IF ( Windspeed_cbh_flag==ACTIVE ) Windspeed_hru = 0.0
         IF ( cbh_active_flag == ACTIVE ) THEN
           IF ( getparam(MODNAME, 'cbh_hru_id', Ncbh, 'integer', cbh_hru_id)/=0 ) CALL read_error(2, 'cbh_hru_id')
           ALLOCATE ( values(Nhru), ivalues(Nhru) )
-          values = 0.0
-          ivalues = 0
         ENDIF
 
         istop = 0
@@ -544,7 +538,7 @@
           IF ( getparam(MODNAME, 'snow_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Snow_cbh_adj)/=0 ) CALL read_error(2, 'snow_cbh_adj')
 
           IF ( control_string(Precip_day, 'precip_day')/=0 ) CALL read_error(5, 'precip_day')
-          CALL find_cbh_header_end(Precip_unit, Precip_day, ierr)
+          CALL find_cbh_header_end(Precip_unit, Precip_day, 'precip_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -562,7 +556,7 @@
 
           IF ( control_string(Tmax_day, 'tmax_day')/=0 ) CALL read_error(5, 'tmax_day')
           IF ( control_string(Tmin_day, 'tmin_day')/=0 ) CALL read_error(5, 'tmin_day')
-          CALL find_cbh_header_end(Tmax_unit, Tmax_day, ierr)
+          CALL find_cbh_header_end(Tmax_unit, Tmax_day, 'tmax_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -572,7 +566,7 @@
               istop = 1
             ENDIF
           ENDIF
-          CALL find_cbh_header_end(Tmin_unit, Tmin_day, ierr)
+          CALL find_cbh_header_end(Tmin_unit, Tmin_day, 'tmin_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -588,7 +582,7 @@
           IF ( getparam(MODNAME, 'potet_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Potet_cbh_adj)/=0 ) &
      &         CALL read_error(2, 'potet_cbh_adj')
           IF ( control_string(Potet_day, 'potet_day')/=0 ) CALL read_error(5, 'potet_day')
-          CALL find_cbh_header_end(Et_unit, Potet_day, ierr)
+          CALL find_cbh_header_end(Et_unit, Potet_day, 'potet_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -602,7 +596,7 @@
 
         IF ( Climate_transp_flag==ACTIVE ) THEN
           IF ( control_string(Transp_day, 'transp_day')/=0 ) CALL read_error(5, 'transp_day')
-          CALL find_cbh_header_end(Transp_unit, Transp_day, ierr)
+          CALL find_cbh_header_end(Transp_unit, Transp_day, 'transp_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -616,7 +610,7 @@
 
         IF ( Climate_swrad_flag==ACTIVE ) THEN
           IF ( control_string(Swrad_day, 'swrad_day')/=0 ) CALL read_error(5, 'swrad_day')
-          CALL find_cbh_header_end(Swrad_unit, Swrad_day, ierr)
+          CALL find_cbh_header_end(Swrad_unit, Swrad_day, 'swrad_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -630,7 +624,7 @@
 
         IF ( Humidity_cbh_flag==ACTIVE ) THEN
           IF ( control_string(Humidity_day, 'humidity_day')/=0 ) CALL read_error(5, 'humidity_day')
-          CALL find_cbh_header_end(Humidity_unit, Humidity_day, ierr)
+          CALL find_cbh_header_end(Humidity_unit, Humidity_day, 'humidity_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -644,7 +638,7 @@
 
         IF ( Windspeed_cbh_flag==ACTIVE ) THEN
           IF ( control_string(Windspeed_day, 'windspeed_day')/=0 ) CALL read_error(5, 'windspeed_day')
-          CALL find_cbh_header_end(Windspeed_unit, Windspeed_day, ierr)
+          CALL find_cbh_header_end(Windspeed_unit, Windspeed_day, 'windspeed_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -658,7 +652,7 @@
 
         IF ( Albedo_cbh_flag==ACTIVE ) THEN
           IF ( control_string(Albedo_day, 'albedo_day')/=0 ) CALL read_error(5, 'albedo_day')
-          CALL find_cbh_header_end(Albedo_unit, Albedo_day, ierr)
+          CALL find_cbh_header_end(Albedo_unit, Albedo_day, 'albedo_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE
@@ -672,7 +666,7 @@
 
         IF ( Cloud_cover_cbh_flag==ACTIVE ) THEN
           IF ( control_string(Cloud_cover_day, 'cloud_cover_day')/=0 ) CALL read_error(5, 'cloud_cover_day')
-          CALL find_cbh_header_end(Cloud_cover_unit, Cloud_cover_day, ierr)
+          CALL find_cbh_header_end(Cloud_cover_unit, Cloud_cover_day, 'cloud_cover_day', ierr)
           IF ( ierr==1 ) THEN
             istop = 1
           ELSE

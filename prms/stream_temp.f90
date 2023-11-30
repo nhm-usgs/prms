@@ -723,7 +723,7 @@
 
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE
+      INTRINSIC :: DBLE, sngl
       REAL, EXTERNAL :: twavg, twmax, get_segwidth
       EXTERNAL :: equilb, lat_inflow, shday
 ! Local Variables
@@ -791,7 +791,7 @@
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
-            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)*harea
+            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)*0.01*harea
          endif
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.

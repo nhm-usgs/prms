@@ -34,7 +34,7 @@
       INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
       EXTERNAL :: read_error, temp_set, find_header_end, find_current_time
-      EXTERNAL :: print_module, print_date
+      EXTERNAL :: print_module
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       REAL :: tmax_hru, tmin_hru, harea

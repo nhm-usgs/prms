@@ -61,7 +61,7 @@
       USE PRMS_WATER_USE
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SNGL, DBLE
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: control_string, declvar, decldim, getdim
       EXTERNAL :: read_error, find_header_end, find_current_file_time, read_event, print_module, PRMS_open_module_file, error_stop
 ! Local Variables

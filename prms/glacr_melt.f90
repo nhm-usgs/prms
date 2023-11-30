@@ -446,7 +446,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam, get_ftnunit, compute_ela_aar
-      INTRINSIC :: ABS, SQRT, SNGL, REAL
+      INTRINSIC :: ABS, SQRT, REAL
       EXTERNAL :: read_error, tag_count, sort5, glacr_restart
 ! Local Variables
       INTEGER :: i, j, ii, jj, o, p, hru_flowline(Nhru), toflowline(Nhru), doela, termh, len_str
@@ -794,7 +794,7 @@
 !                  computations
 !***********************************************************************
       INTEGER FUNCTION glacrrun()
-      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, NEARZERO, FEET
+      USE PRMS_CONSTANTS, ONLY: GLACIER, LAND, FEET2METERS, NEARZERO, FEET !, METERS2FEET
       USE PRMS_GLACR
       USE PRMS_BASIN, ONLY: Hru_elev_ts, Active_hrus, Hru_route_order, Hru_type, &
      &    Elev_units, Hru_elev_meters !, Hru_elev_feet
@@ -886,7 +886,7 @@
 ! Functions
       INTEGER, EXTERNAL :: get_ftnunit, compute_ela_mb, compute_ela_aar, recompute_soltab
       INTRINSIC :: ABS, EXP, SUM, SQRT, ISNAN, SNGL, DBLE
-      EXTERNAL :: tag_count, bottom
+      EXTERNAL :: tag_count, bottom, yearly_ca_coef
 ! Local Variables
       INTEGER :: i, j, ii, jj, o, p, stact_hrus, endact_hrus, next, curr, keep, doela, dosol
       INTEGER :: thecase(Nhru), toflowline(Nhru), count_delta(Nhru), lowpt(Nhru), lowest(Nhru)
@@ -902,7 +902,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: glacr_exist, glrette_exist
 !***********************************************************************
-      comp_glsurf = 1
+      comp_glsurf = 0
       dobot = 1 ! 1 calls bottom calcs, 0 doesn't: Set to 0 for calibrating, then run one extra step with it on
       ! Should change so that saves the basal elevations (or reads in as parameter) and then recalibrating does not change
       botwrite = 0 ! 1 writes bottom calcs, 0 doesn't: Set to 0 for calibrating
@@ -1611,8 +1611,6 @@
       Basin_gl_storage = Basin_gl_storage + Basin_gl_top_gain - Basin_glacrb_melt - Basin_gl_top_melt
       Basin_gl_storvol = Basin_gl_storage/Basin_area_inv
 !
-      comp_glsurf = 0
-!
       END FUNCTION comp_glsurf
 
 !***********************************************************************
@@ -1631,7 +1629,7 @@
       INTEGER :: i, j, ii, o, p, ela2(Nhru)
       REAL :: elamin0(Nhru), elamin20(Nhru), elamin(Nhru), elamin2(Nhru)
 !***********************************************************************
-      compute_ela_mb = 1
+      compute_ela_mb = 0
 ! initialize
       ela2 = 0
       elamin0 = 1.0E15
@@ -1671,8 +1669,6 @@
         ENDDO
       ENDDO
 !
-      compute_ela_mb = 0
-!
       END FUNCTION compute_ela_mb
 
 !***********************************************************************
@@ -1693,7 +1689,7 @@
       REAL :: aar, elaarea
       REAL, PARAMETER :: Convert_units = (39.37*1000)**2
 !***********************************************************************
-      compute_ela_aar = 1
+      compute_ela_aar = 0
 ! initialize
       ela2 = 0
       elamin0 = 1.0E15
@@ -1741,8 +1737,6 @@
           ENDDO
         ENDDO
       ENDDO
-!
-      compute_ela_aar = 0
 
       END FUNCTION compute_ela_aar
 
@@ -1945,7 +1939,7 @@
       IMPLICIT NONE
       INTEGER, PARAMETER :: N = 101
 ! Functions
-      EXTERNAL :: cumtrapzv, spline, splint, solve_poly
+      EXTERNAL :: cumtrapzv, spline, splint, solve_poly, getf_fgrad
       INTRINSIC :: MIN, MAX, ISNAN, SQRT
 ! Arguments
       INTEGER, INTENT(IN) :: Gln, Topn, Gl_top(Ntp), Gt(Ntp), Toflowline(Ntp), Botwrite

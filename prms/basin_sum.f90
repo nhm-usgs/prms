@@ -495,7 +495,7 @@
       USE PRMS_MUSKINGUM_LAKE, ONLY: Basin_2ndstflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SNGL, ABS, DBLE
+      INTRINSIC :: ABS, DBLE
       EXTERNAL :: header_print, write_outfile
 ! Local variables
       INTEGER :: i, j, wyday, endrun, monthdays

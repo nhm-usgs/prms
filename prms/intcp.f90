@@ -8,7 +8,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2023-10-25'
+      character(len=*), parameter :: Version_intcp = '2023-11-24'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:), Apply_irr_in_srunoff(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
@@ -267,8 +267,8 @@
 !              and evaporation for each HRU
 !***********************************************************************
       INTEGER FUNCTION intrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, NEARZERO, &
-     &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param, TINY_SNOWPACK
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, CLOSEZERO, &
+     &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
       USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
@@ -360,7 +360,7 @@
             IF ( cov>0.0 ) THEN
               IF ( changeover<0.0 ) THEN
                 ! covden_win > covden_sum, adjust intcpstor to same volume, and lower depth
-                intcpstor = intcpstor*Covden_sum(i)/cov
+                intcpstor = (intcpstor*Covden_sum(i))/cov
                 changeover = 0.0
               ENDIF
             ELSE
@@ -381,7 +381,7 @@
             IF ( cov>0.0 ) THEN
               IF ( changeover<0.0 ) THEN
                 ! covden_sum > covden_win, adjust intcpstor to same volume, and lower depth
-                intcpstor = intcpstor*Covden_win(i)/cov
+                intcpstor = (intcpstor*Covden_win(i))/cov
                 changeover = 0.0
               ENDIF
             ELSE
@@ -410,7 +410,7 @@
               ELSEIF ( Cov_type(i)==GRASSES ) THEN ! cov_type = 1
                 !rsr, 03/24/2008 intercept rain on snow-free grass,
                 !rsr             when not a mixed event
-                IF ( Pkwater_equiv(i)<TINY_SNOWPACK .AND. netsnow<NEARZERO ) THEN
+                IF ( .not.(Pkwater_equiv(i)>0.0D0) .AND. netsnow<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
                   CALL intercept(Hru_rain(i), stor_max_rain, cov, intcpstor, netrain)
                   !rsr 03/24/2008
                   !it was decided to leave the water in intcpstor rather
@@ -429,7 +429,7 @@
             IF ( cov>0.0 ) THEN
               IF ( Cov_type(i)>GRASSES ) THEN ! cov_type > 1
                 CALL intercept(Hru_snow(i), Snow_intcp(i), cov, intcpstor, netsnow)
-                IF ( netsnow<NEARZERO ) THEN   !rsr, added 3/9/2006
+                IF ( netsnow<CLOSEZERO ) THEN   !rsr, added 3/9/2006, changed from NEARZERO to CLOSEZERO 11/24/2023
                   netrain = netrain + netsnow
                   netsnow = 0.0
                   Newsnow(i) = OFF
@@ -450,7 +450,7 @@
         IF ( Use_transfer_intcp==ACTIVE ) THEN
           IF ( Canopy_gain(i)>0.0 ) THEN
             IF ( Hru_type(i)==LAKE ) CALL error_stop('irrigation specified and hru_type is lake', ERROR_param)
-            ag_water_maxin = Canopy_gain(i)/SNGL(Cfs_conv)/harea ! Canopy_gain in CFS, convert to inches
+            ag_water_maxin = (Canopy_gain(i)/SNGL(Cfs_conv))/harea ! Canopy_gain in CFS, convert to inches
             Gain_inches_hru(i) = ag_water_maxin
             Gain_inches(i) = ag_water_maxin
             IF ( cov>0.0 ) Gain_inches(i) = ag_water_maxin/cov
@@ -484,7 +484,7 @@
 
         ! if precipitation assume no evaporation or sublimation
         IF ( intcpstor>0.0 ) THEN
-          IF ( Hru_ppt(i)<NEARZERO ) THEN
+          IF ( Hru_ppt(i)<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
 
             evrn = Potet(i)/Epan_coef(i, Nowmonth)
             evsn = Potet_sublim(i)*Potet(i)

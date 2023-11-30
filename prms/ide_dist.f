@@ -813,7 +813,7 @@
       USE PRMS_IDE, ONLY: Dalr
       IMPLICIT NONE
       INTRINSIC :: ABS, SNGL, DBLE, DABS
-      EXTERNAL :: SORT2, SORT2I
+      EXTERNAL :: SORT2, SORT2I, moments
 ! Arguments
       INTEGER, INTENT(IN) :: Imax, Itype, Nsta
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse

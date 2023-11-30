@@ -6,7 +6,7 @@
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Water Balance Computations'
         character(len=*), parameter :: MODNAME_WB = 'water_balance'
-        character(len=*), parameter :: Version_water_balance = '2023-09-13'
+        character(len=*), parameter :: Version_water_balance = '2023-11-28'
         INTEGER, SAVE :: BALUNT, SZUNIT, GWUNIT, INTCPUNT, SROUNIT, SNOWUNIT
         REAL, PARAMETER :: TOOSMALL = 3.1E-05, SMALL = 1.0E-04, BAD = 1.0E-03
         DOUBLE PRECISION, PARAMETER :: DSMALL = 1.0D-04, DTOOSMALL = 1.0D-05
@@ -133,10 +133,6 @@
       USE PRMS_GWFLOW, ONLY: Basin_gwstor
       USE PRMS_BASIN, ONLY: Hru_storage
 !***********************************************************************
-      Basin_capillary_wb = 0.0D0
-      Basin_gravity_wb = 0.0D0
-      Basin_soilzone_wb = 0.0D0
-      Basin_dprst_wb = 0.0D0
 !      Hru_runoff = 0.0D0
       Last_basin_gwstor = Basin_gwstor
       Gwstor_ante = Gwres_stor
@@ -148,7 +144,7 @@
 !     water_balance_run - Computes balance for each HRU and model domain
 !***********************************************************************
       SUBROUTINE water_balance_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, NEARZERO, TINY_SNOWPACK, LAKE, CASCADE_OFF, CASCADEGW_OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, NEARZERO, LAKE, CASCADE_OFF, CASCADEGW_OFF
       USE PRMS_MODULE, ONLY: Cascade_flag, Cascadegw_flag, Dprst_flag, Glacier_flag, Nowyear, Nowmonth, Nowday
       USE PRMS_WATER_BALANCE
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_frac_perv, Hru_area_dble, Hru_perv, &
@@ -236,7 +232,7 @@
         ENDIF
 
         ! Skip the HRU if there is no snowpack and no new snow
-        IF ( Pkwater_ante(i)>TINY_SNOWPACK .OR. Newsnow(i)==ACTIVE ) THEN
+        IF ( Pkwater_ante(i)>0.0D0 .OR. Newsnow(i)==ACTIVE ) THEN
           hrubal = SNGL( Pkwater_ante(i) - Pkwater_equiv(i) ) - Snow_evap(i) - Snowmelt(i)
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             hrubal = hrubal + Net_snow(i)
@@ -264,7 +260,7 @@
         IF ( Net_ppt(i)>0.0 ) THEN
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             robal = robal + Net_rain(i)
-          ELSEIF ( Snowmelt(i)<NEARZERO .AND. Pkwater_equiv(i)<TINY_SNOWPACK) THEN
+          ELSEIF ( Snowmelt(i)<NEARZERO .AND. .not.(Pkwater_equiv(i)>0.0D0) .and. .not.(Pkwater_ante(i)>0.0D0) ) THEN
             IF ( Snow_evap(i)<NEARZERO ) THEN
               robal = robal + Net_ppt(i)
             ELSEIF ( Net_snow(i)<NEARZERO ) THEN
@@ -321,7 +317,6 @@
 
         soilbal = (last_sm - Soil_moist(i) - Perv_actet(i))*perv_frac &
      &            - Soil_to_ssr(i) - Soil_to_gw(i) + Cap_infil_tot(i)
-
         IF ( ABS(soilbal)>TOOSMALL ) THEN
           WRITE ( BALUNT, * ) 'HRU capillary problem, HRU:', i
           WRITE ( BALUNT, * ) soilbal, Cap_infil_tot(i), last_sm, Soil_moist(i), Perv_actet(i), Soil_to_ssr(i), &
@@ -388,7 +383,8 @@
           WRITE ( BALUNT, * ) 'Possible HRU water balance issue:', wbal, '; HRU:', i, ' hru_type:', Hru_type(i), '; area:', harea
           WRITE ( BALUNT, * ) 'fluxes', Sroff(i), Gwres_flow(i), Ssres_flow(i), Hru_actet(i), Gwres_sink(i), &
        &                      Pfr_dunnian_flow(i), Intcp_changeover(i), Dunnian_flow(i)
-          WRITE ( BALUNT, * ) 'ppt', Hru_snow(i), Hru_rain(i), Hru_ppt(i), Net_rain(i), Net_snow(i), Pptmix(i), Hru_perv(i)
+          WRITE ( BALUNT, * ) 'ppt', Hru_snow(i), Hru_rain(i), Hru_ppt(i), Net_rain(i), Net_snow(i), Net_ppt(i), &
+       &                      Pptmix(i), Hru_perv(i)
           WRITE(balunt,*) 'snow', Pkwater_ante(i), Pkwater_equiv(i), Snow_evap(i), Snowmelt(i), Pptmix_nopack(i), Pk_precip(i)
           WRITE(balunt,*) 'aet', Hru_intcpevap(i), Hru_impervevap(i), Perv_actet(i), Dprst_evap_hru(i), Potet(i)
           !WRITE ( BALUNT, * ) Gwstor_minarea_wb(i)

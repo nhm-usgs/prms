@@ -145,9 +145,7 @@
      &         CALL read_error(2, 'poi_gage_segment')
           IF ( Parameter_check_flag>0 ) &
      &      CALL checkdim_bounded_limits('poi_gage_segment', 'nsegment', Poi_gage_segment, Npoigages, 1, Nsegment, Inputerror_flag)
-          DO i = 1, Npoigages
-            Poi_gage_id(i) = '                '
-          ENDDO
+          Poi_gage_id(i) = '                '
 
           DO i = 1, Npoigages
             foo = getparamstring(MODNAME, 'poi_gage_id', Npoigages, 'string', &
@@ -245,7 +243,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: control_string, numchars
-      EXTERNAL :: PRMS_open_input_file, PRMS_open_output_file, error_stop
+      EXTERNAL :: PRMS_open_input_file, PRMS_open_output_file, error_stop, read_error
       ! Local Variable
       INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)

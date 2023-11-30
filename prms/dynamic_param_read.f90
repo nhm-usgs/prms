@@ -337,7 +337,6 @@
       USE PRMS_SRUNOFF, ONLY: Sro_to_dprst_perv, Sro_to_dprst_imperv
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SNGL, DBLE
       EXTERNAL :: write_dynoutput, is_eof, write_dynparam, write_dynparam_int
       EXTERNAL :: write_dynparam_potet, error_stop
 ! Local Variables

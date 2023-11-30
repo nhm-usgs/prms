@@ -3,25 +3,14 @@
 !***********************************************************************
       MODULE PRMS_MODULE
     USE ISO_FORTRAN_ENV
-    USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, DEBUG_minimum, DEBUG_less, DEBUG_WB, &
-   &    RUN, DECL, INIT, SETDIMENS, CLEAN, ACTIVE, OFF, ERROR_dim, ERROR_open_out, ERROR_param, ERROR_restart, &
-   &    PRMS, CASCADE_NORMAL, CASCADE_HRU_SEGMENT, CASCADE_OFF, &
-   &    CASCADEGW_SAME, CASCADEGW_OFF, CLIMATE, FROST, TRANSPIRE, WRITE_CLIMATE, POTET, CONVERT, &
-   &    xyz_dist_module, ide_dist_module, temp_dist2_module, temp_map_module, precip_dist2_module, &
-   &    DOCUMENTATION, MAXDIM, MAXFILE_LENGTH, MAXCONTROL_LENGTH, ERROR_control, &
-   &    potet_jh_module, potet_hamon_module, potet_pan_module, potet_pt_module, potet_pm_sta_module, &
-   &    potet_pm_module, potet_hs_module, strmflow_muskingum_lake_module, strmflow_in_out_module, &
-   &    strmflow_noroute_module, strmflow_muskingum_mann_module, &
-   &    strmflow_muskingum_module, precip_1sta_module, precip_laps_module, &
-   &    climate_hru_module, precip_map_module, temp_1sta_module, temp_laps_module, temp_sta_module, &
-   &    smidx_module, carea_module, ddsolrad_module, ccsolrad_module, SAVE_INIT, READ_INIT
+    USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(LEN=74), parameter :: &
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2023-10-25'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 10/25/2023'
+      character(len=*), parameter :: PRMS_versn = '2023-11-24'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 11/24/2023'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -110,8 +99,7 @@
       ELSEIF ( Process(:4)=='decl' ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
         Execution_time_start = Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
-     &                         Elapsed_time_start(7) + Elapsed_time_start(8)*0.001
-        PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
+     &                         Elapsed_time_start(7) + INT(Elapsed_time_start(8)*0.001)
 
         Process_flag = DECL
 
@@ -321,7 +309,6 @@
 
       IF ( Model==WRITE_CLIMATE ) THEN
         ierr = write_climate_hru()
-        CALL summary_output()
         RETURN
       ENDIF
 
@@ -358,8 +345,6 @@
 
       IF ( seg2hru_flag==ACTIVE ) CALL segment_to_hru()
 
-      !IF ( Stream_order_flag==ACTIVE ) ierr = strmflow_character()
-
       IF ( Stream_temp_flag==ACTIVE ) THEN
            ierr = strmflow_character()
            ierr = stream_temp()
@@ -383,7 +368,7 @@
       ELSEIF ( Process_flag==CLEAN ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
         Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
-     &                       Elapsed_time_end(7) + Elapsed_time_end(8)*0.001
+     &                       Elapsed_time_end(7) + INT(Elapsed_time_end(8)*0.001)
         Elapsed_time = Execution_time_end - Execution_time_start
         Elapsed_time_minutes = INT(Elapsed_time/60.0)
         IF ( Print_debug>DEBUG_less ) THEN
@@ -870,7 +855,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getdim
-      EXTERNAL :: check_dimens
+      EXTERNAL :: check_dimens, read_error
 !***********************************************************************
 
       Nhru = getdim('nhru')

@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2023-10-11'
+      character(len=*), parameter :: Version_climateflow = '2023-10-17'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -99,8 +99,8 @@ module PRMS_IT0_VARS
        IMPLICIT NONE
 !   Global Variables
        DOUBLE PRECISION, SAVE :: It0_basin_ssstor, It0_basin_soil_moist
-       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_vol_open(:), It0_dprst_vol_clos(:), It0_dprst_stor_hru(:)
-       REAL, SAVE, ALLOCATABLE :: It0_soil_moist(:), It0_hru_impervstor(:), It0_soil_rechr(:), It0_ssres_stor(:)
+       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_stor_hru(:)
+       REAL, SAVE, ALLOCATABLE :: It0_soil_moist(:), It0_hru_impervstor(:), It0_ssres_stor(:)
 end module PRMS_IT0_VARS
 
 !***********************************************************************
@@ -348,7 +348,7 @@ end module PRMS_IT0_VARS
       ENDIF
 
 ! Soilzone variables
-      ALLOCATE ( Soil_rechr(Nhru), It0_soil_rechr(Nhru) )
+      ALLOCATE ( Soil_rechr(Nhru) )
       IF ( declvar(Soilzone_module, 'soil_rechr', 'nhru', Nhru, 'real', &
      &     'Storage for recharge zone (upper portion) of the'// &
      &     ' capillary reservoir that is available for both evaporation and transpiration', &
@@ -427,10 +427,6 @@ end module PRMS_IT0_VARS
       IF ( declvar(Soilzone_module, 'basin_perv_et', 'one', 1, 'double', &
      &     'Basin area-weighted average ET from capillary reservoirs', &
      &     'inches', Basin_perv_et)/=0 ) CALL read_error(3, 'basin_perv_et')
-
-      IF ( declvar(Soilzone_module, 'basin_lakeevap', 'one', 1, 'double', &
-     &     'Basin area-weighted average lake evaporation', &
-     &     'inches', Basin_lakeevap)/=0 ) CALL read_error(3, 'basin_lakeevap')
 
       ALLOCATE ( Ssres_in(Nssr) )
       IF ( declvar(Soilzone_module, 'ssres_in', 'nssr', Nssr, 'real', &
@@ -544,19 +540,20 @@ end module PRMS_IT0_VARS
      &       'cfs', Seg_upstream_inflow)/=0 ) CALL read_error(3, 'seg_upstream_inflow')
       ENDIF
 
-      IF ( declvar(Strmflow_module, 'basin_lake_stor', 'one', 1, 'double', &
-     &     'Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing', &
-     &     'inches', Basin_lake_stor)/=0 ) CALL read_error(3, 'basin_lake_stor')
-
-      IF ( Nlake>0 ) THEN
+      IF ( Nlake>0 ) THEN 
+        IF ( declvar(Soilzone_module, 'basin_lakeevap', 'one', 1, 'double', &
+     &       'Basin area-weighted average lake evaporation', &
+     &       'inches', Basin_lakeevap)/=0 ) CALL read_error(3, 'basin_lakeevap')
         ALLOCATE ( Lake_vol(Nlake) )
         IF ( declvar(Strmflow_module, 'lake_vol', 'nlake', Nlake, 'double', &
      &       'Storage in each lake using broad-crested weir or gate opening routing', &
      &       'acre-feet', Lake_vol)/=0 ) CALL read_error(3, 'lake_vol')
       ENDIF
+      IF ( declvar(Strmflow_module, 'basin_lake_stor', 'one', 1, 'double', &
+     &     'Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing', &
+     &     'inches', Basin_lake_stor)/=0 ) CALL read_error(3, 'basin_lake_stor')
 
       IF ( Dprst_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-        ALLOCATE ( It0_dprst_vol_open(Nhru), It0_dprst_vol_clos(Nhru) )
         ALLOCATE ( Dprst_vol_open(Nhru) )
         IF ( declvar(Srunoff_module, 'dprst_vol_open', 'nhru', Nhru, 'double', &
      &       'Storage volume in open surface depressions for each HRU', &
@@ -905,14 +902,14 @@ end module PRMS_IT0_VARS
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
      &    Temp_module, Precip_module, Solrad_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Et_flag, Dprst_flag, Solrad_flag, &
-     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag, Glacier_flag
+     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag, Glacier_flag, Stream_order_flag
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type, Hru_perv, Hru_area, Basin_area_inv
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits
+      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error
       REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
       INTEGER :: i, j, ierr
@@ -1180,7 +1177,7 @@ end module PRMS_IT0_VARS
 
       IF ( getparam(Srunoff_module, 'imperv_stor_max', Nhru, 'real', Imperv_stor_max)/=0 ) CALL read_error(2, 'imperv_stor_max')
 
-! initialize arrays (dimensioned Nhru)
+! initialize arrays (dimensioned Nhru) as needed if inactive HRUs
       Tmaxf = 0.0
       Tminf = 0.0
       Tavgf = 0.0
@@ -1231,6 +1228,11 @@ end module PRMS_IT0_VARS
 
       Basin_lake_stor = 0.0D0
       Basin_transp_on = OFF
+! initialize arrays (dimensioned Nsegment)
+      IF ( Stream_order_flag==ACTIVE ) THEN
+        Seg_inflow = 0.0D0
+        Seg_outflow = 0.0D0
+      ENDIF
       Transp_on = OFF
 ! initialize storage variables
       Imperv_stor = 0.0
@@ -1344,7 +1346,7 @@ end module PRMS_IT0_VARS
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
-      USE PRMS_CONSTANTS, ONLY: NEARZERO !, ACTIVE, DEBUG_minimum
+!      USE PRMS_CONSTANTS, ONLY: ACTIVE, DEBUG_minimum
 !      USE PRMS_MODULE, ONLY: Print_debug, forcing_check_flag
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
@@ -1386,7 +1388,7 @@ end module PRMS_IT0_VARS
           PRINT *, 'ERROR, tmax < tmin (degrees Fahrenheit), tmax:', Tmaxf, ' tmin:', TminF
           CALL print_date(1)
         ENDIF
-        IF ( ABS(tdiff)<NEARZERO ) tdiff = 0.0001
+        IF ( ABS(tdiff)<0.0001 ) tdiff = 0.0001
         Prmx = ((Tmaxf-Tmax_allsnow_f)/tdiff)*Adjmix_rain
         IF ( Prmx<0.0 ) Prmx = 0.0
 

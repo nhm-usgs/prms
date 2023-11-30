@@ -125,7 +125,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getvartype, numchars, getvarsize, getparam
-      EXTERNAL :: read_error, PRMS_open_output_file, find_header_end, find_current_file_time
+      EXTERNAL :: read_error, PRMS_open_output_file, find_header_end, find_current_file_time, error_stop
 ! Local Variables
       INTEGER :: ios, ierr, size, dim, jj, j
       CHARACTER(LEN=MAXFILE_LENGTH) :: fileName
@@ -319,7 +319,7 @@
 ! FUNCTIONS AND SUBROUTINES
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
-      EXTERNAL :: read_error
+      EXTERNAL :: read_error, read_event_date
 ! Local Variables
       INTEGER :: j, i, jj, write_month, last_day, write_date
 !***********************************************************************

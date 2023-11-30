@@ -32,7 +32,6 @@
      &    Precip_units, Tmax_allrain_f, Adjmix_rain, Tmaxf, Tminf, &
      &    Basin_ppt, Basin_snow, Basin_rain, Basin_obs_ppt, Tmax_allsnow_f
 ! Functions
-      INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: declparam, getparam, control_string
       EXTERNAL :: read_error, precip_form, find_header_end, find_current_time
       EXTERNAL :: print_module, print_date

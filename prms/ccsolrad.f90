@@ -13,7 +13,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ccsolrad'
-        character(len=*), parameter :: Version_ccsolrad = '2021-08-13'
+        character(len=*), parameter :: Version_ccsolrad = '2023-11-13'
         INTEGER, SAVE :: Observed_flag
         ! Declared Variables
         DOUBLE PRECISION, SAVE :: Basin_radadj, Basin_cloud_cover
@@ -103,7 +103,11 @@
               ENDIF
             ENDIF
           ENDIF
-          Swrad(j) = SNGL( Soltab_potsw(Jday, j)*DBLE( Cloud_radadj(j))/Hru_cossl(j) )
+          if ( .NOT.(Soltab_potsw(jday, j))>0.0 .or. .NOT.(Hru_cossl(j)>0.0D0) ) then
+            Swrad(j) = 0.0
+          else
+            Swrad(j) = SNGL( Soltab_potsw(Jday, j)*DBLE( Cloud_radadj(j))/Hru_cossl(j) )
+          endif
           Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
@@ -175,8 +179,6 @@
         IF ( getparam(MODNAME, 'ccov_intcp', Nhru*MONTHS_PER_YEAR, 'real', Ccov_intcp)/=0 ) CALL read_error(2, 'ccov_intcp')
 
         Cloud_radadj = 0.0
-        Basin_radadj = 0.0D0
-        Basin_cloud_cover = 0.0D0
         Cloud_cover_hru = 0.0
 
         Observed_flag = OFF

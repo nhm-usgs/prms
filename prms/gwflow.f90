@@ -17,7 +17,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Groundwater'
       character(len=6), parameter :: MODNAME = 'gwflow'
-      character(len=*), parameter :: Version_gwflow = '2023-10-06'
+      character(len=*), parameter :: Version_gwflow = '2023-11-13'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea(:), Gwin_dprst(:)
       DOUBLE PRECISION, SAVE :: Basin_gw_upslope
       INTEGER, SAVE :: Gwminarea_flag
@@ -520,30 +520,27 @@
         IF ( gwstor<0.0D0 ) THEN ! could happen with water use
           IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0, set to 0.0', gwstor
           gwstor = 0.0D0
-          Gwres_sink(i) = 0.0
-        ELSE
-
+        ENDIF
 ! Compute groundwater discharge
-          gwflow = gwstor*DBLE( Gwflow_coef(i) )
+        gwflow = gwstor*DBLE( Gwflow_coef(i) )
 
 ! Reduce storage by outflow
-          gwstor = gwstor - gwflow
+        gwstor = gwstor - gwflow
 
-          IF ( Gwsink_coef(i)>0.0 ) THEN
-            gwsink = MIN( gwstor*DBLE( Gwsink_coef(i) ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
-            gwstor = gwstor - gwsink
-          ENDIF
+        IF ( Gwsink_coef(i)>0.0 ) THEN
+          gwsink = MIN( gwstor*DBLE( Gwsink_coef(i) ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
+          gwstor = gwstor - gwsink
+        ENDIF
 ! if gwr_swale_flag = 1 swale GWR flow goes to sink, 2 included in stream network and cascades
 ! maybe gwr_swale_flag = 3 abs(hru_segment) so hru_segment could be changed from 0 to allow HRU swales
-          IF ( Gwr_swale_flag==ACTIVE ) THEN
-            IF ( Gwr_type(i)==SWALE ) THEN
-              gwsink = gwsink + gwflow
-              gwflow = 0.0D0
-            ENDIF
+        IF ( Gwr_swale_flag==ACTIVE ) THEN
+          IF ( Gwr_type(i)==SWALE ) THEN
+            gwsink = gwsink + gwflow
+            gwflow = 0.0D0
           ENDIF
-          Gwres_sink(i) = SNGL( gwsink/gwarea )
-          Basin_gwsink = Basin_gwsink + gwsink
         ENDIF
+        Gwres_sink(i) = SNGL( gwsink/gwarea )
+        Basin_gwsink = Basin_gwsink + gwsink
         Basin_gwstor = Basin_gwstor + gwstor
 
         Gwres_flow(i) = SNGL( gwflow/gwarea )

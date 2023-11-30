@@ -117,7 +117,7 @@
       USE PRMS_BASIN, ONLY: Hru_type, Active_hrus, Hru_route_order, Basin_lat, Hru_lat
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SIN, COS, DBLE
+      INTRINSIC :: SIN, COS, DBLE, SNGL
 !     INTRINSIC :: ASIN
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: compute_soltab, read_error, PRMS_open_module_file
@@ -220,7 +220,7 @@
       ENDIF
 
       DEALLOCATE ( Hru_slope )
-      IF ( Glacier_flag==OFF ) DEALLOCATE ( Hru_aspect )
+      IF ( Glacier_flag==OFF ) DEALLOCATE ( Hru_aspect, Hru_lat )
 
       END FUNCTION sthinit
 
