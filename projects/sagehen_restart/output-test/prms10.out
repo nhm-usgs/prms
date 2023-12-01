@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.1 02/08/2022
+                        Version 5.2.1.1 10/04/2023
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -27,6 +27,7 @@ Snow & Glacr Dynam: snowcomp, glacr_melt
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
                     muskingum_lake, muskingum_mann
+Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
                     nhru_summary, nsub_summary, water_balance
@@ -39,7 +40,7 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2022-02-08
+Computation Order               call_modules        2023-10-04
 Basin Definition                basin               2021-08-18
 Cascading Flow                  cascade             2021-08-13
 Common States and Fluxes        climateflow         2021-08-13
@@ -49,7 +50,7 @@ Timestep Control                prms_time           2021-08-13
 Time Series Data                obs                 2021-08-13
 Temperature Distribution        climate_hru         2021-08-13
 Precipitation Distribution      climate_hru         2021-08-13
-Solar Radiation Distribution    ddsolrad            2021-08-13
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2021-09-07
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2021-09-07
@@ -90,5 +91,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1983   11    1    0.720    0.026   13.431    0.028    0.091   -0.000    0.000
    1983   11    2    0.201    0.029   13.573    0.030    0.049    0.000    0.000
    1983   11    3    0.000    0.095   13.449    0.029    0.039   -0.000    0.000
-Execution elapsed time    0 minutes  0.11 seconds
+Execution elapsed time    0 minutes  0.07 seconds
 

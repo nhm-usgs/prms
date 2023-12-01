@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.1 02/08/2022
+                        Version 5.2.1.1 10/04/2023
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -27,6 +27,7 @@ Snow & Glacr Dynam: snowcomp, glacr_melt
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
                     muskingum_lake, muskingum_mann
+Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
                     nhru_summary, nsub_summary, water_balance
@@ -39,7 +40,7 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2022-02-08
+Computation Order               call_modules        2023-10-04
 Basin Definition                basin               2021-08-18
 Cascading Flow                  cascade             2021-08-13
 Common States and Fluxes        climateflow         2021-08-13
@@ -60,7 +61,7 @@ Groundwater                     gwflow              2021-08-13
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2021-08-13
 Output Summary                  subbasin            2021-08-13
-Output Summary                  nhru_summary        2021-08-13
+Output Summary                  nhru_summary        2022-09-07
 ==============================================================
 
 Using Control File: .\control\climate_hru.control
@@ -101,5 +102,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
  *************************************************************
  Total for run     668.938  388.458    8.959  274.620  260.348
  *************************************************************
-Execution elapsed time    0 minutes  1.16 seconds
+Execution elapsed time    0 minutes  1.12 seconds
 
