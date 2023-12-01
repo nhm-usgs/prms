@@ -9,8 +9,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2023-11-24'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 11/24/2023'
+      character(len=*), parameter :: PRMS_versn = '2023-12-01'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 12/01/2023'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -150,7 +150,7 @@
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
-        WRITE(*,'(/,24X,A,/)') 'Github Commit Hash 36e87ee'
+        WRITE(*,'(/,24X,A,/)') 'Github Commit Hash 08a33e7'
 
         Timestep = 0
         IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
@@ -266,7 +266,6 @@
 ! frost_date is a pre-process module
       IF ( Model==FROST ) THEN
         ierr = frost_date()
-        CALL summary_output()
         RETURN
       ENDIF
 
