@@ -470,7 +470,7 @@
           IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
      &         'Monthly maximum temperature adjustment factor for each HRU', &
-     &         'Monthly (January to December) adjustment factor to maximum air temperature for each HRU,'// &
+     &         'Monthly (January to December) additive adjustment factor to maximum air temperature for each HRU,'// &
      &         ' estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj')
 
@@ -478,7 +478,7 @@
           IF ( declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
      &         'Monthly minimum temperature adjustment factor for each HRU', &
-     &         'Monthly (January to December) adjustment factor to minimum air temperature for each HRU,'// &
+     &         'Monthly (January to December) additive adjustment factor to minimum air temperature for each HRU,'// &
      &         ' estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmin_cbh_adj')
         ENDIF
