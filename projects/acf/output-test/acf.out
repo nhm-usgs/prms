@@ -3,13 +3,14 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.1.1 10/04/2023
+                        Version 5.2.2 12/01/2023
 
         Process            Available Modules
 --------------------------------------------------------------------
   Basin Definition: basin
     Cascading Flow: cascade
   Time Series Data: obs, water_use_read, dynamic_param_read
+                    dynamic_soil_param_read
    Potet Solar Rad: soltab
   Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
                     temp_map
@@ -26,7 +27,7 @@ Snow & Glacr Dynam: snowcomp, glacr_melt
          Soil Zone: soilzone
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
-                    muskingum_lake, muskingum_mann
+                    muskingum_lake, muskingum_mann, segment_to_hru
 Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
@@ -40,34 +41,36 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2023-10-04
-Basin Definition                basin               2021-08-18
-Common States and Fluxes        climateflow         2021-08-13
-Potential Solar Radiation       soltab              2021-08-13
+Computation Order               call_modules        2023-12-01
+Basin Definition                basin               2023-01-11
+Common States and Fluxes        climateflow         2023-10-17
+Potential Solar Radiation       soltab              2022-10-24
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2021-08-13
-Time Series Data                obs                 2021-08-13
-Temperature Distribution        climate_hru         2021-08-13
-Precipitation Distribution      climate_hru         2021-08-13
-Solar Radiation Distribution    climate_hru         2021-08-13
-Potential Evapotranspiration    climate_hru         2021-08-13
+Timestep Control                prms_time           2023-08-10
+Time Series Data                obs                 2023-10-06
+Temperature Distribution        climate_hru         2023-08-10
+Precipitation Distribution      climate_hru         2023-08-10
+Solar Radiation Distribution    climate_hru         2023-08-10
+Potential Evapotranspiration    climate_hru         2023-08-10
 Transpiration Distribution      transp_tindex       2021-09-07
-Canopy Interception             intcp               2021-09-07
-Snow Dynamics                   snowcomp            2021-09-15
-Surface Runoff                  srunoff_smidx       2021-08-18
-Soilzone Computations           soilzone            2021-09-08
-Groundwater                     gwflow              2021-08-13
+Canopy Interception             intcp               2023-11-24
+Snow Dynamics                   snowcomp            2023-11-28
+Surface Runoff                  srunoff_smidx       2023-11-28
+Soilzone Computations           soilzone            2023-11-02
+Groundwater                     gwflow              2023-11-13
 Streamflow Routing Init         routing             2022-09-07
-Streamflow Routing              muskingum           2021-08-13
-Output Summary                  basin_sum           2021-08-13
+Streamflow Routing              muskingum           2023-10-06
+Output Summary                  basin_sum           2022-09-01
 Output Summary                  nhru_summary        2022-09-07
 Output Summary                  basin_summary       2021-08-13
-Output Summary                  prms_summary        2021-08-13
+Output Summary                  prms_summary        2023-09-13
 ==============================================================
 
 Using Control File: .\control\acf.control
 
+
 Using Parameter File: .\input\acf.params
+
 
 
 Start time: 1988/10/01 00:00:00
@@ -674,13 +677,13 @@ DPRST area:              192395.73    Fraction DPRST:          0.0157
    1990    3   18     793.00    27729.91
    1990    3   19     585.00    28815.91
    1990    3   20     507.00    40326.02
-   1990    3   21     450.00    71496.96
+   1990    3   21     450.00    71496.97
    1990    3   22     406.00   114720.11
    1990    3   23     375.00   148904.38
-   1990    3   24     356.00   159176.47
+   1990    3   24     356.00   159176.48
    1990    3   25     336.00   146484.36
    1990    3   26     327.00   122078.57
-   1990    3   27     305.00    96874.39
+   1990    3   27     305.00    96874.40
    1990    3   28     287.00    76158.84
    1990    3   29     286.00    60651.20
    1990    3   30     289.00    49398.93
@@ -895,5 +898,5 @@ DPRST area:              192395.73    Fraction DPRST:          0.0157
  ***************************************
  Total for run        159.12    22642.64
  ***************************************
-Execution elapsed time    0 minutes  0.46 seconds
+Execution elapsed time    0 minutes  1.00 seconds
 

@@ -557,7 +557,7 @@ Default   : 1.000000
 Name      : fastcoef_lin
 Module    : soilzone
 Descr     : Linear preferential-flow routing coefficient
-Help      : Linear coefficient in equation to route preferential-flow storage downslope for each HRU
+Help      : Linear coefficient in equation to route preferential-flow storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 178
 Size      : 178
@@ -571,7 +571,7 @@ Default   : 0.100000
 Name      : fastcoef_sq
 Module    : soilzone
 Descr     : Non-linear preferential-flow routing coefficient
-Help      : Non-linear coefficient in equation used to route preferential-flow storage downslope for each HRU
+Help      : Non-linear coefficient in equation used to route preferential-flow storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 178
 Size      : 178
@@ -1346,8 +1346,8 @@ Default   : 0.000000
 
 Name      : pref_flow_infil_frac
 Module    : soilzone
-Descr     : Fraction of the soilwater infiltration partitioned to the preferential for each HRU
-Help      : Fraction of the soilwater infiltration partitioned to the preferential for each HRU
+Descr     : Fraction of the soilwater infiltration partitioned to the preferential reservoir storage for each HRU
+Help      : Fraction of the soilwater infiltration partitioned to the preferential reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 178
 Size      : 178
@@ -1613,7 +1613,7 @@ Default   : 0.100000
 Name      : slowcoef_lin
 Module    : soilzone
 Descr     : Linear gravity-flow reservoir routing coefficient
-Help      : Linear coefficient in equation to route gravity-reservoir storage downslope for each HRU
+Help      : Linear coefficient in equation to route gravity-reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 178
 Size      : 178
@@ -1627,7 +1627,7 @@ Default   : 0.015000
 Name      : slowcoef_sq
 Module    : soilzone
 Descr     : Non-linear gravity-flow reservoir routing coefficient
-Help      : Non-linear coefficient in equation to route gravity-reservoir storage downslope for each HRU
+Help      : Non-linear coefficient in equation to route gravity-reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 178
 Size      : 178

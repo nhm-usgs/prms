@@ -118,6 +118,10 @@ Name  : nssr
 Value : 128
 Desc  : Number of subsurface reservoirs
 
+Name  : nstreamtemp
+Value : 0
+Desc  : Number of stream temperature replacement segments
+
 Name  : nsub
 Value : 2
 Desc  : Number of internal subbasins
@@ -439,21 +443,21 @@ Default   : 1.000000
 Name      : fastcoef_lin
 Module    : soilzone
 Descr     : Linear preferential-flow routing coefficient
-Help      : Linear coefficient in equation to route preferential-flow storage downslope for each HRU
+Help      : Linear coefficient in equation to route preferential-flow storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
 Type      : float
 Units     : fraction/day
 Width     : 0
-Max       : 1.000000
+Max       : 1.500000
 Min       : 0.000000
 Default   : 0.100000
 
 Name      : fastcoef_sq
 Module    : soilzone
 Descr     : Non-linear preferential-flow routing coefficient
-Help      : Non-linear coefficient in equation used to route preferential-flow storage downslope for each HRU
+Help      : Non-linear coefficient in equation used to route preferential-flow storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1194,8 +1198,8 @@ Default   : 0.000000
 
 Name      : pref_flow_infil_frac
 Module    : soilzone
-Descr     : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
-Help      : Fraction of the soilwater infiltration to the preferential flow occurs for each HRU
+Descr     : Fraction of the soilwater infiltration partitioned to the preferential reservoir storage for each HRU
+Help      : Fraction of the soilwater infiltration partitioned to the preferential reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1329,7 +1333,7 @@ Type      : float
 Units     : decimal fraction
 Width     : 0
 Max       : 10.000000
-Min       : 0.500000
+Min       : 0.200000
 Default   : 1.000000
 
 Name      : runoff_units
@@ -1405,7 +1409,7 @@ Default   : 0.100000
 Name      : slowcoef_lin
 Module    : soilzone
 Descr     : Linear gravity-flow reservoir routing coefficient
-Help      : Linear coefficient in equation to route gravity-reservoir storage downslope for each HRU
+Help      : Linear coefficient in equation to route gravity-reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1419,7 +1423,7 @@ Default   : 0.015000
 Name      : slowcoef_sq
 Module    : soilzone
 Descr     : Non-linear gravity-flow reservoir routing coefficient
-Help      : Non-linear coefficient in equation to route gravity-reservoir storage downslope for each HRU
+Help      : Non-linear coefficient in equation to route gravity-reservoir storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1496,8 +1500,8 @@ Size      : 1536
 Type      : float
 Units     : decimal fraction
 Width     : 0
-Max       : 2.500000
-Min       : 0.500000
+Max       : 5.000000
+Min       : 0.200000
 Default   : 1.000000
 
 Name      : snow_intcp
@@ -1544,8 +1548,8 @@ Default   : 0.000000
 
 Name      : soil2gw_max
 Module    : soilzone
-Descr     : Maximum value for capillary reservoir excess to GWR
-Help      : Maximum amount of the capillary reservoir excess that is routed directly to the GWR for each HRU
+Descr     : Maximum value for capillary reservoir excess to groundwater storage
+Help      : Maximum amount of the capillary reservoir excess that is routed directly to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1580,7 +1584,7 @@ Size      : 128
 Type      : float
 Units     : inches
 Width     : 0
-Max       : 20.000000
+Max       : 30.000000
 Min       : 0.000010
 Default   : 2.000000
 
@@ -1642,8 +1646,8 @@ Default   : 0.100000
 
 Name      : ssr2gw_exp
 Module    : soilzone
-Descr     : Coefficient to route water from subsurface to groundwater
-Help      : Non-linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
+Descr     : Coefficient to route water from subsurface to groundwater storage
+Help      : Non-linear coefficient in equation used to route water from the gravity reservoir groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 128
 Size      : 128
@@ -1656,8 +1660,8 @@ Default   : 1.000000
 
 Name      : ssr2gw_rate
 Module    : soilzone
-Descr     : Coefficient to route water from gravity reservoir to GWR
-Help      : Linear coefficient in equation used to route water from the gravity reservoir to the GWR for each HRU
+Descr     : Coefficient to route water from gravity reservoir to groundwater storage
+Help      : Linear coefficient in equation used to route water from the gravity reservoir to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 128
 Size      : 128

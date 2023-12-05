@@ -77,15 +77,6 @@ Type: double
 Desc: Basin area-weighted average infiltration with cascading flow into capillary reservoirs
 Units: inches
 
-Name: basin_cap_up_max
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average maximum cascade flow that flows to capillary reservoirs
-Units: inches
-
 Name: basin_capwaterin
 Module: soilzone
 Ndimen: 1
@@ -453,24 +444,6 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing
-Units: inches
-
-Name: basin_lakeevap
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average lake evaporation
-Units: inches
-
-Name: basin_lakeprecip
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average precipitation on lake HRUs
 Units: inches
 
 Name: basin_max_temp_mo
@@ -1405,7 +1378,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Fraction of closed surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
@@ -1414,7 +1387,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Fraction of surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
@@ -1432,7 +1405,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Fraction of open surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
@@ -1805,6 +1778,15 @@ Type: float
 Desc: Area of HRU that is pervious
 Units: acres
 
+Name: hru_perv_actet
+Module: soilzone
+Ndimen: 1
+Dimensions: nhru - 27
+Size: 27
+Type: float
+Desc: Actual ET from the capillary reservoir as HRU value
+Units: inches
+
 Name: hru_ppt
 Module: climate_hru
 Ndimen: 1
@@ -2134,7 +2116,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
@@ -2179,7 +2161,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Temperature of the snowpack on each HRU
 Units: degrees Celsius
 
@@ -2827,7 +2809,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 27
 Size: 27
-Type: float
+Type: double
 Desc: Net snowpack energy balance on each HRU
 Units: Langleys
 

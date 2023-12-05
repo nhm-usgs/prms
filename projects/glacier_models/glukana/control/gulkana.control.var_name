@@ -131,15 +131,6 @@ Type: double
 Desc: Basin area-weighted average infiltration with cascading flow into capillary reservoirs
 Units: inches
 
-Name: basin_cap_up_max
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average maximum cascade flow that flows to capillary reservoirs
-Units: inches
-
 Name: basin_capwaterin
 Module: soilzone
 Ndimen: 1
@@ -561,24 +552,6 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing
-Units: inches
-
-Name: basin_lakeevap
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average lake evaporation
-Units: inches
-
-Name: basin_lakeprecip
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average precipitation on lake HRUs
 Units: inches
 
 Name: basin_max_temp_mo
@@ -1756,7 +1729,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
-Type: float
+Type: double
 Desc: Heat deficit, amount of heat necessary to make the glacier or or glacierette snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
@@ -1792,7 +1765,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
-Type: float
+Type: double
 Desc: Temperature of the glacier or glacierette on each HRU
 Units: degrees Celsius
 
@@ -1851,7 +1824,7 @@ Desc: Identifies which glacier each HRU belongs to
 Units: none
 
 Name: glacrb_melt
-Module: snowcomp
+Module: glacr_melt
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
@@ -2503,7 +2476,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
-Type: float
+Type: double
 Desc: Heat deficit, amount of heat necessary to make the snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
@@ -2548,7 +2521,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
-Type: float
+Type: double
 Desc: Temperature of the snowpack on each HRU
 Units: degrees Celsius
 
@@ -2667,15 +2640,6 @@ Dimensions: nhru - 78
 Size: 78
 Type: float
 Desc: Maximum storage of the preferential-flow reservoir for each HRU
-Units: inches
-
-Name: pref_flow_max_in
-Module: soilzone
-Ndimen: 1
-Dimensions: nhru - 78
-Size: 78
-Type: float
-Desc: Maximum infiltration to the preferential-flow reservoir storage for each HRU
 Units: inches
 
 Name: pref_flow_stor
@@ -3196,7 +3160,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
-Type: float
+Type: double
 Desc: Net snowpack energy balance on each HRU
 Units: Langleys
 

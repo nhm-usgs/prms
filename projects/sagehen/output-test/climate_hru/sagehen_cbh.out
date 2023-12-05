@@ -3,13 +3,14 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.1.1 10/04/2023
+                        Version 5.2.2 12/01/2023
 
         Process            Available Modules
 --------------------------------------------------------------------
   Basin Definition: basin
     Cascading Flow: cascade
   Time Series Data: obs, water_use_read, dynamic_param_read
+                    dynamic_soil_param_read
    Potet Solar Rad: soltab
   Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
                     temp_map
@@ -26,7 +27,7 @@ Snow & Glacr Dynam: snowcomp, glacr_melt
          Soil Zone: soilzone
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
-                    muskingum_lake, muskingum_mann
+                    muskingum_lake, muskingum_mann, segment_to_hru
 Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
@@ -40,33 +41,35 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2023-10-04
-Basin Definition                basin               2021-08-18
+Computation Order               call_modules        2023-12-01
+Basin Definition                basin               2023-01-11
 Cascading Flow                  cascade             2021-08-13
-Common States and Fluxes        climateflow         2021-08-13
-Potential Solar Radiation       soltab              2021-08-13
+Common States and Fluxes        climateflow         2023-10-17
+Potential Solar Radiation       soltab              2022-10-24
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2021-08-13
-Time Series Data                obs                 2021-08-13
-Temperature Distribution        climate_hru         2021-08-13
-Precipitation Distribution      climate_hru         2021-08-13
-Solar Radiation Distribution    climate_hru         2021-08-13
-Potential Evapotranspiration    climate_hru         2021-08-13
+Timestep Control                prms_time           2023-08-10
+Time Series Data                obs                 2023-10-06
+Temperature Distribution        climate_hru         2023-08-10
+Precipitation Distribution      climate_hru         2023-08-10
+Solar Radiation Distribution    climate_hru         2023-08-10
+Potential Evapotranspiration    climate_hru         2023-08-10
 Transpiration Distribution      transp_tindex       2021-09-07
-Canopy Interception             intcp               2021-09-07
-Snow Dynamics                   snowcomp            2021-09-15
-Surface Runoff                  srunoff_smidx       2021-08-18
-Soilzone Computations           soilzone            2021-09-08
-Groundwater                     gwflow              2021-08-13
+Canopy Interception             intcp               2023-11-24
+Snow Dynamics                   snowcomp            2023-11-28
+Surface Runoff                  srunoff_smidx       2023-11-28
+Soilzone Computations           soilzone            2023-11-02
+Groundwater                     gwflow              2023-11-13
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2021-08-13
-Output Summary                  subbasin            2021-08-13
+Output Summary                  basin_sum           2022-09-01
+Output Summary                  subbasin            2022-09-07
 Output Summary                  nhru_summary        2022-09-07
 ==============================================================
 
 Using Control File: .\control\climate_hru.control
 
+
 Using Parameter File: .\input\climate_hru.params
+
 
 
 Start time: 1980/10/01 00:00:00
@@ -84,23 +87,23 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
  -------------------------------------------------------------
  initial                               3.100
    1981             27.189   19.621    4.126    6.543    6.181
-   1982             76.778   30.512   11.981   38.412   36.819
-   1983             64.524   32.404   11.445   32.656   38.374
+   1982             76.778   30.511   11.981   38.412   36.819
+   1983             64.524   32.405   11.445   32.655   38.374
    1984             52.146   30.871    9.762   22.958   26.168
-   1985             29.538   21.952    6.945   10.403   11.260
-   1986             60.447   30.253   10.520   26.618   27.044
-   1987             17.887   16.343    4.932    7.132    6.438
-   1988             21.214   17.187    3.413    5.546    4.140
+   1985             29.538   21.943    6.946   10.411   11.260
+   1986             60.447   30.253   10.521   26.619   27.044
+   1987             17.887   16.342    4.933    7.133    6.438
+   1988             21.214   17.185    3.414    5.548    4.140
    1989             43.851   26.103    6.287   14.874   12.683
-   1990             29.970   23.628    5.881    6.747    6.491
-   1991             25.841   22.357    3.845    5.520    5.574
+   1990             29.970   23.627    5.881    6.749    6.491
+   1991             25.841   22.354    3.845    5.524    5.574
    1992             21.591   15.887    3.473    6.076    3.847
-   1993             55.061   28.260    7.123   23.151   18.886
+   1993             55.061   28.259    7.123   23.151   18.886
    1994             20.340   16.378    5.097    5.989    4.182
-   1995             69.736   30.629    8.011   36.192   29.493
+   1995             69.736   30.628    8.011   36.194   29.493
    1996             52.824   26.073    8.959   25.803   22.769
  *************************************************************
- Total for run     668.938  388.458    8.959  274.620  260.348
+ Total for run     668.938  388.438    8.959  274.640  260.348
  *************************************************************
-Execution elapsed time    0 minutes  1.12 seconds
+Execution elapsed time    0 minutes  1.00 seconds
 
