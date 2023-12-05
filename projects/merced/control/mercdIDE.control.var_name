@@ -86,15 +86,6 @@ Type: double
 Desc: Basin area-weighted average maximum cascade flow that flows to capillary reservoirs
 Units: inches
 
-Name: basin_capillary_wb
-Module: water_balance
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average capillary reservoir storage
-Units: inches
-
 Name: basin_capwaterin
 Module: soilzone
 Ndimen: 1
@@ -201,15 +192,6 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin area-weighted average excess infiltration to preferential-flow reservoirs from variable infil
-Units: inches
-
-Name: basin_gravity_wb
-Module: water_balance
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average gravity reservoir storage
 Units: inches
 
 Name: basin_gvr2pfr
@@ -896,15 +878,6 @@ Type: double
 Desc: Basin average excess flow to capillary reservoirs that drains to GWRs
 Units: inches
 
-Name: basin_soilzone_wb
-Module: water_balance
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average storage in soilzone reservoirs
-Units: inches
-
 Name: basin_sroff
 Module: srunoff_smidx
 Ndimen: 1
@@ -1409,15 +1382,6 @@ Type: float
 Desc: Area of HRU that is pervious
 Units: acres
 
-Name: hru_perv_actet
-Module: soilzone
-Ndimen: 1
-Dimensions: nhru - 90
-Size: 90
-Type: float
-Desc: Actual ET from the capillary reservoir as HRU value
-Units: inches
-
 Name: hru_ppt
 Module: ide_dist
 Ndimen: 1
@@ -1911,15 +1875,6 @@ Dimensions: nhru - 90
 Size: 90
 Type: float
 Desc: Maximum storage of the preferential-flow reservoir for each HRU
-Units: inches
-
-Name: pref_flow_max_in
-Module: soilzone
-Ndimen: 1
-Dimensions: nhru - 90
-Size: 90
-Type: float
-Desc: Maximum infiltration to the preferential-flow reservoir storage for each HRU
 Units: inches
 
 Name: pref_flow_stor

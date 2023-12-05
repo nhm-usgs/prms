@@ -3,14 +3,13 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.2 09/01/2023
+                        Version 5.2.1.1 10/04/2023
 
         Process            Available Modules
 --------------------------------------------------------------------
   Basin Definition: basin
     Cascading Flow: cascade
   Time Series Data: obs, water_use_read, dynamic_param_read
-                    dynamic_soil_param_read
    Potet Solar Rad: soltab
   Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
                     temp_map
@@ -27,7 +26,7 @@ Snow & Glacr Dynam: snowcomp, glacr_melt
          Soil Zone: soilzone
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
-                    muskingum_lake, muskingum_mann, segment_to_hru
+                    muskingum_lake, muskingum_mann
 Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
@@ -41,33 +40,30 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2023-09-01
-Basin Definition                basin               2023-01-11
-Common States and Fluxes        climateflow         2023-08-10
-Potential Solar Radiation       soltab              2022-10-24
+Computation Order               call_modules        2023-10-04
+Basin Definition                basin               2021-08-18
+Common States and Fluxes        climateflow         2021-08-13
+Potential Solar Radiation       soltab              2021-08-13
 Parameter Setup                 setup_param         2020-08-03
-Timestep Control                prms_time           2023-08-10
-Time Series Data                obs                 2023-08-30
-Temp & Precip Distribution      xyz_dist            2022-09-07
-Solar Radiation Distribution    ddsolrad            2022-09-01
+Timestep Control                prms_time           2021-08-13
+Time Series Data                obs                 2021-08-13
+Temp & Precip Distribution      xyz_dist            2021-08-13
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2021-09-07
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2021-09-07
-Snow Dynamics                   snowcomp            2023-08-14
-Surface Runoff                  srunoff_smidx       2023-08-10
-Soilzone Computations           soilzone            2023-08-10
+Snow Dynamics                   snowcomp            2021-09-15
+Surface Runoff                  srunoff_smidx       2021-08-18
+Soilzone Computations           soilzone            2021-09-08
 Groundwater                     gwflow              2021-08-13
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2022-09-01
-Water Balance Computations      water_balance       2023-01-17
+Output Summary                  basin_sum           2021-08-13
 Output Summary                  prms_summary        2021-08-13
 ==============================================================
 
 Using Control File: .\control\mercdXYZ.control
 
-
 Using Parameter File: ./input/mercdXYZ.param
-
 
 
 Start time: 1993/10/01 00:00:00
@@ -87,5 +83,5 @@ Fraction impervious:        0.0001    Fraction pervious:       0.9999
  *************************************************************
  Total for run     119.830   53.742    6.791   63.263   67.341
  *************************************************************
-Execution elapsed time    0 minutes  0.23 seconds
+Execution elapsed time    0 minutes  0.10 seconds
 
