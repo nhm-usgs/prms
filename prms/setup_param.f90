@@ -101,7 +101,7 @@
      &     'none')/=0 ) CALL read_error(1, 'parent_hru')
 
       IF ( declparam(MODNAME, 'hru_lon', 'nhru', 'real', &
-     &     '-105.0', '-360.0', '360.0', &
+     &     '-105.0', '-180.0', '180.0', &
      &     'HRU longitude', 'Longitude of each HRU', &
      &     'degrees East')/=0 ) CALL read_error(1, 'hru_lon')
 

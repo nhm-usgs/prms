@@ -79,7 +79,7 @@
 
       ALLOCATE ( seg_res_time(Nsegment) )
       IF ( declvar( MODNAME, 'seg_res_time', 'nsegment', Nsegment, 'real', &
-     &     'Mean resisdence time of water in each segment', &
+     &     'Mean residence time of water in each segment', &
      &     'seconds', seg_res_time )/=0 ) CALL read_error(3, 'seg_res_time')
 
       ALLOCATE ( width_alpha(Nsegment) )

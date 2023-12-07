@@ -136,7 +136,7 @@
       ENDIF
       IF ( Cascade_flag/=CASCADE_HRU_SEGMENT .OR. Model==DOCUMENTATION ) THEN
         IF ( declparam(MODNAME, 'cascade_tol', 'one', 'real', &
-     &       '5.0', '0.0', '99.0', &
+     &       '0.0', '0.0', '99.0', &
      &       'Cascade area below which a cascade link is ignored', &
      &       'Cascade area below which a cascade link is ignored', &
      &       'acres')/=0 ) CALL read_error(1, 'cascade_tol')
@@ -208,7 +208,7 @@
       cascinit = 0
 
       IF ( Cascade_flag==CASCADE_HRU_SEGMENT ) THEN
-        Cascade_tol = 5.0
+        Cascade_tol = 0.0
         Cascade_flg = 1
         Circle_switch = 0
       ELSE

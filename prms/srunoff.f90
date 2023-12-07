@@ -401,7 +401,7 @@
      &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
      &         'Fraction of pervious surface runoff that'// &
      &         ' flows into surface-depression storage; the remainder'// &
-     &         ' flows to a stream network for each HRU', &
+     &         ' flows to the stream network for each HRU', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst')
         ENDIF
         IF ( PRMS4_flag==OFF .OR. Model==DOCUMENTATION ) THEN
@@ -410,7 +410,7 @@
      &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
      &         'Fraction of pervious surface runoff that'// &
      &         ' flows into surface-depression storage; the remainder'// &
-     &         ' flows to a stream network for each HRU', &
+     &         ' flows the a stream network for each HRU', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_perv')
         ENDIF
 
@@ -420,7 +420,7 @@
      &       'Fraction of impervious surface runoff that flows into surface-depression storage', &
      &       'Fraction of impervious surface runoff that'// &
      &       ' flows into surface-depression storage; the remainder'// &
-     &       ' flows to a stream network for each HRU', &
+     &       ' flows to the stream network for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_imperv')
 
         ALLOCATE ( Dprst_et_coef(Nhru) )
