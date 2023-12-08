@@ -368,7 +368,7 @@
         IF ( declparam(MODNAME, 'lake_evap_adj', 'nmonths,nlake', 'real', &
      &       '1.0', '0.5', '1.5', &
      &       'Monthly potet factor to adjust potet on lakes', &
-     &       'Monthly (January to December) adjustment factor for potential ET for each lake', &
+     &       'Monthly (January to December) multiplicative adjustment factor for potential ET for each lake', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'lake_evap_adj')
       ENDIF
 
@@ -696,9 +696,10 @@
       IF ( Soilzone_add_water_use==ACTIVE ) Soilzone_gain_hru = 0.0
       adjust_frozen = OFF
 
+! ***************************************
       DO k = 1, Active_hrus
         i = Hru_route_order(k)
-
+! ***************************************
         hruactet = Hru_impervevap(i) + Hru_intcpevap(i) + Snow_evap(i)
         IF ( Dprst_flag==ACTIVE ) hruactet = hruactet + Dprst_evap_hru(i)
         harea = Hru_area(i)
@@ -1033,7 +1034,10 @@
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
 
-      ENDDO
+! ***************************************
+      ENDDO ! end HRU loop
+! ***************************************
+
       Basin_actet = Basin_actet*Basin_area_inv
       Basin_perv_et = Basin_perv_et*Basin_area_inv
       Basin_swale_et = Basin_swale_et*Basin_area_inv

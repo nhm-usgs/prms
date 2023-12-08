@@ -69,7 +69,7 @@
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
           ! elh = 597.3 - 0.5653*Tavgc(i) ! same as potet_jh
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
-          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184 
+          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184
           ! elh = 2501.0 - 2.361*Tavgc(i)
           ! elh = 2500.8 - 2.36*Tavgc(i) + 0.0016*Tavgc(i)**2 - 0.00006*Tavgc(i)**3
 
@@ -97,8 +97,8 @@
           !A1 = 17.625 !moved outside loop
           !B1 = 243.04 !moved outside loop
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1) 
-          den = A1 - LOG(Humidity_hru(i)/100.0) - t1 
+          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1)
+          den = A1 - LOG(Humidity_hru(i)/100.0) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
@@ -130,7 +130,7 @@
 ! Net radiation (Irmak eqn. 8) MJ / m2 / day
 ! 1 Langley = 0.04184 MJ/m2
           net_rad = Swrad(i)*0.04184 - Lwrad_net(i) - heat_flux
-          
+
 !...COMPUTE EEQ, CM/DAY
 !...net_rad in units of MJ/m2
 !...elh (LATENT HEAT OF VAPORIZATION) in units of JOULES/GRAM:
@@ -159,7 +159,8 @@
         IF ( declparam(MODNAME, 'pt_alpha', 'nhru,nmonths', 'real', &
      &       '1.26', '1.0', '2.0', &
      &       'Potential ET adjustment factor - Priestly-Taylor', &
-     &       'Monthly (January to December) adjustment factor used in Priestly-Taylor potential ET computations for each HRU', &
+     &       'Monthly (January to December) multiplicative adjustment factor used in Priestly-Taylor' // &
+     &       ' potential ET computations for each HRU', &
      &       'decimal fraction')/=0 ) CALL read_error(1, 'pt_alpha')
 
 !******Get parameters
