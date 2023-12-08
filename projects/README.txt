@@ -48,7 +48,7 @@ Sample problems:
    the potential evapotranspiration (PET) rate limited by the unsatisfied PET
    rate to be consistent with other components of the actual evapotransiration
    (AET) rate can be higher on some timesteps, thus different than previous
-   versions of PRMS. Note: results from the Map Results module using and input
+   versions of PRMS. Note: results from the Map Results module using an input
    file (gvr.params) that specifies the intersections between the HRU map and
    output gridded map will be written to the current directory.
 
@@ -56,36 +56,36 @@ Sample problems:
    Yosemite National Park, California and is described in the PRMS-IV 
    documentation (Markstrom and others, 2015, USGS TM 6-B7). This sample 
    includes script files to run one simulation using the ide_dist module
-   and one using the xyz_dist module for precipation and temperature
+   and one using the xyz_dist module for precipitation and temperature
    distribution.
    
 3. acf: This sample model is for the Apalachicola-Chattahoochee-Flint 
-   River Basin the watershed above the Chattahoochee River near Norcross, 
-   Georgia and is described in LaFontaine and others (2013). This sample 
-   illustrates running PRMS to produce output from the nhru_summary module 
-   that is described in Regan and LaFontaine (2017), a statvar file that is
-   described in Markstro and others (2015), and from the prms_summary and 
-   basin_summary modules that are described in the Release notes. 
+   River Basin above the Chattahoochee River near Norcross, Georgia and is 
+   described in LaFontaine and others (2013). This sample illustrates running 
+   PRMS to produce output from the nhru_summary module that is described in 
+   Regan and LaFontaine (2017), a statvar file that is described in Markstrom 
+   and others (2015), and from the prms_summary and basin_summary modules 
+   that are described in the Release notes. 
    
 4. acfb_dyn_params: This sample model is for the Apalachicola-Chattahoochee-Flint 
-   River Basin the watershed above the Chattahoochee River near Norcross, 
-   Georgia and is described in LaFontaine and others (2013). This sample 
-   illustrates running PRMS with a time-series of dynamic parameters input 
-   to the dynamic_param_read module that is described in Regan and LaFontaine (2017).
+   River Basin above the Chattahoochee River near Norcross, Georgia and is 
+   described in LaFontaine and others (2013). This sample illustrates running 
+   PRMS with a time-series of dynamic parameters input to the dynamic_param_read 
+   module that is described in Regan and LaFontaine (2017).
    
 5. acfb_water_use: This sample model is for the Apalachicola-Chattahoochee-Flint 
-   River Basin the watershed above the Chattahoochee River near Norcross, 
-   Georgia and is described in LaFontaine and others (2013). This sample 
-   illustrates running PRMS with a time-series of water-use input to the 
-   water_use_read module that is described in Regan and LaFontaine (2017).
+   River Basin above the Chattahoochee River near Norcross, Georgia and is 
+   described in LaFontaine and others (2013). This sample illustrates running 
+   PRMS with a time-series of water-use input to the water_use_read module that 
+   is described in Regan and LaFontaine (2017).
 
-6. Tazlina: A model of the Tazlina Basin in Alaske is provided for illustrative
-   and educational purposes only. The glacier dynamics simulation method  is
+6. Tazlina: A model of the Tazlina Basin in Alaska is provided for illustrative
+   and educational purposes only. The glacier dynamics simulation method is
    described in Van Beusekom and Viger (2015).
 
 7. sagehen_restart: This is the sagehen model described in sample problem 1
    to demonstrate the use of the restart option with 16 simulations. The
-   restart option is decribe in Regan and LaFontaine (2017) and Regan and 
+   restart option is decribed in Regan and LaFontaine (2017) and Regan and 
    others (2015). The first simulation runs the entire simulation period 
    from October 1, 1980, through January 30, 1984. This simulation provides
    results for the entire simulation period. PRMS is then run 15 additional

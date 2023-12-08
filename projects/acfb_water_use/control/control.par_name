@@ -166,7 +166,7 @@ Default   : 1.000000
 Name      : adjmix_rain
 Module    : climate_hru
 Descr     : Adjustment factor for rain in a rain/snow mix
-Help      : Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event
+Help      : Monthly (January to December) multiplicative factor to adjust rain proportion in a mixed rain/snow event
 Ndimen    : 2
 Dimensions: nhru - 27, nmonths - 12
 Size      : 324
@@ -664,8 +664,8 @@ Size      : 27
 Type      : float
 Units     : degrees East
 Width     : 4
-Max       : 360.000000
-Min       : -360.000000
+Max       : 180.000000
+Min       : -180.000000
 Default   : -105.000000
 
 Name      : hru_percent_imperv
@@ -1012,7 +1012,7 @@ Default   : 1
 Name      : potet_cbh_adj
 Module    : climate_hru
 Descr     : Potential ET adjustment factor, by month for each HRU
-Help      : Monthly (January to December) adjustment factor to potential evapotranspiration specified in CBH Files for each HRU
+Help      : Monthly (January to December) multiplicative adjustment factor to potential evapotranspiration specified in CBH Files for each HRU
 Ndimen    : 2
 Dimensions: nhru - 27, nmonths - 12
 Size      : 324
@@ -1138,7 +1138,7 @@ Default   : 0.500000
 Name      : rain_cbh_adj
 Module    : climate_hru
 Descr     : Rain adjustment factor, by month for each HRU
-Help      : Monthly (January to December) adjustment factor to measured precipitation determined to be rain on each HRU to account for differences in elevation, and so forth
+Help      : Monthly (January to December) multiplicative adjustment factor to measured precipitation determined to be rain on each HRU to account for differences in elevation, and so forth
 Ndimen    : 2
 Dimensions: nhru - 27, nmonths - 12
 Size      : 324
@@ -1306,7 +1306,7 @@ Default   : 50.000000
 Name      : snow_cbh_adj
 Module    : climate_hru
 Descr     : Snow adjustment factor, by month for each HRU
-Help      : Monthly (January to December) adjustment factor to measured precipitation determined to be snow on each HRU to account for differences in elevation, and so forth
+Help      : Monthly (January to December) multiplicative adjustment factor to measured precipitation determined to be snow on each HRU to account for differences in elevation, and so forth
 Ndimen    : 2
 Dimensions: nhru - 27, nmonths - 12
 Size      : 324
@@ -1376,7 +1376,7 @@ Default   : 0.000000
 Name      : soil_moist_init_frac
 Module    : soilzone
 Descr     : Initial fraction available water in the capillary reservoir
-Help      : Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max for each HRU
+Help      : Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max) for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1460,7 +1460,7 @@ Default   : 0.100000
 Name      : sro_to_dprst_imperv
 Module    : srunoff_smidx
 Descr     : Fraction of impervious surface runoff that flows into surface-depression storage
-Help      : Fraction of impervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
+Help      : Fraction of impervious surface runoff that flows into surface-depression storage; the remainder flows to the stream network for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1474,7 +1474,7 @@ Default   : 0.200000
 Name      : sro_to_dprst_perv
 Module    : srunoff_smidx
 Descr     : Fraction of pervious surface runoff that flows into surface-depression storage
-Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows to a stream network for each HRU
+Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows the a stream network for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27
@@ -1488,7 +1488,7 @@ Default   : 0.200000
 Name      : ssr2gw_exp
 Module    : soilzone
 Descr     : Coefficient to route water from subsurface to groundwater storage
-Help      : Non-linear coefficient in equation used to route water from the gravity reservoir groundwater storage for each HRU
+Help      : Non-linear coefficient in equation used to route water from the gravity reservoir to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 27
 Size      : 27

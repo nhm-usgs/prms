@@ -148,7 +148,7 @@ Fixed
 Name      : adjmix_rain
 Module    : precip_1sta
 Descr     : Adjustment factor for rain in a rain/snow mix
-Help      : Monthly (January to December) factor to adjust rain proportion in a mixed rain/snow event
+Help      : Monthly (January to December) multiplicative factor to adjust rain proportion in a mixed rain/snow event
 Ndimen    : 2
 Dimensions: nhru - 128, nmonths - 12
 Size      : 1536
@@ -270,7 +270,7 @@ Units     : acres
 Width     : 0
 Max       : 99.000000
 Min       : 0.000000
-Default   : 5.000000
+Default   : 0.000000
 
 Name      : cecn_coef
 Module    : snowcomp
@@ -693,8 +693,8 @@ Size      : 128
 Type      : float
 Units     : degrees East
 Width     : 4
-Max       : 360.000000
-Min       : -360.000000
+Max       : 180.000000
+Min       : -180.000000
 Default   : -105.000000
 
 Name      : hru_pct_up
@@ -1283,7 +1283,7 @@ Default   : 0.000000
 Name      : radj_sppt
 Module    : ddsolrad
 Descr     : Adjustment to solar radiation on precipitation day - summer
-Help      : Adjustment factor for computed solar radiation for summer day with greater than ppt_rad_adj inches of precipitation for each HRU
+Help      : Multiplicative adjustment factor for computed solar radiation for summer day with greater than ppt_rad_adj inches of precipitation for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1297,7 +1297,7 @@ Default   : 0.440000
 Name      : radj_wppt
 Module    : ddsolrad
 Descr     : Adjustment to solar radiation on precipitation day - winter
-Help      : Adjustment factor for computed solar radiation for winter day with greater than ppt_rad_adj inches of precipitation for each HRU
+Help      : Multiplicative adjustment factor for computed solar radiation for winter day with greater than ppt_rad_adj inches of precipitation for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1325,7 +1325,7 @@ Default   : 0.800000
 Name      : rain_adj
 Module    : precip_1sta
 Descr     : Monthly rain adjustment factor for each HRU
-Help      : Monthly (January to December) factor to adjust measured rain on each HRU to account for differences in elevation, and so forth
+Help      : Monthly (January to December) multiplicative factor to adjust measured rain on each HRU to account for differences in elevation, and so forth
 Ndimen    : 2
 Dimensions: nhru - 128, nmonths - 12
 Size      : 1536
@@ -1493,7 +1493,7 @@ Default   : 50.000000
 Name      : snow_adj
 Module    : precip_1sta
 Descr     : Monthly snow adjustment factor for each HRU
-Help      : Monthly (January to December) factor to adjust measured snow on each HRU to account for differences in elevation, and so forth
+Help      : Monthly (January to December) multiplicative factor to adjust measured snow on each HRU to account for differences in elevation, and so forth
 Ndimen    : 2
 Dimensions: nhru - 128, nmonths - 12
 Size      : 1536
@@ -1563,7 +1563,7 @@ Default   : 0.000000
 Name      : soil_moist_init_frac
 Module    : soilzone
 Descr     : Initial fraction available water in the capillary reservoir
-Help      : Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max for each HRU
+Help      : Initial fraction of available water in the capillary reservoir (fraction of soil_moist_max) for each HRU
 Ndimen    : 1
 Dimensions: nhru - 128
 Size      : 128
@@ -1647,7 +1647,7 @@ Default   : 0.100000
 Name      : ssr2gw_exp
 Module    : soilzone
 Descr     : Coefficient to route water from subsurface to groundwater storage
-Help      : Non-linear coefficient in equation used to route water from the gravity reservoir groundwater storage for each HRU
+Help      : Non-linear coefficient in equation used to route water from the gravity reservoir to groundwater storage for each HRU
 Ndimen    : 1
 Dimensions: nssr - 128
 Size      : 128
