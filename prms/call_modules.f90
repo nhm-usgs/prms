@@ -2,7 +2,6 @@
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
       MODULE PRMS_MODULE
-    USE ISO_FORTRAN_ENV
     USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(LEN=74), parameter :: &
@@ -67,7 +66,7 @@
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Arg
 ! Functions
-      INTRINSIC :: DATE_AND_TIME, INT
+      INTRINSIC :: DATE_AND_TIME, INT, REAL
       INTEGER, EXTERNAL :: check_dims, basin, climateflow, prms_time, setup
       INTEGER, EXTERNAL :: cascade, obs, soltab, transp_tindex
       INTEGER, EXTERNAL :: transp_frost, frost_date, routing
@@ -98,8 +97,8 @@
 
       ELSEIF ( Process(:4)=='decl' ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_start)
-        Execution_time_start = Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
-     &                         Elapsed_time_start(7) + INT(Elapsed_time_start(8)*0.001)
+        Execution_time_start = FLOAT(Elapsed_time_start(5)*3600 + Elapsed_time_start(6)*60 + &
+     &                         Elapsed_time_start(7)) + FLOAT(Elapsed_time_start(8))*0.001
 
         Process_flag = DECL
 
@@ -150,7 +149,7 @@
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
-        WRITE(*,'(/,12X,A,/)') 'Github Commit Hash 0dd303d9859bc627ccf5b0981f523de718a2d5c5 [0dd303d]'
+        WRITE(*,'(/,12X,A,/)') 'Github Commit Hash e2ac2b97df1f7d1c38be24aeb6abb40e24a0a357 [e2ac2b9]'
 
         Timestep = 0
         IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
@@ -366,8 +365,8 @@
         RETURN
       ELSEIF ( Process_flag==CLEAN ) THEN
         CALL DATE_AND_TIME(VALUES=Elapsed_time_end)
-        Execution_time_end = Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
-     &                       Elapsed_time_end(7) + INT(Elapsed_time_end(8)*0.001)
+        Execution_time_end = FLOAT(Elapsed_time_end(5)*3600 + Elapsed_time_end(6)*60 + &
+     &                       Elapsed_time_end(7)) + FLOAT(Elapsed_time_end(8))*0.001
         Elapsed_time = Execution_time_end - Execution_time_start
         Elapsed_time_minutes = INT(Elapsed_time/60.0)
         IF ( Print_debug>DEBUG_less ) THEN
@@ -375,7 +374,7 @@
           PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
           PRINT 9003, 'end  ', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
           PRINT '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                               Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
+     &                                 Elapsed_time - FLOAT(Elapsed_time_minutes)*60.0, ' seconds'
         ENDIF
         IF ( Print_debug>DEBUG_minimum ) &
      &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
