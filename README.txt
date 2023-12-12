@@ -7,9 +7,9 @@
 PRMS is packaged for personal computers using one of the Linux or Microsoft 
 Windows operating systems. An executable file compiled for 64-bit operating 
 systems is provided. The Linux executable was compiled using the gfortran and 
-gcc compilers (8.3.0 version). The Windows executable was compiled using the 
-Microsoft Visual Studio Community 2019, Version 16.3.7 and the Intel Parallel 
-Studio XE 2019 Update 5 Composer Edition and Microsoft Visual C++ 2019 compilers.
+gcc compilers (11.2.0 version). The Windows executable was compiled using the 
+Microsoft Visual Studio Community 2022 (64-bit), Version 17.7.5 and the Intel 
+Fortran version 2023.2 and Intel C++ Classic version 19.2 compilers.
 
 The source code and Linux Makefiles are provided to aid users in compilation
 on other computers. However, no support is provided for compilation.
@@ -106,12 +106,25 @@ the installation directory:
    |            |--output      ; output files written here
    |            |--output-test ; output files as produced for comparison purposes
    |            |--control     ; Control Files and name files for GUI written here 
-   |        |--sagehen         ; scripts for Sagehen River example using temp_1sta
-                                 and precip_1sta climate distribution modules
+   |        |--sagehen         ; scripts for Sagehen River example
    |            |--input       ; Data and Parameter Files
    |            |--output      ; output files written here
    |            |--output-test ; output files as produced for comparison purposes
+   |               |--climate_hru ; tmax, tmin, precip, swrad, and potet specified
+                                    in climate-by-HRU (CBH) Files
+   |			   |--map_results ; modules temp_1sta, precip_1sta, ddsolrad, and
+                                  ; potet_jh are used and outputs mapped recharge
+   |			   |--sagehen     ; modules temp_1sta, precip_1sta, ddsolrad, and
+                                  ; potet_jh are used
    |            |--control     ; Control Files and name files for GUI written here
+   |        |--sagehen_restart ; scripts for Sagehen River restart example using
+                               ; temp_1sta and precip_1sta climate distribution
+                               ; modules. A continuous (full time period) and 15
+							   ; restart simulations are computed
+   |            |--input       ; Data and Parameter Files
+   |            |--output      ; output files written here
+   |            |--output-test ; output files as produced for comparison purposes
+   |            |--windows     ; Control Files and name files for GUI written here
    |        |--Tazlina         ; scripts for Tazlina glacier example using the
                                  xyz_dist climate distribution module and simulating
  				 glacier and frozen ground dynamics
@@ -148,7 +161,7 @@ removed from the PATH environment variable.
 As an alternative, the executable file in the "bin" subdirectory can be copied 
 into a directory already included in the PATH environment variable. Note, the 
 example problems provided with the release (described below) have example Linux 
-shell script or Windows batch files that require the executable be in the "bin"
+shell scripts or Windows batch files that require the executable be in the "bin"
 subdirectory.
 
 
@@ -200,7 +213,7 @@ example problems.
 
 F. COMPILING
 
-The executable file provided in distribution was created using compilers as 
+The executable file provided in the distribution was created using compilers as 
 described above. Although executable versions of the program are provided, the 
 source code also is provided in the "src" subdirectory so that PRMS can be 
 recompiled if necessary. However, the USGS cannot provide assistance to those 
