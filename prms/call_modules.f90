@@ -149,7 +149,7 @@
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
-        WRITE(*,'(/,12X,A,/)') 'Github Commit Hash dba5b0215d28532d3f0fc3ce688dc3726e48058a [dba5b02]'
+        WRITE(*,'(/,12X,A,/)') 'Github Commit Hash 114215cca63e4e0f201277553edb92ed7098af6f'
 
         Timestep = 0
         IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
