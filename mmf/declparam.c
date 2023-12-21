@@ -532,7 +532,7 @@ static int CHECK_param_in_db (char *pkey, char *module, char *dimen, int var_typ
 
 	PARAM *check_param;
 	int		inconsistent, i;
-	char	buf[1024], buf1[256];
+	char	buf[3584], buf1[512];
 	char dim_names[256];
 
 	check_param = param_addr (pkey);
@@ -540,55 +540,57 @@ static int CHECK_param_in_db (char *pkey, char *module, char *dimen, int var_typ
 
 		inconsistent = FALSE;
 
-		(void)snprintf (buf, 1024, "The parameter %s has been declared inconsistently in the modules %s and %s.", pkey, module, check_param->module);
+		(void)snprintf (buf, sizeof(buf), "The parameter %s has been declared inconsistently in the modules %s and %s.", pkey, module, check_param->module);
 
 		/*
 		 * Get all dimensions of previously declared parameters in the
 		 * original format.
 		 */
-		strncpy(dim_names, check_param->dimen[0]->name, 256);
+		strncpy(dim_names, check_param->dimen[0]->name, sizeof(dim_names));
 		for (i = 1; i < check_param->ndimen; i++){
-		  snprintf(dim_names, 256, "%s,%s",dim_names,check_param->dimen[i]->name);
+			// NOTE: The C standard and POSIX specify that the behavior of sprintf and its variants 
+			//       is undefined when an argument overlaps with the destination buffer.
+		  snprintf(dim_names, sizeof(dim_names), "%s,%s", dim_names, check_param->dimen[i]->name);
 		}
 		if (strcmp (dimen, dim_names)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The dimensions have been declared as %s and %s.", dimen, dim_names);
+			(void)snprintf (buf1, sizeof(buf1), " The dimensions have been declared as %s and %s.", dimen, dim_names);
 			strcat (buf, buf1);
 		}
 
 		if (var_type != check_param->type) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The types have been declared as %s and %s.", types[var_type], types[check_param->type]);
+			(void)snprintf (buf1, sizeof(buf1), " The types have been declared as %s and %s.", types[var_type], types[check_param->type]);
 			strcat (buf, buf1);
 		}
 
 		if (strcmp (value, check_param->value_string)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The default values have been declared as %s and %s.", value, check_param->value_string);
+			(void)snprintf (buf1, sizeof(buf1), " The default values have been declared as %s and %s.", value, check_param->value_string);
 			strcat (buf, buf1);
 		}
 
 		if (strcmp (minimum, check_param->min_string)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The minimum value has been declared as %s and %s.", minimum, check_param->min_string);
+			(void)snprintf (buf1, sizeof(buf1), " The minimum value has been declared as %s and %s.", minimum, check_param->min_string);
 			strcat (buf, buf1);
 		}
 
 		if (strcmp (maximum, check_param->max_string)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The maximum value has been declared as %s and %s.", maximum, check_param->max_string);
+			(void)snprintf (buf1, sizeof(buf1), " The maximum value has been declared as %s and %s.", maximum, check_param->max_string);
 			strcat (buf, buf1);
 		}
 
 		if (strcmp (descr, check_param->descr)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf, 1024, " The parameter description has been set as \"%s\"and \"%s.\"", descr, check_param->descr);
+			(void)snprintf (buf1, sizeof(buf1), " The parameter description has been set as \"%s\" and \"%s.\"", descr, check_param->descr);
 			strcat (buf, buf1);
 		}
 
 		if (strcmp (units, check_param->units)) {
 			inconsistent = TRUE;
-			(void)snprintf (buf1, 256, " The units have been set as %s and %s.", help, check_param->help);
+			(void)snprintf (buf1, sizeof(buf1), " The units have been set as %s and %s.", help, check_param->help);
 			strcat (buf, buf1);
 		}
 

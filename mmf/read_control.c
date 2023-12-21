@@ -71,19 +71,19 @@ static char *rc (char *control_name) {
    float   *fptr;
    long   *lptr;
    char   line[MAXCTRLLINELEN], *key;
-   static char      buf[256];
+   static char      buf[512];
 
 /*
 * compute control path, open file
 */
    if ((control_file = fopen (control_name, "r")) == NULL) {
-      (void)snprintf (buf, 256, "read_control: Couldn't open %s", control_name);
+      (void)snprintf (buf, sizeof(buf), "read_control: Couldn't open %s", control_name);
       return (buf);
    }
 
    if (!fgets_rc(line, MAXCTRLLINELEN, control_file)) {
       fclose (control_file);
-      (void)snprintf (buf, 256, "read_control: Problems reading %s", control_name);
+      (void)snprintf (buf, sizeof(buf), "read_control: Problems reading %s", control_name);
       return (buf);
    }
 
@@ -105,7 +105,7 @@ static char *rc (char *control_name) {
 **   get key
 */
       if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
-         (void)snprintf (buf, 256, "read_control: reading key; Early end-of-file");
+         (void)snprintf (buf, sizeof(buf), "read_control: reading key; Early end-of-file");
          printf ("read_control: reading key; Early end-of-file\n");
          return (buf);
       }
@@ -119,12 +119,12 @@ static char *rc (char *control_name) {
 **   get size
 */
       if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
-         (void)snprintf (buf, 256, "read_control: reading size; key = %s", key);
+         (void)snprintf (buf, sizeof(buf), "read_control: reading size; key = %s", key);
          return (buf);
       }
 
       if ((size = atol(line)) < 0) {
-         (void)snprintf (buf, 256, "read_control: negative size; key = %s, line = %s", key, line);
+         (void)snprintf (buf, sizeof(buf), "read_control: negative size; key = %s, line = %s", key, line);
          return (buf);
       }
 
@@ -132,7 +132,7 @@ static char *rc (char *control_name) {
 ** This is a hack, but 1000 should be a good upper limit on the number of indexes for a control variable.
 */
       if (size > 999) {
-         (void)snprintf (buf, 256, "read_control: too many control indexes; size = %ld, key = %s, line = %s", size, key, line);
+         (void)snprintf (buf, sizeof(buf), "read_control: too many control indexes; size = %ld, key = %s, line = %s", size, key, line);
          return (buf);
       }
 
@@ -140,12 +140,12 @@ static char *rc (char *control_name) {
 **   get type
 */
       if (!fgets_rc (line, MAXCTRLLINELEN, control_file)) {
-         (void)snprintf (buf, 256, "WARNING: reading type; key = %s", key);
+         (void)snprintf (buf, sizeof(buf), "WARNING: reading type; key = %s", key);
          return (buf);
       }
 
       if (!(type = atol(line))) {
-         (void)snprintf (buf, 256, "WARNING: invalid type; key = %s, line = %s", key, line);
+         (void)snprintf (buf, sizeof(buf), "WARNING: invalid type; key = %s, line = %s", key, line);
          return (buf);
       }
 
@@ -171,7 +171,7 @@ static char *rc (char *control_name) {
             cp->start_ptr = (void *)dptr;
             for (i = 0; i < size; i++) {
                if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
-                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
+                  (void)snprintf (buf, sizeof(buf), "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -184,7 +184,7 @@ static char *rc (char *control_name) {
             cp->start_ptr = (void *)fptr;
             for (i = 0; i < size; i++) {
                if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
-                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
+                  (void)snprintf (buf, sizeof(buf), "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -197,7 +197,7 @@ static char *rc (char *control_name) {
             cp->start_ptr = (void *)lptr;
             for (i = 0; i < size; i++) {
                if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
-                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
+                  (void)snprintf (buf, sizeof(buf), "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }
@@ -209,7 +209,7 @@ static char *rc (char *control_name) {
 			cp->start_ptr = umalloc (sizeof (char *) * size);
             for (i = 0; i < size; i++) {
                if (fgets_rc(line, MAXCTRLLINELEN, control_file) == NULL) {
-                  (void)snprintf (buf, 256, "read_control: key is %s.\n, file: %s", key, control_name);
+                  (void)snprintf (buf, sizeof(buf), "read_control: key is %s.\n, file: %s", key, control_name);
                   printf ("read_control CRASH reading control file: key is %s.\n, file: %s\n", key, control_name);
                   return (buf);
                }

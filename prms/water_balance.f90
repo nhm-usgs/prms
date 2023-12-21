@@ -116,9 +116,9 @@
  9004 FORMAT ('    Date     Water Bal last store  GWR store', &
               '   GW input    GW flow    GW sink GW upslope minarea_in   downflow')
  9005 FORMAT ('    Date     Water Bal     Robal      Sroff      Infil  Impervevap Impervstor Dprst_evap Dprst_seep', &
-     &        '   Perv Sro Imperv Sro  Dprst Sro  CFGI Sro  Glacrmelt')
+     &        '   Perv Sro Imperv Sro  Dprst Sro  Dunnian   Dprst WB   CFGI Sro')
  9006 FORMAT ('    Date     Water Bal     Robal      Sroff      Infil  Impervevap Impervstor Dprst_evap Dprst_seep', &
-     &        '   Perv Sro Imperv Sro  Dprst Sro  Sroffdown  Srofflake   CFGI Sro  Glacrmelt')
+     &        '   Perv Sro Imperv Sro  Dprst Sro  Dunnian   Dprst WB  Sroffdown  Srofflake   CFGI Sro')
  9007 FORMAT ('    Date     Water Bal  Snowpack    Snowmelt   Snowevap  Snowcover' )
 
       END SUBROUTINE water_balance_decl

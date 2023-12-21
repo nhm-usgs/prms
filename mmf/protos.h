@@ -17,7 +17,7 @@
 
 /***  mmf.c  **************************************************/
 extern long setdims_ (void);
-extern long call_modules_ (char *, int);
+extern long call_modules_ (char *, ftnlen);
 
 /***  alloc_space.c  **************************************************/
 #undef EXTERN
@@ -52,23 +52,6 @@ EXTERN char *CHECK_map_vars (void);
 
 EXTERN void create_vstats (void);
 
-///***  dprint.c  **************************************************/
-//#undef EXTERN
-//#ifdef DPRINT_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN void dpstr_ (char *, ftnint *, ftnlen);
-//EXTERN void dpstr (char *, long);
-//EXTERN void dpint4_ (char *, ftnint *, ftnint *, ftnint *, ftnlen);
-//EXTERN void dplong (char *, long *, long, long);
-//EXTERN void dpreal_ (char *, float *, ftnint *, ftnint *, ftnlen);
-//EXTERN void dpfloat (char *, float *, long, long);
-//EXTERN void dpdble_ (char *, double *, ftnint *, ftnint *, ftnlen);
-//EXTERN void dpdble (char *, double *, long, long);
-
 /***  free_vstats.c  **************************************************/
 #undef EXTERN
 #ifdef FREE_VSTATS_C
@@ -99,115 +82,6 @@ EXTERN void get_times (void);
 
 EXTERN int CheckIndices (char *, char *, int);
 EXTERN char *GetElemAddress (char *, char *, int);
-
-/***  oprint.c  **************************************************/
-#undef EXTERN
-#ifdef OPRINT_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN void opstr_ (char *, ftnlen);
-EXTERN void opstr (char *);
-//EXTERN void opint4_ (char *, ftnint *, ftnint *, ftnlen);
-//EXTERN void oplong (char *, long *, long);
-//EXTERN void opreal_ (char *, float *, ftnint *, ftnlen);
-//EXTERN void opfloat (char *, float *, long);
-//EXTERN void opdble_ (char *, double *, ftnint *, ftnlen);
-//EXTERN void opdble (char *, double *, long);
-
-///***  rosopt.c  **************************************************/
-//#undef EXTERN
-//#ifdef ROSOPT_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN char *rosopt (ROSEN_DATA *, float[], float[]);
-
-///***  opinit.c  **************************************************/
-//#undef EXTERN
-//#ifdef OPINIT_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN char *opinit (float *, float *, int *, ROSEN_DATA *);
-
-/***  bdry.c  **************************************************/
-#undef EXTERN
-#ifdef BDRY_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int bdry (float *, int *, float *, float *, int *, int *, float *);
-
-///***  param.c  **************************************************/
-//#undef EXTERN
-//#ifdef PARAM_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN int param (int *, ROSEN_DATA *);
-
-/***  coropt.c  **************************************************/
-#undef EXTERN
-#ifdef COROPT_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int coropt (int *, float *, float *, int *);
-
-///***  sub1.c  **************************************************/
-//#undef EXTERN
-//#ifdef SUB1_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN int sub1 (int *, float *, int *, float *, float *, float *,
-//      float *, float *, int *, int *, float *,
-//      int *, float *, float *, int *, int *, ROSEN_DATA *);
-
-/***  tcale.c  **************************************************/
-#undef EXTERN
-#ifdef TCALE_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int tcale (int *, float *, float *, float *, float *, int *);
-
-/***  unscal.c  **************************************************/
-#undef EXTERN
-#ifdef UNSCAL_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int unscal (int *, float *, float *, float *, float *, int *);
-
-///***  sub3.c  **************************************************/
-//#undef EXTERN
-//#ifdef SUB3_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN int sub3 (int *, float *, float *, float *, int *, float *, ROSEN_DATA *);
 
 /***  parse_args.c  **************************************************/
 #undef EXTERN
@@ -280,35 +154,6 @@ EXTERN int initializeRuntimeGraphs (void);
 EXTERN int plotRuntimeGraphValue (void);
 EXTERN int closeRuntimeGraphs (void);
 
-/***  stats.c  **************************************************/
-#undef EXTERN
-#ifdef STATS_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int stats (void);
-
-///***  uprint.c  **************************************************/
-//#undef EXTERN
-//#ifdef UPRINT_C
-//#define EXTERN
-//#else
-//#define EXTERN extern
-//#endif
-//
-//EXTERN FILE *GetUserFile (char *, long);
-//EXTERN void closeUserFiles (void);
-//EXTERN void upstr_ (char *, ftnint *, char *, ftnlen, ftnlen);
-//EXTERN void upstr (char *, long, char *);
-//EXTERN void upint4_ (char *, ftnint *, char *, ftnint *, ftnint *, ftnlen, ftnlen);
-//EXTERN void uplong (char *, long, char *, long *, long);
-//EXTERN void upreal_ (char *, ftnint *, char *, float *, ftnint *, ftnlen, ftnlen);
-//EXTERN void upfloat (char *, long, char *, float *, long);
-//EXTERN void updble_ (char *, ftnint *, char *, double *, ftnint *, ftnlen, ftnlen);
-//EXTERN void updble (char *, long, char *, double *, long);
-
 /***  write_vstats.c  **************************************************/
 #undef EXTERN
 #ifdef WRITE_VSTATS_C
@@ -344,17 +189,6 @@ EXTERN LIST *ALLOC_list (char *, int, int);
 EXTERN void RESIZE_list (LIST *, int);
 EXTERN void DELETE_list (LIST *);
 EXTERN void ADD_to_list (LIST *, void *);
-
-/***  sensitivity.c  **************************************************/
-#undef EXTERN
-#ifdef SENSITIVITY_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN char *PRMS_sens (void);
-EXTERN int IN_obj_period (int, int, int);
 
 /***  control_addr.c  **************************************************/
 #undef EXTERN
@@ -633,16 +467,6 @@ EXTERN long readvar (char *, char *);
 
 EXTERN void reset_dim (DIMEN *, long);
 
-/***  save_control.c  **************************************************/
-#undef EXTERN
-#ifdef SAVE_CONTROL_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN void save_control (char *);
-
 /***  save_params.c  **************************************************/
 #undef EXTERN
 #ifdef SAVE_PARAMS_C
@@ -653,16 +477,6 @@ EXTERN void save_control (char *);
 
 EXTERN int save_params (char *);
 EXTERN int write_preprocess_params (void);
-
-/***  save_vars.c  **************************************************/
-#undef EXTERN
-#ifdef SAVE_VARS_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int save_vars (char *);
 
 /***  sort_dims.c  **************************************************/
 #undef EXTERN
@@ -733,26 +547,6 @@ EXTERN double djulian (char *, char *);
 
 EXTERN PUBVAR *var_addr (char *);
 
-/***  esp_batch_run.c  **************************************************/
-#undef EXTERN
-#ifdef ESP_BATCH_RUN_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN char *ESP_batch_run (void);
-
-/***  rosenbrock_batch_run.c  **************************************************/
-#undef EXTERN
-#ifdef ROSENBROCK_BATCH_RUN_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN void ROSENBROCK_batch_run (void);
-
 /***  umalloc_etc.c  **************************************************/
 #undef EXTERN
 #ifdef UMALLOC_ETC_C
@@ -775,36 +569,6 @@ EXTERN void ufree (char *);
 #endif
 
 EXTERN int julday (DATETIME *);
-
-/***  matinv.c  **************************************************/
-#undef EXTERN
-#ifdef MATINV_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int matinv (float *, float *, int *, int *);
-
-/***  matind.c  **************************************************/
-#undef EXTERN
-#ifdef MATIND_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int matind (double *, double *, int *);
-
-/***  snort.c  **************************************************/
-#undef EXTERN
-#ifdef SNORT_C
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
-
-EXTERN int snort (float *, int *, int *, int *);
 
 /***  print_model_info.c  **************************************************/
 #undef EXTERN

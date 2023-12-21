@@ -1163,7 +1163,7 @@
           ! Could use equation from Swinbank 63 using Temp, a is -13.638, b is 6.148
           ! temparature is halfway between the minimum and average temperature for the day
           !temp = (Tminc(i)+Tavgc(i))*0.5
-          !emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E−8 ! /by Stefan Boltzmann in SI units
+          !emis = ((temp+273.16)**(Emis_coefb-4.0))*(10.0**(Emis_coefa+1.0))/5.670373E-8 ! /by Stefan Boltzmann in SI units
           ! If there is any precipitation in the HRU, reset the
           ! emissivity to 1
           IF ( Hru_ppt(i)>0.0 ) emis = 1.0 ! [fraction of radiation]

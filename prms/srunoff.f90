@@ -806,7 +806,7 @@
             ENDIF
           ENDIF
           Hru_sroffp(i) = Srp*Perv_frac
-          Basin_sroffp = Basin_sroffp + Srp*perv_area
+          Basin_sroffp = Basin_sroffp + DBLE( Srp*perv_area )
         ENDIF
 
         Basin_infil = Basin_infil + DBLE( Infil(i)*perv_area )
@@ -1047,7 +1047,7 @@
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: IABS, ABS, DBLE
+      INTRINSIC :: IABS, DBLE !, ABS
 ! Arguments
       INTEGER, INTENT(IN) :: Ncascade_hru
       REAL, INTENT(INOUT) :: Runoff
@@ -1295,7 +1295,6 @@
       REAL :: tmp, dprst_evap_open, dprst_evap_clos
       DOUBLE PRECISION :: seep_open, seep_clos, tmp1
 !***********************************************************************
-!     add the hortonian flow to the depression storage volumes:
       inflow = Availh2o_total
       IF ( Dprst_add_water_use==ACTIVE ) THEN
         IF ( Dprst_gain(Ihru)>0.0 ) inflow = inflow + Dprst_gain(Ihru) / SNGL( Cfs_conv )

@@ -67,9 +67,7 @@
 !     declare parameters and variables
 !***********************************************************************
       SUBROUTINE nsub_summarydecl()
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
-     &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, &
-     &    REAL_TYPE, DBLE_TYPE, RUN, DECL, INIT, CLEAN, DOCUMENTATION
+      USE PRMS_CONSTANTS, ONLY: ERROR_control, DAILY, YEARLY, DOCUMENTATION
       USE PRMS_MODULE, ONLY: Nhru, Nsub, Model
       USE PRMS_NSUB_SUMMARY
       IMPLICIT NONE

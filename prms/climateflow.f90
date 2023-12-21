@@ -134,7 +134,7 @@ end module PRMS_IT0_VARS
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, MONTHS_PER_YEAR, ERROR_dim, &
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
-     &    temp_laps_module, temp_sta_module, temp_dist2_module, potet_pan_module, &
+     &    temp_laps_module, temp_sta_module, temp_dist2_module, &
      &    ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Model, Init_vars_from_file, Temp_flag, Precip_flag, Glacier_flag, &
@@ -781,7 +781,7 @@ end module PRMS_IT0_VARS
      &     'decimal fraction')/=0 ) CALL read_error(1, 'epan_coef')
 
       Use_pandata = OFF
-      IF ( (Nevap>0 .AND. Et_flag==potet_pan_module) .OR. Model==DOCUMENTATION ) THEN
+      IF ( Nevap>0 ) THEN
         Use_pandata = ACTIVE
         ALLOCATE ( Hru_pansta(Nhru) )
         IF ( declparam(Et_module, 'hru_pansta', 'nhru', 'integer', &
@@ -896,7 +896,7 @@ end module PRMS_IT0_VARS
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, DEBUG_less, &
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
-     &    temp_laps_module, temp_sta_module, temp_dist2_module, potet_pan_module, &
+     &    temp_laps_module, temp_sta_module, temp_dist2_module, &
      &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM, ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &

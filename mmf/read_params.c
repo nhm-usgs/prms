@@ -1296,8 +1296,8 @@ static char *get_next_line () {
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 static char *error_string (char *message) {
-	static char buf[256];
-	snprintf (buf, 256, "ERROR: %s; file is %s; line number %d", message, file_name, lineNumber);
+	static char buf[384];
+	snprintf (buf, sizeof(buf), "ERROR: %s; file is %s; line number %d", message, file_name, lineNumber);
 	return buf;
 }
 
@@ -1309,8 +1309,8 @@ static char *error_string (char *message) {
  | RESTRICTIONS :
 \*--------------------------------------------------------------------*/
 static char *warning_string (char *message) {
-	static char buf[256];
-	snprintf (buf, 256, "WARNING: %s; file is %s; line number %d", message, file_name, lineNumber);
+	static char buf[384];
+	snprintf (buf, sizeof(buf), "WARNING: %s; file is %s; line number %d", message, file_name, lineNumber);
 	return buf;
 }
 

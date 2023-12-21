@@ -20,7 +20,7 @@
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=*), parameter :: MODNAME = 'strmflow_in_out'
-      character(len=*), parameter :: Version_strmflow = '2020-08-03'
+      character(len=*), parameter :: Version_strmflow = '2023-11-30'
       INTEGER :: i, iorder, toseg, segtype
       DOUBLE PRECISION :: area_fac, segout
 !***********************************************************************
@@ -64,28 +64,30 @@
           segout = Seg_outflow(iorder)
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
 ! includes closed basins (tosegment=0)
-          IF ( segtype==1 ) THEN
-            Flow_headwater = Flow_headwater + segout
-          ELSEIF ( segtype==2 ) THEN
-            Flow_to_lakes = Flow_to_lakes + segout
-          ELSEIF ( segtype==3 ) THEN
-            Flow_replacement = Flow_replacement + segout
-          ELSEIF ( segtype==4 ) THEN
-            Flow_in_nation = Flow_in_nation + segout
-          ELSEIF ( segtype==5 ) THEN
-            Flow_out_NHM = Flow_out_NHM + segout
-          ELSEIF ( segtype==6 ) THEN
-            Flow_in_region = Flow_in_region + segout
-          ELSEIF ( segtype==7 ) THEN
-            Flow_out_region = Flow_out_region + segout
-          ELSEIF ( segtype==8 ) THEN
-            Flow_to_ocean = Flow_to_ocean + segout
-          ELSEIF ( segtype==9 ) THEN
-            Flow_terminus = Flow_terminus + segout
-          ELSEIF ( segtype==10 ) THEN
-            Flow_in_great_lakes = Flow_in_great_lakes + segout
-          ELSEIF ( segtype==11 ) THEN
-            Flow_to_great_lakes = Flow_to_great_lakes + segout
+          IF ( segtype>0 ) THEN
+            IF ( segtype==1 ) THEN
+              Flow_headwater = Flow_headwater + segout
+            ELSEIF ( segtype==2 ) THEN
+              Flow_to_lakes = Flow_to_lakes + segout
+            ELSEIF ( segtype==3 ) THEN
+              Flow_replacement = Flow_replacement + segout
+            ELSEIF ( segtype==4 ) THEN
+              Flow_in_nation = Flow_in_nation + segout
+            ELSEIF ( segtype==5 ) THEN
+              Flow_out_NHM = Flow_out_NHM + segout
+            ELSEIF ( segtype==6 ) THEN
+              Flow_in_region = Flow_in_region + segout
+            ELSEIF ( segtype==7 ) THEN
+              Flow_out_region = Flow_out_region + segout
+            ELSEIF ( segtype==8 ) THEN
+              Flow_to_ocean = Flow_to_ocean + segout
+            ELSEIF ( segtype==9 ) THEN
+              Flow_terminus = Flow_terminus + segout
+            ELSEIF ( segtype==10 ) THEN
+              Flow_in_great_lakes = Flow_in_great_lakes + segout
+            ELSEIF ( segtype==11 ) THEN
+              Flow_to_great_lakes = Flow_to_great_lakes + segout
+            ENDIF
           ENDIF
           IF ( toseg==OUTFLOW_SEGMENT ) THEN
             Flow_out = Flow_out + segout
