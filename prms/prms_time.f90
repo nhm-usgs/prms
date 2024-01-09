@@ -7,7 +7,7 @@
 !   Local Variables
         character(len=*), parameter :: MODDESC = 'Timestep Control'
         character(len=*), parameter :: MODNAME = 'prms_time'
-        character(len=*), parameter :: Version_prms_time = '2023-08-10'
+        character(len=*), parameter :: Version_prms_time = '2023-11-01'
         INTEGER, SAVE :: Modays(MONTHS_PER_YEAR), Yrdays, Summer_flag, Jday, Jsol, Julwater
         INTEGER, SAVE :: Nowtime(6), Nowhour, Nowminute, Julian_day_absolute
         REAL, SAVE :: Timestep_hours, Timestep_days, Timestep_minutes

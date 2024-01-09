@@ -11,7 +11,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pm_sta'
-        character(len=*), parameter :: Version_potet = '2021-08-13'
+        character(len=*), parameter :: Version_potet = '2023-11-01'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Pm_n_coef(:, :), Pm_d_coef(:, :), Crop_coef(:, :)
         INTEGER, SAVE, ALLOCATABLE :: Hru_windspeed_sta(:), Hru_humidity_sta(:)
