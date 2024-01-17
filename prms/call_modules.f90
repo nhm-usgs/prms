@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2023-12-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 12/01/2023'
+      character(len=*), parameter :: PRMS_versn = '2024-01-16'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 01/16/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -66,7 +66,7 @@
 ! Arguments
       CHARACTER(LEN=*), INTENT(IN) :: Arg
 ! Functions
-      INTRINSIC :: DATE_AND_TIME, INT, REAL
+      INTRINSIC :: DATE_AND_TIME, INT, FLOAT
       INTEGER, EXTERNAL :: check_dims, basin, climateflow, prms_time, setup
       INTEGER, EXTERNAL :: cascade, obs, soltab, transp_tindex
       INTEGER, EXTERNAL :: transp_frost, frost_date, routing
@@ -535,17 +535,11 @@
         IF ( control_string(Var_save_file, 'var_save_file')/=0 ) CALL read_error(5, 'var_save_file')
       ENDIF
 
-      Temp_module = 'temp_1sta'
       IF ( control_string(Temp_module, 'temp_module')/=0 ) CALL read_error(5, 'temp_module')
-      Precip_module = 'precip_1sta'
       IF ( control_string(Precip_module, 'precip_module')/=0 ) CALL read_error(5, 'precip_module')
-      Transp_module = 'transp_index'
       IF ( control_string(Transp_module, 'transp_module')/=0 ) CALL read_error(5, 'transp_module')
-      Et_module = 'potet_jh'
       IF ( control_string(Et_module, 'et_module')/=0 ) CALL read_error(5, 'et_module')
-      Srunoff_module = 'srunoff_smidx'
       IF ( control_string(Srunoff_module, 'srunoff_module')/=0 ) CALL read_error(5, 'srunoff_module')
-      Solrad_module = 'ddsolrad'
       IF ( control_string(Solrad_module, 'solrad_module')/=0 ) CALL read_error(5, 'solrad_module')
       Soilzone_module = 'soilzone'
       !IF ( control_string(Soilzone_module, 'soilzone_module')/=0 ) CALL read_error(5, 'soilzone_module')

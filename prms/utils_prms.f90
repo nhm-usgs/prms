@@ -1,4 +1,4 @@
-! utils_prms.f90 2022-06-02
+! utils_prms.f90 2024-01-11
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -104,7 +104,7 @@
     integer :: i, ios, dim
     character(LEN=4) :: dum
     !***********************************************************************
-    if (Iret /= 2) Iret = 0
+    Iret = 0
     Iunit = get_ftnunit(7777)
     open (Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios)
     if (ios /= 0) then
