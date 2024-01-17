@@ -8,8 +8,8 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2023-11-24'
-      INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:), Apply_irr_in_srunoff(:)
+      character(len=*), parameter :: Version_intcp = '2024-01-10'
+      INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
       INTEGER, SAVE :: Use_transfer_intcp
@@ -79,7 +79,6 @@
       Use_transfer_intcp = OFF
       IF ( Water_use_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         Use_transfer_intcp = ACTIVE
-        ALLOCATE ( Apply_irr_in_srunoff(Nhru) )
         ALLOCATE ( Gain_inches(Nhru) )
         IF ( declvar(MODNAME, 'gain_inches', 'nhru', Nhru, 'real', &
      &       'Canopy_gain in as depth in canopy', &
@@ -272,12 +271,12 @@
       USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
-     &    Hru_route_order, Hru_area, Cov_type, Hru_perv
+     &    Hru_route_order, Hru_area, Cov_type
       USE PRMS_WATER_USE, ONLY: Canopy_gain
 ! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
      &    Hru_snow, Transp_on, Potet, Use_pandata, Hru_pansta, Epan_coef, Potet_sublim
-      USE PRMS_FLOWVARS, ONLY: Pkwater_equiv
+      USE PRMS_IT0_VARS, ONLY: It0_pkwater_equiv
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_OBS, ONLY: Pan_evap
       IMPLICIT NONE
@@ -292,7 +291,7 @@
 !***********************************************************************
       intrun = 0
 
-      ! pkwater_equiv is from last time step
+      ! It0_pkwater_equiv is from last time step
 
       IF ( Print_debug==DEBUG_WB ) THEN
         Intcp_stor_ante = Hru_intcpstor
@@ -312,7 +311,6 @@
         Net_apply = 0.0
         Gain_inches = 0.0
         Gain_inches_hru = 0.0
-        Apply_irr_in_srunoff = OFF
       ENDIF
 
       DO j = 1, Active_hrus
@@ -410,7 +408,7 @@
               ELSEIF ( Cov_type(i)==GRASSES ) THEN ! cov_type = 1
                 !rsr, 03/24/2008 intercept rain on snow-free grass,
                 !rsr             when not a mixed event
-                IF ( .not.(Pkwater_equiv(i)>0.0D0) .AND. netsnow<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
+                IF ( .not.(It0_pkwater_equiv(i)>0.0D0) .AND. netsnow<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
                   CALL intercept(Hru_rain(i), stor_max_rain, cov, intcpstor, netrain)
                   !rsr 03/24/2008
                   !it was decided to leave the water in intcpstor rather
@@ -469,8 +467,7 @@
      &                                                   i, ', application water:', Canopy_gain(i)
               Canopy_gain(i) = 0.0 ! remove ignored canopy gain from water budget
             ELSEIF ( irrigation_type==1 .OR. .NOT.(cov>0.0) ) THEN ! irr_type = 1 or (0 or 3 and cov=0) bare ground
-              Apply_irr_in_srunoff(i) = ACTIVE
-              Net_apply(i) = ag_water_maxin/Hru_perv(i) ! assumes ag_water_maxin is depth/pervious area
+              Net_apply(i) = ag_water_maxin
             ELSE
               CALL error_stop('irrigation specified and irr_type and/or cover density invalid', ERROR_param)
             ENDIF
