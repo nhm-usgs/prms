@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2023-10-17'
+      character(len=*), parameter :: Version_climateflow = '2024-01-16'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -99,7 +99,7 @@ module PRMS_IT0_VARS
        IMPLICIT NONE
 !   Global Variables
        DOUBLE PRECISION, SAVE :: It0_basin_ssstor, It0_basin_soil_moist
-       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_stor_hru(:)
+       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_stor_hru(:), It0_pkwater_equiv(:)
        REAL, SAVE, ALLOCATABLE :: It0_soil_moist(:), It0_hru_impervstor(:), It0_ssres_stor(:)
 end module PRMS_IT0_VARS
 
@@ -568,7 +568,7 @@ end module PRMS_IT0_VARS
      &       'inches', Dprst_stor_hru)/=0 ) CALL read_error(3, 'dprst_stor_hru')
       ENDIF
 
-      ALLOCATE ( Pkwater_equiv(Nhru) )
+      ALLOCATE ( Pkwater_equiv(Nhru), It0_pkwater_equiv(Nhru) )
       IF ( declvar('snowcomp', 'pkwater_equiv', 'nhru', Nhru, 'double', &
      &     'Snowpack water equivalent on each HRU', &
      &     'inches', Pkwater_equiv)/=0 ) CALL read_error(3, 'pkwater_equiv')
