@@ -23,10 +23,10 @@
       USE PRMS_SET_TIME
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Ssres_stor, Basin_ssstor, &
-                               Basin_soil_moist, Dprst_stor_hru, Hru_impervstor
+                               Basin_soil_moist, Dprst_stor_hru, Hru_impervstor, Pkwater_equiv
       USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_ssres_stor, &
                                It0_basin_ssstor, It0_basin_soil_moist, It0_dprst_stor_hru, &
-                               It0_hru_impervstor
+                               It0_hru_impervstor, It0_pkwater_equiv
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
@@ -54,6 +54,7 @@
           It0_soil_moist = Soil_moist
           It0_ssres_stor = Ssres_stor
           It0_hru_impervstor = Hru_impervstor
+          It0_pkwater_equiv = Pkwater_equiv
           IF ( Dprst_flag==ACTIVE ) It0_dprst_stor_hru = Dprst_stor_hru
 
         ELSE ! initialize
