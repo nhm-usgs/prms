@@ -1751,15 +1751,6 @@ Type: double
 Desc: Snowpack water equivalent when there is new snow and in melt phase; used to interpolate between depletion curve and 100 percent on each HRU
 Units: inches
 
-Name: pkwater_ante
-Module: snowcomp
-Ndimen: 1
-Dimensions: nhru - 90
-Size: 90
-Type: double
-Desc: Antecedent snowpack water equivalent on each HRU
-Units: inches
-
 Name: pkwater_equiv
 Module: snowcomp
 Ndimen: 1

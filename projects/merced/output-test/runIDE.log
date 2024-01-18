@@ -1,0 +1,49 @@
+
+
+
+                         U.S. Geological Survey
+               Precipitation-Runoff Modeling System (PRMS)
+                        Version 5.2.2 01/16/2024
+
+    Github Commit Hash a10e7d4c489e0e0b92be90c98fcd78be1f27f736
+
+
+
+==========================================================================
+Please give careful consideration to fixing all ERROR and WARNING messages
+==========================================================================
+
+
+    Active modules listed in the order in which they are called
+
+        Process                    Module         Version Date
+==============================================================
+Computation Order               call_modules        2024-01-16
+Basin Definition                basin               2023-11-01
+Common States and Fluxes        climateflow         2024-01-16
+Potential Solar Radiation       soltab              2023-11-01
+Parameter Setup                 setup_param         2023-11-01
+Timestep Control                prms_time           2023-11-01
+Time Series Data                obs                 2023-11-01
+Temp & Precip Distribution      ide_dist            2023-11-01
+Solar Radiation Distribution    ddsolrad            2023-10-04
+Transpiration Distribution      transp_tindex       2023-11-01
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2024-01-10
+Snow Dynamics                   snowcomp            2024-01-11
+Surface Runoff                  srunoff_smidx       2024-01-16
+Soilzone Computations           soilzone            2024-01-10
+Groundwater                     gwflow              2023-11-13
+Streamflow Routing              strmflow            2020-08-03
+Output Summary                  basin_sum           2023-11-01
+Output Summary                  prms_summary        2023-11-01
+==============================================================
+
+Writing PRMS Water Budget File: ./output/prmsIDE.out
+
+ WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
+
+Simulation time period: 1993/10/01 - 1995/09/30
+
+==========================================================================
+

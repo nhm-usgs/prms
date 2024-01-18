@@ -3,7 +3,7 @@
 rm ../output/*.csv
 rm ../output/*.out
 
-..\..\..\bin\prms .\prms.control -set init_vars_from_file 0 -set save_vars_to_file 0
+..\..\..\bin\prms .\prms.control -set init_vars_from_file 0 -set save_vars_to_file 0 > ..\output\run.log
 
 ..\..\..\bin\prms .\prms.control -set end_time 1983,9,1,0,0,0 -set csv_output_file ..\output\prms_summary1.out -set model_output_file ..\output\prms1.out -set basinOutBaseFileName ..\output\basinOut_1 -set init_vars_from_file 0 -set var_save_file ..\output\prms_ic_1 
 ..\..\..\bin\prms .\prms.control -set start_time 1983,09,02,0,0 -set csv_output_file ..\output\prms_summary2.out -set end_time 1983,09,08,0,0,0 -set model_output_file ..\output\prms2.out -set basinOutBaseFileName ..\output\basinOut_2 -set var_init_file ..\output\prms_ic_1 -set var_save_file ..\output\prms_ic_2

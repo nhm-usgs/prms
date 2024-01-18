@@ -207,7 +207,7 @@ Default   : 1.000000
 Name      : adjust_rain
 Module    : xyz_dist
 Descr     : Monthly (January to December) rain downscaling adjustment factor for each precipitation measurement station
-Help      : Monthly (January to December) multiplicativerain downscaling adjustment factor for each precipitation measurement station
+Help      : Monthly (January to December) multiplicative rain downscaling adjustment factor for each precipitation measurement station
 Ndimen    : 2
 Dimensions: nrain - 14, nmonths - 12
 Size      : 168

@@ -141,7 +141,7 @@
 16   FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
 
-        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash edcf70e3c8d818603b6c04197d0fbaa5b940c809'
+        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash a10e7d4c489e0e0b92be90c98fcd78be1f27f736'
 
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT 15

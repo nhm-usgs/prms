@@ -1460,7 +1460,7 @@ Default   : 0.200000
 Name      : sro_to_dprst_perv
 Module    : srunoff_smidx
 Descr     : Fraction of pervious surface runoff that flows into surface-depression storage
-Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows the a stream network for each HRU
+Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows the stream network for each HRU
 Ndimen    : 1
 Dimensions: nhru - 27
 Size      : 27

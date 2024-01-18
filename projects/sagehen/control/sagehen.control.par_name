@@ -227,7 +227,7 @@ Units     : none
 Width     : 0
 Max       : 2
 Min       : 0
-Default   : 1
+Default   : 0
 Bounded   : ntemp
 
 Name      : carea_max
