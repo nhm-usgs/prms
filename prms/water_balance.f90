@@ -172,7 +172,7 @@
      &    Basin_hortonian_lakes, Basin_imperv_evap, Basin_imperv_stor, &
      &    Basin_dprst_evap, Basin_dprst_seep, Hru_impervevap, Dprst_seep_hru, &
      &    Dprst_evap_hru, Dprst_sroff_hru, Dprst_insroff_hru, Sro_to_dprst_perv, &
-     &    Dprst_area_clos, Hortonian_flow, Dprst_in, Hru_sroffp, Hru_sroffi, Basin_cfgi_sroff, hru_cfgi_sroff, Frozen
+     &    Dprst_area_clos, Hortonian_flow, Dprst_in, Hru_sroffp, Hru_sroffi, Basin_cfgi_sroff
       USE PRMS_SOILZONE, ONLY: Swale_actet, Dunnian_flow, Basin_sz2gw, &
      &    Perv_actet, Cap_infil_tot, Pref_flow_infil, Cap_waterin, Upslope_interflow, &
      &    Upslope_dunnianflow, Pref_flow, Soil_lower, Gvr2pfr, Basin_ssin, &
@@ -279,7 +279,6 @@
         ENDIF
         robal = availh2o_total - Hortonian_flow(i) & !includes dprst runoff, if any
      &          - Infil(i)*perv_frac - Hru_impervevap(i) + It0_hru_impervstor(i) - Hru_impervstor(i)
-        IF ( Frozen(i) == ACTIVE ) robal = robal - hru_cfgi_sroff(i)
         IF ( Cascade_flag>CASCADE_OFF ) robal = robal + SNGL( Upslope_hortonian(i) - Hru_hortn_cascflow(i) )
         IF ( Dprst_flag==ACTIVE ) robal = robal - Dprst_evap_hru(i) + &
      &                                    SNGL( It0_dprst_stor_hru(i) - Dprst_stor_hru(i) - Dprst_seep_hru(i) ) !- Dprst_in(i) - Dprst_insroff_hru(i)

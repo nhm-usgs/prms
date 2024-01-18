@@ -29,7 +29,7 @@
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
-      REAL, SAVE, ALLOCATABLE :: Carea_dif(:), hru_cfgi_sroff(:)
+      REAL, SAVE, ALLOCATABLE :: Carea_dif(:)
       REAL, SAVE :: Srp, Sri, Sra, Perv_frac, Imperv_frac, Hruarea_imperv, Hruarea
       DOUBLE PRECISION, SAVE :: Hruarea_dble, Basin_apply_sroff, Basin_cfgi_sroff
       INTEGER, SAVE :: Isglacier
@@ -298,7 +298,7 @@
      &       'Flag for frozen ground (0=no; 1=yes)', &
      &       'none', Frozen)/=0 ) CALL read_error(3, 'frozen')
 
-        ALLOCATE ( Cfgi(Nhru), hru_cfgi_sroff(Nhru) )
+        ALLOCATE ( Cfgi(Nhru) )
         IF ( declvar(MODNAME, 'cfgi', 'nhru', Nhru, 'real', &
      &       'Continuous Frozen Ground Index', &
      &       'index', Cfgi)/=0 ) CALL read_error(3, 'cfgi')
@@ -410,7 +410,7 @@
      &         'Fraction of pervious surface runoff that flows into surface-depression storage', &
      &         'Fraction of pervious surface runoff that'// &
      &         ' flows into surface-depression storage; the remainder'// &
-     &         ' flows the a stream network for each HRU', &
+     &         ' flows the stream network for each HRU', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst_perv')
         ENDIF
 
@@ -571,7 +571,7 @@
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble
       USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
       USE PRMS_FLOWVARS, ONLY: Sroff, Infil, Imperv_stor, Pkwater_equiv, Dprst_vol_open, Dprst_vol_clos, &
-     &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac, Hru_impervstor, Dprst_stor_hru, Glacrb_melt
+     &    Imperv_stor_max, Snowinfil_max, Basin_sroff, Glacier_frac, Hru_impervstor, Dprst_stor_hru, Glacrb_melt, Soil_moist
       USE PRMS_IT0_VARS, ONLY: It0_pkwater_equiv
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow, Net_ppt, Hru_intcpevap, Net_apply, Intcp_changeover
@@ -691,7 +691,6 @@
 
         frzen = OFF
         IF ( Frozen_flag==ACTIVE ) THEN
-          hru_cfgi_sroff(i) = 0.0
           IF ( Tavgc(i)>0.0 ) THEN
             cfgi_k = 0.5
           ELSE
@@ -708,10 +707,8 @@
           IF ( Cfgi(i)>=Cfgi_thrshld ) THEN
             frzen = ACTIVE
             IF ( Hru_type(i) /= SWALE ) THEN ! if swale, problem, for now add water to storage of pervious, impervious, dprst below
-              hru_cfgi_sroff(i) = availh2o_total + netapply
-              cfgi_sroff = hru_cfgi_sroff(i) * Hruarea ! all water runs off, but still compute components below
+              cfgi_sroff = availh2o_total + netapply * Hruarea ! all water runs off, but still compute components below
               Basin_cfgi_sroff = Basin_cfgi_sroff + cfgi_sroff
-              runoff = DBLE( cfgi_sroff )
             ENDIF
           ENDIF
           Frozen(i) = frzen
@@ -750,6 +747,8 @@
             IF ( Hru_type(i) /= SWALE ) THEN
               Sra = netapply
               infil_apply = 0.0
+            ELSE
+              Soil_moist(i) = Soil_moist(i) + netapply ! CAUTION rsr 1/17/2024
             ENDIF
           ENDIF
           Infil(i) = infil_apply ! if swale net_apply is added to storage

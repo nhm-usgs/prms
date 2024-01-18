@@ -265,7 +265,7 @@
 !     &           'Fraction of pervious surface runoff that flows into surface-depression storage', &
 !     &           'Fraction of pervious surface runoff that'// &
 !     &           ' flows into surface-depression storage; the remainder'// &
-!     &           ' flows to a stream network for each HRU', &
+!     &           ' flows to the stream network for each HRU', &
 !     &           'decimal fraction')/=0 ) CALL read_error(1, 'sro_to_dprst')
             ALLOCATE ( Dprst_area(Nhru) )
             IF ( declparam(MODNAME, 'dprst_area', 'nhru', 'real', &
