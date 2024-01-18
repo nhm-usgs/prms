@@ -138,8 +138,10 @@
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
      &        '                    basin_summary, nsegment_summary', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'))
-  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
+16   FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
+
+        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash edcf70e3c8d818603b6c04197d0fbaa5b940c809'
 
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT 15
@@ -149,7 +151,6 @@
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
-        WRITE(*,'(/,12X,A,/)') 'Github Commit Hash 114215cca63e4e0f201277553edb92ed7098af6f'
 
         Timestep = 0
         IF ( Init_vars_from_file>OFF ) CALL call_modules_restart(READ_INIT)
