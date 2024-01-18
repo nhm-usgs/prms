@@ -6,12 +6,12 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2023-11-01'
+      character(len=*), parameter :: Version_basin = '2024-01-02'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
       DOUBLE PRECISION, SAVE :: Basin_area_inv, Basin_lat, Totarea, Active_area
-      REAL, SAVE, ALLOCATABLE :: Hru_elev_meters(:) !, Hru_elev_feet(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_elev_meters(:), Hru_elev_feet(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_frac_clos(:)
       INTEGER, SAVE, ALLOCATABLE :: Gwr_type(:), Hru_route_order(:), Gwr_route_order(:)
       INTEGER, SAVE :: Weir_gate_flag, Puls_lin_flag
@@ -101,9 +101,9 @@
      &     'acres', Hru_perv)/=0 ) CALL read_error(3, 'hru_perv')
 
       ALLOCATE ( Hru_frac_perv(Nhru) )
-     ! IF ( declvar(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', &
-     !&     'Fraction of HRU that is pervious', &
-     !&     'decimal fraction', Hru_frac_perv)/=0 ) CALL read_error(3, 'hru_frac_perv')
+      IF ( declvar(MODNAME, 'hru_frac_perv', 'nhru', Nhru, 'real', &
+     &     'Fraction of HRU that is pervious', &
+     &     'decimal fraction', Hru_frac_perv)/=0 ) CALL read_error(3, 'hru_frac_perv')
 
       ALLOCATE ( Hru_storage(Nhru) )
       IF ( declvar(MODNAME, 'hru_storage', 'nhru', Nhru, 'double', &
@@ -161,8 +161,7 @@
       ! local arrays
       ALLOCATE ( Hru_route_order(Nhru) )
       ALLOCATE ( Gwr_route_order(Nhru), Gwr_type(Nhru) )
-!      ALLOCATE ( Hru_elev_feet(Nhru) )
-      ALLOCATE ( Hru_elev_meters(Nhru) )
+      ALLOCATE ( Hru_elev_feet(Nhru), Hru_elev_meters(Nhru) )
 
       ! Declared Parameters
       ALLOCATE ( Hru_area(Nhru), Hru_area_dble(Nhru) )
@@ -256,7 +255,7 @@
       INTEGER FUNCTION basinit()
       USE PRMS_CONSTANTS, ONLY: DEBUG_less, ACTIVE, OFF, &
      &    INACTIVE, LAKE, SWALE, FEET, ERROR_basin, DEBUG_minimum, &
-     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO !, METERS2FEET
+     &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO, METERS2FEET
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
      &    Dprst_flag, Lake_route_flag, PRMS4_flag, Frozen_flag, PRMS_VERSION, &
      &    Starttime, Endtime, Parameter_check_flag
@@ -394,10 +393,10 @@
 
         Basin_lat = Basin_lat + DBLE( Hru_lat(i)*harea )
         IF ( Elev_units==FEET ) THEN
-!          Hru_elev_feet(i) = Hru_elev(i)
+          Hru_elev_feet(i) = Hru_elev(i)
           Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
         ELSE
-!          Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
+          Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
           Hru_elev_meters(i) = Hru_elev(i)
         ENDIF
         j = j + 1

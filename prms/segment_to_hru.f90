@@ -7,7 +7,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Streamflow'
         character(len=*), parameter :: MODNAME = 'segment_to_hru'
-        character(len=*), parameter :: Version_segment_to_hru = '2023-08-10'
+        character(len=*), parameter :: Version_segment_to_hru = '2024-01-04'
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Segment_outflow_id(:)
       END MODULE PRMS_SEGMENT_TO_HRU
@@ -17,8 +17,7 @@
       USE PRMS_MODULE, ONLY: Process_flag, Nsegment
       USE PRMS_SEGMENT_TO_HRU
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Basin_area_inv, Hru_perv
-      USE PRMS_FLOWVARS, ONLY: Soil_moist, Basin_soil_moist, Seg_outflow, Soil_rechr, Soil_rechr_max
-      USE PRMS_SOILZONE, ONLY: Basin_soil_rechr
+      USE PRMS_FLOWVARS, ONLY: Soil_moist, Basin_soil_moist, Seg_outflow, Soil_rechr, Soil_rechr_max, Basin_soil_rechr
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       IMPLICIT NONE
 ! Functions

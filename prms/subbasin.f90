@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2023-11-01'
+      character(len=*), parameter :: Version_subbasin = '2024-01-04'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -420,10 +420,10 @@
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
      &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist_max, &
-     &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru
+     &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru, Recharge
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
-      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge
+      USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
