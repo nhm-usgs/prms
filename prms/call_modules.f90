@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-01-16'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.2.2 01/16/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-01-22'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 01/22/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -67,7 +67,7 @@
       CHARACTER(LEN=*), INTENT(IN) :: Arg
 ! Functions
       INTRINSIC :: DATE_AND_TIME, INT, FLOAT
-      INTEGER, EXTERNAL :: check_dims, basin, climateflow, prms_time, setup
+      INTEGER, EXTERNAL :: check_dims, basin, climateflow, prms_time
       INTEGER, EXTERNAL :: cascade, obs, soltab, transp_tindex
       INTEGER, EXTERNAL :: transp_frost, frost_date, routing
       INTEGER, EXTERNAL :: temp_1sta_laps, temp_dist2
@@ -221,7 +221,6 @@
 
         ierr = soltab()
 
-        ierr = setup()
       ENDIF
 
       ierr = prms_time()
@@ -1104,7 +1103,7 @@
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
-      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
+      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, potet_pm_sta, glacr
       EXTERNAL :: precip_map, temp_map, segment_to_hru
 ! Local variable
       INTEGER :: test
@@ -1113,7 +1112,6 @@
       test = cascade()
       test = climateflow()
       test = soltab()
-      test = setup()
       test = prms_time()
       test = obs()
       test = water_use_read()
