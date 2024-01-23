@@ -7,7 +7,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2023-11-01'
+      character(len=*), parameter :: Version_obs = '2024-01-22'
       INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, Nstreamtemp
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
@@ -177,7 +177,7 @@
 
       IF ( Nstreamtemp>0 ) THEN
         ALLOCATE ( Stream_temp(Nstreamtemp) )
-        IF ( declvar(MODNAME, 'stream_temp', 'nstreamtemp', Nstreamtemp, &
+        IF ( declvar(MODNAME, 'stream_temp', 'nstreamtemp', Nstreamtemp, 'real', &
      &       'Stream temperature at each measurement station', &
      &       'degrees Celsius', Stream_temp)/=0 ) CALL read_error(8, 'stream_temp')
       ENDIF
