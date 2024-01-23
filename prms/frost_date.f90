@@ -5,15 +5,15 @@
 ! Declared Parameters: frost_temp
 !***********************************************************************
       INTEGER FUNCTION frost_date()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, DAYS_PER_YEAR, NORTHERN
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, NORTHERN
       USE PRMS_MODULE, ONLY: Process_flag, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
-      USE PRMS_SET_TIME, ONLY: Jsol
+      USE PRMS_SET_TIME, ONLY: Jsol, Yrdays
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Preprocessing'
       character(len=*), parameter :: MODNAME = 'frost_date'
-      character(len=*), parameter :: Version_frost_date = '2020-12-02'
+      character(len=*), parameter :: Version_frost_date = '2024-01-23'
 ! Functions
       INTRINSIC :: NINT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam, get_season
@@ -55,6 +55,14 @@
           switchToFallToday = OFF
         ENDIF
         oldSeason = season
+
+        IF ( Hemisphere==NORTHERN ) THEN
+          spring1 = 1
+          fall1 = Yrdays
+        ELSE
+          spring1 = Yrdays
+          fall1 = 1
+        ENDIF
 
 ! If this is the first timestep of fall, unset the CurrentFallFrost
 ! variable. Also since we are finished looking for spring frosts,
@@ -124,13 +132,6 @@
         springFrostCount = 0
         CALL PRMS_open_module_file(Iunit, 'frost_date.param')
         oldSeason = get_season()
-        IF ( Hemisphere==NORTHERN ) THEN
-          spring1 = 1
-          fall1 = DAYS_PER_YEAR
-        ELSE
-          spring1 = DAYS_PER_YEAR
-          fall1 = 1
-        ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN
         basin_fall_frost = 0.0D0
@@ -142,9 +143,9 @@
           IF ( fallFrostCount==0 ) fallFrostCount = 1
           spring_frost(j) = NINT( springFrostSum(j)/DBLE( springFrostCount ) )
           fall_frost(j) = fall_frost(j) + 10
-          IF ( fall_frost(j)>DAYS_PER_YEAR ) fall_frost(j) = DAYS_PER_YEAR
+          IF ( fall_frost(j)>Yrdays ) fall_frost(j) = Yrdays
           spring_frost(j) = spring_frost(j) + 10
-          IF ( spring_frost(j)>DAYS_PER_YEAR ) spring_frost(j) = spring_frost(j) - DAYS_PER_YEAR
+          IF ( spring_frost(j)>Yrdays ) spring_frost(j) = spring_frost(j) - Yrdays
           basin_fall_frost = basin_fall_frost + fall_frost(j)*Hru_area(j)
           basin_spring_frost = basin_spring_frost + spring_frost(j)*Hru_area(j)
         ENDDO

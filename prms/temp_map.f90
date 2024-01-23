@@ -6,17 +6,18 @@
 ! measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_TEMP_MAP
-        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, MONTHS_PER_YEAR
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=*), parameter :: MODNAME = 'temp_map'
-        character(len=*), parameter :: Version_temp_map = '2023-11-01'
+        character(len=*), parameter :: Version_temp_map = '2024-01-22'
         INTEGER, SAVE :: Tmax_unit, Tmin_unit
+        double precision, save, allocatable :: Tmax_map_values(:), Tmin_map_values(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
-        REAL, SAVE, ALLOCATABLE :: Hru2map_pct(:), Tmax_map_values(:), Tmin_map_values(:), Precip_map_values(:)
-        REAL, SAVE, ALLOCATABLE :: Tmax_map_adj(:, :), Tmin_map_adj(:, :), Precip_map_adj(:, :)
+        double precision, save, allocatable :: Hru2map_pct(:), Tmax_map_adj(:, :), Tmin_map_adj(:, :)
+        REAL, SAVE, ALLOCATABLE :: Tmax_map_adj_sngl(:, :), Tmin_map_adj_sngl(:, :), Hru2map_pct_sngl(:)
         ! parameters in basin:
         !    hru_area
         ! Control Parameters
@@ -24,20 +25,20 @@
       END MODULE PRMS_TEMP_MAP
 
       SUBROUTINE temp_map()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXFILE_LENGTH, MONTHS_PER_YEAR, temp_map_module
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXFILE_LENGTH, temp_map_module
       USE PRMS_MODULE, ONLY: Process_flag, Start_year, Start_month, Start_day, Nmap2hru, Nmap, Nowmonth
       USE PRMS_TEMP_MAP
-      USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc
 ! Functions
-      INTRINSIC :: SNGL
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
       EXTERNAL :: read_error, temp_set, find_header_end, find_current_time
       EXTERNAL :: print_module
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
-      REAL :: tmax_hru, tmin_hru, harea
+      double precision :: tmax_hru, tmin_hru
 !***********************************************************************
        IF ( Process_flag==RUN ) THEN
         READ ( Tmax_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Tmax_map_values(i), i=1,Nmap)
@@ -45,8 +46,8 @@
         Basin_tmax = 0.0D0
         Basin_tmin = 0.0D0
         Basin_temp = 0.0D0
-        Tmaxf = 0.0
-        Tminf = 0.0
+        Tmaxf = 0.0D0
+        Tminf = 0.0D0
 
         DO j = 1, Nmap2hru
           kg = Map2hru_id(j)
@@ -57,17 +58,16 @@
 
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
-          harea = Hru_area(i)
           tmax_hru = Tmaxf(i)
           tmin_hru = Tminf(i)
           CALL temp_set(i, tmax_hru, tmin_hru, Tmaxf(i), Tminf(i), &
-     &                    Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), harea)
+     &                    Tavgf(i), Tmaxc(i), Tminc(i), Tavgc(i), Hru_area_dble(i))
         ENDDO
         Basin_tmax = Basin_tmax*Basin_area_inv
         Basin_tmin = Basin_tmin*Basin_area_inv
         Basin_temp = Basin_temp*Basin_area_inv
-        Solrad_tmax = SNGL( Basin_tmax )
-        Solrad_tmin = SNGL( Basin_tmin )
+        Solrad_tmax = Basin_tmax
+        Solrad_tmin = Basin_tmin
 
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_temp_map)
@@ -75,14 +75,14 @@
         ALLOCATE ( Tmax_map_values(Nmap), Tmin_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Tmax_map_adj(Nmap,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmax_map_adj(Nmap,12), Tmax_map_adj_sngl(Nmap,12) )
         IF ( declparam(MODNAME, 'tmax_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly maximum temperature adjustment factor for each mapped spatial unit', &
      &       'Monthly (January to December) additive adjustment factor to maximum air temperature for each mapped,'// &
      &       ' spatial unit estimated on the basis of slope and aspect', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj')
-        ALLOCATE ( Tmin_map_adj(Nmap,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmin_map_adj(Nmap,12), Tmin_map_adj_sngl(Nmap,12) )
         IF ( declparam(MODNAME, 'tmin_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly minimum temperature adjustment factor for each mapped spatial unit', &
@@ -105,7 +105,7 @@
      &       'Mapped spatial unit identification number for each HRU to map intersection', &
      &       'none')/=0 ) CALL read_error(1, 'map2hru_id')
 
-        ALLOCATE ( Hru2map_pct(Nmap2hru) )
+        ALLOCATE ( Hru2map_pct(Nmap2hru), Hru2map_pct_sngl(Nmap2hru) )
         IF ( declparam(MODNAME, 'hru2map_pct', 'nmap2hru', 'real', &
      &       '0.0', '0.0', '1.0', &
      &       'Portion of HRU associated with each HRU to map intersection', &
@@ -116,14 +116,20 @@
       ELSEIF ( Process_flag==INIT ) THEN
         IF ( getparam(MODNAME, 'map2hru_id', Nmap2hru, 'integer', Map2hru_id)/=0 ) CALL read_error(2, 'map2hru_id')
         IF ( getparam(MODNAME, 'hru2map_id', Nmap2hru, 'integer', Hru2map_id)/=0 ) CALL read_error(2, 'hru2map_id')
-        IF ( getparam(MODNAME, 'hru2map_pct', Nmap2hru, 'real', Hru2map_pct)/=0 ) CALL read_error(2, 'hru2map_pct')
+        IF ( getparam(MODNAME, 'hru2map_pct', Nmap2hru, 'real', Hru2map_pct_sngl)/=0 ) CALL read_error(2, 'hru2map_pct')
+        Hru2map_pct = DBLE( Hru2map_pct_sngl )
+        DEALLOCATE ( Hru2map_pct_sngl )
 
         istop = 0
         ierr = 0
-        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmax_map_adj)/=0 ) &
+        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*12, 'real', Tmax_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmax_map_adj')
-        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmin_map_adj)/=0 ) &
+        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*12, 'real', Tmin_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmin_map_adj')
+        Tmax_map_adj = DBLE( Tmax_map_adj_sngl )
+        Tmin_map_adj = DBLE( Tmin_map_adj_sngl )
+        DEALLOCATE ( Tmax_map_adj_sngl, Tmin_map_adj_sngl )
+
         IF ( control_string(Tmax_map_file, 'tmax_map_file')/=0 ) CALL read_error(5, 'tmax_map_file')
         IF ( control_string(Tmin_map_file, 'tmin_map_file')/=0 ) CALL read_error(5, 'tmin_map_file')
         CALL find_header_end(Tmax_unit, Tmax_map_file, ierr)

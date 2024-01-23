@@ -18,10 +18,10 @@
 
 !***********************************************************************
       INTEGER FUNCTION potet_pm()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, INCH2MM
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PM
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity, Humidity_percent
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru, Windspeed_hru
@@ -29,14 +29,14 @@
       USE PRMS_SET_TIME, ONLY: Jday
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE, LOG, SNGL
+      INTRINSIC :: DBLE, LOG
       INTEGER, EXTERNAL :: declparam, getparam
-      REAL, EXTERNAL :: sat_vapor_press
+      double precision, external :: sat_vapor_press
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      REAL :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
-      REAL :: A1, B1, t1, num, den, stab, sw
+      double precision :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
+      double precision :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pm = 0
 
@@ -49,12 +49,12 @@
 
 !...ATMOSPHERIC PRESSURE FOR ALTITUDE, KPA:
           !prsr = 101.3 - 0.003215*Hru_elev_feet(i)
-          prsr = 101.3 * (((293.0-0.0065*Hru_elev_meters(i))/293.0)**5.26)
+          prsr = 101.3D0 * (((293.0D0-0.0065D0*Hru_elev_meters(i))/293.0D0)**5.26D0)
 
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
           ! elh = 597.3 - 0.5653*Tavgc(i) ! same as potet_jh
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
-          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184 
+          elh = (597.3D0 - 0.5653D0*Tavgc(i)) * 4.184D0
           ! elh = 2501.0 - 2.361*Tavgc(i)
           ! elh = 2500.8 - 2.36*Tavgc(i) + 0.0016*Tavgc(i)**2 - 0.00006*Tavgc(i)**3
 
@@ -65,47 +65,47 @@
           ! Cp = 1.005 approximate specific heat capacity of air at 20 degrees C, increases with temp
           ! MW = 0.622 = molecular weight of water
           ! 1.615755627 = Cp / MW
-          psycnst = 1.615755627*prsr/elh
+          psycnst = 1.615755627D0*prsr/elh
 
 !   heat flux density to the ground,  MJ / m2 / day
 !          heat_flux = -4.2 * (Tavgc_ante(i)-Tavgc(i)) ! could use solrad_tmax or running avg instead of Tavgc_ante
-          heat_flux = 0.0 ! Irmak and others (2012) says equal to zero for daily time step ! G
+          heat_flux = 0.0D0 ! Irmak and others (2012) says equal to zero for daily time step ! G
 
 ! Dew point temperature (Lawrence(2005) eqn. 8), degrees C
 ! Humidity_hru is input as percent so divided by 100 to be in units of decimal fraction
-          A1 = 17.625
-          B1 = 243.04
+          A1 = 17.625D0
+          B1 = 243.04D0
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG(Humidity_hru(i)/100.0) + t1)
-          den = A1 - LOG(Humidity_hru(i)/100.0) - t1
+          num = B1 * (LOG(DBLE(Humidity_hru(i)/100.0)) + t1)
+          den = A1 - LOG(DBLE(Humidity_hru(i)/100.0)) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
 ! divide by 10 to convert millibar to kpa
-          Vp_actual(i) = sat_vapor_press(Tempc_dewpt(i)) / 10.0 ! ea
+          Vp_actual(i) = sat_vapor_press(Tempc_dewpt(i)) / 10.0D0 ! ea
 
 !...SATURATION VAPOR PRESSURE AT AVG TEMP, KILOPASCALS (KPA):
 ! divide by 10 to convert millibar to kpa
-          Vp_sat(i) = sat_vapor_press(Tavgc(i)) / 10.0
+          Vp_sat(i) = sat_vapor_press(Tavgc(i)) / 10.0D0
 
           ! saturation vapor pressure deficit
           vp_deficit = Vp_sat(i) - Vp_actual(i)
 
 !...SLOPE OF SATURATION VAPOR PRESSURE CURVE AT AVG TEMP, KPA/DEG(CELSIUS), Irmak 2012, eqn 18
-          Vp_slope(i) = 4098.0*Vp_sat(i)/((Tavgc(i)+237.3)**2) ! delta
+          Vp_slope(i) = 4098.0D0*Vp_sat(i)/((Tavgc(i)+237.3D0)**2.0D0) ! delta
 
 ! The long wave equation uses the soltab values in the denominator. There
 ! are cases when soltab is zero for certain HRUs (depending on slope/aspect)
 ! for certain months. If this value is zero, reset it to a small value so
 ! there is no divide by zero.
-          IF (Soltab_potsw(Jday,i) <= 10.0) THEN
-            stab = 10.0
+          IF (Soltab_potsw(Jday,i) <= 10.0D0) THEN
+            stab = 10.0D0
           ELSE
-            stab = SNGL( Soltab_potsw(Jday,i) )
+            stab = Soltab_potsw(Jday,i)
           ENDIF
 
-          IF (Swrad(i) <= 10.0) THEN
-            sw = 10.5
+          IF (Swrad(i) <= 10.0D0) THEN
+            sw = 10.5D0
           ELSE
             sw = Swrad(i)
           ENDIF
@@ -114,20 +114,20 @@
 ! Net long wave rediation (Irmak eqn. 10) MJ / m2/ day
 ! 4.903E-09 = Stefan-Boltzmann constant
 
-           Lwrad_net(i) = 4.903E-09 * (((Tmaxc(i) + 273.16)**4 + (Tminc(i) + 273.16)**4)/2.0 ) &
-      &                  * (0.34 - 0.14*(Vp_actual(i)**0.5)) * (((1.35*sw) / stab) - 0.35)
+           Lwrad_net(i) = 4.903D-09 * (((Tmaxc(i) + 273.16D0)**4.0D0 + (Tminc(i) + 273.16D0)**4.0D0)/2.0D0 ) &
+      &                  * (0.34D0 - 0.14D0*(Vp_actual(i)**0.5D0)) * (((1.35D0*sw) / stab) - 0.35D0)
 
 ! Net radiation (Irmak eqn. 8) MJ / m2 / day
 ! 1 Langley = 0.04184 MJ/m2
-          net_rad = Swrad(i)*0.04184 - Lwrad_net(i)
+          net_rad = Swrad(i)*0.04184D0 - Lwrad_net(i)
 
-          a = Vp_slope(i) * (net_rad - heat_flux) / elh * 1000.0
-          b = psycnst * Pm_n_coef(i,Nowmonth) * Windspeed_hru(i) * vp_deficit / (Tavgc(i) + 273.0)
-          c = (Vp_slope(i) + psycnst * (1.0 + Pm_d_coef(i,Nowmonth) * Windspeed_hru(i)))
+          a = Vp_slope(i) * (net_rad - heat_flux) / elh * 1000.0D0
+          b = psycnst * DBLE(Pm_n_coef(i,Nowmonth) * Windspeed_hru(i)) * vp_deficit / (Tavgc(i) + 273.0D0)
+          c = (Vp_slope(i) + psycnst * DBLE( (1.0 + Pm_d_coef(i,Nowmonth) * Windspeed_hru(i))) )
 
 !  PM equation with crop_coef in mm/day
 !          Potet(i) = (a + b)/c
-          Potet(i) = Crop_coef(i, Nowmonth) * (a + b)/c
+          Potet(i) = DBLE(Crop_coef(i, Nowmonth)) * (a + b)/c
           Potet(i) = Potet(i) / INCH2MM
 
 ! may be able to use intrinsic ISNAN
@@ -135,9 +135,9 @@
 !             print *, "potet NaN", potet(i)
 !          end if
 
-          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
-          Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i)*Hru_area(i) )
+          IF ( Potet(i)<0.0D0 ) Potet(i) = 0.0D0
+          Basin_potet = Basin_potet + Potet(i)*Hru_area_dble(i)
+          Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i) ) * Hru_area_dble(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
         Basin_humidity = Basin_humidity*Basin_area_inv
@@ -147,21 +147,21 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pm_n_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pm_n_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'pm_n_coef', 'nhru,nmonths', 'real', &
      &       '900.0', '850.0', '950.0', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET N temperauture coefficient for each HRU', &
      &       'degrees Celsius per day')/=0 ) CALL read_error(1, 'pm_n_coef')
 
-        ALLOCATE ( Pm_d_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pm_d_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'pm_d_coef', 'nhru,nmonths', 'real', &
      &       '0.34', '0.25', '0.45', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET D wind-speed coefficient for each HRU', &
      &       'seconds/meters')/=0 ) CALL read_error(1, 'pm_d_coef')
 
-        ALLOCATE ( Crop_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Crop_coef(Nhru,12) )
         IF ( declparam(MODNAME, 'crop_coef', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '2.0', &
      &       'Crop coefficient for each HRU', &
@@ -170,10 +170,10 @@
 
 !******Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
-        Vp_sat = 0.0
-        IF ( getparam(MODNAME, 'pm_n_coef', Nhru*MONTHS_PER_YEAR, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
-        IF ( getparam(MODNAME, 'pm_d_coef', Nhru*MONTHS_PER_YEAR, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
-        IF ( getparam(MODNAME, 'crop_coef', Nhru*MONTHS_PER_YEAR, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
+        Vp_sat = 0.0D0
+        IF ( getparam(MODNAME, 'pm_n_coef', Nhru_nmonths, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
+        IF ( getparam(MODNAME, 'pm_d_coef', Nhru_nmonths, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
+        IF ( getparam(MODNAME, 'crop_coef', Nhru_nmonths, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
 
       ENDIF
 

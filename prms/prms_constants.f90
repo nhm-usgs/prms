@@ -14,30 +14,39 @@ MODULE PRMS_CONSTANTS
     !real(DOUBLEsize), PARAMETER :: ZERO_SNOWPACK = 1.0D-16
     real(DOUBLEsize), PARAMETER :: DCLOSEZERO = 1.0D-12
 
+    real(DOUBLEsize), parameter :: PI = ACOS(-1.0D0) ! ABOUT 3.1415926535898
+    real(DOUBLEsize), parameter :: TWOPI = 2.0D0*PI ! ABOUT 6.2831853071786
+    real(DOUBLEsize), parameter :: HALF_PI = ACOS(0.0D0)
+    real(DOUBLEsize), parameter :: PI_4 = PI/4.0D0
+    real(DOUBLEsize), parameter :: RADIANS = PI / 180.0D0 ! ABOUT 0.017453292519943
+    real(DOUBLEsize), parameter :: PI_12 = 12.0D0 / PI ! ABOUT 3.8197186342055
+
     integer, parameter :: MAXFILE_LENGTH = 256
     integer, parameter :: MAXLINE_LENGTH = 256
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
-    integer, parameter :: MONTHS_PER_YEAR = 12
     integer, parameter :: MAX_DAYS_PER_YEAR = 366
     integer, parameter :: DAYS_PER_YEAR = 365
-    real(REALsize), parameter :: DAYS_YR = 365.242
+    real(DOUBLEsize), parameter :: DAYS_YR = 365.242D0
     real(DOUBLEsize), parameter :: DAYS_IN_YEAR = 365.242D0
     real(DOUBLEsize), parameter :: SECS_PER_DAY = 86400.0D0
     real(DOUBLEsize), parameter :: SECS_PER_HOUR = 3600.0D0
+    real(DOUBLEsize), parameter :: DEGDAY = 360.0D0 / DAYS_IN_YEAR
+    real(DOUBLEsize), parameter :: DEGDAYRAD = DEGDAY * RADIANS ! about 0.00143356672
+
     real(DOUBLEsize), parameter :: FT2_PER_ACRE = 43560.0D0
     real(DOUBLEsize), parameter :: INCHES_PER_FOOT = 12.0D0
     real(DOUBLEsize), parameter :: CFS2CMS_CONV = 0.028316847D0
 
-    real(REALsize), parameter :: INCH2CM = 2.54
-    real(REALsize), parameter :: INCH2MM = 25.4
-    real(REALsize), parameter :: INCH2M = 0.0254
-    real(REALsize), parameter :: MM2INCH = 1.0 / INCH2MM
-    real(REALsize), parameter :: FEET2METERS = 0.3048
-    real(REALsize), parameter :: METERS2FEET = 1.0 / FEET2METERS
+    real(DOUBLEsize), parameter :: INCH2CM = 2.54D0
+    real(DOUBLEsize), parameter :: INCH2MM = 25.4D0
+    real(DOUBLEsize), parameter :: INCH2M = 0.0254D0
+    real(DOUBLEsize), parameter :: MM2INCH = 1.0D0 / INCH2MM
+    real(DOUBLEsize), parameter :: FEET2METERS = 0.3048D0
+    real(DOUBLEsize), parameter :: METERS2FEET = 1.0D0 / FEET2METERS
 
-    real(REALsize), parameter :: MAXTEMP = 200.0
-    real(REALsize), parameter :: MINTEMP = -150.0
+    real(DOUBLEsize), parameter :: MAXTEMP = 200.0D0
+    real(DOUBLEsize), parameter :: MINTEMP = -150.0D0
 
     ! Frequency values, used for basinOut_freq, nhruOut_freq, and nsubOut_freq
     integer, parameter :: DAILY = 1
@@ -71,14 +80,43 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CFS = 0
     integer, parameter :: CMS = 1
 
-    ! cov_type
+    ! cov_type and ag_cov_type
     integer, parameter :: BARESOIL = 0
     integer, parameter :: GRASSES = 1
     integer, parameter :: SHRUBS = 2
     integer, parameter :: TREES = 3
     integer, parameter :: CONIFEROUS = 4
+! Vaccaro, J.J., 2007, A deep percolation model for estimating ground-water recharge:
+! Documentation of modules for the modular modeling system of the U.S. Geological Survey: 
+! U.S. Geological Survey Scientific Investigations Report 2006-5318, 30 p.
+!    integer, parameter :: WINTER_WHEAT_SUMMER = 5
+!    integer, parameter :: WINTER_WHEAT_FALLOW = 5
+!    integer, parameter :: ORCHARD = 7
+!    integer, parameter :: ALFALFA = 8
+!    integer, parameter :: ROW_CROPS = 9
+!    integer, parameter :: WATER = 10
+!    integer, parameter :: CORN = 11
+!    integer, parameter :: POTATO = 12
+!    integer, parameter :: LENTIL = 14
+!    integer, parameter :: SPRING_WHEAT = 15
+!    integer, parameter :: IMPERVIOUS = 16
+!    integer, parameter :: VEGETABLES_SMALL = 17
+!    integer, parameter :: COTTON = 18
+!    integer, parameter :: MINT = 19
+!    integer, parameter :: GRAPE_CA = 20
+!    integer, parameter :: GRAPE_WA = 21
+!    integer, parameter :: HOPS = 22
+!    integer, parameter :: OLIVE_TREE = 23
+!    integer, parameter :: CITRUS = 24
+!    integer, parameter :: SOYBEAN = 25
+!    integer, parameter :: APPLE_TREE = 26
+!    integer, parameter :: SORGHUM = 27 ! May 20 with 140-day growing season
+!    integer, parameter :: PASTURE = 28 ! irrigated April 1 to Sept 15
+!    integer, parameter :: BEAN = 29
+!    integer, parameter :: PEA = 30
+!    integer, parameter :: ASPARAGUS = 31
 
-    ! soil_type
+    ! soil_type and ag_soil_type
     integer, parameter :: SAND = 1
     integer, parameter :: LOAM = 2
     integer, parameter :: CLAY = 3
@@ -106,6 +144,7 @@ MODULE PRMS_CONSTANTS
 
     ! model_mode
     integer, parameter :: PRMS = 1
+    integer, parameter :: STORM = 22
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1
@@ -113,6 +152,9 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: CLEAN = 3
     integer, parameter :: SETDIMENS = 4
     integer, parameter :: WRITE_CLIMATE=24, CONVERT=25, CLIMATE=26, POTET=27, TRANSPIRE=28, FROST=29
+
+    ! AG irrigation flags
+    integer, parameter :: CANOPY = 2
 
     ! Error Codes
     integer, parameter :: ERROR_read = -4
@@ -137,6 +179,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: ERROR_module = 16
     integer, parameter :: ERROR_lake = 17
     integer, parameter :: ERROR_soilzone = 18
+    integer, parameter :: ERROR_precip = 19
 
       ! debug print flag:
       ! -2=DEBUG_minimum
@@ -155,11 +198,13 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: ide_dist_module = 5, xyz_dist_module = 6, precip_map_module = 9, climate_hru_module = 7
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
     integer, parameter :: temp_map_module = 9, temp_sta_module = 8
-    integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4
+    integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4, potet_jh_warm_module = 12
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
     integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
     integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5, strmflow_noroute_module = 1
     integer, parameter :: smidx_module = 1, carea_module = 2, ddsolrad_module = 1, ccsolrad_module = 2
+    integer, parameter :: mm_dist_module = 10, greenampt_module = 10
+    integer, parameter :: soilzone_module_flag = 1, soilzone_ag_flag = 2, smbal_flag = 0
 
     integer, parameter :: OFF = 0
     integer, parameter :: ACTIVE = 1

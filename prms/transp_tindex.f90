@@ -7,22 +7,23 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
         character(len=13), parameter :: MODNAME = 'transp_tindex'
-        character(len=*), parameter :: Version_transp = '2023-11-01'
+        character(len=*), parameter :: Version_transp = '2024-01-22'
         INTEGER, SAVE, ALLOCATABLE :: Transp_check(:)
-        REAL, SAVE, ALLOCATABLE :: Tmax_sum(:), Transp_tmax_f(:)
+        double precision, save, allocatable :: Tmax_sum(:), Transp_tmax_f(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Transp_beg(:), Transp_end(:)
         REAL, SAVE, ALLOCATABLE :: Transp_tmax(:)
       END MODULE PRMS_TRANSP_TINDEX
 
       INTEGER FUNCTION transp_tindex()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, FAHRENHEIT, MONTHS_PER_YEAR, READ_INIT, SAVE_INIT
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, FAHRENHEIT, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, Start_month, Start_day, Nowmonth, Nowday
       USE PRMS_TRANSP_TINDEX
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tmaxf, Temp_units, Transp_on, Basin_transp_on 
       IMPLICIT NONE
 ! Functions
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam
       REAL, EXTERNAL :: c_to_f
       EXTERNAL :: read_error, print_module, transp_tindex_restart
@@ -44,12 +45,12 @@
             IF ( Nowmonth==Transp_end(i) ) THEN
               Transp_on(i) = OFF
               Transp_check(i) = OFF
-              Tmax_sum(i) = 0.0
+              Tmax_sum(i) = 0.0D0
             ENDIF
 !******check for month to turn transpiration switch on or off
             IF ( Nowmonth==Transp_beg(i) ) THEN
               Transp_check(i) = ACTIVE
-              Tmax_sum(i) = 0.0
+              Tmax_sum(i) = 0.0D0
             ENDIF
           ENDIF
 
@@ -58,11 +59,11 @@
 !******at which time, turn transpiration switch on, check switch off
           ! freezing temperature assumed to be 32 degrees Fahrenheit
           IF ( Transp_check(i)==ACTIVE ) THEN
-            IF ( Tmaxf(i)>32.0 ) Tmax_sum(i) = Tmax_sum(i) + Tmaxf(i)
+            IF ( Tmaxf(i)>32.0D0 ) Tmax_sum(i) = Tmax_sum(i) + Tmaxf(i)
             IF ( Tmax_sum(i)>Transp_tmax_f(i) ) THEN
               Transp_on(i) = ACTIVE
               Transp_check(i) = OFF
-              Tmax_sum(i) = 0.0
+              Tmax_sum(i) = 0.0D0
             ENDIF
           ENDIF
 
@@ -108,17 +109,17 @@
 
         IF ( Init_vars_from_file>OFF ) CALL transp_tindex_restart(READ_INIT)
         IF ( Temp_units==FAHRENHEIT ) THEN
-          Transp_tmax_f = Transp_tmax
+          Transp_tmax_f = DBLE( Transp_tmax )
         ELSE
           DO i = 1, Nhru
-            Transp_tmax_f(i) = c_to_f(Transp_tmax(i))
+            Transp_tmax_f(i) = DBLE( c_to_f(Transp_tmax(i)) )
           ENDDO
         ENDIF
-        !DEALLOCATE ( Transp_tmax )
+        DEALLOCATE ( Transp_tmax )
 
         IF ( Init_vars_from_file==0 ) Tmax_sum = 0.0
 
-        motmp = Start_month + MONTHS_PER_YEAR
+        motmp = Start_month + 12
         Transp_check = OFF
         Basin_transp_on = OFF
         DO j = 1, Active_hrus
@@ -132,7 +133,7 @@
           ELSEIF ( Transp_end(i)>Transp_beg(i) ) THEN
             IF ( Start_month>Transp_beg(i) .AND. Start_month<Transp_end(i) ) Transp_on(i) = ACTIVE
           ELSE
-            IF ( Start_month>Transp_beg(i) .OR. motmp<Transp_end(i)+MONTHS_PER_YEAR ) Transp_on(i) = ACTIVE
+            IF ( Start_month>Transp_beg(i) .OR. motmp<Transp_end(i)+12 ) Transp_on(i) = ACTIVE
           ENDIF
           IF ( Basin_transp_on==OFF ) THEN
             IF ( Transp_on(i)==ACTIVE ) Basin_transp_on = ACTIVE

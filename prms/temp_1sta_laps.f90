@@ -19,11 +19,12 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=9), SAVE :: MODNAME
-        character(len=*), parameter :: Version_temp = '2023-11-01'
+        character(len=*), parameter :: Version_temp = '2024-01-23'
         INTEGER, SAVE, ALLOCATABLE :: Tmax_cnt(:), Tmin_cnt(:), Nuse_tsta(:)
-        REAL, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
-        REAL, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
-        REAL, SAVE :: Solrad_tmax_good, Solrad_tmin_good
+        double precision, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
+        double precision, SAVE, ALLOCATABLE :: Tmax_lapse_dble(:, :), Tmin_lapse_dble(:, :)
+        double precision, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
+        double precision, SAVE :: Solrad_tmax_good, Solrad_tmin_good
         ! Declared Parameters
         INTEGER, SAVE :: Max_missing
         REAL, SAVE, ALLOCATABLE :: Tmax_lapse(:, :), Tmin_lapse(:, :)
@@ -32,25 +33,25 @@
 
       INTEGER FUNCTION temp_1sta_laps()
         USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, &
-     &      GLACIER, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
+     &      GLACIER, DEBUG_less, ERROR_temp, DOCUMENTATION, &
      &      MINTEMP, MAXTEMP, NEARZERO, temp_1sta_module, temp_laps_module, READ_INIT, SAVE_INIT
         USE PRMS_MODULE, ONLY: Process_flag, Nhru, Ntemp, Model, Print_debug, Init_vars_from_file, Save_vars_to_file, &
-     &      Temp_flag, Inputerror_flag, Start_month, Glacier_flag, Nowmonth, Nowday
+     &      Temp_flag, Inputerror_flag, Start_month, Glacier_flag, Nowmonth, Nowday, Nhru_nmonths
       USE PRMS_TEMP_1STA_LAPS
-      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area, Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
+      USE PRMS_BASIN, ONLY: Hru_elev_ts, Hru_area_dble, Active_hrus, Hru_route_order, Basin_area_inv, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Tmax_aspect_adjust, Tmin_aspect_adjust, Tsta_elev, &
      &    Hru_tsta, Solrad_tmax, Solrad_tmin, Basin_temp, Basin_tmax, &
      &    Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tmax_allrain
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: INDEX, ABS
+      INTRINSIC :: INDEX, ABS, DBLE
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
       EXTERNAL :: compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr, nchar
-      REAL :: tmx, tmn
+      double precision :: tmx, tmn
 !***********************************************************************
       temp_1sta_laps = 0
 
@@ -109,40 +110,40 @@
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             IF ( Nowday==1 ) THEN
-              IF ( Glacier_flag==ACTIVE ) THEN
+              IF ( Glacier_flag==1 ) THEN
                 ! Hru_elev_ts is the antecedent glacier elevation
-                IF ( Hru_type(j)==GLACIER ) Elfac(j) = (Hru_elev_ts(j) - Tsta_elev(k))/1000.0
+                IF ( Hru_type(j)==GLACIER ) Elfac(j) = (Hru_elev_ts(j) - DBLE(Tsta_elev(k))) / 1000.0D0
               ENDIF
-              Tcrx(j) = Tmax_lapse(j, Nowmonth)*Elfac(j) - Tmax_aspect_adjust(j, Nowmonth)
-              Tcrn(j) = Tmin_lapse(j, Nowmonth)*Elfac(j) - Tmin_aspect_adjust(j, Nowmonth)
+              Tcrx(j) = Tmax_lapse_dble(j, Nowmonth)*Elfac(j) - DBLE( Tmax_aspect_adjust(j, Nowmonth) )
+              Tcrn(j) = Tmin_lapse_dble(j, Nowmonth)*Elfac(j) - DBLE( Tmin_aspect_adjust(j, Nowmonth) )
             ENDIF
             tmx = Tmax(k) - Tcrx(j)
             tmn = Tmin(k) - Tcrn(j)
             CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
-     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area_dble(j))
           ENDDO
         ELSEIF ( Temp_flag==temp_laps_module ) THEN
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
             l = Hru_tlaps(j)
-            IF ( Glacier_flag==ACTIVE ) THEN
+            IF ( Glacier_flag==1 ) THEN
               ! Hru_elev_ts is the antecedent glacier elevation
               IF ( Hru_type(j)==GLACIER ) CALL compute_temp_laps(Elfac(j), Hru_elev_ts(j), Tsta_elev(l), Tsta_elev(k))
             ENDIF
-            tmx = Tmax(k) + (Tmax(l) - Tmax(k))*Elfac(j) + Tmax_aspect_adjust(j, Nowmonth)
-            tmn = Tmin(k) + (Tmin(l) - Tmin(k))*Elfac(j) + Tmin_aspect_adjust(j, Nowmonth)
+            tmx = Tmax(k) + (Tmax(l) - Tmax(k))*Elfac(j) + DBLE( Tmax_aspect_adjust(j, Nowmonth) )
+            tmn = Tmin(k) + (Tmin(l) - Tmin(k))*Elfac(j) + DBLE( Tmin_aspect_adjust(j, Nowmonth) )
             CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
-     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area_dble(j))
           ENDDO
         ELSE ! Temp_flag = temp_sta_module
           DO jj = 1, Active_hrus
             j = Hru_route_order(jj)
             k = Hru_tsta(j)
-            tmx = Tmax(k) + Tmax_aspect_adjust(j, Nowmonth)
-            tmn = Tmin(k) + Tmin_aspect_adjust(j, Nowmonth)
+            tmx = Tmax(k) + DBLE( Tmax_aspect_adjust(j, Nowmonth) )
+            tmn = Tmin(k) + DBLE( Tmin_aspect_adjust(j, Nowmonth) )
             CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
-     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+     &                    Tmaxc(j), Tminc(j), Tavgc(j), Hru_area_dble(j))
           ENDDO
         ENDIF
         Basin_tmax = Basin_tmax*Basin_area_inv
@@ -186,7 +187,7 @@
 
         IF ( Temp_flag==temp_1sta_module .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Tcrn(Nhru), Tcrx(Nhru) )
-          ALLOCATE ( Tmax_lapse(Nhru, MONTHS_PER_YEAR) )
+          ALLOCATE ( Tmax_lapse(Nhru, 12), Tmax_lapse_dble(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmax_lapse', 'nhru,nmonths', 'real', &
      &         '3.0', '-20.0', '20.0', &
      &         'Monthly maximum temperature lapse rate for each HRU', &
@@ -195,7 +196,7 @@
      &         'temp_units/elev_units')/=0 ) CALL read_error(1, 'tmax_lapse')
 ! 3 degC/ 1000 ft is adiabatic, or 9.8 degC/ 1000 m, or 5.4 degF/ 1000 ft, or 17.64 degF /1000 m
 
-          ALLOCATE ( Tmin_lapse(Nhru, MONTHS_PER_YEAR) )
+          ALLOCATE ( Tmin_lapse(Nhru, 12), Tmin_lapse_dble(Nhru, 12) )
           IF ( declparam(MODNAME, 'tmin_lapse', 'nhru,nmonths', 'real', &
      &         '3.0', '-20.0', '20.0', &
      &         'Monthly minimum temperature lapse rate for each HRU', &
@@ -227,8 +228,11 @@
 
         ! Initialize variables, get parameter values, compute Elfac
         IF ( Temp_flag==temp_1sta_module ) THEN
-          IF ( getparam(MODNAME, 'tmin_lapse', Nhru*MONTHS_PER_YEAR, 'real', Tmin_lapse)/=0 ) CALL read_error(2, 'tmin_lapse')
-          IF ( getparam(MODNAME, 'tmax_lapse', Nhru*MONTHS_PER_YEAR, 'real', Tmax_lapse)/=0 ) CALL read_error(2, 'tmax_lapse')
+          IF ( getparam(MODNAME, 'tmin_lapse', Nhru_nmonths, 'real', Tmin_lapse)/=0 ) CALL read_error(2, 'tmin_lapse')
+          IF ( getparam(MODNAME, 'tmax_lapse', Nhru_nmonths, 'real', Tmax_lapse)/=0 ) CALL read_error(2, 'tmax_lapse')
+          Tmax_lapse_dble = DBLE( Tmax_lapse )
+          Tmin_lapse_dble = DBLE( Tmin_lapse )
+          DEALLOCATE ( Tmax_lapse, Tmin_lapse )
         ELSEIF ( Temp_flag==temp_laps_module ) THEN
           IF ( getparam(MODNAME, 'hru_tlaps', Nhru, 'integer', Hru_tlaps)/=0 ) CALL read_error(2, 'hru_tlaps')
         ENDIF
@@ -236,18 +240,18 @@
         Max_missing = Max_missing + 1
 
         Nuse_tsta = 0
-        Elfac = 0.0
+        Elfac = 0.0D0
         IF ( Temp_flag==temp_1sta_module ) THEN
-          Tcrx = 0.0
-          Tcrn = 0.0
+          Tcrx = 0.0D0
+          Tcrn = 0.0D0
           DO i = 1, Active_hrus
             j = Hru_route_order(i)
             k = Hru_tsta(j)
             Nuse_tsta(k) = 1
             ! Hru_elev_ts is the current elevation, either hru_elev or for restart Hru_elev_ts
-            Elfac(j) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
-            Tcrx(j) = Tmax_lapse(j, Start_month)*Elfac(j) - Tmax_aspect_adjust(j, Start_month)
-            Tcrn(j) = Tmin_lapse(j, Start_month)*Elfac(j) - Tmin_aspect_adjust(j, Start_month)
+            Elfac(j) = (Hru_elev_ts(j)-DBLE(Tsta_elev(k))) / 1000.0D0
+            Tcrx(j) = Tmax_lapse_dble(j, Start_month)*Elfac(j) - DBLE( Tmax_aspect_adjust(j, Start_month) )
+            Tcrn(j) = Tmin_lapse_dble(j, Start_month)*Elfac(j) - DBLE( Tmin_aspect_adjust(j, Start_month) )
           ENDDO
         ELSEIF ( Temp_flag==temp_laps_module ) THEN
           ierr = 0
@@ -274,7 +278,7 @@
           Tmin_cnt = 0
 
           DO i = 1, Ntemp
-            Tmax_prev(i) = Tmax_allrain(1, Start_month)
+            Tmax_prev(i) = DBLE( Tmax_allrain(1, Start_month) )
           ENDDO
           Tmin_prev = Tmax_prev
         ENDIF
@@ -296,19 +300,20 @@
 !     Compute lapse rate for an HRU
 !***********************************************************************
       SUBROUTINE compute_temp_laps(Elfac, Hru_elev, Tsta_elev_laps, Tsta_elev_base)
-      USE PRMS_CONSTANTS, ONLY: NEARZERO
+      USE PRMS_CONSTANTS, ONLY: DNEARZERO
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Hru_elev, Tsta_elev_laps, Tsta_elev_base
-      REAL, INTENT(OUT) :: Elfac
+      REAL, INTENT(IN) :: Tsta_elev_laps, Tsta_elev_base
+      double precision, INTENT(IN) :: Hru_elev
+      double precision, INTENT(OUT) :: Elfac
 ! Functions
       INTRINSIC :: ABS
 ! Local Variables
-      REAL :: tdiff
+      double precision :: tdiff
 !***********************************************************************
-      tdiff = Tsta_elev_laps - Tsta_elev_base
-      IF ( ABS(tdiff)<NEARZERO ) tdiff = 1.0
-      Elfac = (Hru_elev-Tsta_elev_base)/tdiff
+      tdiff = DBLE( Tsta_elev_laps - Tsta_elev_base )
+      IF ( ABS(tdiff)<DNEARZERO ) tdiff = 1.0D0
+      Elfac = (Hru_elev-DBLE(Tsta_elev_base)) / tdiff
       END SUBROUTINE compute_temp_laps
 
 !***********************************************************************

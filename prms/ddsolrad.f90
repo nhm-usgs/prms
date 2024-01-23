@@ -22,10 +22,10 @@
       END MODULE PRMS_DDSOLRAD
 
       INTEGER FUNCTION ddsolrad()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, MONTHS_PER_YEAR, ACTIVE, OFF
-      USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol, Nowmonth
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, ACTIVE, OFF
+      USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol, Nowmonth, Nhru_nmonths
       USE PRMS_DDSOLRAD
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
      &    Rad_conv, Hru_solsta, Basin_horad, &
      &    Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
@@ -35,16 +35,16 @@
       USE PRMS_OBS, ONLY: Solrad
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: INT, FLOAT, DBLE, SNGL
+      INTRINSIC :: INT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
-      REAL :: pptadj, radadj, dday, ddayi
-      REAL, SAVE, DIMENSION(26) :: solf
-      DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
-     &          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
-     &          .734, .738, .742, .746, .75/
+      double precision :: pptadj, radadj, dday, ddayi
+      double precision, SAVE, DIMENSION(26) :: solf
+      DATA solf/.20D0, .35D0, .45D0, .51D0, .56D0, .59D0, .62D0, .64D0, .655D0, .67D0, .682D0, &
+     &          .69D0, .70D0, .71D0, .715D0, .72D0, .722D0, .724D0, .726D0, .728D0, .73D0, &
+     &          .734D0, .738D0, .742D0, .746D0, .75D0/
 !***********************************************************************
       ddsolrad = 0
 
@@ -57,40 +57,40 @@
           j = Hru_route_order(jj)
 
           ! set degree day and radiation adjustment limited by radmax
-          dday = Dday_slope(j, Nowmonth)*Tmax_hru(j) + Dday_intcp(j, Nowmonth) + 1.0
-          IF ( dday<1.0 ) dday = 1.0
-          IF ( dday<26.0 ) THEN
+          dday = DBLE( Dday_slope(j, Nowmonth)*Tmax_hru(j) + Dday_intcp(j, Nowmonth) + 1.0 )
+          IF ( dday<1.0D0 ) dday = 1.0D0
+          IF ( dday<26.0D0 ) THEN
             kp = INT(dday)
-            ddayi = FLOAT(kp)
+            ddayi = DBLE( kp )
             kp1 = kp + 1
             radadj = solf(kp) + ((solf(kp1)-solf(kp))*(dday-ddayi))
-            IF ( radadj>Radmax(j,Nowmonth) ) radadj = Radmax(j, Nowmonth)
+            IF ( radadj>DBLE(Radmax(j,Nowmonth)) ) radadj = DBLE( Radmax(j, Nowmonth) )
           ELSE
-            radadj = Radmax(j, Nowmonth)
+            radadj = DBLE( Radmax(j, Nowmonth) )
           ENDIF
 
           ! Set precipitation adjument factor based on temperature
           ! and amount of precipitation
-          pptadj = 1.0
-          IF ( Hru_ppt(j)>Ppt_rad_adj(j,Nowmonth) ) THEN
+          pptadj = 1.0D0
+          IF ( Hru_ppt(j)>DBLE(Ppt_rad_adj(j,Nowmonth)) ) THEN
             IF ( Tmax_hru(j)<Tmax_index(j,Nowmonth) ) THEN
-              pptadj = Radj_sppt(j)
+              pptadj = DBLE( Radj_sppt(j) )
               IF ( Tmax_hru(j)>=Tmax_allrain(j,Nowmonth) ) THEN
-                IF ( Summer_flag==OFF ) pptadj = Radj_wppt(j) ! Winter
+                IF ( Summer_flag==OFF ) pptadj = DBLE( Radj_wppt(j) ) ! Winter
               ELSE
-                pptadj = Radj_wppt(j)
+                pptadj = DBLE( Radj_wppt(j) )
               ENDIF
             ELSE
-              pptadj = Radadj_intcp(j, Nowmonth) + &
-     &                 Radadj_slope(j, Nowmonth)*(Tmax_hru(j)-Tmax_index(j,Nowmonth))
-              IF ( pptadj>1.0 ) pptadj = 1.0
+              pptadj = DBLE( Radadj_intcp(j, Nowmonth) + &
+     &                       Radadj_slope(j, Nowmonth)*(Tmax_hru(j)-Tmax_index(j,Nowmonth)) )
+              IF ( pptadj>1.0D0 ) pptadj = 1.0D0
             ENDIF
           ENDIF
 
           radadj = radadj*pptadj
-          IF ( radadj<0.2 ) radadj = 0.2
-          Orad_hru(j) = radadj*SNGL( Soltab_horad_potsw(Jday,j) )
-          Basin_orad = Basin_orad + DBLE( Orad_hru(j)*Hru_area(j) )
+          IF ( radadj<0.2D0 ) radadj = 0.2D0
+          Orad_hru(j) = radadj*Soltab_horad_potsw(Jday,j)
+          Basin_orad = Basin_orad + Orad_hru(j)*Hru_area_dble(j)
 
           ! https://www.omnicalculator.com/physics/cloud-base
 !         cloud base = (temperature - dew point) / 4.4 * 1000 + elevation, altitude of clouds
@@ -100,14 +100,14 @@
           IF ( Solsta_flag==1 ) THEN
             k = Hru_solsta(j)
             IF ( k>0 ) THEN
-              IF ( Solrad(k)<0.0 .OR. Solrad(k)>10000.0 ) THEN
+              IF ( Solrad(k)<0.0D0 .OR. Solrad(k)>10000.0D0 ) THEN
                 IF ( Print_debug>DEBUG_less ) THEN
                   PRINT *, 'WARNING, measured solar radiation missing, HRU:', j, '; station:', k, '; value computed'
                   CALL print_date(1)
                 ENDIF
               ELSE
                 Swrad(j) = Solrad(k)*Rad_conv
-                Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
+                Basin_swrad = Basin_swrad + Swrad(j)*Hru_area_dble(j)
                 CYCLE
               ENDIF
             ENDIF
@@ -117,21 +117,21 @@
 ! in Alaska, there are HRUs on certain days when the sun never rises, so this equation doesn't work
 ! when soltab_potsw, soltab_horad_potsw, or orad_hru are 0.0
 
-!          Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
-          if ( Soltab_potsw(jday, j) > 0.0 .and. Soltab_horad_potsw(jday, j) > 0.0 .and. Orad_hru(j) > 0.0 ) then
-             Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+!          Swrad(j) = Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j)
+          if ( Soltab_potsw(jday, j) > 0.0D0 .and. Soltab_horad_potsw(jday, j) > 0.0D0 .and. Orad_hru(j) > 0.0D0 ) then
+             Swrad(j) = Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*Orad_hru(j)/Hru_cossl(j)
           else
-             Swrad(j) = 0.0
+             Swrad(j) = 0.0D0
           endif
 ! markstro
 
-          Basin_swrad = Basin_swrad + DBLE( Swrad(j)*Hru_area(j) )
+          Basin_swrad = Basin_swrad + Swrad(j)*Hru_area_dble(j)
         ENDDO
         Basin_orad = Basin_orad*Basin_area_inv
         IF ( Observed_flag==1 ) THEN
           Orad = Solrad(Basin_solsta)*Rad_conv
         ELSE
-          Orad = SNGL( Basin_orad )
+          Orad = Basin_orad
         ENDIF
         Basin_swrad = Basin_swrad*Basin_area_inv
         Basin_potsw = Basin_swrad
@@ -140,31 +140,31 @@
         CALL print_module(MODDESC, MODNAME, Version_ddsolrad)
 
         ! Declare Parameters
-        ALLOCATE ( Dday_slope(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Dday_slope(Nhru,12) )
         IF ( declparam(MODNAME, 'dday_slope', 'nhru,nmonths', 'real', &
      &       '0.4', '0.1', '1.4', &
      &       'Slope in temperature degree-day relationship', &
      &       'Monthly (January to December) slope in degree-day equation for each HRU', &
      &       'dday/temp_units')/=0 ) CALL read_error(1, 'dday_slope')
-        ALLOCATE ( Dday_intcp(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Dday_intcp(Nhru,12) )
         IF ( declparam(MODNAME, 'dday_intcp', 'nhru,nmonths', 'real', &
      &       '-40.0', '-60.0', '10.0', &
      &       'Intercept in temperature degree-day relationship', &
      &       'Monthly (January to December) intercept in degree-day equation for each HRU', &
      &       'dday')/=0 ) CALL read_error(1, 'dday_intcp')
-        ALLOCATE ( Radadj_slope(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Radadj_slope(Nhru,12) )
         IF ( declparam(MODNAME, 'radadj_slope', 'nhru,nmonths', 'real', &
      &       '0.0', '0.0', '1.0', &
      &       'Slope in air temperature range adjustment to degree-day equation', &
      &       'Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU', &
      &       'dday/temp_units')/=0 ) CALL read_error(1, 'radadj_slope')
-        ALLOCATE ( Radadj_intcp(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Radadj_intcp(Nhru,12) )
         IF ( declparam(MODNAME, 'radadj_intcp', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '1.0', &
      &       'Intercept in air temperature range adjustment to degree-day equation', &
      &       'Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU', &
      &       'dday')/=0 ) CALL read_error(1, 'radadj_intcp')
-        ALLOCATE ( Tmax_index(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmax_index(Nhru,12) )
         IF ( declparam(MODNAME, 'tmax_index', 'nhru,nmonths', 'real', &
      &       '50.0', '-10.0', '110.0', &
      &       'Monthly index temperature', &
@@ -174,11 +174,11 @@
 
       ELSEIF ( Process_flag==INIT ) THEN
 ! Get parameters
-        IF ( getparam(MODNAME, 'dday_slope', Nhru*MONTHS_PER_YEAR, 'real', Dday_slope)/=0 ) CALL read_error(2, 'dday_slope')
-        IF ( getparam(MODNAME, 'dday_intcp', Nhru*MONTHS_PER_YEAR, 'real', Dday_intcp)/=0 ) CALL read_error(2, 'dday_intcp')
-        IF ( getparam(MODNAME, 'radadj_slope', Nhru*MONTHS_PER_YEAR, 'real', Radadj_slope)/=0 ) CALL read_error(2, 'radadj_slope')
-        IF ( getparam(MODNAME, 'radadj_intcp', Nhru*MONTHS_PER_YEAR, 'real', Radadj_intcp)/=0 ) CALL read_error(2, 'radadj_intcp')
-        IF ( getparam(MODNAME, 'tmax_index', Nhru*MONTHS_PER_YEAR, 'real', Tmax_index)/=0 ) CALL read_error(2, 'tmax_index')
+        IF ( getparam(MODNAME, 'dday_slope', Nhru_nmonths, 'real', Dday_slope)/=0 ) CALL read_error(2, 'dday_slope')
+        IF ( getparam(MODNAME, 'dday_intcp', Nhru_nmonths, 'real', Dday_intcp)/=0 ) CALL read_error(2, 'dday_intcp')
+        IF ( getparam(MODNAME, 'radadj_slope', Nhru_nmonths, 'real', Radadj_slope)/=0 ) CALL read_error(2, 'radadj_slope')
+        IF ( getparam(MODNAME, 'radadj_intcp', Nhru_nmonths, 'real', Radadj_intcp)/=0 ) CALL read_error(2, 'radadj_intcp')
+        IF ( getparam(MODNAME, 'tmax_index', Nhru_nmonths, 'real', Tmax_index)/=0 ) CALL read_error(2, 'tmax_index')
         Observed_flag = OFF
         IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = ACTIVE
 
