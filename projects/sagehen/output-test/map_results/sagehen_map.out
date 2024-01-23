@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.2 01/16/2024
+                        Version 5.3.0 01/22/2024
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -41,12 +41,11 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-01-16
+Computation Order               call_modules        2024-01-22
 Basin Definition                basin               2023-11-01
 Cascading Flow                  cascade             2023-11-01
 Common States and Fluxes        climateflow         2024-01-16
 Potential Solar Radiation       soltab              2023-11-01
-Parameter Setup                 setup_param         2023-11-01
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temperature Distribution        temp_1sta           2023-11-01
@@ -58,7 +57,7 @@ Canopy Interception             intcp               2024-01-10
 Snow Dynamics                   snowcomp            2024-01-11
 Surface Runoff                  srunoff_smidx       2024-01-16
 Soilzone Computations           soilzone            2024-01-10
-Groundwater                     gwflow              2023-11-13
+Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2023-11-01
 Output Summary                  map_results         2023-11-01
@@ -106,5 +105,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
  *************************************************************
  Total for run     668.938  378.179    9.262  284.597  260.348
  *************************************************************
-Execution elapsed time    0 minutes  0.71 seconds
+Execution elapsed time    0 minutes  0.75 seconds
 

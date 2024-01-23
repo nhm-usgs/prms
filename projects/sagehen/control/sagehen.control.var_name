@@ -1459,7 +1459,7 @@ Module: gwflow
 Ndimen: 1
 Dimensions: ngw - 128
 Size: 128
-Type: float
+Type: double
 Desc: Cascading groundwater flow from each GWR
 Units: inches
 

@@ -3,9 +3,9 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.2.2 01/16/2024
+                        Version 5.3.0 01/22/2024
 
-    Github Commit Hash a10e7d4c489e0e0b92be90c98fcd78be1f27f736
+    Github Commit Hash edb25e86e3b9a69700556c6667491aa9ae21dfc4
 
 
 
@@ -18,12 +18,11 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-01-16
+Computation Order               call_modules        2024-01-22
 Basin Definition                basin               2023-11-01
 Cascading Flow                  cascade             2023-11-01
 Common States and Fluxes        climateflow         2024-01-16
 Potential Solar Radiation       soltab              2023-11-01
-Parameter Setup                 setup_param         2023-11-01
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temperature Distribution        climate_hru         2024-01-08
@@ -35,7 +34,7 @@ Canopy Interception             intcp               2024-01-10
 Snow Dynamics                   snowcomp            2024-01-11
 Surface Runoff                  srunoff_smidx       2024-01-16
 Soilzone Computations           soilzone            2024-01-10
-Groundwater                     gwflow              2023-11-13
+Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2023-11-01
 Output Summary                  subbasin            2023-11-01
