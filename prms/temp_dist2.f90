@@ -13,8 +13,8 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
-     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, &
+          DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
       USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Init_vars_from_file, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
@@ -72,6 +72,7 @@
 !     lapsemax_max, tsta_xlong, tsta_ylat, hru_ylat, hru_xlong, dist_max
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION
       USE PRMS_TEMP_DIST2
       IMPLICIT NONE
 ! Functions
@@ -322,7 +323,7 @@
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tsta_elev
-      USE PRMS_SET_TIME, ONLY: Nowmonth
+      USE PRMS_MODULE, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
@@ -474,6 +475,7 @@
 !     temp_dist2_restart - write or read temp_dist2 restart file
 !***********************************************************************
       SUBROUTINE temp_dist2_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_TEMP_DIST2
       IMPLICIT NONE

@@ -30,7 +30,7 @@
       END MODULE PRMS_MONTHLYQ
 
       SUBROUTINE monthlyq()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ERROR_OPEN_OUT
       USE PRMS_MONTHLYQ
       USE PRMS_MODULE, ONLY: Process_flag, Nsegment, Nsegment, Starttime, Nowmonth, Nowyear
       USE PRMS_FLOWVARS, ONLY: Seg_inflow
@@ -41,7 +41,7 @@
       EXTERNAL :: read_error, getdimname, aggFlows, PrintFlows, print_module
 	  EXTERNAL :: PRMS_open_output_file, error_stop
 ! Local Variables
-      INTEGER :: i, j, k, len
+      INTEGER :: i, j, k, len, ios
       CHARACTER(LEN = 30) :: dimname
 !***********************************************************************
       IF ( Process_flag == RUN ) THEN

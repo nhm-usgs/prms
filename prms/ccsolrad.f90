@@ -86,7 +86,7 @@
           IF ( radadj>Radmax(j,Nowmonth) ) radadj = Radmax(j, Nowmonth)
           Cloud_radadj(j) = radadj*pptadj
           cloud_radadj_dble = DBLE( Cloud_radadj(j) )
-          Basin_radadj = Basin_radadj + cloud_radadj_dble*Hru_area_dble(j) )
+          Basin_radadj = Basin_radadj + cloud_radadj_dble*Hru_area_dble(j)
 
           Orad_hru(j) = cloud_radadj_dble*Soltab_horad_potsw(Jday,j)
           Basin_orad = Basin_orad + Orad_hru(j)*Hru_area_dble(j)

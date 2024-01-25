@@ -20,7 +20,7 @@
 !***********************************************************************
       INTEGER FUNCTION prms_time()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, YEAR, MONTH, DAY, HOUR, MINUTE, &
-     &    ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time
+     &    ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time, &
      &    CLEAN, DOCUMENTATION, SAVE_INIT, READ_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday, Dprst_flag, &
                              Storm_mode_flag, Storm_flag, Init_vars_from_file, Save_vars_to_file, Model

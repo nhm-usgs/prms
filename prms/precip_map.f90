@@ -13,12 +13,12 @@
         character(len=*), parameter :: MODNAME = 'precip_map'
         character(len=*), parameter :: Version_precip_map = '2024-01-22'
         INTEGER, SAVE :: Precip_unit
-        DOUBLE PRECISON, SAVE, ALLOCATABLE :: Precip_map_values(:)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Precip_map_values(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
         REAL, SAVE, ALLOCATABLE :: Hru2map_pct_sngl(:)
         REAL, SAVE, ALLOCATABLE :: Precip_map_adj_sngl(:, :)
-        DOUBLE PRECISON, SAVE, ALLOCATABLE :: Hru2map_pct(:), Precip_map_adj(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru2map_pct(:), Precip_map_adj(:, :)
         ! parameters in basin:
         !    hru_area
         ! Control Parameters
@@ -40,7 +40,7 @@
       EXTERNAL :: print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
-      DOUBLE PRECISON :: ppt, harea
+      DOUBLE PRECISION :: ppt, harea
 !***********************************************************************
        IF ( Process_flag==RUN ) THEN
         READ ( Precip_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Precip_map_values(i), i=1,Nmap)

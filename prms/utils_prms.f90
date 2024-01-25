@@ -250,23 +250,23 @@
 !***********************************************************************
 ! Convert Fahrenheit to Celsius
 !***********************************************************************
-      REAL FUNCTION f_to_c(Temp)
+      double precision function f_to_c(Temp)
       IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Temp
 !***********************************************************************
-      f_to_c = (Temp-32.0)/1.8
+      f_to_c = (Temp-32.0D0)/1.8D0
       END FUNCTION f_to_c
 
 !***********************************************************************
 ! Convert Celsius to Fahrenheit
 !***********************************************************************
-      REAL FUNCTION c_to_f(Temp)
+      double precision function c_to_f(Temp)
       IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Temp
 !***********************************************************************
-      c_to_f = Temp*1.8 + 32.0
+      c_to_f = Temp*1.8D0 + 32.0D0
       END FUNCTION c_to_f
 
 !***********************************************************************
@@ -483,12 +483,14 @@
 ! Compute saturation vapor pressure over water
 ! Irmak and others (2012), equation 12
 !***********************************************************************
-      REAL FUNCTION sat_vapor_press(Tempc)
+      double precision function sat_vapor_press(Tempc)
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Tempc
+      double precision, intent(in) :: Tempc
+! Functions
+      intrinsic :: EXP
 !***********************************************************************
-      sat_vapor_press = 6.1078*EXP( (17.26939*Tempc)/(237.3+Tempc) )
+      sat_vapor_press = 6.1078D0*EXP( (17.26939D0*Tempc)/(237.3D0+Tempc) )
       END FUNCTION sat_vapor_press
 
 !***********************************************************************
@@ -1032,3 +1034,125 @@
       PRINT '(/,A,I0,2A,/)', 'ERROR ', Ierr, ', ', Msg
       ERROR STOP -1
       END SUBROUTINE error_stop
+
+!***********************************************************************
+      SUBROUTINE write_real_array(Parm_name, Dimen_name, Dimen, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen, Unit
+      REAL, INTENT(IN) :: Values(Dimen)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name
+! Local Variables
+      INTEGER i
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name, Dimen
+      DO i = 1, Dimen
+        WRITE ( Unit, '(F0.8)' ) Values(i)
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '1', /, A, /, I6, /, '2' )
+      END SUBROUTINE write_real_array
+
+!***********************************************************************
+      SUBROUTINE write_double_array(Parm_name, Dimen_name, Dimen, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen, Unit
+      DOUBLE PRECISION, INTENT(IN) :: Values(Dimen)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name
+! Local Variables
+      INTEGER i
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name, Dimen
+      DO i = 1, Dimen
+        WRITE ( Unit, '(F0.8)' ) Values(i)
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '1', /, A, /, I6, /, '3' )
+      END SUBROUTINE write_double_array
+
+!***********************************************************************
+      SUBROUTINE write_integer_array(Parm_name, Dimen_name, Dimen, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen, Unit
+      INTEGER, INTENT(IN) :: Values(Dimen)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name
+! Local Variables
+      INTEGER i
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name, Dimen
+      DO i = 1, Dimen
+        WRITE ( Unit, '(I0)' ) Values(i)
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '1', /, A, /, I6, /, '1' )
+       END SUBROUTINE write_integer_array
+
+!***********************************************************************
+      SUBROUTINE write_2d_real_array(Parm_name, Dimen_name1, Dimen1, Dimen_name2, Dimen2, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen1, Dimen2, Unit
+      REAL, INTENT(IN) :: Values(Dimen1, Dimen2)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name1, Dimen_name2
+! Local Variables
+      INTEGER i, j
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name1, Dimen_name2, Dimen1*Dimen2
+	  DO j = 1, Dimen2
+        DO i = 1, Dimen1
+          WRITE ( Unit, '(F0.8)' ) Values(i, j)
+		ENDDO
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '2', /, A, /, A, /, I8, /, '3' )
+      END SUBROUTINE write_2d_real_array
+
+!***********************************************************************
+      SUBROUTINE write_2d_double_array(Parm_name, Dimen_name1, Dimen1, Dimen_name2, Dimen2, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen1, Dimen2, Unit
+      DOUBLE PRECISION, INTENT(IN) :: Values(Dimen1, Dimen2)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name, Dimen_name1, Dimen_name2
+! Local Variables
+      INTEGER i, j
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name1, Dimen_name2, Dimen1*Dimen2
+	  DO j = 1, Dimen2
+        DO i = 1, Dimen1
+          WRITE ( Unit, '(D0.10)' ) Values(i, j)
+		ENDDO
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '2', /, A, /, A, /, I8, /, '3' )
+      END SUBROUTINE write_2d_double_array
+
+!***********************************************************************
+      SUBROUTINE write_2d_double_array_grid(Parm_name, Dimen_name1, Dimen1, Dimen_name2, Dimen2, Values, Unit)
+!***********************************************************************
+      IMPLICIT NONE
+! Arguments
+      INTEGER, INTENT(IN) :: Dimen1, Dimen2, Unit
+      DOUBLE PRECISION, INTENT(IN) :: Values(Dimen1, Dimen2)
+      CHARACTER(LEN=*), INTENT(IN) :: Parm_name
+      CHARACTER(LEN=*), INTENT(IN) :: Dimen_name1, Dimen_name2
+! Local Variables
+      INTEGER i, j
+      CHARACTER(LEN=12) :: fmt
+!***********************************************************************
+      WRITE ( Unit, 9001) Parm_name, Dimen_name1, Dimen_name2, Dimen1*Dimen2
+      WRITE ( fmt, 9002 ) Dimen1
+      DO i = 1, Dimen2
+        WRITE ( Unit, fmt ) (Values(j, i), j=1,Dimen1)
+      ENDDO
+
+ 9001 FORMAT ( '####', /, A, /, '2', /, A, /, A, /, I8, /, '3' )
+ 9002 FORMAT ( '(', I5, 'F10.5)' )
+      END SUBROUTINE write_2d_double_array_grid

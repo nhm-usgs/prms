@@ -8,14 +8,14 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_jh'
-        character(len=*), parameter :: Version_potet = '2024-01-22'
+        character(len=*), parameter :: Version_potet = '2024-01-25'
         ! Declared Parameters
-        double precision, save, allocatable :: Jh_coef(:, :), Jh_coef_hru(:)
-        real, save, allocatable :: Jh_coef_sngl(:, :), Jh_coef_hru_sngl(:)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Jh_coef(:, :), Jh_coef_hru(:)
+        REAL, SAVE, ALLOCATABLE :: Jh_coef_sngl(:, :), Jh_coef_hru_sngl(:)
       END MODULE PRMS_POTET_JH
 
       INTEGER FUNCTION potet_jh()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, INCH2CM
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, INCH2CM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_JH
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
@@ -27,7 +27,7 @@
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      double precision :: elh
+      DOUBLE PRECISION :: elh
 !***********************************************************************
       potet_jh = 0
 
@@ -50,7 +50,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        ALLOCATE ( Jh_coef(Nhru,12), Jh_coef_sngl(Nhru,12) )
+        ALLOCATE ( Jh_coef(Nhru,MONTHS_PER_YEAR), Jh_coef_sngl(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'jh_coef', 'nhru,nmonths', 'real', &
      &       '0.014', '-0.5', '1.5', &
      &       'Monthly air temperature coefficient for each HRU - Jensen-Haise', &

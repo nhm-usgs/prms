@@ -31,12 +31,12 @@
 ! Functions
       INTRINSIC :: DBLE, LOG
       INTEGER, EXTERNAL :: declparam, getparam
-      DOUBLE, PRECISION, EXTERNAL :: sat_vapor_press
+      DOUBLE PRECISION, EXTERNAL :: sat_vapor_press
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      DOUBLE, PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
-      DOUBLE, PRECISION :: A1, B1, t1, num, den, stab, sw
+      DOUBLE PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
+      DOUBLE PRECISION :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pm = 0
 

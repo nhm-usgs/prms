@@ -20,7 +20,7 @@
       ! Lake Module Variables
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
       ! Three input variables for Spring Creek model only, remove at some point
-      DOUBLE PRECISIONn, SAVE, ALLOCATABLE :: cal_evap(:), cal_potevap(:), solrad2(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: cal_evap(:), cal_potevap(:), solrad2(:)
 !   Declared Parameters
       INTEGER, SAVE :: Runoff_units, Rain_code(MONTHS_PER_YEAR)
       END MODULE PRMS_OBS
@@ -242,11 +242,11 @@
         ALLOCATE ( cal_evap(ncalevap) )
         IF ( declvar(MODNAME, 'pan_evap', 'ncalevap', ncalevap, 'double', &
      &       'Measured pan evaporation at each measurement station', &
-     &       'calories', cal_evap) / =0 ) CALL read_error( 8, 'cal_evap' )
+     &       'calories', cal_evap) /= 0 ) CALL read_error( 8, 'cal_evap' )
         ALLOCATE ( cal_potevap(ncalevap) )
         IF ( declvar(MODNAME, 'cal_potevap', 'ncalevap', ncalevap, 'double', &
      &       'Measured potential evaporation at each measurement station', &
-     &       'calories', cal_potevap) / =0 ) CALL read_error( 8, 'cal_potevap' )
+     &       'calories', cal_potevap) /= 0 ) CALL read_error( 8, 'cal_potevap' )
       ENDIF
 
       END FUNCTION obsdecl
@@ -256,7 +256,7 @@
 !***********************************************************************
       INTEGER FUNCTION obsinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
-      USE PRMS_MODULE, ONLY: Nobs, Nhru_nmonths
+      USE PRMS_MODULE, ONLY: Nobs
       USE PRMS_OBS
       IMPLICIT NONE
 ! Functions

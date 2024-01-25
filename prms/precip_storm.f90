@@ -87,7 +87,7 @@
       ELSEIF ( Process_flag == INIT ) THEN
         IF ( getparam(MODNAME, 'storm_scale_factor', Nstorm, 'double', &
              Storm_scale_factor) /= 0 ) CALL read_error( 2, 'storm_scale_factor' )
-        IF ( getparam(MODNAME, 'strain_adj', Nhru_months, 'double', &
+        IF ( getparam(MODNAME, 'strain_adj', Nhru_nmonths, 'double', &
              Strain_adj) /= 0 ) CALL read_error( 2, 'strain_adj' )
       ENDIF
 

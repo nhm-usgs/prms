@@ -17,7 +17,7 @@
       USE PRMS_MODULE, ONLY: Process_flag, Nsegment, AG_flag
       USE PRMS_SEGMENT_TO_HRU
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Basin_area_inv, Hru_perv, Ag_frac
-      USE PRMS_FLOWVARS, ONLY: Soil_moist, Basin_soil_moist, Seg_outflow, Soil_rechr, Soil_rechr_max, Basin_soil_rechr &
+      USE PRMS_FLOWVARS, ONLY: Soil_moist, Basin_soil_moist, Seg_outflow, Soil_rechr, Soil_rechr_max, Basin_soil_rechr, &
           Ag_soil_moist, Ag_soil_rechr, Ag_soil_rechr_max, Basin_ag_soil_moist, Basin_ag_soil_rechr
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       IMPLICIT NONE

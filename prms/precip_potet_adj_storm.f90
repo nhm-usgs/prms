@@ -18,7 +18,7 @@
       SUBROUTINE precip_potet_adj_storm()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, SETDIMENS, MONTHS_PER_YEAR, MAXDIM
       USE PRMS_PRECIP_POTET_ADJ_STORM
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_months
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow, Basin_potet, Hru_ppt, Hru_rain, Hru_snow, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_days, Storm_num
@@ -77,13 +77,13 @@
              'Monthly factor to adjust measured precipitation to'// &
              ' each HRU to account for differences in elevation,'// &
              ' etc. This factor is for the rain gage used for storm flow routing', &
-             'decimal fraction') /= 0 ) CALL read_error( 1, 'strain_adj' 
+             'decimal fraction') /= 0 ) CALL read_error( 1, 'strain_adj' )
         ALLOCATE ( Stsnow_adj(Nhru, MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'stsnow_adj', 'nhru,nmonths', 'double', &
              '1.0', '0.2', '5.0', &
              'Storm snow adjustment factor, by month for each HRU', &
              'Monthly factor to adjust distributed snow for each HRU to account for differences storm patterns', &
-             'decimal fraction') / =0 ) CALL read_error(1, 'stsnow_adj')
+             'decimal fraction') /= 0 ) CALL read_error( 1, 'stsnow_adj' )
 
       ELSEIF ( Process_flag==INIT ) THEN
         IF ( getparam(MODNAME, 'strain_adj', Nhru_months, 'double', Strain_adj) /= 0 ) CALL read_error(2, 'strain_adj')
