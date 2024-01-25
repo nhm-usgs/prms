@@ -13,6 +13,7 @@ MODULE PRMS_CONSTANTS
     real(DOUBLEsize), PARAMETER :: ZERO_SNOWPACK = EPSILON(0.0D0)
     !real(DOUBLEsize), PARAMETER :: ZERO_SNOWPACK = 1.0D-16
     real(DOUBLEsize), PARAMETER :: DCLOSEZERO = 1.0D-12
+    real(DOUBLEsize), PARAMETER :: ZERO = 0.0D0
 
     real(DOUBLEsize), parameter :: PI = ACOS(-1.0D0) ! ABOUT 3.1415926535898
     real(DOUBLEsize), parameter :: TWOPI = 2.0D0*PI ! ABOUT 6.2831853071786
@@ -25,6 +26,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: MAXLINE_LENGTH = 256
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
+    integer, parameter :: MONTHS_PER_YEAR = 12
     integer, parameter :: MAX_DAYS_PER_YEAR = 366
     integer, parameter :: DAYS_PER_YEAR = 365
     real(DOUBLEsize), parameter :: DAYS_YR = 365.242D0

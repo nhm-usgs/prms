@@ -7,7 +7,7 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'map_results'
-      character(len=*), parameter :: Version_map_results = '2023-11-01'
+      character(len=*), parameter :: Version_map_results = '2024-01-18'
       INTEGER, SAVE :: Mapflg, Numvalues, Lastyear, Totdays
       INTEGER, SAVE :: Yrdays, Yrresults, Totresults, Monresults, Mondays
       INTEGER, SAVE :: Begin_results, Begyr, Dailyresults
@@ -170,7 +170,7 @@
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: getparam, getvartype, numchars, getvarsize
-      EXTERNAL :: read_error, PRMS_open_output_file, checkdim_bounded_limits
+      EXTERNAL :: read_error, PRMS_open_output_file, checkdim_bounded_limits !, netCDF_open
 ! Local Variables
       INTEGER :: i, jj, is, ios, ierr, size, dim
       REAL, ALLOCATABLE, DIMENSION(:) :: map_frac
@@ -186,7 +186,7 @@
       IF ( Mapvars_freq==0 ) THEN
         PRINT *, 'WARNING, map_results requested with mapvars_freq equal 0'
         PRINT *, 'no map_resultsults output is produced'
-        MapOutON_OFF = OFF
+        MapOutON_OFF = OFF ! (1 = text; 2 = netcdf (not implemented yet))
         RETURN
       ENDIF
       IF ( getparam(MODNAME, 'ncol', 1, 'integer', Ncol)/=0 ) CALL read_error(2, 'ncol')
@@ -243,7 +243,11 @@
         Basin_var_daily = 0.0D0
         ALLOCATE ( Dailyunit(NmapOutVars) )
         DO jj = 1, NmapOutVars
-          CALL PRMS_open_output_file(Dailyunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.daily', 'xxx', 0, ios)
+          !IF ( MapOutON_OFF==1 ) THEN
+            CALL PRMS_open_output_file(Dailyunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.daily', 'xxx', 0, ios)
+          !ELSE ! netCDF open files
+          !  CALL netCDF_open(ios) ! open files and write meta data
+          !ENDIF
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
@@ -255,7 +259,11 @@
         Basin_var_week = 0.0D0
         ALLOCATE ( Weekunit(NmapOutVars) )
         DO jj = 1, NmapOutVars
-          CALL PRMS_open_output_file(Weekunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.weekly', 'xxx', 0, ios)
+          !IF ( MapOutON_OFF==1 ) THEN
+            CALL PRMS_open_output_file(Weekunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.weekly', 'xxx', 0, ios)
+          !ELSE ! netCDF open files
+          !  CALL netCDF_open(ios)
+          !ENDIF
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
@@ -267,7 +275,11 @@
         Basin_var_mon = 0.0D0
         ALLOCATE ( Monunit(NmapOutVars) )
         DO jj = 1, NmapOutVars
-          CALL PRMS_open_output_file(Monunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.monthly', 'xxx', 0, ios)
+          !IF ( MapOutON_OFF==1 ) THEN
+            CALL PRMS_open_output_file(Monunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.monthly', 'xxx', 0, ios)
+          !ELSE ! netCDF open files
+          !  CALL netCDF_open(ios)
+          !ENDIF
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
@@ -280,7 +292,11 @@
         Basin_var_yr = 0.0D0
         ALLOCATE ( Yrunit(NmapOutVars) )
         DO jj = 1, NmapOutVars
-          CALL PRMS_open_output_file(Yrunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.yearly', 'xxx', 0, ios)
+          !IF ( MapOutON_OFF==1 ) THEN
+            CALL PRMS_open_output_file(Yrunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.yearly', 'xxx', 0, ios)
+          !ELSE ! netCDF open files
+          !  CALL netCDF_open(ios)
+          !ENDIF
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
@@ -293,7 +309,11 @@
         Basin_var_tot = 0.0D0
         ALLOCATE ( Totunit(NmapOutVars) )
         DO jj = 1, NmapOutVars
-          CALL PRMS_open_output_file(Totunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.total', 'xxx', 0, ios)
+          !IF ( MapOutON_OFF==1 ) THEN
+            CALL PRMS_open_output_file(Totunit(jj), MapOutVar_names(jj)(:Nc_vars(jj))//'.total', 'xxx', 0, ios)
+          !ELSE ! netCDF open files
+          !  CALL netCDF_open(ios)
+          !ENDIF
           IF ( ios/=0 ) ierr = 1
         ENDDO
       ENDIF
@@ -421,7 +441,11 @@
               WRITE ( Yrunit(jj), 9002 ) Prevyr, Prevmo, Prevday, ' Basin yearly mean:', Basin_var_yr(jj)
 
               IF ( Mapflg==ACTIVE ) THEN
-                CALL write_results(Yrunit(jj), Map_var_yr(:,jj))
+                !IF ( MapOutON_OFF==1 ) THEN
+                  CALL write_results(Yrunit(jj), Map_var_yr(1,jj))
+                !ELSE
+                  ! CALL write_netcdf(Yrunit(jj), Map_var_yr(1,jj))
+                !ENDIF
               ELSE
                 Map_var_id = 0.0D0
                 DO k = 1, Nhrucell
@@ -430,7 +454,11 @@
                   Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
      &                                        Map_var_yr(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
                 ENDDO
-                CALL write_results(Yrunit(jj), Map_var_id)
+                !IF ( MapOutON_OFF==1 ) THEN
+                  CALL write_results(Yrunit(jj), Map_var_id)
+                !ELSE
+                  ! CALL write_netcdf(Yrunit(jj), Map_var_yr(1,jj))
+                !ENDIF
               ENDIF
               WRITE ( Yrunit(jj), 9003 )
             ENDDO
@@ -497,7 +525,11 @@
 
           WRITE ( Dailyunit(jj), 9002 ) Nowyear, Nowmonth, Nowday, ' Basin daily mean:', Basin_var_daily(jj)
           IF ( Mapflg==1 ) THEN
-            CALL write_results(Dailyunit(jj), Map_var_daily(:,jj))
+            !IF ( MapOutON_OFF==1 ) THEN
+              CALL write_results(Dailyunit(jj), Map_var_daily(1,jj))
+            !ELSE
+              !CALL write_netcdf(Dailyunit(jj), Map_var_daily(1,jj))
+            !ENDIF
           ELSE
             Map_var_id = 0.0D0
             DO k = 1, Nhrucell
@@ -506,7 +538,11 @@
               Map_var_id(Gvr_map_id(k)) = Map_var_id(Gvr_map_id(k)) + &
      &                                    Map_var_daily(Gvr_hru_id(k), jj)*Gvr_map_frac_dble(k)
             ENDDO
-            CALL write_results(Dailyunit(jj), Map_var_id)
+            !IF ( MapOutON_OFF==1 ) THEN
+              CALL write_results(Dailyunit(jj), Map_var_id)
+            !ELSE
+              !CALL write_netcdf(Dailyunit(jj), Map_var_id)
+            !ENDIF
           ENDIF
           WRITE ( Dailyunit(jj), 9003 )
         ENDDO

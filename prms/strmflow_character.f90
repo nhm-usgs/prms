@@ -8,11 +8,11 @@
       character(len=18), parameter :: MODNAME = 'strmflow_character'
       character(len=*), parameter :: Version_strmflow_character = '2024-01-22'
 !   Declared Variables
-      double precision, save, allocatable :: Seg_width(:), Seg_depth(:), Seg_area(:)
-      double precision, save, allocatable :: Seg_velocity(:), seg_res_time(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_width(:), Seg_depth(:), Seg_area(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_velocity(:), seg_res_time(:)
 !   Segment Parameters
-      double precision, save, allocatable :: width_alpha(:), width_m(:)
-      double precision, save, allocatable :: depth_alpha(:), depth_m(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: width_alpha(:), width_m(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: depth_alpha(:), depth_m(:)
       REAL, SAVE, ALLOCATABLE :: width_alpha_sngl(:), width_m_sngl(:)
       REAL, SAVE, ALLOCATABLE :: depth_alpha_sngl(:), depth_m_sngl(:)
       END MODULE PRMS_STRMFLOW_CHARACTER
@@ -158,7 +158,7 @@
       INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: i
-      double precision :: segflow
+      DOUBLE PRECISION :: segflow
 !***********************************************************************
       strmflow_character_run = 0
 

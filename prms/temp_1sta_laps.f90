@@ -19,12 +19,12 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=9), SAVE :: MODNAME
-        character(len=*), parameter :: Version_temp = '2024-01-23'
+        character(len=*), parameter :: Version_temp = '2024-01-25'
         INTEGER, SAVE, ALLOCATABLE :: Tmax_cnt(:), Tmin_cnt(:), Nuse_tsta(:)
-        double precision, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
-        double precision, SAVE, ALLOCATABLE :: Tmax_lapse_dble(:, :), Tmin_lapse_dble(:, :)
-        double precision, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
-        double precision, SAVE :: Solrad_tmax_good, Solrad_tmin_good
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Elfac(:), Tmax_prev(:), Tmin_prev(:)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Tmax_lapse_dble(:, :), Tmin_lapse_dble(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Tcrn(:), Tcrx(:) ! temp_1sta
+        DOUBLE PRECISION, SAVE :: Solrad_tmax_good, Solrad_tmin_good
         ! Declared Parameters
         INTEGER, SAVE :: Max_missing
         REAL, SAVE, ALLOCATABLE :: Tmax_lapse(:, :), Tmin_lapse(:, :)
@@ -33,7 +33,7 @@
 
       INTEGER FUNCTION temp_1sta_laps()
         USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, &
-     &      GLACIER, DEBUG_less, ERROR_temp, DOCUMENTATION, &
+     &      GLACIER, DEBUG_less, MONTHS_PER_YEAR, ERROR_temp, DOCUMENTATION, &
      &      MINTEMP, MAXTEMP, NEARZERO, temp_1sta_module, temp_laps_module, READ_INIT, SAVE_INIT
         USE PRMS_MODULE, ONLY: Process_flag, Nhru, Ntemp, Model, Print_debug, Init_vars_from_file, Save_vars_to_file, &
      &      Temp_flag, Inputerror_flag, Start_month, Glacier_flag, Nowmonth, Nowday, Nhru_nmonths
@@ -45,13 +45,13 @@
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: INDEX, ABS, DBLE
+      INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam
       EXTERNAL :: read_error, temp_set, print_module, temp_1sta_laps_restart, print_date, checkdim_param_limits
       EXTERNAL :: compute_temp_laps
 ! Local Variables
       INTEGER :: j, k, jj, i, kk, kkk, l, ierr, nchar
-      double precision :: tmx, tmn
+      DOUBLE PRECISION :: tmx, tmn
 !***********************************************************************
       temp_1sta_laps = 0
 
@@ -187,7 +187,7 @@
 
         IF ( Temp_flag==temp_1sta_module .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Tcrn(Nhru), Tcrx(Nhru) )
-          ALLOCATE ( Tmax_lapse(Nhru, 12), Tmax_lapse_dble(Nhru, 12) )
+          ALLOCATE ( Tmax_lapse(Nhru, MONTHS_PER_YEAR), Tmax_lapse_dble(Nhru, MONTHS_PER_YEAR) )
           IF ( declparam(MODNAME, 'tmax_lapse', 'nhru,nmonths', 'real', &
      &         '3.0', '-20.0', '20.0', &
      &         'Monthly maximum temperature lapse rate for each HRU', &
@@ -196,7 +196,7 @@
      &         'temp_units/elev_units')/=0 ) CALL read_error(1, 'tmax_lapse')
 ! 3 degC/ 1000 ft is adiabatic, or 9.8 degC/ 1000 m, or 5.4 degF/ 1000 ft, or 17.64 degF /1000 m
 
-          ALLOCATE ( Tmin_lapse(Nhru, 12), Tmin_lapse_dble(Nhru, 12) )
+          ALLOCATE ( Tmin_lapse(Nhru, MONTHS_PER_YEAR), Tmin_lapse_dble(Nhru, MONTHS_PER_YEAR) )
           IF ( declparam(MODNAME, 'tmin_lapse', 'nhru,nmonths', 'real', &
      &         '3.0', '-20.0', '20.0', &
      &         'Monthly minimum temperature lapse rate for each HRU', &
@@ -304,12 +304,12 @@
       IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Tsta_elev_laps, Tsta_elev_base
-      double precision, INTENT(IN) :: Hru_elev
-      double precision, INTENT(OUT) :: Elfac
+      DOUBLE PRECISiON, INTENT(IN) :: Hru_elev
+      DOUBLE PRECISiON, INTENT(OUT) :: Elfac
 ! Functions
-      INTRINSIC :: ABS
+      INTRINSIC :: ABS, DBLE
 ! Local Variables
-      double precision :: tdiff
+      DOUBLE PRECISiON :: tdiff
 !***********************************************************************
       tdiff = DBLE( Tsta_elev_laps - Tsta_elev_base )
       IF ( ABS(tdiff)<DNEARZERO ) tdiff = 1.0D0

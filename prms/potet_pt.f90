@@ -11,15 +11,15 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pt'
-        character(len=*), parameter :: Version_potet = '2024-01-22'
+        character(len=*), parameter :: Version_potet = '2024-01-25'
         ! Declared Parameters
-        double precision, save, allocatable :: Pt_alpha(:, :)
-        real, save, allocatable :: Pt_alpha_sngl(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pt_alpha(:, :)
+        REAL, SAVE, ALLOCATABLE :: Pt_alpha_sngl(:, :)
       END MODULE PRMS_POTET_PT
 
 !***********************************************************************
       INTEGER FUNCTION potet_pt()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, INCH2CM
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PT
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_meters
@@ -32,12 +32,12 @@
 ! Functions
       INTRINSIC :: DBLE, LOG
       INTEGER, EXTERNAL :: declparam, getparam
-      double precision, external :: sat_vapor_press
+      DOUBLE PRECISION, EXTERNAL :: sat_vapor_press
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      double precision :: elh, prsr, psycnst, heat_flux, net_rad, satvapor, ratio, eeq
-      double precision :: A1, B1, t1, num, den, stab, sw
+      DOUBLE PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, satvapor, ratio, eeq
+      DOUBLE PRECISION :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pt = 0
 
@@ -156,7 +156,7 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pt_alpha(Nhru,12), Pt_alpha_sngl(Nhru,12) )
+        ALLOCATE ( Pt_alpha(Nhru,MONTHS_PER_YEAR), Pt_alpha_sngl(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'pt_alpha', 'nhru,nmonths', 'real', &
      &       '1.26', '1.0', '2.0', &
      &       'Potential ET adjustment factor - Priestly-Taylor', &

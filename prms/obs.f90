@@ -7,16 +7,20 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2023-11-01'
+      character(len=*), parameter :: Version_obs = '2024-01-25'
       INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, Nstreamtemp
+      ! Two dimensions for Spring Creek model only, remove at some point
+      INTEGER, SAVE :: ncalevap, nsolignored
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
-      REAL, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
-      REAL, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:), Stream_temp(:)
-      REAL, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pan_evap(:), Runoff(:), Precip(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Humidity(:), Wind_speed(:), Stream_temp(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
       ! Lake Module Variables
-      REAL, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
+      ! Three input variables for Spring Creek model only, remove at some point
+      DOUBLE PRECISIONn, SAVE, ALLOCATABLE :: cal_evap(:), cal_potevap(:), solrad2(:)
 !   Declared Parameters
       INTEGER, SAVE :: Runoff_units, Rain_code(MONTHS_PER_YEAR)
       END MODULE PRMS_OBS
@@ -63,6 +67,9 @@
       IF ( decldim('nhumid', 0, MAXDIM, 'Number of relative humidity measurement stations')/=0 ) CALL read_error(7, 'nhumid')
       IF ( decldim('nstreamtemp', 0, MAXDIM, 'Number of stream temperature replacement segments')/=0 ) &
      &     CALL read_error(7, 'nstreamtemp')
+      ! special dimensions for Spring Creek model
+      IF ( decldim('ncalevap', 0, MAXDIM, 'Number of potential evaporation measurement stations') /= 0 ) CALL read_error( 7, 'ncalevap' )
+      IF ( decldim('nsolignored', 0, MAXDIM, 'Number of solar radiation measurement stations to ignore') /= 0 ) CALL read_error( 7, 'nsolignored' )
 
       END FUNCTION obssetdims
 
@@ -72,7 +79,7 @@
 !     rain_code
 !***********************************************************************
       INTEGER FUNCTION obsdecl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, xyz_dist_module
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, xyz_dist_module, mm_dist_module
       USE PRMS_MODULE, ONLY: Model, Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, Precip_flag
       USE PRMS_OBS
       IMPLICIT NONE
@@ -87,7 +94,7 @@
 !   Declared Variables
       IF ( Nobs>0 ) THEN
         ALLOCATE ( Runoff(Nobs) )
-        IF ( declvar(MODNAME, 'runoff', 'nobs', Nobs, 'real', &
+        IF ( declvar(MODNAME, 'runoff', 'nobs', Nobs, 'double', &
      &       'Streamflow at each measurement station', &
      &       'runoff_units', Runoff)/=0 ) CALL read_error(8, 'runoff')
         ALLOCATE ( Streamflow_cfs(Nobs) )
@@ -106,25 +113,25 @@
 
       IF ( Nrain>0 ) THEN
         ALLOCATE ( Precip(Nrain) )
-        IF ( declvar(MODNAME, 'precip', 'nrain', Nrain, 'real', &
+        IF ( declvar(MODNAME, 'precip', 'nrain', Nrain, 'double', &
      &       'Precipitation at each measurement station', &
      &       'precip_units', Precip)/=0 ) CALL read_error(8, 'precip')
       ENDIF
 
       IF ( Ntemp>0 ) THEN
         ALLOCATE ( Tmin(Ntemp) )
-        IF ( declvar(MODNAME, 'tmin', 'ntemp', Ntemp, 'real', &
+        IF ( declvar(MODNAME, 'tmin', 'ntemp', Ntemp, 'double', &
      &       'Minimum air temperature at each measurement station', &
      &       'temp_units', Tmin)/=0 ) CALL read_error(8, 'tmin')
         ALLOCATE ( Tmax(Ntemp) )
-        IF ( declvar(MODNAME, 'tmax', 'ntemp', Ntemp, 'real', &
+        IF ( declvar(MODNAME, 'tmax', 'ntemp', Ntemp, 'double', &
      &       'Maximum air temperature at each measurement station', &
      &       'temp_units', Tmax)/=0 ) CALL read_error(8, 'tmax')
       ENDIF
 
       IF ( Nsol>0 ) THEN
         ALLOCATE ( Solrad(Nsol) )
-        IF ( declvar(MODNAME, 'solrad', 'nsol', Nsol, 'real', &
+        IF ( declvar(MODNAME, 'solrad', 'nsol', Nsol, 'double', &
      &       'Solar radiation at each measurement station', &
      &       'Langleys', Solrad)/=0 ) CALL read_error(8, 'solrad')
       ENDIF
@@ -149,42 +156,42 @@
 
       IF ( Nsnow>0 ) THEN
         ALLOCATE ( Snowdepth(Nsnow) )
-        IF ( declvar(MODNAME, 'snowdepth', 'nsnow', Nsnow, 'real', &
+        IF ( declvar(MODNAME, 'snowdepth', 'nsnow', Nsnow, 'double', &
      &       'Snow depth at each measurement station', &
      &       'inches', Snowdepth)/=0 ) CALL read_error(8, 'snowdepth')
       ENDIF
 
       IF ( Nevap>0 ) THEN
         ALLOCATE ( Pan_evap(Nevap) )
-        IF ( declvar(MODNAME, 'pan_evap', 'nevap', Nevap, 'real', &
+        IF ( declvar(MODNAME, 'pan_evap', 'nevap', Nevap, 'double', &
      &       'Pan evaporation at each measurement station', &
      &       'inches', Pan_evap)/=0 ) CALL read_error(8, 'pan_evap')
       ENDIF
 
       IF ( Nhumid>0 ) THEN
         ALLOCATE ( Humidity(Nhumid) )
-        IF ( declvar(MODNAME, 'humidity', 'nhumid', Nhumid, 'real', &
+        IF ( declvar(MODNAME, 'humidity', 'nhumid', Nhumid, 'double', &
      &       'Relative humidity at each measurement station', &
      &       'percentage', Humidity)/=0 ) CALL read_error(8, 'humidity')
       ENDIF
 
       IF ( Nwind>0 ) THEN
         ALLOCATE ( Wind_speed(Nwind) )
-        IF ( declvar(MODNAME, 'wind_speed', 'nwind', Nwind, 'real', &
+        IF ( declvar(MODNAME, 'wind_speed', 'nwind', Nwind, 'double', &
      &       'Wind speed at each measurement station', &
      &       'meters per second', Wind_speed)/=0 ) CALL read_error(8, 'wind_speed')
       ENDIF
 
       IF ( Nstreamtemp>0 ) THEN
         ALLOCATE ( Stream_temp(Nstreamtemp) )
-        IF ( declvar(MODNAME, 'stream_temp', 'nstreamtemp', Nstreamtemp, &
+        IF ( declvar(MODNAME, 'stream_temp', 'nstreamtemp', Nstreamtemp, 'double', &
      &       'Stream temperature at each measurement station', &
      &       'degrees Celsius', Stream_temp)/=0 ) CALL read_error(8, 'stream_temp')
       ENDIF
 
 !   Declared Parameters
       Rain_flag = OFF
-      IF ( Precip_flag==xyz_dist_module ) Rain_flag = ACTIVE
+      IF ( Precip_flag==xyz_dist_module .OR. Precip_flag==mm_dist_module ) Rain_flag = ACTIVE
       IF ( Rain_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'rain_day', 'one', 1, 'integer', &
      &       'Flag to set the form of any precipitation to rain (0=determine form; 1=rain)', &
@@ -206,16 +213,40 @@
 ! Lake Variables
       IF ( Nratetbl>0 ) THEN
         ALLOCATE ( Gate_ht(Nratetbl) )
-        IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'real', &
+        IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'double', &
      &       'Height of the gate opening at each dam with a gate', &
      &       'inches', Gate_ht)/=0 ) CALL read_error(8, 'gate_ht')
       ENDIF
 
       IF ( Nlakeelev>0 ) THEN
         ALLOCATE ( Lake_elev(Nlakeelev) )
-        IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'real', &
+        IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'double', &
      &       'Elevation of each simulated lake surface', &
      &       'feet', Lake_elev)/=0 ) CALL read_error(8, 'lake_elev')
+      ENDIF
+
+!   Declared Variables for Spring Creek, remove at some point
+      nsolignored = getdim( 'nsolignored' )
+      IF ( nsolignored == -1 ) CALL read_error( 6, 'nsolignored' )
+      IF ( Model == DOCUMENTATION .AND. nsolignored == 0 ) nsolignored = 1
+      IF ( nsolignored > 0 ) THEN
+        ALLOCATE ( Solrad2(nsolignored) )
+        IF ( declvar(MODNAME, 'solrad2', 'nsolignored', nsolignored, 'double', &
+     &       'Measured solar radiation at measurement stations not used in simulation', &
+     &       'Langleys', Solrad2) /= 0 ) CALL read_error( 8, 'solrad2' )
+      ENDIF
+      ncalevap = getdim( 'ncalevap' )
+      IF ( ncalevap == -1 ) CALL read_error( 6, 'ncalevap' )
+      IF ( Model == DOCUMENTATION .AND. ncalevap == 0 ) ncalevap = 1
+      IF ( ncalevap > 0 ) THEN
+        ALLOCATE ( cal_evap(ncalevap) )
+        IF ( declvar(MODNAME, 'pan_evap', 'ncalevap', ncalevap, 'double', &
+     &       'Measured pan evaporation at each measurement station', &
+     &       'calories', cal_evap) / =0 ) CALL read_error( 8, 'cal_evap' )
+        ALLOCATE ( cal_potevap(ncalevap) )
+        IF ( declvar(MODNAME, 'cal_potevap', 'ncalevap', ncalevap, 'double', &
+     &       'Measured potential evaporation at each measurement station', &
+     &       'calories', cal_potevap) / =0 ) CALL read_error( 8, 'cal_potevap' )
       ENDIF
 
       END FUNCTION obsdecl
@@ -225,7 +256,7 @@
 !***********************************************************************
       INTEGER FUNCTION obsinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
-      USE PRMS_MODULE, ONLY: Nobs
+      USE PRMS_MODULE, ONLY: Nobs, Nhru_nmonths
       USE PRMS_OBS
       IMPLICIT NONE
 ! Functions
@@ -251,13 +282,13 @@
 !     obsrun - runs obs module
 ! **********************************************************************
       INTEGER FUNCTION obsrun()
-      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV
+      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV, ACTIVE
       USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, Nowmonth
       USE PRMS_OBS
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE
+      INTRINSIC :: SNGL
       INTEGER, EXTERNAL :: readvar
       EXTERNAL :: read_error
 ! Local Variables
@@ -269,12 +300,12 @@
         IF ( readvar(MODNAME, 'runoff')/=0 ) CALL read_error(9, 'runoff')
         IF ( Runoff_units==CMS ) THEN
           DO i = 1, Nobs
-            Streamflow_cms(i) = DBLE( Runoff(i) )
+            Streamflow_cms(i) = Runoff(i)
             Streamflow_cfs(i) = Streamflow_cms(i)/CFS2CMS_CONV
           ENDDO
         ELSE
           DO i = 1, Nobs
-            Streamflow_cfs(i) = DBLE( Runoff(i) )
+            Streamflow_cfs(i) = Runoff(i)
             Streamflow_cms(i) = Streamflow_cfs(i)*CFS2CMS_CONV
           ENDDO
         ENDIF
@@ -282,9 +313,9 @@
 
       IF ( Nrain>0 ) THEN
         IF ( readvar(MODNAME, 'precip')/=0 ) CALL read_error(9, 'precip')
-        IF ( Ppt_zero_thresh>0.0 ) THEN
+        IF ( Ppt_zero_thresh>0.0D0 ) THEN
           DO i = 1, Nrain
-            IF ( Precip(i)<Ppt_zero_thresh ) Precip(i) = 0.0
+            IF ( Precip(i) < Ppt_zero_thresh ) Precip(i) = 0.0D0
           ENDDO
         ENDIF
       ENDIF
@@ -306,7 +337,7 @@
         IF ( readvar(MODNAME, 'snowdepth')/=0 ) CALL read_error(9, 'snowdepth')
       ENDIF
 
-      IF ( Rain_flag==1 ) THEN
+      IF ( Rain_flag==ACTIVE ) THEN
         IF ( Rain_code(Nowmonth)==4 ) THEN
           IF ( readvar(MODNAME, 'rain_day')/=0 ) CALL read_error(9, 'rain_day')
         ENDIF
@@ -330,6 +361,16 @@
 
       IF ( Nstreamtemp>0 ) THEN
         IF ( readvar(MODNAME, 'stream_temp')/=0 ) CALL read_error(9, 'stream_temp')
+      ENDIF
+
+! Variables for Spring Creek model, remove at some point
+      IF ( ncalevap>0 ) THEN
+        IF ( readvar(MODNAME, 'cal_evap')/=0 ) CALL read_error(9, 'cal_evap')
+        IF ( readvar(MODNAME, 'cal_potevap')/=0 ) CALL read_error(9, 'cal_potevap')
+      ENDIF
+
+      IF ( nsolignored>0 ) THEN
+        IF ( readvar(MODNAME, 'solrad2')/=0 ) CALL read_error(9, 'solrad2')
       ENDIF
 
       END FUNCTION obsrun

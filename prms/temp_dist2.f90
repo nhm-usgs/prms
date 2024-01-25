@@ -14,17 +14,19 @@
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
       USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
+     &    DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
+      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Init_vars_from_file, Glacier_flag
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
       character(len=10), parameter :: MODNAME = 'temp_dist2'
-      character(len=*), parameter :: Version_temp = '2021-09-07'
+      character(len=*), parameter :: Version_temp = '2024-01-25'
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
-      REAL, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
-      REAL, SAVE :: Solrad_tmax_good, Solrad_tmin_good
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
+      DOUBLE PRECISION, SAVE :: Solrad_tmax_good, Solrad_tmin_good
 !   Declared Variables
-      REAL, SAVE :: Basin_lapse_max, Basin_lapse_min
+      DOUBLE PRECISION, SAVE :: Basin_lapse_max, Basin_lapse_min
 !   Declared Parameters
       INTEGER, SAVE :: Max_tsta
       REAL, SAVE :: Dist_max
@@ -70,8 +72,6 @@
 !     lapsemax_max, tsta_xlong, tsta_ylat, hru_ylat, hru_xlong, dist_max
 !***********************************************************************
       INTEGER FUNCTION t2dist2decl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp
       USE PRMS_TEMP_DIST2
       IMPLICIT NONE
 ! Functions
@@ -89,11 +89,11 @@
 ! added by Mastin 5/8/98
       ALLOCATE ( Elfac(Nhru,Ntemp), Delv(Ntemp,Ntemp), Dist(Nhru,Ntemp), N_tsta(Nhru) )
 
-      IF ( declvar(MODNAME, 'basin_lapse_max', 'one', 1, 'real', &
+      IF ( declvar(MODNAME, 'basin_lapse_max', 'one', 1, 'double', &
      &     'Basin area-weighted average maximum air temperature lapse rate per 1000 feet', &
      &     'degrees', Basin_lapse_max)/=0 ) CALL read_error(3, 'basin_lapse_max')
 
-      IF ( declvar(MODNAME, 'basin_lapse_min', 'one', 1, 'real', &
+      IF ( declvar(MODNAME, 'basin_lapse_min', 'one', 1, 'double', &
      &     'Basin area-weighted average minimum air temperature lapse rate per 1000 feet', &
      &     'degrees', Basin_lapse_min)/=0 ) CALL read_error(3, 'basin_lapse_min')
 
@@ -201,10 +201,8 @@
 !                 - get parameter values, compute elfac, dist
 !***********************************************************************
       INTEGER FUNCTION t2dist2init()
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DNEARZERO, NEARZERO
-      USE PRMS_MODULE, ONLY:  Nhru, Ntemp, Init_vars_from_file
       USE PRMS_TEMP_DIST2
-      USE PRMS_BASIN, ONLY: Hru_elev
+      USE PRMS_BASIN, ONLY: Hru_elev_ts
       USE PRMS_CLIMATEVARS, ONLY: Tsta_elev
       IMPLICIT NONE
 ! Functions
@@ -251,11 +249,11 @@
       IF ( getparam(MODNAME, 'hru_ylat', Nhru, 'real', Hru_ylat) &
      &     /=0 ) CALL read_error(2, 'hru_ylat')
 
-      Basin_lapse_max = 0.0
-      Basin_lapse_min = 0.0
+      Basin_lapse_max = 0.0D0
+      Basin_lapse_min = 0.0D0
       IF ( Init_vars_from_file==0 ) THEN
-        Solrad_tmax_good = 0.0
-        Solrad_tmin_good = 0.0
+        Solrad_tmax_good = 0.0D0
+        Solrad_tmin_good = 0.0D0
       ENDIF
 
 ! CALCULATE:  DISTANCE FROM EACH MRU TO EACH TEMPERATURE GAGE
@@ -266,7 +264,7 @@
       nuse_tsta_dist = 0.0D0
       DO i = 1, Nhru
         DO k = 1, Ntemp
-          Elfac(i, k) = (Hru_elev(i)-Tsta_elev(k))/1000.0
+          Elfac(i, k) = (Hru_elev_ts(i)-DBLE(Tsta_elev(k)))/1000.0D0
           distx = DBLE( (Hru_xlong(i)-Tsta_xlong(k))**2 )
           disty = DBLE( (Hru_ylat(i)-Tsta_ylat(k))**2 )
           distance = DSQRT(distx+disty)
@@ -302,7 +300,7 @@
       DO j = 1, Ntemp - 1
         DO k = j + 1, Ntemp
           Delv(j, k) = (Tsta_elev(j)-Tsta_elev(k))/1000.0
-          IF ( ABS(Delv(j,k))<NEARZERO ) Delv(j, k) = 1.0
+          IF ( ABS(Delv(j,k))<DNEARZERO ) Delv(j, k) = 1.0D0
         ENDDO
       ENDDO
       ! DEALLOCATE ( Tsta_xlong, Tsta_ylat, Hru_xlong, Hru_ylat )
@@ -319,29 +317,27 @@
 !                  available period of record
 !***********************************************************************
       INTEGER FUNCTION t2dist2run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, DNEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER
-      USE PRMS_MODULE, ONLY: Ntemp, Glacier_flag, Nowmonth
       USE PRMS_TEMP_DIST2
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, &
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble, Basin_area_inv, &
      &    Hru_elev_ts, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, Tmax_aspect_adjust, Tmin_aspect_adjust, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc, Basin_tsta, Tsta_elev
+      USE PRMS_SET_TIME, ONLY: Nowmonth
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
       EXTERNAL :: temp_set, print_date, error_stop
-      INTRINSIC :: FLOAT, DBLE, SNGL
+      INTRINSIC :: DBLE
 ! Local Variables
       INTEGER :: j, k, ntotx, ntotn, jj, kk, allmissing
-      REAL :: tcrx, tcrn, diffn, diffx, mx, mn, tmx_sngl, tmn_sngl
-      DOUBLE PRECISION :: sumtx, sumtn, tmx, tmn
-      REAL :: lapsemaxmax, lapsemaxmin, lapseminmax, lapseminmin
-      DOUBLE PRECISION :: sumdist
+      DOUBLE PRECISION :: sumtx, sumtn, tmx, tmn, tcrx, tcrn, diffn, diffx
+      DOUBLE PRECISION :: lapsemaxmax, lapsemaxmin, lapseminmax, lapseminmin
+      DOUBLE PRECISION :: sumdist, mx, mn
 !***********************************************************************
       t2dist2run = 0
 
-      mn = Monmin(Nowmonth)
-      mx = Monmax(Nowmonth)
+      mn = DBLE( Monmin(Nowmonth) )
+      mx = DBLE( Monmax(Nowmonth) )
 
       Basin_tmax = 0.0D0
       Basin_tmin = 0.0D0
@@ -349,10 +345,10 @@
 
 ! Calculate basin-average lapse rate using all temperature stations
 
-      lapsemaxmax = Lapsemax_max(Nowmonth)
-      lapsemaxmin = Lapsemax_min(Nowmonth)
-      lapseminmax = Lapsemin_max(Nowmonth)
-      lapseminmin = Lapsemin_min(Nowmonth)
+      lapsemaxmax = DBLE( Lapsemax_max(Nowmonth) )
+      lapsemaxmin = DBLE( Lapsemax_min(Nowmonth) )
+      lapseminmax = DBLE( Lapsemin_max(Nowmonth) )
+      lapseminmin = DBLE( Lapsemin_min(Nowmonth) )
 
       sumtx = 0.0D0
       sumtn = 0.0D0
@@ -385,9 +381,9 @@
           IF ( diffx<lapsemaxmin ) diffx = lapsemaxmin
           IF ( diffn>lapseminmax ) diffn = lapseminmax
           IF ( diffn<lapseminmin ) diffn = lapseminmin
-          sumtx = sumtx + DBLE( diffx )
+          sumtx = sumtx + diffx
           ntotx = ntotx + 1
-          sumtn = sumtn + DBLE( diffn )
+          sumtn = sumtn + diffn
           ntotn = ntotn + 1
         ENDDO
       ENDDO
@@ -397,14 +393,14 @@
       ENDIF
 
       IF ( ntotx>0 ) THEN
-        Basin_lapse_max = SNGL(sumtx)/FLOAT(ntotx)
+        Basin_lapse_max = sumtx/DBLE(ntotx)
       ELSE
-        Basin_lapse_max = (lapsemaxmax+lapsemaxmin)*0.5
+        Basin_lapse_max = (lapsemaxmax+lapsemaxmin)*0.5D0
       ENDIF
       IF ( ntotn>0 ) THEN
-        Basin_lapse_min = SNGL(sumtn)/FLOAT(ntotn)
+        Basin_lapse_min = sumtn/DBLE(ntotn)
       ELSE
-        Basin_lapse_min = (lapseminmax+lapseminmin)*0.5
+        Basin_lapse_min = (lapseminmax+lapseminmin)*0.5D0
       ENDIF
 
 ! HRU loop for this day or timestep
@@ -418,7 +414,7 @@
 
         DO kk = 1, N_tsta(j)
           k = Nuse_tsta(kk, j)
-          IF ( Hru_type(j)==GLACIER .AND. Glacier_flag==ACTIVE ) Elfac(j, k) = (Hru_elev_ts(j)-Tsta_elev(k))/1000.0
+          IF ( Hru_type(j)==GLACIER .AND. Glacier_flag==1 ) Elfac(j, k) = (Hru_elev_ts(j)-DBLE(Tsta_elev(k)))/1000.0
 
 ! check for missing or bad temps
           IF ( Tmax(k)<mn ) CYCLE
@@ -429,7 +425,7 @@
           sumdist = sumdist + Dist(j, k)
           tcrx = Basin_lapse_max*Elfac(j, k)
           tcrn = Basin_lapse_min*Elfac(j, k)
-          tmx = tmx + DBLE( (Tmax(k)+tcrx) )*Dist(j, k)
+          tmx = tmx + (Tmax(k)+tcrx)*DBLE(Dist(j, k))
           tmn = tmn + DBLE( (Tmin(k)+tcrn) )*Dist(j, k)
         ENDDO
 
@@ -437,7 +433,7 @@
           tmn = tmn/sumdist - DBLE( Tmin_aspect_adjust(j, Nowmonth) )
           tmx = tmx/sumdist - DBLE( Tmax_aspect_adjust(j, Nowmonth) )
         ELSE
-          tmn = DBLE( (mn+mx)*0.5 )
+          tmn = (mn+mx)*0.5D0
           tmx = tmn
           PRINT *, 'WARNING, HRU:', j, '; no valid data available to set temperatures,'
           PRINT *, ' set values using monmax and monmin', tmx, tmn
@@ -445,10 +441,8 @@
         ENDIF
         IF ( tmx<=tmn ) tmx = tmn + 0.01D0
 
-        tmx_sngl = SNGL( tmx )
-        tmn_sngl = SNGL( tmn )
-        CALL temp_set(j, tmx_sngl, tmn_sngl, Tmaxf(j), Tminf(j), Tavgf(j), &
-     &                Tmaxc(j), Tminc(j), Tavgc(j), Hru_area(j))
+        CALL temp_set(j, tmx, tmn, Tmaxf(j), Tminf(j), Tavgf(j), &
+     &                Tmaxc(j), Tminc(j), Tavgc(j), Hru_area_dble(j))
       ENDDO
 
       Basin_tmax = Basin_tmax*Basin_area_inv
@@ -480,7 +474,6 @@
 !     temp_dist2_restart - write or read temp_dist2 restart file
 !***********************************************************************
       SUBROUTINE temp_dist2_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_TEMP_DIST2
       IMPLICIT NONE

@@ -16,7 +16,7 @@
       END MODULE PRMS_TRANSP_TINDEX
 
       INTEGER FUNCTION transp_tindex()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, FAHRENHEIT, READ_INIT, SAVE_INIT
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, CELSIUS, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Save_vars_to_file, Init_vars_from_file, Start_month, Start_day, Nowmonth, Nowday
       USE PRMS_TRANSP_TINDEX
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
@@ -25,7 +25,7 @@
 ! Functions
       INTRINSIC :: DBLE
       INTEGER, EXTERNAL :: declparam, getparam
-      REAL, EXTERNAL :: c_to_f
+      double precision, external :: c_to_f
       EXTERNAL :: read_error, print_module, transp_tindex_restart
 ! Local Variables
       INTEGER :: i, j, motmp
@@ -106,16 +106,15 @@
         IF ( getparam(MODNAME, 'transp_beg', Nhru, 'integer', Transp_beg)/=0 ) CALL read_error(2, 'transp_beg')
         IF ( getparam(MODNAME, 'transp_end', Nhru, 'integer', Transp_end)/=0 ) CALL read_error(2, 'transp_end')
         IF ( getparam(MODNAME, 'transp_tmax', Nhru, 'real', Transp_tmax)/=0 ) CALL read_error(2, 'transp_tmax')
-
-        IF ( Init_vars_from_file>OFF ) CALL transp_tindex_restart(READ_INIT)
-        IF ( Temp_units==FAHRENHEIT ) THEN
-          Transp_tmax_f = DBLE( Transp_tmax )
-        ELSE
+        Transp_tmax_f = DBLE( Transp_tmax )
+        IF ( Temp_units==CELSIUS ) THEN
           DO i = 1, Nhru
-            Transp_tmax_f(i) = DBLE( c_to_f(Transp_tmax(i)) )
+            Transp_tmax_f(i) = c_to_f(Transp_tmax_f(i))
           ENDDO
         ENDIF
         DEALLOCATE ( Transp_tmax )
+
+        IF ( Init_vars_from_file>OFF ) CALL transp_tindex_restart(READ_INIT)
 
         IF ( Init_vars_from_file==0 ) Tmax_sum = 0.0
 

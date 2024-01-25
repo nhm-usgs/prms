@@ -8,20 +8,19 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=9), parameter :: MODNAME = 'potet_pan'
-        character(len=*), parameter :: Version_potet = '2023-11-01'
-        REAL, SAVE, ALLOCATABLE :: Last_pan_evap(:)
+        character(len=*), parameter :: Version_potet = '2024-01-25'
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Last_pan_evap(:)
       END MODULE PRMS_POTET_PAN
 
       INTEGER FUNCTION potet_pan()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, MONTHS_PER_YEAR, DEBUG_less, ERROR_dim, READ_INIT, SAVE_INIT
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, DEBUG_less, ERROR_dim, READ_INIT, SAVE_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Nevap, Print_debug, Save_vars_to_file, Init_vars_from_file, Nowmonth
       USE PRMS_POTET_PAN
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Hru_pansta, Epan_coef
       USE PRMS_OBS, ONLY: Pan_evap
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE
       EXTERNAL :: read_error, print_module, potet_pan_restart, print_date, error_stop
 ! Local Variables
       INTEGER :: i, j, k
@@ -30,7 +29,7 @@
 
       IF ( Process_flag==RUN ) THEN
         DO i = 1, Nevap
-          IF ( Pan_evap(i)<0.0 ) THEN
+          IF ( Pan_evap(i)<0.0D0 ) THEN
             IF ( Print_debug>DEBUG_less ) THEN
               PRINT *, 'Pan_evap<0, set to last value, station:', i, '; value:', Pan_evap(i)
               CALL print_date(1)
@@ -44,8 +43,8 @@
           i = Hru_route_order(j)
           k = Hru_pansta(i)
           Potet(i) = Pan_evap(k)*Epan_coef(i, Nowmonth)
-          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
+          IF ( Potet(i)<0.0D0 ) Potet(i) = 0.0D0
+          Basin_potet = Basin_potet + Potet(i)*Hru_area_dble(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
         Last_pan_evap = Pan_evap
@@ -61,7 +60,7 @@
         IF ( Init_vars_from_file>OFF ) THEN
           CALL potet_pan_restart(READ_INIT)
         ELSE
-          Last_pan_evap = 0.0
+          Last_pan_evap = 0.0D0
         ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN

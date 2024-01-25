@@ -2,12 +2,12 @@
 ! Convert PRMS IV parameters to PRMS 5
 !***********************************************************************
       SUBROUTINE convert_params()
-      USE PRMS_CONSTANTS, ONLY: DECL, INIT, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: DECL, INIT, MONTHS_PER_YEAR, ACTIVE
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Dprst_flag, Model_mode, Nhru_nmonths
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Convert PRMS parameters'
       character(len=*), parameter :: MODNAME = 'convert_params'
-      character(len=*), parameter :: Version_convert_params = '2024-01-23'
+      character(len=*), parameter :: Version_convert_params = '2024-01-25'
 ! Functions
       EXTERNAL :: print_module, PRMS_open_module_file, read_error
       INTEGER, EXTERNAL :: declparam, getparam
@@ -70,7 +70,7 @@
 !          ENDIF
 
           WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru_nmonths
-          DO i = 1, 12
+          DO i = 1, MONTHS_PER_YEAR
             DO j = 1, Nhru
               WRITE ( ounit, 300 ) Tmax_allrain_offset(j, i)
             ENDDO
@@ -139,7 +139,7 @@
           ENDIF
 
           WRITE ( ounit, 200 ) 'tmax_allrain_offset', Nhru_nmonths
-          DO i = 1, 12
+          DO i = 1, MONTHS_PER_YEAR
             DO j = 1, Nhru
               WRITE ( ounit, 300 ) Tmax_allrain_offset(j, i)
             ENDDO
@@ -155,7 +155,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_convert_params)
 
-        ALLOCATE ( Tmax_allsnow(Nhru,12) )
+        ALLOCATE ( Tmax_allsnow(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'tmax_allsnow', 'nhru,nmonths', 'real', &
      &       '32.0', '-10.0', '40.0', &
      &       'Maximum temperature when precipitation is all snow', &
@@ -181,7 +181,7 @@
      &       ' major vegetation type of each HRU', &
      &       'inches')/=0 ) CALL read_error(1, 'soil_moist_max')
 
-        ALLOCATE ( Tmax_allrain(Nhru,12), Tmax_allrain_offset(Nhru,12) )
+        ALLOCATE ( Tmax_allrain(Nhru,MONTHS_PER_YEAR), Tmax_allrain_offset(Nhru,MONTHS_PER_YEAR) )
         ALLOCATE ( Soil_rechr_max(Nhru), Soil_rechr_init(Nhru), Soil_moist_init(Nhru), Ssstor_init(Nhru) )
         ALLOCATE ( Soil_rechr_init_frac(Nhru), Soil_rechr_max_frac(Nhru), Soil_moist_init_frac(Nhru), Ssstor_init_frac(Nhru) )
 

@@ -9,14 +9,14 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_hs'
-        character(len=*), parameter :: Version_potet = '2024-01-22'
+        character(len=*), parameter :: Version_potet = '2024-01-25'
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hs_krs_sngl(:, :)
-        double precision, save, allocatable :: Hs_krs(:, :)
+        DOUBLE PRECISION, save, allocatable :: Hs_krs(:, :)
       END MODULE PRMS_POTET_HS
 
       INTEGER FUNCTION potet_hs()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_HS
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
@@ -28,7 +28,7 @@
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      double precision :: temp_diff, swrad_inch_day !, coef_kt
+      DOUBLE PRECISION :: temp_diff, swrad_inch_day !, coef_kt
 !***********************************************************************
       potet_hs = 0
 
@@ -57,7 +57,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        ALLOCATE ( Hs_krs(Nhru,12), Hs_krs_sngl(Nhru,12) )
+        ALLOCATE ( Hs_krs(Nhru,MONTHS_PER_YEAR), Hs_krs_sngl(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'hs_krs', 'nhru,nmonths', 'real', &
      &       '0.0135', '0.01', '0.24', &
      &       'Potential ET adjustment factor - Hargreaves-Samani', &

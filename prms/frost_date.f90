@@ -5,7 +5,7 @@
 ! Declared Parameters: frost_temp
 !***********************************************************************
       INTEGER FUNCTION frost_date()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, NORTHERN
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, DAYS_PER_YEAR, NORTHERN
       USE PRMS_MODULE, ONLY: Process_flag, Nhru
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Basin_area_inv, Hemisphere
       USE PRMS_CLIMATEVARS, ONLY: Tmin_hru
@@ -13,7 +13,7 @@
       IMPLICIT NONE
       character(len=*), parameter :: MODDESC = 'Preprocessing'
       character(len=*), parameter :: MODNAME = 'frost_date'
-      character(len=*), parameter :: Version_frost_date = '2024-01-23'
+      character(len=*), parameter :: Version_frost_date = '2024-01-25'
 ! Functions
       INTRINSIC :: NINT, DBLE
       INTEGER, EXTERNAL :: declparam, getparam, get_season
@@ -56,7 +56,7 @@
         ENDIF
         oldSeason = season
 
-        IF ( Hemisphere==NORTHERN ) THEN
+        IF ( Hemisphere==NORTHERN ) THEN ! set in run as could be a leap year
           spring1 = 1
           fall1 = Yrdays
         ELSE
@@ -143,9 +143,9 @@
           IF ( fallFrostCount==0 ) fallFrostCount = 1
           spring_frost(j) = NINT( springFrostSum(j)/DBLE( springFrostCount ) )
           fall_frost(j) = fall_frost(j) + 10
-          IF ( fall_frost(j)>Yrdays ) fall_frost(j) = Yrdays
+          IF ( fall_frost(j)>DAYS_PER_YEAR ) fall_frost(j) = DAYS_PER_YEAR ! using 365 instead of 366
           spring_frost(j) = spring_frost(j) + 10
-          IF ( spring_frost(j)>Yrdays ) spring_frost(j) = spring_frost(j) - Yrdays
+          IF ( spring_frost(j)>DAYS_PER_YEAR ) spring_frost(j) = spring_frost(j) - DAYS_PER_YEAR
           basin_fall_frost = basin_fall_frost + fall_frost(j)*Hru_area(j)
           basin_spring_frost = basin_spring_frost + spring_frost(j)*Hru_area(j)
         ENDDO

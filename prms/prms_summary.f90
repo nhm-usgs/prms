@@ -6,7 +6,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Output Summary'
         character(len=*), parameter :: MODNAME = 'prms_summary'
-        character(len=*), parameter :: Version_prms_summary = '2023-11-01'
+        character(len=*), parameter :: Version_prms_summary = '2024-01-25'
         INTEGER, PARAMETER :: NVARS = 51
         INTEGER, SAVE :: Iunit
         INTEGER, SAVE, ALLOCATABLE :: Gageid_len(:)
@@ -26,20 +26,20 @@
       SUBROUTINE prms_summary()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, ERROR_open_out, DOCUMENTATION, MAXDIM
       USE PRMS_MODULE, ONLY: Model, Process_flag, Nobs, Nsegment, Npoigages, &
-     &    Csv_output_file, Inputerror_flag, Parameter_check_flag, CsvON_OFF, Nowyear, Nowmonth, Nowday
+     &    Csv_output_file, Inputerror_flag, Parameter_check_flag, CsvON_OFF, Nowyear, Nowmonth, Nowday, Soilzone_module !, netcdf_flag
       USE PRMS_PRMS_SUMMARY
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Basin_tmax, Basin_tmin, Basin_swrad, Basin_ppt
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_soil_to_gw, &
      &    Basin_lakeevap, Basin_perv_et, Basin_actet, Basin_lake_stor, &
      &    Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, Basin_cfs, Basin_stflow_in, &
-     &    Basin_stflow_out, Seg_outflow
+     &    Basin_stflow_out, Seg_outflow, Basin_soil_rechr
       USE PRMS_OBS, ONLY: Streamflow_cfs
       USE PRMS_INTCP, ONLY: Basin_intcp_evap, Basin_intcp_stor
       USE PRMS_SNOW, ONLY: Basin_pweqv, Basin_snowevap, Basin_snowmelt, Basin_snowcov, Basin_pk_precip
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_dprst_evap, Basin_imperv_evap, Basin_dprst_seep, &
      &    Basin_dprst_volop, Basin_dprst_volcl, Basin_hortonian
       USE PRMS_SOILZONE, ONLY: Basin_capwaterin, Basin_pref_flow_infil, Basin_prefflow, Basin_recharge, Basin_slowflow, &
-     &    Basin_pref_stor, Basin_slstor, Basin_soil_rechr, Basin_sz2gw, Basin_dunnian
+     &    Basin_pref_stor, Basin_slstor, Basin_sz2gw, Basin_dunnian
       USE PRMS_GWFLOW, ONLY: Basin_gwstor, Basin_gwin, Basin_gwsink, Basin_gwflow, &
      &    Basin_gwstor_minarea_wb, Basin_dnflow
       IMPLICIT NONE
@@ -54,6 +54,12 @@
       CHARACTER(LEN=10) :: chardate
 !***********************************************************************
       IF ( Process_flag==RUN ) THEN
+        IF ( Soilzone_module(:8) /= 'soilzone' ) THEN
+             Basin_pref_flow_infil = 0.0D0
+             Basin_prefflow = 0.0D0
+             Basin_pref_stor = 0.0D0
+             Basin_dunnian = 0.0D0
+        ENDIF
         DO i = 1, Npoigages
           Segmentout(i) = Seg_outflow(Poi_gage_segment(i))
 !          Gageout(i) = Streamflow_cfs(Parent_poigages(i))
@@ -83,6 +89,11 @@
      &            Basin_cfs, Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, gageflow, &
      &            (Segmentout(i), i = 1, Npoigages)
 !     &            (Segmentout(i), Gageout(i), i = 1, Npoigages)
+!        ELSEIF ( netcdf_flag==ACTIVE ) THEN
+          ! Write the pretend data to the file. Although netCDF supports
+          ! reading and writing subsets of data, in this case we write all the
+          ! data in one operation.
+          !! CALL check( nf_put_var(Netcdf_unit, varid, data_out) )
         ELSE
           WRITE ( chardate, '(I4.4,2(1X,I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
@@ -93,11 +104,21 @@
         CALL print_module(MODDESC, MODNAME, Version_prms_summary)
 
 !       Open summary file
-        IF ( control_string(Csv_output_file, 'csv_output_file')/=0 ) CALL read_error(5, 'csv_output_file')
-        IF ( Model/=DOCUMENTATION ) THEN
-          CALL PRMS_open_output_file(Iunit, Csv_output_file, 'csv_output_file', 0, ios)
-          IF ( ios/=0 ) ERROR STOP ERROR_open_out
-        ENDIF
+!       IF ( CsvON_OFF==ACTIVE ) THEN
+          IF ( control_string(Csv_output_file, 'csv_output_file')/=0 ) CALL read_error(5, 'csv_output_file')
+          IF ( Model/=DOCUMENTATION ) THEN
+            CALL PRMS_open_output_file(Iunit, Csv_output_file, 'csv_output_file', 0, ios)
+            IF ( ios/=0 ) ERROR STOP ERROR_open_out
+!!        ELSEIF ( netcdf_flag==ACTIVE ) THEN
+            ! Always check the return code of every netCDF function call.
+            ! wrapping netCDF calls with "call check()"
+            ! makes sure that any return which is not equal to nf_noerr (0)
+            ! will print a netCDF error message and exit.
+            ! Create the netCDF file. The nf_clobber parameter tells netCDF to
+            ! overwrite this file, if it already exists.
+            !!CALL check( nf_create(Csv_output_file, NF90_CLOBBER, Netcdf_unit) )
+          ENDIF
+!        ENDIF
 
         IF ( declvar(MODNAME, 'basin_total_storage', 'one', 1, 'double', &
      &       'Basin area-weighted average storage in all water storage reservoirs', &
@@ -136,6 +157,7 @@
           Cfs_strings = ',cfs'
         ELSE
           Cfs_strings = ' cfs'
+!          Cfs_strings = ',cfs,cfs'
         ENDIF
 
         IF ( Npoigages>0 ) THEN
@@ -218,6 +240,34 @@
 
           WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages+NVARS, '(",",F0.4) )'
 !        WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
+!!        ELSEIF ( netcdf_flag==ACTIVE ) THEN
+              ! We are writing 2D data, a 6 x 12 grid. 
+!  integer, parameter :: NDIMS = 2
+!  integer, parameter :: NX = 6, NY = 12
+
+  ! When we create netCDF files, variables and dimensions, we get back
+  ! an ID for each one.
+ ! integer :: ncid, varid, dimids(NDIMS)
+ ! integer :: x_dimid, y_dimid
+
+  ! This is the data array we will write. It will just be filled with
+  ! a progression of integers for this example.
+!  integer :: data_out(NY, NX)
+          ! Define the dimensions. NetCDF will hand back an ID for each. 
+          !CALL check( nf_def_dim(ncid, "x", NX, x_dimid) )
+          !CALL check( nf_def_dim(ncid, "y", NY, y_dimid) )
+
+          ! The dimids array is used to pass the IDs of the dimensions of
+          ! the variables. Note that in fortran arrays are stored in
+          ! column-major format.
+          !dimids =  (/ y_dimid, x_dimid /)
+
+          ! Define the variable. The type of the variable in this case is
+          ! nf_INT (4-byte integer).
+          !CALL( nf_def_var(ncid, "data", NF90_INT, dimids, varid) )
+
+          ! End define mode. This tells netCDF we are done defining metadata.
+          !! CALL check( nf_enddef(Netcdf_unit) )
         ELSE
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+1, 'A )'
           WRITE ( Iunit, Fmt ) 'Date', &
@@ -230,7 +280,27 @@
         !IF ( control_integer(statsON_OFF, 'statsON_OFF')/=0 ) statsON_OFF = 1
         !IF ( statsON_OFF==ACTIVE ) CALL statvar_to_csv()
         CLOSE ( Iunit )
+!        IF ( netcdf_flag==ACTIVE ) THEN
+          ! Close the file. This frees up any internal netCDF resources
+          ! associated with the file, and flushes any buffers.
+!          CALL check( nf_close(Netcdf_unit) )
+!        ENDIF
       ENDIF
+
+!      CONTAINS
+!        SUBROUTINE check(Status)
+!        USE netcdf, ONLY: nf90_noerr
+!        IMPLICIT NONE
+!        ! Functions
+!        CHARACTER, EXTERNAL :: nf_strerror
+!        ! Arguments
+!        INTEGER, INTENT(IN) :: status
+!        !***********************************************************************
+!        IF ( Status/=nf90_noerr ) THEN
+!          PRINT *, TRIM( nf_strerror(Status) )
+!          STOP 'ERROR, from netCDF library'
+!        ENDIF
+!        END SUBROUTINE check
 
       END SUBROUTINE prms_summary
 
@@ -247,7 +317,7 @@
       ! Local Variable
       INTEGER :: inunit, numvariables, ios, i, outunit, ts, yr, mo, day, hr, mn, sec, num
       INTEGER, ALLOCATABLE :: varindex(:), nc(:)
-      REAL, ALLOCATABLE :: values(:)
+      DOUBLE PRECISION, ALLOCATABLE :: values(:)
       CHARACTER(LEN=32), ALLOCATABLE :: varname(:)
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: statvar_file, statvar_file_csv
       CHARACTER(LEN=10) :: chardate

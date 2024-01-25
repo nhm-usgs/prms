@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2024-01-04'
+      character(len=*), parameter :: Version_subbasin = '2024-01-23'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -420,10 +420,10 @@
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
      &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist_max, &
-     &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru, Recharge
+     &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
-      USE PRMS_SOILZONE, ONLY: Lakein_sz
+      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
@@ -497,18 +497,18 @@
           Qsub(k) = Qsub(k) + srq + ssq
           Subinc_interflow(k) = Subinc_interflow(k) + ssq
           Subinc_sroff(k) = Subinc_sroff(k) + srq
-          Subinc_precip(k) = Subinc_precip(k) + DBLE(Hru_ppt(j))*harea
-          Subinc_rain(k) = Subinc_rain(k) + DBLE(Hru_rain(j))*harea
-          Subinc_snow(k) = Subinc_snow(k) + DBLE(Hru_snow(j))*harea
+          Subinc_precip(k) = Subinc_precip(k) + Hru_ppt(j)*harea
+          Subinc_rain(k) = Subinc_rain(k) + Hru_rain(j)*harea
+          Subinc_snow(k) = Subinc_snow(k) + Hru_snow(j)*harea
           Subinc_actet(k) = Subinc_actet(k) + DBLE(Hru_actet(j))*harea
           Subinc_snowmelt(k) = Subinc_snowmelt(k) + DBLE(Snowmelt(j))*harea
           Subinc_pkweqv(k) = Subinc_pkweqv(k) + Pkwater_equiv(j)*harea
           Subinc_snowcov(k) = Subinc_snowcov(k) + DBLE(Snowcov_area(j))*harea
-          Subinc_potet(k) = Subinc_potet(k) + DBLE(Potet(j))*harea
-          Subinc_swrad(k) = Subinc_swrad(k) + DBLE(Swrad(j))*harea
-          Subinc_tminc(k) = Subinc_tminc(k) + DBLE(Tminc(j))*harea
-          Subinc_tmaxc(k) = Subinc_tmaxc(k) + DBLE(Tmaxc(j))*harea
-          Subinc_tavgc(k) = Subinc_tavgc(k) + DBLE(Tavgc(j))*harea
+          Subinc_potet(k) = Subinc_potet(k) + Potet(j)*harea
+          Subinc_swrad(k) = Subinc_swrad(k) + Swrad(j)*harea
+          Subinc_tminc(k) = Subinc_tminc(k) + Tminc(j)*harea
+          Subinc_tmaxc(k) = Subinc_tmaxc(k) + Tmaxc(j)*harea
+          Subinc_tavgc(k) = Subinc_tavgc(k) + Tavgc(j)*harea
           Subinc_recharge(k) = Subinc_recharge(k) + Recharge(j)*harea
           Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_tot(j)/Soil_zone_max(j)*harea
           Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Soil_moist(j)/Soil_moist_max(j)*harea

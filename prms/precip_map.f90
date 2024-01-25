@@ -13,12 +13,12 @@
         character(len=*), parameter :: MODNAME = 'precip_map'
         character(len=*), parameter :: Version_precip_map = '2024-01-22'
         INTEGER, SAVE :: Precip_unit
-        double precision, save, allocatable :: Precip_map_values(:)
+        DOUBLE PRECISON, SAVE, ALLOCATABLE :: Precip_map_values(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
         REAL, SAVE, ALLOCATABLE :: Hru2map_pct_sngl(:)
         REAL, SAVE, ALLOCATABLE :: Precip_map_adj_sngl(:, :)
-        double precision, save, allocatable :: Hru2map_pct(:), Precip_map_adj(:, :)
+        DOUBLE PRECISON, SAVE, ALLOCATABLE :: Hru2map_pct(:), Precip_map_adj(:, :)
         ! parameters in basin:
         !    hru_area
         ! Control Parameters
@@ -26,7 +26,7 @@
       END MODULE PRMS_PRECIP_MAP
 
       SUBROUTINE precip_map()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, MM, MM2INCH, precip_map_module
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, MM, MM2INCH, MONTHS_PER_YEAR, precip_map_module
       USE PRMS_MODULE, ONLY: Process_flag, Start_year, Start_month, Start_day, Nmap2hru, Nmap, Nowmonth
       USE PRMS_PRECIP_MAP
       USE PRMS_BASIN, ONLY: Hru_area_dble, Basin_area_inv, Active_hrus, Hru_route_order
@@ -40,7 +40,7 @@
       EXTERNAL :: print_module, print_date
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
-      double precision :: ppt, harea
+      DOUBLE PRECISON :: ppt, harea
 !***********************************************************************
        IF ( Process_flag==RUN ) THEN
         READ ( Precip_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Precip_map_values(i), i=1,Nmap)
@@ -70,7 +70,7 @@
             ppt = Hru_ppt(i)
             CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
      &                       Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
-     &                       Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0D0, 1.0D0, &
+     &                       Prmx(i), Tmax_allrain_f(i,Nowmonth), 1.0, 1.0, &
      &                       Adjmix_rain(i,Nowmonth), harea, Basin_obs_ppt, Tmax_allsnow_f(i,Nowmonth), i)
           ELSEIF ( Hru_ppt(i)<0.0D0 ) THEN
             PRINT *, 'WARNING, negative precipitation value entered in precipitation map file and set to 0.0, HRU:', i
@@ -89,7 +89,7 @@
         ALLOCATE ( Precip_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Precip_map_adj(Nmap,12), Precip_map_adj_sngl(Nmap,12) )
+        ALLOCATE ( Precip_map_adj(Nmap,MONTHS_PER_YEAR), Precip_map_adj_sngl(Nmap,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'precip_map_adj', 'nmap,nmonths', 'real', &
      &     '1.0', '0.5', '2.0', &
      &     'Monthly rain adjustment factor for each mapped spatial unit', &
@@ -129,7 +129,7 @@
 
         istop = 0
         ierr = 0
-        IF ( getparam(MODNAME, 'precip_map_adj', Nmap*12, 'real', Precip_map_adj_sngl)/=0 ) &
+        IF ( getparam(MODNAME, 'precip_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Precip_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'precip_map_adj')
         Precip_map_adj = DBLE( Precip_map_adj_sngl )
         DEALLOCATE ( Precip_map_adj_sngl )

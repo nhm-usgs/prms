@@ -18,7 +18,7 @@
 
 !***********************************************************************
       INTEGER FUNCTION potet_pm()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, INCH2MM
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PM
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_meters
@@ -31,12 +31,12 @@
 ! Functions
       INTRINSIC :: DBLE, LOG
       INTEGER, EXTERNAL :: declparam, getparam
-      double precision, external :: sat_vapor_press
+      DOUBLE, PRECISION, EXTERNAL :: sat_vapor_press
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      double precision :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
-      double precision :: A1, B1, t1, num, den, stab, sw
+      DOUBLE, PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
+      DOUBLE, PRECISION :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pm = 0
 
@@ -147,21 +147,21 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pm_n_coef(Nhru,12) )
+        ALLOCATE ( Pm_n_coef(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'pm_n_coef', 'nhru,nmonths', 'real', &
      &       '900.0', '850.0', '950.0', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET N temperauture coefficient for each HRU', &
      &       'degrees Celsius per day')/=0 ) CALL read_error(1, 'pm_n_coef')
 
-        ALLOCATE ( Pm_d_coef(Nhru,12) )
+        ALLOCATE ( Pm_d_coef(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'pm_d_coef', 'nhru,nmonths', 'real', &
      &       '0.34', '0.25', '0.45', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET D wind-speed coefficient for each HRU', &
      &       'seconds/meters')/=0 ) CALL read_error(1, 'pm_d_coef')
 
-        ALLOCATE ( Crop_coef(Nhru,12) )
+        ALLOCATE ( Crop_coef(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'crop_coef', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '2.0', &
      &       'Crop coefficient for each HRU', &
