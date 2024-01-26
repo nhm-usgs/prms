@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2024-01-11'
+      character(len=*), parameter :: Version_stream_temp = '2024-01-25'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -21,7 +21,7 @@
       REAL, SAVE, ALLOCATABLE :: Local_sunset_hour_angle(:, :), Local_sunrise_hour_angle(:, :)
       REAL, SAVE, ALLOCATABLE :: gw_sum(:), ss_sum(:)
       REAL, SAVE, ALLOCATABLE ::  gw_silo(:,:), ss_silo(:,:)
-      REAL, SAVE, ALLOCATABLE :: hru_area_sum(:)
+      double precision, save, allocatable :: hru_area_sum(:)
       REAL, SAVE, ALLOCATABLE :: Seg_length_km(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_count(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_idx(:,:)
@@ -54,7 +54,7 @@
       INTRINSIC :: ACOS
       REAL, PARAMETER :: HALF_PI = ACOS(0.0), ZERO_C = 273.16
       REAL, PARAMETER :: PI = ACOS(-1.0)
-      REAL, PARAMETER :: DEG_TO_RAD = PI / 180.0, NOFLOW_TEMP = -98.9
+      REAL, PARAMETER :: DEG_TO_RAD = PI / 180.0, TWO_PI = 2.0*PI, NOFLOW_TEMP = -98.9
       DOUBLE PRECISION :: MPS_CONVERT = 2.93981481D-07
       END MODULE PRMS_STRMTEMP
 
@@ -385,7 +385,7 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, OFF, NEARZERO, ERROR_param, DAYS_YR
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag, Nhru_nmonths
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
@@ -441,7 +441,7 @@
       IF ( getparam( MODNAME, 'tempIN_segment', Nsegment, 'integer', tempIN_segment)/=0 ) CALL read_error(2, 'tempIN_segment')
 
       IF ( Strmtemp_humidity_flag==1 ) THEN
-         IF ( getparam( MODNAME, 'seg_humidity', Nsegment*MONTHS_PER_YEAR, 'real', Seg_humidity)/=0 ) &
+         IF ( getparam( MODNAME, 'seg_humidity', Nsegment*Nhru_nmonths, 'real', Seg_humidity)/=0 ) &
      &      CALL read_error(2, 'seg_humidity')
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
          IF ( getparam(MODNAME, 'seg_humidity_sta', Nsegment, 'integer', Seg_humidity_sta)/=0 ) &
@@ -558,7 +558,7 @@
             tano = Sin_seg_lat(i) / Cos_seg_lat(i)
             DO k = 1, MAX_DAYS_PER_YEAR
 !  DECLINATION TRIGONOMETRIC PARAMETERS
-               decl = 0.40928 * COS(((2.0 * PI) / DAYS_YR) * (172.0 - k))
+               decl = 0.40928 * COS(((TWO_PI) / DAYS_YR) * (172.0 - k))
                cos_d = COS(decl)
                Sin_declination(k, i) = SIN(decl) ! sin_d
                IF ( cos_d < NEARZERO ) cos_d = NEARZERO
@@ -680,7 +680,7 @@
       USE PRMS_CONSTANTS, ONLY: NEARZERO, CFS2CMS_CONV
       USE PRMS_MODULE, ONLY: Nsegment, Strmtemp_humidity_flag, Nowmonth !, Nowyear, Nowday
       USE PRMS_STRMTEMP
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area, Hru_area_dble
       USE PRMS_SET_TIME, ONLY: Summer_flag, Jday
       USE PRMS_CLIMATEVARS, ONLY: Tavgc, Potet, Hru_rain, Swrad
       USE PRMS_CLIMATE_HRU, ONLY: Humidity_hru
@@ -693,7 +693,7 @@
 
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE, sngl
+      INTRINSIC :: DBLE, SNGL
       REAL, EXTERNAL :: twavg, twmax, get_segwidth
       EXTERNAL :: equilb, lat_inflow, shday
 ! Local Variables
@@ -725,7 +725,7 @@
       Seg_ccov = 0.0
       Seg_melt = 0.0
       Seg_rain = 0.0
-      hru_area_sum = 0.0
+      hru_area_sum = 0.0D0
 
       ! Compute segment lateral inflow temperatures and segment meteorological values
 
@@ -735,10 +735,10 @@
 ! DANGER HACK
 ! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as
 ! this results in divide by 0.0
-         if (Soltab_potsw(jday, j) <= 10.0) then
-            ccov = 1.0 - (Swrad(j) / 10.0 * sngl(Hru_cossl(j)))
+         if (Soltab_potsw(jday, j) <= 10.0D0) then
+            ccov = 1.0D0 - (Swrad(j) / 10.0D0 * Hru_cossl(j))
          else
-            ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
+            ccov = 1.0D0 - (Swrad(j) / Soltab_potsw(jday, j) * Hru_cossl(j))
          endif
 
          if (ccov .ne. ccov) then
@@ -756,8 +756,8 @@
          IF ( i==0 ) CYCLE
 
 ! Compute temperature of surface runoff here for HRU and stream segments
-         Seg_tave_air(i) = Seg_tave_air(i) + Tavgc(j)*harea
-         hru_area_sum(i) = hru_area_sum(i) + harea
+         Seg_tave_air(i) = Seg_tave_air(i) + SNGL( Tavgc(j)*Hru_area_dble(j) )
+         hru_area_sum(i) = hru_area_sum(i) + Hru_area_dble(j)
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
@@ -767,9 +767,9 @@
 ! Figure out the contributions of the HRUs to each segment for these drivers.
          Seg_ccov(i) = Seg_ccov(i) + ccov*harea
 
-         Seg_potet(i) = Seg_potet(i) + DBLE( Potet(j)*harea )
+         Seg_potet(i) = Seg_potet(i) + Potet(j)*Hru_area_dble(j)
          Seg_melt(i) = Seg_melt(i) + Snowmelt(j)*harea
-         Seg_rain(i) = Seg_rain(i) + Hru_rain(j)*harea
+         Seg_rain(i) = Seg_rain(i) + SNGL( Hru_rain(j)*Hru_area_dble(j) )
       ENDDO
 
 
@@ -777,13 +777,13 @@
          i = Segment_order(j)
          IF ( Seg_hru_count(i)>0 ) THEN
 !            carea = Seg_carea_inv(i)
-            Seg_ccov(i) = Seg_ccov(i) / hru_area_sum(i)
-            Seg_potet(i) = Seg_potet(i) / dble(hru_area_sum(i))
-            Seg_tave_air(i) = Seg_tave_air(i) / hru_area_sum(i)
-            Seg_melt(i) = Seg_melt(i) / hru_area_sum(i)
-            Seg_rain(i) = Seg_rain(i) / hru_area_sum(i)
+            Seg_ccov(i) = Seg_ccov(i) / SNGL( hru_area_sum(i) )
+            Seg_potet(i) = Seg_potet(i) / hru_area_sum(i)
+            Seg_tave_air(i) = Seg_tave_air(i) / SNGL( hru_area_sum(i) )
+            Seg_melt(i) = Seg_melt(i) / SNGL( hru_area_sum(i) )
+            Seg_rain(i) = Seg_rain(i) / SNGL( hru_area_sum(i) )
             IF ( Strmtemp_humidity_flag==0 ) then
-               Seg_humid(i) = Seg_humid(i) / hru_area_sum(i)
+               Seg_humid(i) = Seg_humid(i) / SNGL( hru_area_sum(i) )
 
 ! DANGER potential hack here: Should CBH humidity data be converted to decimal fraction in
 ! the CBH file? Probably so. For now, convert it here.
@@ -1104,14 +1104,15 @@
 ! Functions
       INTRINSIC :: ABS, EXP, SNGL, SIGN
 ! Arguments
-      REAL, INTENT(IN) :: T0, Tl_avg, Te, Ak1, Ak2, width, length, qup
-      DOUBLE PRECISION, INTENT(IN) :: Qlat
+      REAL, INTENT(IN) :: T0, Tl_avg, Te, Ak1, Ak2, length, qup
+      DOUBLE PRECISION, INTENT(IN) :: Qlat, width
 ! Local Variables
-      REAL :: tep, b, r, rexp, tw, delt, q_init, denom, Ql
+      REAL :: tep, b, r, rexp, tw, delt, q_init, denom, Ql, width_sngl
 !***************************************************************************************************
 ! DETERMINE EQUATION PARAMETERS
       q_init = SNGL(qup  * CFS2CMS_CONV)
       Ql = SNGL( Qlat )
+      width_sngl = SNGL(width)
 
 ! This is confused logic coment out here and compute the terms as needed below
 !      b = (Ql / Seg_length_km) + ((Ak1 * Seg_width) / 4182.0E03)
@@ -1123,7 +1124,7 @@
 !
 ! ZERO LATERAL FLOW
          tep = Te
-         b = (Ak1 * width) / 4182.0E03
+         b = (Ak1 * width_sngl) / 4182.0E03
          rexp = -1.0*(b * length) / q_init
          r = EXP(rexp)
 
@@ -1132,7 +1133,7 @@
       ELSEIF ( Ql < 0.0 ) THEN
          write(*,*) "twavg: losing stream!!! Should be no such thing in PRMS!"
          tep  = Te
-         b = (Ql / length) + ((Ak1 * width) / 4182.0E03)
+         b = (Ql / length) + ((Ak1 * width_sngl) / 4182.0E03)
          rexp = (Ql - (b * length)) / Ql
          r = 1.0 + (Ql / q_init)
          r = r**rexp
@@ -1141,15 +1142,15 @@
 ! Treat the lateral flow as upstream flow to avoid divide by zero
       ELSEIF ( Ql > NEARZERO .and. q_init <= NEARZERO ) THEN
          tep = Te
-         b = (Ak1 * width) / 4182.0E03
+         b = (Ak1 * width_sngl) / 4182.0E03
 !         rexp = -1.0*(b * length) / q_init
          rexp = -1.0*(b * length) / Ql
          r = EXP(rexp)
 !
 ! GAINING STREAM (ie both ql and q_init have > zero values)
       ELSE
-         b = (Ql / length) + ((Ak1 * width) / 4182.0E03)
-         tep = (((Ql / length) * Tl_avg) + (((Ak1 * width) / (4182.0E03)) * Te)) / b
+         b = (Ql / length) + ((Ak1 * width_sngl) / 4182.0E03)
+         tep = (((Ql / length) * Tl_avg) + (((Ak1 * width_sngl) / (4182.0E03)) * Te)) / b
 
 ! shouldn't need to do this because Ql will always be greater than 0 if in here.
          IF ( Ql > 0.0 ) THEN
@@ -1199,7 +1200,6 @@
 ! Functions
       INTRINSIC :: EXP, SQRT, ABS, SNGL, DBLE
       EXTERNAL :: teak1
-      REAL, EXTERNAL :: sat_vapor_press_poly
 ! Arguments:
       REAL, INTENT(OUT) :: Ted
       REAL, INTENT(OUT) :: Ak1d, Ak2d
@@ -1210,7 +1210,7 @@
       DOUBLE PRECISION :: ha, hv, taabs
       REAL :: hf, hs, b, c, d, delt, del_ht, ltnt_ht, bow_coeff
       REAL :: hnet, vp_sat, sw_power, evap, q_init
-      REAL, PARAMETER :: AKZ = 1.65, A = 5.40E-8, RAD_CONVERT = 41840.0/86400.0
+      REAL, PARAMETER :: AKZ = 1.65, A = 5.40E-8 !, RAD_CONVERT = 41840.0/86400.0
       REAL :: foo
 ! *******************************************************************************
 
@@ -1410,7 +1410,7 @@
 !
       USE PRMS_SET_TIME, ONLY: Jday
       USE PRMS_STRMTEMP, ONLY: Azrh, Alte, Altw, Seg_daylight, &
-     &    PI, HALF_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
+     &    PI, HALF_PI, TWO_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
      &    Level_sunset_azimuth, Max_solar_altitude, Sin_alrs, Sin_declination, Sin_lat_decl, Total_shade
       USE PRMS_STRMFLOW_CHARACTER, ONLY: Seg_width
       IMPLICIT NONE
@@ -1428,7 +1428,7 @@
       REAL :: temp, totsh, sti
       REAL :: altop(3), aztop(3)
 ! PARAMETER
-      REAL, PARAMETER :: RADTOHOUR = 24.0/(2.0 * PI)
+      REAL, PARAMETER :: RADTOHOUR = 24.0/TWO_PI
 !*********************************************************************************
 
 ! if the segment has no width (no flow) set the return values to 0.0

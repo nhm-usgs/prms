@@ -143,7 +143,7 @@
       USE PRMS_CONSTANTS, ONLY: LAKE, DEBUG_less, ACTIVE, OFF
       USE PRMS_SMBAL
       USE PRMS_MODULE, ONLY: Nlake, Nowmonth, Nowday, Print_debug
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_perv, Hru_frac_perv, Lake_hru_id, &
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_area, Hru_perv, Hru_frac_perv, Lake_hru_id, &
      &    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type, Cov_type
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Potet, Hru_ppt, Basin_potet
       USE PRMS_FLOWVARS, ONLY: Basin_actet, Hru_actet, Soil_to_gw, Basin_soil_rechr, Cap_infil_tot, &

@@ -147,6 +147,7 @@ MODULE PRMS_CONSTANTS
     ! model_mode
     integer, parameter :: PRMS = 1
     integer, parameter :: STORM = 22
+    integer, parameter :: HOURLY = 23
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1

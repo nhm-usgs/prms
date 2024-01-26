@@ -20,10 +20,11 @@
 !***********************************************************************
       INTEGER FUNCTION prms_time()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, YEAR, MONTH, DAY, HOUR, MINUTE, &
-     &    ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time, &
-     &    CLEAN, DOCUMENTATION, SAVE_INIT, READ_INIT
+                                ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, &
+                                INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time, &
+                                CLEAN, DOCUMENTATION, SAVE_INIT, READ_INIT
       USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday, Dprst_flag, &
-                             Storm_mode_flag, Storm_flag, Init_vars_from_file, Save_vars_to_file, Model
+                             Storm_mode_flag, Storm_flag, Init_vars_from_file, Save_vars_to_file, Model, Hourly_flag
       USE PRMS_SET_TIME
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Ssres_stor, Basin_ssstor, &
@@ -132,13 +133,17 @@
 
         ! Check to see if in a daily or subdaily time step
         Storm_flag = OFF
-        IF ( Timestep_hours>24.0 ) THEN
+        IF ( Timestep_hours > 24.0D0 ) THEN
           PRINT *, 'ERROR, timestep > daily, fix Data File, timestep:', Timestep_hours
           ERROR STOP ERROR_time
-        ELSEIF ( Storm_mode_flag == ACTIVE ) THEN
-          PRINT *, 'ERROR, timestep < daily and model_mode not specified as STORM', Timestep_hours
-          ERROR STOP ERROR_time
-        ELSE
+        ELSEIF ( Timestep_hours < 24.0D0 ) THEN
+          IF ( Storm_mode_flag == OFF ) THEN
+            PRINT *, 'ERROR, timestep < daily and model_mode not specified as STORM or HOURLY', Timestep_hours
+            ERROR STOP ERROR_time
+          ELSEIF ( Hourly_flag == ACTIVE .AND. Timestep_hours /= 1.0D0 ) THEN
+            PRINT *, 'ERROR, timestep not hourly and model_mode specified as HOURLY', Timestep_hours
+            ERROR STOP ERROR_time
+          ENDIF
           Storm_flag = ACTIVE
         ENDIF
 

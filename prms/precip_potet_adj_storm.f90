@@ -19,7 +19,7 @@
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, SETDIMENS, MONTHS_PER_YEAR, MAXDIM
       USE PRMS_PRECIP_POTET_ADJ_STORM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow, Basin_potet, Hru_ppt, Hru_rain, Hru_snow, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_days, Storm_num
       IMPLICIT NONE
@@ -86,8 +86,8 @@
              'decimal fraction') /= 0 ) CALL read_error( 1, 'stsnow_adj' )
 
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( getparam(MODNAME, 'strain_adj', Nhru_months, 'double', Strain_adj) /= 0 ) CALL read_error(2, 'strain_adj')
-        IF ( getparam(MODNAME, 'stsnow_adj', Nhru_months, 'double', Stsnow_adj) /= 0 ) CALL read_error(2, 'stsnow_adj')
+        IF ( getparam(MODNAME, 'strain_adj', Nhru_nmonths, 'double', Strain_adj) /= 0 ) CALL read_error(2, 'strain_adj')
+        IF ( getparam(MODNAME, 'stsnow_adj', Nhru_nmonths, 'double', Stsnow_adj) /= 0 ) CALL read_error(2, 'stsnow_adj')
       ENDIF
 
       END SUBROUTINE precip_potet_adj_storm
