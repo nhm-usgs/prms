@@ -358,8 +358,8 @@
       Basin_pptexc = ZERO 
       DO jj = 1, Active_hrus
         i = Hru_route_order(jj)
-        Storm_precip(i) = Storm_precip(i) + DBLE(Hru_ppt(i))
-        Basin_storm_precip = Basin_storm_precip + DBLE(Hru_ppt(i))*Hru_area_dble(i)
+        Storm_precip(i) = Storm_precip(i) + Hru_ppt(i)
+        Basin_storm_precip = Basin_storm_precip + Hru_ppt(i)*Hru_area_dble(i)
         IF ( Hru_type(i)==LAKE ) CYCLE ! rsr, does not allow for cascading flow
         DO kk = 1, Ncdels
           Hru_rain_int(kk,i) = ZERO
@@ -390,20 +390,20 @@
         ENDIF
 
         ksat = Kpar(i)*Timestep_hours
-        availh2o = DBLE( Intcp_changeover(i) + Net_rain(i) ) ! no cascading Hortonian or glacier
+        availh2o = DBLE( Intcp_changeover(i) ) + Net_rain(i) ! no cascading Hortonian or glacier
         availh2o_total = DBLE( Intcp_changeover(i) )
-        IF ( Pptmix_nopack(i)==ACTIVE ) availh2o_total = availh2o_total + DBLE( Net_rain(i) )
+        IF ( Pptmix_nopack(i)==ACTIVE ) availh2o_total = availh2o_total + Net_rain(i)
 !*******If precipitation on snowpack all water available to the surface is considered to be snowmelt
 !*******If there is no snowpack and no precip,then check for melt from last of snowpack.
 !*******If rain/snow mix with no antecedent snowpack, compute snowmelt portion of runoff.
         IF ( Snowmelt(i)>0.0 ) THEN
-          availh2o_total = availh2o_total + Snowmelt(i)
+          availh2o_total = availh2o_total + DBLE(Snowmelt(i))
 !*******There was no snowmelt but a snowpack may exist.  If there is
 !*******no snowpack then check for rain on a snowfree HRU.
         ELSEIF ( .not.(Pkwater_equiv(i)<ZERO) .and. .not.(Pkwater_ante(i)>ZERO) ) THEN
 !         If no snowmelt and no snowpack but there was net snow then
 !         snowpack was small and was lost to sublimation.
-          IF ( Net_snow(i)<NEARZERO .AND. Net_rain(i)>0.0 ) availh2o_total = availh2o_total + DBLE( Net_rain(i) )
+          IF ( Net_snow(i)<DNEARZERO .AND. Net_rain(i)>0.0D0 ) availh2o_total = availh2o_total + Net_rain(i)
         ENDIF
 
         IF ( availh2o_total>ZERO ) THEN
@@ -452,8 +452,8 @@
         ENDIF
 
         ! no ET if precipitation
-        IF ( Hru_ppt(i)<NEARZERO ) THEN
-          avail_et = Potet(i) - Snow_evap(i) - Hru_intcpevap(i)
+        IF ( Hru_ppt(i)<DNEARZERO ) THEN
+          avail_et = sngl(Potet(i)) - Snow_evap(i) - Hru_intcpevap(i)
           IF ( imperv_flag==1 ) THEN
             CALL imperv_et(Imperv_stor(i), Potet(i), Imperv_evap(i), Snowcov_area(i), avail_et)
             Hru_impervevap(i) = Imperv_evap(i)*Imperv_frac

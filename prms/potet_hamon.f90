@@ -7,15 +7,15 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_hamon'
-        character(len=*), parameter :: Version_potet = '2024-01-22'
+        character(len=*), parameter :: Version_potet = '2024-01-25'
         DOUBLE PRECISION, PARAMETER :: ONE_12TH = 1.0D0/12.0D0
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Hamon_coef_sngl(:, :)
-        double precision, save, allocatable :: Hamon_coef(:, :)
+        DOUBLE PRECISION, save, allocatable :: Hamon_coef(:, :)
       END MODULE PRMS_POTET_HAMON
 
       INTEGER FUNCTION potet_hamon()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_HAMON
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
@@ -29,7 +29,7 @@
       EXTERNAL :: read_error, print_module
 ! Local Variables
       INTEGER :: i, j
-      double precision :: dyl, vpsat, vdsat
+      DOUBLE PRECISION :: dyl, vpsat, vdsat
 !***********************************************************************
       potet_hamon = 0
 
@@ -55,7 +55,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        ALLOCATE ( Hamon_coef(Nhru,12), Hamon_coef_sngl(Nhru,12) )
+        ALLOCATE ( Hamon_coef(Nhru,MONTHS_PER_YEAR), Hamon_coef_sngl(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'hamon_coef', 'nhru,nmonths', 'real', &
      &       '0.0055', '0.004', '0.008', &
      &       'Monthly air temperature coefficient - Hamon', &

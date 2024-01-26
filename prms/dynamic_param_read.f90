@@ -69,7 +69,7 @@
 !     dynparaminit - open files, read to start time, initialize flags and arrays
 !***********************************************************************
       INTEGER FUNCTION dynparaminit()
-        USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
+        USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
         USE PRMS_MODULE, ONLY: Nhru, Print_debug, Start_year, Start_month, Start_day, &
      &      Dyn_intcp_flag, Dyn_covden_flag, &
      &      Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
@@ -165,7 +165,7 @@
       ENDIF
 
       IF ( Dyn_potet_flag>OFF ) THEN
-        ALLOCATE ( Potet_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Potet_coef(Nhru,12) )
         IF ( control_string(potetcoef_dynamic, 'potetcoef_dynamic')/=0 ) CALL read_error(5, 'potetcoef_dynamic')
         CALL find_header_end(Potetcoef_unit, potetcoef_dynamic, ierr)
         IF ( ierr==0 ) THEN
@@ -444,7 +444,7 @@
             ELSEIF ( Et_flag==potet_hamon_module ) THEN
               Hamon_coef = Potet_coef
             ELSEIF ( Et_flag==potet_pan_module ) THEN
-              Epan_coef = Potet_coef
+              Epan_coef = DBLE( Potet_coef )
             ENDIF
           ENDIF
         ENDIF

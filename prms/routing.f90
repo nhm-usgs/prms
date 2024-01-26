@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2024-01-10'
+      character(len=*), parameter :: Version_routing = '2024-01-22'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades, special_seg_type_flag
@@ -14,7 +14,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:)
       !CHARACTER(LEN=32), SAVE :: Outfmt
       INTEGER, SAVE, ALLOCATABLE :: Ts_i(:)
-      REAL, SAVE, ALLOCATABLE :: Ts(:), C0(:), C1(:), C2(:)
+      double precision, save, allocatable :: Ts(:), C0(:), C1(:), C2(:)
 !   Declared Variables
       DOUBLE PRECISION, SAVE :: Basin_segment_storage
       DOUBLE PRECISION, SAVE :: Flow_to_lakes, Flow_to_ocean, Flow_to_great_lakes, Flow_out_region
@@ -314,12 +314,12 @@
       USE PRMS_FLOWVARS, ONLY: Seg_outflow, Seg_inflow
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: MOD, ABS
+      INTRINSIC :: MOD, DBLE
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error, write_outfile
+      EXTERNAL :: read_error, write_outfile, set_musk_coefs
 ! Local Variables
       INTEGER :: i, j, test, lval, toseg, iseg, isegerr, ierr, eseg
-      REAL :: k, x, d, x_max, velocity
+      REAL :: velocity
       INTEGER, ALLOCATABLE :: x_off(:)
       CHARACTER(LEN=10) :: buffer
 !**********************************************************************
@@ -402,8 +402,8 @@
       IF ( Init_vars_from_file==0 .OR. Init_vars_from_file==2 ) THEN
         IF ( getparam(MODNAME, 'segment_flow_init',  Nsegment, 'real', Segment_flow_init)/=0 ) &
      &       CALL read_error(2,'segment_flow_init')
+        Seg_outflow = DBLE( Segment_flow_init )
         DO i = 1, Nsegment
-          Seg_outflow(i) = Segment_flow_init(i)
           IF ( Tosegment(i)>0 ) Seg_inflow(Tosegment(i)) = Seg_outflow(i)
         ENDDO
         DEALLOCATE ( Segment_flow_init )
@@ -520,11 +520,11 @@
 !      on the values of K_coef and a routing period of 1 hour. See the notes
 !      at the top of this file.
 !
-      C0 = 0.0
-      C1 = 0.0
-      C2 = 0.0
+      C0 = 0.0D0
+      C1 = 0.0D0
+      C2 = 0.0D0
 !make sure K>0
-      Ts = 1.0
+      Ts = 1.0D0
       ierr = 0
       DO i = 1, Nsegment
         IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
@@ -533,113 +533,15 @@
           !K_coef(i) = Seg_length(i)*sqrt(1+ Seg_slope(i)**2)/(velocity*60.*60.) !want in hours
         ENDIF
 
-        IF ( Segment_type(i)==2 .AND. K_coef(i)<24.0 ) THEN
-          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments'
-          K_coef(i) = 24.0
-        ENDIF
-        IF ( K_coef(i)<0.01 ) K_coef(i) = 0.01 !make compliant with old version of K_coef
-        IF ( K_coef(i)>24.0 ) K_coef(i) = 24.0
-        k = K_coef(i)
-        x = X_coef(i)
-
-! check the values of k and x to make sure that Muskingum routing is stable
-
-        IF ( k<1.0 ) THEN
-!          IF ( Parameter_check_flag>0 ) THEN
-!            PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', i, ' has K_coef < 1.0,', k, &
-!     &              'this may produce unstable results'
-!              ierr = 1
-!          ENDIF
-!          Ts(i) = 0.0 ! not sure why this was set to zero, causes divide by 0 if K_coef < 1, BUG FIX 10/18/2016 RSR
-          Ts_i(i) = -1
-
-        ELSEIF ( k<2.0 ) THEN
-          Ts(i) = 1.0
-          Ts_i(i) = 1
-
-        ELSEIF ( k<3.0 ) THEN
-          Ts(i) = 2.0
-          Ts_i(i) = 2
-
-        ELSEIF ( k<4.0 ) THEN
-          Ts(i) = 3.0
-          Ts_i(i) = 3
-
-        ELSEIF ( k<6.0 ) THEN
-          Ts(i) = 4.0
-          Ts_i(i) = 4
-
-        ELSEIF ( k<8.0 ) THEN
-          Ts(i) = 6.0
-          Ts_i(i) = 6
-
-        ELSEIF ( k<12.0 ) THEN
-          Ts(i) = 8.0
-          Ts_i(i) = 8
-
-        ELSEIF ( k<24.0 ) THEN
-          Ts(i) = 12.0
-          Ts_i(i) = 12
-
-        ELSE
-          Ts(i) = 24.0
-          Ts_i(i) = 24
-
-        ENDIF
-
-!  x must be <= t/(2K) the C coefficents will be negative. Check for this for all segments
-!  with Ts >= minimum Ts (1 hour).
-        IF ( Ts(i)>0.1 ) THEN
-          x_max = Ts(i) / (2.0 * k)
-          IF ( x>x_max ) THEN
-            PRINT *, 'ERROR, x_coef value is too large for stable routing for segment:', i, ' x_coef:', x
-            PRINT *, '       a maximum value of:', x_max, ' is suggested'
-            Inputerror_flag = 1
-            CYCLE
-          ENDIF
-        ENDIF
-
-        d = k - (k * x) + (0.5 * Ts(i))
-        IF ( ABS(d)<NEARZERO ) THEN
-          IF ( Parameter_check_flag>0 ) PRINT *, 'WARNING, segment ', i, ' computed value d <', NEARZERO, ', set to 0.0001'
-          d = 0.0001
-        ENDIF
-        C0(i) = (-(k * x) + (0.5 * Ts(i))) / d
-        C1(i) = ((k * x) + (0.5 * Ts(i))) / d
-        C2(i) = (k - (k * x) - (0.5 * Ts(i))) / d
-
-        ! the following code was in the original musroute, but, not in Linsley and others
-        ! rsr, 3/1/2016 - having < 0 coefficient can cause negative flows as found by Jacob in GCPO headwater
-!  if c2 is <= 0.0 then  short travel time though reach (less daily
-!  flows), thus outflow is mainly = inflow w/ small influence of previous
-!  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
-
-!  if c0 is <= 0.0 then long travel time through reach (greater than daily
-!  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
-!  c2 as is, reduce c1 by c0 and set c0=0
-! SHORT travel time
-        IF ( C2(i)<0.0 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
-            PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
-          ENDIF
-          C1(i) = C1(i) + C2(i)
-          C2(i) = 0.0
-        ENDIF
-
-! LONG travel time
-        IF ( C0(i)<0.0 ) THEN
-          IF ( Parameter_check_flag>0 ) THEN
-            PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
-            PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
-          ENDIF
-          C1(i) = C1(i) + C0(i)
-          C0(i) = 0.0
-        ENDIF
+        CALL set_musk_coefs(i, K_coef(i), X_coef(i), C0(i), C1(i), C2(i), Ts(i), Ts_i(i), Segment_type(i), ierr)
 
       ENDDO
+
+! exit if there are any segments that are too short
+      IF ( ierr == 2 ) THEN
+         Inputerror_flag = 1
+         RETURN
+      ENDIF
       IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
       DEALLOCATE ( K_coef, X_coef)
 
@@ -649,12 +551,12 @@
 !     route_run - Computes segment flow states and fluxes
 !***********************************************************************
       INTEGER FUNCTION route_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, OUTFLOW_SEGMENT, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, FT2_PER_ACRE, DNEARZERO, OUTFLOW_SEGMENT, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
+     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT, GLACIER
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag
       USE PRMS_ROUTING
-      USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_route_order, Active_hrus, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
       USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow !, Seg_outflow
@@ -671,6 +573,8 @@
       LOGICAL :: found
 !***********************************************************************
       route_run = 0
+
+      Cfs2acft = Timestep_seconds/FT2_PER_ACRE
 
 ! seg variables are not computed if cascades are active as hru_segment is ignored
       IF ( Hru_seg_cascades==ACTIVE ) THEN
@@ -693,24 +597,24 @@
 
       DO jj = 1, Active_hrus
         j = Hru_route_order(jj)
-        tocfs = DBLE( Hru_area(j) )*Cfs_conv
+        tocfs = Hru_area_dble(j)*Cfs_conv
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-        IF ( Glacier_flag==ACTIVE ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
+        IF ( Hru_type(j)==GLACIER ) Hru_outflow(j) = Hru_outflow(j) + DBLE( Glacr_flow(j) ) / 1728.0D0 / Timestep_seconds
         IF ( Hru_seg_cascades==ACTIVE ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
-            Seg_gwflow(i) = Seg_gwflow(i) + Gwres_flow(j)
-            Seg_sroff(i) = Seg_sroff(i) + Sroff(j)
-            Seg_ssflow(i) = Seg_ssflow(i) + Ssres_flow(j)
+            Seg_gwflow(i) = Seg_gwflow(i) + DBLE( Gwres_flow(j) )
+            Seg_sroff(i) = Seg_sroff(i) + DBLE( Sroff(j) )
+            Seg_ssflow(i) = Seg_ssflow(i) + DBLE( Ssres_flow(j) )
             ! if cascade_flag = CASCADE_HRU_SEGMENT, seg_lateral_inflow set with strm_seg_in
             IF ( Cascade_flag==CASCADE_OFF ) Seg_lateral_inflow(i) = Seg_lateral_inflow(i) + Hru_outflow(j)
             Seginc_sroff(i) = Seginc_sroff(i) + DBLE( Sroff(j) )*tocfs
             Seginc_ssflow(i) = Seginc_ssflow(i) + DBLE( Ssres_flow(j) )*tocfs
             Seginc_gwflow(i) = Seginc_gwflow(i) + DBLE( Gwres_flow(j) )*tocfs
-            Seginc_swrad(i) = Seginc_swrad(i) + DBLE( Swrad(j)*Hru_area(j) )
-            Seginc_potet(i) = Seginc_potet(i) + DBLE( Potet(j)*Hru_area(j) )
+            Seginc_swrad(i) = Seginc_swrad(i) + Swrad(j)*Hru_area_dble(j)
+            Seginc_potet(i) = Seginc_potet(i) + Potet(j)*Hru_area_dble(j)
           ENDIF
         ENDIF
       ENDDO
@@ -735,7 +639,7 @@
       ELSE !     IF ( Noarea_flag==ACTIVE ) THEN
         DO i = 1, Nsegment
 ! This reworked by markstrom
-          IF ( Segment_hruarea(i)>NEARZERO ) THEN
+          IF ( Segment_hruarea(i)>DNEARZERO ) THEN
             Seginc_swrad(i) = Seginc_swrad(i)/Segment_hruarea(i)
             Seginc_potet(i) = Seginc_potet(i)/Segment_hruarea(i)
           ELSE
@@ -744,7 +648,7 @@
             this_seg = i
             found = .false.
             do
-              if (Segment_hruarea(this_seg) <= NEARZERO) then
+              if (Segment_hruarea(this_seg) <= DNEARZERO) then
 
                  ! Hit the headwater segment without finding any HRUs (i.e. sources of streamflow)
                  if (segment_up(this_seg) == 0) then
@@ -769,7 +673,7 @@
               this_seg = i
               found = .false.
               do
-                if (Segment_hruarea(this_seg) <= NEARZERO) then
+                if (Segment_hruarea(this_seg) <= DNEARZERO) then
 
                    ! Hit the terminal segment without finding any HRUs (i.e. sources of streamflow)
                    if (Tosegment(this_seg) == OUTFLOW_SEGMENT) then
@@ -791,8 +695,8 @@
               if (.not. found) then
 !                write(*,*) "route_run: no upstream or downstream HRU found for segment ", i
 !                write(*,*) "    no values for seginc_swrad and seginc_potet"
-                Seginc_swrad(i) = -99.9
-                Seginc_potet(i) = -99.9
+                Seginc_swrad(i) = -99.9D0
+                Seginc_potet(i) = -99.9D0
               endif
             endif
           ENDIF
@@ -800,6 +704,119 @@
       ENDIF
 
       END FUNCTION route_run
+
+!***********************************************************************
+!     set_musk_coefs - compute Muskingum coefficients
+!***********************************************************************
+    SUBROUTINE set_musk_coefs( Segment, K_coef, X_coef, C0, C1, C2, Ts, Ts_i, Segment_type, ierr )
+      USE PRMS_CONSTANTS, ONLY: LAKE
+      IMPLICIT NONE
+      ! Arguments
+      INTEGER, INTENT(IN) :: Segment_type, Segment
+      REAL, INTENT(IN) :: X_coef
+      REAL, INTENT(INOUT) :: K_coef
+      double precision, INTENT(OUT) :: Ts, C0, C1, C2
+      INTEGER, INTENT(OUT) :: Ts_i
+      INTEGER, INTENT(INOUT) :: ierr
+      ! Functions
+      INTRINSIC :: DBLE, ABS
+      ! Local Variables
+      double precision :: k, x, x_max, d
+!***********************************************************************
+      IF ( Segment_type==LAKE .AND. K_coef<24.0 ) THEN
+        PRINT *, 'WARNING, K_coef must be specified = 24.0 for lake segments, set to 24.0'
+        K_coef = 24.0
+        ierr = 1
+      ENDIF
+      IF ( K_coef<0.01 ) K_coef = 0.01 !make compliant with old version of K_coef
+      IF ( K_coef>24.0 ) K_coef = 24.0
+      k = DBLE( K_coef )
+      x = DBLE( X_coef )
+
+! check the values of k and x to make sure that Muskingum routing is stable
+      IF ( k<1.0D0 ) THEN
+          PRINT '(/,A,I6,A,F6.2,/,9X,A,/)', 'WARNING, segment ', Segment, ' has K_coef < 1.0,', k, &
+     &                                      ' this may produce unstable results'
+         ierr = 1
+!        Ts = 0.0D0 ! not sure why this was set to zero, causes divide by 0 if K_coef < 1, BUG FIX 10/18/2016 RSR
+        Ts_i = -1
+      ELSEIF ( k<2.0D0 ) THEN
+        Ts = 1.0D0
+        Ts_i = 1
+      ELSEIF ( k<3.0D0 ) THEN
+        Ts = 2.0D0
+        Ts_i = 2
+      ELSEIF ( k<4.0D0 ) THEN
+        Ts = 3.0D0
+        Ts_i = 3
+      ELSEIF ( k<6.0D0 ) THEN
+        Ts = 4.0D0
+        Ts_i = 4
+      ELSEIF ( k<8.0D0 ) THEN
+        Ts = 6.0D0
+        Ts_i = 6
+      ELSEIF ( k<12.0D0 ) THEN
+        Ts = 8.0D0
+        Ts_i = 8
+      ELSEIF ( k<24.0D0 ) THEN
+        Ts = 12.0D0
+        Ts_i = 12
+      ELSE
+        Ts = 24.0D0
+        Ts_i = 24
+      ENDIF
+
+!  x must be <= t/(2K) the C coefficents will be negative. Check for this for all segments
+!  with Ts >= minimum Ts (1 hour).
+      IF ( Ts>0.1D0 ) THEN
+        x_max = Ts / (2.0D0 * k)
+        IF ( x>x_max ) THEN
+          PRINT *, 'ERROR, x_coef value is too large for stable routing for segment:', Segment, ' x_coef:', x
+          PRINT *, '       a maximum value of:', x_max, ' is suggested'
+          ierr = 2
+        ENDIF
+      ENDIF
+
+      d = k - (k * x) + (0.5D0 * Ts)
+      IF ( ABS(d)<0.0001D0 ) THEN
+        PRINT *, 'WARNING, segment ', Segment, ' computed value d <', 0.0001, ', set to 0.0001'
+        d = 0.0001D0
+        ierr = 1
+      ENDIF
+      C0 = (-(k * x) + (0.5D0 * Ts)) / d
+      C1 = ((k * x) + (0.5D0 * Ts)) / d
+      C2 = (k - (k * x) - (0.5D0 * Ts)) / d
+
+      ! the following code was in the original musroute, but, not in Linsley and others
+      ! rsr, 3/1/2016 - having < 0 coefficient can cause negative flows as found by Jacob in GCPO headwater
+!  if c2 is <= 0.0 then  short travel time though reach (less daily
+!  flows), thus outflow is mainly = inflow w/ small influence of previous
+!  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
+
+!  if c0 is <= 0.0 then long travel time through reach (greater than daily
+!  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
+!  c2 as is, reduce c1 by c0 and set c0=0
+! SHORT travel time
+      IF ( C2<0.0D0 ) THEN
+        PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
+        PRINT *, '        old c2:', C2, '; old c1:', C1, '; new c1:', C1 + C2
+        PRINT *, '        K_coef:', K_coef, '; x_coef:', X_coef, '; segment:', Segment
+        C1 = C1 + C2
+        C2 = 0.0D0
+        ierr = 1
+      ENDIF
+
+! LONG travel time
+      IF ( C0<0.0D0 ) THEN
+        PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
+        PRINT *, '      old c0:', C0, 'old c1:', C1, 'new c1:', C1 + C0
+        PRINT *, '      K_coef:', K_coef, '; x_coef:', X_coef, '; segment:', Segment
+        C1 = C1 + C0
+        C0 = 0.0D0
+        ierr = 1
+      ENDIF
+
+      END SUBROUTINE set_musk_coefs
 
 !***********************************************************************
 !     routing_restart - write or read restart file

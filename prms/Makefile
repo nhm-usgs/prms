@@ -23,7 +23,6 @@ OBJS = \
         climateflow.o \
         cascade.o \
         soltab.o \
-        setup_param.o \
         convert_params.o \
         prms_time.o \
         obs.o \
@@ -53,6 +52,7 @@ OBJS = \
         glacr_melt.o \
         srunoff.o \
         soilzone.o \
+        soilzone_ag.o \
         gwflow.o \
         water_use_read.o \
         dynamic_param_read.o \
@@ -93,9 +93,6 @@ prms_constants.o: prms_constants.f90
 
 call_modules.o: call_modules.f90 prms_constants.mod
 	$(FC) -c $(FFLAGS) call_modules.f90
-
-setup_param.o: setup_param.f90 prms_module.mod prms_constants.mod
-	$(FC) -c $(FFLAGS) setup_param.f90
 
 basin_sum.o: basin_sum.f90 prms_module.mod prms_flowvars.mod prms_intcp.mod prms_snow.mod prms_srunoff.mod prms_gwflow.mod prms_basin.mod prms_climatevars.mod prms_set_time.mod prms_obs.mod prms_muskingum.mod prms_constants.mod prms_glacr.mod prms_routing.mod prms_muskingum_lake.mod
 	$(FC) -c $(FFLAGS) basin_sum.f90
@@ -262,6 +259,9 @@ convert_params.o: convert_params.f90 prms_module.mod prms_constants.mod
 glacr_melt.o: glacr_melt.f90 prms_snow.mod prms_intcp.mod prms_soltab.mod prms_constants.mod prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod
 	$(FC) -c $(FFLAGS) glacr_melt.f90
 
+soilzone_ag.o: soilzone_ag.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_snow.mod prms_climatevars.mod prms_cascade.mod prms_set_time.mod prms_intcp.mod prms_srunoff.mod prms_constants.mod prms_climate_hru.mod
+	$(FC) -c $(FFLAGS) soilzone_ag.f90
+
 segment_to_hru.o: segment_to_hru.f90 prms_module.mod prms_basin.mod prms_flowvars.mod prms_set_time.mod prms_constants.mod prms_soilzone.mod
 	$(FC) -c $(FFLAGS) segment_to_hru.f90
 
@@ -278,6 +278,7 @@ prms_snow.mod: snowcomp.o
 prms_cascade.mod: cascade.o
 prms_srunoff.mod: srunoff.o
 prms_soilzone.mod: soilzone.o
+prms_soilzone_ag.mod: soilzone_ag.o
 prms_routing.mod: routing.o
 prms_water_use.mod: water_use_read.o
 prms_set_time.mod: prms_time.o

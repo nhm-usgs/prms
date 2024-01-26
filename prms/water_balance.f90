@@ -8,8 +8,7 @@
         character(len=*), parameter :: MODNAME_WB = 'water_balance'
         character(len=*), parameter :: Version_water_balance = '2024-01-16'
         INTEGER, SAVE :: BALUNT, SZUNIT, GWUNIT, INTCPUNT, SROUNIT, SNOWUNIT
-        REAL, PARAMETER :: TOOSMALL = 1.0E-05, SMALL = 1.0E-04, BAD = 1.0E-03
-        DOUBLE PRECISION, PARAMETER :: DSMALL = 1.0D-04, DTOOSMALL = 1.0D-05
+        DOUBLE PRECISION, PARAMETER :: DSMALL = 1.0D-04, DTOOSMALL = 1.0D-05, BAD = 1.0D-03
         DOUBLE PRECISION, SAVE :: Last_basin_gwstor, Basin_dprst_wb
         DOUBLE PRECISION, ALLOCATABLE, SAVE :: Hru_storage_ante(:), Gwstor_ante(:)
 !   Declared Variables
@@ -186,13 +185,13 @@
      &    Gwminarea_flag, Gwstor_minarea_wb, Gwin_dprst, Gwres_in
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: ABS, DBLE, SNGL, DABS
+      INTRINSIC :: DBLE, SNGL, DABS
 ! Local Variables
       INTEGER :: i, k
-      REAL :: last_sm, last_ss, soilbal, perv_frac, gvrbal, test, waterin, waterout, hrubal
-      REAL :: delstor, robal, gmelt, availh2o_total, dprst_stor
-      DOUBLE PRECISION :: basin_bal, bsmbal, soil_in, gwbal, gwup, basin_robal, bsnobal
-      DOUBLE PRECISION :: hru_out, hru_in, wbal, delta_stor, pptbal, brobal, dprst_hru_wb, harea
+      REAL :: last_sm, last_ss, perv_frac, waterin, waterout
+      REAL :: delstor, gmelt, dprst_stor
+      DOUBLE PRECISION :: basin_bal, bsmbal, soil_in, gwbal, gwup, basin_robal, bsnobal, availh2o_total, soilbal, gvrbal
+      DOUBLE PRECISION :: hru_out, hru_in, wbal, delta_stor, pptbal, brobal, dprst_hru_wb, harea, robal, hrubal, test
       CHARACTER(LEN=24), PARAMETER :: fmt1 = '(A, I5, 2("/",I2.2), /)'
 !***********************************************************************
       Basin_capillary_wb = 0.0D0
@@ -214,11 +213,11 @@
 
         ! intcp
         delstor = Hru_intcpstor(i) - Intcp_stor_ante(i)
-        hrubal = Hru_rain(i) + Hru_snow(i) - Net_rain(i) - Net_snow(i) &
+        hrubal = SNGL(Hru_rain(i) + Hru_snow(i) - Net_rain(i) - Net_snow(i)) &
      &           - delstor - Hru_intcpevap(i) - Intcp_changeover(i)
         IF ( Use_transfer_intcp==ACTIVE ) hrubal = hrubal + Gain_inches(i) - Net_apply(i)
-        IF ( ABS(hrubal)>TOOSMALL ) THEN
-          IF ( ABS(hrubal)>SMALL ) THEN
+        IF ( DABS(hrubal)>DTOOSMALL ) THEN
+          IF ( DABS(hrubal)>DSMALL ) THEN
             WRITE ( BALUNT, * ) 'Possible HRU interception water balance error'
           ELSE
             WRITE ( BALUNT, * ) 'Interception HRU rounding issue'
@@ -235,12 +234,12 @@
         IF ( It0_pkwater_equiv(i)>0.0D0 .OR. Newsnow(i)==ACTIVE ) THEN
           hrubal = SNGL( It0_pkwater_equiv(i) - Pkwater_equiv(i) ) - Snow_evap(i) - Snowmelt(i)
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
-            hrubal = hrubal + Net_snow(i)
+            hrubal = hrubal + SNGL(Net_snow(i))
           ELSE
             hrubal = hrubal + Net_ppt(i)
           ENDIF
-          IF ( ABS(hrubal)>TOOSMALL ) THEN
-            IF ( ABS(hrubal)>SMALL ) THEN
+          IF ( DABS(hrubal)>DTOOSMALL ) THEN
+            IF ( DABS(hrubal)>DSMALL ) THEN
               WRITE ( BALUNT, * ) 'Possible HRU snow water balance error'
             ELSE
               WRITE ( BALUNT, * ) 'Possible HRU snow rounding issue'
@@ -261,30 +260,30 @@
 !*******no snowpack then check for rain on a snowfree HRU.
 !         If no snowmelt and no snowpack but there was net snow then
 !         snowpack was small and was lost to sublimation.
-        IF ( Glacier_flag==ACTIVE ) availh2o_total = availh2o_total + Glacrb_melt(i)
+        IF ( Glacier_flag==ACTIVE ) availh2o_total = availh2o_total + DBLE(Glacrb_melt(i))
         IF ( Use_transfer_intcp==ACTIVE ) availh2o_total = availh2o_total + Net_apply(i)
 
-        IF ( Net_ppt(i)>0.0 ) THEN
+        IF ( Net_ppt(i)>0.0D0 ) THEN
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             availh2o_total = availh2o_total + Net_rain(i)
           ELSEIF ( .not.(Snowmelt(i)>0.0) .AND. .not.(Pkwater_equiv(i)>0.0D0) .and. .not.(It0_pkwater_equiv(i)>0.0D0) ) THEN
             IF ( .not.(Snow_evap(i)>0.0) ) THEN
               availh2o_total = availh2o_total + Net_ppt(i)
-            ELSEIF ( .not.(Net_snow(i)>0.0) ) THEN
+            ELSEIF ( .not.(Net_snow(i)>0.0D0) ) THEN
               availh2o_total = availh2o_total + Net_rain(i)
             ENDIF
-            !IF ( Net_snow(i)<NEARZERO ) availh2o_total = availh2o_total + Net_rain(i)
+            !IF ( Net_snow(i)<DNEARZERO ) availh2o_total = availh2o_total + Net_rain(i)
             !??  IF ( frzen==1 ) availh2o_total = availh2o_total + Net_rain(i)
           ENDIF
         ENDIF
-        robal = availh2o_total - Hortonian_flow(i) & !includes dprst runoff, if any
-     &          - Infil(i)*perv_frac - Hru_impervevap(i) + It0_hru_impervstor(i) - Hru_impervstor(i)
-        IF ( Cascade_flag>CASCADE_OFF ) robal = robal + SNGL( Upslope_hortonian(i) - Hru_hortn_cascflow(i) )
-        IF ( Dprst_flag==ACTIVE ) robal = robal - Dprst_evap_hru(i) + &
-     &                                    SNGL( It0_dprst_stor_hru(i) - Dprst_stor_hru(i) - Dprst_seep_hru(i) ) !- Dprst_in(i) - Dprst_insroff_hru(i)
+        robal = availh2o_total - DBLE( Hortonian_flow(i) & !includes dprst runoff, if any
+     &          - Infil(i)*perv_frac - Hru_impervevap(i) + It0_hru_impervstor(i) - Hru_impervstor(i) )
+        IF ( Cascade_flag>CASCADE_OFF ) robal = robal + Upslope_hortonian(i) - Hru_hortn_cascflow(i)
+        IF ( Dprst_flag==ACTIVE ) robal = robal - DBLE( Dprst_evap_hru(i) ) + &
+     &                                    It0_dprst_stor_hru(i) - Dprst_stor_hru(i) - Dprst_seep_hru(i) !- Dprst_in(i) - Dprst_insroff_hru(i)
         gmelt = 0.0
-        basin_robal = basin_robal + DBLE( robal )
-        IF ( ABS(robal)>TOOSMALL ) THEN
+        basin_robal = basin_robal + robal
+        IF ( DABS(robal)>DTOOSMALL ) THEN
           IF ( Dprst_flag==ACTIVE ) THEN
             dprst_hru_wb = It0_dprst_stor_hru(i) - Dprst_stor_hru(i) - Dprst_seep_hru(i) - Dprst_sroff_hru(i) + Dprst_in(i) &
      &                     - DBLE( Dprst_evap_hru(i) ) + DBLE( Dprst_insroff_hru(i) )
@@ -295,7 +294,7 @@
      &              (Dprst_vol_open(i)+Dprst_vol_clos(i))/harea, Dprst_area_max(i), &
      &              Dprst_area_clos(i), Dprst_in(i), Sro_to_dprst_perv(i)
           ENDIF
-          IF ( ABS(robal)>SMALL ) THEN
+          IF ( DABS(robal)>DSMALL ) THEN
             WRITE ( BALUNT, '(A,F0.6,A,I0,A,1X,I0)') 'Possible HRU surface runoff water balance ERROR, ', robal, '; HRU: ', i, &
      &                                         '; hru_type:', Hru_type(i)
           ELSE
@@ -318,19 +317,19 @@
         last_sm = It0_soil_moist(i)
         last_ss = It0_ssres_stor(i)
 
-        soilbal = (last_sm - Soil_moist(i) - Perv_actet(i))*perv_frac - Soil_to_ssr(i) - Soil_to_gw(i) + Cap_infil_tot(i)
-        IF ( ABS(soilbal)>TOOSMALL ) THEN
+        soilbal = DBLE( (last_sm - Soil_moist(i) - Perv_actet(i))*perv_frac - Soil_to_ssr(i) - Soil_to_gw(i) + Cap_infil_tot(i) )
+        IF ( DABS(soilbal)>DTOOSMALL ) THEN
           WRITE ( BALUNT, * ) 'HRU capillary problem, HRU:', i
           WRITE ( BALUNT, * ) soilbal, Cap_infil_tot(i), last_sm, Soil_moist(i), Perv_actet(i), Soil_to_ssr(i), &
      &                        Soil_to_gw(i), i, Infil(i), Pref_flow_infil(i), perv_frac, &
      &                        Soil_moist_max(i), Cap_waterin(i), gmelt
           IF ( Cascade_flag>CASCADE_OFF ) WRITE ( BALUNT, * ) 'UP cascade', Upslope_interflow(i), Upslope_dunnianflow(i)
         ENDIF
-        gvrbal = last_ss - Ssres_stor(i) + Soil_to_ssr(i) - Ssr_to_gw(i) - Swale_actet(i) - Dunnian_flow(i) &
-     &           - Ssres_flow(i) + Pfr_dunnian_flow(i) + Pref_flow_infil(i)
+        gvrbal = DBLE( last_ss - Ssres_stor(i) + Soil_to_ssr(i) - Ssr_to_gw(i) - Swale_actet(i) - Dunnian_flow(i) &
+     &           - Ssres_flow(i) + Pfr_dunnian_flow(i) + Pref_flow_infil(i) )
         IF ( Cascade_flag>CASCADE_OFF ) gvrbal = gvrbal - Hru_sz_cascadeflow(i)
-        test = ABS( gvrbal )
-        IF ( test>TOOSMALL ) THEN
+        test = DABS( gvrbal )
+        IF ( test>DTOOSMALL ) THEN
           WRITE ( BALUNT, * ) 'Bad GVR balance, HRU:', i, ' hru_type:', Hru_type(i)
           WRITE ( BALUNT, * ) gvrbal, last_ss, Ssres_stor(i), Ssr_to_gw(i), Swale_actet(i), &
      &            Dunnian_flow(i), Ssres_flow(i), Pfr_dunnian_flow(i), Pref_flow_thrsh(i), Ssres_in(i), &
@@ -344,15 +343,15 @@
      &             + Dunnian_flow(i)
         IF ( Cascade_flag>CASCADE_OFF ) waterout = waterout + Hru_sz_cascadeflow(i)
         soil_in = soil_in + DBLE(Infil(i)*perv_frac)*harea
-        soilbal = waterin - waterout + last_ss - Ssres_stor(i) + (last_sm-Soil_moist(i))*perv_frac
-        basin_bal = basin_bal + DBLE(soilbal)*harea
-        test = ABS( soilbal )
-        IF ( test>TOOSMALL ) THEN
+        soilbal = DBLE( waterin - waterout + last_ss - Ssres_stor(i) + (last_sm-Soil_moist(i))*perv_frac )
+        basin_bal = basin_bal + soilbal*harea
+        test = DABS( soilbal )
+        IF ( test>DTOOSMALL ) THEN
 !          IF ( test>Ssres_stor(i)*TOOSMALL ) THEN
           WRITE ( BALUNT, * ) 'HRU:', i, ' Hru_type:', Hru_type(i)
           IF ( test>BAD ) THEN
             WRITE ( BALUNT, * ) 'HRU soilzone water balance ***ERROR***'
-          ELSEIF ( test>SMALL ) THEN
+          ELSEIF ( test>DSMALL ) THEN
             WRITE ( BALUNT, * ) 'Possible soilzone HRU water balance ERROR'
           ELSE
             WRITE ( BALUNT, * ) 'Possible soilzone HRU water balance rounding issue'
@@ -369,7 +368,7 @@
         ENDIF
 
         hru_out = DBLE( Sroff(i) + Gwres_flow(i) + Ssres_flow(i) + Hru_actet(i) + Gwres_sink(i) )
-        hru_in = DBLE( Hru_ppt(i) ) !+ Intcp_changeover(i) ! need water use input
+        hru_in = Hru_ppt(i) !+ Intcp_changeover(i) ! need water use input
         IF ( Cascade_flag>CASCADE_OFF ) THEN
           hru_out = hru_out + DBLE( Hru_sz_cascadeflow(i) ) + Hru_hortn_cascflow(i)
           hru_in = hru_in + Upslope_dunnianflow(i) + Upslope_interflow(i) + Upslope_hortonian(i)

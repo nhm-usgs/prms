@@ -964,7 +964,7 @@
         IF ( Hru_type(k)/=LAKE ) CYCLE
         tocfs = Hru_area_dble(k)*Cfs_conv
         lakeid = Lake_hru_id(k)
-        Lake_precip(lakeid) = Lake_precip(lakeid) + tocfs*DBLE(Hru_ppt(k))
+        Lake_precip(lakeid) = Lake_precip(lakeid) + tocfs*Hru_ppt(k)
         IF ( Cascade_flag>CASCADE_OFF ) THEN
           Lake_sroff(lakeid) = Lake_sroff(lakeid) + tocfs*(Hortonian_lakes(k)+Upslope_dunnianflow(k))
           Lake_interflow(lakeid) = Lake_interflow(lakeid) + tocfs*Upslope_interflow(k)
