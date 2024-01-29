@@ -19,7 +19,7 @@
 
 !***********************************************************************
       INTEGER FUNCTION potet_pt()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths, OFF, INCH2CM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PT
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_meters
@@ -156,7 +156,7 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pt_alpha(Nhru,MONTHS_PER_YEAR), Pt_alpha_sngl(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pt_alpha(Nhru,Nmonths), Pt_alpha_sngl(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'pt_alpha', 'nhru,nmonths', 'real', &
      &       '1.26', '1.0', '2.0', &
      &       'Potential ET adjustment factor - Priestly-Taylor', &

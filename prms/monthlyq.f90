@@ -213,7 +213,7 @@
 !     Subroutine PrintFlows
 !***********************************************
       SUBROUTINE PrintFlows( )
-	  USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
+	  USE PRMS_CONSTANTS, ONLY: Nmonths
       USE PRMS_MONTHLYQ, ONLY: Cum, Monavg, Cnt, Active_segments, Sum_flag, Oldyear, Counter, Out_unit
       IMPLICIT NONE
 ! Local Variables
@@ -234,9 +234,9 @@
       DO i = 1, Cnt
         j = Active_segments(i)
         IF ( Sum_flag==0 ) THEN
-          WRITE ( Out_unit+i, '(I7, 13F8.1)' ) Oldyear + 1, (Monavg(k,j), k = 10, MONTHS_PER_YEAR), (Monavg(k,j), k=1,9), Monavg(13, j)
+          WRITE ( Out_unit+i, '(I7, 13F8.1)' ) Oldyear + 1, (Monavg(k,j), k = 10, Nmonths), (Monavg(k,j), k=1,9), Monavg(13, j)
         ELSE
-          WRITE ( Out_unit+i, '(I7, 13F8.1)' ) Oldyear + 1, (Cum(k,j), k = 10, MONTHS_PER_YEAR), (Cum(k,j), k=1,9), Cum(13, j)
+          WRITE ( Out_unit+i, '(I7, 13F8.1)' ) Oldyear + 1, (Cum(k,j), k = 10, Nmonths), (Cum(k,j), k=1,9), Cum(13, j)
         ENDIF
 
 !     clear the arrays

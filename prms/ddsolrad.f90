@@ -22,7 +22,7 @@
       END MODULE PRMS_DDSOLRAD
 
       INTEGER FUNCTION ddsolrad()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, MONTHS_PER_YEAR, ACTIVE, OFF
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, DEBUG_less, Nmonths, ACTIVE, OFF
       USE PRMS_MODULE, ONLY: Process_flag, Print_debug, Nhru, Nsol, Nowmonth, Nhru_nmonths
       USE PRMS_DDSOLRAD
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble, Basin_area_inv
@@ -140,31 +140,31 @@
         CALL print_module(MODDESC, MODNAME, Version_ddsolrad)
 
         ! Declare Parameters
-        ALLOCATE ( Dday_slope(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Dday_slope(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'dday_slope', 'nhru,nmonths', 'real', &
      &       '0.4', '0.1', '1.4', &
      &       'Slope in temperature degree-day relationship', &
      &       'Monthly (January to December) slope in degree-day equation for each HRU', &
      &       'dday/temp_units')/=0 ) CALL read_error(1, 'dday_slope')
-        ALLOCATE ( Dday_intcp(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Dday_intcp(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'dday_intcp', 'nhru,nmonths', 'real', &
      &       '-40.0', '-60.0', '10.0', &
      &       'Intercept in temperature degree-day relationship', &
      &       'Monthly (January to December) intercept in degree-day equation for each HRU', &
      &       'dday')/=0 ) CALL read_error(1, 'dday_intcp')
-        ALLOCATE ( Radadj_slope(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Radadj_slope(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'radadj_slope', 'nhru,nmonths', 'real', &
      &       '0.0', '0.0', '1.0', &
      &       'Slope in air temperature range adjustment to degree-day equation', &
      &       'Monthly (January to December) slope in air temperature range adjustment to degree-day equation for each HRU', &
      &       'dday/temp_units')/=0 ) CALL read_error(1, 'radadj_slope')
-        ALLOCATE ( Radadj_intcp(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Radadj_intcp(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'radadj_intcp', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '1.0', &
      &       'Intercept in air temperature range adjustment to degree-day equation', &
      &       'Monthly (January to December) intercept in air temperature range adjustment to degree-day equation for each HRU', &
      &       'dday')/=0 ) CALL read_error(1, 'radadj_intcp')
-        ALLOCATE ( Tmax_index(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmax_index(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'tmax_index', 'nhru,nmonths', 'real', &
      &       '50.0', '-10.0', '110.0', &
      &       'Monthly index temperature', &

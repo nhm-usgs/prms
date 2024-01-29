@@ -36,7 +36,7 @@
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, MAXDIM, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, DEBUG_less
+     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, Nmonths, DEBUG_less
       USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
@@ -418,7 +418,7 @@
 
 !   Declared Parameters
         IF ( Climate_temp_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-          ALLOCATE ( Tmax_cbh_adj(Nhru,MONTHS_PER_YEAR) )
+          ALLOCATE ( Tmax_cbh_adj(Nhru,Nmonths) )
           IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
      &         'Monthly maximum temperature adjustment factor for each HRU', &
@@ -426,7 +426,7 @@
      &         ' estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj')
 
-          ALLOCATE ( Tmin_cbh_adj(Nhru,MONTHS_PER_YEAR) )
+          ALLOCATE ( Tmin_cbh_adj(Nhru,Nmonths) )
           IF ( declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
      &         'Monthly minimum temperature adjustment factor for each HRU', &
@@ -436,7 +436,7 @@
         ENDIF
 
         IF ( Climate_precip_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-          ALLOCATE ( Rain_cbh_adj(Nhru,MONTHS_PER_YEAR) )
+          ALLOCATE ( Rain_cbh_adj(Nhru,Nmonths) )
           IF ( declparam(MODNAME, 'rain_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '2.0', &
      &         'Rain adjustment factor, by month for each HRU', &
@@ -445,7 +445,7 @@
      &         ' each HRU to account for differences in elevation, and so forth', &
      &         'decimal fraction')/=0 ) CALL read_error(1, 'rain_cbh_adj')
 
-          ALLOCATE ( Snow_cbh_adj(Nhru,MONTHS_PER_YEAR) )
+          ALLOCATE ( Snow_cbh_adj(Nhru,Nmonths) )
           IF ( declparam(MODNAME, 'snow_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '2.0', &
      &         'Snow adjustment factor, by month for each HRU', &
@@ -456,7 +456,7 @@
         ENDIF
 
         IF ( Climate_potet_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-          ALLOCATE ( Potet_cbh_adj(Nhru,MONTHS_PER_YEAR) )
+          ALLOCATE ( Potet_cbh_adj(Nhru,Nmonths) )
           IF ( declparam(MODNAME, 'potet_cbh_adj', 'nhru,nmonths', 'real', &
      &         '1.0', '0.5', '1.5', &
      &         'Potential ET adjustment factor, by month for each HRU', &

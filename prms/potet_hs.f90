@@ -16,7 +16,7 @@
       END MODULE PRMS_POTET_HS
 
       INTEGER FUNCTION potet_hs()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_HS
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
@@ -57,7 +57,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        ALLOCATE ( Hs_krs(Nhru,MONTHS_PER_YEAR), Hs_krs_sngl(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Hs_krs(Nhru,Nmonths), Hs_krs_sngl(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'hs_krs', 'nhru,nmonths', 'real', &
      &       '0.0135', '0.01', '0.24', &
      &       'Potential ET adjustment factor - Hargreaves-Samani', &

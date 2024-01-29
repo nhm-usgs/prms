@@ -13,7 +13,7 @@
 ! Variables needed from DATA FILE: tmax, tmin
 !***********************************************************************
       MODULE PRMS_TEMP_DIST2
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, &
+      USE PRMS_CONSTANTS, ONLY: Nmonths, &
           DNEARZERO, NEARZERO, MAXTEMP, MINTEMP, ERROR_data, GLACIER, ERROR_dim
       USE PRMS_MODULE, ONLY: Model, Nhru, Ntemp, Init_vars_from_file, Glacier_flag
       IMPLICIT NONE
@@ -30,9 +30,9 @@
 !   Declared Parameters
       INTEGER, SAVE :: Max_tsta
       REAL, SAVE :: Dist_max
-      REAL, SAVE :: Monmin(MONTHS_PER_YEAR), Monmax(MONTHS_PER_YEAR)
-      REAL, SAVE :: Lapsemin_min(MONTHS_PER_YEAR), Lapsemin_max(MONTHS_PER_YEAR)
-      REAL, SAVE :: Lapsemax_min(MONTHS_PER_YEAR), Lapsemax_max(MONTHS_PER_YEAR)
+      REAL, SAVE :: Monmin(Nmonths), Monmax(Nmonths)
+      REAL, SAVE :: Lapsemin_min(Nmonths), Lapsemin_max(Nmonths)
+      REAL, SAVE :: Lapsemax_min(Nmonths), Lapsemax_max(Nmonths)
       REAL, SAVE, ALLOCATABLE :: Tsta_xlong(:), Tsta_ylat(:)
       REAL, SAVE, ALLOCATABLE :: Hru_xlong(:), Hru_ylat(:)
       END MODULE PRMS_TEMP_DIST2
@@ -222,20 +222,20 @@
       IF ( getparam(MODNAME, 'max_tsta', 1, 'integer', Max_tsta)/=0 ) CALL read_error(2, 'max_tsta')
       IF ( Max_tsta==0 ) Max_tsta = Ntemp
 
-      IF ( getparam(MODNAME, 'monmin', MONTHS_PER_YEAR, 'real', Monmin)/=0 ) CALL read_error(2, 'monmin')
+      IF ( getparam(MODNAME, 'monmin', Nmonths, 'real', Monmin)/=0 ) CALL read_error(2, 'monmin')
 
-      IF ( getparam(MODNAME, 'monmax', MONTHS_PER_YEAR, 'real', Monmax)/=0 ) CALL read_error(2, 'monmax')
+      IF ( getparam(MODNAME, 'monmax', Nmonths, 'real', Monmax)/=0 ) CALL read_error(2, 'monmax')
 
-      IF ( getparam(MODNAME, 'lapsemin_min', MONTHS_PER_YEAR, 'real', Lapsemin_min) &
+      IF ( getparam(MODNAME, 'lapsemin_min', Nmonths, 'real', Lapsemin_min) &
      &     /=0 ) CALL read_error(2, 'lapsemin_min')
 
-      IF ( getparam(MODNAME, 'lapsemin_max', MONTHS_PER_YEAR, 'real', Lapsemin_max) &
+      IF ( getparam(MODNAME, 'lapsemin_max', Nmonths, 'real', Lapsemin_max) &
      &     /=0 ) CALL read_error(2, 'lapsemin_max')
 
-      IF ( getparam(MODNAME, 'lapsemax_min', MONTHS_PER_YEAR, 'real', Lapsemax_min) &
+      IF ( getparam(MODNAME, 'lapsemax_min', Nmonths, 'real', Lapsemax_min) &
      &     /=0 ) CALL read_error(2, 'lapsemax_min')
 
-      IF ( getparam(MODNAME, 'lapsemax_max', MONTHS_PER_YEAR, 'real', Lapsemax_max) &
+      IF ( getparam(MODNAME, 'lapsemax_max', Nmonths, 'real', Lapsemax_max) &
      &     /=0 ) CALL read_error(2, 'lapsemax_max')
 
       IF ( getparam(MODNAME, 'tsta_xlong', Ntemp, 'real', Tsta_xlong) &

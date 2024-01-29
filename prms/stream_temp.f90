@@ -89,7 +89,7 @@
 !   Declared Parameters
 !***********************************************************************
       INTEGER FUNCTION stream_temp_decl()
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR, DOCUMENTATION, ACTIVE, OFF, DAYS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: Nmonths, DOCUMENTATION, ACTIVE, OFF, DAYS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nsegment, Model, Init_vars_from_file, Strmtemp_humidity_flag, Model
       USE PRMS_STRMTEMP
       IMPLICIT NONE
@@ -190,7 +190,7 @@
      &     'Short-wave solar radiation reflected by streams', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'albedo')
 
-      ALLOCATE(lat_temp_adj(Nsegment,MONTHS_PER_YEAR))
+      ALLOCATE(lat_temp_adj(Nsegment,Nmonths))
       IF ( declparam( MODNAME, 'lat_temp_adj', 'nsegment,nmonths', 'real', &
      &     '0.0', '-5.0', '5.0', &
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
@@ -341,7 +341,7 @@
      &     'none')/=0 ) CALL read_error(1, 'tempIN_segment')
 
       IF ( Strmtemp_humidity_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN  ! specified constant
-         ALLOCATE ( Seg_humidity(Nsegment, MONTHS_PER_YEAR) )
+         ALLOCATE ( Seg_humidity(Nsegment, Nmonths) )
          IF ( declparam( MODNAME, 'seg_humidity', 'nsegment,nmonths', 'real', &
      &       '0.7', '0.0', '1.0', &
      &       'Mean monthly humidity for each segment', &
@@ -384,7 +384,7 @@
 !    stream_temp_init - Initialize module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
-      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, MONTHS_PER_YEAR, OFF, NEARZERO, ERROR_param, DAYS_YR
+      USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, Nmonths, OFF, NEARZERO, ERROR_param, DAYS_YR
       USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag, Nhru_nmonths
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
@@ -403,7 +403,7 @@
       stream_temp_init = 0
 
       IF ( getparam( MODNAME, 'albedo', 1, 'real', Albedo)/=0 ) CALL read_error(2, 'albedo')
-      IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*MONTHS_PER_YEAR, 'real', lat_temp_adj)/=0 ) &
+      IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*Nmonths, 'real', lat_temp_adj)/=0 ) &
      &     CALL read_error(2, 'lat_temp_adj')
 
       IF (getparam(MODNAME, 'seg_lat', Nsegment, 'real', Seg_lat)/=0 ) CALL read_error(2, 'seg_lat')

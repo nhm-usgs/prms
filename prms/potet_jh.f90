@@ -15,7 +15,7 @@
       END MODULE PRMS_POTET_JH
 
       INTEGER FUNCTION potet_jh()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, INCH2CM
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths, INCH2CM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_JH
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order
@@ -50,7 +50,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
-        ALLOCATE ( Jh_coef(Nhru,MONTHS_PER_YEAR), Jh_coef_sngl(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Jh_coef(Nhru,Nmonths), Jh_coef_sngl(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'jh_coef', 'nhru,nmonths', 'real', &
      &       '0.014', '-0.5', '1.5', &
      &       'Monthly air temperature coefficient for each HRU - Jensen-Haise', &

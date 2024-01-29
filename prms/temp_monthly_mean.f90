@@ -4,7 +4,7 @@
 ! to a file
 !***********************************************************************
       SUBROUTINE temp_monthly_mean()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ERROR_open_out, MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ERROR_open_out, Nmonths
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Start_month, Start_day, End_year, End_month, End_day, Nowyear, Nowmonth
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Tminc, Tmaxc
@@ -18,7 +18,7 @@
       character(len=*), parameter :: MODDESC = 'Monthly Temperature Distribution'
       character(len=*), parameter :: MODNAME = 'temp_monthly_mean'
       character(len=*), parameter :: Version_temp_monthly_mean = '2024-01-25'
-      INTEGER, SAVE :: start, last_month, years_month(MONTHS_PER_YEAR), startmonth, endyear, endmonth, monthly_unit
+      INTEGER, SAVE :: start, last_month, years_month(Nmonths), startmonth, endyear, endmonth, monthly_unit
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: tmin_mon(:), tmax_mon(:), warm_temp(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: tmax_month(:, :), tmin_month(:, :)
       INTEGER :: i, j, mo, ios
@@ -63,7 +63,7 @@
         CALL print_module( MODDESC, MODNAME, Version_temp_monthly_mean )
         CALL PRMS_open_output_file( monthly_unit, MODNAME//'.out', MODNAME, 0, ios )
         IF ( ios /= 0 ) CALL error_stop( 'in '//MODNAME, ERROR_open_out )
-        ALLOCATE ( tmax_month(Nhru, MONTHS_PER_YEAR), tmin_month(Nhru, MONTHS_PER_YEAR) )
+        ALLOCATE ( tmax_month(Nhru, Nmonths), tmin_month(Nhru, Nmonths) )
         ALLOCATE ( tmax_mon(Nhru), tmin_mon(Nhru) )
 
       ELSEIF ( Process_flag == INIT ) THEN
@@ -76,7 +76,7 @@
         startmonth = Start_month
         IF ( Start_day /= 1 ) THEN
           startmonth = startmonth + 1
-          IF ( startmonth > MONTHS_PER_YEAR ) startmonth = 1
+          IF ( startmonth > Nmonths ) startmonth = 1
           start = 0
         ELSE
           start = 1
@@ -98,7 +98,7 @@
         ALLOCATE ( warm_month(Nhru), warm_temp(Nhru) )
         warm_temp = -100.0D0
         warm_month = 1
-        DO mo = 1, MONTHS_PER_YEAR
+        DO mo = 1, Nmonths
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
             tmin_month(i, mo) = tmin_month(i, mo) / DBLE( years_month(mo) )
@@ -110,11 +110,11 @@
           ENDDO
         ENDDO
 
-        CALL write_2d_double_array( 'tmax_month_mean_warm_C', 'nhru', Nhru, 'nmonths', MONTHS_PER_YEAR, tmax_month, monthly_unit )
-        CALL write_2d_double_array( 'tmin_month_mean_warm_C', 'nhru', Nhru, 'nmonths', MONTHS_PER_YEAR, tmin_month, monthly_unit )
+        CALL write_2d_double_array( 'tmax_month_mean_warm_C', 'nhru', Nhru, 'nmonths', Nmonths, tmax_month, monthly_unit )
+        CALL write_2d_double_array( 'tmin_month_mean_warm_C', 'nhru', Nhru, 'nmonths', Nmonths, tmin_month, monthly_unit )
 
         tmax_month = 1.0D0
-        CALL write_2d_double_array ('jh_coef_vapor', 'nhru', Nhru, 'nmonths', MONTHS_PER_YEAR, tmax_month, monthly_unit )
+        CALL write_2d_double_array ('jh_coef_vapor', 'nhru', Nhru, 'nmonths', Nmonths, tmax_month, monthly_unit )
 
         CALL write_integer_array( 'warm_month', 'nhru', Nhru, warm_month, monthly_unit )
         CALL write_double_array( 'warm_temp', 'nhru', Nhru, warm_temp, monthly_unit )

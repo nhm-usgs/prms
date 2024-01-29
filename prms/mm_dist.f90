@@ -8,7 +8,7 @@
 ! rain_nuse (rain_nsta) - indicies of precipitation stations used
 !***********************************************************************
       MODULE PRMS_MM_DIST
-	    use PRMS_CONSTANTS, only: MONTHS_PER_YEAR
+	    use PRMS_CONSTANTS, only: Nmonths
         implicit none
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temp & Precip Distribution'
@@ -107,21 +107,21 @@
            ' (0=station not used; 1=station used)', &
            'none') /= 0 ) CALL read_error( 2, 'psta_freq_nuse' )
 
-      ALLOCATE ( Tsta_month_max(Ntemp, MONTHS_PER_YEAR) )
+      ALLOCATE ( Tsta_month_max(Ntemp, Nmonths) )
       if ( declparam (MODNAME, 'tsta_month_max', 'ntemp,nmonths', 'double', &
            '0.0', '-100.0', '200.0', &
            'Average monthly maximum temperature at each station', &
            'Average monthly maximum temperature at each station', &
            'temp_units') /= 0 ) CALL read_error( 2, 'tsta_month_max' )
 
-      ALLOCATE ( Tsta_month_min(Ntemp, MONTHS_PER_YEAR) )
+      ALLOCATE ( Tsta_month_min(Ntemp, Nmonths) )
       if ( declparam (MODNAME, 'tsta_month_min', 'ntemp,nmonths', 'double', &
            '0.0', '-100.0', '200.0', &
            'Average monthly minimum temperature at each station', &
            'Average monthly minimum temperature at each station', &
            'temp_units') /= 0 ) CALL read_error( 2, 'tsta_month_min' )
 
-      ALLOCATE ( Psta_month_ppt(Nrain, MONTHS_PER_YEAR) )
+      ALLOCATE ( Psta_month_ppt(Nrain, Nmonths) )
       if ( declparam (MODNAME, 'psta_month_ppt', 'nrain,nmonths', 'double', &
            '0.0', '0.0', '200.0', &
            'Average monthly precipitation at each station', &
@@ -133,42 +133,42 @@
            'Downscaling fraction adjustment', 'Downscaling fraction adjustment', &
            'decimal fraction') /= 0 ) CALL read_error( 2, 'downscale_adj' )
 
-      ALLOCATE ( Hru_month_max(Nhru, MONTHS_PER_YEAR) )
+      ALLOCATE ( Hru_month_max(Nhru, Nmonths) )
       if ( declparam(MODNAME, 'hru_month_max', 'nhru,nmonths', 'double', &
            '0.0', '-100.0', '200.0', &
            'Average monthly maximum temperature at each HRU', &
            'Average monthly maximum temperature at each HRU', &
            'temp_units') /= 0 ) CALL read_error( 2, 'hru_month_max' )
 
-      ALLOCATE ( Hru_month_min(Nhru, MONTHS_PER_YEAR) )
+      ALLOCATE ( Hru_month_min(Nhru, Nmonths) )
       if ( declparam(MODNAME, 'hru_month_min', 'nhru,nmonths', 'double', &
            '0.0', '-100.0', '200.0', &
            'Average monthly minimum temperature at each HRU', &
            'Average monthly minimum temperature at each HRU', &
            'temp_units') /= 0 ) CALL read_error( 2, 'hru_month_min' )
 
-      ALLOCATE ( Hru_month_ppt(Nhru, MONTHS_PER_YEAR) )
+      ALLOCATE ( Hru_month_ppt(Nhru, Nmonths) )
       if ( declparam(MODNAME, 'hru_month_ppt', 'nhru,nmonths', 'double', &
            '0.0', '0.0', '20.0', &
            'Average monthly precipitation at each HRU', &
            'Average monthly precipitation at each HRU', &
            'precip_units') /= 0 ) CALL read_error( 2, 'hru_month_ppt' )
 
-      ALLOCATE ( Rain_month_max(Nrain, MONTHS_PER_YEAR) )
+      ALLOCATE ( Rain_month_max(Nrain, Nmonths) )
       if ( declparam(MODNAME, 'rain_month_max', 'nrain,nmonths', &
            '0.0', '0.0', '20.0', &
            'Average monthly maximum precipitation at each rain station', &
            'Average monthly maximum precipitation at each rain station', &
            'precip_units') /= 0 ) CALL read_error( 2, 'rain_month_max' )
 
-      ALLOCATE ( Rain_month_min(Nrain, MONTHS_PER_YEAR) )
+      ALLOCATE ( Rain_month_min(Nrain, Nmonths) )
       if ( declparam(MODNAME, 'rain_month_min', 'nrain,nmonths', 'double', &
            '0.0', '0.0', '20.0', &
            'Average monthly minimum precipitation at each rain station', &
            'Average monthly minimum precipitation at each rain station', &
            'precip_units') /= 0 ) CALL read_error( 2, 'rain_month_min' )
 
-      ALLOCATE ( Tmax_allrain_sta(Nrain, MONTHS_PER_YEAR) )
+      ALLOCATE ( Tmax_allrain_sta(Nrain, Nmonths) )
       if ( declparam(MODNAME, 'tmax_allrain_sta', 'nrain,nmonths', &
            'double', '38.0', '-8.0', '45.0', &
            'Precipitation is rain if HRU max temperature >= this value', &
@@ -177,7 +177,7 @@
            ' temperature is greater than or equal to this value, precipitation is rain', &
            'temp_units') /= 0 ) CALL read_error( 1, 'tmax_allrain_sta' )
 
-      ALLOCATE ( Tmax_allsnow_sta(Nrain, MONTHS_PER_YEAR) )
+      ALLOCATE ( Tmax_allsnow_sta(Nrain, Nmonths) )
       if ( declparam(MODNAME, 'tmax_allsnow_sta', 'nrain,nmonths', &
            'double', '32.0', '-10.0', '40.0', &
            'Maximum temperature when precipitation is all snow', &
@@ -205,11 +205,11 @@
       if ( getparam (MODNAME, 'tsta_nuse', Ntemp, 'integer', Tsta_nuse) /= 0 ) CALL read_error( 2, 'tsta_nuse' )
       if ( getparam (MODNAME, 'psta_nuse', Nrain, 'integer', Psta_nuse) /= 0 ) CALL read_error( 2, 'psta_nuse' )
       if ( getparam (MODNAME, 'psta_freq_nuse', Nrain, 'integer', Psta_freq_nuse) /= 0 ) CALL read_error( 2, 'psta_freq_nuse' )
-      if ( getparam (MODNAME, 'tsta_month_min', Ntemp*MONTHS_PER_YEAR, 'double', Tsta_month_min) /= 0 ) &
+      if ( getparam (MODNAME, 'tsta_month_min', Ntemp*Nmonths, 'double', Tsta_month_min) /= 0 ) &
            call read_error( 2, 'tsta_month_min' )
-      if ( getparam (MODNAME, 'tsta_month_max', Ntemp*MONTHS_PER_YEAR, 'double', Tsta_month_max) /= 0 ) &
+      if ( getparam (MODNAME, 'tsta_month_max', Ntemp*Nmonths, 'double', Tsta_month_max) /= 0 ) &
            call read_error( 2, 'tsta_month_max' )
-      if ( getparam (MODNAME, 'psta_month_ppt', Nrain*MONTHS_PER_YEAR, 'double', Psta_month_ppt) /= 0 ) &
+      if ( getparam (MODNAME, 'psta_month_ppt', Nrain*Nmonths, 'double', Psta_month_ppt) /= 0 ) &
            call read_error( 2, 'psta_month_ppt' )
       if ( getparam (MODNAME, 'downscale_adj', 1, 'double', Downscale_adj) /= 0 ) CALL read_error( 2, 'downscale_adj' )
       if ( getparam (MODNAME, 'hru_month_min', Nhru_nmonths, 'double', Hru_month_min) /= 0 ) &
@@ -218,13 +218,13 @@
            call read_error( 2, 'hru_month_max' )
       if ( getparam (MODNAME, 'hru_month_ppt', Nhru_nmonths, 'double', Hru_month_ppt) /= 0 ) &
            call read_error( 2, 'hru_month_ppt' )
-      if ( getparam (MODNAME, 'rain_month_max', Nrain*MONTHS_PER_YEAR, 'double', Rain_month_max) /= 0 ) &
+      if ( getparam (MODNAME, 'rain_month_max', Nrain*Nmonths, 'double', Rain_month_max) /= 0 ) &
            call read_error( 2, 'rain_month_max' )
-      if ( getparam (MODNAME, 'rain_month_min', Nrain*MONTHS_PER_YEAR, 'double', Rain_month_min) /= 0 ) &
+      if ( getparam (MODNAME, 'rain_month_min', Nrain*Nmonths, 'double', Rain_month_min) /= 0 ) &
            call read_error( 2, 'rain_month_min' )
-      if ( getparam (MODNAME, 'tmax_allrain_sta', Nrain*MONTHS_PER_YEAR, 'double', Tmax_allrain_sta) /= 0 ) &
+      if ( getparam (MODNAME, 'tmax_allrain_sta', Nrain*Nmonths, 'double', Tmax_allrain_sta) /= 0 ) &
            call read_error( 2, 'tmax_allrain_sta' )
-      if ( getparam (MODNAME, 'tmax_allsnow_sta', Nrain*MONTHS_PER_YEAR, 'double', Tmax_allsnow_sta) /= 0 ) &
+      if ( getparam (MODNAME, 'tmax_allsnow_sta', Nrain*Nmonths, 'double', Tmax_allsnow_sta) /= 0 ) &
            call read_error( 2, 'tmax_allsnow_sta' )
 
       Temp_nsta = 0
@@ -243,7 +243,7 @@
         endif
       enddo
 
-      do j = 1, MONTHS_PER_YEAR
+      do j = 1, Nmonths
         do i = 1, Nrain
           if ( Psta_month_ppt(i, j) == 0.0D0 ) then
             PRINT *, 'ERROR, psta_month_ppt cannot be 0.0, precip station:', i, '; month:', j

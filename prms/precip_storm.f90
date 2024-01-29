@@ -18,7 +18,7 @@
 !     Main precip_storm routine
 !***********************************************************************
       SUBROUTINE precip_storm()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXDIM, SETDIMENS, MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXDIM, SETDIMENS, Nmonths
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE STORM_PRECIP
 	  USE PRMS_BASIN, ONLY: Hru_area_dble, Basin_area_inv, Active_hrus, Hru_route_order
@@ -75,7 +75,7 @@
              '1.0', '0.0', '5.0', &
              'Adjustment factor for each storm', 'Adjustment factor for each storm', &
              'decimal fraction') /= 0 ) CALL read_error( 1, 'storm_scale_factor' )
-        ALLOCATE ( Strain_adj(Nhru, MONTHS_PER_YEAR) )
+        ALLOCATE ( Strain_adj(Nhru, Nmonths) )
         IF ( declparam(MODNAME, 'strain_adj', 'nhru,nmonths', 'double', &
              '1.0', '0.2', '5.0', &
              'Storm rain adjustment factor, by month for each HRU', &

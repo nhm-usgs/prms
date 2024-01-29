@@ -19,7 +19,7 @@
       END MODULE PRMS_POTET_JH_WARM
 
       SUBROUTINE potet_jh_warm()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, INCH2CM, MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, INCH2CM, Nmonths
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_JH_WARM
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_feet
@@ -52,7 +52,7 @@
       ELSEIF ( Process_flag == DECL ) THEN
         CALL print_module( MODDESC, MODNAME, Version_potet )
 
-        ALLOCATE ( Jh_coef_warm(Nhru, MONTHS_PER_YEAR) )
+        ALLOCATE ( Jh_coef_warm(Nhru, Nmonths) )
         IF ( declparam(MODNAME, 'jh_coef_warm', 'nhru,nmonths', 'double', &
              '1.0', '0.1', '2.0', &
              'Potential ET monthly coefficient adjustment factor for each HRU', &

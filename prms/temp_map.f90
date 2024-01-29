@@ -6,7 +6,7 @@
 ! measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_TEMP_MAP
-        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, MONTHS_PER_YEAR
+        USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, Nmonths
         IMPLICIT NONE
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
@@ -75,14 +75,14 @@
         ALLOCATE ( Tmax_map_values(Nmap), Tmin_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Tmax_map_adj(Nmap,MONTHS_PER_YEAR), Tmax_map_adj_sngl(Nmap,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmax_map_adj(Nmap,Nmonths), Tmax_map_adj_sngl(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'tmax_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly maximum temperature adjustment factor for each mapped spatial unit', &
      &       'Monthly (January to December) additive adjustment factor to maximum air temperature for each mapped,'// &
      &       ' spatial unit estimated on the basis of slope and aspect', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj')
-        ALLOCATE ( Tmin_map_adj(Nmap,MONTHS_PER_YEAR), Tmin_map_adj_sngl(Nmap,MONTHS_PER_YEAR) )
+        ALLOCATE ( Tmin_map_adj(Nmap,Nmonths), Tmin_map_adj_sngl(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'tmin_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly minimum temperature adjustment factor for each mapped spatial unit', &
@@ -122,9 +122,9 @@
 
         istop = 0
         ierr = 0
-        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmax_map_adj_sngl)/=0 ) &
+        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*Nmonths, 'real', Tmax_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmax_map_adj')
-        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmin_map_adj_sngl)/=0 ) &
+        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*Nmonths, 'real', Tmin_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmin_map_adj')
         Tmax_map_adj = DBLE( Tmax_map_adj_sngl )
         Tmin_map_adj = DBLE( Tmin_map_adj_sngl )

@@ -26,7 +26,7 @@
       END MODULE PRMS_PRECIP_MAP
 
       SUBROUTINE precip_map()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, MM, MM2INCH, MONTHS_PER_YEAR, precip_map_module
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, OFF, MM, MM2INCH, Nmonths, precip_map_module
       USE PRMS_MODULE, ONLY: Process_flag, Start_year, Start_month, Start_day, Nmap2hru, Nmap, Nowmonth
       USE PRMS_PRECIP_MAP
       USE PRMS_BASIN, ONLY: Hru_area_dble, Basin_area_inv, Active_hrus, Hru_route_order
@@ -89,7 +89,7 @@
         ALLOCATE ( Precip_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Precip_map_adj(Nmap,MONTHS_PER_YEAR), Precip_map_adj_sngl(Nmap,MONTHS_PER_YEAR) )
+        ALLOCATE ( Precip_map_adj(Nmap,Nmonths), Precip_map_adj_sngl(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'precip_map_adj', 'nmap,nmonths', 'real', &
      &     '1.0', '0.5', '2.0', &
      &     'Monthly rain adjustment factor for each mapped spatial unit', &
@@ -129,7 +129,7 @@
 
         istop = 0
         ierr = 0
-        IF ( getparam(MODNAME, 'precip_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Precip_map_adj_sngl)/=0 ) &
+        IF ( getparam(MODNAME, 'precip_map_adj', Nmap*Nmonths, 'real', Precip_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'precip_map_adj')
         Precip_map_adj = DBLE( Precip_map_adj_sngl )
         DEALLOCATE ( Precip_map_adj_sngl )
