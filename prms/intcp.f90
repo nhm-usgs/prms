@@ -8,7 +8,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2024-01-25'
+      character(len=*), parameter :: Version_intcp = '2024-01-31'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_intcp_stor
@@ -59,11 +59,11 @@
 !     intdecl - set up parameters for interception computations
 !   Declared Parameters
 !     snow_intcp, srain_intcp, wrain_intcp, potet_sublim, cov_type
-!     covden_win, covden_sum, epan_coef, hru_area, hru_pansta
+!     covden_win, covden_sum, epan_coef, hru_area, hru_pansta, cover_density
 !***********************************************************************
       INTEGER FUNCTION intdecl()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DOCUMENTATION
-      USE PRMS_MODULE, ONLY: Nhru, Model, Water_use_flag
+      USE PRMS_MODULE, ONLY: Nhru, Model, Water_use_flag, AG_flag
       USE PRMS_INTCP
       IMPLICIT NONE
 ! Functions
@@ -77,7 +77,7 @@
 ! NEW VARIABLES and PARAMETERS for APPLICATION RATES
       ALLOCATE ( Net_apply(Nhru) )
       Use_transfer_intcp = OFF
-      IF ( Water_use_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
+      IF ( Water_use_flag==ACTIVE .OR. AG_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         Use_transfer_intcp = ACTIVE
         ALLOCATE ( Gain_inches(Nhru) )
         IF ( declvar(MODNAME, 'gain_inches', 'nhru', Nhru, 'double', &
@@ -219,7 +219,7 @@
 !***********************************************************************
       INTEGER FUNCTION intinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB
-      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, Print_debug, AG_flag
       USE PRMS_INTCP
       USE PRMS_CLIMATEVARS, ONLY: Transp_on
       IMPLICIT NONE
@@ -233,7 +233,7 @@
       IF ( getparam(MODNAME, 'wrain_intcp', Nhru, 'real', Wrain_intcp)/=0 ) CALL read_error(2, 'wrain_intcp')
       IF ( getparam(MODNAME, 'srain_intcp', Nhru, 'real', Srain_intcp)/=0 ) CALL read_error(2, 'srain_intcp')
 
-      IF ( Use_transfer_intcp==ACTIVE ) THEN
+      IF ( Use_transfer_intcp==ACTIVE .OR. AG_flag==ACTIVE ) THEN
         IF ( getparam(MODNAME, 'irr_type', Nhru, 'integer', Irr_type)/=0 ) CALL read_error(1, 'irr_type')
         Gain_inches = 0.0D0
         Gain_inches_hru = 0.0D0
@@ -268,10 +268,10 @@
       INTEGER FUNCTION intrun()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, CLOSEZERO, DCLOSEZERO, &
      &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
-      USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday
+      USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday, cover_density_flag
       USE PRMS_INTCP
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_type, Covden_win, Covden_sum, &
-     &    Hru_route_order, Hru_area_dble, Cov_type
+     &    Hru_route_order, Hru_area_dble, Cov_type, cover_density
       USE PRMS_WATER_USE, ONLY: Canopy_gain ! need to add ag apply ???
 ! Newsnow and Pptmix can be modfied, WARNING!!!
       USE PRMS_CLIMATEVARS, ONLY: Newsnow, Pptmix, Hru_rain, Hru_ppt, &
@@ -284,7 +284,7 @@
       EXTERNAL :: intercept, error_stop
       INTRINSIC :: DBLE, SNGL
 ! Local Variables
-      INTEGER :: i, j, irrigation_type
+      INTEGER :: i, j, irrigation_type, mo
       REAL :: last, evrn, evsn, cov, intcpstor, diff, changeover, intcpevap, z, d
       REAL :: extra_water, stor_max_rain
       REAL :: potet_sngl
@@ -324,7 +324,9 @@
 
 !******Adjust interception amounts for changes in summer/winter cover density
 
-        IF ( Transp_on(i)==ACTIVE ) THEN
+        IF ( cover_density_flag == ACTIVE ) THEN
+          Canopy_covden(i) = cover_density(i, Nowmonth)
+        ELSEIF ( Transp_on(i)==ACTIVE ) THEN
           Canopy_covden(i) = Covden_sum(i)
         ELSE
           Canopy_covden(i) = Covden_win(i)
@@ -352,7 +354,7 @@
         ENDIF
 
 !***** go from summer to winter cover density
-        IF ( Transp_on(i)==OFF .AND. Intcp_transp_on(i)==ACTIVE ) THEN
+        IF ( Transp_on(i)==OFF .AND. Intcp_transp_on(i)==ACTIVE .AND. cover_density_flag==OFF ) THEN
           Intcp_transp_on(i) = OFF
           IF ( intcpstor>0.0 ) THEN
             ! assume canopy storage change falls as throughfall
@@ -374,7 +376,7 @@
           ENDIF
 
 !****** go from winter to summer cover density, excess = throughfall
-        ELSEIF ( Transp_on(i)==ACTIVE .AND. Intcp_transp_on(i)==OFF ) THEN
+        ELSEIF ( Transp_on(i)==ACTIVE .AND. Intcp_transp_on(i)==OFF .AND. cover_density_flag==OFF ) THEN
           Intcp_transp_on(i) = ACTIVE
           IF ( intcpstor>0.0 ) THEN
             diff = Covden_win(i) - cov
@@ -389,6 +391,29 @@
               IF ( Print_debug>DEBUG_less ) THEN
                 PRINT *, 'covden_sum=0 at summer change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
                 PRINT *, 'intcp_stor:', intcpstor, ' covden_win:', Covden_win(i)
+              ENDIF
+              intcpstor = 0.0
+            ENDIF
+          ENDIF
+        ENDIF
+
+        IF ( cover_density_flag == ACTIVE .AND. Nowday == 1 ) THEN
+          IF ( intcpstor>0.0 ) THEN
+            ! assume canopy storage change falls as throughfall
+            mo = Nowmonth - 1
+            IF ( mo == -1 ) mo = 12
+            diff = cover_density(i,mo) - cov
+            changeover = intcpstor*diff
+            IF ( cov>0.0 ) THEN
+              IF ( changeover<0.0 ) THEN
+                ! cover_density current month > previous month, adjust intcpstor to same volume, and lower depth
+                intcpstor = (intcpstor*cover_density(i,mo))/cov
+                changeover = 0.0
+              ENDIF
+            ELSE
+              IF ( Print_debug>DEBUG_less ) THEN
+                PRINT *, 'cover_density=0 at month change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
+                PRINT *, 'intcp_stor:', intcpstor, ' covder_density:', cover_density(i, Nowmonth)
               ENDIF
               intcpstor = 0.0
             ENDIF
@@ -486,7 +511,7 @@
         IF ( intcpstor>0.0 ) THEN
           IF ( Hru_ppt(i)<DCLOSEZERO ) THEN ! changed from NEARZERO to DCLOSEZERO 01/23/2024
 
-            evrn = SNGL( Potet(i)/Epan_coef(i, Nowmonth) )
+            evrn = Potet(i)/Epan_coef(i, Nowmonth)
             evsn = Potet_sublim(i)*potet_sngl
 
             IF ( Use_pandata==ACTIVE ) THEN
@@ -595,8 +620,8 @@
 !     intcp_restart - write or read intcp restart file
 !***********************************************************************
       SUBROUTINE intcp_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_INTCP
       IMPLICIT NONE
       ! Argument
@@ -607,6 +632,7 @@
       CHARACTER(LEN=5) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
+      IF ( text_restart_flag==OFF ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Basin_intcp_stor
         WRITE ( Restart_outunit ) Intcp_transp_on
@@ -614,6 +640,15 @@
         WRITE ( Restart_outunit ) Intcp_stor
         WRITE ( Restart_outunit ) Hru_intcpstor
       ELSE
+        WRITE ( Restart_outunit, * ) MODNAME
+        WRITE ( Restart_outunit, * ) Basin_intcp_stor
+        WRITE ( Restart_outunit, * ) Intcp_transp_on
+        WRITE ( Restart_outunit, * ) Intcp_on
+        WRITE ( Restart_outunit, * ) Intcp_stor
+        WRITE ( Restart_outunit, * ) Hru_intcpstor
+      ENDIF
+    ELSE
+      IF ( text_restart_flag==OFF ) THEN
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Basin_intcp_stor
@@ -621,5 +656,14 @@
         READ ( Restart_inunit ) Intcp_on
         READ ( Restart_inunit ) Intcp_stor
         READ ( Restart_inunit ) Hru_intcpstor
+      ELSE
+        READ ( Restart_inunit, * ) module_name
+        CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit, * ) Basin_intcp_stor
+        READ ( Restart_inunit, * ) Intcp_transp_on
+        READ ( Restart_inunit, * ) Intcp_on
+        READ ( Restart_inunit, * ) Intcp_stor
+        READ ( Restart_inunit, * ) Hru_intcpstor
       ENDIF
+    ENDIF
       END SUBROUTINE intcp_restart

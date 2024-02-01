@@ -253,7 +253,7 @@
       double precision function f_to_c(Temp)
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Temp
+      DOUBLE PRECISION, INTENT(IN) :: Temp
 !***********************************************************************
       f_to_c = (Temp-32.0D0)/1.8D0
       END FUNCTION f_to_c
@@ -264,10 +264,21 @@
       double precision function c_to_f(Temp)
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Temp
+      DOUBLE PRECISION, INTENT(IN) :: Temp
 !***********************************************************************
       c_to_f = Temp*1.8D0 + 32.0D0
-      END FUNCTION c_to_f
+    END FUNCTION c_to_f
+
+!***********************************************************************
+! Convert Celsius to Fahrenheit
+!***********************************************************************
+      real function c_to_f_sngl(Temp)
+      IMPLICIT NONE
+! Arguments
+      REAL, INTENT(IN) :: Temp
+!***********************************************************************
+      c_to_f_sngl = Temp*1.8D0 + 32.0D0
+    END FUNCTION c_to_f_sngl
 
 !***********************************************************************
       SUBROUTINE write_integer_param(Iunit, Parm_name, Dimen_name, Dimen, Values)
@@ -456,17 +467,17 @@
 ! Flatau, P.j., Walko, R.L., Cotton, W.R., 1992, Polynomial Fits to
 !   saturation vapor pressure: Jornal of Applied Meteorology, v. 31, p. 1507-1513
 !***********************************************************************
-      REAL FUNCTION sat_vapor_press_poly(Tempc)
+      DOUBLE PRECISION FUNCTION sat_vapor_press_poly(Tempc)
       IMPLICIT NONE
 ! Arguments
-      REAL, INTENT(IN) :: Tempc
+      DOUBLE PRECISION, INTENT(IN) :: Tempc
 !***********************************************************************
-      sat_vapor_press_poly = 6.11176750 + 0.443986062*Tempc &
-     &                       + 0.0143053301*Tempc**2 &
-     &                       + 0.265027242E-03*Tempc**3 &
-     &                       + 0.302246994E-05*Tempc**4 &
-     &                       + 0.203886313E-07*Tempc**5 &
-     &                       + 0.638780966E-10*Tempc**6
+      sat_vapor_press_poly = 6.11176750D0 + 0.443986062D0*Tempc &
+     &                       + 0.0143053301D0*Tempc**2 &
+     &                       + 0.265027242D-03*Tempc**3 &
+     &                       + 0.302246994D-05*Tempc**4 &
+     &                       + 0.203886313D-07*Tempc**5 &
+     &                       + 0.638780966D-10*Tempc**6
 ! Mastin documentation for potet_dpm
 !      sat_vapor_press_poly = 23.38*exp(18.1-5303.3/(Tempc+273.0))
 ! Mastin documentation for param_leaf-loss.aml

@@ -20,7 +20,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Temperature Distribution'
       character(len=10), parameter :: MODNAME = 'temp_dist2'
-      character(len=*), parameter :: Version_temp = '2024-01-25'
+      character(len=*), parameter :: Version_temp = '2024-01-31'
       INTEGER, SAVE, ALLOCATABLE :: N_tsta(:), Nuse_tsta(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dist(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Delv(:, :), Elfac(:, :)
@@ -431,8 +431,8 @@
         ENDDO
 
         IF ( sumdist>DNEARZERO ) THEN
-          tmn = tmn/sumdist - DBLE( Tmin_aspect_adjust(j, Nowmonth) )
-          tmx = tmx/sumdist - DBLE( Tmax_aspect_adjust(j, Nowmonth) )
+          tmn = tmn/sumdist - Tmin_aspect_adjust(j, Nowmonth)
+          tmx = tmx/sumdist - Tmax_aspect_adjust(j, Nowmonth)
         ELSE
           tmn = (mn+mx)*0.5D0
           tmx = tmn
@@ -475,23 +475,34 @@
 !     temp_dist2_restart - write or read temp_dist2 restart file
 !***********************************************************************
       SUBROUTINE temp_dist2_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_TEMP_DIST2
       IMPLICIT NONE
       ! Argument
       INTEGER, INTENT(IN) :: In_out
-      ! Function
+      ! Functions
       EXTERNAL :: check_restart
       ! Local Variable
       CHARACTER(LEN=10) :: module_name
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Solrad_tmax_good, Solrad_tmin_good
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Solrad_tmax_good, Solrad_tmin_good
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Solrad_tmax_good, Solrad_tmin_good
+        ENDIF
       ELSE
+        IF ( text_restart_flag==OFF ) THEN
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Solrad_tmax_good, Solrad_tmin_good
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Solrad_tmax_good, Solrad_tmin_good
+        ENDIF
       ENDIF
       END SUBROUTINE temp_dist2_restart

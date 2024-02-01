@@ -11,13 +11,12 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temperature Distribution'
         character(len=*), parameter :: MODNAME = 'temp_map'
-        character(len=*), parameter :: Version_temp_map = '2024-01-25'
+        character(len=*), parameter :: Version_temp_map = '2024-01-31'
         INTEGER, SAVE :: Tmax_unit, Tmin_unit
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Tmax_map_values(:), Tmin_map_values(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru2map_pct(:), Tmax_map_adj(:, :), Tmin_map_adj(:, :)
-        REAL, SAVE, ALLOCATABLE :: Tmax_map_adj_sngl(:, :), Tmin_map_adj_sngl(:, :), Hru2map_pct_sngl(:)
         ! parameters in basin:
         !    hru_area
         ! Control Parameters
@@ -39,6 +38,7 @@
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       DOUBLE PRECISION :: tmax_hru, tmin_hru
+      REAL, ALLOCATABLE :: tmax_map_adj_sngl(:, :), tmin_map_adj_sngl(:, :), hru2map_pct_sngl(:)
 !***********************************************************************
        IF ( Process_flag==RUN ) THEN
         READ ( Tmax_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Tmax_map_values(i), i=1,Nmap)
@@ -75,14 +75,14 @@
         ALLOCATE ( Tmax_map_values(Nmap), Tmin_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Tmax_map_adj(Nmap,Nmonths), Tmax_map_adj_sngl(Nmap,Nmonths) )
+        ALLOCATE ( Tmax_map_adj(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'tmax_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly maximum temperature adjustment factor for each mapped spatial unit', &
      &       'Monthly (January to December) additive adjustment factor to maximum air temperature for each mapped,'// &
      &       ' spatial unit estimated on the basis of slope and aspect', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj')
-        ALLOCATE ( Tmin_map_adj(Nmap,Nmonths), Tmin_map_adj_sngl(Nmap,Nmonths) )
+        ALLOCATE ( Tmin_map_adj(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'tmin_map_adj', 'nmap,nmonths', 'real', &
      &       '0.0', '-10.0', '10.0', &
      &       'Monthly minimum temperature adjustment factor for each mapped spatial unit', &
@@ -105,7 +105,7 @@
      &       'Mapped spatial unit identification number for each HRU to map intersection', &
      &       'none')/=0 ) CALL read_error(1, 'map2hru_id')
 
-        ALLOCATE ( Hru2map_pct(Nmap2hru), Hru2map_pct_sngl(Nmap2hru) )
+        ALLOCATE ( Hru2map_pct(Nmap2hru) )
         IF ( declparam(MODNAME, 'hru2map_pct', 'nmap2hru', 'real', &
      &       '0.0', '0.0', '1.0', &
      &       'Portion of HRU associated with each HRU to map intersection', &
@@ -116,19 +116,20 @@
       ELSEIF ( Process_flag==INIT ) THEN
         IF ( getparam(MODNAME, 'map2hru_id', Nmap2hru, 'integer', Map2hru_id)/=0 ) CALL read_error(2, 'map2hru_id')
         IF ( getparam(MODNAME, 'hru2map_id', Nmap2hru, 'integer', Hru2map_id)/=0 ) CALL read_error(2, 'hru2map_id')
-        IF ( getparam(MODNAME, 'hru2map_pct', Nmap2hru, 'real', Hru2map_pct_sngl)/=0 ) CALL read_error(2, 'hru2map_pct')
-        Hru2map_pct = DBLE( Hru2map_pct_sngl )
-        DEALLOCATE ( Hru2map_pct_sngl )
+        IF ( getparam(MODNAME, 'hru2map_pct', Nmap2hru, 'real', hru2map_pct_sngl)/=0 ) CALL read_error(2, 'hru2map_pct')
+        Hru2map_pct = DBLE( hru2map_pct_sngl )
+        DEALLOCATE ( hru2map_pct_sngl )
 
         istop = 0
         ierr = 0
-        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*Nmonths, 'real', Tmax_map_adj_sngl)/=0 ) &
+        ALLOCATE ( tmin_map_adj_sngl(Nmap,Nmonths), tmax_map_adj_sngl(Nmap,Nmonths) )
+        IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*Nmonths, 'real', tmax_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmax_map_adj')
-        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*Nmonths, 'real', Tmin_map_adj_sngl)/=0 ) &
+        IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*Nmonths, 'real', tmin_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'tmin_map_adj')
-        Tmax_map_adj = DBLE( Tmax_map_adj_sngl )
-        Tmin_map_adj = DBLE( Tmin_map_adj_sngl )
-        DEALLOCATE ( Tmax_map_adj_sngl, Tmin_map_adj_sngl )
+        Tmax_map_adj = DBLE( tmax_map_adj_sngl )
+        Tmin_map_adj = DBLE( tmin_map_adj_sngl )
+        DEALLOCATE ( tmax_map_adj_sngl, tmin_map_adj_sngl )
 
         IF ( control_string(Tmax_map_file, 'tmax_map_file')/=0 ) CALL read_error(5, 'tmax_map_file')
         IF ( control_string(Tmin_map_file, 'tmin_map_file')/=0 ) CALL read_error(5, 'tmin_map_file')

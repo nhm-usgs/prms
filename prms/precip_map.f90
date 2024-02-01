@@ -2,7 +2,7 @@
 ! Maximum, minimum, average temperatures, and precipitation are distributed to each HRU
 ! using temperature and/or precipitation data input as a time series of gridded
 ! or other spatial units using an area-weighted method and correction factors to
-! account for differences in altitude, spatial variation, topography, and 
+! account for differences in altitude, spatial variation, topography, and
 ! measurement gage efficiency
 !***********************************************************************
       MODULE PRMS_PRECIP_MAP
@@ -13,12 +13,10 @@
         character(len=*), parameter :: MODNAME = 'precip_map'
         character(len=*), parameter :: Version_precip_map = '2024-01-22'
         INTEGER, SAVE :: Precip_unit
-        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Precip_map_values(:)
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Hru2map_id(:), Map2hru_id(:)
-        REAL, SAVE, ALLOCATABLE :: Hru2map_pct_sngl(:)
-        REAL, SAVE, ALLOCATABLE :: Precip_map_adj_sngl(:, :)
-        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru2map_pct(:), Precip_map_adj(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru2map_pct(:), Precip_map_values(:)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Precip_map_adj(:, :)
         ! parameters in basin:
         !    hru_area
         ! Control Parameters
@@ -41,6 +39,7 @@
 ! Local Variables
       INTEGER :: yr, mo, dy, i, hr, mn, sec, ierr, ios, j, kg, kh, istop
       DOUBLE PRECISION :: ppt, harea
+      REAL, ALLOCATABLE :: Hru2map_pct_sngl(:), Precip_map_adj_sngl(:, :)
 !***********************************************************************
        IF ( Process_flag==RUN ) THEN
         READ ( Precip_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Precip_map_values(i), i=1,Nmap)
@@ -89,7 +88,7 @@
         ALLOCATE ( Precip_map_values(Nmap) )
 
 ! Declare parameters
-        ALLOCATE ( Precip_map_adj(Nmap,Nmonths), Precip_map_adj_sngl(Nmap,Nmonths) )
+        ALLOCATE ( Precip_map_adj(Nmap,Nmonths) )
         IF ( declparam(MODNAME, 'precip_map_adj', 'nmap,nmonths', 'real', &
      &     '1.0', '0.5', '2.0', &
      &     'Monthly rain adjustment factor for each mapped spatial unit', &
@@ -112,7 +111,7 @@
      &       'Mapped spatial unit identification number for each HRU to map intersection', &
      &       'none')/=0 ) CALL read_error(1, 'map2hru_id')
 
-        ALLOCATE ( Hru2map_pct(Nmap2hru), Hru2map_pct_sngl(Nmap2hru) )
+        ALLOCATE ( Hru2map_pct(Nmap2hru) )
         IF ( declparam(MODNAME, 'hru2map_pct', 'nmap2hru', 'real', &
      &       '0.0', '0.0', '1.0', &
      &       'Portion of HRU associated with each HRU to map intersection', &
@@ -121,6 +120,7 @@
 
 ! Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
+        ALLOCATE ( Hru2map_pct_sngl(Nmap2hru) )
         IF ( getparam(MODNAME, 'map2hru_id', Nmap2hru, 'integer', Map2hru_id)/=0 ) CALL read_error(2, 'map2hru_id')
         IF ( getparam(MODNAME, 'hru2map_id', Nmap2hru, 'integer', Hru2map_id)/=0 ) CALL read_error(2, 'hru2map_id')
         IF ( getparam(MODNAME, 'hru2map_pct', Nmap2hru, 'real', Hru2map_pct_sngl)/=0 ) CALL read_error(2, 'hru2map_pct')
@@ -129,6 +129,7 @@
 
         istop = 0
         ierr = 0
+        ALLOCATE ( Precip_map_adj_sngl(Nmap,Nmonths) )
         IF ( getparam(MODNAME, 'precip_map_adj', Nmap*Nmonths, 'real', Precip_map_adj_sngl)/=0 ) &
      &       CALL read_error(2, 'precip_map_adj')
         Precip_map_adj = DBLE( Precip_map_adj_sngl )

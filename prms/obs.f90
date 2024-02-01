@@ -2,7 +2,7 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: Nmonths
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
@@ -18,11 +18,11 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Tmax(:), Tmin(:), Solrad(:), Snowdepth(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Streamflow_cfs(:), Streamflow_cms(:)
       ! Lake Module Variables
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
+      REAL, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
       ! Three input variables for Spring Creek model only, remove at some point
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: cal_evap(:), cal_potevap(:), solrad2(:)
 !   Declared Parameters
-      INTEGER, SAVE :: Runoff_units, Rain_code(MONTHS_PER_YEAR)
+      INTEGER, SAVE :: Runoff_units, Rain_code(Nmonths)
       END MODULE PRMS_OBS
 
 !***********************************************************************
@@ -213,14 +213,14 @@
 ! Lake Variables
       IF ( Nratetbl>0 ) THEN
         ALLOCATE ( Gate_ht(Nratetbl) )
-        IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'double', &
+        IF ( declvar(MODNAME, 'gate_ht', 'nratetbl', Nratetbl, 'real', &
      &       'Height of the gate opening at each dam with a gate', &
      &       'inches', Gate_ht)/=0 ) CALL read_error(8, 'gate_ht')
       ENDIF
 
       IF ( Nlakeelev>0 ) THEN
         ALLOCATE ( Lake_elev(Nlakeelev) )
-        IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'double', &
+        IF ( declvar(MODNAME, 'lake_elev', 'nlakeelev', Nlakeelev, 'real', &
      &       'Elevation of each simulated lake surface', &
      &       'feet', Lake_elev)/=0 ) CALL read_error(8, 'lake_elev')
       ENDIF
@@ -255,7 +255,7 @@
 !     obsinit - initializes obs module
 !***********************************************************************
       INTEGER FUNCTION obsinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, Nmonths, CFS
       USE PRMS_MODULE, ONLY: Nobs
       USE PRMS_OBS
       IMPLICIT NONE
@@ -271,7 +271,7 @@
       ENDIF
 
       IF ( Rain_flag==ACTIVE ) THEN
-        IF ( getparam(MODNAME, 'rain_code', MONTHS_PER_YEAR, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
+        IF ( getparam(MODNAME, 'rain_code', Nmonths, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
       ENDIF
 
       Rain_day = OFF

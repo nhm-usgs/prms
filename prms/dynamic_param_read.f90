@@ -5,7 +5,7 @@
 ! pm_n_coef, pm_d_coef, pt_alpha, hs_krs, hamon_coef, potet_cbh_adj,
 ! wrain_intcp, srain_intcp, snow_intcp by HRU from pre-processed files.
 ! These parameters can be input for any date within the simulation time
-! period. Associated states with each parameter are adjusted.
+! period. Associated states with each parameter are adjusted in module computed.
 !***********************************************************************
       MODULE PRMS_DYNAMIC_PARAM_READ
         USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH
@@ -13,7 +13,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Time Series Data'
         character(len=*), parameter :: MODNAME = 'dynamic_param_read'
-        character(len=*), parameter :: Version_dynamic_param_read = '2023-11-01'
+        character(len=*), parameter :: Version_dynamic_param_read = '2024-01-31'
         INTEGER, SAVE :: Wrain_intcp_unit, Wrain_intcp_next_yr, Wrain_intcp_next_mo, Wrain_intcp_next_day
         INTEGER, SAVE :: Srain_intcp_unit, Srain_intcp_next_yr, Srain_intcp_next_mo, Srain_intcp_next_day
         INTEGER, SAVE :: Snow_intcp_unit, Snow_intcp_next_yr, Snow_intcp_next_mo, Snow_intcp_next_day
@@ -21,6 +21,7 @@
         INTEGER, SAVE :: Covtype_unit, Covtype_next_yr, Covtype_next_mo, Covtype_next_day
         INTEGER, SAVE :: Covden_sum_unit, Covden_sum_next_yr, Covden_sum_next_mo, Covden_sum_next_day, Covden_sum_flag
         INTEGER, SAVE :: Covden_win_unit, Covden_win_next_yr, Covden_win_next_mo, Covden_win_next_day, Covden_win_flag
+        INTEGER, SAVE :: cover_density_unit, cover_density_next_yr, cover_density_next_mo, cover_density_next_day
         INTEGER, SAVE :: Potetcoef_unit, Potetcoef_next_yr, Potetcoef_next_mo, Potetcoef_next_day
         INTEGER, SAVE :: Transpbeg_unit, Transpbeg_next_yr, Transpbeg_next_mo, Transpbeg_next_day, Transpbeg_flag
         INTEGER, SAVE :: Transpend_unit, Transpend_next_yr, Transpend_next_mo, Transpend_next_day, Transpend_flag
@@ -36,7 +37,7 @@
 ! Control Parameters
         CHARACTER(LEN=MAXFILE_LENGTH) :: wrain_intcp_dynamic, srain_intcp_dynamic, snow_intcp_dynamic, covtype_dynamic
         CHARACTER(LEN=MAXFILE_LENGTH) :: potetcoef_dynamic, transpbeg_dynamic, transpend_dynamic
-        CHARACTER(LEN=MAXFILE_LENGTH) :: radtrncf_dynamic, dynamic_param_log_file
+        CHARACTER(LEN=MAXFILE_LENGTH) :: radtrncf_dynamic, dynamic_param_log_file, cover_density_dynamic
         CHARACTER(LEN=MAXFILE_LENGTH) :: fallfrost_dynamic, springfrost_dynamic, transp_on_dynamic, snareathresh_dynamic
         CHARACTER(LEN=MAXFILE_LENGTH) :: covden_sum_dynamic, covden_win_dynamic, sro2dprst_perv_dyn, sro2dprst_imperv_dyn
       END MODULE PRMS_DYNAMIC_PARAM_READ
@@ -69,12 +70,12 @@
 !     dynparaminit - open files, read to start time, initialize flags and arrays
 !***********************************************************************
       INTEGER FUNCTION dynparaminit()
-        USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
-        USE PRMS_MODULE, ONLY: Nhru, Print_debug, Start_year, Start_month, Start_day, &
-     &      Dyn_intcp_flag, Dyn_covden_flag, &
-     &      Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
-     &      Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dyn_fallfrost_flag, &
-     &      Dyn_springfrost_flag, Dyn_snareathresh_flag
+      USE PRMS_CONSTANTS, ONLY: Nmonths, ACTIVE, OFF, ERROR_dynamic, DEBUG_minimum
+      USE PRMS_MODULE, ONLY: Nhru, Print_debug, Start_year, Start_month, Start_day, &
+     &    Dyn_intcp_flag, Dyn_covden_flag, &
+     &    Dyn_covtype_flag, Dyn_potet_flag, Dyn_transp_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
+     &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, Transp_flag, Dyn_fallfrost_flag, &
+     &    Dyn_springfrost_flag, Dyn_snareathresh_flag
       USE PRMS_DYNAMIC_PARAM_READ
       IMPLICIT NONE
 ! Functions
@@ -153,6 +154,16 @@
           istop = 1
         ENDIF
       ENDIF
+      IF ( Dyn_covden_flag == 4 ) THEN
+        IF ( control_string(cover_density_dynamic, 'cover_density_dynamic')/=0 ) CALL read_error(5, 'cover_density_dynamic')
+        CALL find_header_end(cover_density_unit, cover_density_dynamic, ierr)
+        IF ( ierr==0 ) THEN
+          CALL find_current_file_time(cover_density_unit, year, month, day, cover_density_next_yr, cover_density_next_mo, &
+                                      cover_density_next_day)
+        ELSE
+          istop = 1
+        ENDIF
+      ENDIF
 
       IF ( Dyn_covtype_flag==ACTIVE ) THEN
         IF ( control_string(covtype_dynamic, 'covtype_dynamic')/=0 ) CALL read_error(5, 'covtype_dynamic')
@@ -165,7 +176,7 @@
       ENDIF
 
       IF ( Dyn_potet_flag>OFF ) THEN
-        ALLOCATE ( Potet_coef(Nhru,12) )
+        ALLOCATE ( Potet_coef(Nhru,Nmonths) )
         IF ( control_string(potetcoef_dynamic, 'potetcoef_dynamic')/=0 ) CALL read_error(5, 'potetcoef_dynamic')
         CALL find_header_end(Potetcoef_unit, potetcoef_dynamic, ierr)
         IF ( ierr==0 ) THEN
@@ -320,9 +331,9 @@
       USE PRMS_MODULE, ONLY: Nhru, Nowyear, Nowmonth, Nowday, &
      &    Dyn_covtype_flag, Dyn_potet_flag, Dyn_radtrncf_flag, Dyn_transp_on_flag, &
      &    Dyn_sro2dprst_perv_flag, Dyn_sro2dprst_imperv_flag, &
-     &    Dyn_snareathresh_flag, Et_flag
+     &    Dyn_snareathresh_flag, Et_flag, Dyn_covden_flag
       USE PRMS_DYNAMIC_PARAM_READ
-      USE PRMS_BASIN, ONLY: Cov_type, Covden_win, Covden_sum
+      USE PRMS_BASIN, ONLY: Cov_type, Covden_win, Covden_sum, cover_density
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Epan_coef
       USE PRMS_POTET_JH, ONLY: Jh_coef, Jh_coef_hru
       USE PRMS_POTET_PM, ONLY: Pm_n_coef, Pm_d_coef
@@ -396,6 +407,16 @@
           ENDIF
         ENDIF
       ENDIF
+      IF ( Dyn_covden_flag == 4 ) THEN
+        IF ( cover_density_next_mo/=0 ) THEN
+          IF ( cover_density_next_yr==Nowyear .AND. cover_density_next_mo==Nowmonth .AND. cover_density_next_day==Nowday ) THEN
+            READ ( cover_density_unit, *, IOSTAT=ios ) cover_density_next_yr, cover_density_next_mo, cover_density_next_day, Temp
+            if (ios /= 0) call error_stop('reading cover_density dynamic parameter file', ERROR_dynamic)
+            CALL write_dynparam(Output_unit, Nhru, Updated_hrus, Temp, cover_density(:,Nowmonth), 'cover_density')
+            CALL is_eof(cover_density_unit, cover_density_next_yr, cover_density_next_mo, cover_density_next_day)
+          ENDIF
+        ENDIF
+      ENDIF
 
       IF ( Dyn_covtype_flag==ACTIVE ) THEN
         IF ( Covtype_next_mo/=0 ) THEN
@@ -423,10 +444,10 @@
 
             IF ( Et_flag==potet_jh_module ) THEN ! potet_jh
               IF ( Dyn_potet_flag==1 ) THEN
-                Jh_coef = Potet_coef
+                Jh_coef = DBLE( Potet_coef )
               ELSE
                 DO i = 1, Nhru
-                  Jh_coef_hru(i) = Potet_coef(i,Nowmonth)
+                  Jh_coef_hru(i) = DBLE( Potet_coef(i,Nowmonth) )
                 ENDDO
               ENDIF
             ELSEIF ( Et_flag==climate_hru_module ) THEN
@@ -438,11 +459,11 @@
                 Pm_d_coef = Potet_coef
               ENDIF
             ELSEIF ( Et_flag==potet_pt_module ) THEN
-              Pt_alpha = Potet_coef
+              Pt_alpha = DBLE( Potet_coef )
             ELSEIF ( Et_flag==potet_hs_module ) THEN
-              Hs_krs = Potet_coef
+              Hs_krs = DBLE( Potet_coef )
             ELSEIF ( Et_flag==potet_hamon_module ) THEN
-              Hamon_coef = Potet_coef
+              Hamon_coef = DBLE( Potet_coef )
             ELSEIF ( Et_flag==potet_pan_module ) THEN
               Epan_coef = DBLE( Potet_coef )
             ENDIF

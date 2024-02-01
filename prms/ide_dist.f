@@ -9,19 +9,20 @@
 ! Lauren Hay, November 2004
 !***********************************************************************
       MODULE PRMS_IDE
+      USE PRMS_CONSTANTS, ONLY: Nmonths
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC =
      +                               'Temp & Precip Distribution'
       character(len=*), parameter :: MODNAME = 'ide_dist'
-      character(len=*), parameter :: Version_ide_dist = '2024-01-23'
+      character(len=*), parameter :: Version_ide_dist = '2024-01-31'
       INTEGER, SAVE :: Temp_nsta, Rain_nsta
       INTEGER, SAVE, ALLOCATABLE :: Rain_nuse(:), Temp_nuse(:)
       DOUBLE PRECISION, SAVE :: Dalr
       DOUBLE PRECISION, SAVE :: Basin_centroid_x, Basin_centroid_y
-      REAL, SAVE :: Temp_wght_elev(12)
-      REAL, SAVE :: Prcp_wght_elev(12)
-      double precision, save, allocatable :: Precip_ide(:)
+      REAL, SAVE :: Temp_wght_elev(Nmonths)
+      REAL, SAVE :: Prcp_wght_elev(Nmonths)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Precip_ide(:)
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Tmax_rain_sta(:), Tmin_rain_sta(:)
 !   Declared Parameters
@@ -33,8 +34,8 @@
       INTEGER, SAVE :: Ndist_tsta, Ndist_psta
       REAL, SAVE :: Dist_exp
       REAL, SAVE, ALLOCATABLE :: Adjust_snow(:, :), Adjust_rain(:, :)
-      REAL, SAVE :: Temp_wght_dist(12)
-      REAL, SAVE :: Prcp_wght_dist(12)
+      REAL, SAVE :: Temp_wght_dist(Nmonths)
+      REAL, SAVE :: Prcp_wght_dist(Nmonths)
       REAL, SAVE, ALLOCATABLE :: Tmax_allsnow_sta(:, :)
       REAL, SAVE, ALLOCATABLE :: Tmax_allrain_sta(:, :)
       END MODULE PRMS_IDE
@@ -94,7 +95,7 @@
       ENDIF
 
 ! declare parameters
-      ALLOCATE ( Adjust_snow(Nrain,12) )
+      ALLOCATE ( Adjust_snow(Nrain,Nmonths) )
       IF ( declparam(MODNAME, 'adjust_snow', 'nrain,nmonths', 'real',
      +     '-0.4', '-0.5', '3.0',
      +     'Monthly (January to December) snow downscaling adjustment'//
@@ -104,7 +105,7 @@
      +     ' factor for each precipitation measurement station',
      +     'decimal fraction')/=0 ) CALL read_error(1, 'adjust_snow')
 
-      ALLOCATE ( Adjust_rain(Nrain,12) )
+      ALLOCATE ( Adjust_rain(Nrain,Nmonths) )
       IF ( declparam(MODNAME, 'adjust_rain', 'nrain,nmonths', 'real',
      +     '-0.4', '-0.5', '3.0',
      +     'Monthly (January to December) rain downscaling adjustment'//
@@ -225,7 +226,7 @@
      +     ' distance calculations',
      +     'none')/=0 ) CALL read_error(1, 'ndist_tsta')
 
-      ALLOCATE ( Tmax_allrain_sta(Nrain,12) )
+      ALLOCATE ( Tmax_allrain_sta(Nrain,Nmonths) )
       IF ( declparam(MODNAME, 'tmax_allrain_sta', 'nrain,nmonths',
      +     'real', '38.0', '-8.0', '75.0',
      +     'Precipitation is rain if HRU max temperature >= this value',
@@ -236,7 +237,7 @@
      +     ' precipitation is rain',
      +     'temp_units')/=0 ) CALL read_error(1, 'tmax_allrain_sta')
 
-      ALLOCATE ( Tmax_allsnow_sta(Nrain,12) )
+      ALLOCATE ( Tmax_allsnow_sta(Nrain,Nmonths) )
       IF ( declparam(MODNAME, 'tmax_allsnow_sta', 'nrain,nmonths',
      +     'real', '32.0', '-10.0', '40.0',
      +     'Maximum temperature when precipitation is all snow',
@@ -274,10 +275,10 @@
       Tmax_rain_sta = 0.0
       Tmin_rain_sta = 0.0
 
-      IF ( getparam(MODNAME, 'adjust_rain',Nrain*12,'real',
+      IF ( getparam(MODNAME, 'adjust_rain',Nrain*Nmonths,'real',
      +     Adjust_rain)/=0 ) CALL read_error(2, 'adjust_rain')
 
-      IF ( getparam(MODNAME, 'adjust_snow',Nrain*12,'real',
+      IF ( getparam(MODNAME, 'adjust_snow',Nrain*Nmonths,'real',
      +     Adjust_snow)/=0 ) CALL read_error(2, 'adjust_snow')
 
       IF ( getparam(MODNAME, 'solrad_elev', 1, 'real', Solrad_elev)
@@ -307,10 +308,10 @@
       IF ( getparam(MODNAME, 'psta_nuse', Nrain, 'integer',
      +     Psta_nuse)/=0 ) CALL read_error(2, 'psta_nuse')
 
-      IF ( getparam(MODNAME, 'temp_wght_dist', 12, 'real',
+      IF ( getparam(MODNAME, 'temp_wght_dist', Nmonths, 'real',
      +     Temp_wght_dist)/=0 ) CALL read_error(2, 'temp_wght_dist')
 
-      IF ( getparam(MODNAME, 'prcp_wght_dist', 12, 'real',
+      IF ( getparam(MODNAME, 'prcp_wght_dist', Nmonths, 'real',
      +     Prcp_wght_dist)/=0 ) CALL read_error(2, 'prcp_wght_dist')
 
       IF ( getparam(MODNAME, 'dist_exp', 1, 'real', Dist_exp)
@@ -330,11 +331,11 @@
         ierr = 1
       ENDIF
 
-      IF ( getparam(MODNAME, 'tmax_allrain_sta', Nrain*12,
+      IF ( getparam(MODNAME, 'tmax_allrain_sta', Nrain*Nmonths,
      +     'real',
      +     Tmax_allrain_sta)/=0 ) CALL read_error(2, 'tmax_allrain_sta')
 
-      IF ( getparam(MODNAME, 'tmax_allsnow_sta', Nrain*12,
+      IF ( getparam(MODNAME, 'tmax_allsnow_sta', Nrain*Nmonths,
      +     'real',
      +     Tmax_allsnow_sta)/=0 ) CALL read_error(2, 'tmax_allsnow_sta')
 
@@ -443,9 +444,10 @@
       USE PRMS_OBS, ONLY: Tmax, Tmin
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SNGL
+      INTRINSIC :: SNGL, DBLE
       EXTERNAL :: temp_set, compute_inv, compute_elv
       DOUBLE PRECISION, EXTERNAL :: c_to_f
+      REAL, EXTERNAL :: c_to_f_sngl
 ! Arguments
       REAL, INTENT(IN) :: Temp_wght_dist, Temp_wght_elev
 ! Local Variables
@@ -483,12 +485,12 @@
         IF ( Temp_wght_elev.GT.0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmax, dat_elev, itype)
-        tmax_hru = dble( (Temp_wght_dist*dat_dist) +
+        tmax_hru = DBLE( (Temp_wght_dist*dat_dist) +
      +                   (Temp_wght_elev*dat_elev) )
 !
 !  Temperature adjustment by HRU
 !
-        tmax_hru = tmax_hru + dble( Tmax_aspect_adjust(n, Nowmonth) )
+        tmax_hru = tmax_hru + Tmax_aspect_adjust(n, Nowmonth)
 
         itype = -1
         dat_elev = 0.0
@@ -499,12 +501,12 @@
         IF ( Temp_wght_elev.GT.0.0 )
      +       CALL compute_elv(Ntemp, Temp_nsta, Temp_nuse,
      +            Tsta_elev_meters, z, Tmin, dat_elev, itype)
-        tmin_hru = dble( (Temp_wght_dist*dat_dist) +
+        tmin_hru = DBLE( (Temp_wght_dist*dat_dist) +
      +                   (Temp_wght_elev*dat_elev) )
 !
 !  Temperature adjustment by HRU
 !
-        tmin_hru = tmin_hru + dble( Tmin_aspect_adjust(n, Nowmonth) )
+        tmin_hru = tmin_hru + Tmin_aspect_adjust(n, Nowmonth)
         IF ( Temp_units==CELSIUS ) THEN
           tmax_hru = c_to_f(tmax_hru)
           tmin_hru = c_to_f(tmin_hru)
@@ -591,8 +593,8 @@
         Tmin_rain_sta(n) = (Temp_wght_dist*dat_dist)
      +                     + (Temp_wght_elev*dat_elev)
         IF ( Temp_units==CELSIUS ) THEN
-          Tmax_rain_sta(n) = c_to_f(Tmax_rain_sta(n))
-          Tmin_rain_sta(n) = c_to_f(Tmin_rain_sta(n))
+          Tmax_rain_sta(n) = c_to_f_sngl(Tmax_rain_sta(n))
+          Tmin_rain_sta(n) = c_to_f_sngl(Tmin_rain_sta(n))
         ENDIF
       ENDDO
 
@@ -616,6 +618,7 @@
       USE PRMS_OBS, ONLY: Precip
       IMPLICIT NONE
 ! Functions
+      INTRINSIC :: SNGL, DBLE
       EXTERNAL :: precip_form, compute_inv, compute_elv, print_date
       EXTERNAL :: error_stop
 ! Arguments
@@ -738,7 +741,7 @@
       INTEGER, INTENT(IN) :: Imax, Ndist, Nsta
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse
       REAL, DIMENSION(Imax), INTENT(IN) :: Sta_x, Sta_y
-      double precision, DIMENSION(Imax), INTENT(IN) :: Dat
+      DOUBLE PRECISION, DIMENSION(Imax), INTENT(IN) :: Dat
       REAL, INTENT(IN) :: Dist_exp, X, Y
       REAL, INTENT(OUT) :: Dat_dist
 ! Local Variables
@@ -825,7 +828,7 @@
       INTEGER, DIMENSION(Imax), INTENT(IN) :: Nuse
       REAL, INTENT(IN) :: Z
       REAL, DIMENSION(Imax), INTENT(IN) :: Sta_z
-      double precision, dimension(Imax), intent(in) :: Datin
+      DOUBLE PRECISION, DIMENSION(Imax), intent(in) :: Datin
       REAL, INTENT(OUT) :: Dat_elev
 ! Local Variables
       INTEGER nn, j1, j2, num, n, i, j

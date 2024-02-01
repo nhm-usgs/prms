@@ -13,7 +13,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Temp & Precip Distribution'
         character(len=14), parameter :: MODNAME = 'mm_dist'
-        character(len=*), parameter :: Version_mm_dist = '2024-01-25'
+        character(len=*), parameter :: Version_mm_dist = '2024-01-31'
         integer, save :: Temp_nsta, Rain_nsta
         integer, save, allocatable :: Temp_nuse(:), Rain_nuse(:)
 ! Declared Variables 
@@ -58,7 +58,7 @@
       use PRMS_MODULE, only: Nhru, Ntemp, Nrain
       implicit none
 ! functions
-      integer, external :: declmodule, declvar, declparam
+      integer, external :: declvar, declparam
       external :: read_error, print_module
 !*********************************************************************** 
       call print_module( MODDESC, MODNAME, Version_mm_dist )
@@ -326,8 +326,8 @@
         endif
 
 ! Temperature adjustment by HRU
-        tmax_hru = tmax_hru + DBLE( Tmax_aspect_adjust(i, Nowmonth) )
-        tmin_hru = tmin_hru + DBLE( Tmin_aspect_adjust(i, Nowmonth) )
+        tmax_hru = tmax_hru + Tmax_aspect_adjust(i, Nowmonth)
+        tmin_hru = tmin_hru + Tmin_aspect_adjust(i, Nowmonth)
 
 ! IF max is less than min, switch
         if ( tmax_hru < tmin_hru ) then

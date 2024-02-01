@@ -19,12 +19,13 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=*), parameter :: MODNAME = 'smbal'
-      character(len=*), parameter :: Version_smbal = '2024-01-04'
+      character(len=*), parameter :: Version_smbal = '2024-01-26'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE, ALLOCATABLE :: Soil2gw(:), Soil_saturated(:)
       REAL, SAVE, ALLOCATABLE :: Snow_free(:), Potet_rechr(:), Potet_lower(:)
 !   Declared Variables
-      DOUBLE PRECISION, SAVE :: Basin_lakeprecip
+      DOUBLE PRECISION, SAVE :: Basin_lakeprecip, Basin_cap_infil_tot
+      REAL, SAVE, ALLOCATABLE :: Perv_actet(:), Cap_infil_tot(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Soil_type(:)
       REAL, SAVE, ALLOCATABLE :: Soil2gw_max(:)
@@ -60,37 +61,62 @@
 !     soil2gw_max, soil_type, cov_type, hru_area
 !***********************************************************************
       INTEGER FUNCTION smdecl()
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, DEBUG_SMBAL, ACTIVE, OFF, ERROR_control, ERROR_param
       USE PRMS_SMBAL
-      USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug
+      USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, Model, Dprst_flag, Frozen_flag, Glacier_flag, Cascade_flag
+      USE PRMS_FLOWVARS, ONLY: Pref_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: declparam, declvar
-      EXTERNAL :: read_error, print_module, PRMS_open_module_file
+      EXTERNAL :: read_error, print_module, PRMS_open_module_file, error_stop
 !***********************************************************************
       smdecl = 0
 
-      CALL print_module(MODDESC, MODNAME, Version_smbal)
+      CALL print_module( MODDESC, MODNAME, Version_smbal )
+      IF ( Print_debug == 1 ) CALL error_stop( 'print_debug = 1 is not available with smbal/ssflow', ERROR_control )
+      IF ( Pref_flag == ACTIVE ) CALL error_stop( 'preferential flow not available with smbal/ssflow', ERROR_param )
+
+      IF ( Dprst_flag == ACTIVE ) CALL error_stop( 'surface depression storage not available with smbal', ERROR_control )
+      IF ( Frozen_flag == ACTIVE ) CALL error_stop( 'frozen ground simulation not available with smbal', ERROR_control )
+      IF ( Glacier_flag == ACTIVE ) CALL error_stop( 'glacier simulation not available with smbal', ERROR_control )
+      IF ( Cascade_flag /= OFF ) CALL error_stop( 'cascading flow not available with smbal', ERROR_control )
+
+      IF ( Cascade_flag /= OFF ) CALL error_stop( 'cascading flow not available with smbal', ERROR_control )
 
 ! Declare Variables and Parameters
-      IF ( Nlake>0 ) THEN
-
       ALLOCATE ( Potet_lower(Nhru) )
       ALLOCATE ( Potet_rechr(Nhru) )
       ALLOCATE ( Snow_free(Nhru) )
       ALLOCATE ( Soil_saturated(Nhru) )
 
-      IF ( Print_debug==7 ) CALL PRMS_open_module_file(DBGUNT, 'soilzone.dbg')
+      IF ( Print_debug == DEBUG_SMBAL ) CALL PRMS_open_module_file(DBGUNT, 'smbal.dbg')
 
+      IF ( Nlake > 0 .OR. Model == DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'basin_lakeprecip', 'one', 1, 'double', &
      &       'Basin area-weighted average precipitation on lake HRUs', &
-     &       'inches', Basin_lakeprecip)/=0 ) CALL read_error(3, 'basin_lakeprecip')
+     &       'inches', Basin_lakeprecip) /= 0 ) CALL read_error( 3, 'basin_lakeprecip' )
         ALLOCATE ( Lake_evap_adj(12,Nlake) )
         IF ( declparam(MODNAME, 'lake_evap_adj', 'nmonths,nlake', 'real', &
      &       '1.0', '0.5', '1.5', &
      &       'Monthly potet factor to adjust potet on lakes', &
      &       'Monthly (January to December) multiplicative adjustment factor for potential ET for each lake', &
-     &       'decimal fraction')/=0 ) CALL read_error(1, 'lake_evap_adj')
+     &       'decimal fraction') /= 0 ) CALL read_error( 1, 'lake_evap_adj' )
       ENDIF
+
+      IF ( declvar(MODNAME, 'basin_cap_infil_tot', 'one', 1, 'double', &
+     &     'Basin area-weighted average infiltration with cascading flow into capillary reservoirs', &
+     &     'inches', Basin_cap_infil_tot) /= 0 ) CALL read_error( 3, 'basin_cap_infil_tot' )
+
+      ALLOCATE ( Cap_infil_tot(Nhru) )
+      IF ( declvar(MODNAME, 'cap_infil_tot', 'nhru', Nhru, 'real', &
+     &     'Infiltration and cascading interflow and Dunnian flow added to capillary reservoir storage for each HRU', &
+     &     'inches', Cap_infil_tot) /= 0 ) CALL read_error( 3, 'cap_infil_tot' )
+
+      ALLOCATE ( Perv_actet(Nhru) )
+      IF ( declvar(MODNAME, 'perv_actet', 'nhru', Nhru, 'real', &
+     &     'Actual ET from the capillary reservoir of each HRU', &
+     &     'inches', Perv_actet)/=0 ) CALL read_error(3, 'perv_actet')
+
       ALLOCATE ( Soil2gw_max(Nhru) )
       IF ( declparam(MODNAME, 'soil2gw_max', 'nhru', 'real', &
      &     '0.0', '0.0', '5.0', &
@@ -103,7 +129,7 @@
       IF ( declparam(MODNAME, 'soil_type', 'nhru', 'integer', &
      &     '2', '1', '3', &
      &     'HRU soil type', 'Soil type of each HRU (1=sand; 2=loam; 3=clay)', &
-     &     'none')/=0 ) CALL read_error(1, 'soil_type')
+     &     'none') /= 0 ) CALL read_error( 1, 'soil_type' )
 
 ! Allocate arrays for local variables
       ALLOCATE ( Soil2gw(Nhru) )
@@ -115,21 +141,22 @@
 !              set initial values and check parameter values
 !***********************************************************************
       INTEGER FUNCTION sminit()
-      USE PRMS_CONSTANTS, ONLY: NEARZERO
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, Nmonths
       USE PRMS_SMBAL
       USE PRMS_MODULE, ONLY: Nhru, Nlake
       IMPLICIT NONE
 ! Functions
+      INTRINSIC :: maxval
       EXTERNAL :: read_error
       INTEGER, EXTERNAL :: getparam
 !***********************************************************************
       sminit = 0
 
-      IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type)/=0 ) CALL read_error(2, 'soil_type')
-      IF ( getparam(MODNAME, 'soil2gw_max', Nhru, 'real', Soil2gw_max)/=0 ) CALL read_error(2, 'soil2gw_max')
+      IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type) /= 0 ) CALL read_error( 2, 'soil_type' )
+      IF ( getparam(MODNAME, 'soil2gw_max', Nhru, 'real', Soil2gw_max) /= 0 ) CALL read_error( 2, 'soil2gw_max' )
       IF ( Nlake>0 ) THEN
-        IF ( getparam(MODNAME, 'lake_evap_adj', 12*Nlake, 'real', Lake_evap_adj)/=0 ) &
-     &       CALL read_error(2, 'lake_evap_adj')
+        IF ( getparam(MODNAME, 'lake_evap_adj', Nmonths*Nlake, 'real', Lake_evap_adj) /= 0 ) &
+     &       CALL read_error( 2, 'lake_evap_adj' )
       ENDIF
 
       END FUNCTION sminit
@@ -146,10 +173,10 @@
       USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_area, Hru_perv, Hru_frac_perv, Lake_hru_id, &
      &    Active_hrus, Hru_route_order, Basin_area_inv, Hru_type, Cov_type
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Potet, Hru_ppt, Basin_potet
-      USE PRMS_FLOWVARS, ONLY: Basin_actet, Hru_actet, Soil_to_gw, Basin_soil_rechr, Cap_infil_tot, &
-     &    Basin_soil_to_gw, Soil_to_ssr, Basin_perv_et, Basin_lakeevap, Perv_actet, Basin_cap_infil_tot, &
-     &    Soil_rechr_max, Soil_moist_max, Infil, Basin_soil_moist, Soil_moist, Soil_rechr
-      USE PRMS_SOILZONE, ONLY: Basin_sz2gw, Cap_waterin, Basin_capwaterin, Soil_lower, Basin_lake_stor, Basin_sm2gvr
+      USE PRMS_FLOWVARS, ONLY: Basin_actet, Hru_actet, Soil_to_gw, Basin_soil_rechr, &
+     &    Basin_soil_to_gw, Soil_to_ssr, Basin_perv_et, Basin_lakeevap, &
+     &    Soil_rechr_max, Soil_moist_max, Infil, Basin_soil_moist, Soil_moist, Soil_rechr, Basin_lake_stor
+      USE PRMS_SOILZONE, ONLY: Basin_sz2gw, Cap_waterin, Basin_capwaterin, Soil_lower, Basin_sm2gvr
       USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap
@@ -158,7 +185,7 @@
       EXTERNAL :: compute_soilmoist, compute_szactet
 ! Local Variables
       INTEGER :: i, k, update_potet
-      REAL :: avail_potet, gvr_maxin
+      REAL :: avail_potet, gvr_maxin, potet_sngl
       REAL :: perv_area, harea, hruactet, perv_frac, capwater_maxin, pervactet !, tmp
 !***********************************************************************
       smrun = 0
@@ -193,8 +220,9 @@
 ! ***************************************
         hruactet = Hru_impervevap(i) + Hru_intcpevap(i) + Snow_evap(i)
         harea = Hru_area(i)
+        potet_sngl = SNGL( Potet(i) )
 
-        IF ( Hru_type(i)==LAKE ) THEN ! lake or reservoir
+        IF ( Hru_type(i) == LAKE ) THEN ! lake or reservoir
           !WARNING, RSR, if hru_actet>water in lake, then budget error
           hruactet = (sngl(Potet(i)) - hruactet)*Lake_evap_adj(Nowmonth,Lake_hru_id(i))
           IF ( hruactet>sngl(Potet(i)) ) THEN
@@ -262,7 +290,8 @@
             CALL compute_szactet(Soil_moist_max(i), Soil_rechr_max(i), Transp_on(i), Cov_type(i), &
      &                           Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, avail_potet, &
      &                           Snow_free(i), Potet_rechr(i), Potet_lower(i), &
-     &                           Potet(i), perv_frac, Soil_saturated(i), i)
+     &                           potet_sngl, perv_frac, Soil_saturated(i), i, 0)
+
           ! sanity check
 !          IF ( pervactet>avail_potet ) THEN
 !            Soil_moist(i) = Soil_moist(i) + pervactet - avail_potet

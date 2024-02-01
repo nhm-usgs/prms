@@ -26,7 +26,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: MAXLINE_LENGTH = 256
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
-    integer, parameter :: MONTHS_PER_YEAR = 12
+    integer, parameter :: Nmonths = 12
     integer, parameter :: MAX_DAYS_PER_YEAR = 366
     integer, parameter :: DAYS_PER_YEAR = 365
     real(DOUBLEsize), parameter :: DAYS_YR = 365.242D0
@@ -195,15 +195,16 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: DEBUG_normal = 0
     integer, parameter :: DEBUG_WB = 1
     integer, parameter :: DEBUG_SOLTAB = 5
+    integer, parameter :: DEBUG_SMBAL = 5
 
 ! module flags
     integer, parameter :: precip_1sta_module = 1, precip_laps_module = 2, precip_dist2_module = 3
     integer, parameter :: ide_dist_module = 5, xyz_dist_module = 6, precip_map_module = 9, climate_hru_module = 7
     integer, parameter :: temp_1sta_module = 1, temp_laps_module = 2, temp_dist2_module = 3
-    integer, parameter :: temp_map_module = 9, temp_sta_module = 8
+    integer, parameter :: temp_map_module = 9, temp_sta_module = 8, temp_2sta_module = 4
     integer, parameter :: potet_jh_module = 1, potet_hamon_module = 2, potet_pan_module = 4, potet_jh_warm_module = 12
     integer, parameter :: potet_pt_module = 5, potet_pm_sta_module = 6, potet_hs_module = 10, potet_pm_module = 11
-    integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7
+    integer, parameter :: strmflow_muskingum_module = 4, strmflow_muskingum_mann_module = 7, musroute_module = 12
     integer, parameter :: strmflow_muskingum_lake_module = 3, strmflow_in_out_module = 5, strmflow_noroute_module = 1
     integer, parameter :: smidx_module = 1, carea_module = 2, ddsolrad_module = 1, ccsolrad_module = 2
     integer, parameter :: mm_dist_module = 10, greenampt_module = 10

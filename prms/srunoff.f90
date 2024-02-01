@@ -595,7 +595,7 @@
       USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag, AG_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
-     &    Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv, &
+     &    Hru_perv, Hru_imperv, Hru_frac_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble, Ag_area
       USE PRMS_CLIMATEVARS, ONLY: Potet, Tavgc
@@ -670,7 +670,7 @@
         Hruarea = Hru_area(i)
         Hruarea_dble = Hru_area_dble(i)
         Hruarea_imperv = Hru_imperv(i)
-        Imperv_frac = Hru_percent_imperv(i)
+        Imperv_frac = Hru_frac_imperv(i)
         upslope = 0.0D0
         IF ( Cascade_flag>CASCADE_OFF ) upslope = Upslope_hortonian(i)
         ag_on = OFF
@@ -1257,7 +1257,7 @@
       USE PRMS_SRUNOFF
       USE PRMS_CONSTANTS, ONLY: ACTIVE
       USE PRMS_MODULE, ONLY: Init_vars_from_file, Nhru, PRMS4_flag, Inputerror_flag
-      USE PRMS_BASIN, ONLY: Dprst_clos_flag, Dprst_frac, &
+      USE PRMS_BASIN, ONLY: Dprst_clos_flag, Hru_frac_dprst, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Basin_area_inv, &
      &    Hru_area_dble, Active_hrus, Hru_route_order, Dprst_open_flag
       USE PRMS_FLOWVARS, ONLY: Dprst_vol_open, Dprst_vol_clos, Dprst_stor_hru
@@ -1324,9 +1324,9 @@
       DO j = 1, Active_hrus
         i = Hru_route_order(j)
 
-        IF ( Dprst_frac(i)>0.0 ) THEN
+        IF ( Hru_frac_dprst(i)>0.0 ) THEN
           IF ( Dprst_depth_avg(i)==0.0 ) THEN
-            PRINT *, 'ERROR, dprst_frac>0 and dprst_depth_avg==0 for HRU:', i, '; dprst_frac:', Dprst_frac(i)
+            PRINT *, 'ERROR, dprst_frac>0 and dprst_depth_avg==0 for HRU:', i, '; dprst_frac:', Hru_frac_dprst(i)
             Inputerror_flag = 1
             CYCLE
           ENDIF

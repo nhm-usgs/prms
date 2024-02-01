@@ -6,7 +6,9 @@
 !
 ! gwflow goes to GWR instead of to the lake unless specified as
 ! going to stream segment associated with the lake, which would be a
-! problem
+! problem, thus gw_upslope usually goes to GWR under the lake,
+! but is included in strm_seg_in if gwflow is associated with a stream
+! segment, set in gwflow, 06/15/2009
 !
 ! nlake_hrus set to nlake for version 5.0.0, nlake_hrus to be added in 5.0.1
 ! in future this module may be used for muskingum only, so would need to
@@ -90,6 +92,24 @@
 !      time step (one hour), then the outflow of the segment is set to the
 !      value of the inflow.
 !
+! Modified 6/2006 to simulate dead storage in a reservoir reach segment_type 1
+! that is filled by channel losses.  Storage is reduce at the basin's
+! potential evaporation rate and a user-defined percentage of the volume.
+! Assumes daily timestep.
+!   New parameters:  dead_volume (ac-ft)
+!                    reach_area (ac-ft)
+!   New variable     dead_storage (ac-ft)
+!
+! Modified 6/2006 to simulate channel losses in a reservoir reach--segment_type 1
+! Losses are assumed to be lost first to dead storage and then to deep
+! groundwater. Use monthlyq_pot.f module to get listings of the amount of
+! channel loss.
+!   New parameters:  deep_sink_pct         percentage of flow that is lost
+!                    channel_sink_pct      decimal percent of dead storage
+!                                          lost daily to deep groundwater
+!                    channel_sink_thrshld  maximum flow in cfs that
+!                                          channel_sink_pct is applied
+!   New variable:    channel_loss
 !***********************************************************************
       MODULE PRMS_MUSKINGUM_LAKE
       IMPLICIT NONE
@@ -97,11 +117,16 @@
       DOUBLE PRECISION, PARAMETER :: ONE_24TH = 1.0D0 / 24.0D0
       character(len=*), parameter :: MODDESC = 'Streamflow & Lake Routing'
       character(len=14), parameter :: MODNAME = 'muskingum_lake'
-      character(len=*), parameter :: Version_muskingum_lake = '2024-01-1'
+      character(len=*), parameter :: Version_muskingum_lake = '2024-01-31'
       INTEGER, SAVE :: Obs_flag, Linear_flag, Weir_flag, Gate_flag, Puls_flag
       INTEGER, SAVE :: Secondoutflow_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Currinsum(:), Pastin(:), Pastout(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Outflow_ts(:), Inflow_ts(:)
+      INTEGER, SAVE :: Nmusktable, Nbankval
+      INTEGER, SAVE, ALLOCATABLE :: Ts_i_table(:, :), Nratetable(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ts_table(:, :), Czero_t(:, :), Cone_t(:, :), Ctwo_t(:, :)
+      REAL, SAVE, ALLOCATABLE :: Past_deadstr(:)
+      INTEGER, SAVE, ALLOCATABLE :: Lake_id(:), segment_hru_id(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: C24(:, :), S24(:, :), Wvd(:, :)
 !   Dimensions
       INTEGER, SAVE :: Mxnsos, Ngate, Nstage, Ngate2, Nstage2, Ngate3, Nstage3, Ngate4, Nstage4
@@ -113,6 +138,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_stream_in(:), Lake_lateral_inflow(:), Lake_gwflow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_precip(:), Lake_sroff(:), Lake_interflow(:), Lake_outvol_ts(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Lake_seep_in(:), Lake_evap(:), Lake_2gw(:), Lake_outq2(:)
+      REAL, SAVE, ALLOCATABLE :: Dead_storage(:), Channel_loss(:), Vol_loss(:)
 !   Declared Parameters
       ! lake_segment_id only required if cascades are active, otherwise use hru_segment
       INTEGER, SAVE, ALLOCATABLE :: Obsout_lake(:), Lake_out2(:), Nsos(:), Ratetbl_lake(:), Lake_segment_id(:)
@@ -122,6 +148,12 @@
       REAL, SAVE, ALLOCATABLE :: Rate_table(:, :), Rate_table2(:, :), Rate_table3(:, :), Rate_table4(:, :)
       REAL, SAVE, ALLOCATABLE :: Tbl_stage(:), Tbl_gate(:), Tbl_stage2(:), Tbl_gate2(:)
       REAL, SAVE, ALLOCATABLE :: Tbl_stage3(:), Tbl_gate3(:), Tbl_stage4(:), Tbl_gate4(:)
+      INTEGER, SAVE, ALLOCATABLE :: Table_segment(:), Segment_table_on_off(:)
+      REAL, SAVE, ALLOCATABLE :: Ratetbl_disch(:, :), K_coef_table(:, :), X_coef_table(:, :)
+      REAL, SAVE, ALLOCATABLE :: Dead_vol(:), Reach_area(:), Deep_sink_pct(:)
+      REAL, SAVE, ALLOCATABLE :: Channel_sink_thrshld(:), Channel_sink_pct(:)
+!   Declared Control Parameters
+      INTEGER, SAVE :: Dead_storage_flag
       END MODULE PRMS_MUSKINGUM_LAKE
 
 !***********************************************************************
@@ -163,6 +195,10 @@
       EXTERNAL :: read_error
 !***********************************************************************
       muskingum_lake_setdims = 0
+      IF ( decldim('nmusktable', 0, MAXDIM, 'Number of Muskingum rating tables')/=0 ) &
+     &     CALL read_error(7, 'nmusktable')
+      IF ( decldim('nbankval', 2, MAXDIM, 'Maximum number of values in Muskingum rating tables')/=0 ) &
+     &     CALL read_error(7, 'nbankval')
 
       IF ( decldim('ngate', 0, MAXDIM, &
      &     'Maximum number of reservoir gate-opening values (columns) for lake rating table 1')/=0 ) &
@@ -203,12 +239,12 @@
 !     lake_out2, lake_out2_a, lake_out2_b
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_decl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, CASCADE_OFF, ERROR_dim
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, CASCADE_OFF, ERROR_dim, ACTIVE, OFF
       USE PRMS_MODULE, ONLY: Model, Nsegment, Nratetbl, Nlake, Init_vars_from_file, Cascade_flag
       USE PRMS_MUSKINGUM_LAKE
       IMPLICIT NONE
 ! Functions
-      INTEGER, EXTERNAL :: declparam, declvar, getdim
+      INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
       EXTERNAL :: read_error, print_module, error_stop
 !***********************************************************************
       muskingum_lake_decl = 0
@@ -286,6 +322,102 @@
       ALLOCATE ( Currinsum(Nsegment) )
       ALLOCATE ( Pastin(Nsegment), Pastout(Nsegment) )
       ALLOCATE ( Outflow_ts(Nsegment), Inflow_ts(Nsegment) )
+      ALLOCATE ( Table_segment(Nsegment) )
+
+      IF ( control_integer(Dead_storage_flag, 'dead_storage_flag')/=0 ) Dead_storage_flag = OFF
+      IF ( Dead_storage_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
+        ! segment_hru_id is the HRU id of the last hru_segment value
+        ALLOCATE ( Lake_id(Nsegment), segment_hru_id(Nsegment) )
+        Nmusktable = getdim('nmusktable')
+        IF ( Nmusktable/=0 ) CALL read_error(6, 'nmusktable')
+        IF ( Model==DOCUMENTATION .AND. Nmusktable==0 ) Nmusktable = 1
+        Nbankval = getdim('nbankval')
+        IF ( Nbankval==-1 ) CALL read_error(6, 'nbankval')
+        IF ( Model==DOCUMENTATION .AND. Nbankval==0 ) Nbankval = 1
+        ALLOCATE ( Czero_t(Nbankval,Nmusktable), Cone_t(Nbankval,Nmusktable), Ctwo_t(Nbankval,Nmusktable) )
+        ALLOCATE ( Ts_i_table(Nbankval,Nmusktable), Ts_table(Nbankval,Nmusktable), Nratetable(Nsegment) )
+
+        ALLOCATE ( K_coef_table(Nbankval,Nmusktable) )
+        IF ( declparam(MODNAME, 'K_coef_table', 'nbankval,nmusktable', 'real', &
+     &       '1.0', '0.01', '24.0', &
+     &       'Muskingum storage coefficient for each rating table', &
+     &       'Travel time of flood wave from one segment to the next downstream segment,'// &
+     &       ' called the Muskingum storage coefficient; enter 1.0 for reservoirs,'// &
+     &       ' diversions, and segment(s) flowing out of the basin', &
+     &       'hours')/=0 ) CALL read_error(1, 'K_coef_table')
+        ALLOCATE ( X_coef_table(Nbankval,Nmusktable) )
+        IF ( declparam(MODNAME, 'x_coef_table', 'nbankval,nmusktable', 'real', &
+     &       '0.2', '0.0', '0.5', &
+     &       'Routing weighting factor for each rating table', &
+     &       'The amount of attenuation of the flow wave, called the Muskingum routing weighting factor;'// &
+     &       ' enter 0.0 for reservoirs, diversions, and segment(s) flowing out of the basin', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'x_coef_table')
+        ALLOCATE ( Ratetbl_disch(Nbankval,Nmusktable) )
+        IF ( declparam(MODNAME, 'ratetbl_disch', 'nbankval,nmusktable', 'real', &
+     &       '-999.0',  '0.0', '240.0', &
+     &       'Flow rate corresponding to the musroute rating table', &
+     &       'Flow rate corresponding to the musroute rating table', &
+     &       'runoff_units')/=0 ) CALL read_error(1, 'ratetbl_disch')
+        IF ( declparam(MODNAME, 'table_segment', 'nsegment', 'integer', &
+     &       '0', '0', 'nmusktable', &
+     &       'Rating table number for Maskingum flow routing', &
+     &       'Rating table number for Maskingum flow routing', &
+     &       'none')/=0 ) CALL read_error(1, 'table_segment')
+        ALLOCATE ( Segment_table_on_off(Nsegment) )
+        IF ( declparam(MODNAME, 'segment_table_on_off', 'nsegment', 'integer', &
+     &       '0', '0', '1', &
+     &       'Use or not use Muskingum flow rating table (0=no; 1=yes)', &
+     &       'Use or not use Muskingum flow rating table (0=no; 1=yes)', &
+     &       'none')/=0 ) CALL read_error(1, 'segment_table_on_off')
+
+! New parameters for dead storage simulation
+        ALLOCATE ( Past_deadstr(Nsegment) )
+! New variable for dead storage simulation
+        ALLOCATE ( Dead_storage(Nsegment) )
+        IF ( declvar(MODNAME, 'dead_storage', 'nsegment', Nsegment, 'real', &
+     &       'The current amount of water in dead storage', &
+     &       'acre-feet', Dead_storage)/=0 ) CALL read_error(3, 'dead_storage')
+! New variables for channel loss simulation
+        ALLOCATE ( Channel_loss(Nsegment) )
+        IF ( declvar(MODNAME, 'channel_loss', 'nsegment', Nsegment, 'real', &
+     &       'Amount of water loss to deep groundwater from a segment', &
+     &       'cfs', Channel_loss)/=0 ) CALL read_error(3, 'channel_loss')
+        ALLOCATE ( Vol_loss(Nsegment) )
+        IF ( declvar(MODNAME, 'vol_loss', 'nsegment', Nsegment, 'real', &
+     &       'Amount of water volume loss to deep groundwater from a segment', &
+     &       'acre-feet', Vol_loss)/=0 ) CALL read_error(3, 'vol_loss')
+        ALLOCATE ( Dead_vol(Nsegment) )
+        IF ( declparam(MODNAME, 'dead_vol', 'nsegment', 'real', &
+     &       '0.0', '0.0', '1E+07', &
+     &       'Dead storage in acre-feet for reservoir segments', &
+     &       'Volume in a reach that needs to be filled before flow leaves the segment. Volume is reduced by evaporation', &
+     &       'acre-feet')/=0 ) CALL read_error(1, 'dead_vol')
+        ALLOCATE ( Reach_area(Nsegment) )
+        IF ( declparam(MODNAME, 'reach_area', 'nsegment', 'real', &
+     &       '0.0', '0.0', '1E+07', &
+     &       'Reach area in acres of dead storage', &
+     &       'Used to calculate evaporation to reduce dead-storage volume', &
+     &       'acres')/=0 ) CALL read_error(1, 'reach_area')
+! New parameters for channel loss simulation
+        ALLOCATE ( Deep_sink_pct(Nsegment) )
+        IF ( declparam(MODNAME, 'deep_sink_pct', 'nsegment', 'real', &
+     &       '0.0', '0.0', '1.0', &
+     &       'Portion of flow in segment that is lost', &
+     &       'Segment discharge is reduced by this decimal percentage for reservoir type segments', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'deep_sink_pct')
+        ALLOCATE ( Channel_sink_pct(Nsegment) )
+        IF ( declparam(MODNAME, 'channel_sink_pct', 'nsegment', 'real', &
+     &       '0.0', '0.0', '1.0', &
+     &       'Portion of flow in channel that is lost', &
+     &       'Segment discharge is reduced by this decimal percentage and routed to dead storage only if it is not filled', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'channel_sink_pct')
+        ALLOCATE ( Channel_sink_thrshld(Nsegment) )
+        IF ( declparam(MODNAME, 'channel_sink_thrshld', 'nsegment', 'real', &
+     &       '10.0', '0.0', '1E+07', &
+     &       'The maximum discharge that channel_sink_pct is applied', &
+     &       'The maximum channel loss in reservoir segment types', &
+     &       'cfs')/=0 ) CALL read_error(1, 'channel_sink_thrshld')
+      ENDIF
 
       ! Lake declared variables
       ALLOCATE ( Lake_inflow(Nlake) )
@@ -615,7 +747,7 @@
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_init()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, CFS2CMS_CONV, DNEARZERO, LAKE, ERROR_dim, CASCADE_OFF, CASCADE_HRU_SEGMENT
-      USE PRMS_MODULE, ONLY: Nsegment, Nhru, Nratetbl, Nlake, Init_vars_from_file, Cascade_flag, Inputerror_flag
+      USE PRMS_MODULE, ONLY: Nsegment, Nhru, Nratetbl, Nlake, Nobs, Init_vars_from_file, Cascade_flag, Inputerror_flag
       USE PRMS_MUSKINGUM_LAKE
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_route_order, Gwr_type, &
      &    Lake_hru_id, Weir_gate_flag, Lake_type, Puls_lin_flag
@@ -625,15 +757,108 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, NINT, DBLE, DABS
-      EXTERNAL :: read_error, error_stop
+      EXTERNAL :: read_error, error_stop, set_musk_coefs
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
-      INTEGER :: i, ierr, j, jj, kk, ii, jjj
+      INTEGER :: i, ierr, j, jj, kk, ii, jjj, itable, ntable
       DOUBLE PRECISION :: tmp
 !***********************************************************************
       muskingum_lake_init = 0
 
       IF ( Init_vars_from_file==0 ) Outflow_ts = 0.0D0
+
+      IF ( Dead_storage_flag==ACTIVE ) THEN
+        IF ( getparam(MODNAME, 'K_coef_table', Nbankval*Nmusktable, 'real', K_coef_table)/=0 ) &
+             CALL read_error(2, 'K_coef_table')
+        IF ( getparam(MODNAME, 'x_coef_table', Nbankval*Nmusktable, 'real', X_coef_table)/=0 ) &
+             CALL read_error(2, 'x_coef_table')
+        IF ( getparam(MODNAME, 'ratetbl_disch',  Nbankval*Nmusktable, 'real', Ratetbl_disch)/=0 ) &
+             CALL read_error(2, 'ratetbl_disch')
+        IF ( getparam(MODNAME, 'table_segment', Nsegment, 'integer', Table_segment)/=0 ) &
+             CALL read_error(2, 'table_segment')
+        IF ( getparam(MODNAME, 'segment_table_on_off', Nsegment, 'integer', Segment_table_on_off)/=0 ) &
+             CALL read_error(2, 'segment_table_on_off')
+
+        Nratetable = 0
+        ierr = 0
+        DO i = 1, Nsegment
+          IF ( Table_segment(i)>Nmusktable ) THEN
+            PRINT *, 'ERROR, table id is > nmusktable for segment:', i, ' table id =', Table_segment(i)
+            ierr = 1
+            CYCLE
+          ENDIF
+          IF ( Segment_table_on_off(i)==0 ) THEN
+            DO j = 1, Nbankval
+              K_coef_table(j, i) = 0.0
+            ENDDO
+            Table_segment(i) = 0
+          ENDIF
+        ENDDO
+        IF ( ierr==1 ) THEN
+          Inputerror_flag = 1
+          RETURN
+        ENDIF
+        DO i = 1, Nmusktable
+          DO j = Nbankval, 1, -1
+            IF ( K_coef_table(j, i)>0.009 ) THEN
+              Nratetable(i) = j
+              EXIT
+            ENDIF
+          ENDDO
+        ENDDO
+
+        IF ( Init_vars_from_file==0 ) THEN
+          IF ( Dead_storage_flag==ACTIVE ) Dead_storage = 0.0
+        ENDIF
+      ELSE
+        Table_segment = OFF
+      ENDIF
+!
+!     Compute the three constants in the Muskingum routing equation based
+!     on the values of K_coef and a routing period of 1 hour. See the notes
+!     at the top of this file.
+
+!  if c2 is <= 0.0 then  short travel time though reach (less daily
+!  flows), thus outflow is mainly = inflow w/ small influence of previous
+!  inflow. Therefore, keep c0 as is, and lower c1 by c2, set c2=0
+
+!  if c0 is <= 0.0 then long travel time through reach (greater than daily
+!  flows), thus mainly dependent on yesterdays flows.  Therefore, keep
+!  c2 as is, reduce c1 by c0 and set c0=0
+!
+      IF ( Dead_storage_flag==ACTIVE ) THEN
+        Czero_t = 0.0
+        Cone_t = 0.0
+        Ctwo_t = 0.0
+        Ts_i_table = 1
+        Ts_table = 1.0
+!make sure K>0
+        ierr = 0
+        DO i = 1, Nsegment
+          IF ( Table_segment(i)>0 ) THEN
+            itable = Table_segment(i)
+            ntable = Nratetable(itable)
+            DO j = 1, ntable
+              CALL set_musk_coefs(i, K_coef_table(j, itable), X_coef_table(j, itable), &
+                                  Czero_t(j,itable), Cone_t(j,itable), Ctwo_t(j,itable), &
+                                  Ts_table(j,itable), Ts_i_table(j,itable), Segment_type(i), ierr)
+            ENDDO
+          ENDIF
+        ENDDO
+        IF ( ierr==1 ) PRINT '(/,A,/)', '***Recommend that the Muskingum parameters be adjusted in the Parameter File'
+        DEALLOCATE ( K_coef_table, X_coef_table)
+        Lake_id = 0
+        segment_hru_id = 0
+        DO i = 1, Nsegment
+          DO kk = 1, Active_hrus
+            j = Hru_route_order(kk)
+            IF ( Hru_segment(j)==i ) THEN
+              IF ( Segment_type(i)==2 ) Lake_id(i) = Lake_hru_id(j)
+              Segment_hru_id(i) = j
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDIF
 
       Basin_segment_storage = 0.0D0
       DO i = 1, Nsegment
@@ -840,8 +1065,8 @@
 !            ENDIF
 !          ENDIF
         ELSEIF ( Lake_type(j)==6 ) THEN
-          IF ( Obsout_lake(j)==0 ) THEN
-            PRINT *, 'ERROR, obsout_lake value = 0 for lake:', j, Obsout_lake(j)
+          IF ( Obsout_lake(j)==0 .OR. Obsout_lake(j)>Nobs ) THEN
+            PRINT *, 'ERROR, obsout_lake value = 0 or > nobs for lake:', j, Obsout_lake(j)
             ierr = 1
           ENDIF
         ENDIF
@@ -870,13 +1095,26 @@
       !DEALLOCATE ( Lake_din1, Lake_qro )
       IF ( Mxnsos>0 ) DEALLOCATE ( O2, S2 )
 
+      IF ( Dead_storage_flag==ACTIVE ) THEN
+        Past_deadstr = Dead_storage
+! following parameters for dead storage simulation
+        IF ( getparam(MODNAME, 'dead_vol', Nsegment, 'real', Dead_vol)/=0 ) CALL read_error(2, 'dead_vol')
+        IF ( getparam(MODNAME, 'reach_area', Nsegment, 'real', Reach_area)/=0 ) CALL read_error(2, 'reach_area')
+! following parameters for channel loss simulation
+        IF ( getparam(MODNAME, 'deep_sink_pct', Nsegment, 'real', Deep_sink_pct)/=0 ) CALL read_error(2, 'deep_sink_pct')
+        IF ( getparam(MODNAME, 'channel_sink_pct', Nsegment, 'real', Channel_sink_pct)/=0 ) &
+             CALL read_error(2, 'channel_sink_pct')
+        IF ( getparam(MODNAME, 'channel_sink_thrshld', Nsegment, 'real', Channel_sink_thrshld)/=0 ) &
+             CALL read_error(2, 'channel_sink_thrshld')
+      ENDIF
+
       END FUNCTION muskingum_lake_init
 
 !***********************************************************************
 !     muskingum_lake_run - Compute routing summary values
 !***********************************************************************
       INTEGER FUNCTION muskingum_lake_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, OUTFLOW_SEGMENT, LAKE, ERROR_water_use, ERROR_streamflow, CASCADE_OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, OUTFLOW_SEGMENT, LAKE, ERROR_water_use, ERROR_streamflow, CASCADE_OFF, OFF
       USE PRMS_MODULE, ONLY: Nsegment, Nlake, Cascade_flag, Glacier_flag, Lake_transfer_water_use, Lake_add_water_use, &
      &    Nowyear, Nowmonth, Nowday
       USE PRMS_MUSKINGUM_LAKE
@@ -889,11 +1127,12 @@
      &    Seg_upstream_inflow, Seg_lateral_inflow, Flow_out, Basin_lake_stor, Hru_actet, Lake_vol, Basin_sroff
       USE PRMS_OBS, ONLY: Streamflow_cfs
       USE PRMS_SET_TIME, ONLY: Cfs_conv
+      USE PRMS_CLIMATEVARS, ONLY: Potet
       USE PRMS_WATER_USE, ONLY: Lake_transfer, Lake_gain
       USE PRMS_ROUTING, ONLY: Use_transfer_segment, Segment_delta_flow, Basin_segment_storage, &
      &    Obsin_segment, Segment_order, Tosegment, C0, C1, C2, Ts, Ts_i, Obsout_segment, special_seg_type_flag, &
      &    Flow_to_ocean, Flow_to_great_lakes, Flow_out_region, Flow_out_NHM, Segment_type, Flow_terminus, &
-     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes
+     &    Flow_to_lakes, Flow_replacement, Flow_in_region, Flow_in_nation, Flow_headwater, Flow_in_great_lakes, Cfs2acft
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
       USE PRMS_GLACR, ONLY: Basin_gl_top_melt, Basin_gl_ice_melt
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
@@ -903,8 +1142,9 @@
       INTRINSIC :: MOD, DBLE
       EXTERNAL :: route_lake, error_stop
 ! Local Variables
-      INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj
+      INTEGER :: i, j, iorder, toseg, imod, tspd, segtype, lakeid, k, jj, itable, ntable
       DOUBLE PRECISION :: area_fac, segout, currin, tocfs, lake_in_ts
+      REAL :: avail_stor, temp
 !***********************************************************************
       muskingum_lake_run = 0
 
@@ -912,6 +1152,16 @@
 !     values may be 0.0 as intial, > 0.0 for runtime and dynamic
 !     initial condtions. Then set outlfow and inflow for this time
 !     step to 0.0
+
+      IF ( Dead_storage_flag==ACTIVE ) THEN
+        DO i = 1, Nsegment
+          IF ( Segment_type(i)==1 ) THEN
+            Past_deadstr(i) = Dead_storage(i)
+            Vol_loss(i) = Reach_area(i)*Potet(segment_hru_id(i))/12.0D0
+          ENDIF
+        ENDDO
+      ENDIF
+
 !
 !     upstream_inflow and outflow will vary by hour
 !     lateral_inflow and everything else will vary by day
@@ -964,7 +1214,7 @@
         IF ( Hru_type(k)/=LAKE ) CYCLE
         tocfs = Hru_area_dble(k)*Cfs_conv
         lakeid = Lake_hru_id(k)
-        Lake_precip(lakeid) = Lake_precip(lakeid) + tocfs*Hru_ppt(k)
+        Lake_precip(lakeid) = Lake_precip(lakeid) + tocfs*DBLE(Hru_ppt(k))
         IF ( Cascade_flag>CASCADE_OFF ) THEN
           Lake_sroff(lakeid) = Lake_sroff(lakeid) + tocfs*(Hortonian_lakes(k)+Upslope_dunnianflow(k))
           Lake_interflow(lakeid) = Lake_interflow(lakeid) + tocfs*Upslope_interflow(k)
@@ -1039,14 +1289,31 @@
               Lake_stream_in(lakeid) = Seg_upstream_inflow(iorder)
             ELSE
 ! Compute routed streamflow
-              IF ( Ts_i(iorder)>0 ) THEN
+              IF ( Table_segment(iorder)==OFF ) THEN
+                IF ( Ts_i(iorder)>0 ) THEN
 ! Muskingum routing equation
-                Outflow_ts(iorder) = Inflow_ts(iorder)*C0(iorder) + Pastin(iorder)*C1(iorder) + Outflow_ts(iorder)*C2(iorder)
-              ELSE
+                  Outflow_ts(iorder) = Inflow_ts(iorder)*C0(iorder) + Pastin(iorder)*C1(iorder) + Outflow_ts(iorder)*C2(iorder)
+                ELSE
 ! If travel time (K_coef paremter) is less than or equal to
 ! time step (one hour), then the outflow is equal to the inflow
 ! Outflow_ts is the value from last hour
-                Outflow_ts(iorder) = Inflow_ts(iorder)
+                  Outflow_ts(iorder) = Inflow_ts(iorder)
+                ENDIF
+              ELSE
+                itable = Table_segment(i)
+                ntable = Nratetable(itable)
+                DO jj = 1, ntable
+                  IF ( Ts_i_table(jj,itable)>0 ) THEN
+! Muskingum routing equation
+                    Outflow_ts(iorder) = Inflow_ts(iorder)*Czero_t(jj, itable) + Pastin(iorder)*Cone_t(jj, itable) + &
+                                         Outflow_ts(iorder)*Ctwo_t(jj, itable)
+                  ELSE
+! If travel time (K_coef paremter) is less than or equal to
+! time step (one hour), then the outflow is equal to the inflow
+! Outflow_ts is the value from last hour
+                    Outflow_ts(iorder) = Inflow_ts(iorder)
+                  ENDIF
+                ENDDO
               ENDIF
             ENDIF
 
@@ -1078,6 +1345,42 @@
             Seg_outflow(iorder) = Seg_outflow(iorder) + Outflow_ts(iorder)
             ! pastout is equal to the Inflow_ts on the previous routed timestep
             Pastout(iorder) = Outflow_ts(iorder)
+          ENDIF
+
+!  First, compute potential channel loss then use channel loss to add to
+!  dead storage volume, if dead storage is full there is no channel loss or
+!  it is reduced.
+!  Second, reduce dead storage by evaporation (vol_loss) and deep sink
+!  (deep_sink_pct * dead storage)
+!  Third, compute Segment_inflow  (Segment_inflow - actual channel loss)
+
+          IF ( Dead_storage_flag==ACTIVE ) THEN
+            IF ( Segment_type(iorder)/=2 ) THEN ! not a lake segment
+              ! channel sink and deep sink calcs
+              IF ( Seg_inflow(iorder)>Channel_sink_thrshld(iorder) ) THEN
+                Channel_loss(iorder) = Channel_sink_thrshld(iorder)*Channel_sink_pct(iorder)
+              ELSE
+                Channel_loss(iorder) = Seg_inflow(iorder)*Channel_sink_pct(iorder)
+              ENDIF
+              Dead_storage(iorder) = Past_deadstr(iorder) + Channel_loss(iorder)*Cfs2acft
+              avail_stor = Dead_vol(iorder) - Dead_storage(iorder)
+              IF ( avail_stor<0.0 ) THEN
+                Channel_loss(iorder) = Channel_loss(iorder) + avail_stor/Cfs2acft
+                Dead_storage(iorder) = Dead_vol(iorder)
+              ENDIF
+              Dead_storage(iorder) = Dead_storage(iorder) + Channel_loss(iorder)*Cfs2acft - Vol_loss(iorder) &
+                                     - Deep_sink_pct(iorder)*Dead_storage(iorder)
+              IF ( Dead_storage(iorder)<0.0 ) Dead_storage(iorder) = 0.0
+              Seg_inflow(iorder) = Seg_inflow(iorder) - Channel_loss(iorder)
+              IF ( Seg_inflow(iorder)<0.0 ) THEN
+                PRINT *, 'Channel loss problem, segment_inflow<0.0', Seg_inflow(iorder), ' value set to 0.0'
+                temp = Seg_inflow(iorder)
+                Channel_loss(iorder) = Channel_loss(iorder) + temp
+                Dead_storage(iorder) = Dead_storage(iorder) - temp*Cfs2acft
+                Vol_loss(iorder) = Vol_loss(iorder) + temp*Cfs2acft
+                Seg_inflow(iorder) = 0.0
+              ENDIF
+            ENDIF
           ENDIF
 
 ! Add current timestep's flow rate to sum the upstream flow rates.
@@ -1115,6 +1418,11 @@
         segout = Seg_outflow(i)
         Seg_inflow(i) = Seg_inflow(i) * ONE_24TH
         Seg_upstream_inflow(i) = Currinsum(i) * ONE_24TH
+        IF ( Dead_storage_flag==ACTIVE ) THEN
+          Channel_loss(i) = Channel_loss(i) * ONE_24TH
+          Dead_storage(i) = Dead_storage(i) * ONE_24TH
+          Vol_loss(i) = Vol_loss(i) * ONE_24TH
+        ENDIF
 ! Flow_out is the total flow out of the basin, which allows for multiple outlets
 ! includes closed basins (tosegment=0)
         IF ( special_seg_type_flag == ACTIVE ) THEN
@@ -1156,7 +1464,7 @@
       Basin_cfs = Flow_out
       Basin_stflow_out = Basin_cfs / area_fac
       Basin_cms = Basin_cfs*CFS2CMS_CONV
-      IF ( Glacier_flag==ACTIVE ) THEN
+      IF ( Glacier_flag==1 ) THEN
         Basin_stflow_in = Basin_stflow_in + Basin_gl_top_melt
         Basin_gl_ice_cfs = Basin_gl_ice_melt*area_fac
         Basin_gl_cfs = Basin_gl_top_melt*area_fac
@@ -1472,6 +1780,7 @@
           WRITE ( Restart_outunit ) Din1
           WRITE ( Restart_outunit ) Lake_sto
         ENDIF
+        IF ( Dead_storage_flag==ACTIVE ) WRITE ( Restart_outunit ) Dead_storage
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
@@ -1480,5 +1789,6 @@
           READ ( Restart_inunit ) Din1
           READ ( Restart_inunit ) Lake_sto
         ENDIF
+        IF ( Dead_storage_flag==ACTIVE ) READ ( Restart_inunit, * ) Dead_storage
       ENDIF
       END SUBROUTINE muskingum_lake_restart

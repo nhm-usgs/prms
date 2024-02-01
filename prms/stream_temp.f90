@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2024-01-25'
+      character(len=*), parameter :: Version_stream_temp = '2024-01-30'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -21,7 +21,7 @@
       REAL, SAVE, ALLOCATABLE :: Local_sunset_hour_angle(:, :), Local_sunrise_hour_angle(:, :)
       REAL, SAVE, ALLOCATABLE :: gw_sum(:), ss_sum(:)
       REAL, SAVE, ALLOCATABLE ::  gw_silo(:,:), ss_silo(:,:)
-      double precision, save, allocatable :: hru_area_sum(:)
+      REAL, SAVE, ALLOCATABLE :: hru_area_sum(:)
       REAL, SAVE, ALLOCATABLE :: Seg_length_km(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_count(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_idx(:,:)
@@ -385,7 +385,7 @@
 !***********************************************************************
       INTEGER FUNCTION stream_temp_init()
       USE PRMS_CONSTANTS, ONLY: MAX_DAYS_PER_YEAR, Nmonths, OFF, NEARZERO, ERROR_param, DAYS_YR
-      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag, Nhru_nmonths
+      USE PRMS_MODULE, ONLY: Nsegment, Init_vars_from_file, Strmtemp_humidity_flag, Inputerror_flag
       USE PRMS_STRMTEMP
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_OBS, ONLY: Nhumid
@@ -441,7 +441,7 @@
       IF ( getparam( MODNAME, 'tempIN_segment', Nsegment, 'integer', tempIN_segment)/=0 ) CALL read_error(2, 'tempIN_segment')
 
       IF ( Strmtemp_humidity_flag==1 ) THEN
-         IF ( getparam( MODNAME, 'seg_humidity', Nsegment*Nhru_nmonths, 'real', Seg_humidity)/=0 ) &
+         IF ( getparam( MODNAME, 'seg_humidity', Nsegment*Nmonths, 'real', Seg_humidity)/=0 ) &
      &      CALL read_error(2, 'seg_humidity')
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
          IF ( getparam(MODNAME, 'seg_humidity_sta', Nsegment, 'integer', Seg_humidity_sta)/=0 ) &
@@ -725,7 +725,7 @@
       Seg_ccov = 0.0
       Seg_melt = 0.0
       Seg_rain = 0.0
-      hru_area_sum = 0.0D0
+      hru_area_sum = 0.0
 
       ! Compute segment lateral inflow temperatures and segment meteorological values
 
@@ -736,9 +736,9 @@
 ! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as
 ! this results in divide by 0.0
          if (Soltab_potsw(jday, j) <= 10.0D0) then
-            ccov = 1.0D0 - (Swrad(j) / 10.0D0 * Hru_cossl(j))
+            ccov = SNGL( 1.0D0 - (Swrad(j) / 10.0D0 * Hru_cossl(j)) )
          else
-            ccov = 1.0D0 - (Swrad(j) / Soltab_potsw(jday, j) * Hru_cossl(j))
+            ccov = SNGL( 1.0D0 - (Swrad(j) / Soltab_potsw(jday, j) * Hru_cossl(j)) )
          endif
 
          if (ccov .ne. ccov) then
@@ -756,8 +756,8 @@
          IF ( i==0 ) CYCLE
 
 ! Compute temperature of surface runoff here for HRU and stream segments
-         Seg_tave_air(i) = Seg_tave_air(i) + SNGL( Tavgc(j)*Hru_area_dble(j) )
-         hru_area_sum(i) = hru_area_sum(i) + Hru_area_dble(j)
+         Seg_tave_air(i) = Seg_tave_air(i) + SNGL(Tavgc(j))*harea
+         hru_area_sum(i) = hru_area_sum(i) + harea
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
@@ -769,7 +769,7 @@
 
          Seg_potet(i) = Seg_potet(i) + Potet(j)*Hru_area_dble(j)
          Seg_melt(i) = Seg_melt(i) + Snowmelt(j)*harea
-         Seg_rain(i) = Seg_rain(i) + SNGL( Hru_rain(j)*Hru_area_dble(j) )
+         Seg_rain(i) = Seg_rain(i) + SNGL(Hru_rain(j))*harea
       ENDDO
 
 
@@ -777,13 +777,13 @@
          i = Segment_order(j)
          IF ( Seg_hru_count(i)>0 ) THEN
 !            carea = Seg_carea_inv(i)
-            Seg_ccov(i) = Seg_ccov(i) / SNGL( hru_area_sum(i) )
-            Seg_potet(i) = Seg_potet(i) / hru_area_sum(i)
-            Seg_tave_air(i) = Seg_tave_air(i) / SNGL( hru_area_sum(i) )
-            Seg_melt(i) = Seg_melt(i) / SNGL( hru_area_sum(i) )
-            Seg_rain(i) = Seg_rain(i) / SNGL( hru_area_sum(i) )
+            Seg_ccov(i) = Seg_ccov(i) / hru_area_sum(i)
+            Seg_potet(i) = Seg_potet(i) / DBLE(hru_area_sum(i))
+            Seg_tave_air(i) = Seg_tave_air(i) / hru_area_sum(i)
+            Seg_melt(i) = Seg_melt(i) / hru_area_sum(i)
+            Seg_rain(i) = Seg_rain(i) / hru_area_sum(i)
             IF ( Strmtemp_humidity_flag==0 ) then
-               Seg_humid(i) = Seg_humid(i) / SNGL( hru_area_sum(i) )
+               Seg_humid(i) = Seg_humid(i) / hru_area_sum(i)
 
 ! DANGER potential hack here: Should CBH humidity data be converted to decimal fraction in
 ! the CBH file? Probably so. For now, convert it here.
@@ -1094,7 +1094,7 @@
       END SUBROUTINE lat_inflow
 
 !***********************************************************************************************
-      REAL FUNCTION twavg(qup, T0, Qlat, Tl_avg, Te, Ak1, Ak2, width, length)
+      REAL FUNCTION twavg(qup, T0, Qlat, Tl_avg, Te, Ak1, Ak2, width_dble, length)
 !
 !     PURPOSE:
 !        1. TO PREDICT THE AVERAGE DAILY WATER TEMPERATURE USING A SECOND-ORDER
@@ -1105,14 +1105,14 @@
       INTRINSIC :: ABS, EXP, SNGL, SIGN
 ! Arguments
       REAL, INTENT(IN) :: T0, Tl_avg, Te, Ak1, Ak2, length, qup
-      DOUBLE PRECISION, INTENT(IN) :: Qlat, width
+      DOUBLE PRECISION, INTENT(IN) :: Qlat, width_dble
 ! Local Variables
-      REAL :: tep, b, r, rexp, tw, delt, q_init, denom, Ql, width_sngl
+      REAL :: tep, b, r, rexp, tw, delt, q_init, denom, Ql, width
 !***************************************************************************************************
 ! DETERMINE EQUATION PARAMETERS
       q_init = SNGL(qup  * CFS2CMS_CONV)
       Ql = SNGL( Qlat )
-      width_sngl = SNGL(width)
+      width = SNGL(width_dble)
 
 ! This is confused logic coment out here and compute the terms as needed below
 !      b = (Ql / Seg_length_km) + ((Ak1 * Seg_width) / 4182.0E03)
@@ -1124,7 +1124,7 @@
 !
 ! ZERO LATERAL FLOW
          tep = Te
-         b = (Ak1 * width_sngl) / 4182.0E03
+         b = (Ak1 * width) / 4182.0E03
          rexp = -1.0*(b * length) / q_init
          r = EXP(rexp)
 
@@ -1133,7 +1133,7 @@
       ELSEIF ( Ql < 0.0 ) THEN
          write(*,*) "twavg: losing stream!!! Should be no such thing in PRMS!"
          tep  = Te
-         b = (Ql / length) + ((Ak1 * width_sngl) / 4182.0E03)
+         b = (Ql / length) + ((Ak1 * width) / 4182.0E03)
          rexp = (Ql - (b * length)) / Ql
          r = 1.0 + (Ql / q_init)
          r = r**rexp
@@ -1142,15 +1142,15 @@
 ! Treat the lateral flow as upstream flow to avoid divide by zero
       ELSEIF ( Ql > NEARZERO .and. q_init <= NEARZERO ) THEN
          tep = Te
-         b = (Ak1 * width_sngl) / 4182.0E03
+         b = (Ak1 * width) / 4182.0E03
 !         rexp = -1.0*(b * length) / q_init
          rexp = -1.0*(b * length) / Ql
          r = EXP(rexp)
 !
 ! GAINING STREAM (ie both ql and q_init have > zero values)
       ELSE
-         b = (Ql / length) + ((Ak1 * width_sngl) / 4182.0E03)
-         tep = (((Ql / length) * Tl_avg) + (((Ak1 * width_sngl) / (4182.0E03)) * Te)) / b
+         b = (Ql / length) + ((Ak1 * width) / 4182.0E03)
+         tep = (((Ql / length) * Tl_avg) + (((Ak1 * width) / (4182.0E03)) * Te)) / b
 
 ! shouldn't need to do this because Ql will always be greater than 0 if in here.
          IF ( Ql > 0.0 ) THEN
@@ -1410,7 +1410,7 @@
 !
       USE PRMS_SET_TIME, ONLY: Jday
       USE PRMS_STRMTEMP, ONLY: Azrh, Alte, Altw, Seg_daylight, &
-     &    PI, HALF_PI, TWO_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
+     &    PI, HALF_PI, Cos_seg_lat, Sin_seg_lat, Cos_lat_decl, Horizontal_hour_angle, &
      &    Level_sunset_azimuth, Max_solar_altitude, Sin_alrs, Sin_declination, Sin_lat_decl, Total_shade
       USE PRMS_STRMFLOW_CHARACTER, ONLY: Seg_width
       IMPLICIT NONE
@@ -1428,7 +1428,7 @@
       REAL :: temp, totsh, sti
       REAL :: altop(3), aztop(3)
 ! PARAMETER
-      REAL, PARAMETER :: RADTOHOUR = 24.0/TWO_PI
+      REAL, PARAMETER :: RADTOHOUR = 24.0/(2.0 * PI)
 !*********************************************************************************
 
 ! if the segment has no width (no flow) set the return values to 0.0
@@ -1880,7 +1880,8 @@
 !     stream_temp_restart - write or read stream_temp restart file
 !***********************************************************************
       SUBROUTINE stream_temp_restart(In_out)
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, OFF
+      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit, text_restart_flag
       USE PRMS_STRMTEMP
       IMPLICIT NONE
       ! Argument
@@ -1890,24 +1891,47 @@
       ! Local Variable
       CHARACTER(LEN=11) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
-         WRITE ( Restart_outunit ) MODNAME
-         WRITE ( Restart_outunit ) Seg_tave_water
-         WRITE ( Restart_outunit ) gw_silo
-         WRITE ( Restart_outunit ) ss_silo
-         WRITE ( Restart_outunit ) gw_sum
-         WRITE ( Restart_outunit ) ss_sum
-         WRITE ( Restart_outunit ) gw_index
-         WRITE ( Restart_outunit ) ss_index
+      IF ( In_out==SAVE_INIT ) THEN
+        IF ( text_restart_flag==OFF ) THEN
+          WRITE ( Restart_outunit ) MODNAME
+          WRITE ( Restart_outunit ) Seg_tave_water
+          WRITE ( Restart_outunit ) gw_silo
+          WRITE ( Restart_outunit ) ss_silo
+          WRITE ( Restart_outunit ) gw_sum
+          WRITE ( Restart_outunit ) ss_sum
+          WRITE ( Restart_outunit ) gw_index
+          WRITE ( Restart_outunit ) ss_index
+        ELSE
+          WRITE ( Restart_outunit, * ) MODNAME
+          WRITE ( Restart_outunit, * ) Seg_tave_water
+          WRITE ( Restart_outunit, * ) gw_silo
+          WRITE ( Restart_outunit, * ) ss_silo
+          WRITE ( Restart_outunit, * ) gw_sum
+          WRITE ( Restart_outunit, * ) ss_sum
+          WRITE ( Restart_outunit, * ) gw_index
+          WRITE ( Restart_outunit, * ) ss_index
+        ENDIF
       ELSE
-         READ ( Restart_inunit ) module_name
-         CALL check_restart(MODNAME, module_name)
-         READ ( Restart_inunit ) Seg_tave_water
-         READ ( Restart_inunit ) gw_silo
-         READ ( Restart_inunit ) ss_silo
-         READ ( Restart_inunit ) gw_sum
-         READ ( Restart_inunit ) ss_sum
-         READ ( Restart_inunit ) gw_index
-         READ ( Restart_inunit ) ss_index
+        IF ( text_restart_flag==OFF ) THEN
+          READ ( Restart_inunit ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit ) Seg_tave_water
+          READ ( Restart_inunit ) gw_silo
+          READ ( Restart_inunit ) ss_silo
+          READ ( Restart_inunit ) gw_sum
+          READ ( Restart_inunit ) ss_sum
+          READ ( Restart_inunit ) gw_index
+          READ ( Restart_inunit ) ss_index
+        ELSE
+          READ ( Restart_inunit, * ) module_name
+          CALL check_restart(MODNAME, module_name)
+          READ ( Restart_inunit, * ) Seg_tave_water
+          READ ( Restart_inunit, * ) gw_silo
+          READ ( Restart_inunit, * ) ss_silo
+          READ ( Restart_inunit, * ) gw_sum
+          READ ( Restart_inunit, * ) ss_sum
+          READ ( Restart_inunit, * ) gw_index
+          READ ( Restart_inunit, * ) ss_index
+        ENDIF
       ENDIF
       END SUBROUTINE stream_temp_restart

@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2024-01-23'
+      character(len=*), parameter :: Version_subbasin = '2024-01-30'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -242,8 +242,7 @@
       USE PRMS_MODULE, ONLY: Nsub, Nhru, Print_debug, &
      &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, Lake_hru_id
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol, &
      &    Hru_impervstor, Dprst_stor_hru
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
@@ -413,17 +412,16 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nsub, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, Lake_hru_id
+      USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, Hru_type, Hru_frac_perv, Lake_hru_id
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
-      USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
+      USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, Recharge, &
      &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist_max, &
      &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
-      USE PRMS_SOILZONE, ONLY: Lakein_sz, Recharge
+      USE PRMS_SOILZONE, ONLY: Lakein_sz
       USE PRMS_GWFLOW, ONLY: Gwres_flow
       USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
       IMPLICIT NONE
@@ -510,8 +508,8 @@
           Subinc_tmaxc(k) = Subinc_tmaxc(k) + Tmaxc(j)*harea
           Subinc_tavgc(k) = Subinc_tavgc(k) + Tavgc(j)*harea
           Subinc_recharge(k) = Subinc_recharge(k) + Recharge(j)*harea
-          Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_tot(j)/Soil_zone_max(j)*harea
-          Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Soil_moist(j)/Soil_moist_max(j)*harea
+          IF ( Soil_zone_max(j)>0.0 ) Subinc_szstor_frac(k) = Subinc_szstor_frac(k) + Soil_moist_tot(j)/Soil_zone_max(j)*harea
+          IF ( Soil_moist_max(j)>0.0 ) Subinc_capstor_frac(k) = Subinc_capstor_frac(k) + Soil_moist(j)/Soil_moist_max(j)*harea
           Subinc_stor(k) = Subinc_stor(k) + soilstor + snowstor + landstor
           gwq = DBLE(Gwres_flow(j))*harea
           Qsub(k) = Qsub(k) + gwq
@@ -521,7 +519,6 @@
       ENDDO
 
       !convert first as subbasins don't have to be in order
-      dmy1 = 0.0D0
       DO j = 1, Nsub
         subarea = Sub_area(j)
         Sub_inq(j) = Qsub(j)*Cfs_conv

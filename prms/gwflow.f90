@@ -172,11 +172,13 @@
      &       'Index of the GWR that receives flow from each'// &
      &       ' associated subsurface or gravity reservoir (deprecated)', &
      &       'none')/=0 ) CALL read_error(1, 'ssr_gwres')
-        IF ( declparam(MODNAME, 'hru_gwres', 'nhru', 'integer', &
-     &       '1', 'bounded', 'ngw', &
-     &       'Index of GWR assigned to HRU', &
-     &       'Index of GWR receiving soil-zone drainage from each associated HRU', &
-     &       'none')/=0 ) CALL read_error(1, 'hru_gwres')
+        IF ( Nhru /= Ngw ) THEN
+          IF ( declparam(MODNAME, 'hru_gwres', 'nhru', 'integer', &
+     &         '1', 'bounded', 'ngw', &
+     &         'Index of GWR assigned to HRU', &
+     &         'Index of GWR receiving soil-zone drainage from each associated HRU', &
+     &         'none')/=0 ) CALL read_error(1, 'hru_gwres')
+        ENDIF
       ENDIF
 
       ALLOCATE ( Gwstor_minarea(Ngw) )
@@ -286,12 +288,12 @@
 !                  compute initial values.
 !***********************************************************************
       INTEGER FUNCTION gwflowinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, DEBUG_less, CASCADEGW_OFF
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, DEBUG_less, CASCADEGW_OFF, LAKE
       USE PRMS_MODULE, ONLY: Nhru, Ngw, Nssr, Nlake, Print_debug, Init_vars_from_file, &
      &    Dprst_flag, Inputerror_flag, Gwr_swale_flag, Soilzone_flag
       USE PRMS_GWFLOW
-      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, &
-     &                      Lake_hru_id, Weir_gate_flag, Hru_storage
+      USE PRMS_BASIN, ONLY: Gwr_type, Basin_area_inv, Active_gwrs, Gwr_route_order, &
+     &                      Lake_hru_id, Weir_gate_flag, Hru_storage, Hru_area_dble, Hru_type
       USE PRMS_FLOWVARS, ONLY: Gwres_stor
       IMPLICIT NONE
 ! Functions
@@ -306,13 +308,13 @@
       IF ( Soilzone_flag==0 ) THEN
         IF ( getparam(MODNAME, 'ssr_gwres', Nssr, 'integer', Ssr_gwres)/=0 ) CALL read_error(2, 'ssr_gwres')
         IF ( getparam(MODNAME, 'hru_gwres', Nhru, 'integer', Hru_gwres)/=0 ) CALL read_error(2, 'hru_gwres')
-        Gwres_area = 0.0
+        Gwres_area = 0.0D0
         DO i = 1, Nhru
           j = Hru_gwres(i)
-          Gwres_area(j) = Gwres_area(j) + Hru_area(i)
+          IF ( Hru_type(i) /= LAKE ) Gwres_area(j) = Gwres_area(j) + Hru_area_dble(i)
         ENDDO
       ELSE
-        Gwres_area = Hru_area
+        Gwres_area = Hru_area_dble
       ENDIF
 
       IF ( getparam(MODNAME, 'gwflow_coef', Ngw, 'real', Gwflow_coef)/=0 ) CALL read_error(2, 'gwflow_coef')
@@ -331,10 +333,10 @@
       Basin_gwstor = 0.0D0
       DO j = 1, Active_gwrs
         i = Gwr_route_order(j)
-        Basin_gwstor = Basin_gwstor + Gwres_stor(i)*DBLE(Gwres_area(i))
+        Basin_gwstor = Basin_gwstor + Gwres_stor(i)*Gwres_area(i)
         IF ( Gwstor_min(i)>0.0 ) THEN
           Gwminarea_flag = 1
-          Gwstor_minarea(i) = DBLE( Gwstor_min(i)*Gwres_area(i) )
+          Gwstor_minarea(i) = DBLE( Gwstor_min(i) )*Gwres_area(i)
         ENDIF
         IF ( Gwflow_coef(i)>1.0 ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT *, 'WARNING, gwflow_coef value > 1.0 for GWR:', i, Gwflow_coef(i)
@@ -412,7 +414,7 @@
      &    Gwr_add_water_use, Gwr_transfer_water_use, Nowyear, Nowmonth, Nowday, Nssr, Soilzone_flag
       USE PRMS_GWFLOW
       USE PRMS_BASIN, ONLY: Active_gwrs, Gwr_route_order, Lake_type, Active_hrus, Hru_route_order, &
-     &    Basin_area_inv, Gwr_type, Lake_hru_id, Weir_gate_flag, Hru_storage, Hru_area_dble
+     &    Basin_area_inv, Gwr_type, Lake_hru_id, Weir_gate_flag, Hru_storage, Hru_area_dble, Ssres_area
       USE PRMS_FLOWVARS, ONLY: Soil_to_gw, Ssr_to_gw, Sroff, Ssres_flow, Gwres_stor, Lake_vol
       USE PRMS_CASCADE, ONLY: Ncascade_gwr
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Timestep_days
@@ -455,7 +457,7 @@
           IF ( Gwr_type(j)==LAKE ) THEN ! only if a weir gate lake
             jjj = Lake_hru_id(j) !! jjj must be > zero due to check above
             IF ( Lake_type(jjj)==4 .OR. Lake_type(jjj)==5 ) THEN
-              inch2acre_feet = DBLE(Gwres_area(j))/12.0D0
+              inch2acre_feet = Gwres_area(j)/12.0D0
               seepage = Lake_seepage_max(jjj)
               ! seepage added to GWR
               !rsr, need seepage variable for WB
@@ -479,7 +481,7 @@
 ! DANGER, needed for multiple HRU lakes, if lake goes dry some GWRs won't receive seepage, withdrawn from lake based on route order
                 IF ( Lake_vol(jjj)<seepage*inch2acre_feet ) seepage = Lake_vol(jjj)/inch2acre_feet
                 Lake_seepage(jjj) = Lake_seepage(jjj) + seepage*inch2acre_feet ! units, acre-feet
-                Basin_lake_seep = Basin_lake_seep + seepage*DBLE(Gwres_area(j)) ! units, acre-inches
+                Basin_lake_seep = Basin_lake_seep + seepage*Gwres_area(j) ! units, acre-inches
               ENDIF
               Gwres_stor(j) = Gwres_stor(j) + seepage
               Lake_seepage_gwr(j) = seepage ! can be positive or negative value
@@ -520,7 +522,7 @@
       Basin_gwin = 0.0D0
       DO j = 1, Active_gwrs
         i = Gwr_route_order(j)
-        gwarea = DBLE( Gwres_area(i) )
+        gwarea = Gwres_area(i)
         gwstor = Gwres_stor(i)*gwarea ! acre-inches
         gwin = Gw_in_soil(i) + Gw_in_ssr(i)
         IF ( Cascadegw_flag>CASCADEGW_OFF ) THEN

@@ -7,7 +7,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Green & Amp Infiltration'
       character(len=*), parameter :: MODNAME = 'grnampt_infil'
-      character(len=*), parameter :: Version_grnampt_infil = '2024-01-05'
+      character(len=*), parameter :: Version_grnampt_infil = '2024-01-31'
       DOUBLE PRECISION, parameter :: ZERO = 0.0D0
       INTEGER, SAVE :: Ncdels, Nchxs, Nofxs, Ncmoc, Ntstep, DBGUNIT, BALUNT
 !     Bms    = HRU RECHARGE ZONE Sat_moist_stor
@@ -226,7 +226,7 @@
       IF ( declparam(MODNAME, 'infil_dt', 'nhru', 'double', &
      &     '5.0', '1.0', '15.0', &
      &     'Timestep for infiltration computation', 'Timestep for infiltration computation', &
-     &     'minutes')/=0 ) CALL read_error(1, 'epan_coef')
+     &     'minutes')/=0 ) CALL read_error(1, 'infil_dt')
 
  9001 FORMAT ('    Date        Water Bal         Precip         Netppt      Intcpevap      Intcpstor      last_stor')
 
@@ -299,14 +299,15 @@
       USE PRMS_GRNAMPT
       USE PRMS_MODULE, ONLY: Print_debug, Nhru, Nobs, Nowyear, Nowmonth, Nowday
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_type, Hru_area_dble, Basin_area_inv, &
-                            Hru_perv, Hru_imperv, Hru_percent_imperv, Hru_frac_perv
+                            Hru_perv, Hru_imperv, Hru_frac_imperv, Hru_frac_perv
       USE PRMS_SET_TIME, ONLY: Timestep_hours, Timestep_seconds, Timestep_days, Timestep_minutes, &
                                Storm_status, Nowhour, Nowminute, Nowtime
       USE PRMS_OBS, ONLY: Runoff
       USE PRMS_CLIMATEVARS, ONLY: Potet, Hru_ppt
       USE PRMS_FLOWVARS, ONLY: Soil_rechr, Soil_rechr_max, Imperv_stor_max, Imperv_stor, Infil, Pkwater_equiv
       USE PRMS_INTCP, ONLY: Net_ppt, Hru_intcpevap, Net_rain, Net_snow, Intcp_changeover
-      USE PRMS_SNOW, ONLY: Snowmelt, Snow_evap, Snowcov_area, Pptmix_nopack, Pkwater_ante
+      USE PRMS_SNOW, ONLY: Snowmelt, Snow_evap, Snowcov_area, Pptmix_nopack
+      USE PRMS_IT0_VARS, ONLY: It0_pkwater_equiv
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Imperv_evap
       IMPLICIT NONE
 ! Functions
@@ -371,7 +372,7 @@
         himperv = DBLE( Hru_imperv(i) )
         imperv_flag = OFF
         IF ( himperv>ZERO ) imperv_flag = ACTIVE
-        Imperv_frac = DBLE( Hru_percent_imperv(i) )
+        Imperv_frac = DBLE( Hru_frac_imperv(i) )
 
 !     delp = fraction representing pt portion of dt interval
         cdels = Timestep_minutes/Infil_dt(i) ! number of infiltration steps in current timestep
@@ -400,7 +401,7 @@
           availh2o_total = availh2o_total + DBLE(Snowmelt(i))
 !*******There was no snowmelt but a snowpack may exist.  If there is
 !*******no snowpack then check for rain on a snowfree HRU.
-        ELSEIF ( .not.(Pkwater_equiv(i)<ZERO) .and. .not.(Pkwater_ante(i)>ZERO) ) THEN
+        ELSEIF ( .not.(Pkwater_equiv(i)<ZERO) .and. .not.(It0_pkwater_equiv(i)>ZERO) ) THEN
 !         If no snowmelt and no snowpack but there was net snow then
 !         snowpack was small and was lost to sublimation.
           IF ( Net_snow(i)<DNEARZERO .AND. Net_rain(i)>0.0D0 ) availh2o_total = availh2o_total + Net_rain(i)
@@ -482,7 +483,7 @@
 
         IF ( Print_debug>0 ) THEN
           wbal = DBLE(Infil(i)*Hru_frac_perv(i)) + Hru_pptexc(i) - availh2o_total
-          IF ( Imperv_flag==1 ) wbal = wbal + (DBLE(Imperv_evap(i))+Imperv_stor(i)-last_stor)*DBLE(Hru_percent_imperv(i))
+          IF ( Imperv_flag==1 ) wbal = wbal + (DBLE(Imperv_evap(i))+Imperv_stor(i)-last_stor)*DBLE(Hru_frac_imperv(i))
           IF ( Print_debug==1 ) THEN
             IF ( ABS(wbal)>1.0D-05 ) THEN
               WRITE ( BALUNT, * ) 'Green-Ampt HRU water-balance issue'

@@ -11,10 +11,9 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_pt'
-        character(len=*), parameter :: Version_potet = '2024-01-25'
+        character(len=*), parameter :: Version_potet = '2024-01-31'
         ! Declared Parameters
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Pt_alpha(:, :)
-        REAL, SAVE, ALLOCATABLE :: Pt_alpha_sngl(:, :)
       END MODULE PRMS_POTET_PT
 
 !***********************************************************************
@@ -38,6 +37,7 @@
       INTEGER :: i, j
       DOUBLE PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, satvapor, ratio, eeq
       DOUBLE PRECISION :: A1, B1, t1, num, den, stab, sw
+      REAL, ALLOCATABLE :: Pt_alpha_sngl(:, :)
 !***********************************************************************
       potet_pt = 0
 
@@ -156,7 +156,7 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pt_alpha(Nhru,Nmonths), Pt_alpha_sngl(Nhru,Nmonths) )
+        ALLOCATE ( Pt_alpha(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'pt_alpha', 'nhru,nmonths', 'real', &
      &       '1.26', '1.0', '2.0', &
      &       'Potential ET adjustment factor - Priestly-Taylor', &
@@ -166,6 +166,7 @@
 
 !******Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
+        ALLOCATE ( Pt_alpha_sngl(Nhru,Nmonths) )
         IF ( getparam(MODNAME, 'pt_alpha', Nhru_nmonths, 'real', Pt_alpha_sngl)/=0 ) CALL read_error(2, 'pt_alpha')
         Pt_alpha = DBLE( Pt_alpha_sngl )
         DEALLOCATE ( Pt_alpha_sngl )

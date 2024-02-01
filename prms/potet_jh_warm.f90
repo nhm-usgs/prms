@@ -10,12 +10,12 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Potential Evapotranspiration'
         character(len=*), parameter :: MODNAME = 'potet_jh_warm'
-        character(len=*), parameter :: Version_potet = '2024-01-25'
+        character(len=*), parameter :: Version_potet = '2024-01-31'
         ! Local Variables
-        double precision, allocatable, save :: coef_t_mean(:), temp_x_mean(:)
+        double precision, allocatable, save :: coef_t_mean(:,:), temp_x_mean(:,:)
         ! Declared Parameters
         double precision, save, allocatable :: Jh_coef_warm(:, :)
-        double precision, save, allocatable :: Tmax_month_mean_warm_C(:), Tmin_month_mean_warm_C(:)
+        double precision, save, allocatable :: Tmax_month_mean_warm_C(:, :), Tmin_month_mean_warm_C(:, :)
       END MODULE PRMS_POTET_JH_WARM
 
       SUBROUTINE potet_jh_warm()
@@ -42,7 +42,7 @@
         DO j = 1, Active_hrus
           i = Hru_route_order(j)
           elh = ( 597.3D0-(0.5653D0*Tavgc(i)) ) * INCH2CM
-          Potet(i) = ( Jh_coef_warm(i,Nowmonth)*coef_t_mean(i) ) * ( (Tavgf(i)-temp_x_mean(i)) * (Swrad(i)/elh) )
+          Potet(i) = ( Jh_coef_warm(i,Nowmonth)*coef_t_mean(i,Nowmonth) ) * ( (Tavgf(i)-temp_x_mean(i,Nowmonth)) * (Swrad(i)/elh) )
           IF ( Potet(i) < 0.0D0 ) Potet(i) = 0.0D0
           Basin_potet = Basin_potet + Potet(i) * Hru_area_dble(i)
         ENDDO
@@ -59,15 +59,15 @@
              'Potential ET monthly coefficient adjustment factor for each HRU', &
              'decimal fraction') /= 0 ) CALL read_error( 1, 'jh_coef_warm' )
 
-        ALLOCATE ( Tmax_month_mean_warm_C(Nhru) )
-        IF ( declparam(MODNAME, 'tmax_month_mean_warm_C', 'nhru', 'double', &
+        ALLOCATE ( Tmax_month_mean_warm_C(Nhru,Nmonths) )
+        IF ( declparam(MODNAME, 'tmax_month_mean_warm_C', 'nhru,nmonths', 'double', &
              '24.0', '-10.0', '150.0', &
              'Mean maximum air temperature for simulation time period', &
              'Mean maximum air temperature for simulation time period', &
              'degrees Celsius') /= 0 ) CALL read_error( 1, 'tmax_month_mean_warm_C' )
 
-        ALLOCATE ( Tmin_month_mean_warm_C(Nhru) )
-        IF ( declparam(MODNAME, 'tmin_month_mean_warm_C', 'nhru', 'double', &
+        ALLOCATE ( Tmin_month_mean_warm_C(Nhru,Nmonths) )
+        IF ( declparam(MODNAME, 'tmin_month_mean_warm_C', 'nhru,nmonth', 'double', &
              '24.0', '-10.0', '150.0', &
              'Mean minimum air temperature for simulation time period', &
              'Mean minimum air temperature for simulation time period', &
@@ -77,23 +77,25 @@
       ELSEIF ( Process_flag == INIT ) THEN
         IF ( getparam(MODNAME, 'jh_coef_warm', Nhru_nmonths, 'double', Jh_coef_warm) /= 0 ) CALL read_error( 2, 'jh_coef_warm' )
 
-        IF ( getparam(MODNAME, 'tmax_month_mean_warm_C', Nhru, 'double', &
+        IF ( getparam(MODNAME, 'tmax_month_mean_warm_C', Nhru_nmonths, 'double', &
              Tmax_month_mean_warm_C) /= 0 ) CALL read_error( 2, 'tmax_month_mean_warm_C' )
 
-        IF ( getparam(MODNAME, 'tmin_month_mean_warm_C', Nhru, 'double', &
+        IF ( getparam(MODNAME, 'tmin_month_mean_warm_C', Nhru_nmonths, 'double', &
              Tmin_month_mean_warm_C) /= 0 ) CALL read_error( 2, 'tmin_month_mean_warm_C' )
 
-        ALLOCATE ( coef_t_mean(Nhru), temp_x_mean(Nhru) )
+        ALLOCATE ( coef_t_mean(Nhru,Nmonths), temp_x_mean(Nhru,Nmonths) )
         DO i = 1, Nhru
           elev_slope = Hru_elev_feet(i) / 1000.0D0
-		  temp = Tmax_month_mean_warm_C(i)
-		  temp2 = Tmin_month_mean_warm_C(i)
-          satvapor = sat_vapor_press(temp) - sat_vapor_press(temp2)
-          coef_h = 50.0D0 / satvapor ! mb/mb
-          ! degrees F
-          temp_x_mean(i) = 27.5D0 - 0.25D0*satvapor - elev_slope
-          ! degrees F
-          coef_t_mean(i) = 1.0D0 / (68.0D0 - 3.6D0*elev_slope + 13.0D0*coef_h)
+          DO j = 1, Nmonths
+		    temp = Tmax_month_mean_warm_C(i,j)
+            temp2 = Tmin_month_mean_warm_C(i,j)
+            satvapor = sat_vapor_press(temp) - sat_vapor_press(temp2)
+            coef_h = 50.0D0 / satvapor ! mb/mb
+            ! degrees F
+            temp_x_mean(i,j) = 27.5D0 - 0.25D0*satvapor - elev_slope
+            ! degrees F
+            coef_t_mean(i,j) = 1.0D0 / (68.0D0 - 3.6D0*elev_slope + 13.0D0*coef_h)
+          ENDDO
         ENDDO
         DEALLOCATE ( Tmax_month_mean_warm_C, Tmin_month_mean_warm_C )
       ENDIF

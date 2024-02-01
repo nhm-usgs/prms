@@ -7,7 +7,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Transpiration Distribution'
         character(len=*), parameter :: MODNAME = 'transp_frost'
-        character(len=*), parameter :: Version_transp = '2023-11-01'
+        character(len=*), parameter :: Version_transp = '2024-01-31'
         ! Declared Parameters
         INTEGER, SAVE, ALLOCATABLE :: Fall_frost(:), Spring_frost(:)
       END MODULE PRMS_TRANSP_FROST
@@ -16,7 +16,7 @@
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, ACTIVE, OFF
       USE PRMS_MODULE, ONLY: Process_flag, Nhru
       USE PRMS_TRANSP_FROST
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_order_flag
       USE PRMS_CLIMATEVARS, ONLY: Transp_on, Basin_transp_on
       USE PRMS_SET_TIME, ONLY: Jsol
       IMPLICIT NONE
@@ -28,7 +28,7 @@
 !***********************************************************************
       transp_frost = 0
 
-      IF ( Process_flag==RUN ) THEN
+      IF ( Process_flag == RUN ) THEN
 !******Set switch for active transpiration period
 ! If the current solar day is between the last frost of the
 ! spring and the first frost of the fall, then transpiration
@@ -36,13 +36,22 @@
 ! Basin_transp_on is set to 1 (ACTIVE).
         Basin_transp_on = OFF
         Transp_on = OFF
-        DO j = 1, Active_hrus
-          i = Hru_route_order(j)
-          IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
-            Transp_on(i) = ACTIVE
-            Basin_transp_on = ACTIVE
-          ENDIF
-        ENDDO
+        IF ( Hru_order_flag == ACTIVE ) THEN
+          DO i = 1, Nhru
+            IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
+              Transp_on(i) = ACTIVE
+              Basin_transp_on = ACTIVE
+            ENDIF
+          ENDDO
+        ELSE
+          DO j = 1, Active_hrus
+            i = Hru_route_order(j)
+            IF ( Jsol>=Spring_frost(i) .AND. Jsol<=Fall_frost(i) ) THEN
+              Transp_on(i) = ACTIVE
+              Basin_transp_on = ACTIVE
+            ENDIF
+          ENDDO
+        ENDIF
 
       ELSEIF ( Process_flag==DECL ) THEN
         CALL print_module(MODDESC, MODNAME, Version_transp)

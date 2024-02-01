@@ -14,11 +14,13 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ddsolrad'
-        character(len=*), parameter :: Version_ddsolrad = '2024-01-25'
+        character(len=*), parameter :: Version_ddsolrad = '2024-01-31'
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
-        REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
+        REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :), Radmax(:, :)
         REAL, SAVE, ALLOCATABLE :: Dday_slope(:, :), Dday_intcp(:, :), Tmax_index(:, :)
+        DOUBLE PRECISION, SAVE, ALLOCATABLE :: Ppt_rad_adj(:, :)
+        DOUBLE PRECISION, SAVE :: Rad_conv
       END MODULE PRMS_DDSOLRAD
 
       INTEGER FUNCTION ddsolrad()
@@ -27,9 +29,8 @@
       USE PRMS_DDSOLRAD
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble, Basin_area_inv
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Tmax_hru, Basin_orad, Orad_hru, &
-     &    Rad_conv, Hru_solsta, Basin_horad, &
-     &    Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
-     &    Solsta_flag, Radj_sppt, Radj_wppt, Ppt_rad_adj, Radmax
+     &    Hru_solsta, Basin_horad, Basin_potsw, Basin_swrad, Basin_solsta, Orad, Hru_ppt, Tmax_allrain, &
+     &    Solsta_flag, Radj_sppt, Radj_wppt
       USE PRMS_SOLTAB, ONLY: Soltab_potsw, Soltab_basinpotsw, Hru_cossl, Soltab_horad_potsw
       USE PRMS_SET_TIME, ONLY: Jday, Summer_flag
       USE PRMS_OBS, ONLY: Solrad
@@ -40,7 +41,8 @@
       EXTERNAL :: read_error, print_module, print_date
 ! Local Variables
       INTEGER :: j, jj, k, kp, kp1
-      REAL :: pptadj, radadj, dday, ddayi
+      REAL :: pptadj, radadj, dday, ddayi, Rad_conv_sngl
+      REAL, ALLOCATABLE :: Ppt_rad_adj_sngl(:, :)
       REAL, SAVE, DIMENSION(26) :: solf
       DATA solf/.20, .35, .45, .51, .56, .59, .62, .64, .655, .67, .682, &
      &          .69, .70, .71, .715, .72, .722, .724, .726, .728, .73, &
@@ -72,7 +74,7 @@
           ! Set precipitation adjument factor based on temperature
           ! and amount of precipitation
           pptadj = 1.0
-          IF ( Hru_ppt(j) > DBLE( Ppt_rad_adj(j,Nowmonth) ) ) THEN
+          IF ( Hru_ppt(j) > Ppt_rad_adj(j,Nowmonth) ) THEN
             IF ( Tmax_hru(j) < DBLE( Tmax_index(j,Nowmonth) ) ) THEN
               pptadj = Radj_sppt(j)
               IF ( Tmax_hru(j)>=Tmax_allrain(j,Nowmonth) ) THEN
@@ -172,6 +174,28 @@
      &       ' to determine precipitation adjustments to solar radiation for each HRU', &
      &       'temp_units')/=0 ) CALL read_error(1, 'tmax_index')
 
+        ALLOCATE ( Ppt_rad_adj(Nhru,Nmonths) )
+        IF ( declparam(MODNAME, 'ppt_rad_adj', 'nhru,nmonths', 'real', &
+     &       '0.02', '0.0', '0.5', &
+     &       'Radiation reduced if HRU precipitation above this value', &
+     &       'Monthly minimum precipitation, if HRU precipitation exceeds this value, radiation is'// &
+     &       ' multiplied by radj_sppt or radj_wppt adjustment factor', &
+     &       'inches')/=0 ) CALL read_error(1, 'ppt_rad_adj')
+        ALLOCATE ( Radmax(Nhru,Nmonths) )
+        IF ( declparam(MODNAME, 'radmax', 'nhru,nmonths', 'real', &
+     &       '0.8', '0.1', '1.0', &
+     &       'Maximum fraction of potential solar radiation', &
+     &       'Monthly (January to December) maximum fraction of the potential solar radiation'// &
+     &       ' that may reach the ground due to haze, dust, smog, and so forth, for each HRU', &
+     &       'decimal fraction')/=0 ) CALL read_error(1, 'radmax')
+        IF ( Nsol > 0 ) THEN
+          IF ( declparam(MODNAME, 'rad_conv', 'one', 'real', &
+     &         '1.0', '0.1', '100.0', &
+     &         'Conversion factor to Langleys for measured radiation', &
+     &         'Conversion factor to Langleys for measured solar radiation', &
+     &         'Langleys/radiation units')/=0 ) CALL read_error(1, 'rad_conv')
+        ENDIF
+
       ELSEIF ( Process_flag==INIT ) THEN
 ! Get parameters
         IF ( getparam(MODNAME, 'dday_slope', Nhru_nmonths, 'real', Dday_slope)/=0 ) CALL read_error(2, 'dday_slope')
@@ -179,6 +203,16 @@
         IF ( getparam(MODNAME, 'radadj_slope', Nhru_nmonths, 'real', Radadj_slope)/=0 ) CALL read_error(2, 'radadj_slope')
         IF ( getparam(MODNAME, 'radadj_intcp', Nhru_nmonths, 'real', Radadj_intcp)/=0 ) CALL read_error(2, 'radadj_intcp')
         IF ( getparam(MODNAME, 'tmax_index', Nhru_nmonths, 'real', Tmax_index)/=0 ) CALL read_error(2, 'tmax_index')
+        ALLOCATE ( Ppt_rad_adj_sngl(Nhru,Nmonths) )
+        IF ( getparam(MODNAME, 'ppt_rad_adj', Nhru_nmonths, 'real', Ppt_rad_adj_sngl)/=0 ) &
+     &       CALL read_error(2, 'ppt_rad_adj')
+        Ppt_rad_adj = DBLE( Ppt_rad_adj_sngl )
+        DEALLOCATE ( Ppt_rad_adj_sngl )
+        IF ( getparam(MODNAME, 'radmax', Nhru_nmonths, 'real', Radmax)/=0 ) CALL read_error(2, 'radmax')
+        IF ( Nsol > 0 ) THEN
+          IF ( getparam(MODNAME, 'rad_conv', 1, 'real', Rad_conv_sngl)/=0 ) CALL read_error(2, 'rad_conv')
+          Rad_conv = DBLE( Rad_conv_sngl )
+        ENDIF
         Observed_flag = OFF
         IF ( Nsol>0 .AND. Basin_solsta>0 ) Observed_flag = ACTIVE
 

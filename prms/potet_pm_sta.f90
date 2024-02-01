@@ -22,7 +22,7 @@
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths, INCH2MM
       USE PRMS_MODULE, ONLY: Process_flag, Nhru, Parameter_check_flag, Inputerror_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PM_STA
-      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
+      USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area_dble, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
      &    Tempc_dewpt, Vp_actual, Lwrad_net, Vp_slope, Vp_sat, Basin_humidity
       USE PRMS_OBS, ONLY: Humidity, Wind_speed, Nwind, Nhumid
@@ -30,13 +30,13 @@
       USE PRMS_SET_TIME, ONLY: Jday
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE, LOG, SNGL
+      INTRINSIC :: DBLE, LOG
       INTEGER, EXTERNAL :: declparam, getparam
       DOUBLE PRECISION, EXTERNAL :: sat_vapor_press
       EXTERNAL :: read_error, print_module, checkdim_param_limits
 ! Local Variables
       INTEGER :: i, j
-      DOUBLE PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c 
+      DOUBLE PRECISION :: elh, prsr, psycnst, heat_flux, net_rad, vp_deficit, a, b, c
       DOUBLE PRECISION :: A1, B1, t1, num, den, stab, sw
 !***********************************************************************
       potet_pm_sta = 0
@@ -54,7 +54,7 @@
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, CAL/GRAM:
           ! elh = 597.3 - 0.5653*Tavgc(i) ! same as potet_jh
 !...LATENT HEAT OF VAPORIZATION AT AVG TEMPERATURE, JOULES/GRAM:
-          elh = (597.3 - 0.5653*Tavgc(i)) * 4.184 
+          elh = (597.3D0 - 0.5653D0*Tavgc(i)) * 4.184D0
           ! elh = 2501.0 - 2.361*Tavgc(i)
           ! elh = 2500.8 - 2.36*Tavgc(i) + 0.0016*Tavgc(i)**2 - 0.00006*Tavgc(i)**3
 
@@ -65,19 +65,19 @@
           ! Cp = 1.005 approximate specific heat capacity of air at 20 degrees C, increases with temp
           ! MW = 0.622 = molecular weight of water
           ! 1.615755627 = Cp / MW
-          psycnst = 1.615755627*prsr/elh
+          psycnst = 1.615755627D0*prsr/elh
 
 !   heat flux density to the ground,  MJ / m2 / day
 !          heat_flux = -4.2 * (Tavgc_ante(i)-Tavgc(i)) ! could use solrad_tmax or running avg instead of Tavgc_ante
-          heat_flux = 0.0 ! Irmak and others (2012) says equal to zero for daily time step ! G
+          heat_flux = 0.0D0 ! Irmak and others (2012) says equal to zero for daily time step ! G
 
 ! Dew point temperature (Lawrence(2005) eqn. 8), degrees C
 ! Humidity is input as percent so divided by 100 to be in units of decimal fraction
-          A1 = 17.625
-          B1 = 243.04
+          A1 = 17.625D0
+          B1 = 243.04D0
           t1 = A1 * Tavgc(i) / (B1 + Tavgc(i))
-          num = B1 * (LOG(Humidity(Hru_humidity_sta(i))/100.0) + t1)
-          den = A1 - LOG(Humidity(Hru_humidity_sta(i))/100.0) - t1
+          num = B1 * (DBLE( LOG(Humidity(Hru_humidity_sta(i))/100.0) ) + t1)
+          den = A1 - DBLE( LOG(Humidity(Hru_humidity_sta(i))/100.0) ) - t1
           Tempc_dewpt(i) = num / den
 
 ! Actual vapor pressure (Irmak eqn. 12), KPA
@@ -86,7 +86,7 @@
 
 !...SATURATION VAPOR PRESSURE AT AVG TEMP, KILOPASCALS (KPA):
 ! divide by 10 to convert millibar to kpa
-          Vp_sat(i) = sat_vapor_press(Tavgc(i)) / 10.0
+          Vp_sat(i) = sat_vapor_press(Tavgc(i)) / 10.0D0
 
           ! saturation vapor pressure deficit
           vp_deficit = Vp_sat(i) - Vp_actual(i)
@@ -98,14 +98,14 @@
 ! are cases when soltab is zero for certain HRUs (depending on slope/aspect)
 ! for certain months. If this value is zero, reset it to a small value so
 ! there is no divide by zero.
-          IF (Soltab_potsw(Jday,i) <= 10.0D0) THEN
-            stab = 10.0
+          IF ( .not.(Soltab_potsw(Jday,i) > 10.0D0) ) THEN
+            stab = 10.0D0
           ELSE
-            stab = SNGL( Soltab_potsw(Jday,i) )
+            stab = Soltab_potsw(Jday,i)
           ENDIF
 
-          IF (Swrad(i) <= 10.0D0) THEN
-            sw = 10.5
+          IF ( .not.(Swrad(i) > 10.0D0) ) THEN
+            sw = 10.5D0
           ELSE
             sw = Swrad(i)
           ENDIF
@@ -122,8 +122,8 @@
           net_rad = Swrad(i)*0.04184D0 - Lwrad_net(i)
 
           a = Vp_slope(i) * (net_rad - heat_flux) / elh * 1000.0D0
-          b = psycnst * Pm_n_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i)) * vp_deficit / (Tavgc(i) + 273.0)
-          c = (Vp_slope(i) + psycnst * DBLE( (1.0 + Pm_d_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i)))))
+          b = psycnst * DBLE( Pm_n_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i)) ) * vp_deficit / (Tavgc(i) + 273.0D0)
+          c = (Vp_slope(i) + psycnst * DBLE( (1.0 + Pm_d_coef(i,Nowmonth) * Wind_speed(Hru_windspeed_sta(i))) ))
 
 !  PM equation with crop_coef in mm/day
 !          Potet(i) = (a + b)/c
@@ -135,9 +135,9 @@
 !             print *, "potet NaN", potet(i)
 !          end if
 
-          IF ( Potet(i)<0.0 ) Potet(i) = 0.0
-          Basin_potet = Basin_potet + DBLE( Potet(i)*Hru_area(i) )
-          Basin_humidity = Basin_humidity + DBLE( Hru_humidity_sta(i)*Hru_area(i) )
+          IF ( Potet(i)<0.0D0 ) Potet(i) = 0.0D0
+          Basin_potet = Basin_potet + Potet(i)*Hru_area_dble(i)
+          Basin_humidity = Basin_humidity + DBLE( Hru_humidity_sta(i) ) * Hru_area_dble(i)
         ENDDO
         Basin_potet = Basin_potet*Basin_area_inv
         Basin_humidity = Basin_humidity*Basin_area_inv
