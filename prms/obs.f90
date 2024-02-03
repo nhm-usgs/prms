@@ -2,7 +2,7 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
+      USE PRMS_CONSTANTS, ONLY: Nmonths
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
@@ -18,7 +18,7 @@
       ! Lake Module Variables
       REAL, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
 !   Declared Parameters
-      INTEGER, SAVE :: Runoff_units, Rain_code(MONTHS_PER_YEAR)
+      INTEGER, SAVE :: Runoff_units, Rain_code(Nmonths)
       END MODULE PRMS_OBS
 
 !***********************************************************************
@@ -224,7 +224,7 @@
 !     obsinit - initializes obs module
 !***********************************************************************
       INTEGER FUNCTION obsinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, Nmonths, CFS
       USE PRMS_MODULE, ONLY: Nobs
       USE PRMS_OBS
       IMPLICIT NONE
@@ -240,7 +240,7 @@
       ENDIF
 
       IF ( Rain_flag==ACTIVE ) THEN
-        IF ( getparam(MODNAME, 'rain_code', MONTHS_PER_YEAR, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
+        IF ( getparam(MODNAME, 'rain_code', Nmonths, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
       ENDIF
 
       Rain_day = OFF
@@ -251,7 +251,7 @@
 !     obsrun - runs obs module
 ! **********************************************************************
       INTEGER FUNCTION obsrun()
-      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV
+      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV, ACTIVE
       USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, Nowmonth
       USE PRMS_OBS
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
@@ -306,7 +306,7 @@
         IF ( readvar(MODNAME, 'snowdepth')/=0 ) CALL read_error(9, 'snowdepth')
       ENDIF
 
-      IF ( Rain_flag==1 ) THEN
+      IF ( Rain_flag==ACTIVE ) THEN
         IF ( Rain_code(Nowmonth)==4 ) THEN
           IF ( readvar(MODNAME, 'rain_day')/=0 ) CALL read_error(9, 'rain_day')
         ENDIF

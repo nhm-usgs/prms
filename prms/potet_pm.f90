@@ -18,8 +18,8 @@
 
 !***********************************************************************
       INTEGER FUNCTION potet_pm()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2MM
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths, OFF, INCH2MM
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PM
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
@@ -98,13 +98,13 @@
 ! are cases when soltab is zero for certain HRUs (depending on slope/aspect)
 ! for certain months. If this value is zero, reset it to a small value so
 ! there is no divide by zero.
-          IF (Soltab_potsw(Jday,i) <= 10.0) THEN
+          IF ( .not.(Soltab_potsw(Jday,i) > 10.0D0) ) THEN
             stab = 10.0
           ELSE
             stab = SNGL( Soltab_potsw(Jday,i) )
           ENDIF
 
-          IF (Swrad(i) <= 10.0) THEN
+          IF ( .not.(Swrad(i) > 10.0) ) THEN
             sw = 10.5
           ELSE
             sw = Swrad(i)
@@ -147,21 +147,21 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pm_n_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pm_n_coef(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'pm_n_coef', 'nhru,nmonths', 'real', &
      &       '900.0', '850.0', '950.0', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET N temperauture coefficient for each HRU', &
      &       'degrees Celsius per day')/=0 ) CALL read_error(1, 'pm_n_coef')
 
-        ALLOCATE ( Pm_d_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pm_d_coef(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'pm_d_coef', 'nhru,nmonths', 'real', &
      &       '0.34', '0.25', '0.45', &
      &       'Penman-Monteith coefficient', &
      &       'Monthly (January to December) Penman-Monteith potential ET D wind-speed coefficient for each HRU', &
      &       'seconds/meters')/=0 ) CALL read_error(1, 'pm_d_coef')
 
-        ALLOCATE ( Crop_coef(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Crop_coef(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'crop_coef', 'nhru,nmonths', 'real', &
      &       '1.0', '0.0', '2.0', &
      &       'Crop coefficient for each HRU', &
@@ -171,9 +171,9 @@
 !******Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
         Vp_sat = 0.0
-        IF ( getparam(MODNAME, 'pm_n_coef', Nhru*MONTHS_PER_YEAR, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
-        IF ( getparam(MODNAME, 'pm_d_coef', Nhru*MONTHS_PER_YEAR, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
-        IF ( getparam(MODNAME, 'crop_coef', Nhru*MONTHS_PER_YEAR, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
+        IF ( getparam(MODNAME, 'pm_n_coef', Nhru_nmonths, 'real', Pm_n_coef)/=0 ) CALL read_error(2, 'pm_n_coef')
+        IF ( getparam(MODNAME, 'pm_d_coef', Nhru_nmonths, 'real', Pm_d_coef)/=0 ) CALL read_error(2, 'pm_d_coef')
+        IF ( getparam(MODNAME, 'crop_coef', Nhru_nmonths, 'real', Crop_coef)/=0 ) CALL read_error(2, 'crop_coef')
 
       ENDIF
 

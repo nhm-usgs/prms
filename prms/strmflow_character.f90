@@ -48,7 +48,6 @@
       USE PRMS_STRMFLOW_CHARACTER
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: INDEX
       INTEGER, EXTERNAL :: declvar, declparam
       EXTERNAL :: read_error, print_module
 !***********************************************************************

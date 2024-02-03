@@ -18,8 +18,8 @@
 
 !***********************************************************************
       INTEGER FUNCTION potet_pt()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MONTHS_PER_YEAR, OFF, INCH2CM
-      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, Nmonths, OFF, INCH2CM
+      USE PRMS_MODULE, ONLY: Process_flag, Nhru, Humidity_cbh_flag, Nowmonth, Nhru_nmonths
       USE PRMS_POTET_PT
       USE PRMS_BASIN, ONLY: Basin_area_inv, Active_hrus, Hru_area, Hru_route_order, Hru_elev_meters
       USE PRMS_CLIMATEVARS, ONLY: Basin_potet, Potet, Tavgc, Swrad, Tminc, Tmaxc, &
@@ -110,13 +110,13 @@
 ! are cases when soltab is zero for certain HRUs (depending on slope/aspect)
 ! for certain months. If this value is zero, reset it to a small value so
 ! there is no divide by zero.
-          IF (Soltab_potsw(Jday,i) <= 10.0) THEN
+          IF (.not.(Soltab_potsw(Jday,i) > 10.0D0)) THEN
             stab = 10.0
           ELSE
             stab = SNGL( Soltab_potsw(Jday,i) )
           ENDIF
 
-          IF (Swrad(i) <= 10.0) THEN
+          IF ( .not.( Swrad(i) > 10.0) ) THEN
             sw = 10.5
           ELSE
             sw = Swrad(i)
@@ -155,7 +155,7 @@
         CALL print_module(MODDESC, MODNAME, Version_potet)
 
         ! Declare Parameters
-        ALLOCATE ( Pt_alpha(Nhru,MONTHS_PER_YEAR) )
+        ALLOCATE ( Pt_alpha(Nhru,Nmonths) )
         IF ( declparam(MODNAME, 'pt_alpha', 'nhru,nmonths', 'real', &
      &       '1.26', '1.0', '2.0', &
      &       'Potential ET adjustment factor - Priestly-Taylor', &
@@ -165,7 +165,7 @@
 
 !******Get parameters
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( getparam(MODNAME, 'pt_alpha', Nhru*MONTHS_PER_YEAR, 'real', Pt_alpha)/=0 ) CALL read_error(2, 'pt_alpha')
+        IF ( getparam(MODNAME, 'pt_alpha', Nhru_nmonths, 'real', Pt_alpha)/=0 ) CALL read_error(2, 'pt_alpha')
 
       ENDIF
 
