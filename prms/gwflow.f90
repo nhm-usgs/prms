@@ -268,7 +268,7 @@
       USE PRMS_MODULE, ONLY: Ngw, Nlake, Print_debug, Init_vars_from_file, &
      &    Dprst_flag, Inputerror_flag, Gwr_swale_flag
       USE PRMS_GWFLOW
-      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area, Basin_area_inv, Active_gwrs, Gwr_route_order, &
+      USE PRMS_BASIN, ONLY: Gwr_type, Hru_area_dble, Basin_area_inv, Active_gwrs, Gwr_route_order, &
      &                      Lake_hru_id, Weir_gate_flag, Hru_storage
       USE PRMS_FLOWVARS, ONLY: Gwres_stor
       IMPLICIT NONE
@@ -297,10 +297,10 @@
       Basin_gwstor = 0.0D0
       DO j = 1, Active_gwrs
         i = Gwr_route_order(j)
-        Basin_gwstor = Basin_gwstor + Gwres_stor(i)*DBLE(Hru_area(i))
+        Basin_gwstor = Basin_gwstor + Gwres_stor(i) * Hru_area_dble(i)
         IF ( Gwstor_min(i)>0.0 ) THEN
           Gwminarea_flag = 1
-          Gwstor_minarea(i) = DBLE( Gwstor_min(i)*Hru_area(i) )
+          Gwstor_minarea(i) = DBLE( Gwstor_min(i) ) * Hru_area_dble(i)
         ENDIF
         IF ( Gwflow_coef(i)>1.0 ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT *, 'WARNING, gwflow_coef value > 1.0 for GWR:', i, Gwflow_coef(i)
@@ -518,31 +518,32 @@
 
         gwsink = 0.0D0
         IF ( gwstor<0.0D0 ) THEN ! could happen with water use
-          IF ( gwstor < -5.0D-10) THEN
-            IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0, set to 0.0', gwstor
-          ENDIF
-          gwstor = 0.0D0
-        ENDIF
+          IF ( Print_debug>DEBUG_less ) PRINT *, 'Warning, groundwater reservoir for HRU:', i, ' is < 0.0', gwstor
+          gwflow = 0.0D0
+          Gwres_sink(i) = 0.0
+        ELSE
+
 ! Compute groundwater discharge
-        gwflow = gwstor*DBLE( Gwflow_coef(i) )
+          gwflow = gwstor*DBLE( Gwflow_coef(i) )
 
 ! Reduce storage by outflow
-        gwstor = gwstor - gwflow
+          gwstor = gwstor - gwflow
 
-        IF ( Gwsink_coef(i)>0.0 ) THEN
-          gwsink = MIN( gwstor*DBLE( Gwsink_coef(i) ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
-          gwstor = gwstor - gwsink
-        ENDIF
+          IF ( Gwsink_coef(i)>0.0 ) THEN
+            gwsink = MIN( gwstor*DBLE( Gwsink_coef(i) ), gwstor ) ! if gwsink_coef > 1, could have had negative gwstor
+            gwstor = gwstor - gwsink
+          ENDIF
 ! if gwr_swale_flag = 1 swale GWR flow goes to sink, 2 included in stream network and cascades
 ! maybe gwr_swale_flag = 3 abs(hru_segment) so hru_segment could be changed from 0 to allow HRU swales
-        IF ( Gwr_swale_flag==ACTIVE ) THEN
-          IF ( Gwr_type(i)==SWALE ) THEN
-            gwsink = gwsink + gwflow
-            gwflow = 0.0D0
+          IF ( Gwr_swale_flag==ACTIVE ) THEN
+            IF ( Gwr_type(i)==SWALE ) THEN
+              gwsink = gwsink + gwflow
+              gwflow = 0.0D0
+            ENDIF
           ENDIF
+          Gwres_sink(i) = SNGL( gwsink/gwarea )
+          Basin_gwsink = Basin_gwsink + gwsink
         ENDIF
-        Gwres_sink(i) = SNGL( gwsink/gwarea )
-        Basin_gwsink = Basin_gwsink + gwsink
         Basin_gwstor = Basin_gwstor + gwstor
 
         Gwres_flow(i) = SNGL( gwflow/gwarea )

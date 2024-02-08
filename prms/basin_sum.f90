@@ -7,7 +7,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=9), parameter :: MODNAME = 'basin_sum'
-      character(len=*), parameter :: Version_basin_sum = '2023-11-01'
+      character(len=*), parameter :: Version_basin_sum = '2024-01-22'
 
       INTEGER, SAVE :: BALUNT, Totdays
       INTEGER, SAVE :: Header_prt, Endjday
@@ -311,7 +311,7 @@
 !     sumbinit - Initialize basinsum module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION sumbinit()
-      USE PRMS_CONSTANTS, ONLY: OFF
+      USE PRMS_CONSTANTS, ONLY: OFF, ERROR_param
       USE PRMS_MODULE, ONLY: Nobs, Init_vars_from_file, Print_debug
       USE PRMS_BASINSUM
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_lake_stor
@@ -319,11 +319,12 @@
       USE PRMS_SNOW, ONLY: Basin_pweqv
       USE PRMS_SRUNOFF, ONLY: Basin_imperv_stor, Basin_dprst_volcl, Basin_dprst_volop
       USE PRMS_GWFLOW, ONLY: Basin_gwstor
+      USE PRMS_ROUTING, ONLY: Basin_segment_storage
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: MAX, MOD
       INTEGER, EXTERNAL :: getparam, julian_day
-      EXTERNAL :: header_print, read_error, write_outfile, PRMS_open_module_file
+      EXTERNAL :: header_print, read_error, write_outfile, PRMS_open_module_file, error_stop
 ! Local Variables
       INTEGER :: pftemp
 !***********************************************************************
@@ -332,7 +333,12 @@
       IF ( Nobs>0 ) THEN
         IF ( getparam(MODNAME, 'outlet_sta', 1, 'integer', Outlet_sta) &
      &       /=0 ) CALL read_error(2, 'outlet_sta')
-        IF ( Outlet_sta==0 ) Outlet_sta = 1
+        IF ( Outlet_sta==0 ) THEN
+          Outlet_sta = 1
+        ELSEIF ( Outlet_sta>Nobs ) THEN
+          PRINT *, 'ERROR, invalid value specified for outlet_sta:', Outlet_sta
+          CALL error_stop('outlet_sta is specified > nobs', ERROR_param)
+        ENDIF
       ENDIF
 
       IF ( getparam(MODNAME, 'print_type', 1, 'integer', Print_type) &
@@ -446,7 +452,7 @@
       Basin_storage = Basin_soil_moist + Basin_intcp_stor + &
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
      &                Basin_imperv_stor + Basin_lake_stor + &
-     &                Basin_dprst_volop + Basin_dprst_volcl
+     &                Basin_dprst_volop + Basin_dprst_volcl + Basin_segment_storage
 !glacier storage not known at start
 
       IF ( Print_freq/=0 ) THEN
@@ -475,7 +481,7 @@
 !     sumbrun - Computes summary values
 !***********************************************************************
       INTEGER FUNCTION sumbrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, strmflow_muskingum_module, strmflow_muskingum_lake_module, strmflow_muskingum_mann_module
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, strmflow_muskingum_lake_module
       USE PRMS_MODULE, ONLY: Nobs, Print_debug, End_year, Strmflow_flag, Glacier_flag, Nowyear, Nowmonth, Nowday, Nratetbl
       USE PRMS_BASINSUM
       USE PRMS_BASIN, ONLY: Active_area, Active_hrus, Hru_route_order
@@ -499,11 +505,12 @@
       EXTERNAL :: header_print, write_outfile
 ! Local variables
       INTEGER :: i, j, wyday, endrun, monthdays
-      DOUBLE PRECISION :: wat_bal, obsrunoff
+      DOUBLE PRECISION :: wat_bal, obsrunoff, yrdays_dble
 !***********************************************************************
       sumbrun = 0
 
       wyday = Julwater
+      yrdays_dble = DBLE( Yrdays )
 
       IF ( Nowyear==End_year .AND. Jday==Endjday ) THEN
         endrun = 1
@@ -516,13 +523,11 @@
       Last_basin_stor = Basin_storage
       Basin_storage = Basin_soil_moist + Basin_intcp_stor + &
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
-     &                Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
+     &                Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl+ Basin_segment_storage
 ! Basin_storage doesn't include any processes on glacier
 ! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
 !   includes glaciers that have depth estimates and these are known to be iffy
       IF ( Glacier_flag==ACTIVE ) Basin_storage = Basin_storage + Basin_gl_storage
-      IF ( Strmflow_flag==strmflow_muskingum_lake_module .OR. Strmflow_flag==strmflow_muskingum_module &
-     &     .OR. Strmflow_flag==strmflow_muskingum_mann_module) Basin_storage = Basin_storage + Basin_segment_storage
 
 ! volume calculation for storage
       Basin_storvol = Basin_storage*Active_area
@@ -697,8 +702,8 @@
         IF ( wyday==Yrdays ) THEN
           IF ( Print_type==0 ) THEN
 
-            Obs_runoff_yr = Obs_runoff_yr/Yrdays
-            Basin_cfs_yr = Basin_cfs_yr/Yrdays
+            Obs_runoff_yr = Obs_runoff_yr/yrdays_dble
+            Basin_cfs_yr = Basin_cfs_yr/yrdays_dble
             IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:40))
             WRITE ( Buffer40, "(I7,F21.2,F12.2)" ) Nowyear, Obs_runoff_yr, Basin_cfs_yr
             CALL write_outfile(Buffer40)
@@ -713,11 +718,11 @@
             IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS(:62))
 
           ELSEIF ( Print_type==2 ) THEN
-            Basin_swrad_yr = Basin_swrad_yr/Yrdays
-            Basin_max_temp_yr = Basin_max_temp_yr/Yrdays
-            Basin_min_temp_yr = Basin_min_temp_yr/Yrdays
-            Obs_runoff_yr = Obs_runoff_yr/Yrdays
-            Basin_cfs_yr = Basin_cfs_yr/Yrdays
+            Basin_swrad_yr = Basin_swrad_yr/yrdays_dble
+            Basin_max_temp_yr = Basin_max_temp_yr/yrdays_dble
+            Basin_min_temp_yr = Basin_min_temp_yr/yrdays_dble
+            Obs_runoff_yr = Obs_runoff_yr/yrdays_dble
+            Basin_cfs_yr = Basin_cfs_yr/yrdays_dble
             IF ( Mprt .OR. Dprt ) CALL write_outfile(EQULS)
             WRITE ( Buffer151, 9007 ) Nowyear, Basin_swrad_yr, Basin_max_temp_yr, &
      &              Basin_min_temp_yr, Basin_ppt_yr, Basin_net_ppt_yr, &
