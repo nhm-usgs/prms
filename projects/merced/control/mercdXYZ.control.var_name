@@ -1292,6 +1292,24 @@ Type: double
 Desc: Yearly area-weighted average actual ET for each HRU
 Units: inches
 
+Name: hru_frac_imperv
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 90
+Size: 90
+Type: float
+Desc: Proportion of each HRU area that is impervious
+Units: decimal fraction
+
+Name: hru_frac_perv
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 90
+Size: 90
+Type: float
+Desc: Fraction of HRU that is pervious
+Units: decimal fraction
+
 Name: hru_imperv
 Module: basin
 Ndimen: 1
@@ -1397,7 +1415,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: float
-Desc: HRU area-weighted average surface runoff from impervious areas for each HRU
+Desc: HRU area-weighted average surface runoff from impervious areas flowing out for each HRU
 Units: inches
 
 Name: hru_sroffp
@@ -1406,7 +1424,7 @@ Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
 Type: float
-Desc: HRU area-weighted average surface runoff from pervious areas for each HRU
+Desc: HRU area-weighted average surface runoff from pervious areas flowing out of each HRU
 Units: inches
 
 Name: hru_storage
@@ -2224,7 +2242,7 @@ Module: snowcomp
 Ndimen: 1
 Dimensions: nhru - 90
 Size: 90
-Type: double
+Type: float
 Desc: Net snowpack energy balance on each HRU
 Units: Langleys
 

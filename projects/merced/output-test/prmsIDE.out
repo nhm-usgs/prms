@@ -3,7 +3,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.3.0 01/22/2024
+                        Version 5.3.0 02/10/2024
 
         Process            Available Modules
 --------------------------------------------------------------------
@@ -41,49 +41,22 @@ Stream Temperature: stream_temp
 
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-01-22
-Basin Definition                basin               2023-11-01
+Computation Order               call_modules        2024-02-10
+Basin Definition                basin               2024-01-22
 Common States and Fluxes        climateflow         2024-01-16
-Potential Solar Radiation       soltab              2023-11-01
+Potential Solar Radiation       soltab              2024-01-22
 Timestep Control                prms_time           2023-11-01
-Time Series Data                obs                 2023-11-01
+Time Series Data                obs                 2024-01-22
 Temp & Precip Distribution      ide_dist            2023-11-01
-Solar Radiation Distribution    ddsolrad            2023-10-04
+Solar Radiation Distribution    ddsolrad            2024-02-08
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-01-10
-Snow Dynamics                   snowcomp            2024-01-11
-Surface Runoff                  srunoff_smidx       2024-01-16
-Soilzone Computations           soilzone            2024-01-10
+Snow Dynamics                   snowcomp            2024-02-08
+Surface Runoff                  srunoff_smidx       2024-02-08
+Soilzone Computations           soilzone            2024-02-07
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2023-11-01
-Output Summary                  prms_summary        2023-11-01
+Output Summary                  basin_sum           2024-01-22
+Output Summary                  prms_summary        2024-01-15
 ==============================================================
-
-Using Control File: .\control\mercdIDE.control
-
-
-Using Parameter File: ./input/mercdIDE.param
-
-
-
-Start time: 1993/10/01 00:00:00
-End time:   1995/09/30 00:00:00
-
-
-Model domain area:       206059.42    Active basin area:    206059.42
-Fraction impervious:        0.0001    Fraction pervious:       0.9999
-
-
-
-
-   Year Month Day   Precip     ET    Storage S-Runoff M-Runoff
-                  (inches) (inches) (inches) (inches) (inches)
- -------------------------------------------------------------
- initial                               7.288
- *************************************************************
- Total for run     100.986   43.033    7.839   57.401   67.341
- *************************************************************
-Execution elapsed time    0 minutes  0.17 seconds
-
