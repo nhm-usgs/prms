@@ -1880,6 +1880,7 @@
 !     stream_temp_restart - write or read stream_temp restart file
 !***********************************************************************
       SUBROUTINE stream_temp_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_STRMTEMP
       IMPLICIT NONE
@@ -1890,7 +1891,7 @@
       ! Local Variable
       CHARACTER(LEN=11) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
          WRITE ( Restart_outunit ) MODNAME
          WRITE ( Restart_outunit ) Seg_tave_water
          WRITE ( Restart_outunit ) gw_silo

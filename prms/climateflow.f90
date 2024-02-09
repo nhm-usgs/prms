@@ -100,7 +100,7 @@ module PRMS_IT0_VARS
        IMPLICIT NONE
 !   Global Variables
        DOUBLE PRECISION, SAVE :: It0_basin_ssstor, It0_basin_soil_moist
-       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_stor_hru(:), It0_pkwater_equiv(:)
+       DOUBLE PRECISION, SAVE, ALLOCATABLE :: It0_dprst_stor_hru(:), It0_pkwater_equiv(:), It0_soil_rechr(:)
        REAL, SAVE, ALLOCATABLE :: It0_soil_moist(:), It0_hru_impervstor(:), It0_ssres_stor(:)
 end module PRMS_IT0_VARS
 
@@ -349,7 +349,7 @@ end module PRMS_IT0_VARS
       ENDIF
 
 ! Soilzone variables
-      ALLOCATE ( Soil_rechr(Nhru) )
+      ALLOCATE ( Soil_rechr(Nhru), It0_soil_rechr(Nhru) )
       IF ( declvar(Soilzone_module, 'soil_rechr', 'nhru', Nhru, 'real', &
      &     'Storage for recharge zone (upper portion) of the'// &
      &     ' capillary reservoir that is available for both evaporation and transpiration', &
@@ -875,6 +875,7 @@ end module PRMS_IT0_VARS
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type, Hru_perv, Hru_area, Basin_area_inv
       IMPLICIT NONE
 ! Functions
+      INTRINSIC :: maxval
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error
       REAL, EXTERNAL :: c_to_f, f_to_c

@@ -440,7 +440,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Iunit
       INTEGER, INTENT (INOUT) :: Next_yr, Next_mo, Next_day
-! Funcions
+! Functions
       EXTERNAL :: is_eof
 ! Local Variables
       INTEGER :: keep_reading

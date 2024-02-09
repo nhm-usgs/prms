@@ -235,7 +235,7 @@
 !     data jday/356,10,23,38,51,66,80,94,109,123,138,152,173/
       ENDIF
 
-      IF ( Glacier_flag==OFF ) DEALLOCATE ( Hru_aspect, Hru_slope, Hru_lat, obliquity )
+      IF ( Glacier_flag==OFF ) DEALLOCATE ( Hru_aspect, Hru_slope, Hru_lat )
 
       END FUNCTION sthinit
 

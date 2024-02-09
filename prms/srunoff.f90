@@ -1036,7 +1036,8 @@
       USE PRMS_MODULE, ONLY: Sroff_flag
       USE PRMS_SRUNOFF, ONLY: Ihru, Smidx_coef, Smidx_exp, &
      &    Carea_max, Carea_min, Carea_dif, Contrib_fraction
-      USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Soil_rechr_max
+      USE PRMS_FLOWVARS, ONLY: Soil_rechr_max
+      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_soil_rechr
       IMPLICIT NONE
 ! Arguments
       REAL, INTENT(IN) :: Pptp, Ptc
@@ -1047,7 +1048,7 @@
 !******Pervious area computations
       IF ( Sroff_flag==smidx_module ) THEN
         ! antecedent soil_moist
-        smidx = Soil_moist(Ihru) + (0.5*Ptc)
+        smidx = It0_soil_moist(Ihru) + (0.5*Ptc)
         IF ( smidx>25.0) THEN
           ca_fraction = Carea_max(Ihru)
         ELSE
@@ -1055,7 +1056,7 @@
         ENDIF
       ELSE
         ! antecedent soil_rechr
-        ca_fraction = Carea_min(Ihru) + Carea_dif(Ihru)*(Soil_rechr(Ihru)/Soil_rechr_max(Ihru))
+        ca_fraction = Carea_min(Ihru) + Carea_dif(Ihru)*(It0_soil_rechr(Ihru)/Soil_rechr_max(Ihru))
       ENDIF
       IF ( ca_fraction>Carea_max(Ihru) ) THEN
         ca_fraction = Carea_max(Ihru)

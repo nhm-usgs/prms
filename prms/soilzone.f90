@@ -1494,7 +1494,7 @@
       SUBROUTINE soilzone_restart(In_out)
       USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
-      USE PRMS_FLOWVARS, ONLY: Pref_flow_stor, Basin_soil_rechr
+      USE PRMS_FLOWVARS, ONLY: Pref_flow_stor, Basin_soil_rechr, Pref_flag
       USE PRMS_SOILZONE
       IMPLICIT NONE
       ! Argument
@@ -1507,11 +1507,11 @@
       IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Basin_soil_rechr, Basin_slstor, Basin_soil_moist_tot, Basin_pref_stor
-        WRITE ( Restart_outunit ) Pref_flow_stor
+        IF ( Pref_flag == ACTIVE ) WRITE ( Restart_outunit ) Pref_flow_stor
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
         READ ( Restart_inunit ) Basin_soil_rechr, Basin_slstor, Basin_soil_moist_tot, Basin_pref_stor
-        READ ( Restart_inunit ) Pref_flow_stor
+        IF ( Pref_flag == ACTIVE ) READ ( Restart_inunit ) Pref_flow_stor
       ENDIF
       END SUBROUTINE soilzone_restart

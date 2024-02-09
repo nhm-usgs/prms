@@ -1734,8 +1734,6 @@
       SUBROUTINE caloss(Cal, Pkwater_equiv, Pk_def, Pk_temp, Pk_ice, Freeh2o, Ihru_gl)
       USE PRMS_CONSTANTS, ONLY: CLOSEZERO !, ZERO_SNOWPACK
       IMPLICIT NONE
-! Functions
-      INTRINSIC :: SNGL
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru_gl
       REAL, INTENT(IN) :: Cal
@@ -2259,7 +2257,7 @@
       USE PRMS_CONSTANTS, ONLY: CLOSEZERO
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: SNGL
+      INTRINSIC :: SNGL, DBLE
       EXTERNAL :: calin, caloss
 ! Arguments
       INTEGER, INTENT(IN) :: Niteda, Tstorm_mo, Ihru_gl
@@ -2876,7 +2874,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, active_layer_present
 ! Functions
-      INTRINSIC :: ATAN, SNGL
+      INTRINSIC :: ATAN, DBLE, SNGL
 ! Local Variables
       REAL :: reduce
 !***********************************************************************

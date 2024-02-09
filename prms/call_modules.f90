@@ -9,7 +9,7 @@
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
       character(len=*), parameter :: PRMS_versn = '2024-02-10'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 01/22/2024'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 02/10/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -141,7 +141,7 @@
   16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
 
-        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash edb25e86e3b9a69700556c6667491aa9ae21dfc4'
+        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash 95924d7053e26baac6416b9cbe55049cd546ac19'
 
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT 15

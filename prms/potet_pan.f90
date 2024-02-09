@@ -75,6 +75,7 @@
 !     Write to or read from restart file
 !***********************************************************************
       SUBROUTINE potet_pan_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_POTET_PAN, ONLY: MODNAME, Last_pan_evap
       IMPLICIT NONE
@@ -84,7 +85,7 @@
       ! Local Variable
       CHARACTER(LEN=9) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Last_pan_evap
       ELSE

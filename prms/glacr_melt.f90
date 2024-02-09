@@ -442,7 +442,7 @@
       USE PRMS_CONSTANTS, ONLY: GLACIER, LAND
       USE PRMS_MODULE, ONLY: Nhru, Init_vars_from_file, Nhru_nmonths
       USE PRMS_GLACR
-      USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_elev_ts, Active_hrus, Hru_route_order, &
+      USE PRMS_BASIN, ONLY: Hru_area, Hru_elev_ts, Active_hrus, Hru_route_order, &
      &    Hru_type, Basin_area_inv, Hru_elev_meters
       USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
       USE PRMS_SOLTAB, ONLY: Hru_slope
@@ -703,7 +703,7 @@
         glacier_frac_use = 0.0
         DO jj = 1, Active_hrus
           j = Hru_route_order(jj)
-          Hru_area_inch2(j) = Hru_area_dble(j)*Acre_inch2
+          Hru_area_inch2(j) = Hru_area(j)*Acre_inch2
           IF ( Hru_type(j)==GLACIER ) THEN
             glacier_frac_use(j)= Glacier_frac(j)
             !should be end of extensions or branches-- will fail if don't set up with indices stacked
@@ -882,7 +882,7 @@
       USE PRMS_SET_TIME, ONLY: Julwater
       USE PRMS_INTCP, ONLY: Net_rain, Net_snow
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt, Glacrmelt, Glacr_air_deltemp, Glacr_delsnow, &
-     &    Glrette_frac_init, Snowcov_area, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
+     &    Glrette_frac_init, Basin_snowicecov, Snow_evap, Glacr_evap, Basin_glacrb_melt
       USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
       IMPLICIT NONE
 ! Functions
@@ -915,7 +915,7 @@
       lowest = 0
       count_delta = 0
       count_delta2 = 0
-      delta_areayr = 0.0
+      delta_areayr = 0.0D0
       delta_vol = 0.0D0
       lowpt = 0
       stact_hrus = 0
@@ -937,7 +937,7 @@
       Gl_ice_melt = 0.0
       Glacr_flow = 0.0
       Basin_snowicecov = Basin_snowicecov*Acre_inch2/Basin_area_inv
-      gl_gain = 0.D0
+      gl_gain = 0.0D0
 !
 ! Start of year calculations after have a year of data
       IF ( Julwater==1 .AND. Nowyear>=Start_year+1) THEN
@@ -1402,7 +1402,7 @@
             gl_gain(j) = DBLE(gl_snow - gl_evap)
             gl_total(j) = -Hru_glres_melt(j) + gl_gain(j)
             !this is daily mass balance on glacier part of HRU in inches, divide by glacier_frac so averaged over glaciated part of HRU only
-            Hru_mb_yrcumul(j) = Hru_mb_yrcumul(j) + gl_total(j)/Glacier_frac(j)
+            Hru_mb_yrcumul(j) = Hru_mb_yrcumul(j) + gl_total(j)/DBLE(Glacier_frac(j))
             Basin_gl_top_gain = Basin_gl_top_gain + gl_gain(j)*Hru_area_inch2(j)
             !postive indicates snow, negative indicates melt
           ENDIF
@@ -1509,13 +1509,13 @@
      &                  (Top_tag(j)==-1.AND.count_delta(j)==0)) ) THEN
                     count_delta(j) = 1
                     volresv = DBLE(Hru_glres_melt(j))*Hru_area_inch2(j)
-                    IF ( volresv>DNEARZERO ) in_top_melt(jj, ii) = in_top_melt(jj, ii) + volresv
+                    IF ( volresv>DNEARZERO ) in_top_melt(jj, ii) = in_top_melt(jj, ii)+ volresv
                     ! all excess rain is included in melt, rain on ice goes into reservoirs
                     ! should be true unless Glacrmelt==0
                     IF ( Glacrmelt(j)-Net_rain(j)*Glacier_frac(j)>NEARZERO ) &
      &                     volresv_ice =  DBLE(Glacrmelt(j)-Net_rain(j)*Glacier_frac(j))*Hru_area_inch2(j)
-                    IF ( volresv_ice>DNEARZERO ) in_top_melt_ice(jj, ii) = in_top_melt_ice(jj, ii) + volresv_ice
-                    delta_vol(o) = delta_vol(o) + gl_total(j)*Hru_area_inch2(j)/0.917
+                    IF ( volresv_ice>DNEARZERO ) in_top_melt_ice(jj, ii) = in_top_melt_ice(jj, ii)+ volresv_ice
+                    delta_vol(o) = delta_vol(o) + gl_total(j)*Hru_area_inch2(j)/0.917D0
                     ! divide by density ratio to get in volume, if were all converted to ice (by end of year)
                   ENDIF
                 ENDIF
@@ -1545,8 +1545,8 @@
               IF ( jj==1 .AND. thecase(ii)==1 ) stor = Stor_snow(Term(o),Nowmonth)/24.0  !days
               IF ( jj==2 .AND. thecase(ii)==2 ) stor = Stor_ice(Term(o),Nowmonth)/24.0  !days
             ENDDO
-            tot_reserv(jj) = Prev_out(p, jj)*EXP(-1.0/stor) + in_top_melt_tot(jj)*(1.0-EXP(-1.0/stor))
-            tot_reservi(jj) = Prev_outi(p, jj)*EXP(-1.0/stor) + in_top_melt_itot(jj)*(1.0-EXP(-1.0/stor))
+            tot_reserv(jj) = DBLE(Prev_out(p, jj)*EXP(-1.0/stor)) + in_top_melt_tot(jj)*DBLE((1.0-EXP(-1.0/stor)))
+            tot_reservi(jj) = DBLE(Prev_outi(p, jj)*EXP(-1.0/stor)) + in_top_melt_itot(jj)*DBLE((1.0-EXP(-1.0/stor)))
             Gl_ice_melt(p) = Gl_ice_melt(p) + SNGL(tot_reservi(jj))
             Gl_top_melt(p) = Gl_top_melt(p) + SNGL(tot_reserv(jj))
             Prev_out(p, jj) = SNGL(in_top_melt_tot(jj))
@@ -1572,7 +1572,7 @@
               IF ( Hru_type(i)==GLACIER ) THEN !find a i in glacier
                 IF ( Glacr_tag(i)==Glacr_tag(j) .AND. Hru_elev_ts(i)>=Hru_elev_ts(j) ) THEN
                 !will add self (i=j) and everything above
-                  tot_delta_mb(j) = tot_delta_mb(j) + Hru_mb_yrcumul(i)*Glacier_frac(i)*Hru_area_inch2(i)
+                  tot_delta_mb(j) = tot_delta_mb(j) + Hru_mb_yrcumul(i)*DBLE(Glacier_frac(i))*Hru_area_inch2(i)
                 ENDIF
               ENDIF
             ENDDO
@@ -1596,7 +1596,7 @@
             Basin_gl_top_melt = Basin_gl_top_melt + DBLE(Glrette_melt(j))*Hru_area_inch2(j)
             Basin_gl_top_gain = Basin_gl_top_gain + DBLE(gl_gain(j))*Hru_area_inch2(j)
             Basin_snowicecov = Basin_snowicecov + DBLE(( 1.-Snowcov_area(j) )*Glrette_frac(j))*Hru_area_inch2(j)
-            Glacr_flow(j) = REAL(Glrette_melt(j)*Hru_area_inch2(j))
+            Glacr_flow(j) = Glrette_melt(j)*SNGL(Hru_area_inch2(j))
           ENDIF
         ENDDO
       ENDIF
@@ -1702,9 +1702,9 @@
 
       DO o = 1, Ngl
         p = Glacr_tag(Term(o)) !index by Glacr_tag
-        IF ( Prev_area(Term(o))<1.0*Convert_units ) aar = 0.44
+        IF ( Prev_area(Term(o))<DBLE(1.0*Convert_units) ) aar = 0.44
         !for glaciers area <1km^2
-        IF ( Prev_area(Term(o))>=4.0*Convert_units ) aar = 0.64
+        IF ( Prev_area(Term(o))>=DBLE(4.0*Convert_units) ) aar = 0.64
         !for glaciers area >4km^2
         elaarea = SNGL(Prev_area(Term(o)))*aar
 !aar is percentage of area from top down, from Kern and Laszlo 2010
@@ -3013,6 +3013,7 @@
 !     glacr_restart- write or read glacrrestart file
 !***********************************************************************
       SUBROUTINE glacr_restart(In_out)
+      USE PRMS_CONSTANTS, ONLY: SAVE_INIT
       USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
       USE PRMS_GLACR
       IMPLICIT NONE
@@ -3022,7 +3023,7 @@
       ! Local Variable
       CHARACTER(LEN=10) :: module_name
 !***********************************************************************
-      IF ( In_out==0 ) THEN
+      IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
         WRITE ( Restart_outunit ) Nhrugl, Basin_gl_top_melt, Gl_mb_yrcumul
         WRITE ( Restart_outunit ) Gl_mb_cumul, Glnet_ar_delta, Gl_mbc_yrend
