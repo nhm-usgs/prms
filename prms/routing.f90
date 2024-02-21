@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2024-01-16'
+      character(len=*), parameter :: Version_routing = '2024-02-09'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades, special_seg_type_flag
@@ -622,7 +622,7 @@
           IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
             PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i), '; segment:', i
           ENDIF
           C1(i) = C1(i) + C2(i)
           C2(i) = 0.0
@@ -633,7 +633,7 @@
           IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
             PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i), '; segment:', i
           ENDIF
           C1(i) = C1(i) + C0(i)
           C0(i) = 0.0
@@ -649,10 +649,10 @@
 !     route_run - Computes segment flow states and fluxes
 !***********************************************************************
       INTEGER FUNCTION route_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, OUTFLOW_SEGMENT, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, OUTFLOW_SEGMENT, GLACIER, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT, GLACIER
-      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag
+     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT
+      USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
       USE PRMS_ROUTING
       USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_route_order, Active_hrus, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
@@ -684,7 +684,6 @@
         Seg_sroff = 0.0D0
         Seg_ssflow = 0.0D0
       ENDIF
-
       IF ( Cascade_flag==CASCADE_OFF ) THEN
         Seg_lateral_inflow = 0.0D0
       ELSE ! use strm_seg_in for cascade_flag = 1 (CASCADE_NORMAL) or 2 (CASCADE_HRU_SEGMENT)
@@ -697,7 +696,9 @@
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-        IF ( Hru_type(j)==GLACIER ) Hru_outflow(j) = Hru_outflow(j) + DBLE( Glacr_flow(j) ) / 1728.0D0 / Timestep_seconds
+        IF ( Glacier_flag==ACTIVE ) THEN
+          IF ( Hru_type(j)==GLACIER ) Hru_outflow(j) = Hru_outflow(j) + DBLE( Glacr_flow(j) ) / 1728.0D0 / Timestep_seconds
+        ENDIF
         IF ( Hru_seg_cascades==ACTIVE ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
@@ -735,7 +736,7 @@
       ELSE !     IF ( Noarea_flag==ACTIVE ) THEN
         DO i = 1, Nsegment
 ! This reworked by markstrom
-          IF ( Segment_hruarea(i) > 0.0D0 ) THEN
+          IF ( Segment_hruarea(i)>NEARZERO ) THEN
             Seginc_swrad(i) = Seginc_swrad(i)/Segment_hruarea(i)
             Seginc_potet(i) = Seginc_potet(i)/Segment_hruarea(i)
           ELSE
@@ -744,7 +745,7 @@
             this_seg = i
             found = .false.
             do
-              if ( .not.(Segment_hruarea(this_seg) > 0.0D0) ) then
+              if ( .not.(Segment_hruarea(this_seg) > 0.0) ) then
 
                  ! Hit the headwater segment without finding any HRUs (i.e. sources of streamflow)
                  if (segment_up(this_seg) == 0) then
@@ -769,7 +770,7 @@
               this_seg = i
               found = .false.
               do
-                if ( .not.(Segment_hruarea(this_seg) > 0.0D0) ) then
+                if ( .not.(Segment_hruarea(this_seg) > 0.0) ) then
 
                    ! Hit the terminal segment without finding any HRUs (i.e. sources of streamflow)
                    if (Tosegment(this_seg) == OUTFLOW_SEGMENT) then

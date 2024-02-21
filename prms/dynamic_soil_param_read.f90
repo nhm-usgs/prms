@@ -185,7 +185,7 @@
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
      &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor, Hru_impervstor, Dprst_stor_hru, &
-     &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max, Pref_flag
+     &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
      &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
       USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_dprst_stor_hru, It0_hru_impervstor, &
@@ -336,7 +336,7 @@
           harea = Hru_area(i)
           to_slow_stor = 0.0
 
-          ! temp_imperv_frac has new values with negative values set to the old value, Hru_percent_imperv has old values
+          ! temp_imperv_frac has new values with negative values set to the old value, Hru_frac_imperv has old values
           IF ( check_imperv==ACTIVE ) THEN
             frac_imperv = temp_imperv_frac(i)
           ELSE
@@ -485,8 +485,7 @@
           Basin_ssstor = 0.0D0
           DO j = 1, Active_hrus
             i = Hru_route_order(j)
-            Ssres_stor(i) = Slow_stor(i)
-            IF ( Pref_flag == ACTIVE ) Ssres_stor(i) = Ssres_stor(i) + Pref_flow_stor(i)
+            Ssres_stor(i) = Slow_stor(i) + Pref_flow_stor(i)
             Basin_ssstor = Basin_ssstor + DBLE( Ssres_stor(i)*Hru_area(i) )
           ENDDO
           Basin_ssstor = Basin_ssstor * Basin_area_inv

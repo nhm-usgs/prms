@@ -1415,7 +1415,7 @@
 
         gate2 = Ngate
         gate1 = Ngate - 1
-        IF ( .not.(Gate_ht>Tbl_gate(Ngate)) ) THEN
+        IF ( Gate_ht<=Tbl_gate(Ngate) ) THEN
           DO mm = 1, Ngate
             IF ( Tbl_gate(mm)>Gate_ht ) THEN
               IF ( mm==1 ) THEN

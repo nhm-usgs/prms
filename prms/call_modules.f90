@@ -2,14 +2,14 @@
 ! Defines the computational sequence, valid modules, and dimensions
 !***********************************************************************
       MODULE PRMS_MODULE
-    USE PRMS_CONSTANTS
+      USE PRMS_CONSTANTS
       IMPLICIT NONE
       character(LEN=*), parameter :: &
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-02-10'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 02/10/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-02-20'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 02/20/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -29,7 +29,7 @@
       INTEGER, SAVE :: PRMS_output_unit, Restart_inunit, Restart_outunit
       INTEGER, SAVE :: Dynamic_flag, Dynamic_soil_flag, Water_use_flag, Soilzone_add_water_use
       INTEGER, SAVE :: Elapsed_time_start(8), Elapsed_time_end(8), Elapsed_time_minutes
-      INTEGER, SAVE :: Nowyear, Nowmonth, Nowday, Nhru_nmonths
+      INTEGER, SAVE :: Nowyear, Nowmonth, Nowday
       INTEGER, SAVE :: Gwr_transfer_water_use, Gwr_add_water_use
       INTEGER, SAVE :: Lake_transfer_water_use, Lake_add_water_use
       REAL, SAVE :: Execution_time_start, Execution_time_end, Elapsed_time
@@ -81,7 +81,7 @@
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
       INTEGER, EXTERNAL :: stream_temp, glacr, dynamic_soil_param_read, strmflow_character
-      EXTERNAL :: print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
+      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
 ! Local Variables
@@ -141,14 +141,13 @@
   16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
 
-        WRITE(*,'(/,4X,A,/)') 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
-
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) PRINT 15
           PRINT 9002
           WRITE ( PRMS_output_unit, 15 )
           PRINT 16, EQULS(:62)
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
+          WRITE(*,'(/,4X,A,/)') 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
 
@@ -214,6 +213,7 @@
 ! All modules must be called for setdims, declare, initialize, and cleanup
       IF ( Process_flag/=RUN ) THEN
         ierr = basin()
+        IF ( ierr/=0 ) CALL module_error('basin', Arg, ierr)
 
         IF ( Call_cascade==ACTIVE ) ierr = cascade()
 
@@ -221,6 +221,7 @@
 
         ierr = soltab()
 
+        ierr = setup()
       ENDIF
 
       ierr = prms_time()
@@ -853,7 +854,6 @@
 
       Nhru = getdim('nhru')
       IF ( Nhru==-1 ) CALL read_error(7, 'nhru')
-      Nhru_nmonths = Nhru * Nmonths
 
       Nssr = getdim('nssr')
       IF ( Nssr==-1 ) CALL read_error(7, 'nssr')

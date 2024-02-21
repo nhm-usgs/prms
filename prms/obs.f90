@@ -2,12 +2,12 @@
 ! Reads and stores observed data from all specified measurement stations
 !***********************************************************************
       MODULE PRMS_OBS
-      USE PRMS_CONSTANTS, ONLY: Nmonths
+      USE PRMS_CONSTANTS, ONLY: MONTHS_PER_YEAR
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Time Series Data'
       character(len=*), parameter :: MODNAME = 'obs'
-      character(len=*), parameter :: Version_obs = '2024-01-22'
+      character(len=*), parameter :: Version_obs = '2023-11-01'
       INTEGER, SAVE :: Nlakeelev, Nwind, Nhumid, Rain_flag, Nstreamtemp
 !   Declared Variables
       INTEGER, SAVE :: Rain_day
@@ -18,7 +18,7 @@
       ! Lake Module Variables
       REAL, SAVE, ALLOCATABLE :: Gate_ht(:), Lake_elev(:)
 !   Declared Parameters
-      INTEGER, SAVE :: Runoff_units, Rain_code(Nmonths)
+      INTEGER, SAVE :: Runoff_units, Rain_code(MONTHS_PER_YEAR)
       END MODULE PRMS_OBS
 
 !***********************************************************************
@@ -145,6 +145,7 @@
         IF ( Nhumid==0 ) Nhumid = 1
         IF ( Nwind==0 ) Nwind = 1
         IF ( Nlakeelev==0 ) Nlakeelev = 1
+        IF ( Nstreamtemp==0 ) Nstreamtemp = 1
       ENDIF
 
       IF ( Nsnow>0 ) THEN
@@ -224,7 +225,7 @@
 !     obsinit - initializes obs module
 !***********************************************************************
       INTEGER FUNCTION obsinit()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, Nmonths, CFS
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, CFS
       USE PRMS_MODULE, ONLY: Nobs
       USE PRMS_OBS
       IMPLICIT NONE
@@ -240,7 +241,7 @@
       ENDIF
 
       IF ( Rain_flag==ACTIVE ) THEN
-        IF ( getparam(MODNAME, 'rain_code', Nmonths, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
+        IF ( getparam(MODNAME, 'rain_code', MONTHS_PER_YEAR, 'integer', Rain_code)/=0 ) CALL read_error(2, 'rain_code')
       ENDIF
 
       Rain_day = OFF

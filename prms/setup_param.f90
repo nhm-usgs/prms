@@ -70,7 +70,7 @@
       ! 6=connectivity segment not in NHDPlus; 7=split segment from NHDPlus flowline because of travel time > 24 hours;
       ! 8=split segment from NHMPlus flowline because of change in elevation > 500 meters)
       IF ( declparam(MODNAME, 'poi_type', 'npoigages', 'integer', &
-     &     '1', '1', '1', &
+     &     '1', '0', '2', &
      &     'Type code for each POI gage', &
      &     'Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)', &
      &     'none')/=0 ) CALL read_error(1, 'poi_type')

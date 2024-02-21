@@ -28,9 +28,9 @@
       INTEGER, SAVE :: Elev_units
       INTEGER, SAVE, ALLOCATABLE :: Hru_type(:), Cov_type(:)
       INTEGER, SAVE, ALLOCATABLE :: Lake_hru_id(:), Lake_type(:) !not needed if no lakes
-      REAL, SAVE, ALLOCATABLE :: Hru_area(:), Hru_percent_imperv(:), Hru_elev(:), Hru_lat(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_area(:), Hru_elev(:), Hru_lat(:) ! , Hru_percent_imperv(:)
       REAL, SAVE, ALLOCATABLE :: Covden_sum(:), Covden_win(:)
-      REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:), Dprst_frac(:)
+      REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:) !, Dprst_frac(:)
       END MODULE PRMS_BASIN
 
 !***********************************************************************
@@ -117,7 +117,6 @@
 
       ALLOCATE ( Hru_frac_dprst(Nhru) ) ! this can change with dynamic parameters
       IF ( Dprst_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
-        ALLOCATE ( Dprst_frac(Nhru) )
         IF ( declvar(MODNAME, 'hru_frac_dprst', 'nhru', Nhru, 'real', &
      &       'Proportion of each HRU area that is surface-depression storage', &
      &       'decimal fraction', Hru_frac_dprst)/=0 ) CALL read_error(3, 'hru_frac_dprst')
@@ -137,6 +136,7 @@
      &       'Aggregate sum of closed surface-depression storage areas of each HRU', &
      &       'acres', Dprst_area_clos_max)/=0 ) CALL read_error(1, 'dprst_area_clos_max')
 
+!        ALLOCATE ( Dprst_frac(Nhru) )
         IF ( PRMS4_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Dprst_area(Nhru) )
           IF ( declparam(MODNAME, 'dprst_area', 'nhru', 'real', &
@@ -199,7 +199,7 @@
      &     'HRU latitude', 'Latitude of each HRU', &
      &     'degrees North')/=0 ) CALL read_error(1, 'hru_lat')
 
-      ALLOCATE ( Hru_percent_imperv(Nhru) )
+!      ALLOCATE ( Hru_percent_imperv(Nhru) )
       IF ( declparam(MODNAME, 'hru_percent_imperv', 'nhru', 'real', &
      &     '0.0', '0.0', '0.999', &
      &     'HRU percent impervious', 'Fraction of each HRU area that is impervious', &
@@ -301,24 +301,30 @@
       IF ( getparam(MODNAME, 'covden_sum', Nhru, 'real', Covden_sum)/=0 ) CALL read_error(2, 'covden_sum')
       IF ( getparam(MODNAME, 'covden_win', Nhru, 'real', Covden_win)/=0 ) CALL read_error(2, 'covden_win')
       IF ( getparam(MODNAME, 'elev_units', 1, 'integer', Elev_units)/=0 ) CALL read_error(2, 'elev_units')
-      IF ( getparam(MODNAME, 'hru_percent_imperv', Nhru, 'real', Hru_percent_imperv)/=0 ) CALL read_error(2, 'hru_percent_imperv')
+      IF ( getparam(MODNAME, 'hru_percent_imperv', Nhru, 'real', Hru_frac_imperv)/=0 ) CALL read_error(2, 'hru_percent_imperv')
+!      IF ( getparam_real(MODNAME, 'hru_percent_imperv', Nhru, Hru_percent_imperv)/=0 ) CALL read_error(2, 'hru_percent_imperv')
+!      Hru_frac_imperv = Hru_percent_imperv
+!      DEALLOCATE ( Hru_percent_imperv ) ! since it can change, use hru_frac_imperv and hru_frac_dprst
 
       dprst_frac_flag = 0
       IF ( Dprst_flag==ACTIVE ) THEN
         IF ( getparam(MODNAME, 'dprst_frac_open', Nhru, 'real', Dprst_frac_open)/=0 ) CALL read_error(2, 'dprst_frac_open')
         IF ( PRMS4_flag==ACTIVE ) THEN
-          IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac_hru')
-          IF ( Dprst_frac(1)>-1.0 ) THEN
+          IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, 'real', Hru_frac_dprst)/=0 ) CALL read_error(2, 'dprst_frac_hru')
+!          IF ( getparam(MODNAME, 'dprst_frac_hru', Nhru, Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac_hru')
+!          IF ( Dprst_frac(1)>-1.0 ) THEN
+          IF ( Hru_frac_dprst(1)>-1.0 ) THEN
             IF ( Print_debug>DEBUG_less ) PRINT *, 'Using dprst_frac_hru instead of dprst_area'
             dprst_frac_flag = 1
           ELSE
             IF ( getparam(MODNAME, 'dprst_area', Nhru, 'real', Dprst_area)/=0 ) CALL read_error(2, 'dprst_area')
           ENDIF
         ELSE
-          IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac')
+          IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Hru_frac_dprst)/=0 ) CALL read_error(2, 'dprst_frac')
+!          IF ( getparam(MODNAME, 'dprst_frac', Nhru, 'real', Dprst_frac)/=0 ) CALL read_error(2, 'dprst_frac')
         ENDIF
-        Hru_frac_dprst = Dprst_frac
-        DEALLOCATE ( Dprst_frac ) ! don't use as it can be changed with dynamic parameters
+!        Hru_frac_dprst = Dprst_frac
+!        DEALLOCATE ( Dprst_frac ) ! don't use as it can be changed with dynamic parameters
       ELSE
         Hru_frac_dprst = 0.0
       ENDIF
@@ -368,8 +374,6 @@
       Hru_perv = 0.0
       Hru_storage = 0.0D0
       Hru_route_order = 0
-      Hru_frac_imperv = Hru_percent_imperv
-      DEALLOCATE ( Hru_percent_imperv ) ! since they can change, use hru_frac_imperv and hru_frac_dprst
       Imperv_flag = OFF
       j = 0
       DO i = 1, Nhru

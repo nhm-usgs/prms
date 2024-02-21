@@ -25,7 +25,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Surface Runoff'
       character(LEN=13), save :: MODNAME
-      character(len=*), parameter :: Version_srunoff = '2024-02-08'
+      character(len=*), parameter :: Version_srunoff = '2024-02-09'
       INTEGER, SAVE :: Ihru
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_thres_open(:), Dprst_in(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Dprst_vol_open_max(:), Dprst_vol_clos_max(:)
@@ -500,8 +500,8 @@
       Imperv_evap = 0.0
       Hortonian_flow = 0.0
       Hru_sroffi = 0.0
-      IF ( Call_cascade==ACTIVE ) Strm_seg_in = 0.0D0
       Hru_impervevap = 0.0
+      IF ( Call_cascade==ACTIVE ) Strm_seg_in = 0.0D0
       IF ( Cascade_flag>CASCADE_OFF ) THEN
         Hru_hortn_cascflow = 0.0D0
         IF ( Nlake>0 ) Hortonian_lakes = 0.0D0
@@ -588,7 +588,7 @@
 !                  computations using antecedent soil moisture.
 !***********************************************************************
       INTEGER FUNCTION srunoffrun()
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, LAND, LAKE, GLACIER, CASCADE_OFF, SWALE, ZERO_SNOWPACK
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, LAND, LAKE, GLACIER, CASCADE_OFF, SWALE, ZERO_SNOWPACK, CLOSEZERO
       USE PRMS_MODULE, ONLY: Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
@@ -724,6 +724,7 @@
           ENDIF
         ENDIF
         availh2o_total = SNGL( waterin ) * glacier_free ! new water for glacier_free area
+
         frzen = OFF
         IF ( Frozen_flag==ACTIVE ) THEN
           IF ( Tavgc(i)>0.0 ) THEN
@@ -760,14 +761,18 @@
               ENDIF
             ENDIF
           ELSE ! if frozen all new water runs off glacier_free area, glacier HRUs shouldn't have impervious
-            IF ( Hru_type(i) /= SWALE ) Sri = availh2o_total
+            IF ( Hru_type(i) /= SWALE ) THEN
+              Sri = availh2o_total
+            ELSE
+              Imperv_stor = Imperv_stor + availh2o_total
             ! for swales water added to storage above
+            ENDIF
           ENDIF
         ENDIF
 
-!******Compute runoff for pervious area, only if not frozen ground
+!******Compute runoff for pervious and depression storage area, only if not frozen ground
         IF ( frzen==OFF ) THEN
-          IF ( Isglacier==OFF ) THEN
+          IF ( active_glacier==OFF ) THEN
             CALL compute_infil(Net_rain(i), Net_ppt(i), Snowmelt(i), Pk_precip(i), Net_apply(i), &
      &                         Snowinfil_max(i), Net_snow(i), Pkwater_equiv(i), Infil(i), Hru_type(i), Intcp_changeover(i), &
      &                         glacier_free)
@@ -780,9 +785,7 @@
           ENDIF
         ELSE ! frozen ground
           IF ( Hru_type(i) /= SWALE ) THEN
-            Sra = Net_apply(i) * glacier_free
             Srp = availh2o_total
-            Infil(i) = 0.0
           ELSE
             Infil(i) = availh2o_total
           ENDIF
@@ -818,16 +821,17 @@
             Imperv_frac = Hru_frac_imperv(i)
             Hru_sroffi(i) = Sri * Imperv_frac
             Basin_sroffi = Basin_sroffi + DBLE( Sri*Hruarea_imperv )
+            runoff = runoff + DBLE( Sri*Hruarea_imperv )
           ENDIF
           Hru_sroffp(i) = Srp*Perv_frac
           Basin_sroffp = Basin_sroffp + DBLE( Srp * Perv_area )
-          runoff = runoff + DBLE( Srp*perv_area + Sri*Hruarea_imperv )
+          runoff = runoff + DBLE( Srp*perv_area )
           srunoff = SNGL( runoff/Hruarea_dble )
 
 !******Compute HRU weighted average (to units of inches/dt)
           IF ( Cascade_flag>CASCADE_OFF ) THEN
             hru_sroff_down = 0.0D0
-            IF ( srunoff>0.0 ) THEN
+            IF ( srunoff>CLOSEZERO ) THEN
               IF ( Ncascade_hru(i)>0 ) CALL run_cascade_sroff(Ncascade_hru(i), srunoff, hru_sroff_down)
               Hru_hortn_cascflow(i) = hru_sroff_down
               !IF ( Hru_hortn_cascflow(i)<0.0D0 ) Hru_hortn_cascflow(i) = 0.0D0
@@ -958,10 +962,10 @@
       IF ( Hru_type==LAND .OR. Isglacier==ACTIVE ) hru_flag = 1 ! land or glacier
 
 ! irrigation application just like infiltration
-      IF ( Net_apply > 0.0 ) THEN
+      IF ( Net_apply>0.0 ) THEN
         Sra = 0.0
-        Infil = Infil + Net_apply
-        CALL perv_comp(Net_apply, Net_apply, Infil, Sra)
+        Infil = Infil + Net_apply * glacier_free
+        IF ( hru_flag==1 ) CALL perv_comp(Net_apply, Net_apply, Infil, Sra)
       ENDIF
 
 ! compute runoff from cascading Hortonian flow
@@ -973,7 +977,7 @@
         ENDIF
       ENDIF
 
-! compute runoff from canopy changeover water
+! compute runoff from canopy changeover water; assume Intcp_changeover not in glacier HRUs
       IF ( Intcp_changeover>0.0 ) THEN
         Infil = Infil + Intcp_changeover * glacier_free
         IF ( hru_flag==1 ) CALL perv_comp(Intcp_changeover, Intcp_changeover, Infil, Srp)
@@ -1425,13 +1429,13 @@
 !     Open depression surface area for each HRU:
       Dprst_area_open = 0.0
       IF ( Dprst_vol_open>0.0D0 ) THEN
-        open_vol_r = Dprst_vol_open/Dprst_vol_open_max
-        IF ( .not.(open_vol_r>0.0D0) ) THEN
+        open_vol_r = SNGL( Dprst_vol_open/Dprst_vol_open_max )
+        IF ( .not.(open_vol_r>0.0 ) ) THEN
           frac_op_ar = 0.0
-        ELSEIF ( open_vol_r>1.0D0 ) THEN
+        ELSEIF ( open_vol_r>1.0 ) THEN
           frac_op_ar = 1.0
         ELSE
-          frac_op_ar = EXP(Va_open_exp(Ihru) * SNGL( LOG(open_vol_r) ))
+          frac_op_ar = EXP(Va_open_exp(Ihru)*LOG(open_vol_r))
         ENDIF
         Dprst_area_open = Dprst_area_open_max*frac_op_ar
         IF ( Dprst_area_open>Dprst_area_open_max ) Dprst_area_open = Dprst_area_open_max

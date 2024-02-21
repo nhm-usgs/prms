@@ -315,7 +315,6 @@
       ENDIF
 
 ! added some code to allow for restart, but not climate states and fluxes and subinc_deltastor
-
       Subinc_interflow = 0.0D0
       Subinc_gwflow = 0.0D0
       Subinc_sroff = 0.0D0
@@ -419,7 +418,7 @@
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow
       USE PRMS_FLOWVARS, ONLY: Hru_actet, Ssres_flow, Sroff, &
-     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist_max, &
+     &    Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol, Soil_moist, Soil_moist_max, &
      &    Soil_moist_tot, Soil_zone_max, Hru_impervstor, Dprst_stor_hru
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hortonian_lakes
@@ -521,6 +520,7 @@
       ENDDO
 
       !convert first as subbasins don't have to be in order
+      dmy1 = 0.0D0
       DO j = 1, Nsub
         subarea = Sub_area(j)
         Sub_inq(j) = Qsub(j)*Cfs_conv

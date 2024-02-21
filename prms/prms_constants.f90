@@ -3,51 +3,41 @@ MODULE PRMS_CONSTANTS
     IMPLICIT NONE
 
     !! INT32, REAL32, REAL64
-    integer, parameter :: REALsize = REAL32
+    integer, parameter :: sp = REAL32
     !! Define real precision and range
-    integer, parameter :: DOUBLEsize = REAL64
+    integer, parameter :: dp = REAL64
     !! Define double precision and range
-    real(REALsize), parameter :: CLOSEZERO = EPSILON(0.0) ! 1.19209290E-07
-    real(REALsize), parameter :: NEARZERO = 1.0E-6
-    real(DOUBLEsize), parameter :: DNEARZERO = EPSILON(0.0D0) ! 2.220446049250313E-016
-    real(DOUBLEsize), PARAMETER :: ZERO_SNOWPACK = EPSILON(0.0D0)
-    !real(DOUBLEsize), PARAMETER :: ZERO_SNOWPACK = 1.0D-16
-    real(DOUBLEsize), PARAMETER :: DCLOSEZERO = 1.0D-12
-
-    real(DOUBLEsize), parameter :: PI = ACOS(-1.0D0) ! ABOUT 3.1415926535898
-    real(DOUBLEsize), parameter :: TWOPI = 2.0D0*PI ! ABOUT 6.2831853071786
-    real(DOUBLEsize), parameter :: HALF_PI = ACOS(0.0D0)
-    real(DOUBLEsize), parameter :: PI_4 = PI/4.0D0
-    real(DOUBLEsize), parameter :: RADIANS = PI / 180.0D0 ! ABOUT 0.017453292519943
-    real(DOUBLEsize), parameter :: PI_12 = 12.0D0 / PI ! ABOUT 3.8197186342055
+    real(REAL32), parameter :: CLOSEZERO = EPSILON(0.0) ! 1.19209290E-07
+    real(REAL32), parameter :: NEARZERO = 1.0E-6
+    real(REAL64), parameter :: DNEARZERO = EPSILON(0.0D0) ! 2.220446049250313E-016
+    real(REAL64), PARAMETER :: ZERO_SNOWPACK = EPSILON(0.0D0)
+    !real(REAL64), PARAMETER :: ZERO_SNOWPACK = 1.0D-12
 
     integer, parameter :: MAXFILE_LENGTH = 256
     integer, parameter :: MAXLINE_LENGTH = 256
     integer, parameter :: MAXCONTROL_LENGTH = 32
     integer, parameter :: MAXDIM = 500
-    integer, parameter :: Nmonths = 12
+    integer, parameter :: MONTHS_PER_YEAR = 12
     integer, parameter :: MAX_DAYS_PER_YEAR = 366
     integer, parameter :: DAYS_PER_YEAR = 365
-    real(REALsize), parameter :: DAYS_YR = 365.242
-!    real(REALsize), parameter :: DAYS_YR = 365.256 ! https://en.wikipedia.org/wiki/Earth%27s_orbit
-    real(DOUBLEsize), parameter :: DAYS_IN_YEAR = 365.242D0
-    real(DOUBLEsize), parameter :: SECS_PER_DAY = 86400.0D0
-    real(DOUBLEsize), parameter :: SECS_PER_HOUR = 3600.0D0
-    real(DOUBLEsize), parameter :: DEGDAY = 360.0D0 / DAYS_IN_YEAR
-    real(DOUBLEsize), parameter :: DEGDAYRAD = DEGDAY * RADIANS ! about 0.00143356672
-    real(DOUBLEsize), parameter :: FT2_PER_ACRE = 43560.0D0
-    real(DOUBLEsize), parameter :: INCHES_PER_FOOT = 12.0D0
-    real(DOUBLEsize), parameter :: CFS2CMS_CONV = 0.028316847D0
+    real(REAL32), parameter :: DAYS_YR = 365.242
+!    real(REAL32), parameter :: DAYS_YR = 365.256 ! https://en.wikipedia.org/wiki/Earth%27s_orbit
+    real(REAL64), parameter :: DAYS_IN_YEAR = 365.242D0
+    real(REAL64), parameter :: SECS_PER_DAY = 86400.0D0
+    real(REAL64), parameter :: SECS_PER_HOUR = 3600.0D0
+    real(REAL64), parameter :: FT2_PER_ACRE = 43560.0D0
+    real(REAL64), parameter :: INCHES_PER_FOOT = 12.0D0
+    real(REAL64), parameter :: CFS2CMS_CONV = 0.028316847D0
 
-    real(REALsize), parameter :: INCH2CM = 2.54
-    real(REALsize), parameter :: INCH2MM = 25.4
-    real(REALsize), parameter :: INCH2M = 0.0254
-    real(REALsize), parameter :: MM2INCH = 1.0 / INCH2MM
-    real(REALsize), parameter :: FEET2METERS = 0.3048
-    real(REALsize), parameter :: METERS2FEET = 1.0 / FEET2METERS
+    real(REAL32), parameter :: INCH2CM = 2.54
+    real(REAL32), parameter :: INCH2MM = 25.4
+    real(REAL32), parameter :: INCH2M = 0.0254
+    real(REAL32), parameter :: MM2INCH = 1.0 / INCH2MM
+    real(REAL32), parameter :: FEET2METERS = 0.3048
+    real(REAL32), parameter :: METERS2FEET = 1.0 / FEET2METERS
 
-    real(REALsize), parameter :: MAXTEMP = 200.0
-    real(REALsize), parameter :: MINTEMP = -150.0
+    real(REAL32), parameter :: MAXTEMP = 200.0
+    real(REAL32), parameter :: MINTEMP = -150.0
 
     ! Frequency values, used for basinOut_freq, nhruOut_freq, and nsubOut_freq
     integer, parameter :: DAILY = 1

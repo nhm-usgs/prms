@@ -523,7 +523,7 @@
       Last_basin_stor = Basin_storage
       Basin_storage = Basin_soil_moist + Basin_intcp_stor + &
      &                Basin_gwstor + Basin_ssstor + Basin_pweqv + &
-     &                Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl+ Basin_segment_storage
+     &                Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl + Basin_segment_storage
 ! Basin_storage doesn't include any processes on glacier
 ! In glacier module, Basin_gl_storstart is an estimate for starting glacier volume, but only
 !   includes glaciers that have depth estimates and these are known to be iffy

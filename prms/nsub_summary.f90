@@ -112,7 +112,7 @@
 !     Initialize module values
 !***********************************************************************
       SUBROUTINE nsub_summaryinit()
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, DNEARZERO, &
+      USE PRMS_CONSTANTS, ONLY: ERROR_control, ERROR_open_out, DNEARZERO, &
      &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
       USE PRMS_MODULE, ONLY: Nhru, Nsub, Inputerror_flag, Start_year, Prms_warmup
       USE PRMS_NSUB_SUMMARY

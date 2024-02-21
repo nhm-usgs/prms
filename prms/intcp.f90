@@ -266,7 +266,7 @@
 !              and evaporation for each HRU
 !***********************************************************************
       INTEGER FUNCTION intrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, CLOSEZERO, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DEBUG_WB, ZERO_SNOWPACK, &
      &    DEBUG_less, LAKE, BARESOIL, GRASSES, ERROR_param
       USE PRMS_MODULE, ONLY: Print_debug, Nowyear, Nowmonth, Nowday
       USE PRMS_INTCP
@@ -358,7 +358,7 @@
             IF ( cov>0.0 ) THEN
               IF ( changeover<0.0 ) THEN
                 ! covden_win > covden_sum, adjust intcpstor to same volume, and lower depth
-                intcpstor = (intcpstor*Covden_sum(i))/cov
+                intcpstor = intcpstor*Covden_sum(i)/cov
                 changeover = 0.0
               ENDIF
             ELSE
@@ -379,7 +379,7 @@
             IF ( cov>0.0 ) THEN
               IF ( changeover<0.0 ) THEN
                 ! covden_sum > covden_win, adjust intcpstor to same volume, and lower depth
-                intcpstor = (intcpstor*Covden_win(i))/cov
+                intcpstor = intcpstor*Covden_win(i)/cov
                 changeover = 0.0
               ENDIF
             ELSE
@@ -408,7 +408,7 @@
               ELSEIF ( Cov_type(i)==GRASSES ) THEN ! cov_type = 1
                 !rsr, 03/24/2008 intercept rain on snow-free grass,
                 !rsr             when not a mixed event
-                IF ( .not.(It0_pkwater_equiv(i)>0.0D0) .AND. netsnow<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
+                IF ( It0_pkwater_equiv(i)<ZERO_SNOWPACK .AND. .not.(netsnow>0.0) ) THEN ! changed from NEARZERO to .not.>0 02/17/2024
                   CALL intercept(Hru_rain(i), stor_max_rain, cov, intcpstor, netrain)
                   !rsr 03/24/2008
                   !it was decided to leave the water in intcpstor rather
@@ -427,7 +427,7 @@
             IF ( cov>0.0 ) THEN
               IF ( Cov_type(i)>GRASSES ) THEN ! cov_type > 1
                 CALL intercept(Hru_snow(i), Snow_intcp(i), cov, intcpstor, netsnow)
-                IF ( netsnow<CLOSEZERO ) THEN   !rsr, added 3/9/2006, changed from NEARZERO to CLOSEZERO 11/24/2023
+                IF ( .not.(netsnow>0.0) ) THEN   !rsr, added 3/9/2006, changed from NEARZERO to .not.>0 02/17/2024
                   netrain = netrain + netsnow
                   netsnow = 0.0
                   Newsnow(i) = OFF
@@ -481,7 +481,7 @@
 
         ! if precipitation assume no evaporation or sublimation
         IF ( intcpstor>0.0 ) THEN
-          IF ( Hru_ppt(i)<CLOSEZERO ) THEN ! changed from NEARZERO to CLOSEZERO 11/24/2023
+          IF ( .not.(Hru_ppt(i)>0.0) ) THEN ! changed from NEARZERO to .not.>0 01/17/2024
 
             evrn = Potet(i)/Epan_coef(i, Nowmonth)
             evsn = Potet_sublim(i)*Potet(i)
