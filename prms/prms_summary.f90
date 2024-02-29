@@ -86,7 +86,7 @@
         ELSEIF ( CsvON_OFF==3 ) THEN
           WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
-        ELSE
+        ELSEIF ( CsvON_OFF==2 ) THEN
           WRITE ( chardate, '(I4.4,2(1X,I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
         ENDIF
@@ -137,7 +137,8 @@
 !        Cfs_strings = ',cfs,cfs'
         IF ( CsvON_OFF==1 .OR. CsvON_OFF==3 ) THEN
           Cfs_strings = ',cfs'
-        ELSE
+!          Cfs_strings = ',cfs,cfs'
+        ELSEIF ( CsvON_OFF==2 ) THEN
           Cfs_strings = ' cfs'
         ENDIF
 

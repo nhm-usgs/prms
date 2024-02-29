@@ -168,7 +168,7 @@
 
       ALLOCATE ( Hru_sroffi(Nhru) )
       IF ( declvar(MODNAME, 'hru_sroffi', 'nhru', Nhru, 'real', &
-     &     'HRU area-weighted average surface runoff from impervious areas flowing out for each HRU', &
+     &     'HRU area-weighted average surface runoff from impervious areas flowing out of each HRU', &
      &     'inches', Hru_sroffi)/=0 ) CALL read_error(3, 'hru_sroffi')
 
      ! ALLOCATE ( Hru_sroffa(Nhru) )

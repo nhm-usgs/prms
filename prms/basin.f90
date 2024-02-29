@@ -97,7 +97,7 @@
 
       ALLOCATE ( Hru_frac_imperv(Nhru) )
       IF ( declvar(MODNAME, 'hru_frac_imperv', 'nhru', Nhru, 'real', &
-     &     'Proportion of each HRU area that is impervious', &
+     &     'Fraction of each HRU area that is impervious', &
      &     'decimal fraction', Hru_frac_imperv)/=0 ) CALL read_error(3, 'hru_frac_imperv')
 
       ALLOCATE ( Hru_perv(Nhru) )
@@ -118,7 +118,7 @@
       ALLOCATE ( Hru_frac_dprst(Nhru) ) ! this can change with dynamic parameters
       IF ( Dprst_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         IF ( declvar(MODNAME, 'hru_frac_dprst', 'nhru', Nhru, 'real', &
-     &       'Proportion of each HRU area that is surface-depression storage', &
+     &       'Fraction of each HRU area that is surface-depression storage', &
      &       'decimal fraction', Hru_frac_dprst)/=0 ) CALL read_error(3, 'hru_frac_dprst')
 
         ALLOCATE ( Dprst_area_max(Nhru) )
