@@ -45,7 +45,7 @@
 !******Compute "EQUIVALENT" EVAPOTRANSPIRATION, EEQ (IN./DAY),
 !...USING PRIESTLY-TAYLOR METHOD. THE VARIBLES ARE CALCULATED
 !...USING FORMULAS GIVEN IN JENSEN, 1990.
-        IF ( Humidity_cbh_flag==OFF ) Humidity_hru = Humidity_percent(:, Nowmonth)
+        IF ( Humidity_cbh_flag==OFF ) Humidity_hru = Humidity_percent(1, Nowmonth)
         ! next three lines were in loop, moved out since just setting constants
         A1 = 17.625
         B1 = 243.04

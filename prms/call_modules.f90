@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-02-20'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 02/20/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-03-01'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 03/01/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -110,7 +110,7 @@
         ENDIF
   10  FORMAT (///, 25X, 'U.S. Geological Survey', /, 15X, &
      &        'Precipitation-Runoff Modeling System (PRMS)', /, 24X, A)
-  15  FORMAT (/, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
+  15  FORMAT (/, 68('-'), /, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
      &        '  Basin Definition: basin', /, &
      &        '    Cascading Flow: cascade', /, &
      &        '  Time Series Data: obs, water_use_read, dynamic_param_read', /, &
@@ -137,17 +137,20 @@
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
      &        '                    basin_summary, nsegment_summary', /, &
-     &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'))
+     &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'),/)
   16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
      &        'Module', 9X, 'Version Date', /, A)
 
         IF ( Print_debug>DEBUG_minimum ) THEN
-          IF ( Print_debug>DEBUG_less ) PRINT 15
-          PRINT 9002
+          IF ( Print_debug>DEBUG_less ) THEN
+            PRINT 15
+            WRITE (*,'(4X,A)') 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
+          ENDIF
           WRITE ( PRMS_output_unit, 15 )
+          WRITE ( PRMS_output_unit, '(4X,A)' ) 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
+          PRINT 9002
           PRINT 16, EQULS(:62)
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
-          WRITE(*,'(/,4X,A,/)') 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
         ENDIF
         CALL print_module(MODDESC, MODNAME, PRMS_versn)
 
@@ -412,7 +415,7 @@
 
     4 FORMAT (/, 2(A, I5, 2('/',I2.2)), //, A, /)
  9001 FORMAT (/, 26X, 25('='), /, 26X, 'Normal completion of PRMS', /, 26X, 25('='), /)
- 9002 FORMAT (//, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='))
+ 9002 FORMAT (/, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='))
  9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
  9004 FORMAT (/, 2A)
 
@@ -722,7 +725,7 @@
       IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = OFF
       IF ( control_integer(Dprst_transfer_water_use, 'dprst_transfer_water_use')/=0 ) Dprst_transfer_water_use = OFF
       IF ( control_integer(Dprst_add_water_use, 'dprst_add_water_use')/=0 ) Dprst_add_water_use = OFF
-      ! 0 = off, 1 = on, 2 = lauren version
+      ! 0 = off, 1 = on, 2 = lauren version, 3 = CSV for POIs
       IF ( control_integer(CsvON_OFF, 'csvON_OFF')/=0 ) CsvON_OFF = OFF
 
 ! map results dimensions
@@ -973,7 +976,7 @@
       ENDIF
 
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
-        IF ( Stream_order_flag==ACTIVE .OR. Call_cascade==ACTIVE ) THEN
+        IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
           Inputerror_flag = 1
         ENDIF
@@ -982,7 +985,7 @@
       Lake_route_flag = OFF
       IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = ACTIVE ! muskingum_lake
 
-      IF ( Stream_temp_flag>0 .AND. Stream_order_flag==OFF ) THEN
+      IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'
         PRINT *, '       must be set to strmflow_in_out, muskingum, muskingum_mann, or muskingum_lake'
         Inputerror_flag = 1
@@ -1103,9 +1106,9 @@
       INTEGER, EXTERNAL :: intcp, snowcomp, gwflow, srunoff, soilzone
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
-      INTEGER, EXTERNAL :: stream_temp, dynamic_soil_param_read, strmflow_character
+      INTEGER, EXTERNAL :: stream_temp, strmflow_character
       EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
-      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr
+      INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta, glacr, dynamic_soil_param_read
       EXTERNAL :: precip_map, temp_map, segment_to_hru
 ! Local variable
       INTEGER :: test

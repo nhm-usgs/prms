@@ -778,7 +778,7 @@
          IF ( Seg_hru_count(i)>0 ) THEN
 !            carea = Seg_carea_inv(i)
             Seg_ccov(i) = Seg_ccov(i) / hru_area_sum(i)
-            Seg_potet(i) = Seg_potet(i) / DBLE(hru_area_sum(i))
+            Seg_potet(i) = Seg_potet(i) / dble(hru_area_sum(i))
             Seg_tave_air(i) = Seg_tave_air(i) / hru_area_sum(i)
             Seg_melt(i) = Seg_melt(i) / hru_area_sum(i)
             Seg_rain(i) = Seg_rain(i) / hru_area_sum(i)
@@ -1114,7 +1114,7 @@
       Ql = SNGL( Qlat )
 
 ! This is confused logic coment out here and compute the terms as needed below
-!      b = (Ql / Seg_length_km) + ((Ak1 * Seg_width) / 4182.0E03)
+!      b = (Ql / Seg_length) + ((Ak1 * Seg_width) / 4182.0E03)
 !      IF ( b < NEARZERO ) b = NEARZERO ! rsr, don't know what value this should be to avoid divide by 0
 !      r = 1.0 + (Ql / q_init)
 !      IF ( r < NEARZERO ) r = NEARZERO

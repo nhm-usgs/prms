@@ -186,10 +186,10 @@
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
      &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor, Hru_impervstor, Dprst_stor_hru, &
      &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
+      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_soil_rechr, It0_hru_impervstor, &
+                               It0_dprst_stor_hru, It0_ssres_stor, It0_basin_ssstor
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
      &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
-      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_dprst_stor_hru, It0_hru_impervstor, &
-     &                         It0_basin_ssstor, It0_ssres_stor
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL, DBLE
@@ -479,6 +479,7 @@
           ENDDO
           Basin_soil_moist = Basin_soil_moist * Basin_area_inv
           It0_soil_moist = Soil_moist
+          It0_soil_rechr = Soil_rechr
           It0_basin_soil_moist = Basin_soil_moist
         ENDIF
         IF ( it0_grav_flag == ACTIVE ) THEN

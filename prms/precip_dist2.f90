@@ -177,7 +177,7 @@
       EXTERNAL :: read_error
       INTRINSIC :: DSQRT, DABS, DBLE
 ! Local Variables
-      INTEGER :: i, k, j, n, kk, kkbig, jj
+      INTEGER :: i, k, n, kk, kkbig, jj, j
       DOUBLE PRECISION :: distx, disty, distance, big_dist, dist, dist_max_dble
       DOUBLE PRECISION, ALLOCATABLE :: nuse_psta_dist(:, :)
 !***********************************************************************
@@ -398,7 +398,7 @@
        ! precipitation is a mixture of rain and snow
         ELSE
           tdiff = Tmaxf(i) - Tminf(i)
-          IF ( ABS(tdiff)<0.0001 ) tdiff = 0.0001
+          IF ( ABS(tdiff)<0.00001 ) tdiff = 0.00001
           Prmx(i) = ((Tmaxf(i)-Tmax_allsnow_f(i, Nowmonth))/tdiff)*Adjmix_rain(i, Nowmonth)
 
 !******Unless mixture adjustment raises the proportion of rain to

@@ -252,7 +252,7 @@
 !     obsrun - runs obs module
 ! **********************************************************************
       INTEGER FUNCTION obsrun()
-      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: CMS, CFS2CMS_CONV
       USE PRMS_MODULE, ONLY: Nratetbl, Ntemp, Nrain, Nsol, Nobs, Nevap, Nsnow, Nowmonth
       USE PRMS_OBS
       USE PRMS_CLIMATEVARS, ONLY: Ppt_zero_thresh
@@ -307,7 +307,7 @@
         IF ( readvar(MODNAME, 'snowdepth')/=0 ) CALL read_error(9, 'snowdepth')
       ENDIF
 
-      IF ( Rain_flag==ACTIVE ) THEN
+      IF ( Rain_flag==1 ) THEN
         IF ( Rain_code(Nowmonth)==4 ) THEN
           IF ( readvar(MODNAME, 'rain_day')/=0 ) CALL read_error(9, 'rain_day')
         ENDIF

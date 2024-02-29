@@ -32,8 +32,8 @@
       END MODULE PRMS_CLIMATE_HRU
 
       INTEGER FUNCTION climate_hru()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, MAXDIM, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, DEBUG_less
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, &
+     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, MAXDIM, DEBUG_less
       USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
@@ -72,7 +72,7 @@
         ENDIF
 
         IF ( Climate_precip_flag==ACTIVE ) CALL read_cbh_values('hru_ppt', Precip_unit, Hru_ppt, ierr)
-        IF ( ierr == 0 ) THEN
+        IF ( ierr==0 ) THEN
           IF ( Ppt_zero_thresh>0.0 ) THEN
             DO jj = 1, Active_hrus
               i = Hru_route_order(jj)
@@ -91,7 +91,7 @@
         ENDIF
 
         IF ( Climate_swrad_flag==ACTIVE ) THEN
-          IF ( cbh_active_flag == OFF ) THEN
+          IF ( cbh_active_flag==OFF ) THEN
             IF ( Orad_flag==OFF ) THEN
               READ ( Swrad_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Swrad(i), i=1,Nhru)
             ELSE
@@ -109,7 +109,7 @@
           ELSE
             IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'swrad', ios, ierr)
             IF ( ierr == 0 ) THEN
-              IF ( cbh_active_flag == ACTIVE ) THEN
+              IF ( cbh_active_flag==ACTIVE ) THEN
                 Swrad = -999.0
                 DO i = i, Ncbh
                   Swrad(cbh_hru_id(i)) = values(i)
@@ -121,7 +121,7 @@
         ENDIF
 
         IF ( Climate_transp_flag==ACTIVE ) THEN
-          IF ( cbh_active_flag == OFF ) THEN
+          IF ( cbh_active_flag==OFF ) THEN
             READ ( Transp_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (Transp_on(i), i=1,Nhru)
           ELSE
             READ ( Transp_unit, *, IOSTAT=ios ) yr, mo, dy, hr, mn, sec, (ivalues(i), i=1,Ncbh)
@@ -130,8 +130,8 @@
             ierr = ierr + 1
           ELSE
             IF ( Cbh_check_flag==ACTIVE ) CALL read_cbh_date(yr, mo, dy, 'transp_on', ios, ierr)
-            IF ( ierr == 0 ) THEN
-              IF ( cbh_active_flag == ACTIVE ) THEN
+            IF ( ierr==0 ) THEN
+              IF ( cbh_active_flag==ACTIVE ) THEN
                 Transp_on = -999
                 DO i = i, Ncbh
                   Transp_on(cbh_hru_id(i)) = ivalues(i)
@@ -198,7 +198,7 @@
 
           IF ( Climate_temp_flag==ACTIVE ) THEN
             IF ( forcing_check_flag==ACTIVE ) THEN
-              IF ( Tminf(i) > Tmaxf(i))  THEN
+              IF ( Tminf(i)>Tmaxf(i))  THEN
                 IF ( Print_debug > DEBUG_less ) PRINT *, 'WARNING, CBH tmin > tmax, HRU, date, tmin, tmax, diff:', &
                                                          i, Nowyear, Nowmonth, Nowday, Tminf(i), Tmaxf(i), Tmaxf(i) - Tminf(i)
 !                write_tmin_tmax = 1
@@ -240,7 +240,7 @@
           IF ( Humidity_cbh_flag==ACTIVE ) Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i)*harea )
           IF ( Windspeed_cbh_flag==ACTIVE ) Basin_windspeed = Basin_windspeed + DBLE( Windspeed_hru(i)*harea )
         ENDDO
-!        IF ( write_tmin_tmax == 1 ) THEN
+!        IF ( write_tmin_tmax==1 ) THEN
 !          WRITE ( 863,  '(I4,2I3,3I2,128F7.2)' ) Nowyear, Nowmonth, Nowday, 0, 0, 0, (Tmaxf(i), i=1,Nhru)
 !          WRITE ( 864, '(I4,2I3,3I2,128F7.2)' ) Nowyear, Nowmonth, Nowday, 0, 0, 0, (Tminf(i), i=1,Nhru)
 !        ENDIF
@@ -372,7 +372,7 @@
      &         'decimal fraction')/=0 ) CALL read_error(1, 'potet_cbh_adj')
         ENDIF
 
-        IF ( cbh_active_flag == ACTIVE ) THEN
+        IF ( cbh_active_flag==ACTIVE ) THEN
           Ncbh = getdim('ncbh')
           IF ( Ncbh==-1 ) CALL read_error(7, 'ncbh')
           ALLOCATE ( cbh_hru_id(Ncbh) )
@@ -384,7 +384,7 @@
         ENDIF
 
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( cbh_active_flag == ACTIVE ) THEN
+        IF ( cbh_active_flag==ACTIVE ) THEN
           IF ( getparam(MODNAME, 'cbh_hru_id', Ncbh, 'integer', cbh_hru_id)/=0 ) CALL read_error(2, 'cbh_hru_id')
           ALLOCATE ( values(Nhru), ivalues(Nhru) )
         ENDIF
@@ -677,3 +677,72 @@
      !   write(888,'(F0.5)') (new_values(i),i=1,nhru)
       ENDIF
       END SUBROUTINE read_cbh_values
+
+!***********************************************************************
+!   Read CBH File to line before data starts
+!***********************************************************************
+  subroutine find_cbh_header_end(Iunit, Fname, Paramname, Iret)
+    use PRMS_CONSTANTS, only: DEBUG_less
+    use PRMS_MODULE, only: Nhru, Orad_flag, Print_debug
+    implicit none
+    ! Argument
+    integer, intent(OUT) :: Iunit
+    integer, intent(INOUT) :: Iret
+    character(LEN=*), intent(IN) :: Fname, Paramname
+    ! Functions
+    intrinsic :: trim
+    integer, external :: get_ftnunit
+    ! Local Variables
+    integer :: i, ios, dim
+    character(LEN=4) :: dum
+    !***********************************************************************
+    Iret = 0
+    Iunit = get_ftnunit(6777)
+    open (Iunit, FILE=trim(Fname), STATUS='OLD', IOSTAT=ios)
+    if (ios /= 0) then
+      if (Iret == 2) then ! this signals climate_hru to ignore the Humidity CBH file, could add other files
+        Iret = 0
+        if (Print_debug > DEBUG_less) &
+   &         write (*, '(/,A,/,A,/,A)') 'WARNING, optional CBH file not found, will use associated parameter values'
+      else
+        write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure the input file exists'
+        Iret = 1
+      end if
+    else
+      ! read to line before data starts in each file
+      i = 0
+      do while (i == 0)
+        read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+        if (ios /= 0) then
+          write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure the input file is in correct format'
+          Iret = 1
+          exit
+        elseif (dum == '####') then
+          backspace Iunit
+          backspace Iunit
+          if (Orad_flag == 1 .and. Paramname(:5) == 'swrad') backspace Iunit ! backspace again as swrad CBH file contains orad as last column
+          read (Iunit, *, IOSTAT=ios) dum, dim
+          if (ios /= 0) then
+            write (*, '(/,A,/,A,/,A)') 'ERROR reading file:', Fname, 'check to be sure dimension line is in correct format'
+            Iret = 1
+            exit
+          end if
+          if (dim /= Nhru) then
+            print '(/,2(A,I0))', '***CBH file dimension incorrect*** nhru= ', Nhru, ' CBH dimension= ', dim, ' File: '//Fname
+            print *, 'ERROR: update Control File with correct CBH files'
+            Iret = 1
+            exit
+          end if
+          read (Iunit, FMT='(A4)', IOSTAT=ios) dum
+          if (ios /= 0) then
+            write (*, '(/,A,/,A,/)') 'ERROR reading file:', Fname
+            Iret = 1
+            exit
+          end if
+          if (Orad_flag == 1 .and. Paramname(:5) == 'swrad') read (Iunit, FMT='(A4)') dum ! read again as swrad CBH file contains orad as last column
+          i = 1
+        end if
+      end do
+    end if
+
+    end subroutine find_cbh_header_end

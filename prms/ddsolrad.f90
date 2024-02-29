@@ -97,7 +97,7 @@
 !In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet. 
 !Make sure to adjust the result afterwards if you're using the SI units!
 
-          IF ( Solsta_flag==ACTIVE ) THEN
+          IF ( Solsta_flag==1 ) THEN
             k = Hru_solsta(j)
             IF ( k>0 ) THEN
               IF ( Solrad(k)<0.0 .OR. Solrad(k)>10000.0 ) THEN

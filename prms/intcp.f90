@@ -11,7 +11,7 @@
       character(len=*), parameter :: Version_intcp = '2024-01-10'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
-      DOUBLE PRECISION, SAVE :: Last_intcp_stor
+      DOUBLE PRECISION, SAVE :: Last_basin_intcp_stor
       INTEGER, SAVE :: Use_transfer_intcp
       INTEGER, PARAMETER :: RAIN = 0, SNOW = 1
 !   Declared Variables
@@ -295,7 +295,7 @@
 
       IF ( Print_debug==DEBUG_WB ) THEN
         Intcp_stor_ante = Hru_intcpstor
-        Last_intcp_stor = Basin_intcp_stor
+        Last_basin_intcp_stor = Basin_intcp_stor
       ENDIF
       Basin_changeover = 0.0D0
       Basin_net_ppt = 0.0D0
@@ -448,7 +448,7 @@
         IF ( Use_transfer_intcp==ACTIVE ) THEN
           IF ( Canopy_gain(i)>0.0 ) THEN
             IF ( Hru_type(i)==LAKE ) CALL error_stop('irrigation specified and hru_type is lake', ERROR_param)
-            ag_water_maxin = (Canopy_gain(i)/SNGL(Cfs_conv))/harea ! Canopy_gain in CFS, convert to inches
+            ag_water_maxin = Canopy_gain(i)/SNGL(Cfs_conv)/harea ! Canopy_gain in CFS, convert to inches
             Gain_inches_hru(i) = ag_water_maxin
             Gain_inches(i) = ag_water_maxin
             IF ( cov>0.0 ) Gain_inches(i) = ag_water_maxin/cov
