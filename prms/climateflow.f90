@@ -1339,7 +1339,7 @@ end module PRMS_IT0_VARS
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
       USE PRMS_CONSTANTS, ONLY: ACTIVE !, DEBUG_minimum
-!      USE PRMS_MODULE, ONLY: Print_debug, forcing_check_flag
+      USE PRMS_MODULE, ONLY: forcing_check_flag
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions
@@ -1403,7 +1403,7 @@ end module PRMS_IT0_VARS
       Basin_rain = Basin_rain + DBLE( Hru_rain*Hru_area )
       Basin_snow = Basin_snow + DBLE( Hru_snow*Hru_area )
 
-!      IF ( forcing_check_flag == ACTIVE ) THEN
+      IF ( forcing_check_flag == ACTIVE ) THEN
         IF ( Hru_ppt < 0.0 .OR. Hru_rain < 0.0 .OR. Hru_snow < 0.0 ) THEN
 !          IF ( Print_debug > DEBUG_minimum ) THEN
             PRINT '(A,I0)', 'Warning, adjusted precipitation value(s) < 0.0 for HRU: ', Ihru
@@ -1411,7 +1411,7 @@ end module PRMS_IT0_VARS
             CALL print_date(0)
 !          ENDIF
         ENDIF
-!      ENDIF
+      ENDIF
 
       END SUBROUTINE precip_form
 

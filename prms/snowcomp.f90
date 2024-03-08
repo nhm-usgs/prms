@@ -105,7 +105,7 @@
 !     albset_rnm, albset_rna, albset_snm, albset_sna, potet_sublim
 !     emis_noppt, cecn_coef, freeh2o_cap, tstorm_mo, tmax_allsnow
 !     hru_area, cov_type, covden_win
-!     glacr_freeh2o_cap, glacr_layer
+!     glacr_freeh2o_cap, glacr_layer, glacier_frac_init
 !***********************************************************************
       INTEGER FUNCTION snodecl()
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, MONTHS_PER_YEAR
