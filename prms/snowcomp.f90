@@ -588,7 +588,7 @@
      &       'none')/=0 ) CALL read_error(1, 'snarea_d')
       ENDIF
 
-      ALLOCATE ( Snarea_thresh(Nhru) )
+      ALLOCATE ( Snarea_thresh(Nhru), snarea_thresh_dble(Nhru) )
       IF ( declparam(MODNAME, 'snarea_thresh', 'nhru', 'real', &
      &     '50.0', '0.0', '200.0', &
      &     'Maximum threshold water equivalent for snow depletion', &
@@ -730,7 +730,7 @@
         ENDDO
       ENDIF
       IF ( getparam(MODNAME, 'snarea_thresh', Nhru, 'real', Snarea_thresh)/=0 ) CALL read_error(2, 'snarea_thresh')
-      snarea_thresh_dble = DBLE ( Snarea_thresh )
+      snarea_thresh_dble = DBLE( Snarea_thresh )
       DEALLOCATE ( Snarea_thresh )
       IF ( getparam(MODNAME, 'albset_rnm', 1, 'real', Albset_rnm)/=0 ) CALL read_error(2, 'albset_rnm')
       IF ( getparam(MODNAME, 'albset_rna', 1, 'real', Albset_rna)/=0 ) CALL read_error(2, 'albset_rna')
@@ -1423,7 +1423,8 @@
         ENDIF
 
 ! LAST check to clear out all arrays if packwater is gone
-        IF ( .not.(Pkwater_equiv(i)>ZERO_SNOWPACK) ) THEN
+        !IF ( .not.(Pkwater_equiv(i)>0.0D0) ) THEN
+        IF ( Pkwater_equiv(i)<ZERO_SNOWPACK ) THEN ! reset to be sure it is zero if snowpack melted on last timestep
           IF ( Print_debug>DEBUG_less ) THEN
             IF ( Pkwater_equiv(i)<-ZERO_SNOWPACK ) &
      &           PRINT *, 'Snowpack problem, pkwater_equiv negative, HRU:', i, ' value:', Pkwater_equiv(i)
@@ -1432,7 +1433,7 @@
         ENDIF
         frac = 1.0
         IF ( Active_glacier>OFF ) THEN
-          IF ( Glacr_pkwater_equiv(i)>0.0D0 ) THEN
+          IF ( Glacr_pkwater_equiv(i)>ZERO_SNOWPACK ) THEN
             Glacr_pk_depth(i) = Glacr_pkwater_equiv(i)/DBLE(Glacr_pk_den(i))
           ELSE
             CALL glacr_states_to_zero(i,0)
@@ -2633,7 +2634,6 @@
       SUBROUTINE snowcov(Iasw, Newsnow, Snowcov_area, Snarea_curve, &
      &                   Pkwater_equiv, Pst, Snarea_thresh, Net_snow, &
      &                   Scrv, Pksv, Snowcov_areasv, Ai, Frac_swe)
-      USE PRMS_CONSTANTS, ONLY: ZERO_SNOWPACK
       IMPLICIT NONE
 ! Arguments
       INTEGER, INTENT(IN) :: Newsnow
@@ -2667,7 +2667,7 @@
 
       ! calculate the ratio of the current packwater equivalent to
       ! the maximum packwater equivalent for the given snowpack
-      IF ( Ai>ZERO_SNOWPACK ) THEN
+      IF ( Ai>0.0D0 ) THEN
         Frac_swe = SNGL( Pkwater_equiv/Ai ) ! [fraction]
         Frac_swe = MIN( 1.0, Frac_swe )
       ELSE

@@ -649,11 +649,10 @@
      &    Basin_soil_moist, Basin_ssstor, Slow_stor, Slow_flow, Pkwater_equiv, &
      &    Soil_moist_tot, Dprst_stor_hru, Hru_impervstor, Soil_lower_stor_max, Soil_zone_max, Pref_flow_stor, &
      &    Ssres_stor, Soil_moist, Sat_threshold, Soil_rechr, Basin_sroff, Basin_lake_stor
-      USE PRMS_INTCP, ONLY: Hru_intcpstor
+      USE PRMS_INTCP, ONLY: Hru_intcpstor, Hru_intcpevap
       USE PRMS_WATER_USE, ONLY: Soilzone_gain, Soilzone_gain_hru
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_SET_TIME, ONLY: Cfs_conv
-      USE PRMS_INTCP, ONLY: Hru_intcpevap
       USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Dprst_seep_hru, Frozen, Hortonian_flow, Basin_hortonian
       IMPLICIT NONE
@@ -1268,7 +1267,8 @@
       IF ( Et_type>1 ) THEN
         pcts = Soil_moist/Soil_moist_max
         IF ( pcts>0.9999 ) Soil_saturated = 1
-        pctr = Soil_rechr/Soil_rechr_max
+        pctr = 0.0
+        IF ( Soil_rechr_max>0.0 ) pctr = Soil_rechr/Soil_rechr_max
         Potet_lower = pet
         Potet_rechr = pet
 

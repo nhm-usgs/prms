@@ -1339,7 +1339,7 @@ end module PRMS_IT0_VARS
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
       USE PRMS_CONSTANTS, ONLY: ACTIVE !, DEBUG_minimum
-      USE PRMS_MODULE, ONLY: forcing_check_flag
+      USE PRMS_MODULE, ONLY: forcing_check_flag !, Print_debug
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions

@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-03-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 5.3.0 03/01/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-03-10'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 03/10/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -976,7 +976,7 @@
       ENDIF
 
       IF ( Nsegment<1 .AND. Model/=DOCUMENTATION ) THEN
-        IF ( Stream_order_flag==1 .OR. Call_cascade==1 ) THEN
+        IF ( Stream_order_flag==ACTIVE .OR. Call_cascade==1 ) THEN
           PRINT *, 'ERROR, streamflow and cascade routing require nsegment > 0, specified as:', Nsegment
           Inputerror_flag = 1
         ENDIF
@@ -985,7 +985,7 @@
       Lake_route_flag = OFF
       IF ( Nlake>0 .AND. Strmflow_flag==3 ) Lake_route_flag = ACTIVE ! muskingum_lake
 
-      IF ( Stream_temp_flag>0 .AND. Stream_order_flag==0 ) THEN
+      IF ( Stream_temp_flag>0 .AND. Stream_order_flag==OFF ) THEN
         PRINT *, 'ERROR, stream temperature computation requires streamflow routing, thus strmflow_module'
         PRINT *, '       must be set to strmflow_in_out, muskingum, muskingum_mann, or muskingum_lake'
         Inputerror_flag = 1

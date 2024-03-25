@@ -1014,7 +1014,7 @@
 !***********************************************************************
       SUBROUTINE compute_infil_glacier(Net_rain, Net_ppt, Snowmelt, Pk_precip, Net_apply, &
      &                                 Snowinfil_max, Net_snow, Pkwater_equiv, Infil, hru_flag, Intcp_changeover, glacier_free)
-      USE PRMS_CONSTANTS, ONLY: ZERO_SNOWPACK, LAND, ACTIVE, CASCADE_OFF, GLACIER
+      USE PRMS_CONSTANTS, ONLY: ZERO_SNOWPACK, LAND, ACTIVE, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Cascade_flag
       USE PRMS_SRUNOFF, ONLY: Upslope_hortonian, Ihru, Srp, Sra
       USE PRMS_SNOW, ONLY: Pptmix_nopack
