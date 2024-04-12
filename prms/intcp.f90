@@ -8,7 +8,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Canopy Interception'
       character(len=5), parameter :: MODNAME = 'intcp'
-      character(len=*), parameter :: Version_intcp = '2024-01-10'
+      character(len=*), parameter :: Version_intcp = '2024-04-04'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
       DOUBLE PRECISION, SAVE :: Last_basin_intcp_stor
@@ -297,6 +297,7 @@
         Intcp_stor_ante = Hru_intcpstor
         Last_basin_intcp_stor = Basin_intcp_stor
       ENDIF
+
       Basin_changeover = 0.0D0
       Basin_net_ppt = 0.0D0
       Basin_net_snow = 0.0D0
@@ -366,6 +367,7 @@
                 PRINT *, 'covden_win=0 at winter change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
                 PRINT *, 'intcp_stor:', intcpstor, ' covden_sum:', Covden_sum(i)
               ENDIF
+              changeover = intcpstor*Covden_sum(i)
               intcpstor = 0.0
             ENDIF
           ENDIF
@@ -387,6 +389,7 @@
                 PRINT *, 'covden_sum=0 at summer change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
                 PRINT *, 'intcp_stor:', intcpstor, ' covden_win:', Covden_win(i)
               ENDIF
+              changeover = intcpstor*Covden_win(i)
               intcpstor = 0.0
             ENDIF
           ENDIF
@@ -532,9 +535,10 @@
         IF ( intcpstor>0.0 ) Intcp_on(i) = ACTIVE
         Hru_intcpstor(i) = intcpstor*cov
         Intcp_changeover(i) = changeover + extra_water
-        Net_rain(i) = netrain
+        IF ( Intcp_changeover(i)>0.0 .AND. netsnow>0.0 ) Pptmix(i) = ACTIVE
+        Net_rain(i) = netrain + Intcp_changeover(i) ! 4/2/2024 ***CAUTION*** adding changeover to net_rain
         Net_snow(i) = netsnow
-        Net_ppt(i) = netrain + netsnow
+        Net_ppt(i) = Net_rain(i) + netsnow
 
         !rsr, question about depression storage for basin_net_ppt???
         !     my assumption is that cover density is for the whole HRU
@@ -543,8 +547,8 @@
         Basin_net_rain = Basin_net_rain + DBLE( Net_rain(i)*harea )
         Basin_intcp_stor = Basin_intcp_stor + DBLE( intcpstor*cov*harea )
         Basin_intcp_evap = Basin_intcp_evap + DBLE( intcpevap*cov*harea )
-        IF ( changeover>0.0 ) THEN
-          IF ( Print_debug>DEBUG_less ) PRINT '(A,F0.5,A,4(1X,I0))', 'Change over storage:', changeover, '; HRU:', i, &
+        IF ( Intcp_changeover(i)>0.0 ) THEN
+          IF ( Print_debug>DEBUG_less ) PRINT '(A,F0.5,A,4(1X,I0))', 'Change over storage added to net_rain:', Intcp_changeover(i), '; HRU:', i, &
      &                                                               Nowyear, Nowmonth, Nowday
           Basin_changeover = Basin_changeover + DBLE( Intcp_changeover(i)*harea )
         ENDIF

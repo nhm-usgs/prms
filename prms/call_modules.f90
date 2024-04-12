@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-03-10'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 03/10/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-04-10'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 04/10/2024'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -108,7 +108,7 @@
           PRINT 10, PRMS_VERSION
           WRITE ( PRMS_output_unit, 10 ) PRMS_VERSION
         ENDIF
-  10  FORMAT (///, 25X, 'U.S. Geological Survey', /, 15X, &
+  10  FORMAT (//, 25X, 'U.S. Geological Survey', /, 15X, &
      &        'Precipitation-Runoff Modeling System (PRMS)', /, 24X, A)
   15  FORMAT (/, 68('-'), /, 8X, 'Process',  12X, 'Available Modules', /, 68('-'), /, &
      &        '  Basin Definition: basin', /, &
@@ -138,8 +138,8 @@
      &        '                    nhru_summary, nsub_summary, water_balance', /, &
      &        '                    basin_summary, nsegment_summary', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'),/)
-  16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 20X, &
-     &        'Module', 9X, 'Version Date', /, A)
+  16  FORMAT (/, 68('-'), /, 4X, 'Active modules listed in the order in which they are called', &
+              /, 68('-'), /, 8X, 'Process', 20X, 'Module', 9X, 'Version Date', /, A)
 
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) THEN
@@ -148,7 +148,7 @@
           ENDIF
           WRITE ( PRMS_output_unit, 15 )
           WRITE ( PRMS_output_unit, '(4X,A)' ) 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
-          PRINT 9002
+          PRINT 9002, EQULS, EQULS
           PRINT 16, EQULS(:62)
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)
         ENDIF
@@ -415,8 +415,8 @@
 
     4 FORMAT (/, 2(A, I5, 2('/',I2.2)), //, A, /)
  9001 FORMAT (/, 26X, 25('='), /, 26X, 'Normal completion of PRMS', /, 26X, 25('='), /)
- 9002 FORMAT (/, 74('='), /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, 74('='))
- 9003 FORMAT ('Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
+ 9002 FORMAT (/, A, /, 'Please give careful consideration to fixing all ERROR and WARNING messages', /, A, /)
+ 9003 FORMAT (/,'Execution ', A, ' date and time (yyyy/mm/dd hh:mm:ss)', I5, 2('/',I2.2), I3, 2(':',I2.2), /)
  9004 FORMAT (/, 2A)
 
       END FUNCTION call_modules

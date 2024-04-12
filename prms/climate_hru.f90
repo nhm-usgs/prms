@@ -223,7 +223,7 @@
               IF ( Precip_units==MM ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
-     &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
+     &                         Tmaxf(i), Tminf(i), Tavgf(i), Pptmix(i), Newsnow(i), &
      &                         Prmx(i), Tmax_allrain_f(i,Nowmonth), &
      &                         Rain_cbh_adj(i,Nowmonth), Snow_cbh_adj(i,Nowmonth), &
      &                         Adjmix_rain(i,Nowmonth), harea, sum_obs, Tmax_allsnow_f(i,Nowmonth), i)

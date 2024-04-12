@@ -14,7 +14,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Solar Radiation Distribution'
         character(len=*), parameter :: MODNAME = 'ddsolrad'
-        character(len=*), parameter :: Version_ddsolrad = '2024-02-08'
+        character(len=*), parameter :: Version_ddsolrad = '2024-04-04'
         INTEGER, SAVE :: Observed_flag
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Radadj_slope(:, :), Radadj_intcp(:, :)
@@ -117,8 +117,8 @@
 ! in Alaska, there are HRUs on certain days when the sun never rises, so this equation doesn't work
 ! when soltab_potsw, soltab_horad_potsw, or orad_hru are 0.0
 
-          if ( Soltab_potsw(jday, j) > 0.0D0 .and. Soltab_horad_potsw(jday, j) > 0.0D0 .and. Orad_hru(j) > 0.0 ) then
-             Swrad(j) = SNGL( Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j)*DBLE(Orad_hru(j))/Hru_cossl(j) )
+          if ( Soltab_horad_potsw(jday, j) > 0.0D0 ) then
+             Swrad(j) = SNGL( (Soltab_potsw(Jday, j)/Soltab_horad_potsw(Jday, j))*DBLE(Orad_hru(j))/Hru_cossl(j) )
           else
              Swrad(j) = 0.0
           endif

@@ -19,7 +19,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2024-02-28'
+      character(len=*), parameter :: Version_soilzone = '2024-04-10'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
@@ -492,7 +492,7 @@
       IF ( getparam(MODNAME, 'pref_flow_infil_frac', 'real', Nhru, Pref_flow_infil_frac)/=0 ) &
      &     CALL read_error(2, 'pref_flow_infil_frac')
       IF ( Pref_flow_infil_frac(1)<0.0 ) THEN
-        PRINT '(/,A)', 'WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den'
+        PRINT '(/,A)', ' WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den'
         Pref_flow_infil_frac = Pref_flow_den ! should pref_flow_infil_frac be set to 0 if pref_flow_den = 0 ???
       ENDIF
       Pref_flag = OFF
@@ -653,7 +653,7 @@
       USE PRMS_WATER_USE, ONLY: Soilzone_gain, Soilzone_gain_hru
       USE PRMS_CASCADE, ONLY: Ncascade_hru
       USE PRMS_SET_TIME, ONLY: Cfs_conv
-      USE PRMS_SNOW, ONLY: Snowcov_area, Snow_evap
+      USE PRMS_SNOW, ONLY: Snow_evap, It0_snowcov_area
       USE PRMS_SRUNOFF, ONLY: Hru_impervevap, Dprst_evap_hru, Dprst_seep_hru, Frozen, Hortonian_flow, Basin_hortonian
       IMPLICIT NONE
 ! Functions
@@ -706,7 +706,7 @@
       Potet_rechr = 0.0
       Potet_lower = 0.0
       Cap_infil_tot = 0.0
-      Snow_free = 1.0 - Snowcov_area
+      Snow_free = 1.0 - It0_snowcov_area
       IF ( Pref_flag==ACTIVE ) THEN
         Pfr_dunnian_flow = 0.0
         Pref_flow_infil = 0.0

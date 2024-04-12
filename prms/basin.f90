@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2024-01-22'
+      character(len=*), parameter :: Version_basin = '2024-04-04'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag, Imperv_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -524,7 +524,6 @@
         PRINT *,                           'Fraction pervious           = ', basin_perv
         IF ( Water_area>0.0D0 ) PRINT *,   'Fraction lakes              = ', Water_area*Basin_area_inv
         IF ( Dprst_flag==ACTIVE ) PRINT *, 'Fraction storage area       = ', basin_dprst*Basin_area_inv
-        PRINT *, ' '
       ENDIF
 
 !     print out start and end times
@@ -548,7 +547,7 @@
           WRITE (buffer, 9005) 'DPRST area:          ', basin_dprst, '    Fraction DPRST:   ', basin_dprst*Basin_area_inv
           CALL write_outfile(buffer)
         ENDIF
-        CALL write_outfile(' ')
+!        CALL write_outfile(' ')
       ENDIF
 
  9002 FORMAT (A, I4.2, 2('/', I2.2), I3.2, 2(':', I2.2))

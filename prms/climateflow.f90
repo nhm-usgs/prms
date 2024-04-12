@@ -6,14 +6,14 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2024-01-28'
+      character(len=*), parameter :: Version_climateflow = '2024-04-10'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
       REAL, SAVE, ALLOCATABLE :: Tsta_elev_feet(:), Tsta_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Psta_elev_feet(:), Psta_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Tmax_allsnow_f(:, :), Tmax_allsnow_c(:, :)
-      REAL, SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :)
+      REAL, SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :), Tmax_allrain_c(:, :)
 !   Declared Variables - Precip
       INTEGER, SAVE, ALLOCATABLE :: Newsnow(:), Pptmix(:)
       DOUBLE PRECISION, SAVE :: Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt
@@ -599,6 +599,7 @@ end module PRMS_IT0_VARS
      &     ALLOCATE ( Psta_elev_meters(Nrain), Psta_elev_feet(Nrain) )
       ALLOCATE ( Tmax_hru(Nhru), Tmin_hru(Nhru) )
       ALLOCATE ( Tmax_allsnow_f(Nhru,MONTHS_PER_YEAR), Tmax_allsnow_c(Nhru,MONTHS_PER_YEAR), Tmax_allrain_f(Nhru,MONTHS_PER_YEAR) )
+      ALLOCATE ( Tmax_allrain_c(Nhru,MONTHS_PER_YEAR) )
 
 ! Declare Parameters
       IF ( Temp_flag<climate_hru_module .OR. Model==DOCUMENTATION ) THEN
@@ -975,6 +976,7 @@ end module PRMS_IT0_VARS
           DO i = 1, Nhru
             Tmax_allrain_f(i, j) = Tmax_allsnow(i, j) + Tmax_allrain_offset(i, j)
             Tmax_allsnow_c(i, j) = f_to_c(Tmax_allsnow(i,j))
+            Tmax_allrain_c(i, j) = f_to_c(Tmax_allrain_f(i,j))
           ENDDO
         ENDDO
         Tmax_allrain = Tmax_allrain_f
@@ -985,6 +987,7 @@ end module PRMS_IT0_VARS
             Tmax_allsnow_f(j, i) = c_to_f(Tmax_allsnow(j,i))
             Tmax_allrain(j, i) = Tmax_allsnow(j, i) + Tmax_allrain_offset(j, i)
             Tmax_allrain_f(j, i) = c_to_f(Tmax_allrain(j, i))
+            Tmax_allrain_c(i, j) = Tmax_allrain(i,j)
           ENDDO
         ENDDO
       ENDIF
@@ -1336,7 +1339,7 @@ end module PRMS_IT0_VARS
 !     Computes precipitation form (rain, snow or mix) and depth for each HRU
 !***********************************************************************
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
-     &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
+     &           Tminf, Tavgf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
       USE PRMS_CONSTANTS, ONLY: ACTIVE !, DEBUG_minimum
       USE PRMS_MODULE, ONLY: forcing_check_flag !, Print_debug
@@ -1348,7 +1351,7 @@ end module PRMS_IT0_VARS
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
       REAL, INTENT(IN) :: Tmax_allrain_f, Tmax_allsnow_f, Rain_adj, Snow_adj
-      REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Hru_area
+      REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Tavgf, Hru_area
       DOUBLE PRECISION, INTENT(INOUT) :: Sum_obs
       INTEGER, INTENT(INOUT) :: Pptmix, Newsnow
       REAL, INTENT(INOUT) :: Precip, Hru_rain, Hru_snow, Prmx, Hru_ppt
@@ -1368,7 +1371,8 @@ end module PRMS_IT0_VARS
 !******If minimum temperature is above base temperature for snow or
 !******maximum temperature is above all_rain temperature then
 !******precipitation is all rain
-      ELSEIF ( Tminf>Tmax_allsnow_f .OR. .not.(Tmaxf<Tmax_allrain_f) ) THEN
+!      ELSEIF ( Tminf>Tmax_allsnow_f .OR. .not.(Tmaxf<Tmax_allrain_f) ) THEN
+      ELSEIF ( .not.(Tavgf<Tmax_allrain_f) ) THEN
         Hru_ppt = Precip*Rain_adj
         Hru_rain = Hru_ppt
         Prmx = 1.0
