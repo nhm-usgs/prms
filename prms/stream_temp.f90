@@ -735,7 +735,7 @@
 ! DANGER HACK
 ! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as
 ! this results in divide by 0.0
-         if ( .not.(Soltab_potsw(jday, j) > 10.0D0) ) then
+         if (Soltab_potsw(jday, j) <= 10.0D0) then
             ccov = 1.0 - (Swrad(j) / 10.0 * sngl(Hru_cossl(j)))
          else
             ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
@@ -761,7 +761,7 @@
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
-            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)*0.01*harea
+            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)/100.0*harea
          endif
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.

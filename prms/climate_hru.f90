@@ -198,7 +198,7 @@
 
           IF ( Climate_temp_flag==ACTIVE ) THEN
             IF ( forcing_check_flag==ACTIVE ) THEN
-              IF ( Tminf(i)>Tmaxf(i))  THEN
+              IF ( Tminf(i) > Tmaxf(i))  THEN
                 IF ( Print_debug > DEBUG_less ) PRINT *, 'WARNING, CBH tmin > tmax, HRU, date, tmin, tmax, diff:', &
                                                          i, Nowyear, Nowmonth, Nowday, Tminf(i), Tmaxf(i), Tmaxf(i) - Tminf(i)
 !                write_tmin_tmax = 1
@@ -223,7 +223,7 @@
               IF ( Precip_units==MM ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
-     &                         Tmaxf(i), Tminf(i), Tavgf(i), Pptmix(i), Newsnow(i), &
+     &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
      &                         Prmx(i), Tmax_allrain_f(i,Nowmonth), &
      &                         Rain_cbh_adj(i,Nowmonth), Snow_cbh_adj(i,Nowmonth), &
      &                         Adjmix_rain(i,Nowmonth), harea, sum_obs, Tmax_allsnow_f(i,Nowmonth), i)
@@ -240,7 +240,7 @@
           IF ( Humidity_cbh_flag==ACTIVE ) Basin_humidity = Basin_humidity + DBLE( Humidity_hru(i)*harea )
           IF ( Windspeed_cbh_flag==ACTIVE ) Basin_windspeed = Basin_windspeed + DBLE( Windspeed_hru(i)*harea )
         ENDDO
-!        IF ( write_tmin_tmax==1 ) THEN
+!        IF ( write_tmin_tmax == 1 ) THEN
 !          WRITE ( 863,  '(I4,2I3,3I2,128F7.2)' ) Nowyear, Nowmonth, Nowday, 0, 0, 0, (Tmaxf(i), i=1,Nhru)
 !          WRITE ( 864, '(I4,2I3,3I2,128F7.2)' ) Nowyear, Nowmonth, Nowday, 0, 0, 0, (Tminf(i), i=1,Nhru)
 !        ENDIF
@@ -564,7 +564,7 @@
       right_day = 1
       IF ( Year/=Nowyear .OR. Month/=Nowmonth .OR. Day/=Nowday ) right_day = 0
       IF ( Ios/=0 .OR. right_day==0 ) THEN
-        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios 
+        PRINT *, 'ERROR, reading CBH File, variable: ', Var, ' IOSTAT=', Ios
         IF ( Ios==-1 ) THEN
           PRINT *, '       End-of-File found'
         ELSEIF ( right_day==0 ) THEN

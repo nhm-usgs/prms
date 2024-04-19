@@ -278,7 +278,7 @@
       USE PRMS_NSEGMENT_SUMMARY
       USE PRMS_SET_TIME, ONLY: Modays
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
+! Functions
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error

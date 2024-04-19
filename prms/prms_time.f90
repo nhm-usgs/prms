@@ -54,8 +54,8 @@
           It0_soil_moist = Soil_moist
           It0_soil_rechr = Soil_rechr
           It0_ssres_stor = Ssres_stor
-          It0_hru_impervstor = Hru_impervstor
           It0_pkwater_equiv = Pkwater_equiv
+          It0_hru_impervstor = Hru_impervstor
           IF ( Dprst_flag==ACTIVE ) It0_dprst_stor_hru = Dprst_stor_hru
 
         ELSE ! initialize

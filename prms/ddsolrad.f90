@@ -75,7 +75,7 @@
           IF ( Hru_ppt(j)>Ppt_rad_adj(j,Nowmonth) ) THEN
             IF ( Tmax_hru(j)<Tmax_index(j,Nowmonth) ) THEN
               pptadj = Radj_sppt(j)
-              IF ( .not.(Tmax_hru(j)<Tmax_allrain(j,Nowmonth)) ) THEN
+              IF ( Tmax_hru(j)>=Tmax_allrain(j,Nowmonth) ) THEN
                 IF ( Summer_flag==OFF ) pptadj = Radj_wppt(j) ! Winter
               ELSE
                 pptadj = Radj_wppt(j)
@@ -94,7 +94,7 @@
 
           ! https://www.omnicalculator.com/physics/cloud-base
 !         cloud base = (temperature - dew point) / 4.4 * 1000 + elevation, altitude of clouds
-!In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet. 
+!In this formula, the temperature and dew point are expressed in degrees Fahrenheits and the elevation and cloud base altitude are expressed in feet.
 !Make sure to adjust the result afterwards if you're using the SI units!
 
           IF ( Solsta_flag==1 ) THEN

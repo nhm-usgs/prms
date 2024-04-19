@@ -292,7 +292,7 @@
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Hru_area_dble
       USE PRMS_SET_TIME, ONLY: Modays
       IMPLICIT NONE
-! FUNCTIONS AND SUBROUTINES
+! Functions
       INTRINSIC :: SNGL, DBLE
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error

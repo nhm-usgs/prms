@@ -734,7 +734,7 @@
 ! Convert String to Upper Case
 !*****************************
       SUBROUTINE to_upper( string )
- ! Arguments
+! Arguments
       CHARACTER(LEN=*), INTENT(INOUT) :: string
 ! Functions
       INTRINSIC :: ICHAR, CHAR

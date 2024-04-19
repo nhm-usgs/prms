@@ -310,7 +310,7 @@
             CALL is_eof(Imperv_frac_unit, Imperv_next_yr, Imperv_next_mo, Imperv_next_day)
             check_imperv = ACTIVE
             check_fractions = ACTIVE
-            Imperv_flag = ACTIVE
+            Imperv_flag = OFF
           ENDIF
         ENDIF
       ENDIF

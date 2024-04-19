@@ -149,7 +149,7 @@
       USE PRMS_BASIN, ONLY: Hru_route_order, Active_hrus, Hru_frac_perv, Hru_area_dble, Hru_perv, &
      &    Hru_type, Basin_area_inv, Dprst_area_max, Hru_frac_imperv, Hru_frac_dprst, Cov_type, Hru_storage, Hru_area, &
      &    Covden_win, Covden_sum
-      USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Newsnow, Pptmix, Potet
+      USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Basin_ppt, Hru_rain, Hru_snow, Pptmix, Potet
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Soil_to_gw, Soil_to_ssr, &
      &    Infil, Soil_moist_max, Ssr_to_gw, Ssres_flow, Basin_soil_to_gw, Soil_moist, Ssres_stor, Pref_flow_stor, &
      &    Slow_flow, Basin_perv_et, Basin_ssflow, Basin_swale_et, Slow_stor, Ssres_in, Soil_rechr, &
@@ -233,7 +233,7 @@
         ENDIF
 
         ! Skip the HRU if there is no snowpack and no new snow
-        IF ( It0_pkwater_equiv(i)>ZERO_SNOWPACK .OR. Newsnow(i)==1 ) THEN
+        IF ( It0_pkwater_equiv(i)>ZERO_SNOWPACK .OR. Net_snow(i)>0.0 ) THEN
           hrubal = It0_pkwater_equiv(i) - Pkwater_equiv(i) - DBLE( Snow_evap(i) + Snowmelt(i) )
           IF ( Pptmix_nopack(i)==ACTIVE ) THEN
             hrubal = hrubal + Net_snow(i)
@@ -249,7 +249,7 @@
             WRITE ( BALUNT, * ) i, hrubal, Nowyear, Nowmonth, Nowday, &
      &              It0_pkwater_equiv(i), Pkwater_equiv(i), Snow_evap(i), &
      &              Snowmelt(i), Net_ppt(i), Net_snow(i), Net_rain(i), &
-     &              Newsnow(i), Pptmix(i), Pptmix_nopack(i), Intcp_changeover(i)
+     &              Hru_snow(i), Pptmix(i), Pptmix_nopack(i), Intcp_changeover(i)
             WRITE ( BALUNT, '(A,/)' ) '*******************************'
           ENDIF
           bsnobal = bsnobal + hrubal*harea

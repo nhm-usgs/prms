@@ -17,7 +17,8 @@
       INTEGER, SAVE :: Weir_gate_flag, Puls_lin_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_dble(:), Lake_area(:)
 !   Declared Variables
-      REAL, SAVE, ALLOCATABLE :: Hru_frac_perv(:), Hru_frac_imperv(:), Hru_frac_dprst(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_frac_perv(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_frac_imperv(:), Hru_frac_dprst(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_max(:)
       REAL, SAVE, ALLOCATABLE :: Hru_perv(:), Hru_imperv(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_area_open_max(:), Dprst_area_clos_max(:)
@@ -287,14 +288,6 @@
       IF ( getparam(MODNAME, 'hru_area', Nhru, 'real', Hru_area)/=0 ) CALL read_error(2, 'hru_area')
       IF ( getparam(MODNAME, 'hru_elev', Nhru, 'real', Hru_elev)/=0 ) CALL read_error(2, 'hru_elev')
       Hru_elev_ts = Hru_elev
-      IF ( Elev_units==FEET ) THEN
-!        Hru_elev_feet = Hru_elev_ts
-        Hru_elev_meters = Hru_elev_ts * FEET2METERS
-      ELSE
-!        Hru_elev_feet = Hru_elev_ts * METERS2FEET
-        Hru_elev_meters = Hru_elev_ts
-      ENDIF
-
       IF ( getparam(MODNAME, 'hru_lat', Nhru, 'real', Hru_lat)/=0 ) CALL read_error(2, 'hru_lat')
       IF ( getparam(MODNAME, 'hru_type', Nhru, 'integer', Hru_type)/=0 ) CALL read_error(2, 'hru_type')
       IF ( getparam(MODNAME, 'cov_type', Nhru, 'integer', Cov_type)/=0 ) CALL read_error(2, 'cov_type')
@@ -420,6 +413,13 @@
         ENDIF
 
         Basin_lat = Basin_lat + DBLE( Hru_lat(i)*harea )
+        IF ( Elev_units==FEET ) THEN
+!          Hru_elev_feet(i) = Hru_elev(i)
+          Hru_elev_meters(i) = Hru_elev(i)*FEET2METERS
+        ELSE
+!          Hru_elev_feet(i) = Hru_elev(i)*METERS2FEET
+          Hru_elev_meters(i) = Hru_elev(i)
+        ENDIF
         j = j + 1
         Hru_route_order(j) = i
 
@@ -524,6 +524,7 @@
         PRINT *,                           'Fraction pervious           = ', basin_perv
         IF ( Water_area>0.0D0 ) PRINT *,   'Fraction lakes              = ', Water_area*Basin_area_inv
         IF ( Dprst_flag==ACTIVE ) PRINT *, 'Fraction storage area       = ', basin_dprst*Basin_area_inv
+!        PRINT *, ' '
       ENDIF
 
 !     print out start and end times
