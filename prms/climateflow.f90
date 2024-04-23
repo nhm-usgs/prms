@@ -1272,7 +1272,7 @@ end module PRMS_IT0_VARS
 !***********************************************************************
       SUBROUTINE temp_set(Ihru, Tmax, Tmin, Tmaxf, Tminf, Tavgf, Tmaxc, Tminc, Tavgc, Hru_area)
       USE PRMS_CLIMATEVARS, ONLY: Basin_temp, Basin_tmax, Basin_tmin, Temp_units, Tmax_hru, Tmin_hru
-      USE PRMS_CONSTANTS, ONLY: MINTEMP, MAXTEMP, ERROR_temp, DEBUG_less, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: MINTEMP, MAXTEMP, ERROR_temp, ACTIVE !, DEBUG_less
       USE PRMS_MODULE, ONLY: forcing_check_flag !, Print_debug
       IMPLICIT NONE
 ! Arguments
@@ -1285,19 +1285,19 @@ end module PRMS_IT0_VARS
       REAL, EXTERNAL :: c_to_f, f_to_c
       EXTERNAL :: print_date
 ! Local Variable
-      INTEGER :: foo
+!      INTEGER :: foo
 !***********************************************************************
 !      IF ( forcing_check_flag == ACTIVE ) THEN
         IF ( Tmax < Tmin ) THEN
 !          IF ( Print_debug > DEBUG_less ) THEN
             PRINT '(A,I0)', 'Warning, adjusted tmax value < adjusted tmin value for HRU: ', Ihru
             PRINT '(4(A,F0.4))', '         tmax: ', Tmax, ' tmin: ', Tmin, ', Difference: ', Tmin-Tmax
-            PRINT '(A)',         '         values swapped'
+!            PRINT '(A)',         '         values swapped'
             CALL print_date(0)
 !          ENDIF
-          foo = Tmax
-          Tmax = Tmin
-          Tmin = foo
+!          foo = Tmax
+!          Tmax = Tmin
+!          Tmin = foo
         ENDIF
 !      ENDIF
 
@@ -1342,7 +1342,7 @@ end module PRMS_IT0_VARS
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
      &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, DEBUG_minimum
+      USE PRMS_CONSTANTS, ONLY: ACTIVE !, DEBUG_minimum
 !      USE PRMS_MODULE, ONLY: Print_debug, forcing_check_flag
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
@@ -1384,7 +1384,7 @@ end module PRMS_IT0_VARS
           PRINT *, 'ERROR, tmax < tmin (degrees Fahrenheit), tmax:', Tmaxf, ' tmin:', TminF
           CALL print_date(1)
         ENDIF
-        IF ( ABS(tdiff)<NEARZERO ) tdiff = NEARZERO
+        IF ( ABS(tdiff)<0.00001 ) tdiff = 0.00001
         Prmx = ((Tmaxf-Tmax_allsnow_f)/tdiff)*Adjmix_rain
         IF ( Prmx<0.0 ) Prmx = 0.0
 

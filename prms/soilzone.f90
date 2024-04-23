@@ -663,12 +663,12 @@
 ! Local Variables
       INTEGER :: i, k, update_potet, compute_lateral
       REAL :: dunnianflw, interflow, perv_area, harea
-      REAL :: availh2o, avail_potet, hruactet
+      REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet, hruactet
       REAL :: gvr_maxin, topfr !, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capwater_maxin, ssresin
       REAL :: cap_upflow_max, unsatisfied_et, pervactet, prefflow, ag_water_maxin, ponding_water
-      DOUBLE PRECISION :: gwin, dnslowflow, dnpreflow, dndunn
+      DOUBLE PRECISION :: gwin
       INTEGER :: cfgi_frozen_hru, adjust_frozen, adjust_dunnian
 !***********************************************************************
       szrun = 0
@@ -812,31 +812,33 @@
         prefflow = 0.0
         dunnianflw_pfr = 0.0
         IF ( Pref_flag == ACTIVE ) THEN
-          IF ( Pref_flow_infil_frac(i)>0.0 .AND. Pref_flow_thrsh(i)>0.0 ) THEN
-            pref_flow_maxin = 0.0
-            IF ( capwater_maxin>0.0 ) THEN
-              ! pref_flow for whole HRU
-              pref_flow_maxin = capwater_maxin*Pref_flow_infil_frac(i)
-              capwater_maxin = capwater_maxin - pref_flow_maxin
-              pref_flow_maxin = pref_flow_maxin*perv_frac
-              IF ( cfgi_frozen_hru==ACTIVE ) THEN
-                IF ( compute_lateral == ACTIVE ) THEN
-                  dunnianflw_pfr = pref_flow_maxin
-                ELSE ! swale
+          IF ( Pref_flow_infil_frac(i)>0.0 ) THEN
+            IF ( Pref_flow_thrsh(i)>0.0 ) THEN
+              pref_flow_maxin = 0.0
+              IF ( capwater_maxin>0.0 ) THEN
+                ! pref_flow for whole HRU
+                pref_flow_maxin = capwater_maxin*Pref_flow_infil_frac(i)
+                capwater_maxin = capwater_maxin - pref_flow_maxin
+                pref_flow_maxin = pref_flow_maxin*perv_frac
+                IF ( cfgi_frozen_hru==ACTIVE ) THEN
+                  IF ( compute_lateral == ACTIVE ) THEN
+                    dunnianflw_pfr = pref_flow_maxin
+                  ELSE ! swale
+                    Pref_flow_stor(i) = Pref_flow_stor(i) + pref_flow_maxin
+                  ENDIF
+                ELSE
+                  ! compute contribution to preferential-flow reservoir storage
                   Pref_flow_stor(i) = Pref_flow_stor(i) + pref_flow_maxin
+                  IF ( compute_lateral == ACTIVE ) dunnianflw_pfr = MAX( 0.0, Pref_flow_stor(i)-Pref_flow_max(i) )
                 ENDIF
-              ELSE
-                ! compute contribution to preferential-flow reservoir storage
-                Pref_flow_stor(i) = Pref_flow_stor(i) + pref_flow_maxin
-                IF ( compute_lateral == ACTIVE ) dunnianflw_pfr = MAX( 0.0, Pref_flow_stor(i)-Pref_flow_max(i) )
+                IF ( dunnianflw_pfr>0.0 ) THEN
+                  Basin_dunnian_pfr = Basin_dunnian_pfr + DBLE( dunnianflw_pfr*harea )
+                  Pref_flow_stor(i) = Pref_flow_max(i)
+                ENDIF
+                Pref_flow_infil(i) = pref_flow_maxin - dunnianflw_pfr
+                Basin_pref_flow_infil = Basin_pref_flow_infil + DBLE( Pref_flow_infil(i)*harea )
+                Pfr_dunnian_flow(i) = dunnianflw_pfr
               ENDIF
-              IF ( dunnianflw_pfr>0.0 ) THEN
-                Basin_dunnian_pfr = Basin_dunnian_pfr + DBLE( dunnianflw_pfr*harea )
-                Pref_flow_stor(i) = Pref_flow_max(i)
-              ENDIF
-              Pref_flow_infil(i) = pref_flow_maxin - dunnianflw_pfr
-              Basin_pref_flow_infil = Basin_pref_flow_infil + DBLE( Pref_flow_infil(i)*harea )
-              Pfr_dunnian_flow(i) = dunnianflw_pfr
             ENDIF
           ENDIF
         ENDIF
@@ -865,7 +867,7 @@
         ELSE
           IF ( compute_lateral==ACTIVE ) THEN
             adjust_frozen = ACTIVE
-            Sroff(i) = Sroff(i) + capwater_maxin
+            Sroff(i) = Sroff(i) + capwater_maxin ! this doesn't work with cascades rsr, 4/22/2024
             Hru_sroffp(i) = Hru_sroffp(i) + capwater_maxin * perv_frac
             Hortonian_flow(i) = Hortonian_flow(i) + capwater_maxin * perv_frac
             Frozen_cap_flow(i) = capwater_maxin
@@ -963,19 +965,23 @@
           IF ( Cascade_flag>CASCADE_OFF ) THEN
             IF ( Ncascade_hru(i)>0 ) THEN
               IF ( interflow+dunnianflw>CLOSEZERO ) THEN
-                dnslowflow = 0.0D0
-                dnpreflow = 0.0D0
-                dndunn = 0.0D0
+                dnslowflow = 0.0
+                dnpreflow = 0.0
+                dndunn = 0.0
                 CALL compute_cascades(i, Ncascade_hru(i), Slow_flow(i), &
      &                                prefflow, Dunnian_flow(i), dnslowflow, &
      &                                dnpreflow, dndunn)
-                Basin_dninterflow = Basin_dninterflow + (dnslowflow+dnpreflow)*Hru_area_dble(i)
-                Basin_dndunnianflow = Basin_dndunnianflow + dndunn*Hru_area_dble(i)
-                Hru_sz_cascadeflow(i) = dnslowflow + dnpreflow + dndunn
+                Basin_dninterflow = Basin_dninterflow + DBLE( (dnslowflow+dnpreflow)*harea )
+                Basin_dndunnianflow = Basin_dndunnianflow + DBLE( dndunn*harea )
+                Hru_sz_cascadeflow(i) = DBLE( dnslowflow + dnpreflow + dndunn )
                 Basin_dncascadeflow = Basin_dncascadeflow + Hru_sz_cascadeflow(i)*Hru_area_dble(i)
               ENDIF
             ENDIF
+          ELSE
+            ! treat dunnianflw as surface runoff to streams
+            Sroff(i) = Sroff(i) + Dunnian_flow(i)
           ENDIF
+          Basin_dunnian = Basin_dunnian + DBLE( Dunnian_flow(i)*harea )
 
 ! treat pref_flow as interflow
           Ssres_flow(i) = Slow_flow(i)
@@ -989,10 +995,6 @@
           ENDIF
           Basin_ssflow = Basin_ssflow + DBLE( Ssres_flow(i)*harea )
           Basin_slowflow = Basin_slowflow + DBLE( Slow_flow(i)*harea )
-
-! treat dunnianflw as surface runoff to streams
-          Sroff(i) = Sroff(i) + Dunnian_flow(i)
-          Basin_dunnian = Basin_dunnian + DBLE( Dunnian_flow(i)*harea )
 
         ELSE ! for swales ! RSR: new 2/15/2024 take unsatisfied_et from pref_flow_stor first
           Swale_actet(i) = 0.0
@@ -1402,18 +1404,19 @@
 !***********************************************************************
       SUBROUTINE compute_cascades(Ihru, Ncascade_hru, Slowflow, Preflow, &
      &           Dunnian, Dnslowflow, Dnpreflow, Dndunnflow)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO
+!      USE PRMS_CONSTANTS, ONLY: CLOSEZERO
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_SOILZONE, ONLY: Upslope_dunnianflow, Upslope_interflow
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
       USE PRMS_SRUNOFF, ONLY: Strm_seg_in
+      USE PRMS_FLOWVARS, ONLY: Sroff
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: IABS, DBLE, SNGL
+      INTRINSIC :: IABS, DBLE
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Ncascade_hru
       REAL, INTENT(INOUT) :: Dunnian, Slowflow, Preflow
-      DOUBLE PRECISION, INTENT(INOUT) :: Dnslowflow, Dnpreflow, Dndunnflow
+      REAL, INTENT(INOUT) :: Dnslowflow, Dnpreflow, Dndunnflow
 ! Local Variables
       INTEGER :: j, k
       REAL :: frac, fracwt
@@ -1426,9 +1429,9 @@
           fracwt = Hru_down_fracwt(k, Ihru)
           Upslope_interflow(j) = Upslope_interflow(j) + DBLE( (Slowflow+Preflow)*fracwt )
           Upslope_dunnianflow(j) = Upslope_dunnianflow(j) + DBLE( Dunnian*fracwt )
-          Dnslowflow = Dnslowflow + DBLE( Slowflow*frac )
-          Dnpreflow = Dnpreflow + DBLE( Preflow*frac )
-          Dndunnflow = Dndunnflow + DBLE( Dunnian*frac )
+          Dnslowflow = Dnslowflow + Slowflow*frac
+          Dnpreflow = Dnpreflow + Preflow*frac
+          Dndunnflow = Dndunnflow + Dunnian*frac
 ! if hru_down(k, Ihru) < 0, cascade contributes to a stream
         ELSEIF ( j<0 ) THEN
           j = IABS(j)
@@ -1436,13 +1439,14 @@
         ENDIF
       ENDDO
 
-! reset Slowflow, Preflow, and Dunnian_flow as they accumulate flow to streams
-      Slowflow = Slowflow - SNGL( Dnslowflow )
-      IF ( Slowflow < CLOSEZERO ) Slowflow = 0.0
-      Preflow = Preflow - SNGL( Dnpreflow )
-      IF ( Preflow < CLOSEZERO ) Preflow = 0.0
-      Dunnian = Dunnian - SNGL( Dndunnflow )
-      IF ( Dunnian < CLOSEZERO ) Dunnian = 0.0
+! reset Sroff, Slowflow, Preflow, and Dunnian_flow as they accumulate flow to streams
+      Slowflow = Slowflow - Dnslowflow
+ !     IF ( Slowflow < CLOSEZERO ) Slowflow = 0.0
+      Preflow = Preflow - Dnpreflow
+  !    IF ( Preflow < CLOSEZERO ) Preflow = 0.0
+      Dunnian = Dunnian - Dndunnflow
+  !    IF ( Dunnian < CLOSEZERO ) Dunnian = 0.0
+      Sroff(Ihru) = Sroff(Ihru) + Dunnian
 
       END SUBROUTINE compute_cascades
 

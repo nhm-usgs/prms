@@ -6,7 +6,7 @@ MODULE PRMS_CONSTANTS
     real, parameter :: NEARZERO = 1.0E-6
     double precision, parameter :: DNEARZERO = EPSILON(0.0D0) ! 2.220446049250313E-016
 !    double precision, PARAMETER :: ZERO_SNOWPACK = EPSILON(0.0D0)
-    double precision, PARAMETER :: ZERO_SNOWPACK = 1.0D-10
+    double precision, PARAMETER :: ZERO_SNOWPACK = 1.0D-12
 
     integer, parameter :: MAXFILE_LENGTH = 256
     integer, parameter :: MAXLINE_LENGTH = 256

@@ -647,6 +647,7 @@
         Hru_impervevap = 0.0
       ENDIF
       Contrib_fraction = 0.0
+      Hru_sroffp = 0.0
 
       dprst_chk = 0
       Infil = 0.0
@@ -721,7 +722,7 @@
           ELSE
             cfgi_k = 0.08
           ENDIF
-          depth_cm = Pk_depth(i)*2.54 !depth of snow cover averaged over HRU
+          depth_cm = SNGL(Pk_depth(i))*2.54 !depth of snow cover averaged over HRU
           Cfgi(i) = Cfgi_decay*Cfgi_prev(i) - Tavgc(i)*( 2.71828**(-0.4*cfgi_k*depth_cm) )
           IF ( active_glacier==1 ) THEN
             Cfgi(i) = 0.0 !if glacier over, want ground completely unfrozen, or below threshold, infiltration
@@ -911,10 +912,10 @@
         Imperv_stor = Imperv_stor - Imperv_evap
       ENDIF
       !rsr, sanity check
-      IF ( Imperv_stor<0.0 ) THEN
+!      IF ( Imperv_stor<0.0 ) THEN
 !        PRINT *, 'imperv_stor<0', Imperv_stor
-        Imperv_stor = 0.0
-      ENDIF
+!        Imperv_stor = 0.0
+!      ENDIF
 
       END SUBROUTINE imperv_et
 
@@ -1151,7 +1152,7 @@
       USE PRMS_CASCADE, ONLY: Hru_down, Hru_down_frac, Hru_down_fracwt, Cascade_area
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: IABS, DBLE !, ABS
+      INTRINSIC :: IABS, DBLE
 ! Arguments
       INTEGER, INTENT(IN) :: Ncascade_hru
       REAL, INTENT(INOUT) :: Runoff
@@ -1252,6 +1253,8 @@
         Dprst_seep_rate_clos = 0.0
         Va_clos_exp = 0.0
       ENDIF
+      Dprst_area_open = 0.0
+      Dprst_area_clos = 0.0
       Dprst_stor_hru = 0.0D0
       Dprst_vol_thres_open = 0.0D0
       Dprst_vol_open_max = 0.0D0
