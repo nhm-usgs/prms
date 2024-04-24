@@ -10,6 +10,7 @@
       character(len=12), parameter :: MODNAME = 'call_modules'
       character(len=*), parameter :: PRMS_versn = '2024-04-10'
       character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 04/10/2024'
+      character(len=*), parameter :: githash = 'Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw
@@ -144,10 +145,10 @@
         IF ( Print_debug>DEBUG_minimum ) THEN
           IF ( Print_debug>DEBUG_less ) THEN
             PRINT 15
-            WRITE (*,'(4X,A)') 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
+            WRITE (*,'(A)') githash
           ENDIF
           WRITE ( PRMS_output_unit, 15 )
-          WRITE ( PRMS_output_unit, '(4X,A)' ) 'Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1'
+          WRITE ( PRMS_output_unit, '(A)' ) githash
           PRINT 9002, EQULS, EQULS
           PRINT 16, EQULS(:62)
           WRITE ( PRMS_output_unit, 16 ) EQULS(:62)

@@ -664,8 +664,8 @@ Size      : 258
 Type      : float
 Units     : degrees East
 Width     : 4
-Max       : 180.000000
-Min       : -180.000000
+Max       : 360.000000
+Min       : -360.000000
 Default   : -105.000000
 
 Name      : hru_percent_imperv
@@ -991,8 +991,8 @@ Size      : 1
 Type      : long
 Units     : none
 Width     : 4
-Max       : 1
-Min       : 1
+Max       : 2
+Min       : 0
 Default   : 1
 
 Name      : potet_cbh_adj
@@ -1460,7 +1460,7 @@ Default   : 0.200000
 Name      : sro_to_dprst_perv
 Module    : srunoff_smidx
 Descr     : Fraction of pervious surface runoff that flows into surface-depression storage
-Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows the stream network for each HRU
+Help      : Fraction of pervious surface runoff that flows into surface-depression storage; the remainder flows to the stream network for each HRU
 Ndimen    : 1
 Dimensions: nhru - 258
 Size      : 258

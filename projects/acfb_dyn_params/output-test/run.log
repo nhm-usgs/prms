@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-    Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1
+Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -95,10 +95,10 @@ Simulation time period: 1980/01/01 - 1999/12/31
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 10:35:37
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:14:30
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 10:35:37
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:14:30
 
-Execution elapsed time    0 minutes  0.80 seconds
+Execution elapsed time    0 minutes  0.76 seconds
 
