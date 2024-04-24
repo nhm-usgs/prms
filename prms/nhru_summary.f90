@@ -259,7 +259,7 @@
       ENDIF
       WRITE ( Output_fmt2, 9002 ) '("Date",', Nhru, '(", ",I0) )'
       ALLOCATE ( Nhru_var_daily(Nhru, NhruOutVars) )
-      IF ( write_binary_nhru_flag == 2 .AND. Daily_flag ) ALLOCATE( daily_values(Nhru) )
+      IF ( write_binary_nhru_flag == 2 .AND. Daily_flag==ACTIVE ) ALLOCATE( daily_values(Nhru) )
       IF ( write_binary_nhru_flag == 2 .AND. Monthly_flag == ACTIVE ) ALLOCATE( monthly_values(Nhru) )
       Nhru_var_daily = 0.0
       file_suffix = '.csv'

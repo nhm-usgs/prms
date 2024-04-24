@@ -1,10 +1,10 @@
 
 
-
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 5.3.0 02/10/2024
+                        Version 6.0.0 04/10/2024
 
+--------------------------------------------------------------------
         Process            Available Modules
 --------------------------------------------------------------------
   Basin Definition: basin
@@ -36,30 +36,33 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
+    Github Commit Hash a036995c883ac16cd752bd73b6def0958eae4ae1
 
+--------------------------------------------------------------------
     Active modules listed in the order in which they are called
-
+--------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-02-10
-Basin Definition                basin               2024-01-22
+Computation Order               call_modules        2024-04-10
+Basin Definition                basin               2024-04-04
 Cascading Flow                  cascade             2023-11-01
-Common States and Fluxes        climateflow         2024-01-16
+Common States and Fluxes        climateflow         2024-04-10
 Potential Solar Radiation       soltab              2024-01-22
+Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
-Time Series Data                obs                 2024-01-22
+Time Series Data                obs                 2023-11-01
 Temperature Distribution        temp_1sta           2023-11-01
 Precipitation Distribution      precip_1sta         2023-11-01
-Solar Radiation Distribution    ddsolrad            2024-02-08
+Solar Radiation Distribution    ddsolrad            2024-04-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
-Canopy Interception             intcp               2024-01-10
-Snow Dynamics                   snowcomp            2024-02-08
-Surface Runoff                  srunoff_smidx       2024-02-08
-Soilzone Computations           soilzone            2024-02-07
+Canopy Interception             intcp               2024-04-04
+Snow Dynamics                   snowcomp            2024-04-17
+Surface Runoff                  srunoff_smidx       2024-04-04
+Soilzone Computations           soilzone            2024-04-10
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2024-01-22
+Output Summary                  basin_sum           2024-04-`0
 Output Summary                  map_results         2023-11-01
 Output Summary                  subbasin            2023-11-01
 Output Summary                  nsub_summary        2023-11-01
@@ -78,30 +81,28 @@ Model domain area:         6782.50    Active basin area:      6782.50
 Fraction impervious:        0.0000    Fraction pervious:       1.0000
 
 
-
-
    Year Month Day   Precip     ET    Storage S-Runoff M-Runoff
-                  (inches) (inches) (inches) (inches) (inches)
- -------------------------------------------------------------
- initial                               3.100
-   1981             27.189   19.021    4.320    6.948    6.181
-   1982             76.778   29.334   12.413   39.350   36.819
-   1983             64.524   30.751   12.133   34.053   38.374
-   1984             52.146   30.059   10.298   23.923   26.168
-   1985             29.538   21.710    7.302   10.823   11.260
-   1986             60.447   29.521   10.893   27.336   27.044
-   1987             17.887   16.247    5.119    7.413    6.438
-   1988             21.214   17.022    3.578    5.733    4.140
-   1989             43.851   25.427    6.628   15.374   12.683
-   1990             29.970   22.994    6.279    7.324    6.491
-   1991             25.841   21.933    4.160    6.028    5.574
-   1992             21.591   15.636    3.722    6.393    3.847
-   1993             55.061   27.290    7.484   24.010   18.886
-   1994             20.340   16.071    5.377    6.377    4.182
-   1995             69.736   29.707    8.422   36.984   29.493
-   1996             52.824   25.456    9.262   26.529   22.769
- *************************************************************
- Total for run     668.938  378.179    9.262  284.597  260.348
- *************************************************************
-Execution elapsed time    0 minutes  0.71 seconds
+                  (inches) (inches)  (inches) (inches) (inches)
+ --------------------------------------------------------------
+ initial                                3.100
+   1981             27.189   19.021     4.320    6.948    6.181
+   1982             76.778   29.335    12.413   39.350   36.819
+   1983             64.524   30.750    12.133   34.054   38.374
+   1984             52.146   30.059    10.297   23.922   26.168
+   1985             29.538   21.718     7.301   10.815   11.260
+   1986             60.447   29.521    10.892   27.334   27.044
+   1987             17.887   16.248     5.119    7.412    6.438
+   1988             21.214   17.024     3.578    5.731    4.140
+   1989             43.851   25.427     6.628   15.374   12.683
+   1990             29.970   22.996     6.279    7.323    6.491
+   1991             25.841   21.938     4.160    6.023    5.574
+   1992             21.591   15.636     3.722    6.392    3.847
+   1993             55.061   27.287     7.489   24.007   18.886
+   1994             20.340   16.073     5.379    6.377    4.182
+   1995             69.736   29.709     8.423   36.984   29.493
+   1996             52.824   25.455     9.262   26.529   22.769
+ **************************************************************
+ Total for run     668.938  378.199     9.262  284.576  260.348
+ **************************************************************
+Execution elapsed time    0 minutes  0.77 seconds
 
