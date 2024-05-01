@@ -834,7 +834,7 @@
       CHARACTER(LEN=*), INTENT(IN) :: Modname, Restart_module
 !***********************************************************************
       IF ( Restart_module/=Modname ) THEN
-        PRINT *, 'ERROR READING RESTART FILE, expecting module: ', Modname, ' found: ', Restart_module
+        PRINT *, 'ERROR, reading restart file, expecting module: ', Modname, ' found: ', Restart_module
         ERROR STOP ERROR_restart
       ENDIF
       END SUBROUTINE check_restart

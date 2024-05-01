@@ -6,14 +6,14 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2024-04-10'
+      character(len=*), parameter :: Version_climateflow = '2024-04-30'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
       REAL, SAVE, ALLOCATABLE :: Tsta_elev_feet(:), Tsta_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Psta_elev_feet(:), Psta_elev_meters(:)
       REAL, SAVE, ALLOCATABLE :: Tmax_allsnow_f(:, :), Tmax_allsnow_c(:, :)
-      REAL, SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :) !, Tmax_allrain_c(:, :)
+      REAL, SAVE, ALLOCATABLE :: Tmax_allrain_f(:, :), Tmax_allrain_c(:, :)
 !   Declared Variables - Precip
       INTEGER, SAVE, ALLOCATABLE :: Newsnow(:), Pptmix(:)
       DOUBLE PRECISION, SAVE :: Basin_ppt, Basin_rain, Basin_snow, Basin_obs_ppt
@@ -44,6 +44,7 @@
       INTEGER, SAVE :: Temp_units, Basin_tsta
       INTEGER, SAVE, ALLOCATABLE :: Hru_tsta(:)
       REAL, SAVE, ALLOCATABLE :: Tsta_elev(:), Tmax_aspect_adjust(:, :), Tmin_aspect_adjust(:, :)
+      REAL, SAVE, ALLOCATABLE :: Tmax_adj_offset(:, :)
 !   Declared Parameters - Precip
       INTEGER, SAVE :: Precip_units
       REAL, SAVE :: Ppt_zero_thresh
@@ -136,7 +137,7 @@ end module PRMS_IT0_VARS
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
      &    temp_laps_module, temp_sta_module, temp_dist2_module, &
-     &    ddsolrad_module, ccsolrad_module
+     &    ddsolrad_module, ccsolrad_module, PRMS6
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Model, Init_vars_from_file, Temp_flag, Precip_flag, Glacier_flag, &
      &    Strmflow_module, Temp_module, Stream_order_flag, &
@@ -600,7 +601,7 @@ end module PRMS_IT0_VARS
      &     ALLOCATE ( Psta_elev_meters(Nrain), Psta_elev_feet(Nrain) )
       ALLOCATE ( Tmax_hru(Nhru), Tmin_hru(Nhru) )
       ALLOCATE ( Tmax_allsnow_f(Nhru,MONTHS_PER_YEAR), Tmax_allsnow_c(Nhru,MONTHS_PER_YEAR), Tmax_allrain_f(Nhru,MONTHS_PER_YEAR) )
-!      ALLOCATE ( Tmax_allrain_c(Nhru,MONTHS_PER_YEAR) )
+      ALLOCATE ( Tmax_allrain_c(Nhru,MONTHS_PER_YEAR) )
 
 ! Declare Parameters
       IF ( Temp_flag<climate_hru_module .OR. Model==DOCUMENTATION ) THEN
@@ -626,11 +627,21 @@ end module PRMS_IT0_VARS
      &     Temp_flag==ide_dist_module .OR. Temp_flag==xyz_dist_module .OR. Temp_flag==temp_sta_module &
      &     .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Tmax_aspect_adjust(Nhru,MONTHS_PER_YEAR) )
-        IF ( declparam(Temp_module, 'tmax_adj', 'nhru,nmonths', 'real', &
-     &       '0.0', '-10.0', '10.0', &
-     &       'HRU maximum temperature adjustment', &
-     &       'Adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect', &
-     &       'temp_units')/=0 ) CALL read_error(1, 'tmax_adj')
+        IF ( Model/=PRMS6 ) THEN
+          IF ( declparam(Temp_module, 'tmax_adj', 'nhru,nmonths', 'real', &
+     &         '0.0', '-10.0', '10.0', &
+     &         'HRU maximum temperature adjustment', &
+     &         'Adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect', &
+     &         'temp_units')/=0 ) CALL read_error(1, 'tmax_adj')
+        ELSE
+          ALLOCATE ( Tmax_adj_offset(Nhru,MONTHS_PER_YEAR) )
+          IF ( declparam(Temp_module, 'tmax_adj_offset', 'nhru,nmonths', 'real', &
+     &         '0.0', '0.0', '10.0', &
+     &         'HRU maximum temperature adjustment as offset from tmin_adj', &
+     &         'Adjustment to maximum temperature for each HRU as offset from tmin_adj,' // &
+     &         ' estimated on the basis of slope and aspect', &
+     &         'temp_units')/=0 ) CALL read_error(1, 'tmax_adj_offset')
+        ENDIF
 
         ALLOCATE ( Tmin_aspect_adjust(Nhru,MONTHS_PER_YEAR) )
         IF ( declparam(Temp_module, 'tmin_adj', 'nhru,nmonths', 'real', &
@@ -890,21 +901,21 @@ end module PRMS_IT0_VARS
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, MONTHS_PER_YEAR, DEBUG_less, &
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
-     &    temp_laps_module, temp_sta_module, temp_dist2_module, &
+     &    temp_laps_module, temp_sta_module, temp_dist2_module, PRMS6, &
      &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM, ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
      &    Temp_module, Stream_order_flag, Glacier_flag, &
      &    Precip_module, Solrad_module, Et_module, PRMS4_flag, &
      &    Soilzone_module, Srunoff_module, Et_flag, Dprst_flag, Solrad_flag, &
-     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag
+     &    Parameter_check_flag, Inputerror_flag, Humidity_cbh_flag, Model
       USE PRMS_CLIMATEVARS
       USE PRMS_FLOWVARS
       USE PRMS_BASIN, ONLY: Elev_units, Active_hrus, Hru_route_order, Hru_type, Hru_perv, Hru_area, Basin_area_inv
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error
+      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error, error_stop
       REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
       INTEGER :: i, j, ierr
@@ -928,8 +939,17 @@ end module PRMS_IT0_VARS
 
       IF ( Temp_flag==temp_1sta_module .OR. Temp_flag==temp_laps_module .OR. Temp_flag==temp_dist2_module .OR. &
      &     Temp_flag==ide_dist_module .OR. Temp_flag==xyz_dist_module .OR. Temp_flag==temp_sta_module ) THEN
-        IF ( getparam(Temp_module, 'tmax_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmax_aspect_adjust)/=0 ) CALL read_error(2, 'tmax_adj')
-        IF ( getparam(Temp_module, 'tmin_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmin_aspect_adjust)/=0 ) CALL read_error(2, 'tmin_adj')
+        IF ( getparam(Temp_module, 'tmin_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmin_aspect_adjust)/=0 ) &
+                      CALL read_error(2, 'tmin_adj')
+        IF ( Model/=PRMS6 ) THEN
+          IF ( getparam(Temp_module, 'tmax_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmax_aspect_adjust)/=0 ) &
+                        CALL read_error(2, 'tmax_adj')
+        ELSE
+          IF ( getparam(Temp_module, 'tmax_adj_offset', Nhru*MONTHS_PER_YEAR, 'real', Tmax_adj_offset)/=0 ) &
+                        CALL read_error(2, 'tmax_adj_offset')
+          Tmax_aspect_adjust = Tmin_aspect_adjust + Tmax_adj_offset
+          DEALLOCATE ( Tmax_adj_offset )
+        ENDIF
       ENDIF
 
       IF ( getparam(Temp_module, 'temp_units', 1, 'integer', Temp_units)/=0 ) CALL read_error(2, 'temp_units')
@@ -977,7 +997,7 @@ end module PRMS_IT0_VARS
           DO i = 1, Nhru
             Tmax_allrain_f(i, j) = Tmax_allsnow(i, j) + Tmax_allrain_offset(i, j)
             Tmax_allsnow_c(i, j) = f_to_c(Tmax_allsnow(i,j))
-!            Tmax_allrain_c(i, j) = f_to_c(Tmax_allrain_f(i,j))
+            Tmax_allrain_c(i, j) = f_to_c(Tmax_allrain_f(i,j))
           ENDDO
         ENDDO
         Tmax_allrain = Tmax_allrain_f
@@ -988,7 +1008,7 @@ end module PRMS_IT0_VARS
             Tmax_allsnow_f(j, i) = c_to_f(Tmax_allsnow(j,i))
             Tmax_allrain(j, i) = Tmax_allsnow(j, i) + Tmax_allrain_offset(j, i)
             Tmax_allrain_f(j, i) = c_to_f(Tmax_allrain(j, i))
-!            Tmax_allrain_c(i, j) = Tmax_allrain(i,j)
+            Tmax_allrain_c(i, j) = Tmax_allrain(i,j)
           ENDDO
         ENDDO
       ENDIF
@@ -1169,7 +1189,7 @@ end module PRMS_IT0_VARS
       Basin_soil_moist = Basin_soil_moist * Basin_area_inv
       Basin_ssstor = Basin_ssstor * Basin_area_inv
 
-      IF ( ierr>0 ) STOP ERROR_PARAM
+      IF ( ierr>0 ) CALL error_stop('parameter error', ERROR_param)
 
       IF ( getparam(Srunoff_module, 'snowinfil_max', Nhru, 'real', Snowinfil_max)/=0 ) CALL read_error(2, 'snowinfil_max')
 
@@ -1220,12 +1240,11 @@ end module PRMS_IT0_VARS
 ! initialize scalers
       Basin_humidity = 0.0D0
       Basin_lakeevap = 0.0D0
+      Basin_lake_stor = 0.0D0
       Flow_out = 0.0D0
 
       IF ( Init_vars_from_file>0 .OR. ierr>0 ) RETURN
 
-      Basin_lake_stor = 0.0D0
-      Basin_transp_on = OFF
 ! initialize arrays (dimensioned Nsegment)
       IF ( Stream_order_flag==ACTIVE ) THEN
         Seg_inflow = 0.0D0
@@ -1287,7 +1306,7 @@ end module PRMS_IT0_VARS
 ! Local Variable
 !      INTEGER :: foo
 !***********************************************************************
-!      IF ( forcing_check_flag == ACTIVE ) THEN
+      IF ( forcing_check_flag == ACTIVE ) THEN
         IF ( Tmax < Tmin ) THEN
 !          IF ( Print_debug > DEBUG_less ) THEN
             PRINT '(A,I0)', 'Warning, adjusted tmax value < adjusted tmin value for HRU: ', Ihru
@@ -1299,7 +1318,7 @@ end module PRMS_IT0_VARS
 !          Tmax = Tmin
 !          Tmin = foo
         ENDIF
-!      ENDIF
+      ENDIF
 
       IF ( Temp_units==0 ) THEN
 !       degrees Fahrenheit
@@ -1340,10 +1359,10 @@ end module PRMS_IT0_VARS
 !     Computes precipitation form (rain, snow or mix) and depth for each HRU
 !***********************************************************************
       SUBROUTINE precip_form(Precip, Hru_ppt, Hru_rain, Hru_snow, Tmaxf, &
-     &           Tminf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
+     &           Tminf, Tavgf, Pptmix, Newsnow, Prmx, Tmax_allrain_f, Rain_adj, &
      &           Snow_adj, Adjmix_rain, Hru_area, Sum_obs, Tmax_allsnow_f, Ihru)
-      USE PRMS_CONSTANTS, ONLY: ACTIVE !, DEBUG_minimum
-!      USE PRMS_MODULE, ONLY: Print_debug, forcing_check_flag
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, PRMS6 !, DEBUG_minimum
+      USE PRMS_MODULE, ONLY: Model !, Print_debug, forcing_check_flag
       USE PRMS_CLIMATEVARS, ONLY: Basin_ppt, Basin_rain, Basin_snow
       IMPLICIT NONE
 ! Functions
@@ -1352,7 +1371,7 @@ end module PRMS_IT0_VARS
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru
       REAL, INTENT(IN) :: Tmax_allrain_f, Tmax_allsnow_f, Rain_adj, Snow_adj
-      REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Hru_area
+      REAL, INTENT(IN) :: Adjmix_rain, Tmaxf, Tminf, Tavgf, Hru_area
       DOUBLE PRECISION, INTENT(INOUT) :: Sum_obs
       INTEGER, INTENT(INOUT) :: Pptmix, Newsnow
       REAL, INTENT(INOUT) :: Precip, Hru_rain, Hru_snow, Prmx, Hru_ppt
@@ -1372,7 +1391,11 @@ end module PRMS_IT0_VARS
 !******If minimum temperature is above base temperature for snow or
 !******maximum temperature is above all_rain temperature then
 !******precipitation is all rain
-      ELSEIF ( Tminf>Tmax_allsnow_f .OR. Tmaxf>=Tmax_allrain_f ) THEN
+      ELSEIF ( Model==PRMS6 .AND. .not.(Tavgf<Tmax_allrain_f) ) THEN
+        Hru_ppt = Precip*Rain_adj
+        Hru_rain = Hru_ppt
+        Prmx = 1.0
+      ELSEIF ( Model/=PRMS6 .AND. Tminf>Tmax_allsnow_f .OR. Tmaxf>=Tmax_allrain_f ) THEN
         Hru_ppt = Precip*Rain_adj
         Hru_rain = Hru_ppt
         Prmx = 1.0
@@ -1438,7 +1461,6 @@ end module PRMS_IT0_VARS
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Basin_transp_on, Basin_soil_moist, Basin_ssstor, Basin_lake_stor
         WRITE ( Restart_outunit ) Transp_on
         WRITE ( Restart_outunit ) Pkwater_equiv
         IF ( Glacier_flag==ACTIVE ) THEN
@@ -1464,7 +1486,6 @@ end module PRMS_IT0_VARS
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Basin_transp_on, Basin_soil_moist, Basin_ssstor, Basin_lake_stor
         READ ( Restart_inunit ) Transp_on
         READ ( Restart_inunit ) Pkwater_equiv
         IF ( Glacier_flag==ACTIVE ) THEN

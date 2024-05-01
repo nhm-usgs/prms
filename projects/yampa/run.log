@@ -1,0 +1,180 @@
+
+
+                         U.S. Geological Survey
+               Precipitation-Runoff Modeling System (PRMS)
+                        Version 6.0.0 04/10/2024
+
+--------------------------------------------------------------------
+        Process            Available Modules
+--------------------------------------------------------------------
+  Basin Definition: basin
+    Cascading Flow: cascade
+  Time Series Data: obs, water_use_read, dynamic_param_read
+                    dynamic_soil_param_read
+   Potet Solar Rad: soltab
+  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
+                    temp_map
+       Precip Dist: precip_1sta, precip_laps, precip_dist2,
+                    climate_hru, precip_map
+Temp & Precip Dist: xyz_dist, ide_dist
+    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru
+Transpiration Dist: transp_tindex, climate_hru, transp_frost
+      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,
+                    potet_hs, potet_pt, potet_pm, potet_pm_sta
+      Interception: intcp
+Snow & Glacr Dynam: snowcomp, glacr_melt
+    Surface Runoff: srunoff_smidx, srunoff_carea
+         Soil Zone: soilzone
+       Groundwater: gwflow
+Streamflow Routing: strmflow, strmflow_in_out, muskingum,
+                    muskingum_lake, muskingum_mann, segment_to_hru
+Streamflow Charact: strmflow_character
+Stream Temperature: stream_temp
+    Output Summary: basin_sum, subbasin, map_results, prms_summary,
+                    nhru_summary, nsub_summary, water_balance
+                    basin_summary, nsegment_summary
+     Preprocessing: write_climate_hru, frost_date
+--------------------------------------------------------------------
+
+Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
+
+==========================================================================
+Please give careful consideration to fixing all ERROR and WARNING messages
+==========================================================================
+
+
+--------------------------------------------------------------------
+    Active modules listed in the order in which they are called
+--------------------------------------------------------------------
+        Process                    Module         Version Date
+==============================================================
+Computation Order               call_modules        2024-05-01
+Basin Definition                basin               2024-04-04
+Common States and Fluxes        climateflow         2024-04-30
+Potential Solar Radiation       soltab              2024-01-22
+Parameter Setup                 setup_param         2020-08-03
+Timestep Control                prms_time           2023-11-01
+Time Series Data                obs                 2023-11-01
+Temperature Distribution        climate_hru         2024-04-30
+Precipitation Distribution      climate_hru         2024-04-30
+Solar Radiation Distribution    ddsolrad            2024-04-04
+Transpiration Distribution      transp_tindex       2023-11-01
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2024-04-04
+Snow Dynamics                   snowcomp            2024-04-30
+Surface Runoff                  srunoff_smidx       2024-04-04
+Soilzone Computations           soilzone            2024-04-30
+Groundwater                     gwflow              2024-01-22
+Streamflow Routing Init         routing             2024-02-09
+Streamflow Routing              muskingum           2023-11-01
+Output Summary                  basin_sum           2024-04-`0
+Water Balance Computations      water_balance       2024-04-04
+Output Summary                  nhru_summary        2024-04-04
+Output Summary                  prms_summary        2024-01-15
+==============================================================
+
+Using Control File: .\yampa.control
+
+Using Parameter File: ./input/yampa.param
+
+Writing var_save_file: ./output/prms_ic.out
+
+Writing PRMS Water Budget File: ./output/model.out
+
+WARNING, HRU: 2 soil_moist_init > soil_moist_max,    3.000000000    2.535964966
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 7 soil_moist_init > soil_moist_max,    3.000000000    2.497133970
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 26 soil_moist_init > soil_moist_max,    3.000000000    2.835566998
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 36 soil_moist_init > soil_moist_max,    3.000000000    2.784316063
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 38 soil_moist_init > soil_moist_max,    3.000000000    2.841423988
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 48 soil_moist_init > soil_moist_max,    3.000000000    2.236690998
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 56 soil_moist_init > soil_moist_max,    3.000000000    2.955913067
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 57 soil_moist_init > soil_moist_max,    3.000000000    2.587512016
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 58 soil_moist_init > soil_moist_max,    3.000000000    2.681227922
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 60 soil_moist_init > soil_moist_max,    3.000000000    2.601804972
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 65 soil_moist_init > soil_moist_max,    3.000000000    2.471070051
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 66 soil_moist_init > soil_moist_max,    3.000000000    2.487004042
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 67 soil_moist_init > soil_moist_max,    3.000000000    1.943227053
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 68 soil_moist_init > soil_moist_max,    3.000000000    2.044811010
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 69 soil_moist_init > soil_moist_max,    3.000000000    2.206640005
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 70 soil_moist_init > soil_moist_max,    3.000000000    2.752482891
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 74 soil_moist_init > soil_moist_max,    3.000000000    2.753124952
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 75 soil_moist_init > soil_moist_max,    3.000000000    2.475404978
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 76 soil_moist_init > soil_moist_max,    3.000000000    1.930428982
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 77 soil_moist_init > soil_moist_max,    3.000000000    1.703616023
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 79 soil_moist_init > soil_moist_max,    3.000000000    2.956856966
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 80 soil_moist_init > soil_moist_max,    3.000000000    2.242389917
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 83 soil_moist_init > soil_moist_max,    3.000000000    2.871515989
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 84 soil_moist_init > soil_moist_max,    3.000000000    2.468300104
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 91 soil_moist_init > soil_moist_max,    3.000000000    2.926737070
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 92 soil_moist_init > soil_moist_max,    3.000000000    2.750022888
+         soil_moist set to soil_moist_max
+
+ WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
+
+Simulation time period: 1980/10/01 - 1988/09/30
+
+==========================================================================
+
+
+                          =========================
+                          Normal completion of PRMS
+                          =========================
+
+
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01  9:40:17
+
+
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01  9:40:18
+
+Execution elapsed time    0 minutes  0.97 seconds
+

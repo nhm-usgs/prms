@@ -10,7 +10,7 @@
         ! Local Variables
         character(len=*), parameter :: MODDESC = 'Climate Input'
         character(len=*), parameter :: MODNAME = 'climate_hru'
-        character(len=*), parameter :: Version_climate_hru = '2024-01-08'
+        character(len=*), parameter :: Version_climate_hru = '2024-04-30'
         INTEGER, SAVE :: Precip_unit, Tmax_unit, Tmin_unit, Et_unit, Swrad_unit, Transp_unit
         INTEGER, SAVE :: Humidity_unit, Windspeed_unit
         INTEGER, SAVE :: Albedo_unit, Cloud_cover_unit, Ncbh
@@ -27,13 +27,13 @@
         REAL, ALLOCATABLE :: Albedo_hru(:), Cloud_cover_cbh(:)
         ! Declared Parameters
         REAL, SAVE, ALLOCATABLE :: Rain_cbh_adj(:, :), Snow_cbh_adj(:, :), Potet_cbh_adj(:, :)
-        REAL, SAVE, ALLOCATABLE :: Tmax_cbh_adj(:, :), Tmin_cbh_adj(:, :)
+        REAL, SAVE, ALLOCATABLE :: Tmax_cbh_adj(:, :), Tmin_cbh_adj(:, :), Tmax_cbh_adj_offset(:, :)
         INTEGER, SAVE, ALLOCATABLE :: cbh_hru_id(:)
       END MODULE PRMS_CLIMATE_HRU
 
       INTEGER FUNCTION climate_hru()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, RUN, DECL, INIT, DOCUMENTATION, &
-     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, MAXDIM, DEBUG_less
+     &    MM2INCH, MINTEMP, MAXTEMP, ERROR_cbh, MM, MONTHS_PER_YEAR, MAXDIM, DEBUG_less, PRMS6
       USE PRMS_MODULE, ONLY: Process_flag, Model, Nhru, Climate_transp_flag, Orad_flag, &
      &    Climate_precip_flag, Climate_temp_flag, Climate_potet_flag, Climate_swrad_flag, &
      &    Start_year, Start_month, Start_day, Humidity_cbh_flag, Windspeed_cbh_flag, &
@@ -223,7 +223,7 @@
               IF ( Precip_units==MM ) Hru_ppt(i) = Hru_ppt(i)*MM2INCH
               ppt = Hru_ppt(i)
               CALL precip_form(ppt, Hru_ppt(i), Hru_rain(i), Hru_snow(i), &
-     &                         Tmaxf(i), Tminf(i), Pptmix(i), Newsnow(i), &
+     &                         Tmaxf(i), Tminf(i), Tavgf(i), Pptmix(i), Newsnow(i), &
      &                         Prmx(i), Tmax_allrain_f(i,Nowmonth), &
      &                         Rain_cbh_adj(i,Nowmonth), Snow_cbh_adj(i,Nowmonth), &
      &                         Adjmix_rain(i,Nowmonth), harea, sum_obs, Tmax_allsnow_f(i,Nowmonth), i)
@@ -326,12 +326,23 @@
 !   Declared Parameters
         IF ( Climate_temp_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
           ALLOCATE ( Tmax_cbh_adj(Nhru,MONTHS_PER_YEAR) )
-          IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
-     &         '0.0', '-10.0', '10.0', &
-     &         'Monthly maximum temperature adjustment factor for each HRU', &
-     &         'Monthly (January to December) additive adjustment factor to maximum air temperature for each HRU,'// &
-     &         ' estimated on the basis of slope and aspect', &
-     &         'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj')
+          IF ( Model/=PRMS6 ) THEN
+            IF ( declparam(MODNAME, 'tmax_cbh_adj', 'nhru,nmonths', 'real', &
+     &           '0.0', '-10.0', '10.0', &
+     &           'Monthly maximum temperature adjustment factor for each HRU', &
+     &           'Monthly (January to December) additive adjustment factor to maximum air temperature for each HRU,'// &
+     &           ' estimated on the basis of slope and aspect', &
+     &           'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj')
+          ELSE
+            ALLOCATE ( Tmax_cbh_adj_offset(Nhru,MONTHS_PER_YEAR) )
+            IF ( declparam(MODNAME, 'tmax_cbh_adj_offset', 'nhru,nmonths', 'real', &
+     &           '0.0', '0.0', '10.0', &
+     &           'Monthly maximum temperature adjustment factor as an offset from tmin_cbh_adj for each HRU', &
+     &           'Monthly (January to December) additive adjustment factor to maximum air temperature as an'// &
+     &           ' offset from tmin_cbh_adj for each HRU,'// &
+     &           ' estimated on the basis of slope and aspect', &
+     &           'temp_units')/=0 ) CALL read_error(1, 'tmax_cbh_adj_offset')
+          ENDIF
 
           ALLOCATE ( Tmin_cbh_adj(Nhru,MONTHS_PER_YEAR) )
           IF ( declparam(MODNAME, 'tmin_cbh_adj', 'nhru,nmonths', 'real', &
@@ -410,9 +421,17 @@
         ENDIF
 
         IF ( Climate_temp_flag==ACTIVE ) THEN
-          IF ( getparam(MODNAME, 'tmax_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmax_cbh_adj)/=0 ) CALL read_error(2, 'tmax_cbh_adj')
-          IF ( getparam(MODNAME, 'tmin_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmin_cbh_adj)/=0 ) CALL read_error(2, 'tmin_cbh_adj')
-
+          IF ( getparam(MODNAME, 'tmin_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmin_cbh_adj)/=0 ) &
+                        CALL read_error(2, 'tmin_cbh_adj')
+          IF ( Model/=PRMS6 ) THEN
+            IF ( getparam(MODNAME, 'tmax_cbh_adj', Nhru*MONTHS_PER_YEAR, 'real', Tmax_cbh_adj)/=0 ) &
+                          CALL read_error(2, 'tmax_cbh_adj')
+          ELSE
+            IF ( getparam(MODNAME, 'tmax_cbh_adj_offset', Nhru*MONTHS_PER_YEAR, 'real', Tmax_cbh_adj_offset)/=0 ) &
+                          CALL read_error(2, 'tmax_cbh_adj_offset')
+            Tmax_cbh_adj = Tmin_cbh_adj + Tmax_cbh_adj_offset
+            DEALLOCATE ( Tmax_cbh_adj_offset )
+          ENDIF
           IF ( control_string(Tmax_day, 'tmax_day')/=0 ) CALL read_error(5, 'tmax_day')
           IF ( control_string(Tmin_day, 'tmin_day')/=0 ) CALL read_error(5, 'tmin_day')
           CALL find_cbh_header_end(Tmax_unit, Tmax_day, 'tmax_day', ierr)

@@ -8,7 +8,7 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-04-10'
+      character(len=*), parameter :: PRMS_versn = '2024-05-01'
       character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 04/10/2024'
       character(len=*), parameter :: githash = 'Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2'
       CHARACTER(LEN=8), SAVE :: Process
@@ -1367,7 +1367,7 @@
           ENDIF
         ENDIF
         IF ( ierr==1 ) THEN
-          PRINT *, 'ERROR READING RESTART FILE'
+          PRINT *, 'ERROR, reading restart file'
           ERROR STOP ERROR_restart
         ENDIF
       ENDIF
