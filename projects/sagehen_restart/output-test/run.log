@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
+Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -48,23 +48,23 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-04-10
+Computation Order               call_modules        2024-05-01
 Basin Definition                basin               2024-04-04
 Cascading Flow                  cascade             2023-11-01
-Common States and Fluxes        climateflow         2024-04-10
+Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
-Temperature Distribution        climate_hru         2024-01-08
-Precipitation Distribution      climate_hru         2024-01-08
+Temperature Distribution        climate_hru         2024-04-30
+Precipitation Distribution      climate_hru         2024-04-30
 Solar Radiation Distribution    ddsolrad            2024-04-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
-Snow Dynamics                   snowcomp            2024-04-17
+Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-10
+Soilzone Computations           soilzone            2024-04-30
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-04-`0
@@ -85,73 +85,16 @@ Simulation time period: 1980/10/01 - 1984/01/30
 
 ==========================================================================
 
-Warning, adjusted tmax value < adjusted tmin value for HRU: 91
-         tmax: 25.7200 tmin: 28.4000, Difference: 2.6800
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 96
-         tmax: 25.7400 tmin: 28.4000, Difference: 2.6600
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 99
-         tmax: 27.1800 tmin: 28.4000, Difference: 1.2200
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 100
-         tmax: 27.9500 tmin: 28.2900, Difference: .3400
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 102
-         tmax: 27.4100 tmin: 28.4000, Difference: .9900
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 104
-         tmax: 25.7000 tmin: 28.4000, Difference: 2.7000
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 47
-         tmax: 27.7600 tmin: 28.4000, Difference: .6400
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 71
-         tmax: 28.3200 tmin: 28.3900, Difference: .0700
-    Date: 1980/12/01
-Warning, adjusted tmax value < adjusted tmin value for HRU: 91
-         tmax: 19.4200 tmin: 20.3100, Difference: .8900
-    Date: 1982/04/03
-Warning, adjusted tmax value < adjusted tmin value for HRU: 96
-         tmax: 19.4400 tmin: 20.3200, Difference: .8800
-    Date: 1982/04/03
-Warning, adjusted tmax value < adjusted tmin value for HRU: 99
-         tmax: 20.8800 tmin: 21.0400, Difference: .1600
-    Date: 1982/04/03
-Warning, adjusted tmax value < adjusted tmin value for HRU: 102
-         tmax: 21.1100 tmin: 21.1600, Difference: .0500
-    Date: 1982/04/03
-Warning, adjusted tmax value < adjusted tmin value for HRU: 104
-         tmax: 19.4000 tmin: 20.3000, Difference: .9000
-    Date: 1982/04/03
-Warning, adjusted tmax value < adjusted tmin value for HRU: 91
-         tmax: 22.1300 tmin: 23.9100, Difference: 1.7800
-    Date: 1982/04/13
-Warning, adjusted tmax value < adjusted tmin value for HRU: 96
-         tmax: 22.1600 tmin: 23.9200, Difference: 1.7600
-    Date: 1982/04/13
-Warning, adjusted tmax value < adjusted tmin value for HRU: 99
-         tmax: 24.3100 tmin: 24.6400, Difference: .3300
-    Date: 1982/04/13
-Warning, adjusted tmax value < adjusted tmin value for HRU: 102
-         tmax: 24.6700 tmin: 24.7600, Difference: .0900
-    Date: 1982/04/13
-Warning, adjusted tmax value < adjusted tmin value for HRU: 104
-         tmax: 22.1000 tmin: 23.9000, Difference: 1.8000
-    Date: 1982/04/13
-Warning, adjusted tmax value < adjusted tmin value for HRU: 47
-         tmax: 24.3800 tmin: 24.8000, Difference: .4200
-    Date: 1982/04/13
 
                           =========================
                           Normal completion of PRMS
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:23:35
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:06:22
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:23:35
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:06:22
 
-Execution elapsed time    0 minutes  0.29 seconds
+Execution elapsed time    0 minutes  0.27 seconds
 

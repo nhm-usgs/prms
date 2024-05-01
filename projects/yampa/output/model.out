@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
+Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -79,5 +79,5 @@ End time:   1988/09/30 00:00:00
 
 Model domain area:      1006589.79    Active basin area:   1006589.79
 Fraction impervious:        0.0009    Fraction pervious:       0.9991
-Execution elapsed time    0 minutes  0.97 seconds
+Execution elapsed time    0 minutes  0.98 seconds
 

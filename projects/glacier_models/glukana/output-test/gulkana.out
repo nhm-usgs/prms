@@ -36,29 +36,29 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
+Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-04-10
+Computation Order               call_modules        2024-05-01
 Basin Definition                basin               2024-04-04
-Common States and Fluxes        climateflow         2024-04-10
+Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
-Temp & Precip Distribution      xyz_dist            2023-11-01
+Temp & Precip Distribution      xyz_dist            2024-04-30
 Solar Radiation Distribution    ccsolrad            2024-04-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
-Snow Dynamics                   snowcomp            2024-04-17
+Snow Dynamics                   snowcomp            2024-04-30
 Glacier Dynamics                glacr_melt          2024-04-04
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-10
+Soilzone Computations           soilzone            2024-04-30
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
@@ -130,5 +130,5 @@ Fraction impervious:        0.0687    Fraction pervious:       0.9313
  **************************************************************
  Total for run     418.200  279.047     1.062  143.002 -286.767
  **************************************************************
-Execution elapsed time    0 minutes  1.55 seconds
+Execution elapsed time    0 minutes  1.53 seconds
 

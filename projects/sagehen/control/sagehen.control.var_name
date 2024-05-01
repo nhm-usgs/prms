@@ -32,6 +32,78 @@ Type: float
 Desc: Snow surface albedo or the fraction of radiation reflected from the snowpack surface for each HRU
 Units: decimal fraction
 
+Name: albedo_hru
+Module: climate_hru
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Snowpack albedo of each HRU read from CBH File
+Units: decimal fraction
+
+Name: alt_above_ela
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Altitude above equilibrium line altitude (ELA)
+Units: elev_units
+
+Name: ann_tempc
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Current average year air temperature over each HRU
+Units: degrees Celsius
+
+Name: av_basal_slope
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier average basal slope at flowline location, indexed by Glacr_tag
+Units: decimal fraction
+
+Name: av_fgrad
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier average HRU mass balance gradient with elevation at flowline at end of each hydrological year, Ngl of these
+Units: decimal fraction
+
+Name: basal_elev
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier basal elevation mean over HRU
+Units: elev_units
+
+Name: basal_slope
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier basal slope down flowline mean over each HRU
+Units: decimal fraction
+
+Name: basin_2ndstflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin volume-weighted average streamflow from each lake with a second outlet
+Units: inches
+
 Name: basin_actet
 Module: soilzone
 Ndimen: 1
@@ -84,6 +156,15 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin area-weighted average maximum cascade flow that flows to capillary reservoirs
+Units: inches
+
+Name: basin_capillary_wb
+Module: water_balance
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average capillary reservoir storage
 Units: inches
 
 Name: basin_capwaterin
@@ -140,6 +221,15 @@ Type: double
 Desc: Basin area-weighted average water released from a change over of canopy cover type
 Units: inches
 
+Name: basin_cloud_cover
+Module: ccsolrad
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average cloud cover proportion
+Units: decimal fraction
+
 Name: basin_cms
 Module: strmflow_in_out
 Ndimen: 1
@@ -194,6 +284,51 @@ Type: double
 Desc: Basin area-weighted average cascading interflow
 Units: inches
 
+Name: basin_dprst_evap
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average evaporation from surface-depression storage
+Units: inches
+
+Name: basin_dprst_seep
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average seepage from surface-depression storage
+Units: inches
+
+Name: basin_dprst_sroff
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average surface runoff from open surface-depression storage
+Units: inches
+
+Name: basin_dprst_volcl
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage volume in closed surface depressions
+Units: inches
+
+Name: basin_dprst_volop
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage volume in open surface depressions
+Units: inches
+
 Name: basin_dunnian
 Module: soilzone
 Ndimen: 1
@@ -219,6 +354,114 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin area-weighted average excess infiltration to preferential-flow reservoirs from variable infil
+Units: inches
+
+Name: basin_gl_area
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average glacier-covered area
+Units: decimal fraction
+
+Name: basin_gl_cfs
+Module: basin
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin glacier surface melt (rain, snow, ice) leaving the basin through the stream network
+Units: cfs
+
+Name: basin_gl_ice_cfs
+Module: basin
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin glacier ice (firn) melt leaving the basin through the stream network
+Units: cfs
+
+Name: basin_gl_ice_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted glacier ice (firn) melt coming out of termini of all glaciers and glacierettes
+Units: inches
+
+Name: basin_gl_storage
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage change in glacier reservoirs
+Units: inches
+
+Name: basin_gl_storstart
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage estimated start in glacier reservoirs
+Units: inches
+
+Name: basin_gl_storvol
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin storage volume in glacier storage reservoirs
+Units: acre-inches
+
+Name: basin_gl_top_gain
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted glacier surface gain (snow and rain minus evaporation) for all glaciers and glacierettes
+Units: inches
+
+Name: basin_gl_top_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted glacier surface melt (snow, ice and rain) coming out of termini of all glaciers and glacierettes
+Units: inches
+
+Name: basin_glacrb_melt
+Module: snowcomp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average basal melt of glacier, goes to soil
+Units: inches
+
+Name: basin_glacrevap
+Module: snowcomp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average glacier ice evaporation and sublimation
+Units: inches
+
+Name: basin_gravity_wb
+Module: water_balance
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average gravity reservoir storage
 Units: inches
 
 Name: basin_gvr2pfr
@@ -338,6 +581,33 @@ Type: double
 Desc: Basin area-weighted average Hortonian runoff
 Units: inches
 
+Name: basin_hortonian_lakes
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average Hortonian surface runoff to lakes
+Units: inches
+
+Name: basin_hru_apply
+Module: intcp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average canopy_gain
+Units: inches
+
+Name: basin_humidity
+Module: potet_jh
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average humidity
+Units: percentage
+
 Name: basin_imperv_evap
 Module: srunoff_smidx
 Ndimen: 1
@@ -419,6 +689,15 @@ Type: double
 Desc: Basin area-weighted average maximum interflow that flows from gravity reservoirs
 Units: inches
 
+Name: basin_lake_seep
+Module: gwflow
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average of lake-bed seepage to GWRs
+Units: acre-feet
+
 Name: basin_lake_stor
 Module: strmflow_in_out
 Ndimen: 1
@@ -427,6 +706,51 @@ Size: 1
 Type: double
 Desc: Basin volume-weighted average storage for all lakes using broad-crested weir or gate opening routing
 Units: inches
+
+Name: basin_lakeevap
+Module: soilzone
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average lake evaporation
+Units: inches
+
+Name: basin_lakeinsz
+Module: soilzone
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average lake inflow from land HRUs
+Units: inches
+
+Name: basin_lakeprecip
+Module: soilzone
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average precipitation on lake HRUs
+Units: inches
+
+Name: basin_lapse_max
+Module: temp_dist2
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: float
+Desc: Basin area-weighted average maximum air temperature lapse rate per 1000 feet
+Units: degrees
+
+Name: basin_lapse_min
+Module: temp_dist2
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: float
+Desc: Basin area-weighted average minimum air temperature lapse rate per 1000 feet
+Units: degrees
 
 Name: basin_max_temp_mo
 Module: basin_sum
@@ -481,6 +805,15 @@ Size: 1
 Type: double
 Desc: Yearly basin area-weighted average minimum temperature
 Units: temp_units
+
+Name: basin_net_apply
+Module: intcp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average net application
+Units: inches
 
 Name: basin_net_ppt
 Module: intcp
@@ -689,6 +1022,15 @@ Type: double
 Desc: Basin area-weighted average snowpack water equivalent (not including glacier)
 Units: inches
 
+Name: basin_radadj
+Module: ccsolrad
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average radiation adjustment for cloud cover
+Units: decimal fraction
+
 Name: basin_rain
 Module: precip_1sta
 Ndimen: 1
@@ -724,6 +1066,15 @@ Size: 1
 Type: double
 Desc: Monthly area-weighted average discharge/precipitation ratio
 Units: decimal fraction
+
+Name: basin_segment_storage
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in the stream network
+Units: inches
 
 Name: basin_slowflow
 Module: soilzone
@@ -796,6 +1147,15 @@ Size: 1
 Type: double
 Desc: Basin area-weighted average evaporation and sublimation from snowpack (not including glacier)
 Units: inches
+
+Name: basin_snowicecov
+Module: snowcomp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average snow and glacier and glacierette covered area
+Units: decimal fraction
 
 Name: basin_snowmelt
 Module: snowcomp
@@ -885,6 +1245,15 @@ Dimensions: one - 1
 Size: 1
 Type: double
 Desc: Basin average excess flow to capillary reservoirs that drains to GWRs
+Units: inches
+
+Name: basin_soilzone_wb
+Module: water_balance
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average storage in soilzone reservoirs
 Units: inches
 
 Name: basin_sroff
@@ -1193,6 +1562,15 @@ Type: long
 Desc: Flag indicating whether transpiration is occurring anywhere in the basin (0=no; 1=yes)
 Units: none
 
+Name: basin_windspeed
+Module: climate_hru
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Basin area-weighted average wind speed
+Units: meters/second
+
 Name: canopy_covden
 Module: intcp
 Ndimen: 1
@@ -1201,6 +1579,24 @@ Size: 128
 Type: float
 Desc: Canopy cover density for each HRU
 Units: decimal fraction
+
+Name: canopy_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the canopy reservoir for each HRU for each time step
+Units: cfs
+
+Name: canopy_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the canopy reservoir for each HRU for the simulation
+Units: cfs
 
 Name: cap_infil_tot
 Module: soilzone
@@ -1220,6 +1616,69 @@ Type: float
 Desc: Infiltration and any cascading interflow and Dunnian surface runoff added to capillary reservoir storage for each HRU
 Units: inches
 
+Name: cfgi
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Continuous Frozen Ground Index
+Units: index
+
+Name: cfgi_prev
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Continuous Frozen Ground Index from previous day
+Units: index
+
+Name: cloud_cover_cbh
+Module: climate_hru
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Cloud_cover of each HRU read from CBH File
+Units: decimal fraction
+
+Name: cloud_cover_hru
+Module: ccsolrad
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Cloud cover proportion of each HRU
+Units: decimal fraction
+
+Name: cloud_radadj
+Module: ccsolrad
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Radiation adjustment for cloud cover of each HRU
+Units: decimal fraction
+
+Name: consumed_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nconsumed - 0
+Size: 0
+Type: float
+Desc: Transfer flow rate to each water-use comsumption destination for each time step
+Units: cfs
+
+Name: consumed_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nconsumed - 0
+Size: 0
+Type: float
+Desc: Transfer flow rate to each water-use comsumption destination for the simulation
+Units: cfs
+
 Name: contrib_fraction
 Module: srunoff_smidx
 Ndimen: 1
@@ -1227,6 +1686,195 @@ Dimensions: nhru - 128
 Size: 128
 Type: float
 Desc: Contributing area of each HRU pervious area
+Units: decimal fraction
+
+Name: delta_volyr
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Year total volume change for each glacier, indexed by Glacr_tag
+Units: inches cubed
+
+Name: din1
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Inflow from the previous time step to each lake using Puls or linear storage routing
+Units: cfs
+
+Name: dprst_area_clos
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Surface area of closed surface depressions based on storage volume for each HRU
+Units: acres
+
+Name: dprst_area_clos_max
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Aggregate sum of closed surface-depression storage areas of each HRU
+Units: acres
+
+Name: dprst_area_max
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Aggregate sum of surface-depression storage areas of each HRU
+Units: acres
+
+Name: dprst_area_open
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Surface area of open surface depressions based on storage volume for each HRU
+Units: acres
+
+Name: dprst_area_open_max
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Aggregate sum of open surface-depression storage areas of each HRU
+Units: acres
+
+Name: dprst_evap_hru
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Evaporation from surface-depression storage for each HRU
+Units: inches
+
+Name: dprst_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to surface-depression storage for each HRU for each time step
+Units: cfs
+
+Name: dprst_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to surface-depression storage for each HRU for the simulation
+Units: cfs
+
+Name: dprst_insroff_hru
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Surface runoff from pervious and impervious portions into open and closed surface-depression storage for each HRU
+Units: inches
+
+Name: dprst_seep_hru
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Seepage from surface-depression storage to associated GWR for each HRU
+Units: inches
+
+Name: dprst_sroff_hru
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Surface runoff from open surface-depression storage for each HRU
+Units: inches
+
+Name: dprst_stor_hru
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Surface-depression storage for each HRU
+Units: inches
+
+Name: dprst_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from surface-depression storage for each HRU for each time step
+Units: cfs
+
+Name: dprst_transfer_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from surface-depression storage for each HRU for the simulation
+Units: cfs
+
+Name: dprst_vol_clos
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Storage volume in closed surface depressions for each HRU
+Units: acre-inches
+
+Name: dprst_vol_clos_frac
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Fraction of closed surface-depression storage of the maximum storage for each HRU
+Units: decimal fraction
+
+Name: dprst_vol_frac
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Fraction of surface-depression storage of the maximum storage for each HRU
+Units: decimal fraction
+
+Name: dprst_vol_open
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Storage volume in open surface depressions for each HRU
+Units: acre-inches
+
+Name: dprst_vol_open_frac
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Fraction of open surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
 Name: dunnian_flow
@@ -1237,6 +1885,60 @@ Size: 128
 Type: float
 Desc: Dunnian surface runoff that flows to the stream network for each HRU
 Units: inches
+
+Name: ela
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: HRU number at ELA corresponding to each top in each glacier, Ntp of these
+Units: none
+
+Name: elevlake
+Module: gwflow
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: float
+Desc: Surface elevation of each lake
+Units: feet
+
+Name: external_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nexternal - 0
+Size: 0
+Type: float
+Desc: Transfer gains to each external location for each time step
+Units: cfs
+
+Name: external_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nexternal - 0
+Size: 0
+Type: float
+Desc: Transfer gains to each external location for each time step
+Units: cfs
+
+Name: external_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: nexternal - 0
+Size: 0
+Type: float
+Desc: Transfer flow rate from each external source for each time step
+Units: cfs
+
+Name: external_transfer_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nexternal - 0
+Size: 0
+Type: float
+Desc: Transfer flow rate from each external source for the simulation
+Units: cfs
 
 Name: flow_headwater
 Module: routing
@@ -1364,6 +2066,357 @@ Type: float
 Desc: Storage of free liquid water in the snowpack on each HRU
 Units: inches
 
+Name: frozen
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: Flag for frozen ground (0=no; 1=yes)
+Units: none
+
+Name: gain_inches
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Canopy_gain in as depth in canopy
+Units: inches
+
+Name: gain_inches_hru
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Canopy_gain in canopy as depth over the HRU
+Units: inches
+
+Name: gate_ht
+Module: obs
+Ndimen: 1
+Dimensions: nratetbl - 0
+Size: 0
+Type: float
+Desc: Height of the gate opening at each dam with a gate
+Units: inches
+
+Name: gl_area
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Area of each glacier, indexed by Glacr_tag
+Units: acres
+
+Name: gl_ice_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Amount of glacier ice (firn) melt coming out of terminus of glacier, indexed by Glacr_tag
+Units: inches
+
+Name: gl_mb_cumul
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Cumulative mass balance for each glacier since start day, indexed by Glacr_tag
+Units: inches
+
+Name: gl_mb_yrcumul
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Yearly mass balance for each glacier, indexed by Glacr_tag
+Units: inches
+
+Name: gl_top_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Amount of glacier surface melt (snow, ice, rain) coming out of terminus of glacier, indexed by Glacr_tag
+Units: inches
+
+Name: glacier_frac
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Fraction of glaciation (0=none; 1=100%)
+Units: decimal fraction
+
+Name: glacr_5avsnow
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Current 5-yr average snow over glacier or glacierette HRUs
+Units: inches/yr
+
+Name: glacr_5avsnow1
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: First 5-yr average snow over glacier or glacierette HRUs
+Units: inches/yr
+
+Name: glacr_air_5avtemp
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Current 5-yr average summer (June July Aug) air temperature over glacier or glacierette HRUs
+Units: degrees Celsius
+
+Name: glacr_air_5avtemp1
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: First 5-yr average summer temperature over glacier or glacierette HRUs
+Units: degrees Celsius
+
+Name: glacr_air_deltemp
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Change in 5-yr average air temperature over glacier or glacierette HRUs from first
+Units: degrees Celsius
+
+Name: glacr_albedo
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Ice surface albedo or the fraction of radiation reflected from the icepack surface for each glacier or glacierette HRU
+Units: decimal fraction
+
+Name: glacr_delsnow
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Change in 5-yr average snow over glacier or glacierette HRUs from first
+Units: inches/yr
+
+Name: glacr_elev_init
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier surface elevation mean over HRU at initiation extrapolating to 100% glacierized HRU
+Units: elev_units
+
+Name: glacr_evap
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Evaporation and sublimation from icepack on each glacier or glacierette HRU
+Units: inches
+
+Name: glacr_flow
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier melt and rain from HRU to stream network, only nonzero at termini HRUs and snowfield HRUs
+Units: inches cubed
+
+Name: glacr_freeh2o
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Storage of free liquid water in the icepack on each glacier or glacierette HRU
+Units: inches
+
+Name: glacr_freeh2o_capm
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Free-water holding capacity of glacier or glacierette ice, changes to 0 if active layer melts
+Units: decimal fraction
+
+Name: glacr_pk_def
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Heat deficit, amount of heat necessary to make the glacier or or glacierette snowpack isothermal at 0 degrees Celsius
+Units: Langleys
+
+Name: glacr_pk_den
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Density of the icepack on each glacier or glacierette HRU, hard coded to equal 0.917
+Units: gm/cm3
+
+Name: glacr_pk_depth
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Depth of icepack on each glacier or glacierette HRU, make essentially infinite
+Units: inches
+
+Name: glacr_pk_ice
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Storage of frozen water in the icepack on each glacier or glacierette HRU
+Units: inches
+
+Name: glacr_pk_temp
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Temperature of the glacier or glacierette on each HRU
+Units: degrees Celsius
+
+Name: glacr_pkwater_ante
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Antecedent icepack water equivalent on each glacier or glacierette HRU
+Units: inches
+
+Name: glacr_pkwater_equiv
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Icepack water equivalent on each glacier or glacierette HRU
+Units: inches
+
+Name: glacr_pss
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Previous glacier or glacierette pack water equivalent plus new ice
+Units: inches
+
+Name: glacr_pst
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: While an icepack exists, glacr_pst tracks the maximum ice water equivalent of that icepack
+Units: inches
+
+Name: glacr_slope_init
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier surface slope mean over HRU at initiation extrapolating to 100% glacierized HRU
+Units: elev_units
+
+Name: glacr_tag
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: Identifies which glacier each HRU belongs to
+Units: none
+
+Name: glacrb_melt
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier or glacierette basal melt, goes to soil
+Units: inches/day
+
+Name: glacrcov_area
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Ice-covered area (no snowpack) on each glacier HRU or HRU with glacierette at start of step
+Units: decimal fraction
+
+Name: glacrmelt
+Module: snowcomp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Melt from icepack on each glacier or glacierette HRU, includes rain water that does not absorb
+Units: inches
+
+Name: glnet_ar_delta
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Sum of area change of each glacier since start year, indexed by Glacr_tag
+Units: acres
+
+Name: glrette_frac
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Fraction of snow field (too small for glacier dynamics)
+Units: decimal fraction
+
+Name: glrette_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Amount of glacierette surface melt (snow, ice, rain) from an HRU
+Units: inches
+
 Name: gw_in_soil
 Module: gwflow
 Ndimen: 1
@@ -1382,6 +2435,15 @@ Type: double
 Desc: Drainage from gravity reservoir excess water for each GWR
 Units: acre-inches
 
+Name: gw_seep_lakein
+Module: gwflow
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Groundwater discharge to any associated lake for each GWR
+Units: acre-feet
+
 Name: gw_upslope
 Module: gwflow
 Ndimen: 1
@@ -1390,6 +2452,42 @@ Size: 128
 Type: double
 Desc: Groundwater flow received from upslope GWRs for each GWR
 Units: acre-inches
+
+Name: gwr_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the groundwater reservoir of each HRU for each time step
+Units: cfs
+
+Name: gwr_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the groundwater reservoir of each HRU for the simulation
+Units: cfs
+
+Name: gwr_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from the groundwater reservoir of each HRU for each time step
+Units: cfs
+
+Name: gwr_transfer_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from the groundwater reservoir of each HRU for the simulation
+Units: cfs
 
 Name: gwres_flow
 Module: gwflow
@@ -1445,6 +2543,15 @@ Type: float
 Desc: Hortonian surface runoff reaching stream network for each HRU
 Units: inches
 
+Name: hortonian_lakes
+Module: srunoff_smidx
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Surface runoff to lakes for each HRU
+Units: inches
+
 Name: hru_actet
 Module: soilzone
 Ndimen: 1
@@ -1454,6 +2561,15 @@ Type: float
 Desc: Actual ET for each HRU
 Units: inches
 
+Name: hru_elev_ts
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: HRU elevation for timestep, which can change for glaciers
+Units: elev_units
+
 Name: hru_et_yr
 Module: basin_sum
 Ndimen: 1
@@ -1462,6 +2578,15 @@ Size: 128
 Type: double
 Desc: Yearly area-weighted average actual ET for each HRU
 Units: inches
+
+Name: hru_frac_dprst
+Module: basin
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Fraction of each HRU area that is surface-depression storage
+Units: decimal fraction
 
 Name: hru_frac_imperv
 Module: basin
@@ -1480,6 +2605,15 @@ Size: 128
 Type: float
 Desc: Fraction of HRU that is pervious
 Units: decimal fraction
+
+Name: hru_glres_melt
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Amount of glacier surface melt (snow, ice, rain) from an HRU that goes into reservoirs
+Units: inches
 
 Name: hru_gw_cascadeflow
 Module: gwflow
@@ -1553,6 +2687,24 @@ Type: double
 Desc: Lateral flow to stream network from each HRU
 Units: inches
 
+Name: hru_mb_yrcumul
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Mass balance for a glacier HRU, cumulative for year
+Units: inches
+
+Name: hru_mb_yrend
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Glacier HRU mass balance at end of previous hydrological year
+Units: inches
+
 Name: hru_outflow
 Module: routing
 Ndimen: 1
@@ -1597,6 +2749,15 @@ Size: 128
 Type: float
 Desc: Rain distributed to each HRU
 Units: inches
+
+Name: hru_slope_ts
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: HRU slope for timestep, which can change for glaciers
+Units: decimal fraction
 
 Name: hru_snow
 Module: precip_1sta
@@ -1652,6 +2813,24 @@ Type: double
 Desc: Cascading interflow and Dunnian surface runoff from each HRU
 Units: inches
 
+Name: humidity
+Module: obs
+Ndimen: 1
+Dimensions: nhumid - 0
+Size: 0
+Type: float
+Desc: Relative humidity at each measurement station
+Units: percentage
+
+Name: humidity_hru
+Module: climate_hru
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Relative humidity of each HRU read from CBH File
+Units: percentage
+
 Name: iasw
 Module: snowcomp
 Ndimen: 1
@@ -1659,6 +2838,15 @@ Dimensions: nhru - 128
 Size: 128
 Type: long
 Desc: Flag indicating that snow covered area is interpolated between previous location on curve and maximum (1), or is on the defined curve (0)
+Units: none
+
+Name: ikeep_gl
+Module: glacr_melt
+Ndimen: 2
+Dimensions: nhru - 128, four - 4
+Size: 512
+Type: long
+Desc: Glacier integer variables keeping from first year
 Units: none
 
 Name: imperv_evap
@@ -1742,6 +2930,15 @@ Type: float
 Desc: Interception storage in canopy for cover density for each HRU
 Units: inches
 
+Name: is_rain_day
+Module: xyz_dist
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: long
+Desc: Flag to indicate if it is raining anywhere in the basin
+Units: none
+
 Name: iso
 Module: snowcomp
 Ndimen: 1
@@ -1750,6 +2947,267 @@ Size: 128
 Type: long
 Desc: Flag to indicate if time is before (1) or after (2) the day to force melt season (melt_force)
 Units: none
+
+Name: keep_gl
+Module: glacr_melt
+Ndimen: 2
+Dimensions: nhru - 128, seven - 7
+Size: 896
+Type: float
+Desc: Glacier real variables keeping from first year
+Units: none
+
+Name: lake_2gw
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total seepage from each lake using broad-crested weir or gate opening routing
+Units: cfs
+
+Name: lake_elev
+Module: obs
+Ndimen: 1
+Dimensions: nlakeelev - 0
+Size: 0
+Type: float
+Desc: Elevation of each simulated lake surface
+Units: feet
+
+Name: lake_evap
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total evaporation from each lake
+Units: cfs
+
+Name: lake_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to each lake HRU for each time step
+Units: cfs
+
+Name: lake_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to each lake HRU for the simulation
+Units: cfs
+
+Name: lake_gwflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total groundwater flow into each lake
+Units: cfs
+
+Name: lake_inflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total inflow to each lake
+Units: cfs
+
+Name: lake_interflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total interflow into each lake
+Units: cfs
+
+Name: lake_invol
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Inflow to each lake using broad-crested weir or gate opening routing
+Units: acre-feet
+
+Name: lake_lateral_inflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Lateral inflow to each lake
+Units: cfs
+
+Name: lake_outcfs
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Streamflow leaving each lake, includes any second outlet flow
+Units: cfs
+
+Name: lake_outcms
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Streamflow leaving each lake, includes any second outlet flow
+Units: cms
+
+Name: lake_outflow
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Evaporation and seepage from each lake
+Units: cfs
+
+Name: lake_outq2
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Streamflow from second outlet for each lake with a second outlet
+Units: cfs
+
+Name: lake_outvol
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Outflow from each lake using broad-crested weir or gate opening routing
+Units: acre-inches
+
+Name: lake_outvol_ts
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Outflow from each lake using broad-crested weir or gate opening routing for the time step
+Units: acre-inches
+
+Name: lake_precip
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total precipitation into each lake
+Units: cfs
+
+Name: lake_seep_in
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total seepage into each lake using broad-crested weir or gate opening routing
+Units: cfs
+
+Name: lake_seepage
+Module: gwflow
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Lake-bed seepage from each lake to associated GWRs
+Units: acre-feet
+
+Name: lake_seepage_gwr
+Module: gwflow
+Ndimen: 1
+Dimensions: ngw - 128
+Size: 128
+Type: double
+Desc: Net lake-bed seepage to associated GWRs
+Units: inches
+
+Name: lake_sroff
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total surface runoff into each lake
+Units: cfs
+
+Name: lake_sto
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Storage in each lake using Puls or linear storage routing
+Units: cfs-days
+
+Name: lake_stream_in
+Module: muskingum_lake
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Total streamflow into each lake
+Units: cfs
+
+Name: lake_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from each lake HRU for each time step
+Units: cfs
+
+Name: lake_transfer_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer flow rate from each lake HRU for the simulation
+Units: cfs
+
+Name: lake_vol
+Module: strmflow_in_out
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Storage in each lake using broad-crested weir or gate opening routing
+Units: acre-feet
+
+Name: lakein_gwflow
+Module: gwflow
+Ndimen: 1
+Dimensions: nlake - 0
+Size: 0
+Type: double
+Desc: Groundwater flow received from upslope GWRs for each Lake GWR
+Units: acre-inches
+
+Name: lakein_sz
+Module: soilzone
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Cascading interflow and Dunnian surface runoff to lake HRUs from each upslope HRU
+Units: inches
 
 Name: last_basin_stor
 Module: basin_sum
@@ -1778,6 +3236,15 @@ Type: long
 Desc: Flag indicating whether there was new snow that was insufficient to reset the albedo curve (1) (albset_snm or albset_sna), otherwise (0)
 Units: none
 
+Name: lwrad_net
+Module: potet_jh
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Net long-wave radiation for each HRU
+Units: megajoules/m**2/day
+
 Name: mso
 Module: snowcomp
 Ndimen: 1
@@ -1786,6 +3253,15 @@ Size: 128
 Type: long
 Desc: Flag to indicate if time is before (1) or after (2) the first potential day for melt season (melt_look)
 Units: none
+
+Name: net_apply
+Module: intcp
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: canopy_gain minus interception
+Units: inches
 
 Name: net_ppt
 Module: intcp
@@ -1821,6 +3297,15 @@ Dimensions: nhru - 128
 Size: 128
 Type: long
 Desc: Flag to indicate if new snow fell on each HRU (0=no; 1=yes)
+Units: none
+
+Name: nhrugl
+Module: glacr_melt
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: long
+Desc: Number of at least partially glacierized HRUs at initiation
 Units: none
 
 Name: obs_runoff_mo
@@ -1886,6 +3371,15 @@ Type: double
 Desc: Yearly measured streamflow at specified outlet station
 Units: inches
 
+Name: ode_glacrva_coef
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Estimate of glacrva_coef from ODE basal topography of each glacier, indexed by Glacr_tag
+Units: m**(3-2*glacrva_exp)
+
 Name: orad
 Module: ddsolrad
 Ndimen: 1
@@ -1903,6 +3397,24 @@ Size: 128
 Type: float
 Desc: Solar radiation on a horizontal surface for each HRU
 Units: Langleys
+
+Name: order_flowline
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: Order of flowlines that belong together as glaciers, Ntp of these
+Units: none
+
+Name: pan_evap
+Module: obs
+Ndimen: 1
+Dimensions: nevap - 0
+Size: 0
+Type: float
+Desc: Pan evaporation at each measurement station
+Units: inches
 
 Name: perv_actet
 Module: soilzone
@@ -1974,15 +3486,6 @@ Dimensions: nhru - 128
 Size: 128
 Type: double
 Desc: Snowpack water equivalent when there is new snow and in melt phase; used to interpolate between depletion curve and 100 percent on each HRU
-Units: inches
-
-Name: pkwater_ante
-Module: snowcomp
-Ndimen: 1
-Dimensions: nhru - 128
-Size: 128
-Type: double
-Desc: Antecedent snowpack water equivalent on each HRU
 Units: inches
 
 Name: pkwater_equiv
@@ -2102,6 +3605,42 @@ Type: float
 Desc: Soil storage threshold defining storage between field capacity and maximum soil saturation minus preferential-flow storage
 Units: inches
 
+Name: prev_area
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Previous year glacier-covered area above each HRU where all branches of the glacier are included
+Units: inches squared
+
+Name: prev_out
+Module: glacr_melt
+Ndimen: 2
+Dimensions: nhru - 128, nglres - 3
+Size: 384
+Type: float
+Desc: Antecedent outflow of the 3 reservoirs in each glacier, indexed by Glacr_tag
+Units: inches cubed
+
+Name: prev_outi
+Module: glacr_melt
+Ndimen: 2
+Dimensions: nhru - 128, nglres - 3
+Size: 384
+Type: float
+Desc: Antecedent outflow of the 3 reservoirs in each glacier for only ice (firn) melt, indexed by Glacr_tag
+Units: inches cubed
+
+Name: prev_vol
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: double
+Desc: Previous volume of each glacier, indexed by Glacr_tag
+Units: inches cubed
+
 Name: prmx
 Module: precip_1sta
 Ndimen: 1
@@ -2128,6 +3667,15 @@ Size: 128
 Type: double
 Desc: While a snowpack exists, pst tracks the maximum snow water equivalent of that snowpack
 Units: inches
+
+Name: rain_day
+Module: obs
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: long
+Desc: Flag to set the form of any precipitation to rain (0=determine form; 1=rain)
+Units: none
 
 Name: recharge
 Module: soilzone
@@ -2165,6 +3713,60 @@ Type: double
 Desc: Snowpack water equivalent plus a portion of new snow on each HRU
 Units: inches
 
+Name: seg_area
+Module: strmflow_character
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Cross sectional area of flow in each segment
+Units: square meters
+
+Name: seg_ccov
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average cloud cover fraction for each segment from HRUs contributing flow to the segment
+Units: decimal fraction
+
+Name: seg_daylight
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Hours of daylight
+Units: hours
+
+Name: seg_depth
+Module: strmflow_character
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Depth of flow in each segment
+Units: meters
+
+Name: seg_gwflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average groundwater discharge for each segment from HRUs contributing flow to the segment and upstream HRUs
+Units: inches
+
+Name: seg_humid
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average relative humidity for each segment from HRUs contributing flow to the segment
+Units: decimal fraction
+
 Name: seg_inflow
 Module: strmflow_in_out
 Ndimen: 1
@@ -2183,6 +3785,15 @@ Type: double
 Desc: Lateral inflow entering a segment
 Units: cfs
 
+Name: seg_melt
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average snowmelt for each segment from HRUs contributing flow to the segment
+Units: inches
+
 Name: seg_outflow
 Module: strmflow_in_out
 Ndimen: 1
@@ -2192,6 +3803,123 @@ Type: double
 Desc: Streamflow leaving a segment
 Units: cfs
 
+Name: seg_potet
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: HRU area-weighted average potential ET for each segment
+Units: inches
+
+Name: seg_rain
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average rainfall for each segment from HRUs contributing flow to the segment
+Units: inches
+
+Name: seg_res_time
+Module: strmflow_character
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Mean residence time of water in each segment
+Units: seconds
+
+Name: seg_shade
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average shade fraction for each segment
+Units: decimal fraction
+
+Name: seg_sroff
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment and upstream HRUs
+Units: inches
+
+Name: seg_ssflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average interflow for each segment from HRUs contributing flow to the segment and upstream HRUs
+Units: inches
+
+Name: seg_tave_air
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Area-weighted average air temperature for each segment from HRUs contributing flow to the segment
+Units: degrees Celsius
+
+Name: seg_tave_gw
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: groundwater temperature
+Units: degrees Celsius
+
+Name: seg_tave_lat
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: lateral flow temperature
+Units: degrees Celsius
+
+Name: seg_tave_sroff
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: surface runoff temperature
+Units: degrees Celsius
+
+Name: seg_tave_ss
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: subsurface temperature
+Units: degrees Celsius
+
+Name: seg_tave_upstream
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Temperature of streamflow entering each segment
+Units: degrees Celsius
+
+Name: seg_tave_water
+Module: stream_temp
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Computed daily mean stream temperature for each segment
+Units: degrees Celsius
+
 Name: seg_upstream_inflow
 Module: strmflow_in_out
 Ndimen: 1
@@ -2199,6 +3927,114 @@ Dimensions: nsegment - 15
 Size: 15
 Type: double
 Desc: Sum of inflow from upstream segments
+Units: cfs
+
+Name: seg_velocity
+Module: strmflow_character
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Mean velocity of flow in each segment
+Units: meters per second
+
+Name: seg_width
+Module: strmflow_character
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Width of flow in each segment
+Units: meters
+
+Name: seginc_gwflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average groundwater discharge for each segment from HRUs contributing flow to the segment
+Units: cfs
+
+Name: seginc_potet
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average potential ET for each segment from HRUs contributing flow to the segment
+Units: inches
+
+Name: seginc_sroff
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment
+Units: cfs
+
+Name: seginc_ssflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average interflow for each segment from HRUs contributing flow to the segment
+Units: cfs
+
+Name: seginc_swrad
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Area-weighted average solar radiation for each segment from HRUs contributing flow to the segment
+Units: Langleys
+
+Name: segment_delta_flow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: double
+Desc: Cumulative flow in minus flow out for each stream segment
+Units: cfs
+
+Name: segment_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Transfer gains for each stream segment for each time step
+Units: cfs
+
+Name: segment_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Transfer gains for each stream segment for the simulation
+Units: cfs
+
+Name: segment_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Transfer flow rate from each stream segment for each time step
+Units: cfs
+
+Name: segment_transfer_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nsegment - 15
+Size: 15
+Type: float
+Desc: Transfer flow rate from each stream segment for the simulation
 Units: cfs
 
 Name: slow_flow
@@ -2263,6 +4099,15 @@ Size: 128
 Type: float
 Desc: Snow cover fraction when there is new snow and in melt phase; used to interpolate between depletion curve and 100 percent on each HRU
 Units: decimal fraction
+
+Name: snowdepth
+Module: obs
+Ndimen: 1
+Dimensions: nsnow - 0
+Size: 0
+Type: float
+Desc: Snow depth at each measurement station
+Units: inches
 
 Name: snowmelt
 Module: snowcomp
@@ -2354,6 +4199,42 @@ Type: float
 Desc: Portion of excess flow to the capillary reservoir that flows to the gravity reservoir for each HRU
 Units: inches
 
+Name: soilzone_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the capillary reservoir within the soilzone for each HRU for each time step
+Units: cfs
+
+Name: soilzone_gain_hru
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Irrigation added to soilzone as depth over each HRU
+Units: inches
+
+Name: soilzone_gain_tot
+Module: water_use_read
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Transfer gains to the capillary reservoir within the soilzone for each HRU for the simulation
+Units: cfs
+
+Name: solrad
+Module: obs
+Ndimen: 1
+Dimensions: nsol - 0
+Size: 0
+Type: float
+Desc: Solar radiation at each measurement station
+Units: Langleys
+
 Name: solrad_tmax
 Module: temp_1sta
 Ndimen: 1
@@ -2416,6 +4297,15 @@ Size: 128
 Type: float
 Desc: Storage in the gravity and preferential-flow reservoirs for each HRU
 Units: inches
+
+Name: stream_temp
+Module: obs
+Ndimen: 1
+Dimensions: nstreamtemp - 0
+Size: 0
+Type: float
+Desc: Stream temperature at each measurement station
+Units: degrees Celsius
 
 Name: streamflow_cfs
 Module: obs
@@ -2732,6 +4622,24 @@ Type: float
 Desc: Net snowpack energy balance on each HRU
 Units: Langleys
 
+Name: tempc_dewpt
+Module: potet_jh
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Air temperature at dew point for each HRU
+Units: degrees Celsius
+
+Name: term
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: HRU number at terminus of each glacier, Ngl of these
+Units: none
+
 Name: tmax
 Module: obs
 Ndimen: 1
@@ -2740,6 +4648,15 @@ Size: 2
 Type: float
 Desc: Maximum air temperature at each measurement station
 Units: temp_units
+
+Name: tmax_rain_sta
+Module: xyz_dist
+Ndimen: 1
+Dimensions: nrain - 2
+Size: 2
+Type: float
+Desc: Maximum temperature distributed to the precipitation measurement stations
+Units: degrees Fahrenheit
 
 Name: tmaxc
 Module: temp_1sta
@@ -2768,6 +4685,15 @@ Type: float
 Desc: Minimum air temperature at each measurement station
 Units: temp_units
 
+Name: tmin_rain_sta
+Module: xyz_dist
+Ndimen: 1
+Dimensions: nrain - 2
+Size: 2
+Type: float
+Desc: Minimum temperature distributed to the precipitation measurement stations
+Units: degrees Fahrenheit
+
 Name: tminc
 Module: temp_1sta
 Ndimen: 1
@@ -2785,6 +4711,159 @@ Size: 128
 Type: float
 Desc: Minimum air temperature distributed to each HRU
 Units: degrees Fahrenheit
+
+Name: top
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: HRU number at tops of each glacier, Ntp of these
+Units: none
+
+Name: top_tag
+Module: glacr_melt
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: long
+Desc: Identifies which glacier top each HRU is fed by. If =-1, then has multiple feeders
+Units: none
+
+Name: total_canopy_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all canopy reservoirs for each time step
+Units: cfs
+
+Name: total_consumed_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates to all water-use comsumption destinations for each time step
+Units: cfs
+
+Name: total_dprst_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all surface-depression storage for each time step
+Units: cfs
+
+Name: total_dprst_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates from all surface-depression storage for each time step
+Units: cfs
+
+Name: total_external_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all external locations for each time step
+Units: cfs
+
+Name: total_external_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates from all external sources for each time step
+Units: cfs
+
+Name: total_gwr_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Flow to all groundwater reservoirs for each time step
+Units: cfs
+
+Name: total_gwr_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates from all groundwater reservoirs for each time step
+Units: cfs
+
+Name: total_lake_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all lake HRUs for each time step
+Units: cfs
+
+Name: total_lake_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates from all lake HRUs for each time step
+Units: cfs
+
+Name: total_segment_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all stream segments for each time step
+Units: cfs
+
+Name: total_segment_transfer
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer flow rates from all stream segments for each time step
+Units: cfs
+
+Name: total_soilzone_gain
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer gains to all capillary reservoirs for each time step
+Units: cfs
+
+Name: total_transfers
+Module: water_use_read
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Transfer of all water-use transfers for each time step
+Units: cfs
+
+Name: transfer_rate
+Module: water_use_read
+Ndimen: 1
+Dimensions: nwateruse - 0
+Size: 0
+Type: double
+Desc: Transfer of each water-use transfer for each time step
+Units: cfs
 
 Name: transp_on
 Module: transp_tindex
@@ -2831,6 +4910,33 @@ Type: double
 Desc: Cascading interflow runoff that flows to the capillary reservoir of each downslope HRU for each upslope HRU
 Units: inches
 
+Name: vp_actual
+Module: potet_jh
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Actual vapor pressure for each HRU
+Units: kilopascals
+
+Name: vp_sat
+Module: potet_jh
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Saturation vapor pressure for each HRU
+Units: kilopascals
+
+Name: vp_slope
+Module: potet_jh
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Slope of saturation vapor pressure versus air temperature curve for each HRU
+Units: kilopascals/degrees Celsius
+
 Name: watbal_sum
 Module: basin_sum
 Ndimen: 1
@@ -2839,3 +4945,30 @@ Size: 1
 Type: double
 Desc: Water balance aggregate
 Units: inches
+
+Name: wind_speed
+Module: obs
+Ndimen: 1
+Dimensions: nwind - 0
+Size: 0
+Type: float
+Desc: Wind speed at each measurement station
+Units: meters per second
+
+Name: windspeed_hru
+Module: climate_hru
+Ndimen: 1
+Dimensions: nhru - 128
+Size: 128
+Type: float
+Desc: Wind speed for each HRU read from CBH File
+Units: meters/second
+
+Name: yrdays5
+Module: snowcomp
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: long
+Desc: Number of days since last 5-year mark
+Units: none

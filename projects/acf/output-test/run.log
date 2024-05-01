@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash aecdc05ddddcf5c4dc6146e6a45fdb20c5d0e539 [aecdc05] 5.2.2.2
+Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -48,22 +48,22 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-04-10
+Computation Order               call_modules        2024-05-01
 Basin Definition                basin               2024-04-04
-Common States and Fluxes        climateflow         2024-04-10
+Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
-Temperature Distribution        climate_hru         2024-01-08
-Precipitation Distribution      climate_hru         2024-01-08
-Solar Radiation Distribution    climate_hru         2024-01-08
-Potential Evapotranspiration    climate_hru         2024-01-08
+Temperature Distribution        climate_hru         2024-04-30
+Precipitation Distribution      climate_hru         2024-04-30
+Solar Radiation Distribution    climate_hru         2024-04-30
+Potential Evapotranspiration    climate_hru         2024-04-30
 Transpiration Distribution      transp_tindex       2023-11-01
 Canopy Interception             intcp               2024-04-04
-Snow Dynamics                   snowcomp            2024-04-17
+Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-10
+Soilzone Computations           soilzone            2024-04-30
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
@@ -99,10 +99,10 @@ Simulation time period: 1988/10/01 - 1990/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:10:30
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:01:07
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/04/24 11:10:30
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:01:08
 
-Execution elapsed time    0 minutes  0.56 seconds
+Execution elapsed time    0 minutes  0.57 seconds
 
