@@ -181,13 +181,13 @@
       USE PRMS_BASIN, ONLY: Hru_type, Hru_area, Dprst_clos_flag, &
      &    Hru_frac_imperv, Hru_frac_perv, Hru_imperv, Hru_perv, Hru_frac_dprst, Dprst_open_flag, &
      &    Dprst_area_max, Dprst_area_open_max, Dprst_area_clos_max, Dprst_frac_open, &
-     &    Hru_area_dble, Dprst_area, Active_hrus, Hru_route_order, Basin_area_inv, Imperv_flag
+     &    Dprst_area, Active_hrus, Hru_route_order, Basin_area_inv, Imperv_flag
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Soil_rechr, Imperv_stor, Sat_threshold, &
      &    Soil_rechr_max, Soil_moist_max, Imperv_stor_max, Dprst_vol_open, Dprst_vol_clos, Ssres_stor, &
-     &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor, Hru_impervstor, Dprst_stor_hru, &
-     &    Soil_zone_max, Soil_moist_tot, Soil_lower_stor_max
-      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_soil_rechr, It0_hru_impervstor, &
-                               It0_dprst_stor_hru, It0_ssres_stor, It0_basin_ssstor
+     &    Slow_stor, Pref_flow_stor, Basin_soil_moist, Basin_ssstor, &
+     &    Soil_zone_max, Soil_lower_stor_max
+      USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_basin_soil_moist, It0_soil_rechr, &
+                               It0_ssres_stor, It0_basin_ssstor
       USE PRMS_SRUNOFF, ONLY:  Dprst_depth_avg, Op_flow_thres, Dprst_vol_open_max, Dprst_vol_clos_max, &
      &    Dprst_vol_thres_open, Dprst_vol_open_frac, Dprst_vol_clos_frac, Dprst_vol_frac
       IMPLICIT NONE
@@ -282,9 +282,9 @@
             Soil_lower_stor_max(i) = Soil_moist_max(i) - Soil_rechr_max(i)
           ENDIF
 
-          IF ( check_dprst_depth_flag==ACTIVE ) THEN
-            Dprst_vol_clos_max(i) = Dprst_area_clos_max(i)*DBLE(Dprst_depth_avg(i))
-            Dprst_vol_open_max(i) = Dprst_area_open_max(i)*DBLE(Dprst_depth_avg(i))
+          IF ( check_dprst_depth_flag==ACTIVE ) THEN ! CAUTION if dynamic parameters change dprst_frac>0 to dprst_frac=0, will lose dprst volume 5/17/2024 rsr
+            Dprst_vol_clos_max(i) = DBLE( Dprst_area_clos_max(i)*Dprst_depth_avg(i) )
+            Dprst_vol_open_max(i) = DBLE( Dprst_area_open_max(i)*Dprst_depth_avg(i) )
             Dprst_vol_thres_open(i) = Dprst_vol_open_max(i)*DBLE(Op_flow_thres(i))
           ENDIF
         ENDDO
@@ -372,7 +372,6 @@
                 Imperv_stor(i) = 0.0
               ENDIF
             ENDIF
-            Hru_impervstor(i) = Imperv_stor(i)*frac_imperv
             Hru_frac_imperv(i) = frac_imperv
             Hru_imperv(i) = harea*frac_imperv
             IF ( frac_imperv > 0.0 ) Imperv_flag = ACTIVE
@@ -403,19 +402,19 @@
                 IF ( frac_dprst>0.0 ) THEN
                   ! update variables as dprst could have gone from positive value to 0 and not get updated in srunoff
                   IF ( Dprst_vol_open_max(i)>0.0D0 ) THEN
-                    Dprst_vol_open_frac(i) = Dprst_vol_open(i)/Dprst_vol_open_max(i)
+                    Dprst_vol_open_frac(i) = SNGL( Dprst_vol_open(i)/Dprst_vol_open_max(i) )
                   ELSE
-                    Dprst_vol_open_frac(i) = 0.0D0
+                    Dprst_vol_open_frac(i) = 0.0
                   ENDIF
                   IF ( Dprst_vol_clos_max(i)>0.0D0 ) THEN
-                    Dprst_vol_clos_frac(i) = Dprst_vol_clos(i)/Dprst_vol_clos_max(i)
+                    Dprst_vol_clos_frac(i) = SNGL( Dprst_vol_clos(i)/Dprst_vol_clos_max(i) )
                   ELSE
-                    Dprst_vol_clos_frac(i) = 0.0D0
+                    Dprst_vol_clos_frac(i) = 0.0
                   ENDIF
                   IF ( Dprst_vol_open_max(i)+Dprst_vol_clos_max(i)>0.0D0 ) THEN
-                    Dprst_vol_frac(i) = (Dprst_vol_open(i)+Dprst_vol_clos(i))/(Dprst_vol_open_max(i)+Dprst_vol_clos_max(i))
+                    Dprst_vol_frac(i) = SNGL( (Dprst_vol_open(i)+Dprst_vol_clos(i))/(Dprst_vol_open_max(i)+Dprst_vol_clos_max(i)) )
                   ELSE
-                    Dprst_vol_frac(i) = 0.0D0
+                    Dprst_vol_frac(i) = 0.0
                   ENDIF
                 ENDIF
               ENDIF
@@ -493,11 +492,6 @@
           It0_ssres_stor = Ssres_stor
           It0_basin_ssstor = Basin_ssstor
         ENDIF
-        IF ( it0_dprst_flag==ACTIVE ) THEN
-          Dprst_stor_hru = (Dprst_vol_open+Dprst_vol_clos) / Hru_area_dble
-          It0_dprst_stor_hru = Dprst_stor_hru
-        ENDIF
-        IF ( check_imperv==ACTIVE ) It0_hru_impervstor = Hru_impervstor
       ENDIF
 
       IF ( check_sm_max_flag==ACTIVE .OR. check_fractions==ACTIVE ) THEN
@@ -505,7 +499,6 @@
           i = Hru_route_order(j)
           IF ( Hru_type(i)==LAKE ) CYCLE ! skip lake
           Soil_zone_max(i) = Sat_threshold(i) + Soil_moist_max(i)*Hru_frac_perv(i)
-          Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*Hru_frac_perv(i)
         ENDDO
       ENDIF
 

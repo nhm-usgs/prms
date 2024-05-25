@@ -111,12 +111,12 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: WRITE_CLIMATE=24, CONVERT=25, CLIMATE=26, POTET=27, TRANSPIRE=28, FROST=29
 
     ! Error Codes
-    integer, parameter :: ERROR_read = -4
+!    integer, parameter :: ERROR_read = -4          ! not used
     integer, parameter :: ERROR_open_out = -3
     integer, parameter :: ERROR_open_in = -2
     integer, parameter :: ERROR_write = -1
     integer, parameter :: ERROR_control = 1
-    integer, parameter :: ERROR_var = 2
+!    integer, parameter :: ERROR_var = 2            ! not used
     integer, parameter :: ERROR_dim = 3
     integer, parameter :: ERROR_param = 4
     integer, parameter :: ERROR_data = 5
@@ -133,7 +133,7 @@ MODULE PRMS_CONSTANTS
     integer, parameter :: ERROR_module = 16
     integer, parameter :: ERROR_lake = 17
     integer, parameter :: ERROR_soilzone = 18
-!    integer, parameter :: ERROR_precip = 19
+!    integer, parameter :: ERROR_precip = 19        ! not used
 
       ! debug print flag:
       ! -2=DEBUG_minimum

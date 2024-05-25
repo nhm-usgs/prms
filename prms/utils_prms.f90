@@ -1,4 +1,4 @@
-! utils_prms.f90 2024-01-11
+!     utils_prms.f90 2024-01-11
 !***********************************************************************
 !     Read CBH File to current time
 !***********************************************************************
@@ -87,7 +87,7 @@
       END SUBROUTINE find_current_file_time
 
 !***********************************************************************
-!     Read file to line before data starts
+!     Read File to line before data starts in file
 !***********************************************************************
       SUBROUTINE find_header_end(Iunit, Fname, Iret )
       USE PRMS_CONSTANTS, ONLY: DEBUG_less
@@ -123,8 +123,7 @@
           ENDIF
        ENDDO
      ENDIF
-
-      END SUBROUTINE find_header_end
+   END SUBROUTINE find_header_end
 
 !**********************
 ! Check for end of file

@@ -1959,7 +1959,8 @@
 !***********************************************************************
       divu = 1.E3
       kappa = 0.04 !from Mazo 1995, value after all scaling
-      junk = 1.0E36
+      junk(1) = 1.0E36
+      junk(2) = 1.0E36
       sa = 1.0E15
       sh = 1.0E15
       shf = 1.0E15
@@ -2344,8 +2345,12 @@
 !  but then would change when got off glacier
 ! Top and bottom of glacier affected by steep negative slope and steep positive slope respectively, may want to exclude
             dv1k = dv(1)*kk(thestr)/divu !in km
-            plinetop = hraw(1)/(dv1k**(1.0/2.1))
-            IF ( dv1k==0.0 ) plinetop = 0.0
+            IF ( dv1k==0.0 ) THEN
+              plinetop = 0.0
+            ELSE
+              IF ( dv1k<0.0 ) dv1k = ABS( dv1k ) ! rsr, 4/4/2024 next statement is not allowed for negative values
+              plinetop = hraw(1)/(dv1k**(1.0/2.1))
+            ENDIF
             zraw_av(len_str+2) = ((urawtop(thestr)- ( plinetop/(rline(1)+1.0)*dv1k**(rline(1)+1.0) )/hraw(1)) &
      &                 + urawterm(thestr))*divu
             zraw_av(len_str+1) = urawterm(thestr)*divu

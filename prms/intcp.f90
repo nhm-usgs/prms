@@ -11,7 +11,7 @@
       character(len=*), parameter :: Version_intcp = '2024-04-04'
       INTEGER, SAVE, ALLOCATABLE :: Intcp_transp_on(:)
       REAL, SAVE, ALLOCATABLE :: Intcp_stor_ante(:)
-      DOUBLE PRECISION, SAVE :: Last_basin_intcp_stor
+      DOUBLE PRECISION, SAVE :: Last_intcp_stor
       INTEGER, SAVE :: Use_transfer_intcp
       INTEGER, PARAMETER :: RAIN = 0, SNOW = 1
 !   Declared Variables
@@ -295,9 +295,8 @@
 
       IF ( Print_debug==DEBUG_WB ) THEN
         Intcp_stor_ante = Hru_intcpstor
-        Last_basin_intcp_stor = Basin_intcp_stor
+        Last_intcp_stor = Basin_intcp_stor
       ENDIF
-
       Basin_changeover = 0.0D0
       Basin_net_ppt = 0.0D0
       Basin_net_snow = 0.0D0
@@ -354,9 +353,9 @@
           Intcp_transp_on(i) = OFF
           IF ( intcpstor>0.0 ) THEN
             ! assume canopy storage change falls as throughfall
+            diff = Covden_sum(i) - cov
+            changeover = intcpstor*diff
             IF ( cov>0.0 ) THEN
-              diff = Covden_sum(i) - cov
-              changeover = intcpstor*diff
               IF ( changeover<0.0 ) THEN
                 ! covden_win > covden_sum, adjust intcpstor to same volume, and lower depth
                 intcpstor = intcpstor*Covden_sum(i)/cov
@@ -367,7 +366,6 @@
                 PRINT *, 'covden_win=0 at winter change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
                 PRINT *, 'intcp_stor:', intcpstor, ' covden_sum:', Covden_sum(i)
               ENDIF
-              changeover = intcpstor*Covden_sum(i)
               intcpstor = 0.0
             ENDIF
           ENDIF
@@ -376,9 +374,9 @@
         ELSEIF ( Transp_on(i)==ACTIVE .AND. Intcp_transp_on(i)==OFF ) THEN
           Intcp_transp_on(i) = ACTIVE
           IF ( intcpstor>0.0 ) THEN
+            diff = Covden_win(i) - cov
+            changeover = intcpstor*diff
             IF ( cov>0.0 ) THEN
-              diff = Covden_win(i) - cov
-              changeover = intcpstor*diff
               IF ( changeover<0.0 ) THEN
                 ! covden_sum > covden_win, adjust intcpstor to same volume, and lower depth
                 intcpstor = intcpstor*Covden_win(i)/cov
@@ -389,7 +387,6 @@
                 PRINT *, 'covden_sum=0 at summer change over with canopy storage, HRU:', i, Nowyear, Nowmonth, Nowday
                 PRINT *, 'intcp_stor:', intcpstor, ' covden_win:', Covden_win(i)
               ENDIF
-              changeover = intcpstor*Covden_win(i)
               intcpstor = 0.0
             ENDIF
           ENDIF

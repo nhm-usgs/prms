@@ -25,15 +25,15 @@
       END MODULE PRMS_TEMP_MAP
 
       SUBROUTINE temp_map()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXFILE_LENGTH, MONTHS_PER_YEAR, temp_map_module, PRMS6
-      USE PRMS_MODULE, ONLY: Process_flag, Start_year, Start_month, Start_day, Nmap2hru, Nmap, Nowmonth, Model
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, MAXFILE_LENGTH, MONTHS_PER_YEAR, temp_map_module, ACTIVE, OFF, DOCUMENTATION
+      USE PRMS_MODULE, ONLY: Process_flag, Start_year, Start_month, Start_day, Nmap2hru, Nmap, Nowmonth, Model, PRMS6_flag
       USE PRMS_TEMP_MAP
       USE PRMS_BASIN, ONLY: Hru_area, Basin_area_inv, Active_hrus, Hru_route_order
       USE PRMS_CLIMATEVARS, ONLY: Solrad_tmax, Solrad_tmin, Basin_temp, &
      &    Basin_tmax, Basin_tmin, Tmaxf, Tminf, Tminc, Tmaxc, Tavgf, Tavgc
 ! Functions
       INTRINSIC :: SNGL
-      INTEGER, EXTERNAL :: declparam, getparam, getdim, decldim, control_string
+      INTEGER, EXTERNAL :: declparam, getparam, control_string
       EXTERNAL :: read_error, temp_set, find_header_end, find_current_time
       EXTERNAL :: print_module
 ! Local Variables
@@ -77,20 +77,21 @@
 
 ! Declare parameters
         ALLOCATE ( Tmax_map_adj(Nmap,MONTHS_PER_YEAR) )
-        IF ( Model/=PRMS6 ) THEN
+        IF ( PRMS6_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
+          IF ( declparam(MODNAME, 'tmax_map_adj_offset', 'nmap,nmonths', 'real', &
+     &         '0.0', '0.0', '50.0', &
+     &         'Monthly maximum temperature adjustment factor as an offset from tmin_map_adj for each mapped spatial unit', &
+     &         'Monthly (January to December) additive adjustment factor to maximum air temperature as an offset from' // &
+     &         ' tmin_map_adj for each mapped, spatial unit estimated on the basis of slope and aspect', &
+     &         'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj_offset')
+        ENDIF
+        IF ( PRMS6_flag==OFF .OR. Model==DOCUMENTATION ) THEN
           IF ( declparam(MODNAME, 'tmax_map_adj', 'nmap,nmonths', 'real', &
      &         '0.0', '-10.0', '10.0', &
      &         'Monthly maximum temperature adjustment factor for each mapped spatial unit', &
      &         'Monthly (January to December) additive adjustment factor to maximum air temperature for each mapped,'// &
      &         ' spatial unit estimated on the basis of slope and aspect', &
      &         'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj')
-        ELSE
-          IF ( declparam(MODNAME, 'tmax_map_adj_offset', 'nmap,nmonths', 'real', &
-     &         '0.0', '0.0', '10.0', &
-     &         'Monthly maximum temperature adjustment factor as an offset from tmin_map_adj for each mapped spatial unit', &
-     &         'Monthly (January to December) additive adjustment factor to maximum air temperature as an offset from' // &
-     &         ' tmin_map_adj for each mapped, spatial unit estimated on the basis of slope and aspect', &
-     &         'temp_units')/=0 ) CALL read_error(1, 'tmax_map_adj_offset')
         ENDIF
         ALLOCATE ( Tmin_map_adj(Nmap,MONTHS_PER_YEAR) )
         IF ( declparam(MODNAME, 'tmin_map_adj', 'nmap,nmonths', 'real', &
@@ -132,14 +133,14 @@
         ierr = 0
         IF ( getparam(MODNAME, 'tmin_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmin_map_adj)/=0 ) &
      &       CALL read_error(2, 'tmin_map_adj')
-        IF ( Model/=PRMS6 ) THEN
-          IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmax_map_adj)/=0 ) &
-     &         CALL read_error(2, 'tmax_map_adj')
-        ELSE
+        IF ( PRMS6_flag==ACTIVE ) THEN
           IF ( getparam(MODNAME, 'tmax_map_adj_offset', Nmap*MONTHS_PER_YEAR, 'real', Tmax_map_adj_offset)/=0 ) &
      &         CALL read_error(2, 'tmax_map_adj_offset')
           Tmax_map_adj = Tmin_map_adj + Tmax_map_adj_offset
           DEALLOCATE ( Tmax_map_adj_offset )
+        ELSE
+          IF ( getparam(MODNAME, 'tmax_map_adj', Nmap*MONTHS_PER_YEAR, 'real', Tmax_map_adj)/=0 ) &
+     &         CALL read_error(2, 'tmax_map_adj')
         ENDIF
         IF ( control_string(Tmax_map_file, 'tmax_map_file')/=0 ) CALL read_error(5, 'tmax_map_file')
         IF ( control_string(Tmin_map_file, 'tmin_map_file')/=0 ) CALL read_error(5, 'tmin_map_file')

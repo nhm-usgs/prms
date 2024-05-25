@@ -95,7 +95,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
-      INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
+      INTEGER, EXTERNAL :: declparam, declvar, control_integer
       EXTERNAL :: read_error, print_module
 !***********************************************************************
       stream_temp_decl = 0

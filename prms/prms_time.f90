@@ -19,14 +19,13 @@
       INTEGER FUNCTION prms_time()
       USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, YEAR, MONTH, DAY, HOUR, MINUTE, MAX_DAYS_PER_YEAR, DAYS_PER_YEAR, &
      &    ACTIVE, OFF, NORTHERN, FT2_PER_ACRE, SECS_PER_HOUR, INCHES_PER_FOOT, SECS_PER_DAY, ERROR_time
-      USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday, Dprst_flag
+      USE PRMS_MODULE, ONLY: Process_flag, Timestep, Starttime, Nowyear, Nowmonth, Nowday
       USE PRMS_SET_TIME
       USE PRMS_BASIN, ONLY: Hemisphere, Basin_area_inv
       USE PRMS_FLOWVARS, ONLY: Soil_moist, Ssres_stor, Basin_ssstor, Soil_rechr, &
-                               Basin_soil_moist, Dprst_stor_hru, Hru_impervstor, Pkwater_equiv
+                               Basin_soil_moist, Pkwater_equiv
       USE PRMS_IT0_VARS, ONLY: It0_soil_moist, It0_ssres_stor, It0_soil_rechr, &
-                               It0_basin_ssstor, It0_basin_soil_moist, It0_dprst_stor_hru, &
-                               It0_hru_impervstor, It0_pkwater_equiv
+                               It0_basin_ssstor, It0_basin_soil_moist, It0_pkwater_equiv
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: SNGL
@@ -55,8 +54,6 @@
           It0_soil_rechr = Soil_rechr
           It0_ssres_stor = Ssres_stor
           It0_pkwater_equiv = Pkwater_equiv
-          It0_hru_impervstor = Hru_impervstor
-          IF ( Dprst_flag==ACTIVE ) It0_dprst_stor_hru = Dprst_stor_hru
 
         ELSE ! initialize
           Modays(1) = 31
