@@ -115,10 +115,10 @@ long declvar (char *module, char *name, char *dimen, long maxsize, char *type,
 
   if (var_addr(vkey) != NULL) {
 	  if (print_mode) {
-	    return(0);
+	      return(0);
 	  } else {
       fprintf(stderr, "ERROR - declvar - key '%s' already exists.\n", vkey);
-      return(1); }
+              return(1); }
   }
 
   /*
