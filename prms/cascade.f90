@@ -194,8 +194,8 @@
 !     cascinit - Initialize cascade module - get parameter values,
 !***********************************************************************
       INTEGER FUNCTION cascinit()
-      USE PRMS_CONSTANTS, ONLY: OFF, ERROR_cascades, CASCADE_OFF, CASCADE_HRU_SEGMENT, CASCADE_NORMAL, CASCADEGW_OFF
-      USE PRMS_MODULE, ONLY: Ngw, Print_debug, Cascade_flag, Cascadegw_flag, Gwr_swale_flag
+      USE PRMS_CONSTANTS, ONLY: OFF, CASCADE_OFF, CASCADE_HRU_SEGMENT, CASCADE_NORMAL, CASCADEGW_OFF
+      USE PRMS_MODULE, ONLY: Ngw, Print_debug, Cascade_flag, Cascadegw_flag, Gwr_swale_flag, Inputerror_flag
       USE PRMS_CASCADE
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Gwr_route_order, Active_gwrs, Gwr_type, Hru_type
       IMPLICIT NONE
@@ -203,7 +203,7 @@
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error, init_cascade, initgw_cascade
 ! Local Variables
-      INTEGER :: i, j, k, ii, iret, itest
+      INTEGER :: i, j, k, ii, iret
 !***********************************************************************
       cascinit = 0
 
@@ -217,15 +217,14 @@
         IF ( getparam(MODNAME, 'circle_switch', 1, 'integer', Circle_switch)/=0 ) CALL read_error(2, 'circle_switch')
       ENDIF
 
-      IF ( Cascade_flag>CASCADE_OFF ) CALL init_cascade(itest)
+      IF ( Cascade_flag>CASCADE_OFF ) CALL init_cascade(cascinit)
 
-      iret = 0
       IF ( Cascadegw_flag>CASCADEGW_OFF ) THEN
         ALLOCATE ( Gwr_down(Ndown,Ngw), Gwr_down_frac(Ndown,Ngw), Cascade_gwr_area(Ndown,Ngw) )
 !        ALLOCATE ( Gwr_down_fracwt(Ndown,Ngw) )
         IF ( Cascadegw_flag==CASCADE_NORMAL ) THEN
           CALL initgw_cascade(iret)
-          IF ( iret==1 ) ERROR STOP ERROR_cascades
+          IF ( iret==1 ) cascinit = 1
         ELSE ! cascadegw_flag=2 (CASCADEGW_SAME) so GWR cascades set to HRU cascades
           Gwr_type = Hru_type
           Active_gwrs = Active_hrus
@@ -244,12 +243,11 @@
             i = Gwr_route_order(ii)
             IF ( Gwr_type(i)==3 ) THEN
               PRINT *, 'ERROR, GWR is a swale when gwr_swale_flag = 0, GWR:', i
-              iret = 1
+              cascinit = 1
             ENDIF
           ENDDO
         ENDIF
       ENDIF
-      IF ( itest/=0 .OR. iret/=0 ) ERROR STOP ERROR_cascades
 
       IF ( Print_debug==13 ) THEN
         IF ( Cascade_flag>CASCADE_OFF ) THEN
@@ -276,6 +274,8 @@
         ENDIF
         CLOSE ( MSGUNT )
       ENDIF
+
+      IF ( cascinit==1 ) Inputerror_flag = 1
 
  9001 FORMAT (//, 18X, 'UP HRU', 4X, 'DOWN HRU    FRACTION')
  9002 FORMAT (//, 18X, 'UP GWR', 4X, 'DOWN GWR    FRACTION')

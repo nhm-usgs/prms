@@ -174,7 +174,7 @@
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: read_error
+      EXTERNAL :: read_error, checkdim_param_limits
       INTRINSIC :: DSQRT, DABS, DBLE
 ! Local Variables
       INTEGER :: i, k, n, kk, kkbig, jj, j
@@ -192,8 +192,7 @@
 
       IF ( getparam(MODNAME, 'max_psta', 1, 'integer', Max_psta) &
      &     /=0 ) CALL read_error(2, 'max_psta')
-      IF ( Max_psta==0 ) Max_psta = Nrain
-      IF ( Max_psta>Nrain ) Max_psta = Nrain
+      CALL checkdim_param_limits(1, 'max_psta', 'nrain', Max_psta, 1, Nrain, Inputerror_flag)
 
 !      IF ( getparam(MODNAME, 'maxmon_prec', MONTHS_PER_YEAR, 'real', Maxmon_prec) &
 !           /=0 ) CALL read_error(2, 'maxmon_prec')

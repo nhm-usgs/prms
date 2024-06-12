@@ -493,6 +493,7 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, smidx_module, carea_module, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Init_vars_from_file, &
      &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
+      USE PRMS_FLOWVARS, ONLY: Basin_sroff
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
       USE PRMS_FLOWVARS, ONLY: ! Soil_moist_max
@@ -519,8 +520,10 @@
 
       Basin_sroffi = 0.0D0
       Basin_sroffp = 0.0D0
+      Basin_infil = 0.0D0
+      Basin_sroff = 0.0D0
       Basin_imperv_evap = 0.0D0
-      Basin_imperv_stor = 0.0D0
+      Basin_hortonian = 0.0D0
       Basin_dprst_sroff = 0.0D0
       Basin_dprst_evap = 0.0D0
       Basin_dprst_seep = 0.0D0
@@ -528,9 +531,14 @@
       Basin_sroff_down = 0.0D0
       Basin_hortonian_lakes = 0.0D0
       Basin_contrib_fraction = 0.0D0
-      Basin_dprst_volop = 0.0D0
-      Basin_dprst_volcl = 0.0D0
+      Srp = 0.0
+      Sri = 0.0
+      Sra = 0.0
+
       IF ( Init_vars_from_file==OFF ) THEN
+        Basin_imperv_stor = 0.0D0
+        Basin_dprst_volop = 0.0D0
+        Basin_dprst_volcl = 0.0D0
         Hru_impervstor = 0.0
         Frozen = OFF
         IF ( Frozen_flag==ACTIVE ) THEN
@@ -816,7 +824,7 @@
           Basin_apply_sroff = Basin_apply_sroff + DBLE( Sra*perv_area )
         ENDIF
 
-!******Compute runoff for depression storage area
+!******Compute runoff and storage for depression storage area
         IF ( Dprst_flag==ACTIVE ) THEN
           dprst_chk = OFF
           IF ( Dprst_area_max(i)>0.0 ) THEN
@@ -1211,6 +1219,23 @@
 
 ! reset Sroff as it accumulates flow to streams
       Runoff = Runoff - SNGL( Hru_sroff_down )
+!      IF ( Runoff<0.0 ) THEN
+!        IF ( Runoff<-NEARZERO ) THEN
+!          IF ( Print_debug>-1 ) PRINT *, 'runoff < NEARZERO', Runoff
+!          IF ( Hru_sroff_down>ABS(Runoff) ) THEN
+!            Hru_sroff_down = Hru_sroff_down - Runoff
+!          ELSE
+!            DO k = 1, Ncascade_hru
+!              j = Hru_down(k, Ihru)
+!              IF ( Strm_seg_in(j)>ABS(Runoff) ) THEN
+!                Strm_seg_in(j) = Strm_seg_in(j) - Runoff
+!                EXIT
+!              ENDIF
+!            ENDDO
+!          ENDIF
+!        ENDIF
+!        Runoff = 0.0
+!      ENDIF
 
       END SUBROUTINE run_cascade_sroff
 
@@ -1647,6 +1672,7 @@
 !***********************************************************************
       IF ( In_out==SAVE_INIT ) THEN
         WRITE ( Restart_outunit ) MODNAME
+        WRITE ( Restart_outunit ) Basin_imperv_stor, Basin_dprst_volop, Basin_dprst_volcl
         WRITE ( Restart_outunit ) Hru_impervstor
         IF ( Dprst_flag==ACTIVE ) THEN
           WRITE ( Restart_outunit ) Dprst_area_open
@@ -1662,6 +1688,7 @@
       ELSE
         READ ( Restart_inunit ) module_name
         CALL check_restart(MODNAME, module_name)
+        READ ( Restart_inunit ) Basin_imperv_stor, Basin_dprst_volop, Basin_dprst_volcl
         READ ( Restart_inunit ) Hru_impervstor
         IF ( Dprst_flag==ACTIVE ) THEN
           READ ( Restart_inunit ) Dprst_area_open

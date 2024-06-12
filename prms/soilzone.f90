@@ -49,6 +49,7 @@
       REAL, SAVE, ALLOCATABLE :: Pref_flow(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_infil(:), Pref_flow_in(:)
       REAL, SAVE, ALLOCATABLE :: Hru_sz_cascadeflow(:), Swale_actet(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_dunnian_cascadeflow(:), Hru_interflow_cascadeflow(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_max(:), Snow_free(:)
       REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
@@ -273,6 +274,16 @@
      &       'Cascading interflow and Dunnian surface runoff from each HRU', &
      &       'inches', Hru_sz_cascadeflow)/=0 ) CALL read_error(3, 'hru_sz_cascadeflow')
 
+        ALLOCATE ( Hru_dunnian_cascadeflow(Nhru) )
+        IF ( declvar(MODNAME, 'hru_dunnian_cascadeflow', 'nhru', Nhru, 'real', &
+     &       'Cascading Dunnian surface runoff from each HRU', &
+     &       'inches', Hru_dunnian_cascadeflow)/=0 ) CALL read_error(3, 'hru_dunnian_cascadeflow')
+
+        ALLOCATE ( Hru_interflow_cascadeflow(Nhru) )
+        IF ( declvar(MODNAME, 'hru_interflow_cascadeflow', 'nhru', Nhru, 'real', &
+     &       'Cascading interflow from each HRU', &
+     &       'inches', Hru_interflow_cascadeflow)/=0 ) CALL read_error(3, 'hru_interflow_cascadeflow')
+
         IF ( Nlake>0 ) THEN
           ALLOCATE ( Lakein_sz(Nhru) )
           IF ( declvar(MODNAME, 'lakein_sz', 'nhru', Nhru, 'double', &
@@ -484,7 +495,6 @@
 
       IF ( getparam(MODNAME, 'slowcoef_lin', Nhru, 'real', Slowcoef_lin)/=0 ) CALL read_error(2, 'slowcoef_lin')
       IF ( getparam(MODNAME, 'slowcoef_sq', Nhru, 'real', Slowcoef_sq)/=0 ) CALL read_error(2, 'slowcoef_sq')
-
       IF ( getparam(MODNAME, 'pref_flow_den', Nhru, 'real', Pref_flow_den)/=0 ) CALL read_error(2, 'pref_flow_den')
       Pref_flag = OFF
       IF ( maxval(Pref_flow_den) > 0.0 ) THEN
@@ -501,13 +511,6 @@
         IF ( getparam(MODNAME, 'fastcoef_lin', Nhru, 'real', Fastcoef_lin)/=0 ) CALL read_error(2, 'fastcoef_lin')
         IF ( getparam(MODNAME, 'fastcoef_sq', Nhru, 'real', Fastcoef_sq)/=0 ) CALL read_error(2, 'fastcoef_sq')
       ENDIF
-      ! initialize because they are declared
-      Basin_pref_stor = 0.0D0
-      Basin_pref_flow_infil = 0.0D0
-      Basin_dunnian_pfr = 0.0D0
-      Basin_gvr2pfr = 0.0D0
-      Basin_prefflow = 0.0D0
-      Basin_pfr_stor_frac = 0.0D0
 
       IF ( getparam(MODNAME, 'ssr2gw_rate', Nssr, 'real', Ssr2gw_rate)/=0 ) CALL read_error(2, 'ssr2gw_rate')
       IF ( getparam(MODNAME, 'ssr2gw_exp', Nssr, 'real', Ssr2gw_exp)/=0 ) CALL read_error(2, 'ssr2gw_exp')
@@ -523,6 +526,15 @@
       Soil_lower_ratio = 0.0
       Pref_flow_thrsh = 0.0
       Pref_flow_max = 0.0
+
+      ! initialize because they are declared, no longer in init_basin_vars
+      Basin_pref_stor = 0.0D0
+      Basin_pref_flow_infil = 0.0D0
+      Basin_dunnian_pfr = 0.0D0
+      Basin_gvr2pfr = 0.0D0
+      Basin_prefflow = 0.0D0
+      Basin_pfr_stor_frac = 0.0D0
+
       DO i = 1, Nhru
 
 ! WARNING changing parameter values as invalid for these HRU types, need to be 0 for computations below
@@ -608,9 +620,9 @@
 !***********************************************************************
       INTEGER FUNCTION szrun()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, LAKE, SWALE, &
-     &    DEBUG_less, CASCADE_OFF, CLOSEZERO !, ERROR_param
+     &    DEBUG_less, CASCADE_OFF !, ERROR_param
       USE PRMS_MODULE, ONLY: Print_debug, Dprst_flag, Cascade_flag, Nlake, &
-     &    Frozen_flag, Soilzone_add_water_use, Nowmonth !, Nowyear, Nowday
+     &    Frozen_flag, Soilzone_add_water_use, Nowmonth !, Nowyear, Nowday, CLOSEZERO
       USE PRMS_SOILZONE
       USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_frac_perv, Hru_storage, &
      &    Hru_route_order, Active_hrus, Basin_area_inv, Hru_area, &
@@ -654,6 +666,8 @@
         Upslope_interflow = 0.0D0
         Upslope_dunnianflow = 0.0D0
         Hru_sz_cascadeflow = 0.0
+        Hru_dunnian_cascadeflow = 0.0
+        Hru_interflow_cascadeflow = 0.0
         Basin_lakeinsz = 0.0D0
         Basin_dninterflow = 0.0D0
         Basin_dndunnianflow = 0.0D0
@@ -954,7 +968,7 @@
           Dunnian_flow(i) = dunnianflw
           IF ( Cascade_flag>CASCADE_OFF ) THEN
             IF ( Ncascade_hru(i)>0 ) THEN
-              IF ( interflow+dunnianflw>CLOSEZERO ) THEN
+              IF ( interflow+dunnianflw>NEARZERO ) THEN
                 dnslowflow = 0.0
                 dnpreflow = 0.0
                 dndunn = 0.0
@@ -964,6 +978,8 @@
                 Basin_dninterflow = Basin_dninterflow + DBLE( (dnslowflow+dnpreflow)*harea )
                 Basin_dndunnianflow = Basin_dndunnianflow + DBLE( dndunn*harea )
                 Hru_sz_cascadeflow(i) = dnslowflow + dnpreflow + dndunn
+                Hru_dunnian_cascadeflow(i) = dndunn
+                Hru_interflow_cascadeflow(i) = dnslowflow + dnpreflow
                 Basin_dncascadeflow = Basin_dncascadeflow + DBLE( Hru_sz_cascadeflow(i)*harea )
               ENDIF
             ENDIF

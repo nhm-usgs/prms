@@ -266,11 +266,11 @@
 !**********************************************************************
       INTEGER FUNCTION basinit()
       USE PRMS_CONSTANTS, ONLY: DEBUG_less, ACTIVE, OFF, &
-     &    INACTIVE, LAKE, FEET, ERROR_basin, DEBUG_minimum, &
+     &    INACTIVE, LAKE, FEET, DEBUG_minimum, &
      &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO !, METERS2FEET, SWALE
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
      &    Dprst_flag, Lake_route_flag, PRMS4_flag, PRMS_VERSION, &
-     &    Starttime, Endtime, Parameter_check_flag !, Frozen_flag
+     &    Starttime, Endtime, Parameter_check_flag, Inputerror_flag !, Frozen_flag
       USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
@@ -387,25 +387,25 @@
             IF ( lakeid>Numlakes_check ) Numlakes_check = lakeid
           ELSE
             PRINT *, 'ERROR, hru_type = 2 for HRU:', i, ' and lake_hru_id = 0'
-            basinit = 1
+            Inputerror_flag = 1
             CYCLE
           ENDIF
           IF ( Nlake==0 ) THEN
             PRINT *, 'ERROR, hru_type = 2 for HRU:', i, ' and dimension nlake = 0'
-            basinit = 1
+            Inputerror_flag = 1
             CYCLE
           ENDIF
         ELSE
           Land_area = Land_area + harea_dble ! swale or land or glacier
           IF ( Lake_hru_id(i)>0 ) THEN
             PRINT *, 'ERROR, HRU:', i, ' specifed to be a lake by lake_hru_id but hru_type not equal 2'
-            basinit = 1
+            Inputerror_flag = 1
             CYCLE
           ENDIF
           !IF ( Frozen_flag==ACTIVE ) THEN ! water on frozen swales added to storage
           !  IF ( Hru_type(i)==SWALE ) THEN
           !    PRINT *, 'ERROR, a swale HRU cannot be frozen for CFGI, HRU:', i
-          !    basinit = 1
+          !    Inputerror_flag = 1
           !    CYCLE
           !  ENDIF
           !ENDIF
@@ -429,7 +429,7 @@
           Imperv_flag = ACTIVE
           IF ( Hru_frac_imperv(i)>0.99999 ) THEN
             PRINT *, 'ERROR, hru_percent_imperv > 0.999999 for HRU:', i, ' value:', Hru_frac_imperv(i)
-            basinit = 1
+            Inputerror_flag = 1
           ENDIF
           Hru_imperv(i) = Hru_frac_imperv(i)*harea
           basin_imperv = basin_imperv + DBLE( Hru_imperv(i) )
@@ -441,7 +441,7 @@
             Dprst_area_max(i) = Hru_frac_dprst(i)*harea
             IF ( Hru_frac_dprst(i)>0.99999 ) THEN
               PRINT *, 'ERROR, dprst_frac > 0.999999 for HRU:', i, ' value:', Hru_frac_dprst(i)
-              basinit = 1
+              Inputerror_flag = 1
             ENDIF
           ELSE
             Dprst_area_max(i) = Dprst_area(i)
@@ -466,7 +466,7 @@
           PRINT *, '       pervious fraction:', Hru_frac_perv(i)
           PRINT *, '       impervious fraction:', Hru_frac_imperv(i)
           IF ( Dprst_flag==ACTIVE ) PRINT *, '       depression storage fraction:', Hru_frac_dprst(i)
-          basinit = 1
+          Inputerror_flag = 1
         ENDIF
         basin_perv = basin_perv + DBLE( Hru_perv(i) )
       ENDDO
@@ -477,23 +477,23 @@
 !          PRINT *, 'ERROR, number of lake HRUs specified in hru_type'
 !          PRINT *, 'does not equal dimension nlake:', Nlake, ', number of lake HRUs:', Numlake_hrus
 !          PRINT *, 'For PRMS lake routing each lake must be a single HRU'
-!          basinit = 1
+!          Inputerror_flag = 1
 !        ENDIF
         IF ( Numlakes_check/=Nlake ) THEN
           PRINT *, 'ERROR, number of lakes specified in lake_hru_id'
           PRINT *, 'does not equal dimension nlake:', Nlake, ', number of lakes:', Numlakes_check
           PRINT *, 'For PRMS lake routing each lake must be a single HRU'
-          basinit = 1
+          Inputerror_flag = 1
         ENDIF
         DO i = 1, Numlakes_check
           IF ( Lake_area(i)<DNEARZERO ) THEN
             PRINT *, 'ERROR, Lake:', i, ' has 0 area, thus no value of lake_hru_id is associated with the lake'
-            basinit = 1
+            Inputerror_flag = 1
           ENDIF
         ENDDO
       ENDIF
 
-      IF ( basinit==1 ) ERROR STOP ERROR_basin
+      IF ( Inputerror_flag==1 ) RETURN
 
       Active_hrus = j
       Active_area = Land_area + Water_area

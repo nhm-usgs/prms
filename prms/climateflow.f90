@@ -131,12 +131,12 @@ end module PRMS_IT0_VARS
 !     climateflow_decl - declare climate and flow variables and parameters
 !***********************************************************************
       INTEGER FUNCTION climateflow_decl()
-      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, MONTHS_PER_YEAR, ERROR_dim, &
+      USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ACTIVE, OFF, MONTHS_PER_YEAR, &
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
      &    temp_laps_module, temp_sta_module, temp_dist2_module, &
      &    ddsolrad_module, ccsolrad_module
-      USE PRMS_MODULE, ONLY: Nhru, Nssr, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, &
+      USE PRMS_MODULE, ONLY: Nhru, Nssr, Nsegment, Nevap, Nlake, Ntemp, Nrain, Nsol, Ngw, Inputerror_flag, &
      &    Model, Init_vars_from_file, Temp_flag, Precip_flag, Glacier_flag, &
      &    Strmflow_module, Temp_module, Stream_order_flag, PRMS6_flag, &
      &    Precip_module, Solrad_module, Transp_module, Et_module, PRMS4_flag, &
@@ -444,7 +444,7 @@ end module PRMS_IT0_VARS
      &     'inches', Basin_soil_to_gw)/=0 ) CALL read_error(3, 'basin_soil_to_gw')
 
 ! gwflow
-      ALLOCATE ( Gwres_stor(Nhru) )
+      ALLOCATE ( Gwres_stor(Ngw) )
       IF ( declvar('gwflow', 'gwres_stor', 'ngw', Nhru, 'double', &
      &     'Storage in each GWR', &
      &     'inches', Gwres_stor)/=0 ) CALL read_error(3, 'gwres_stor')
@@ -501,7 +501,7 @@ end module PRMS_IT0_VARS
       IF ( Call_cascade==1 .OR. Stream_order_flag==ACTIVE ) THEN
         IF ( Nsegment==0 .AND. Model/=DOCUMENTATION ) THEN
           PRINT *, 'ERROR, nsegment=0, must be > 0 for selected module options'
-          ERROR STOP ERROR_dim
+          Inputerror_flag = 1
         ENDIF
       ENDIF
 
@@ -888,7 +888,7 @@ end module PRMS_IT0_VARS
      &    potet_pt_module, potet_pm_module, potet_pm_sta_module, climate_hru_module, &
      &    precip_laps_module, xyz_dist_module, ide_dist_module, temp_1sta_module, &
      &    temp_laps_module, temp_sta_module, temp_dist2_module, &
-     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ERROR_PARAM, ddsolrad_module, ccsolrad_module
+     &    FEET, FEET2METERS, METERS2FEET, FAHRENHEIT, INACTIVE, LAKE, ddsolrad_module, ccsolrad_module
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nevap, Nlake, Ntemp, Nrain, Nsol, &
      &    Print_debug, Init_vars_from_file, Temp_flag, Precip_flag, &
      &    Temp_module, Stream_order_flag, Glacier_flag, &
@@ -901,10 +901,10 @@ end module PRMS_IT0_VARS
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
-      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error, error_stop
+      EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error
       REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
-      INTEGER :: i, j, ierr
+      INTEGER :: i, j
 !***********************************************************************
       climateflow_init = 0
 
@@ -989,12 +989,12 @@ end module PRMS_IT0_VARS
         Tmax_allrain = Tmax_allrain_f
       ELSE
         Tmax_allsnow_c = Tmax_allsnow
-        DO j = 1, MONTHS_PER_YEAR
-          DO i = 1, Nhru
-            Tmax_allsnow_f(i, j) = c_to_f(Tmax_allsnow(i,j))
-            Tmax_allrain(i, j) = Tmax_allsnow(i, j) + Tmax_allrain_offset(i, j)
-            Tmax_allrain_f(i, j) = c_to_f(Tmax_allrain(i,j))
-            Tmax_allrain_c(i, j) = Tmax_allrain(i, j)
+        DO i = 1, MONTHS_PER_YEAR
+          DO j = 1, Nhru
+            Tmax_allsnow_f(j, i) = c_to_f(Tmax_allsnow(j,i))
+            Tmax_allrain(j, i) = Tmax_allsnow(j, i) + Tmax_allrain_offset(j, i)
+            Tmax_allrain_f(j, i) = c_to_f(Tmax_allrain(j,i))
+            Tmax_allrain_c(j, i) = Tmax_allrain(j, i)
           ENDDO
         ENDDO
       ENDIF
@@ -1072,7 +1072,6 @@ end module PRMS_IT0_VARS
         Soil_rechr_max = Soil_rechr_max*Soil_moist_max
       ENDIF
 
-      ierr = 0
       IF ( Init_vars_from_file==OFF .OR. Init_vars_from_file==2 .OR. Init_vars_from_file==5 ) THEN
         IF ( PRMS4_flag==ACTIVE ) THEN
           ! use PRMS4 parameters
@@ -1109,7 +1108,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_moist_max(i)<0.00001 ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9006, i, Soil_moist_max(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             Soil_moist_max(i) = 0.00001
             IF ( Print_debug>DEBUG_less ) PRINT 9008, i
@@ -1118,7 +1117,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_rechr_max(i)<0.00001 ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9007, i, Soil_rechr_max(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             Soil_rechr_max(i) = 0.00001
             IF ( Print_debug>DEBUG_less ) PRINT 9009, i
@@ -1127,7 +1126,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_rechr_max(i)>Soil_moist_max(i) ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9002, i, Soil_rechr_max(i), Soil_moist_max(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             IF ( Print_debug>DEBUG_less ) PRINT 9012, i, Soil_rechr_max(i), Soil_moist_max(i)
             Soil_rechr_max(i) = Soil_moist_max(i)
@@ -1136,7 +1135,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_rechr(i)>Soil_rechr_max(i) ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9003, i, Soil_rechr(i), Soil_rechr_max(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             IF ( Print_debug>DEBUG_less ) PRINT 9013, i, Soil_rechr(i), Soil_rechr_max(i)
             Soil_rechr(i) = Soil_rechr_max(i)
@@ -1145,7 +1144,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_moist(i)>Soil_moist_max(i) ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9004, i, Soil_moist(i), Soil_moist_max(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             IF ( Print_debug>DEBUG_less ) PRINT 9014, i, Soil_moist(i), Soil_moist_max(i)
             Soil_moist(i) = Soil_moist_max(i)
@@ -1154,7 +1153,7 @@ end module PRMS_IT0_VARS
         IF ( Soil_rechr(i)>Soil_moist(i) ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9005, i, Soil_rechr(i), Soil_moist(i)
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             IF ( Print_debug>DEBUG_less ) PRINT 9015, i, Soil_rechr(i), Soil_moist(i)
             Soil_rechr(i) = Soil_moist(i)
@@ -1163,7 +1162,7 @@ end module PRMS_IT0_VARS
         IF ( Ssres_stor(i)>Sat_threshold(i) ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT *, 'ERROR, HRU:', i, Ssres_stor(i), Sat_threshold(i), ' ssres_stor > sat_threshold'
-            ierr = 1
+            Inputerror_flag = 1
           ELSE
             PRINT *, 'WARNING, HRU:', i, Ssres_stor(i), Sat_threshold(i), ' ssres_stor > sat_threshold, ssres_stor set to max'
             Ssres_stor(i) = Sat_threshold(i)
@@ -1174,8 +1173,6 @@ end module PRMS_IT0_VARS
       ENDDO
       Basin_soil_moist = Basin_soil_moist * Basin_area_inv
       Basin_ssstor = Basin_ssstor * Basin_area_inv
-
-      IF ( ierr>0 ) CALL error_stop('parameter error', ERROR_param)
 
       IF ( getparam(Srunoff_module, 'snowinfil_max', Nhru, 'real', Snowinfil_max)/=0 ) CALL read_error(2, 'snowinfil_max')
 
@@ -1229,7 +1226,7 @@ end module PRMS_IT0_VARS
       Basin_lake_stor = 0.0D0
       Flow_out = 0.0D0
 
-      IF ( Init_vars_from_file>0 .OR. ierr>0 ) RETURN
+      IF ( Init_vars_from_file>0 ) RETURN
 
 ! initialize arrays (dimensioned Nsegment)
       IF ( Stream_order_flag==ACTIVE ) THEN
@@ -1381,7 +1378,7 @@ end module PRMS_IT0_VARS
         Hru_ppt = Precip*Rain_adj
         Hru_rain = Hru_ppt
         Prmx = 1.0
-      ELSEIF ( PRMS6_flag==OFF .AND. Tminf>Tmax_allsnow_f .OR. Tmaxf>=Tmax_allrain_f ) THEN
+      ELSEIF ( PRMS6_flag==OFF .AND. (Tminf>Tmax_allsnow_f .OR. Tmaxf>=Tmax_allrain_f) ) THEN
         Hru_ppt = Precip*Rain_adj
         Hru_rain = Hru_ppt
         Prmx = 1.0

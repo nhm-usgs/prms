@@ -627,7 +627,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: ABS, NINT, DBLE, DABS
-      EXTERNAL :: read_error, error_stop
+      EXTERNAL :: read_error, error_stop, checkdim_param_limits
       INTEGER, EXTERNAL :: getparam
 ! Local Variables
       INTEGER :: i, ierr, j, jj, kk, ii, jjj
@@ -842,10 +842,8 @@
 !            ENDIF
 !          ENDIF
         ELSEIF ( Lake_type(j)==6 ) THEN
-          IF ( Obsout_lake(j)==0 .OR. Obsout_lake(j)>Nobs ) THEN
-            PRINT *, 'ERROR, obsout_lake value = 0 or > nobs for lake:', j, Obsout_lake(j)
-            ierr = 1
-          ENDIF
+          IF ( Obsout_lake(j)==0 .OR. Obsout_lake(j)>Nobs ) &
+               CALL checkdim_param_limits(j, 'obsout_lake', 'nobs', Obsout_lake(i), 1, Nobs, ierr)
         ENDIF
         IF ( ierr==1 ) THEN
           Inputerror_flag = 1

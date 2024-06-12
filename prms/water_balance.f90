@@ -191,10 +191,10 @@
       INTRINSIC :: ABS, DBLE, SNGL, DABS
 ! Local Variables
       INTEGER :: i, k
-      REAL :: last_sm, last_ss, soilbal, perv_frac, gvrbal, test, waterin, waterout, hrubal, delta_stor
+      REAL :: last_sm, last_ss, soilbal, perv_frac, gvrbal, test, waterin, waterout, hrubal, delta_stor_sngl
       REAL :: delstor, robal, gmelt, harea
       DOUBLE PRECISION :: basin_bal, bsmbal, soil_in, gwbal, gwup, basin_robal, bsnobal
-      DOUBLE PRECISION :: hru_out, hru_in, wbal, pptbal, brobal, dprst_hru_wb, harea_dble
+      DOUBLE PRECISION :: hru_out, hru_in, wbal, delta_stor, pptbal, brobal, dprst_hru_wb, harea_dble
       DOUBLE PRECISION :: dprst_stor
       CHARACTER(LEN=*), PARAMETER :: fmt1 = '(A, I5, 2("/",I2.2))'
 !***********************************************************************
@@ -259,7 +259,7 @@
         ENDIF
 
 ! srunoff balance
-        delta_stor = Imperv_stor_ante(i) - Hru_impervstor(i)
+        delta_stor_sngl = Imperv_stor_ante(i) - Hru_impervstor(i)
         waterout = Infil(i)*perv_frac + Hru_impervevap(i) + Hortonian_flow(i) ! Hortonian_flow includes dprst runoff, if any
         gmelt = 0.0
         IF ( Glacier_flag == ACTIVE ) gmelt = Glacrb_melt(i) ! ?? what about Glacr_flow(i); units inches cubed
@@ -275,9 +275,9 @@
         IF ( Cascade_flag>CASCADE_OFF ) waterin = waterin + SNGL( Upslope_hortonian(i) - Hru_hortn_cascflow(i) )
         IF ( Dprst_flag==ACTIVE ) THEN
           waterout = waterout + Dprst_evap_hru(i) + SNGL( Dprst_seep_hru(i) ) ! ??- Dprst_in(i) - Dprst_insroff_hru(i)
-          delta_stor = delta_stor + SNGL( Dprst_stor_ante(i) - Dprst_stor_hru(i) )
+          delta_stor_sngl = delta_stor_sngl + SNGL( Dprst_stor_ante(i) - Dprst_stor_hru(i) )
         ENDIF
-        robal = waterin + delta_stor - waterout
+        robal = waterin + delta_stor_sngl - waterout
         basin_robal = basin_robal + DBLE( robal )
         IF ( ABS(robal)>TOOSMALL ) THEN
           IF ( ABS(robal)>SMALL ) THEN

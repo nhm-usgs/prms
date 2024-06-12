@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-05-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 05/01/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-06-01'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 06/01/2024'
       character(len=*), parameter :: githash = 'Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -83,7 +83,7 @@
       INTEGER, EXTERNAL :: strmflow_in_out, muskingum, muskingum_lake, numchars
       INTEGER, EXTERNAL :: water_use_read, dynamic_param_read, potet_pm_sta
       INTEGER, EXTERNAL :: stream_temp, glacr, dynamic_soil_param_read, strmflow_character
-      EXTERNAL :: module_error, print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
+      EXTERNAL :: print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
       EXTERNAL :: call_modules_restart, water_balance, summary_output
       EXTERNAL :: prms_summary, module_doc, convert_params, read_error
 ! Local Variables
@@ -381,7 +381,7 @@
           PRINT 9003, 'start', (Elapsed_time_start(i),i=1,3), (Elapsed_time_start(i),i=5,7)
           PRINT 9003, 'end  ', (Elapsed_time_end(i),i=1,3), (Elapsed_time_end(i),i=5,7)
           PRINT '(A,I5,A,F6.2,A,/)', 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
-     &                                Elapsed_time - FLOAT(Elapsed_time_minutes)*60.0, ' seconds'
+     &                               Elapsed_time - FLOAT(Elapsed_time_minutes)*60.0, ' seconds'
         ENDIF
         IF ( Print_debug>DEBUG_minimum ) &
      &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
@@ -463,9 +463,9 @@
         PRMS4_flag = ACTIVE
         IF ( Model_mode(:5)=='PRMS5' .OR. Model_mode(:5)=='prms5' ) PRMS4_flag = OFF
         IF ( Model_mode(:5)=='PRMS6' .OR. Model_mode(:5)=='prms6' ) THEN
-          Model = PRMS6
           PRMS4_flag = OFF
-          PRMS6_flag = OFF
+          Model = PRMS6
+          PRMS6_flag = ACTIVE
         ENDIF
       ELSEIF ( Model_mode(:5)=='FROST' ) THEN
         Model = FROST
@@ -765,10 +765,10 @@
       IF ( control_integer(Dyn_transp_on_flag, 'dyn_transp_on_flag')/=0 ) Dyn_transp_on_flag = OFF
       Dynamic_flag = OFF
       Dynamic_soil_flag = OFF
-      IF ( Dyn_intcp_flag/=0 .OR. Dyn_covden_flag/=0 .OR. &
-     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=0 .OR. Dyn_transp_flag/=0 .OR. &
-     &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=0 .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
-     &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=0 .OR. Dyn_snareathresh_flag/=0 .OR. &
+      IF ( Dyn_intcp_flag/=OFF .OR. Dyn_covden_flag/=OFF .OR. &
+     &     Dyn_potet_flag/=OFF .OR. Dyn_covtype_flag/=OFF .OR. Dyn_transp_flag/=OFF .OR. &
+     &     Dyn_radtrncf_flag/=OFF .OR. Dyn_sro2dprst_perv_flag/=OFF .OR. Dyn_sro2dprst_imperv_flag/=OFF .OR. &
+     &     Dyn_fallfrost_flag/=OFF .OR. Dyn_springfrost_flag/=OFF .OR. Dyn_snareathresh_flag/=OFF .OR. &
      &     Dyn_transp_on_flag/=OFF ) Dynamic_flag = ACTIVE
       IF ( Dyn_imperv_flag/=OFF .OR. Dyn_dprst_flag/=OFF .OR. Dyn_soil_flag/=OFF ) Dynamic_soil_flag = ACTIVE
       IF ( control_integer(Gwr_transferON_OFF, 'gwr_transferON_OFF')/=0) Gwr_transferON_OFF = OFF

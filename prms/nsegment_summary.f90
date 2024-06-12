@@ -110,9 +110,9 @@
 !     Initialize module values
 !***********************************************************************
       SUBROUTINE nsegment_summaryinit()
-      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_control, ERROR_open_out, &
+      USE PRMS_CONSTANTS, ONLY: MAXFILE_LENGTH, ERROR_open_out, &
      &    DAILY, MONTHLY, DAILY_MONTHLY, MEAN_MONTHLY, MEAN_YEARLY, YEARLY, ACTIVE, OFF, REAL_TYPE, DBLE_TYPE
-      USE PRMS_MODULE, ONLY: Nsegment, NsegmentOutON_OFF, Start_year, Prms_warmup
+      USE PRMS_MODULE, ONLY: Nsegment, NsegmentOutON_OFF, Start_year, Prms_warmup, Inputerror_flag
       USE PRMS_NSEGMENT_SUMMARY
       IMPLICIT NONE
 ! Functions
@@ -157,7 +157,7 @@
           ierr = 1
         ENDIF
       ENDDO
-      IF ( ierr==1 ) ERROR STOP ERROR_control
+
       IF ( Double_vars==ACTIVE ) THEN
         ALLOCATE ( Nsegment_var_dble(Nsegment, NsegmentOutVars) )
         Nsegment_var_dble = 0.0D0
@@ -202,6 +202,12 @@
       IF ( NsegmentOutON_OFF==2 ) THEN
         IF ( getparam(MODNAME, 'nhm_seg', Nsegment, 'integer', Nhm_seg)/=0 ) CALL read_error(2, 'nhm_seg')
       ENDIF
+
+      IF ( ierr==1 ) THEN
+        Inputerror_flag = 1
+        RETURN
+      ENDIF
+
       WRITE ( Output_fmt2, 9002 ) Nsegment
       ALLOCATE ( Nsegment_var_daily(Nsegment, NsegmentOutVars) )
       Nsegment_var_daily = 0.0

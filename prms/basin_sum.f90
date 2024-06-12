@@ -312,8 +312,8 @@
 !     sumbinit - Initialize basinsum module - get parameter values
 !***********************************************************************
       INTEGER FUNCTION sumbinit()
-      USE PRMS_CONSTANTS, ONLY: OFF, ERROR_param
-      USE PRMS_MODULE, ONLY: Nobs, Init_vars_from_file, Print_debug
+      USE PRMS_CONSTANTS, ONLY: OFF
+      USE PRMS_MODULE, ONLY: Nobs, Init_vars_from_file, Print_debug, Inputerror_flag
       USE PRMS_BASINSUM
       USE PRMS_FLOWVARS, ONLY: Basin_soil_moist, Basin_ssstor, Basin_lake_stor
       USE PRMS_INTCP, ONLY: Basin_intcp_stor
@@ -325,7 +325,7 @@
 ! Functions
       INTRINSIC :: MAX, MOD
       INTEGER, EXTERNAL :: getparam, julian_day
-      EXTERNAL :: header_print, read_error, write_outfile, PRMS_open_module_file, error_stop
+      EXTERNAL :: header_print, read_error, write_outfile, PRMS_open_module_file, checkdim_param_limits
 ! Local Variables
       INTEGER :: pftemp
 !***********************************************************************
@@ -337,8 +337,7 @@
         IF ( Outlet_sta==0 ) THEN
           Outlet_sta = 1
         ELSEIF ( Outlet_sta>Nobs ) THEN
-          PRINT *, 'ERROR, invalid value specified for outlet_sta:', Outlet_sta
-          CALL error_stop('outlet_sta is specified > nobs', ERROR_param)
+          CALL checkdim_param_limits(1, 'outlet_sta', 'nobs', Outlet_sta, 1, Nobs, Inputerror_flag)
         ENDIF
       ENDIF
 

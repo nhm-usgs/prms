@@ -361,7 +361,7 @@
 
       IF ( Strmflow_flag==strmflow_muskingum_mann_module ) THEN
         IF ( getparam(MODNAME, 'mann_n', Nsegment, 'real', Mann_n)/=0 ) CALL read_error(2, 'mann_n')
-        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
+        IF ( getparam(MODNAME, 'seg_depth', Nsegment, 'real', Seg_depth)/=0 ) CALL read_error(2, 'seg_depth')
       ENDIF
 
       IF ( Strmflow_flag==strmflow_muskingum_mann_module .OR. Stream_temp_flag==ACTIVE ) THEN
