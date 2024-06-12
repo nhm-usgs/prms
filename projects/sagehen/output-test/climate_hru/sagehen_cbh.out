@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,14 +36,14 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Cascading Flow                  cascade             2023-11-01
 Common States and Fluxes        climateflow         2024-04-30
@@ -59,10 +59,10 @@ Transpiration Distribution      transp_tindex       2023-11-01
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2024-04-`0
+Output Summary                  basin_sum           2024-04-30
 Output Summary                  subbasin            2023-11-01
 Output Summary                  nhru_summary        2024-04-04
 ==============================================================
@@ -80,7 +80,9 @@ Model domain area:         6782.50    Active basin area:      6782.50
 Fraction impervious:        0.0000    Fraction pervious:       1.0000
 
 
-   Year Month Day   Precip     ET    Storage S-Runoff M-Runoff
+
+
+   Year Month Day   Precip     ET    Storage  S-Runoff M-Runoff
                   (inches) (inches)  (inches) (inches) (inches)
  --------------------------------------------------------------
  initial                                3.100
@@ -88,7 +90,7 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1982             76.778   30.512    11.981   38.412   36.819
    1983             64.524   32.404    11.445   32.656   38.374
    1984             52.146   30.871     9.762   22.958   26.168
-   1985             29.538   21.952     6.945   10.403   11.260
+   1985             29.538   21.951     6.945   10.403   11.260
    1986             60.447   30.253    10.520   26.618   27.044
    1987             17.887   16.343     4.932    7.132    6.438
    1988             21.214   17.187     3.413    5.546    4.140
@@ -103,5 +105,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
  **************************************************************
  Total for run     668.938  388.458     8.959  274.620  260.348
  **************************************************************
-Execution elapsed time    0 minutes  1.14 seconds
+Execution elapsed time    0 minutes  1.13 seconds
 

@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,14 +36,14 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
@@ -52,20 +52,20 @@ Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temperature Distribution        climate_hru         2024-04-30
 Precipitation Distribution      climate_hru         2024-04-30
-Solar Radiation Distribution    ddsolrad            2024-04-04
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
-Output Summary                  basin_sum           2024-04-`0
+Output Summary                  basin_sum           2024-04-30
 Water Balance Computations      water_balance       2024-04-04
 Output Summary                  nhru_summary        2024-04-04
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Using Control File: pipestem.control
@@ -78,7 +78,9 @@ End time:   2016/09/30 00:00:00
 
 
 Model domain area:       419193.44    Active basin area:    419193.44
-Fraction impervious:        0.0000    Fraction pervious:       1.0000
-DPRST area:                   0.00    Fraction DPRST:          0.0000
-Execution elapsed time    0 minutes  1.07 seconds
+Fraction impervious:        0.0000    Fraction pervious:       0.9648
+DPRST area:               14741.23    Fraction DPRST:          0.0352
+
+
+Execution elapsed time    0 minutes  1.01 seconds
 

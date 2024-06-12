@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,14 +36,14 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
@@ -59,13 +59,13 @@ Transpiration Distribution      transp_tindex       2023-11-01
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
-Output Summary                  basin_sum           2024-04-`0
+Output Summary                  basin_sum           2024-04-30
 Output Summary                  nhru_summary        2024-04-04
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Using Control File: .\Control\control
@@ -82,7 +82,9 @@ Fraction impervious:        0.0310    Fraction pervious:       0.8664
 DPRST area:               76833.59    Fraction DPRST:          0.1025
 
 
-   Year Month Day   Precip     ET    Storage S-Runoff M-Runoff
+
+
+   Year Month Day   Precip     ET    Storage  S-Runoff M-Runoff
                   (inches) (inches)  (inches) (inches) (inches)
  --------------------------------------------------------------
  initial                               31.824
@@ -103,11 +105,11 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
    1994             63.330   23.963    12.556   32.720    1.640
    1995             53.742   26.685     9.363   30.250    1.522
    1996             68.484   24.683    10.856   42.307    1.877
-   1997             55.724   25.731    11.176   29.673    1.762
+   1997             55.724   25.731    11.176   29.674    1.762
    1998             63.457   25.341     7.028   41.417    1.816
    1999             45.071   27.058     6.400   17.608    1.094
  **************************************************************
  Total for run    1110.775  507.968    10.154  622.340   13.445
  **************************************************************
-Execution elapsed time    0 minutes  0.79 seconds
+Execution elapsed time    0 minutes  0.70 seconds
 

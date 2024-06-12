@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -48,7 +48,7 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
@@ -63,12 +63,12 @@ Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Glacier Dynamics                glacr_melt          2024-04-04
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
-Output Summary                  basin_sum           2024-04-`0
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  basin_sum           2024-04-30
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Using Control File: .\control\Tazlina.control
@@ -611,8 +611,6 @@ WARNING, HRU: 177 soil_rechr > soil_moist,    1.326616287    0.000000000
 WARNING, HRU: 178 soil_rechr > soil_moist,    1.326616287    0.000000000
          soil_rechr set to soil_moist based on initial and maximum values
 
- WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
-
 Simulation time period: 1950/10/01 - 2015/09/30
 
 ==========================================================================
@@ -623,10 +621,10 @@ Simulation time period: 1950/10/01 - 2015/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:06:57
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:04:54
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:07:01
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:04:58
 
 Execution elapsed time    0 minutes  3.93 seconds
 

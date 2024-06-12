@@ -439,7 +439,7 @@ Units     : none
 Width     : 0
 Max       : 2
 Min       : 0
-Default   : 0
+Default   : 1
 Bounded   : ntemp
 
 Name      : carea_max
@@ -497,6 +497,21 @@ Width     : 0
 Max       : 99.000000
 Min       : 0.000000
 Default   : 0.000000
+
+Name      : cbh_hru_id
+Module    : climate_hru
+Descr     : HRU identification number associated with each value in CBH File
+Help      : HRU identification number associated with each value in CBH File
+Ndimen    : 1
+Dimensions: ncbh - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 128
+Min       : 0
+Default   : 1
+Bounded   : nhru
 
 Name      : ccov_intcp
 Module    : ccsolrad
@@ -4262,7 +4277,7 @@ Default   : 0.000000
 Name      : tmax_adj
 Module    : temp_1sta
 Descr     : HRU maximum temperature adjustment
-Help      : Adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect
+Help      : Monthly (January to December) additive adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect
 Ndimen    : 2
 Dimensions: nhru - 128, nmonths - 12
 Size      : 1536
@@ -4271,6 +4286,20 @@ Units     : temp_units
 Width     : 0
 Max       : 10.000000
 Min       : -10.000000
+Default   : 0.000000
+
+Name      : tmax_adj_offset
+Module    : temp_1sta
+Descr     : HRU maximum temperature adjustment as offset from tmin_adj
+Help      : Monthly (January to December) additive adjustment to maximum temperature for each HRU as offset from tmin_adj, estimated on the basis of slope and aspect
+Ndimen    : 2
+Dimensions: nhru - 128, nmonths - 12
+Size      : 1536
+Type      : float
+Units     : temp_units
+Width     : 4
+Max       : 50.000000
+Min       : 0.000000
 Default   : 0.000000
 
 Name      : tmax_allrain
@@ -4385,6 +4414,20 @@ Max       : 10.000000
 Min       : -10.000000
 Default   : 0.000000
 
+Name      : tmax_cbh_adj_offset
+Module    : climate_hru
+Descr     : Monthly maximum temperature adjustment factor as an offset from tmin_cbh_adj for each HRU
+Help      : Monthly (January to December) additive adjustment factor to maximum air temperature as an offset from tmin_cbh_adj for each HRU, estimated on the basis of slope and aspect
+Ndimen    : 2
+Dimensions: nhru - 128, nmonths - 12
+Size      : 1536
+Type      : float
+Units     : temp_units
+Width     : 4
+Max       : 50.000000
+Min       : 0.000000
+Default   : 0.000000
+
 Name      : tmax_div
 Module    : xyz_dist
 Descr     : Maximum temperature divisor term for climate station transform
@@ -4439,6 +4482,20 @@ Units     : temp_units
 Width     : 4
 Max       : 10.000000
 Min       : -10.000000
+Default   : 0.000000
+
+Name      : tmax_map_adj_offset
+Module    : temp_map
+Descr     : Monthly maximum temperature adjustment factor as an offset from tmin_map_adj for each mapped spatial unit
+Help      : Monthly (January to December) additive adjustment factor to maximum air temperature as an offset from tmin_map_adj for each mapped, spatial unit estimated on the basis of slope and aspect
+Ndimen    : 2
+Dimensions: nmap - 0, nmonths - 12
+Size      : 1
+Type      : float
+Units     : temp_units
+Width     : 4
+Max       : 50.000000
+Min       : 0.000000
 Default   : 0.000000
 
 Name      : tmin_add

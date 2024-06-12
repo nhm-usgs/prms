@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -48,7 +48,7 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
@@ -57,20 +57,20 @@ Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temperature Distribution        climate_hru         2024-04-30
 Precipitation Distribution      climate_hru         2024-04-30
-Solar Radiation Distribution    ddsolrad            2024-04-04
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing Init         routing             2024-02-09
 Streamflow Routing              muskingum           2023-11-01
-Output Summary                  basin_sum           2024-04-`0
+Output Summary                  basin_sum           2024-04-30
 Water Balance Computations      water_balance       2024-04-04
 Output Summary                  nhru_summary        2024-04-04
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Using Control File: pipestem.control
@@ -80,65 +80,6 @@ Using Parameter File: pipestem.param
 Writing var_save_file: prms_ic.out
 
 Writing PRMS Water Budget File: pipestem.out
-
-WARNING, HRU: 1 soil_rechr_max > soil_moist_max,    1.500000000    1.031388044
-         soil_rechr_max set to soil_moist_max
-
-WARNING, HRU: 1 soil_moist_init > soil_moist_max,    3.000000000    1.031388044
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 3 soil_moist_init > soil_moist_max,    3.000000000    1.924785018
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 4 soil_rechr_max > soil_moist_max,    1.500000000    0.897871971
-         soil_rechr_max set to soil_moist_max
-
-WARNING, HRU: 4 soil_rechr_init > soil_rechr_max,    1.000000000    0.897871971
-         soil_rechr set to soil_rechr_max
-
-WARNING, HRU: 4 soil_moist_init > soil_moist_max,    3.000000000    0.897871971
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 5 soil_rechr_max > soil_moist_max,    1.500000000    0.559208989
-         soil_rechr_max set to soil_moist_max
-
-WARNING, HRU: 5 soil_rechr_init > soil_rechr_max,    1.000000000    0.559208989
-         soil_rechr set to soil_rechr_max
-
-WARNING, HRU: 5 soil_moist_init > soil_moist_max,    3.000000000    0.559208989
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 6 soil_moist_init > soil_moist_max,    3.000000000    2.324604034
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 8 soil_moist_init > soil_moist_max,    3.000000000    1.666546941
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 9 soil_moist_init > soil_moist_max,    3.000000000    2.104517937
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 10 soil_moist_init > soil_moist_max,    3.000000000    1.855574012
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 11 soil_rechr_max > soil_moist_max,    1.500000000    1.301834941
-         soil_rechr_max set to soil_moist_max
-
-WARNING, HRU: 11 soil_moist_init > soil_moist_max,    3.000000000    1.301834941
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 12 soil_moist_init > soil_moist_max,    3.000000000    2.284137011
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 13 soil_rechr_max > soil_moist_max,    1.500000000    1.065322042
-         soil_rechr_max set to soil_moist_max
-
-WARNING, HRU: 13 soil_moist_init > soil_moist_max,    3.000000000    1.065322042
-         soil_moist set to soil_moist_max
-
-WARNING, HRU: 14 soil_moist_init > soil_moist_max,    3.000000000    2.053025007
-         soil_moist set to soil_moist_max
-
- WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
 
 Simulation time period: 1980/10/01 - 2016/09/30
 
@@ -150,10 +91,10 @@ Simulation time period: 1980/10/01 - 2016/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:03:56
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:01:51
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/05/01 11:03:58
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:01:52
 
-Execution elapsed time    0 minutes  1.07 seconds
+Execution elapsed time    0 minutes  1.01 seconds
 

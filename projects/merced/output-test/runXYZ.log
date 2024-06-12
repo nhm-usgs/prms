@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -14,7 +14,7 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Common States and Fluxes        climateflow         2024-04-30
 Potential Solar Radiation       soltab              2024-01-22
@@ -22,22 +22,20 @@ Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temp & Precip Distribution      xyz_dist            2024-04-30
-Solar Radiation Distribution    ddsolrad            2024-04-04
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2024-04-`0
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  basin_sum           2024-04-30
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Writing PRMS Water Budget File: ./output/prmsXYZ.out
-
- WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
 
 Simulation time period: 1993/10/01 - 1995/09/30
 

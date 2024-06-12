@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 04/10/2024
+                        Version 6.0.0 06/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,14 +36,14 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 62761520d4284c8e7d0114d7d16c69c508494832 [6276152] branch 5.2.2.2
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-05-01
+Computation Order               call_modules        2024-06-01
 Basin Definition                basin               2024-04-04
 Cascading Flow                  cascade             2023-11-01
 Common States and Fluxes        climateflow         2024-04-30
@@ -53,19 +53,19 @@ Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
 Temperature Distribution        climate_hru         2024-04-30
 Precipitation Distribution      climate_hru         2024-04-30
-Solar Radiation Distribution    ddsolrad            2024-04-04
+Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-04-30
+Soilzone Computations           soilzone            2024-05-24
 Groundwater                     gwflow              2024-01-22
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2024-04-`0
+Output Summary                  basin_sum           2024-04-30
 Output Summary                  subbasin            2023-11-01
-Output Summary                  basin_summary       2021-11-19
-Output Summary                  prms_summary        2024-01-15
+Output Summary                  basin_summary       2021-08-13
+Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
 Using Control File: .\prms.control
@@ -81,16 +81,18 @@ Model domain area:         6782.50    Active basin area:      6782.50
 Fraction impervious:        0.0000    Fraction pervious:       1.0000
 
 
+
+
    Year Month Day   Precip     ET    Storage  S-Runoff M-Runoff   Watbal  WBalSum
                   (inches) (inches) (inches) (inches) (inches) (inches) (inches)
- -------------------------------------------------------------------------------
- initial                               11.176
-   1983    9   30    0.000    0.036    11.869    0.026    0.042   -0.755   -5.124
-   1983   10    1    0.133    0.045    11.929    0.028    0.033    0.000   -5.124
-   1983   10    2    0.044    0.050    11.897    0.025    0.031   -0.000   -5.124
-   1983   10    3    0.000    0.056    11.819    0.023    0.027    0.000   -5.124
-   1983   10    4    0.000    0.109    11.686    0.023    0.026   -0.000   -5.124
-   1983   10    5    0.000    0.116    11.548    0.022    0.025   -0.000   -5.124
-   1983   10    6    0.000    0.102    11.425    0.021    0.024    0.000   -5.124
-Execution elapsed time    0 minutes  0.08 seconds
+ --------------------------------------------------------------------------------
+ initial                               11.931
+   1983    9   30    0.000    0.036    11.869    0.026    0.042    0.000    0.000
+   1983   10    1    0.133    0.045    11.929    0.028    0.033    0.000    0.000
+   1983   10    2    0.044    0.050    11.897    0.025    0.031   -0.000    0.000
+   1983   10    3    0.000    0.056    11.819    0.023    0.027    0.000    0.000
+   1983   10    4    0.000    0.109    11.686    0.023    0.026   -0.000    0.000
+   1983   10    5    0.000    0.116    11.548    0.022    0.025   -0.000    0.000
+   1983   10    6    0.000    0.102    11.425    0.021    0.024    0.000    0.000
+Execution elapsed time    0 minutes  0.09 seconds
 
