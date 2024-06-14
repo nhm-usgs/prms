@@ -596,7 +596,7 @@
 ! initialize arrays (dimensioned Nhru)
       Dunnian_flow = 0.0
       IF ( Nlake>0 ) THEN
-        IF ( Cascade_flag>CASCADE_OFF>0 ) Lakein_sz = 0.0D0
+        IF ( Cascade_flag>CASCADE_OFF ) Lakein_sz = 0.0D0
       ENDIF
       Cap_infil_tot = 0.0
       Pref_flow_infil = 0.0
