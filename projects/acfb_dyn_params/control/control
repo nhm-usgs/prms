@@ -1,4 +1,4 @@
-PRMS version 5
+Dynamic parameter example for Apalachicola-Chattahoochee-Flint (ACF) River Basin
 ####
 print_debug
 1
@@ -44,12 +44,12 @@ tminf
 ani_output_file
 1
 4
-./output/animation.out
+.\output\animation.out
 ####
 data_file
 1
 4
-./input/data
+.\input\data
 ####
 dispGraphsBuffSize
 1
@@ -88,12 +88,12 @@ climate_hru
 executable_desc
 1
 4
-PRMS 5.2.0
+PRMS 6.0.0 Release
 ####
 executable_model
 1
 4
-../../bin/prms
+..\..\bin\prms
 ####
 initial_deltat
 1
@@ -108,7 +108,7 @@ PRMS5
 model_output_file
 1
 4
-./output/model.out
+.\output\model.out
 ####
 naniOutVars
 1
@@ -123,7 +123,7 @@ ndispGraphs
 param_file
 1
 4
-./input/params
+.\input\params
 ####
 precip_module
 1
@@ -186,7 +186,7 @@ basin_ppt
 stat_var_file
 1
 4
-./output/statvar
+.\output\statvar
 ####
 statsON_OFF
 1
@@ -196,7 +196,7 @@ statsON_OFF
 stats_output_file
 1
 4
-./output/stats.out
+.\output\stats.out
 ####
 strmflow_module
 1
@@ -241,7 +241,7 @@ csvON_OFF
 csv_output_file
 1
 4
-./output/prms_summary.csv
+.\output\prms_summary.csv
 ####
 nhruOutON_OFF
 1
@@ -261,7 +261,7 @@ hru_actet
 nhruOutBaseFileName
 1
 4
-output/nhru_summary_
+output\nhru_summary_
 ####
 prms_warmup
 1
@@ -286,7 +286,7 @@ save_vars_to_file
 var_save_file
 1
 4
-./output/spin_up_1999_12_31_ic
+.\output\spin_up_1999_12_31_ic
 ####
 dyn_imperv_flag
 1
@@ -296,9 +296,4 @@ dyn_imperv_flag
 imperv_frac_dynamic
 1
 4
-./input/hru_percent_imperv.dyn
-####
-soilzone_aet_flag
-1
-1
-0
+.\input\hru_percent_imperv.dyn

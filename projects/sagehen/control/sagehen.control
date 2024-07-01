@@ -8,12 +8,12 @@ PRMS5
 executable_desc
 1
 4
-PRMS version 5.1.0
+PRMS 6.0.0 Release
 ####
 executable_model
 1
 4
-../../bin/prms
+..\..\bin\prms
 ####
 start_time
 6
@@ -63,7 +63,7 @@ csvON_OFF
 csv_output_file
 1
 4
-./output/sagehen.csv
+.\output\sagehen.csv
 ####
 temp_module
 1

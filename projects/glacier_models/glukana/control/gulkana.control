@@ -1,4 +1,4 @@
-PRMS 5 CONTROL FILE
+PRMS 5 control file for Glukana glacier example
 ####
 print_debug
 1
@@ -13,7 +13,7 @@ stream_temp_flag
 model_output_file
 1
 4
-./output/gulkana.out
+.\output\gulkana.out
 ####
 model_mode
 1
@@ -48,12 +48,12 @@ aniOutON_OFF
 data_file
 1
 4
-./input/dataxyz.Gulkana
+.\input\dataxyz.Gulkana
 ####
 ani_output_file
 1
 4
-./output/gulkana.ani
+.\output\gulkana.ani
 ####
 dprst_flag
 1
@@ -90,7 +90,7 @@ transp_tindex
 var_init_file
 1
 4
-./input/gulkana.init
+.\input\gulkana.init
 ####
 nstatVars
 1
@@ -100,7 +100,7 @@ nstatVars
 param_file
 1
 4
-./input/gulkana.par
+.\input\gulkana.par
 ####
 et_module
 1
@@ -110,7 +110,7 @@ potet_jh
 stat_var_file
 1
 4
-./output/gulkana.statvar
+.\output\gulkana.statvar
 ####
 srunoff_module
 1
@@ -200,7 +200,7 @@ xyz_dist
 var_save_file
 1
 4
-./input/gulkana.init
+.\input\gulkana.init
 ####
 initial_deltat
 1
@@ -237,7 +237,7 @@ dispVar_element
 executable_desc
 1
 4
-PRMS version 5.2.1
+PRMS 6.0.0 Release
 ####
 glacier_flag
 1
@@ -257,7 +257,7 @@ frozen_flag
 csv_output_file
 1
 4
-./output/prms_summary.csv
+.\output\prms_summary.csv
 ####
 csvON_OFF
 1

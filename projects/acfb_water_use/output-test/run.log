@@ -73,11 +73,11 @@ Output Summary                  nhru_summary        2024-04-04
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
-Using Control File: .\Control\control
+Using Control File: .\control\control
 
-Using Parameter File: ./input/params
+Using Parameter File: .\input\params
 
-Writing PRMS Water Budget File: ./output/model.out
+Writing PRMS Water Budget File: .\output\model.out
 
  WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
 
@@ -91,10 +91,10 @@ Simulation time period: 1980/01/01 - 1999/12/31
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:00:01
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:42:24
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:00:01
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:42:25
 
-Execution elapsed time    0 minutes  0.70 seconds
+Execution elapsed time    0 minutes  0.80 seconds
 

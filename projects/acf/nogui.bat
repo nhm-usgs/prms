@@ -1,5 +1,5 @@
 @ECHO OFF
-..\..\bin\prms .\control\acf.control > output\run.log
+..\..\bin\prms .\control\acf.control > .\output\run.log
 ECHO.
-ECHO Run complete. Please press enter to continue.
+ECHO Run complete. Press any key to exit.
 PAUSE>NUL

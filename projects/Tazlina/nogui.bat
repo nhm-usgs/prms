@@ -1,6 +1,5 @@
 @ECHO OFF
-
 ..\..\bin\prms .\control\Tazlina.control > .\output\run.log
 ECHO.
-ECHO Run complete. Please press enter to continue.
+ECHO Run complete. Press any key to exit.
 PAUSE>NUL

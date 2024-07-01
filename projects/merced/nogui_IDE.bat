@@ -1,5 +1,5 @@
 @ECHO OFF
-..\..\bin\prms -C.\control\mercdIDE.control > .\output\runIDE.log
+..\..\bin\prms .\control\mercdIDE.control > .\output\runIDE.log
 ECHO.
-ECHO Run complete. Please press enter to continue.
+ECHO Run complete. Press any key to exit.
 PAUSE>NUL

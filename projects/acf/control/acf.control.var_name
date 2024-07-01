@@ -1333,7 +1333,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 258
 Size: 258
-Type: double
+Type: float
 Desc: Fraction of closed surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
@@ -1342,7 +1342,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 258
 Size: 258
-Type: double
+Type: float
 Desc: Fraction of surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 
@@ -1360,7 +1360,7 @@ Module: srunoff_smidx
 Ndimen: 1
 Dimensions: nhru - 258
 Size: 258
-Type: double
+Type: float
 Desc: Fraction of open surface-depression storage of the maximum storage for each HRU
 Units: decimal fraction
 

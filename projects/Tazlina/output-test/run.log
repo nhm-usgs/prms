@@ -73,9 +73,9 @@ Output Summary                  prms_summary        2024-04-30
 
 Using Control File: .\control\Tazlina.control
 
-Using Parameter File: ./input/Tazlina.par
+Using Parameter File: .\input\Tazlina.par
 
-Writing PRMS Water Budget File: ./output/Tazlina.out
+Writing PRMS Water Budget File: .\output\Tazlina.out
 
 WARNING, HRU: 1 soil_rechr > soil_moist,    1.326616287    0.000000000
          soil_rechr set to soil_moist based on initial and maximum values
@@ -621,10 +621,10 @@ Simulation time period: 1950/10/01 - 2015/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:04:54
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:46:24
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  9:04:58
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:46:28
 
 Execution elapsed time    0 minutes  3.93 seconds
 

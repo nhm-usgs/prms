@@ -75,9 +75,9 @@ Output Summary                  prms_summary        2024-04-30
 
 Using Control File: .\control\control
 
-Using Parameter File: ./input/params
+Using Parameter File: .\input\params
 
-Writing PRMS Water Budget File: ./output/model.out
+Writing PRMS Water Budget File: .\output\model.out
 
 A summary of dynamic parameter events are written to file:
 dynamic_soil_parameter.out
@@ -95,10 +95,10 @@ Simulation time period: 1980/01/01 - 1999/12/31
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  8:59:07
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:41:51
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/06/12  8:59:08
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:41:51
 
-Execution elapsed time    0 minutes  0.73 seconds
+Execution elapsed time    0 minutes  0.77 seconds
 

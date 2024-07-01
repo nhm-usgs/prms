@@ -1,5 +1,5 @@
 @ECHO OFF
-..\..\bin\prms -C.\control\mercdXYZ.control > .\output\runXYZ.log
+..\..\bin\prms .\control\mercdXYZ.control > .\output\runXYZ.log
 ECHO.
-ECHO Run complete. Please press enter to continue.
+ECHO Run complete. Press any key to exit.
 PAUSE>NUL

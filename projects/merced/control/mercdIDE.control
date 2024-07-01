@@ -3,7 +3,7 @@ USGS 11266500 MERCED R A POHONO BRIDGE NR YOSEMITE CA
 model_output_file
 1
 4
-./output/prmsIDE.out
+.\output\prmsIDE.out
 ####
 model_mode
 1
@@ -58,7 +58,7 @@ dispGraphsBuffSize
 executable_model
 1
 4
-../../bin/prms
+..\..\bin\prms
 ####
 aniOutON_OFF
 1
@@ -68,12 +68,12 @@ aniOutON_OFF
 data_file
 1
 4
-./input/mercd.data
+.\input\mercd.data
 ####
 ani_output_file
 1
 4
-./output/prms_IDE.ani
+.\output\prms_IDE.ani
 ####
 dprst_flag
 1
@@ -114,7 +114,7 @@ transp_tindex
 var_init_file
 1
 4
-./output/var_IDE.init
+.\output\var_IDE.init
 ####
 nstatVars
 1
@@ -124,7 +124,7 @@ nstatVars
 param_file
 1
 4
-./input/mercdIDE.param
+.\input\mercdIDE.param
 ####
 et_module
 1
@@ -134,7 +134,7 @@ potet_jh
 stat_var_file
 1
 4
-./output/IDE.statvar
+.\output\IDE.statvar
 ####
 srunoff_module
 1
@@ -230,7 +230,7 @@ ide_dist
 var_save_file
 1
 4
-./output/var_IDE.init
+.\output\var_IDE.init
 ####
 initial_deltat
 1
@@ -271,12 +271,12 @@ dispVar_element
 executable_desc
 1
 4
-PRMS version 5.1.0
+PRMS 6.0.0 Release
 ####
 csv_output_file
 1
 4
-./output/prms_summaryIDE.csv
+.\output\prms_summaryIDE.csv
 ####
 csvON_OFF
 1

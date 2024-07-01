@@ -68,7 +68,7 @@ Output Summary                  prms_summary        2024-04-30
 
 Using Control File: .\control\Tazlina.control
 
-Using Parameter File: ./input/Tazlina.par
+Using Parameter File: .\input\Tazlina.par
 
 
 Start time: 1950/10/01 00:00:00

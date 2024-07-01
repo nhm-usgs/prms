@@ -35,7 +35,7 @@ Output Summary                  basin_sum           2024-04-30
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
-Writing PRMS Water Budget File: ./output/prmsXYZ.out
+Writing PRMS Water Budget File: .\output\prmsXYZ.out
 
 Simulation time period: 1993/10/01 - 1995/09/30
 

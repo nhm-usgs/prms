@@ -3,7 +3,7 @@ PRMS
 
 Description of dimensions and parameters required in the application.
 
-Parameter file: ./input/mercdXYZ.param
+Parameter file: .\input\mercdXYZ.param
 
 mercedes with updated climate stations and solrad_elev
 
@@ -17,6 +17,10 @@ Desc  : Number of HRU links for cascading flow
 Name  : ncascdgw
 Value : 0
 Desc  : Number of GWR links for cascading flow
+
+Name  : ncbh
+Value : 0
+Desc  : Number of values in each CBH File (active HRUs)
 
 Name  : nconsumed
 Value : 0
@@ -598,6 +602,20 @@ Max       : 90.000000
 Min       : -90.000000
 Default   : 40.000000
 
+Name      : hru_lon
+Module    : setup_param
+Descr     : HRU longitude
+Help      : Longitude of each HRU
+Ndimen    : 1
+Dimensions: nhru - 90
+Size      : 90
+Type      : float
+Units     : degrees East
+Width     : 4
+Max       : 360.000000
+Min       : -360.000000
+Default   : -105.000000
+
 Name      : hru_percent_imperv
 Module    : basin
 Descr     : HRU percent impervious
@@ -641,7 +659,7 @@ Min       : 0
 Default   : 1
 
 Name      : hru_x
-Module    : xyz_dist
+Module    : setup_param
 Descr     : X for each HRU (albers)
 Help      : Longitude (X) for each HRU in albers projection
 Ndimen    : 1
@@ -655,7 +673,7 @@ Min       : -10000000.000000
 Default   : 0.000000
 
 Name      : hru_y
-Module    : xyz_dist
+Module    : setup_param
 Descr     : Y for each HRU (albers)
 Help      : Latitude (Y) for each HRU in albers projection
 Ndimen    : 1
@@ -766,6 +784,34 @@ Max       : 100.000000
 Min       : -100.000000
 Default   : 0.000000
 
+Name      : nhm_id
+Module    : setup_param
+Descr     : National Hydrologic Model HRU ID
+Help      : National Hydrologic Model HRU ID
+Ndimen    : 1
+Dimensions: nhru - 90
+Size      : 90
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 1
+Default   : 1
+
+Name      : nhm_seg
+Module    : setup_param
+Descr     : National Hydrologic Model segment ID
+Help      : National Hydrologic Model segment ID
+Ndimen    : 1
+Dimensions: nsegment - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 0
+Default   : 0
+
 Name      : outlet_sta
 Module    : basin_sum
 Descr     : Index of measurement station to use for basin outlet
@@ -780,6 +826,119 @@ Max       : 1
 Min       : 0
 Default   : 0
 Bounded   : nobs
+
+Name      : parent_gw
+Module    : setup_param
+Descr     : Lumen index in parent model for each GWR
+Help      : Lumen index in parent model for each GWR
+Ndimen    : 1
+Dimensions: ngw - 90
+Size      : 90
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 1
+Default   : 1
+
+Name      : parent_hru
+Module    : setup_param
+Descr     : Lumen index in parent model for each HRU
+Help      : Lumen index in parent model for each HRU
+Ndimen    : 1
+Dimensions: nhru - 90
+Size      : 90
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 1
+Default   : 1
+
+Name      : parent_poigages
+Module    : setup_param
+Descr     : Lumen index in parent model for each POI gage
+Help      : Lumen index in parent model for each POI gage
+Ndimen    : 1
+Dimensions: npoigages - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 0
+Default   : 0
+
+Name      : parent_segment
+Module    : setup_param
+Descr     : Lumen index in parent model for each segment
+Help      : Lumen index in parent model for each segment
+Ndimen    : 1
+Dimensions: nsegment - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 0
+Default   : 0
+
+Name      : parent_ssr
+Module    : setup_param
+Descr     : Lumen index in parent model for each SSR
+Help      : Lumen index in parent model  for each SSR
+Ndimen    : 1
+Dimensions: nssr - 90
+Size      : 90
+Type      : long
+Units     : none
+Width     : 4
+Max       : 99999999
+Min       : 1
+Default   : 1
+
+Name      : poi_gage_id
+Module    : setup_param
+Descr     : POI Gage ID
+Help      : USGS stream gage for each POI gage
+Ndimen    : 1
+Dimensions: npoigages - 0
+Size      : 1
+Type      : string
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 0
+Default   : 0
+
+Name      : poi_gage_segment
+Module    : setup_param
+Descr     : Segment index for each POI gage
+Help      : Segment index for each POI gage
+Ndimen    : 1
+Dimensions: npoigages - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 0
+Min       : 0
+Default   : 0
+Bounded   : nsegment
+
+Name      : poi_type
+Module    : setup_param
+Descr     : Type code for each POI gage
+Help      : Type code for each POI gage (0=non-calibration gage, 1=calibration gage, 2=flow replacement gage)
+Ndimen    : 1
+Dimensions: npoigages - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 2
+Min       : 0
+Default   : 1
 
 Name      : potet_sublim
 Module    : snowcomp
@@ -1470,7 +1629,7 @@ Default   : 0.000000
 Name      : tmax_adj
 Module    : xyz_dist
 Descr     : HRU maximum temperature adjustment
-Help      : Adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect
+Help      : Monthly (January to December) additive adjustment to maximum temperature for each HRU, estimated on the basis of slope and aspect
 Ndimen    : 2
 Dimensions: nhru - 90, nmonths - 12
 Size      : 1080
@@ -1606,6 +1765,20 @@ Width     : 0
 Max       : 100.000000
 Min       : -100.000000
 Default   : 1.000000
+
+Name      : tosegment_nhm
+Module    : setup_param
+Descr     : National Hydrologic Model downstream segment ID
+Help      : National Model Hydrologic downstream segment ID
+Ndimen    : 1
+Dimensions: nsegment - 0
+Size      : 1
+Type      : long
+Units     : none
+Width     : 4
+Max       : 9999999
+Min       : 0
+Default   : 0
 
 Name      : transp_beg
 Module    : transp_tindex

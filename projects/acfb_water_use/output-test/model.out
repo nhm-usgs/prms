@@ -68,9 +68,9 @@ Output Summary                  nhru_summary        2024-04-04
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
-Using Control File: .\Control\control
+Using Control File: .\control\control
 
-Using Parameter File: ./input/params
+Using Parameter File: .\input\params
 
 
 Start time: 1980/01/01 00:00:00
@@ -111,5 +111,5 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
  **************************************************************
  Total for run    1110.775  507.968    10.154  622.340   13.445
  **************************************************************
-Execution elapsed time    0 minutes  0.70 seconds
+Execution elapsed time    0 minutes  0.80 seconds
 
