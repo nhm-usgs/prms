@@ -1,0 +1,96 @@
+
+
+                         U.S. Geological Survey
+               Precipitation-Runoff Modeling System (PRMS)
+                        Version 6.0.0 06/01/2024
+
+--------------------------------------------------------------------
+        Process            Available Modules
+--------------------------------------------------------------------
+  Basin Definition: basin
+    Cascading Flow: cascade
+  Time Series Data: obs, water_use_read, dynamic_param_read
+                    dynamic_soil_param_read
+   Potet Solar Rad: soltab
+  Temperature Dist: temp_1sta, temp_laps, temp_dist2, climate_hru,
+                    temp_map
+       Precip Dist: precip_1sta, precip_laps, precip_dist2,
+                    climate_hru, precip_map
+Temp & Precip Dist: xyz_dist, ide_dist
+    Solar Rad Dist: ccsolrad, ddsolrad, climate_hru
+Transpiration Dist: transp_tindex, climate_hru, transp_frost
+      Potential ET: potet_hamon, potet_jh, potet_pan, climate_hru,
+                    potet_hs, potet_pt, potet_pm, potet_pm_sta
+      Interception: intcp
+Snow & Glacr Dynam: snowcomp, glacr_melt
+    Surface Runoff: srunoff_smidx, srunoff_carea
+         Soil Zone: soilzone
+       Groundwater: gwflow
+Streamflow Routing: strmflow, strmflow_in_out, muskingum,
+                    muskingum_lake, muskingum_mann, segment_to_hru
+Streamflow Charact: strmflow_character
+Stream Temperature: stream_temp
+    Output Summary: basin_sum, subbasin, map_results, prms_summary,
+                    nhru_summary, nsub_summary, water_balance
+                    basin_summary, nsegment_summary
+     Preprocessing: write_climate_hru, frost_date
+--------------------------------------------------------------------
+
+Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
+
+==========================================================================
+Please give careful consideration to fixing all ERROR and WARNING messages
+==========================================================================
+
+
+--------------------------------------------------------------------
+    Active modules listed in the order in which they are called
+--------------------------------------------------------------------
+        Process                    Module         Version Date
+==============================================================
+Computation Order               call_modules        2024-06-01
+Basin Definition                basin               2024-04-04
+Common States and Fluxes        climateflow         2024-04-30
+Potential Solar Radiation       soltab              2024-01-22
+Parameter Setup                 setup_param         2020-08-03
+Timestep Control                prms_time           2023-11-01
+Time Series Data                obs                 2023-11-01
+Temp & Precip Distribution      xyz_dist            2024-04-30
+Solar Radiation Distribution    ccsolrad            2024-04-04
+Transpiration Distribution      transp_tindex       2023-11-01
+Potential Evapotranspiration    potet_jh            2021-08-13
+Canopy Interception             intcp               2024-04-04
+Snow Dynamics                   snowcomp            2024-04-30
+Glacier Dynamics                glacr_melt          2024-04-04
+Surface Runoff                  srunoff_smidx       2024-04-04
+Soilzone Computations           soilzone            2024-05-24
+Groundwater                     gwflow              2024-01-22
+Streamflow Routing Init         routing             2024-02-09
+Streamflow Routing              muskingum           2023-11-01
+Output Summary                  basin_sum           2024-04-30
+Output Summary                  prms_summary        2024-04-30
+==============================================================
+
+Using Control File: .\control\gulkana.control
+
+Using Parameter File: .\input\gulkana.par
+
+Writing PRMS Water Budget File: .\output\gulkana.out
+
+Simulation time period: 1971/10/01 - 2015/09/30
+
+==========================================================================
+
+
+                          =========================
+                          Normal completion of PRMS
+                          =========================
+
+
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:43:17
+
+
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:43:18
+
+Execution elapsed time    0 minutes  1.57 seconds
+
