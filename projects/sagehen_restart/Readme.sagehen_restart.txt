@@ -1,5 +1,5 @@
 
-                  Sagehen Restart Sample Problem for GSFLOW
+                  Sagehen Restart Sample Problem for PRMS
                                  October 2016
  
 This sample is for the Sagehen Creek Watershed and demonstrates use of the 
