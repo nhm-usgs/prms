@@ -16,8 +16,8 @@
       IMPLICIT NONE
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Groundwater'
-      character(len=6), parameter :: MODNAME = 'gwflow'
-      character(len=*), parameter :: Version_gwflow = '2024-01-22'
+      character(len=*), parameter :: MODNAME = 'gwflow'
+      character(len=*), parameter :: Version_gwflow = '2024-05-30'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Gwstor_minarea(:), Gwin_dprst(:)
       DOUBLE PRECISION, SAVE :: Basin_gw_upslope
       INTEGER, SAVE :: Gwminarea_flag
@@ -551,7 +551,7 @@
           IF ( Ncascade_gwr(i)>0 ) THEN
             CALL rungw_cascade(i, Ncascade_gwr(i), Gwres_flow(i), dnflow)
             Hru_gw_cascadeflow(i) = dnflow
-            Basin_dnflow = Basin_dnflow + dnflow*gwarea
+            Basin_dnflow = Basin_dnflow + DBLE( dnflow*Hru_area(i) )
           ELSEIF ( Gwr_type(i)==LAKE ) THEN
             Lakein_gwflow(Lake_hru_id(i)) = Lakein_gwflow(Lake_hru_id(i)) + Gwres_flow(i)
           ENDIF
@@ -602,7 +602,7 @@
         ! Gwres_flow is in inches
 ! if gwr_down(k, Igwr) > 0, cascade contributes to a downslope GWR
         IF ( j>0 ) THEN
-          Gw_upslope(j) = Gw_upslope(j) + Gwres_flow*Cascade_gwr_area(k, Igwr)
+          Gw_upslope(j) = Gw_upslope(j) + DBLE( Gwres_flow*Cascade_gwr_area(k, Igwr) )
           Dnflow = Dnflow + Gwres_flow*Gwr_down_frac(k, Igwr)
 ! if gwr_down(k, Igwr) < 0, cascade contributes to a stream
         ELSEIF ( j<0 ) THEN

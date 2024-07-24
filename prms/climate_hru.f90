@@ -287,7 +287,7 @@
 
       ELSEIF ( Process_flag==DECL ) THEN
 
-        IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = ACTIVE
+        IF ( control_integer(Cbh_check_flag, 'cbh_check_flag')/=0 ) Cbh_check_flag = OFF
         IF ( control_integer(cbh_active_flag, 'cbh_active_flag')/=0 ) cbh_active_flag = OFF
 
         IF ( Climate_temp_flag==ACTIVE .OR. Model==DOCUMENTATION ) &

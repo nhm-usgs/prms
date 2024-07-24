@@ -77,7 +77,7 @@ void setup_cont (void) {
 		decl_control_int_array ("cascadegw_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
-		lval[0] = 1;
+		lval[0] = 0;
 		decl_control_int_array ("subbasin_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
@@ -105,7 +105,7 @@ void setup_cont (void) {
 		decl_control_int_array ("cbh_active_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
-		lval[0] = 1;
+		lval[0] = 0;
 		decl_control_int_array ("cbh_check_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
