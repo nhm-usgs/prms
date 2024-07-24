@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
+b7497383baa8ad3dcd9aaa897cc5ce16ca5fbc6a [b749738] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -65,7 +65,7 @@ Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
 Soilzone Computations           soilzone            2024-05-24
-Groundwater                     gwflow              2024-01-22
+Groundwater                     gwflow              2024-05-30
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-04-30
 Output Summary                  subbasin            2023-11-01
@@ -73,11 +73,11 @@ Output Summary                  basin_summary       2021-08-13
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
-Using Control File: .\prms.control
+Using Control File: .\control\prms.control
 
-Using Parameter File: ..\input\prms.params
+Using Parameter File: .\input\prms.params
 
-Writing PRMS Water Budget File: ..\output\sagehen_prms_cont.out
+Writing PRMS Water Budget File: .\output\sagehen_prms_cont.out
 
  WARNING, pref_flow_infil_frac not specified, substituting pref_flow_den
 
@@ -91,10 +91,10 @@ Simulation time period: 1980/10/01 - 1984/01/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:45:47
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/07/23 12:02:39
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/01  9:45:47
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/07/23 12:02:39
 
-Execution elapsed time    0 minutes  0.30 seconds
+Execution elapsed time    0 minutes  0.23 seconds
 

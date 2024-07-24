@@ -79,7 +79,7 @@ Sample problems:
    PRMS with a time-series of water-use input to the water_use_read module that 
    is described in Regan and LaFontaine (2017).
 
-6. Tazlina: A model of the Tazlina Basin in Alaska is provided for illustrative
+6. glukana: A model of the Glukana Basin in Alaska is provided for illustrative
    and educational purposes only. The glacier dynamics simulation method is
    described in Van Beusekom and Viger (2015).
 

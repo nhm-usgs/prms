@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
+b7497383baa8ad3dcd9aaa897cc5ce16ca5fbc6a [b749738] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -60,7 +60,7 @@ Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
 Soilzone Computations           soilzone            2024-05-24
-Groundwater                     gwflow              2024-01-22
+Groundwater                     gwflow              2024-05-30
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-04-30
 Output Summary                  subbasin            2023-11-01
@@ -68,9 +68,9 @@ Output Summary                  basin_summary       2021-08-13
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
-Using Control File: .\prms.control
+Using Control File: .\control\prms.control
 
-Using Parameter File: ..\input\prms.params
+Using Parameter File: .\input\prms.params
 
 
 Start time: 1983/10/21 00:00:00
@@ -94,5 +94,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1983   10   25    0.000    0.114    10.672    0.020    0.022    0.000    0.000
    1983   10   26    0.000    0.043    10.610    0.019    0.022    0.000    0.000
    1983   10   27    0.000    0.036    10.555    0.019    0.021    0.000    0.000
-Execution elapsed time    0 minutes  0.09 seconds
+Execution elapsed time    0 minutes  0.10 seconds
 
