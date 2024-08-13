@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Common States and Fluxes'
       character(len=11), parameter :: MODNAME = 'climateflow'
-      character(len=*), parameter :: Version_climateflow = '2024-04-30'
+      character(len=*), parameter :: Version_climateflow = '2024-08-09'
       INTEGER, SAVE :: Use_pandata, Solsta_flag
       ! Tmax_hru and Tmin_hru are in temp_units
       REAL, SAVE, ALLOCATABLE :: Tmax_hru(:), Tmin_hru(:)
@@ -788,7 +788,7 @@ end module PRMS_IT0_VARS
 
       ALLOCATE ( Sat_threshold(Nhru) )
       IF ( declparam(Soilzone_module, 'sat_threshold', 'nhru', 'real', &
-     &     '999.0', '0.00001', '999.0', &
+     &     '999.0', '0.0', '999.0', &
      &     'Soil saturation threshold, above field-capacity threshold', &
      &     'Water holding capacity of the gravity and preferential-'// &
      &     'flow reservoirs; difference between field capacity and total soil saturation for each HRU', &
@@ -796,7 +796,7 @@ end module PRMS_IT0_VARS
 
       ALLOCATE ( Soil_moist_max(Nhru) )
       IF ( declparam(Soilzone_module, 'soil_moist_max', 'nhru', 'real', &
-     &     '2.0', '0.00001', '30.0', &
+     &     '2.0', '0.001', '30.0', &
      &     'Maximum value of water for soil zone', &
      &     'Maximum available water holding capacity of capillary'// &
      &     ' reservoir from land surface to rooting depth of the major vegetation type of each HRU', &
@@ -904,7 +904,7 @@ end module PRMS_IT0_VARS
       EXTERNAL :: checkdim_param_limits, checkdim_bounded_limits, read_error
       REAL, EXTERNAL :: c_to_f, f_to_c
 ! Local variables
-      INTEGER :: i, j
+      INTEGER :: i, j, bad_soil_moist_max
 !***********************************************************************
       climateflow_init = 0
 
@@ -1102,16 +1102,18 @@ end module PRMS_IT0_VARS
       ! check parameters
       Basin_soil_moist = 0.0D0 ! set because these are saved in It0 variables in prms_time
       Basin_ssstor = 0.0D0
+      bad_soil_moist_max = 0
       DO i = 1, Nhru
         IF ( Hru_type(i)==INACTIVE .OR. Hru_type(i)==LAKE ) CYCLE
         ! hru_type = land or swale or glacier
-        IF ( Soil_moist_max(i)<0.00001 ) THEN
+        IF ( Soil_moist_max(i)<0.001 ) THEN
           IF ( Parameter_check_flag>0 ) THEN
             PRINT 9006, i, Soil_moist_max(i)
             Inputerror_flag = 1
           ELSE
-            Soil_moist_max(i) = 0.00001
+            Soil_moist_max(i) = 0.001
             IF ( Print_debug>DEBUG_less ) PRINT 9008, i
+            bad_soil_moist_max = bad_soil_moist_max + 1
           ENDIF
         ENDIF
         IF ( Soil_rechr_max(i)<0.00001 ) THEN
@@ -1171,6 +1173,7 @@ end module PRMS_IT0_VARS
         Basin_soil_moist = Basin_soil_moist + Soil_moist(i) * Hru_perv(i)
         Basin_ssstor = Basin_ssstor + Ssres_stor(i) * Hru_area(i)
       ENDDO
+      IF ( bad_soil_moist_max > 0 ) WRITE(*,'(/,A,I0)') 'WARNING, number of soil_moist_max < 0.001: ', bad_soil_moist_max
       Basin_soil_moist = Basin_soil_moist * Basin_area_inv
       Basin_ssstor = Basin_ssstor * Basin_area_inv
 
@@ -1254,9 +1257,9 @@ end module PRMS_IT0_VARS
  9003 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_rechr_init > soil_rechr_max', 2F15.9)
  9004 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_moist_init > soil_moist_max', 2F15.9)
  9005 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_rechr > soil_moist based on init and max values', 2F15.9)
- 9006 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_moist_max < 0.00001', F15.9)
+ 9006 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_moist_max < 0.001', F15.9)
  9007 FORMAT (/, 'ERROR, HRU: ', I0, ' soil_rechr_max < 0.00001', F15.9)
- 9008 FORMAT (/, 'WARNING, HRU: ', I0, ' soil_moist_max < 0.00001, set to 0.00001')
+ 9008 FORMAT (/, 'WARNING, HRU: ', I0, ' soil_moist_max < 0.001, set to 0.001')
  9009 FORMAT (/, 'WARNING, HRU: ', I0, ' soil_rechr_max < 0.00001, set to 0.00001')
  9012 FORMAT (/, 'WARNING, HRU: ', I0, ' soil_rechr_max > soil_moist_max,', 2F15.9, /, 9X, &
      &        'soil_rechr_max set to soil_moist_max')

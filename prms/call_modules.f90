@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-06-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 06/01/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-09-01'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 09/01/2024'
       character(len=*), parameter :: githash = 'b7497383baa8ad3dcd9aaa897cc5ce16ca5fbc6a [b749738] branch 5.2.2.2'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions

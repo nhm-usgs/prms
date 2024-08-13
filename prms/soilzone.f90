@@ -21,7 +21,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2024-05-24'
+      character(len=*), parameter :: Version_soilzone = '2024-06-20'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
@@ -63,6 +63,7 @@
       REAL, SAVE, ALLOCATABLE :: Ssr2gw_rate(:), Ssr2gw_exp(:)
       REAL, SAVE, ALLOCATABLE :: Soil2gw_max(:)
       REAL, SAVE, ALLOCATABLE :: Lake_evap_adj(:, :)
+      REAL, SAVE :: cascade_min
       END MODULE PRMS_SOILZONE
 
 !***********************************************************************
@@ -466,6 +467,14 @@
      &     ' from the gravity reservoir to groundwater storage for each HRU', &
      &     'none')/=0 ) CALL read_error(1, 'ssr2gw_exp')
 
+      IF ( Cascade_flag>CASCADE_OFF ) THEN
+        IF ( declparam(MODNAME, 'cascade_min', 'one', 'real', &
+     &       '0.000001', '0.0', '0.01', &
+     &       'Cascade minimum', &
+     &       'Minimum depth of interflow + Dunnian flow to cascade', &
+     &       'inches')/=0 ) CALL read_error(1,'cascade_min')
+      ENDIF
+
       END FUNCTION szdecl
 
 !***********************************************************************
@@ -519,6 +528,10 @@
       IF ( Nlake>0 ) THEN
         IF ( getparam(MODNAME, 'lake_evap_adj', MONTHS_PER_YEAR*Nlake, 'real', Lake_evap_adj)/=0 ) &
      &       CALL read_error(2, 'lake_evap_adj')
+      ENDIF
+
+      IF ( Cascade_flag>CASCADE_OFF ) THEN
+        IF ( getparam(MODNAME, 'cascade_min', 1, 'real', cascade_min)/=0 ) CALL read_error(2, 'cascade_min')
       ENDIF
 
       Swale_limit = 0.0
@@ -619,8 +632,8 @@
 !             and groundwater reservoirs
 !***********************************************************************
       INTEGER FUNCTION szrun()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, LAKE, SWALE, &
-     &    DEBUG_less, CASCADE_OFF !, ERROR_param
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, &
+     &    DEBUG_less, CASCADE_OFF !, ERROR_param, NEARZERO
       USE PRMS_MODULE, ONLY: Print_debug, Dprst_flag, Cascade_flag, Nlake, &
      &    Frozen_flag, Soilzone_add_water_use, Nowmonth !, Nowyear, Nowday, CLOSEZERO
       USE PRMS_SOILZONE
@@ -968,7 +981,7 @@
           Dunnian_flow(i) = dunnianflw
           IF ( Cascade_flag>CASCADE_OFF ) THEN
             IF ( Ncascade_hru(i)>0 ) THEN
-              IF ( interflow+dunnianflw>NEARZERO ) THEN
+              IF ( interflow+dunnianflw>cascade_min ) THEN
                 dnslowflow = 0.0
                 dnpreflow = 0.0
                 dndunn = 0.0

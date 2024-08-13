@@ -30,7 +30,7 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_rain(:), Subinc_snow(:), Subinc_stor(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Subinc_recharge(:), Subinc_szstor_frac(:), Subinc_capstor_frac(:)
 !   Declared Parameters
-      INTEGER, SAVE, ALLOCATABLE :: Subbasin_down(:), Hru_subbasin(:)
+      INTEGER, SAVE, ALLOCATABLE :: Subbasin_down(:)
       END MODULE PRMS_SUBBASIN
 
 !***********************************************************************
@@ -63,7 +63,7 @@
 !***********************************************************************
       INTEGER FUNCTION subdecl()
       USE PRMS_CONSTANTS, ONLY: DOCUMENTATION, ERROR_dim
-      USE PRMS_MODULE, ONLY: Model, Nsub, Nhru
+      USE PRMS_MODULE, ONLY: Model, Nsub
       USE PRMS_SUBBASIN
       IMPLICIT NONE
 ! Functions
@@ -221,13 +221,6 @@
      &     'Index number for the downstream subbasin whose inflow is outflow from this subbasin', &
      &     'none')/=0 ) CALL read_error(1, 'subbasin_down')
 
-      ALLOCATE ( Hru_subbasin(Nhru) )
-      IF ( declparam(MODNAME, 'hru_subbasin', 'nhru', 'integer', &
-     &     '0', 'bounded', 'nsub', &
-     &     'Index of subbasin assigned to each HRU', &
-     &     'Index of subbasin assigned to each HRU', &
-     &     'none')/=0 ) CALL read_error(1, 'hru_subbasin')
-
 ! Allocate arrays for variables
       ALLOCATE ( Sub_area(Nsub), Laststor(Nsub) )
 
@@ -239,11 +232,11 @@
 !***********************************************************************
       INTEGER FUNCTION subinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, DNEARZERO
-      USE PRMS_MODULE, ONLY: Nsub, Nhru, Print_debug, &
+      USE PRMS_MODULE, ONLY: Nsub, Print_debug, &
      &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, Lake_hru_id
+     &    Hru_type, Hru_frac_perv, Lake_hru_id, Hru_subbasin
       USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_INTCP, ONLY: Hru_intcpstor
@@ -262,7 +255,6 @@
 !***********************************************************************
       subinit = 0
 
-      IF ( getparam(MODNAME, 'hru_subbasin', Nhru, 'integer', Hru_subbasin)/=0 ) CALL read_error(2, 'hru_subbasin')
       IF ( getparam(MODNAME, 'subbasin_down', Nsub, 'integer', Subbasin_down)/=0 ) CALL read_error(2, 'subbasin_down')
 
 ! Determine the tree structure for the internal nodes
@@ -412,7 +404,7 @@
       USE PRMS_MODULE, ONLY: Nsub, Dprst_flag, Lake_route_flag, Cascade_flag
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
-     &    Hru_type, Hru_frac_perv, Lake_hru_id
+     &    Hru_type, Hru_frac_perv, Lake_hru_id, Hru_subbasin
       USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
       USE PRMS_SNOW, ONLY: Snowcov_area, Snowmelt
       USE PRMS_CLIMATEVARS, ONLY: Hru_ppt, Swrad, Potet, Tminc, Tmaxc, Tavgc, Hru_rain, Hru_snow

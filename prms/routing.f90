@@ -6,16 +6,16 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2024-02-09'
+      character(len=*), parameter :: Version_routing = '2024-08-13'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades, special_seg_type_flag
       INTEGER, SAVE, ALLOCATABLE :: Segment_order(:), Segment_up(:)
-      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:)
       !CHARACTER(LEN=32), SAVE :: Outfmt
       INTEGER, SAVE, ALLOCATABLE :: Ts_i(:)
       REAL, SAVE, ALLOCATABLE :: Ts(:), C0(:), C1(:), C2(:)
 !   Declared Variables
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segment_hruarea(:), Segmentcum_hruarea(:), Seg_upstream_hruarea(:)
       DOUBLE PRECISION, SAVE :: Basin_segment_storage
       DOUBLE PRECISION, SAVE :: Flow_to_lakes, Flow_to_ocean, Flow_to_great_lakes, Flow_out_region
       DOUBLE PRECISION, SAVE :: Flow_in_region, Flow_in_nation, Flow_headwater, Flow_out_NHM
@@ -23,6 +23,8 @@
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seginc_ssflow(:), Seginc_sroff(:), Segment_delta_flow(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seginc_gwflow(:), Seginc_swrad(:), Seginc_potet(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_outflow(:), Seg_ssflow(:), Seg_sroff(:), Seg_gwflow(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segcum_ssflow(:), Segcum_sroff(:), Segcum_gwflow(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Seg_upstream_ssflow(:), Seg_upstream_sroff(:), Seg_upstream_gwflow(:)
 !   Declared Parameters
       INTEGER, SAVE, ALLOCATABLE :: Segment_type(:), Tosegment(:), Hru_segment(:), Obsin_segment(:), Obsout_segment(:)
       REAL, SAVE, ALLOCATABLE :: K_coef(:), X_coef(:)
@@ -278,24 +280,74 @@
 
         ALLOCATE ( Seg_ssflow(Nsegment) )
         IF ( declvar(MODNAME, 'seg_ssflow', 'nsegment', Nsegment, 'double', &
-     &       'Area-weighted average interflow for each segment from HRUs contributing flow to the segment and upstream HRUs', &
+     &       'Area-weighted average interflow for each segment from HRUs contributing flow to the segment', &
      &       'inches', Seg_ssflow)/=0 ) CALL read_error(3, 'seg_ssflow')
 
         ALLOCATE ( Seg_gwflow(Nsegment) )
         IF ( declvar(MODNAME, 'seg_gwflow', 'nsegment', Nsegment, 'double', &
-     &       'Area-weighted average groundwater discharge for each segment from'// &
-     &       ' HRUs contributing flow to the segment and upstream HRUs', &
+     &       'Area-weighted average groundwater flow for each segment from'// &
+     &       ' HRUs contributing flow to the segment', &
      &       'inches', Seg_gwflow)/=0 ) CALL read_error(3, 'seg_gwflow')
 
         ALLOCATE ( Seg_sroff(Nsegment) )
         IF ( declvar(MODNAME, 'seg_sroff', 'nsegment', Nsegment, 'double', &
      &       'Area-weighted average surface runoff for each segment from'// &
-     &       ' HRUs contributing flow to the segment and upstream HRUs', &
+     &       ' HRUs contributing flow to the segment', &
      &       'inches', Seg_sroff)/=0 ) CALL read_error(3, 'seg_sroff')
+
+        ALLOCATE ( Segcum_ssflow(Nsegment) )
+        IF ( declvar(MODNAME, 'segcum_ssflow', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average interflow for each segment from HRUs contributing flow to the segment'// &
+     &        ' including upstream HRUs', &
+     &       'cfs', Segcum_ssflow)/=0 ) CALL read_error(3, 'segcum_ssflow')
+
+        ALLOCATE ( Segcum_gwflow(Nsegment) )
+        IF ( declvar(MODNAME, 'segcum_gwflow', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average groundwater flow for each segment from'// &
+     &       ' HRUs contributing flow to the segment including upstream HRUs', &
+     &       'cfs', Segcum_gwflow)/=0 ) CALL read_error(3, 'segcum_gwflow')
+
+        ALLOCATE ( Segcum_sroff(Nsegment) )
+        IF ( declvar(MODNAME, 'segcum_sroff', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average surface runoff for each segment from'// &
+     &       ' HRUs contributing flow to the segment', &
+     &       'cfs', Segcum_sroff)/=0 ) CALL read_error(3, 'segcum_sroff')
+
+        ALLOCATE ( Seg_upstream_ssflow(Nsegment) )
+        IF ( declvar(MODNAME, 'seg_upstream_ssflow', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average interflow for each segment from upstream HRUs', &
+     &       'cfs', Seg_upstream_ssflow)/=0 ) CALL read_error(3, 'seg_upstream_ssflow')
+
+        ALLOCATE ( Seg_upstream_gwflow(Nsegment) )
+        IF ( declvar(MODNAME, 'seg_upstream_gwflow', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average groundwater flow for each segment from'// &
+     &       ' HRUs contributing flow to the segment including upstream HRUs', &
+     &       'cfs', Seg_upstream_gwflow)/=0 ) CALL read_error(3, 'seg_upstream_gwflow')
+
+        ALLOCATE ( Seg_upstream_sroff(Nsegment) )
+        IF ( declvar(MODNAME, 'seg_upstream_sroff', 'nsegment', Nsegment, 'double', &
+     &       'Area-weighted average surface runoff for each segment from'// &
+     &       ' HRUs contributing flow to the segment', &
+     &       'cfs', Seg_upstream_sroff)/=0 ) CALL read_error(3, 'seg_upstream_sroff')
+
+        ALLOCATE( Segment_hruarea(Nsegment) )
+        IF ( declvar(MODNAME, 'segment_hruarea', 'one', 1, 'double', &
+     &       'Contributing area to each segment', &
+     &       'acres', Segment_hruarea)/=0 ) CALL read_error(3, 'segment_hruarea')
+
+        ALLOCATE( Segmentcum_hruarea(Nsegment) )
+        IF ( declvar(MODNAME, 'segmentcum_hruarea', 'one', 1, 'double', &
+     &       'Contributing area to each segment including upslope HRUs', &
+     &       'acres', Segmentcum_hruarea)/=0 ) CALL read_error(3, 'segmentcum_hruarea')
+
+        ALLOCATE( Seg_upstream_hruarea(Nsegment) )
+        IF ( declvar(MODNAME, 'seg_upstream_hruarea', 'one', 1, 'double', &
+     &       'Contributing area to each segment from upslope HRUs', &
+     &       'acres', Seg_upstream_hruarea)/=0 ) CALL read_error(3, 'seg_upstream_hruarea')
       ENDIF
 
       ! local arrays
-      ALLOCATE ( Segment_order(Nsegment), Segment_up(Nsegment), Segment_hruarea(Nsegment) )
+      ALLOCATE ( Segment_order(Nsegment), Segment_up(Nsegment) )
 
       END FUNCTION routingdecl
 
@@ -318,7 +370,7 @@
       INTEGER, EXTERNAL :: getparam
       EXTERNAL :: read_error, write_outfile
 ! Local Variables
-      INTEGER :: i, j, test, lval, toseg, iseg, isegerr, ierr, eseg
+      INTEGER :: i, j, test, lval, toseg, iseg, isegerr, ierr, eseg, iorder
       REAL :: k, x, d, x_max, velocity
       INTEGER, ALLOCATABLE :: x_off(:)
       CHARACTER(LEN=10) :: buffer
@@ -515,6 +567,15 @@
 !      ENDIF
       DEALLOCATE ( x_off )
 
+      Segmentcum_hruarea = 0.0D0
+      Seg_upstream_hruarea = 0.0D0
+      DO i = 1, Nsegment
+        iseg = Hru_segment(i)
+        iorder = Segment_order(i)
+        Segmentcum_hruarea(iorder) = Segmentcum_hruarea(iorder) + Seg_upstream_hruarea(iorder)
+        IF ( toseg>0 ) Seg_upstream_hruarea(toseg) = Seg_upstream_hruarea(toseg) + Segment_hruarea(iorder)
+      ENDDO
+
       IF ( Strmflow_flag==strmflow_in_out_module ) RETURN
 !
 !      Compute the three constants in the Muskingum routing equation based
@@ -667,7 +728,7 @@
 ! Functions
       INTRINSIC :: DBLE
 ! Local Variables
-      INTEGER :: i, j, jj, this_seg
+      INTEGER :: i, j, jj, this_seg, iorder, toseg
       DOUBLE PRECISION :: tocfs
       LOGICAL :: found
 !***********************************************************************
@@ -718,6 +779,27 @@
           ENDIF
         ENDIF
       ENDDO
+
+      IF ( Hru_seg_cascades==ACTIVE ) THEN
+        Segcum_gwflow = 0.0D0
+        Segcum_ssflow = 0.0D0
+        Segcum_sroff = 0.0D0
+        Seg_upstream_gwflow = 0.0D0
+        Seg_upstream_ssflow = 0.0D0
+        Seg_upstream_sroff = 0.0D0
+        DO i = 1, Nsegment
+          iorder = Segment_order(i)
+          toseg = Tosegment(iorder)
+          Segcum_gwflow(iorder) = Segcum_gwflow(iorder) + Seg_upstream_gwflow(iorder)
+          Segcum_ssflow(iorder) = Segcum_ssflow(iorder) + Seg_upstream_ssflow(iorder)
+          Segcum_sroff(iorder) = Segcum_sroff(iorder) + Seg_upstream_sroff(iorder)
+          IF ( toseg>0 ) THEN
+            Seg_upstream_gwflow(toseg) = Seg_upstream_gwflow(toseg) + Seginc_gwflow(iorder)
+            Seg_upstream_ssflow(toseg) = Seg_upstream_ssflow(toseg) + Seginc_ssflow(iorder)
+            Seg_upstream_sroff(toseg) = Seg_upstream_sroff(toseg) + Seginc_sroff(iorder)
+          ENDIF
+        ENDDO
+      ENDIF
 
       IF ( Use_transfer_segment==ACTIVE ) THEN
         DO i = 1, Nsegment

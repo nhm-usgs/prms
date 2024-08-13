@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Basin Definition'
       character(len=*), parameter :: MODNAME = 'basin'
-      character(len=*), parameter :: Version_basin = '2024-04-04'
+      character(len=*), parameter :: Version_basin = '2024-08-09'
       INTEGER, SAVE :: Numlake_hrus, Active_hrus, Active_gwrs, Numlakes_check
       INTEGER, SAVE :: Hemisphere, Dprst_clos_flag, Dprst_open_flag, Imperv_flag
       DOUBLE PRECISION, SAVE :: Land_area, Water_area
@@ -32,6 +32,7 @@
       REAL, SAVE, ALLOCATABLE :: Hru_area(:), Hru_elev(:), Hru_lat(:) ! , Hru_percent_imperv(:)
       REAL, SAVE, ALLOCATABLE :: Covden_sum(:), Covden_win(:)
       REAL, SAVE, ALLOCATABLE :: Dprst_frac_open(:), Dprst_area(:) !, Dprst_frac(:)
+      INTEGER, SAVE, ALLOCATABLE :: Hru_subbasin(:)
       END MODULE PRMS_BASIN
 
 !***********************************************************************
@@ -64,7 +65,7 @@
       INTEGER FUNCTION basdecl()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, DOCUMENTATION
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Model, Dprst_flag, Lake_route_flag, &
-     &    PRMS4_flag, Glacier_flag
+     &    PRMS4_flag, Glacier_flag, Nsub
       USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
@@ -258,6 +259,15 @@
         ALLOCATE ( Lake_area(1) )
       ENDIF
 
+      IF ( Nsub>0 ) THEN
+        ALLOCATE ( Hru_subbasin(Nhru) )
+        IF ( declparam(MODNAME, 'hru_subbasin', 'nhru', 'integer', &
+     &       '0', 'bounded', 'nsub', &
+     &       'Index of subbasin assigned to each HRU', &
+     &       'Index of subbasin assigned to each HRU', &
+     &       'none')/=0 ) CALL read_error(1, 'hru_subbasin')
+      ENDIF
+
       END FUNCTION basdecl
 
 !**********************************************************************
@@ -270,7 +280,7 @@
      &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO !, METERS2FEET, SWALE
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
      &    Dprst_flag, Lake_route_flag, PRMS4_flag, PRMS_VERSION, &
-     &    Starttime, Endtime, Parameter_check_flag, Inputerror_flag !, Frozen_flag
+     &    Starttime, Endtime, Parameter_check_flag, Inputerror_flag, Nsub !, Frozen_flag
       USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
@@ -344,6 +354,9 @@
       ELSE
         Lake_hru_id = 0
       ENDIF
+      IF ( Nsub>0 ) THEN
+        IF ( getparam(MODNAME, 'hru_subbasin', Nhru, 'integer', Hru_subbasin)/=0 ) CALL read_error(2, 'hru_subbasin')
+      ENDIF
 
       Basin_gl_cfs = 0.0D0
       Basin_gl_ice_cfs = 0.0D0
@@ -367,16 +380,17 @@
       Hru_perv = 0.0
       Hru_storage = 0.0D0
       Hru_route_order = 0
+      Hru_area_dble = DBLE( Hru_area )
       Imperv_flag = OFF
       j = 0
       DO i = 1, Nhru
         harea = Hru_area(i)
-        harea_dble = DBLE( harea )
-        Hru_area_dble(i) = harea_dble
+        harea_dble = Hru_area_dble(i)
         Totarea = Totarea + harea_dble
         perv_area = harea
 
         IF ( Hru_type(i)==INACTIVE ) CYCLE
+
 ! ????????? need to fix for lakes with multiple HRUs and PRMS lake routing ????????
         IF ( Hru_type(i)==LAKE ) THEN
           Numlake_hrus = Numlake_hrus + 1
@@ -548,6 +562,7 @@
           WRITE (buffer, 9005) 'DPRST area:          ', basin_dprst, '    Fraction DPRST:   ', basin_dprst*Basin_area_inv
           CALL write_outfile(buffer)
         ENDIF
+        IF ( Active_hrus/=Nhru ) PRINT *, 'Active HRUs: ', Active_hrus, '   Inactive HRUs: ', Nhru - Active_hrus
         CALL write_outfile(' ')
       ENDIF
 
