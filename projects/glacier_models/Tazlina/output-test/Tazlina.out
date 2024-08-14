@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 06/01/2024
+                        Version 6.0.0 09/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,16 +36,16 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 4426f3df79b97d74504dee6d2e15fc86fddc84f0 [4426f3d] branch 5.2.2.2
+Github Commit Hash [9c10c93] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-06-01
-Basin Definition                basin               2024-04-04
-Common States and Fluxes        climateflow         2024-04-30
+Computation Order               call_modules        2024-09-01
+Basin Definition                basin               2024-08-09
+Common States and Fluxes        climateflow         2024-08-09
 Potential Solar Radiation       soltab              2024-01-22
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
@@ -58,9 +58,9 @@ Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Glacier Dynamics                glacr_melt          2024-04-04
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-05-24
-Groundwater                     gwflow              2024-01-22
-Streamflow Routing Init         routing             2024-02-09
+Soilzone Computations           soilzone            2024-06-20
+Groundwater                     gwflow              2024-05-30
+Streamflow Routing Init         routing             2024-08-13
 Streamflow Routing              muskingum           2023-11-01
 Output Summary                  basin_sum           2024-04-30
 Output Summary                  prms_summary        2024-04-30
@@ -68,7 +68,7 @@ Output Summary                  prms_summary        2024-04-30
 
 Using Control File: .\control\Tazlina.control
 
-Using Parameter File: ./input/Tazlina.par
+Using Parameter File: .\input\Tazlina.par
 
 
 Start time: 1950/10/01 00:00:00
@@ -153,5 +153,5 @@ Fraction impervious:        0.0473    Fraction pervious:       0.9527
  **************************************************************
  Total for run    1037.626  380.070 -1211.408 1843.397 -316.118
  **************************************************************
-Execution elapsed time    0 minutes  4.01 seconds
+Execution elapsed time    0 minutes  3.98 seconds
 

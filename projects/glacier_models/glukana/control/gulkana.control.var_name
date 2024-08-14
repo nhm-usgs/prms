@@ -2792,7 +2792,7 @@ Ndimen: 1
 Dimensions: nsegment - 27
 Size: 27
 Type: double
-Desc: Area-weighted average groundwater discharge for each segment from HRUs contributing flow to the segment and upstream HRUs
+Desc: Area-weighted average groundwater flow for each segment from HRUs contributing flow to the segment
 Units: inches
 
 Name: seg_inflow
@@ -2828,7 +2828,7 @@ Ndimen: 1
 Dimensions: nsegment - 27
 Size: 27
 Type: double
-Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment and upstream HRUs
+Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment
 Units: inches
 
 Name: seg_ssflow
@@ -2837,8 +2837,26 @@ Ndimen: 1
 Dimensions: nsegment - 27
 Size: 27
 Type: double
-Desc: Area-weighted average interflow for each segment from HRUs contributing flow to the segment and upstream HRUs
+Desc: Area-weighted average interflow for each segment from HRUs contributing flow to the segment
 Units: inches
+
+Name: seg_upstream_gwflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average groundwater flow for each segment from HRUs contributing flow to the segment including upstream HRUs
+Units: cfs
+
+Name: seg_upstream_hruarea
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Contributing area to each segment from upslope HRUs
+Units: acres
 
 Name: seg_upstream_inflow
 Module: muskingum
@@ -2847,6 +2865,51 @@ Dimensions: nsegment - 27
 Size: 27
 Type: double
 Desc: Sum of inflow from upstream segments
+Units: cfs
+
+Name: seg_upstream_sroff
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment
+Units: cfs
+
+Name: seg_upstream_ssflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average interflow for each segment from upstream HRUs
+Units: cfs
+
+Name: segcum_gwflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average groundwater flow for each segment from HRUs contributing flow to the segment including upstream HRUs
+Units: cfs
+
+Name: segcum_sroff
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average surface runoff for each segment from HRUs contributing flow to the segment
+Units: cfs
+
+Name: segcum_ssflow
+Module: routing
+Ndimen: 1
+Dimensions: nsegment - 27
+Size: 27
+Type: double
+Desc: Area-weighted average interflow for each segment from HRUs contributing flow to the segment including upstream HRUs
 Units: cfs
 
 Name: seginc_gwflow
@@ -2902,6 +2965,24 @@ Size: 27
 Type: double
 Desc: Cumulative flow in minus flow out for each stream segment
 Units: cfs
+
+Name: segment_hruarea
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Contributing area to each segment
+Units: acres
+
+Name: segmentcum_hruarea
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Contributing area to each segment including upslope HRUs
+Units: acres
 
 Name: slow_flow
 Module: soilzone

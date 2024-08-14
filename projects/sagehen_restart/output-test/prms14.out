@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 06/01/2024
+                        Version 6.0.0 09/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,30 +36,30 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-b7497383baa8ad3dcd9aaa897cc5ce16ca5fbc6a [b749738] branch 5.2.2.2
+Github Commit Hash [9c10c93] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-06-01
-Basin Definition                basin               2024-04-04
+Computation Order               call_modules        2024-09-01
+Basin Definition                basin               2024-08-09
 Cascading Flow                  cascade             2023-11-01
-Common States and Fluxes        climateflow         2024-04-30
+Common States and Fluxes        climateflow         2024-08-09
 Potential Solar Radiation       soltab              2024-01-22
 Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
 Time Series Data                obs                 2023-11-01
-Temperature Distribution        climate_hru         2024-04-30
-Precipitation Distribution      climate_hru         2024-04-30
+Temperature Distribution        climate_hru         2024-08-09
+Precipitation Distribution      climate_hru         2024-08-09
 Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
 Snow Dynamics                   snowcomp            2024-04-30
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-05-24
+Soilzone Computations           soilzone            2024-06-20
 Groundwater                     gwflow              2024-05-30
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-04-30
@@ -94,5 +94,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1983   11   29    0.000    0.008    28.024    0.021    0.070   -0.000    0.000
    1983   11   30    0.000    0.015    27.989    0.020    0.063    0.000    0.000
    1983   12    1    0.000    0.041    27.929    0.020    0.063   -0.000    0.000
-Execution elapsed time    0 minutes  0.09 seconds
+Execution elapsed time    0 minutes  0.11 seconds
 

@@ -262,6 +262,20 @@ Max       : 1
 Min       : 0
 Default   : 0
 
+Name      : cascade_min
+Module    : soilzone
+Descr     : Cascade minimum
+Help      : Minimum depth of interflow + Dunnian flow to cascade
+Ndimen    : 1
+Dimensions: one - 1
+Size      : 1
+Type      : float
+Units     : inches
+Width     : 4
+Max       : 0.010000
+Min       : 0.000000
+Default   : 0.000001
+
 Name      : cascade_tol
 Module    : cascade
 Descr     : Cascade area below which a cascade link is ignored
@@ -774,7 +788,7 @@ Default   : 0
 Bounded   : nsegment
 
 Name      : hru_subbasin
-Module    : subbasin
+Module    : basin
 Descr     : Index of subbasin assigned to each HRU
 Help      : Index of subbasin assigned to each HRU
 Ndimen    : 1
@@ -1365,7 +1379,7 @@ Type      : float
 Units     : inches
 Width     : 0
 Max       : 999.000000
-Min       : 0.000010
+Min       : 0.000000
 Default   : 999.000000
 
 Name      : segment_flow_init
@@ -1589,7 +1603,7 @@ Type      : float
 Units     : inches
 Width     : 0
 Max       : 30.000000
-Min       : 0.000010
+Min       : 0.001000
 Default   : 2.000000
 
 Name      : soil_rechr_init_frac

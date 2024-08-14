@@ -1569,7 +1569,7 @@ Type      : float
 Units     : inches
 Width     : 0
 Max       : 999.000000
-Min       : 0.000010
+Min       : 0.000000
 Default   : 999.000000
 
 Name      : segment_flow_init
@@ -1779,7 +1779,7 @@ Type      : float
 Units     : inches
 Width     : 0
 Max       : 30.000000
-Min       : 0.000010
+Min       : 0.001000
 Default   : 2.000000
 
 Name      : soil_rechr_init_frac

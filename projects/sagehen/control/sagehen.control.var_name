@@ -2201,6 +2201,15 @@ Type: double
 Desc: Streamflow leaving a segment
 Units: cfs
 
+Name: seg_upstream_hruarea
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Contributing area to each segment from upslope HRUs
+Units: acres
+
 Name: seg_upstream_inflow
 Module: strmflow_in_out
 Ndimen: 1
@@ -2209,6 +2218,15 @@ Size: 15
 Type: double
 Desc: Sum of inflow from upstream segments
 Units: cfs
+
+Name: segmentcum_hruarea
+Module: routing
+Ndimen: 1
+Dimensions: one - 1
+Size: 1
+Type: double
+Desc: Contributing area to each segment including upslope HRUs
+Units: acres
 
 Name: slow_flow
 Module: soilzone
