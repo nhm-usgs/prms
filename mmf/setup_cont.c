@@ -66,7 +66,7 @@ void setup_cont (void) {
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
-		decl_control_int_array ("print_debug", 1, lval);
+		decl_control_int_array("print_debug", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 1;
@@ -79,6 +79,10 @@ void setup_cont (void) {
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
 		decl_control_int_array ("subbasin_flag", 1, lval);
+
+		lval = (long*)umalloc(sizeof(long));
+		lval[0] = 0;
+		decl_control_int_array("one_subbasin_flag", 1, lval);
 
         lval = (long *)umalloc (sizeof (long));
 		lval[0] = 0;
@@ -97,8 +101,8 @@ void setup_cont (void) {
 		decl_control_int_array ("parameter_check_flag", 1, lval);
 
 		lval = (long*)umalloc (sizeof (long));
-		lval[0] = 0;
-		decl_control_int_array ("no_snow_flag", 1, lval);
+		lval[0] = 1;
+		decl_control_int_array ("snow_flag", 1, lval);
 
 		lval = (long*)umalloc (sizeof (long));
 		lval[0] = 0;
