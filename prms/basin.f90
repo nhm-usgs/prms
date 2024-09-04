@@ -16,6 +16,8 @@
       INTEGER, SAVE, ALLOCATABLE :: Gwr_type(:), Hru_route_order(:), Gwr_route_order(:)
       INTEGER, SAVE :: Weir_gate_flag, Puls_lin_flag
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_area_dble(:), Lake_area(:)
+!!      LOGICAL, ALLOCATABLE, SAVE :: active_mask(:)
+!!      INTEGER, ALLOCATABLE, SAVE :: active_mask_hru(:)
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Hru_frac_perv(:)
       REAL, SAVE, ALLOCATABLE :: Hru_frac_imperv(:), Hru_frac_dprst(:)
@@ -280,7 +282,7 @@
      &    NORTHERN, SOUTHERN, FEET2METERS, DNEARZERO !, METERS2FEET, SWALE
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Print_debug, &
      &    Dprst_flag, Lake_route_flag, PRMS4_flag, PRMS_VERSION, &
-     &    Starttime, Endtime, Parameter_check_flag, Inputerror_flag, Nsub !, Frozen_flag
+     &    Starttime, Endtime, Parameter_check_flag, Inputerror_flag, Nsub, one_subbasin_flag !, Frozen_flag
       USE PRMS_BASIN
       IMPLICIT NONE
 ! Functions
@@ -388,6 +390,10 @@
         harea_dble = Hru_area_dble(i)
         Totarea = Totarea + harea_dble
         perv_area = harea
+
+        IF ( one_subbasin_flag>0 ) THEN
+          IF ( Hru_subbasin(i) /= one_subbasin_flag ) Hru_type(i) = INACTIVE
+        ENDIF
 
         IF ( Hru_type(i)==INACTIVE ) CYCLE
 
@@ -511,6 +517,19 @@
 
       Active_hrus = j
       Active_area = Land_area + Water_area
+
+!!      ! Create mask of only active HRUs
+!!      allocate( active_mask(nhru)
+!!      active_mask = .false.
+!!      where (hru_type /= INACTIVE) active_mask = .true.
+!!      active_mask_hru(Active_hrus) )
+!!      j = 0
+!!      do i = 1, Nhru
+!!          if ( active_mask(i) ) then
+!!              j = j + 1
+!!              active_mask_hru(j) = i
+!!          endif
+!!      enddo
 
       Active_gwrs = Active_hrus
       Gwr_type = Hru_type

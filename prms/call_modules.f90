@@ -44,10 +44,10 @@
       INTEGER, SAVE :: NhruOutON_OFF, Gwr_swale_flag, NsubOutON_OFF, BasinOutON_OFF, NsegmentOutON_OFF
       INTEGER, SAVE :: Stream_temp_flag, Strmtemp_humidity_flag, Stream_temp_shade_flag
       INTEGER, SAVE :: Prms_warmup !, statsON_OFF
-      INTEGER, SAVE :: Frozen_flag, Glacier_flag
+      INTEGER, SAVE :: Frozen_flag, Glacier_flag, one_subbasin_flag
       INTEGER, SAVE :: Dprst_add_water_use, Dprst_transfer_water_use
       INTEGER, SAVE :: Snarea_curve_flag, Soilzone_aet_flag, snow_cloudcover_flag
-      INTEGER, SAVE :: seg2hru_flag, no_snow_flag, forcing_check_flag
+      INTEGER, SAVE :: seg2hru_flag, snow_flag, forcing_check_flag
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Model_output_file, Var_init_file, Var_save_file
       CHARACTER(LEN=MAXFILE_LENGTH), SAVE :: Csv_output_file, Model_control_file, Param_file
       CHARACTER(LEN=MAXCONTROL_LENGTH), SAVE :: Temp_module, Srunoff_module, Et_module
@@ -324,7 +324,7 @@
 
       ierr = intcp()
 
-      IF ( no_snow_flag==OFF ) THEN
+      IF ( snow_flag==ACTIVE ) THEN
         ierr = snowcomp()
 
         IF ( Glacier_flag==ACTIVE ) ierr = glacr()
@@ -724,6 +724,7 @@
 ! subbasin dimensions
       IF ( control_integer(Subbasin_flag, 'subbasin_flag')/=0 ) Subbasin_flag = OFF
       IF ( decldim('nsub', 0, MAXDIM, 'Number of internal subbasins')/=0 ) CALL read_error(7, 'nsub')
+      IF ( control_integer(one_subbasin_flag, 'one_subbasin_flag')/=0 ) one_subbasin_flag = OFF
 
       IF ( control_integer(Dprst_flag, 'dprst_flag')/=0 ) Dprst_flag = OFF
       IF ( control_integer(Dprst_transfer_water_use, 'dprst_transfer_water_use')/=0 ) Dprst_transfer_water_use = OFF
@@ -746,7 +747,7 @@
      &     CALL read_error(7, 'nmap2hru')
       IF ( decldim('nmap', 0, MAXDIM, 'Number of mapped values')/=0 ) CALL read_error(7, 'nmap')
       IF ( control_integer(Glacier_flag, 'glacier_flag')/=0 ) Glacier_flag = OFF
-      IF ( control_integer(no_snow_flag, 'no_snow_flag')/=0 ) no_snow_flag = OFF
+      IF ( control_integer(snow_flag, 'snow_flag')/=0 ) snow_flag = ACTIVE
       IF ( control_integer(Frozen_flag, 'frozen_flag')/=0 ) Frozen_flag = OFF
       IF ( control_integer(Dyn_imperv_flag, 'dyn_imperv_flag')/=0 ) Dyn_imperv_flag = OFF
       IF ( control_integer(Dyn_intcp_flag, 'dyn_intcp_flag')/=0 ) Dyn_intcp_flag = OFF
@@ -942,6 +943,8 @@
       IF ( Nsub==-1 ) CALL read_error(7, 'nsub')
       ! default = 1, turn off if no subbasins
       IF ( Subbasin_flag==1 .AND. Nsub==0 ) Subbasin_flag = 0
+
+      IF ( one_subbasin_flag==1 .AND. Nsub==0 ) one_subbasin_flag = 0
 
       Nsegment = getdim('nsegment')
       IF ( Nsegment==-1 ) CALL read_error(7, 'nsegment')
