@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash [5cfbc4d] branch 5.2.2.2
+Github Commit Hash 265732eadc181e1632b4dcfc9fe08ac2d10e9abe
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -94,5 +94,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1983   11   29    0.000    0.008    28.024    0.021    0.070   -0.000    0.000
    1983   11   30    0.000    0.015    27.989    0.020    0.063    0.000    0.000
    1983   12    1    0.000    0.041    27.929    0.020    0.063   -0.000    0.000
-Execution elapsed time    0 minutes  0.10 seconds
+Execution elapsed time    0 minutes  0.09 seconds
 
