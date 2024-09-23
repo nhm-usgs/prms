@@ -10,7 +10,7 @@
       character(len=12), parameter :: MODNAME = 'call_modules'
       character(len=*), parameter :: PRMS_versn = '2024-09-01'
       character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 09/01/2024'
-      character(len=*), parameter :: githash = 'Github Commit Hash [9c10c93] branch 5.2.2.2'
+      character(len=*), parameter :: githash = 'Github Commit Hash [5cfbc4d] branch 5.2.2.2'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
       INTEGER, SAVE :: Nratetbl, Nwateruse, Nexternal, Nconsumed, Npoigages, Ncascade, Ncascdgw, Ncbh

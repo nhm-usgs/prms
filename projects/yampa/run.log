@@ -1,37 +1,8 @@
-==========================================================================
-Command line: 
-..\..\bin\gsflow_test  .\yampa.control
-
-number of command line words: 2
-
-Executable: ..\..\bin\gsflow_test
-
-==========================================================================
-Control File: .\yampa.control
- WARNING, control parameter not used: cbh_binary_flag, ignored
- WARNING, control parameter not used: initial_deltat, ignored
- WARNING, control parameter not used: aniOutON_OFF, ignored
- WARNING, control parameter not used: ani_output_file, ignored
- WARNING, control parameter not used: naniOutVars, ignored
- WARNING, control parameter not used: aniOutVar_names, ignored
- WARNING, control parameter not used: dispGraphsBuffSize, ignored
- WARNING, control parameter not used: ndispGraphs, ignored
- WARNING, control parameter not used: dispVar_element, ignored
- WARNING, control parameter not used: dispVar_names, ignored
- WARNING, control parameter not used: dispVar_plot, ignored
-==========================================================================
-
-                          U.S. Geological Survey
-        Coupled Groundwater and Surface-water FLOW model (GSFLOW)
-                         Version: 2.4.0 09/01/2024
-
-    An integration of the Precipitation-Runoff Modeling System (PRMS)
-    and the Modular Groundwater Model (MODFLOW-NWT and MODFLOW-2005)
 
 
-
+                         U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                       Version 6.0.0 09/01/2024
+                        Version 6.0.0 09/01/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -53,7 +24,7 @@ Transpiration Dist: transp_tindex, climate_hru, transp_frost
       Interception: intcp
 Snow & Glacr Dynam: snowcomp, glacr_melt
     Surface Runoff: srunoff_smidx, srunoff_carea
-         Soil Zone: soilzone, soilzone_ag
+         Soil Zone: soilzone
        Groundwater: gwflow
 Streamflow Routing: strmflow, strmflow_in_out, muskingum,
                     muskingum_lake, muskingum_mann, segment_to_hru
@@ -61,14 +32,11 @@ Streamflow Charact: strmflow_character
 Stream Temperature: stream_temp
     Output Summary: basin_sum, subbasin, map_results, prms_summary,
                     nhru_summary, nsub_summary, water_balance
-                    basin_summary, nsegment_summary, statvar_out
+                    basin_summary, nsegment_summary
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash b7b217f master branch
-
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/08/27 16:29:51
-
+Github Commit Hash [5cfbc4d] branch 5.2.2.2
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -80,15 +48,13 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-PRMS Computation Order          gsflow_prms         2024-09-01
-Read Control File               read_control_file   2024-08-01
-Read Parameter File             read_parameter_file 2024-08-27
-Read Data File                  read_data_file      2023-06-02
+Computation Order               call_modules        2024-09-01
 Basin Definition                basin               2024-08-09
 Common States and Fluxes        climateflow         2024-08-09
 Potential Solar Radiation       soltab              2024-01-22
-Time Series Data                obs                 2023-11-01
+Parameter Setup                 setup_param         2020-08-03
 Timestep Control                prms_time           2023-11-01
+Time Series Data                obs                 2023-11-01
 Temperature Distribution        climate_hru         2024-08-09
 Precipitation Distribution      climate_hru         2024-08-09
 Solar Radiation Distribution    ddsolrad            2023-10-04
@@ -104,34 +70,7 @@ Streamflow Routing              muskingum           2023-11-01
 Output Summary                  basin_sum           2024-04-30
 Water Balance Computations      water_balance       2024-04-04
 Output Summary                  nhru_summary        2024-04-04
-Statistics Variables Output     statvar_out         2021-09-08
 Output Summary                  prms_summary        2024-04-30
-WARNING, parameter: dprst_depth_avg is ignored as it is not used
-WARNING, parameter: dprst_et_coef is ignored as it is not used
-WARNING, parameter: dprst_flow_coef is ignored as it is not used
-WARNING, parameter: dprst_frac is ignored as it is not used
-WARNING, parameter: dprst_frac_init is ignored as it is not used
-WARNING, parameter: dprst_frac_open is ignored as it is not used
-WARNING, parameter: dprst_seep_rate_clos is ignored as it is not used
-WARNING, parameter: dprst_seep_rate_open is ignored as it is not used
-WARNING, parameter: hru_lon is ignored as it is not used
-WARNING, parameter: hru_segment_nhm is ignored as it is not used
-WARNING, parameter: mann_n is ignored as it is not used
-WARNING, parameter: nhm_id is ignored as it is not used
-WARNING, parameter: nhm_seg is ignored as it is not used
-WARNING, parameter: op_flow_thres is ignored as it is not used
-WARNING, parameter: poi_type is ignored as it is not used
-WARNING, parameter: seg_cum_area is ignored as it is not used
-WARNING, parameter: seg_depth is ignored as it is not used
-WARNING, parameter: seg_length is ignored as it is not used
-WARNING, parameter: seg_slope is ignored as it is not used
-WARNING, parameter: seg_width is ignored as it is not used
-WARNING, parameter: sro_to_dprst_imperv is ignored as it is not used
-WARNING, parameter: sro_to_dprst_perv is ignored as it is not used
-WARNING, parameter: tmax_cbh_adj is ignored as it is not used
-WARNING, parameter: tosegment_nhm is ignored as it is not used
-WARNING, parameter: va_clos_exp is ignored as it is not used
-WARNING, parameter: va_open_exp is ignored as it is not used
 ==============================================================
 
 Using Control File: .\yampa.control
@@ -141,15 +80,6 @@ Using Parameter File: ./input/yampa.param
 Writing var_save_file: ./output/prms_ic.out
 
 Writing PRMS Water Budget File: ./output/model.out
-  
- WARNING, parameter: ppt_zero_thresh is not specified
-          Set to default value:  0.0000000E+00
- WARNING, parameter: tmax_cbh_adj_offset is not specified
-          Set to default value:  0.0000000E+00
- WARNING, parameter: pref_flow_infil_frac is not specified
-          Set to default value:  -1.000000    
- WARNING, parameter: obsout_segment is not specified
-          Set to default value:           0
 
 Simulation time period: 1980/10/01 - 1988/09/30
 
@@ -161,10 +91,10 @@ Simulation time period: 1980/10/01 - 1988/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/08/27 16:29:51
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/09/23  9:54:06
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/08/27 16:29:53
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/09/23  9:54:07
 
-Execution elapsed time    0 minutes  1.11 seconds
+Execution elapsed time    0 minutes  1.05 seconds
 

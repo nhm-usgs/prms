@@ -820,8 +820,8 @@ Type      : long
 Units     : none
 Width     : 4
 Max       : 9999999
-Min       : 0
-Default   : 0
+Min       : 1
+Default   : 1
 
 Name      : obsin_segment
 Module    : routing

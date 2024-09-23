@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash [9c10c93] branch 5.2.2.2
+Github Commit Hash [5cfbc4d] branch 5.2.2.2
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -111,5 +111,5 @@ DPRST area:               76833.59    Fraction DPRST:          0.1025
  **************************************************************
  Total for run    1110.775  507.968    10.154  622.340   13.445
  **************************************************************
-Execution elapsed time    0 minutes  0.72 seconds
+Execution elapsed time    0 minutes  0.71 seconds
 
