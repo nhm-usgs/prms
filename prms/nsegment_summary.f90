@@ -7,14 +7,13 @@
 ! Module Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'nsegment_summary'
-      character(len=*), parameter :: Version_nsegment_summary = '2023-11-01'
+      character(len=*), parameter :: Version_nsegment_summary = '2024-09-01'
       INTEGER, SAVE :: Begin_results, Begyr, Lastyear
       INTEGER, SAVE, ALLOCATABLE :: Dailyunit(:), Nc_vars(:), Nsegment_var_type(:)
       REAL, SAVE, ALLOCATABLE :: Nsegment_var_daily(:, :)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nsegment_var_dble(:, :)
-      CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2, Output_fmt3
-      INTEGER, SAVE :: Daily_flag, Double_vars, Yeardays, Monthly_flag
-      DOUBLE PRECISION, SAVE :: Monthdays
+      CHARACTER(LEN=48), SAVE :: Output_fmt, Output_fmt2 !, Output_fmt3
+      INTEGER, SAVE :: Daily_flag, Double_vars, Yeardays, Monthly_flag, Monthdays
       INTEGER, SAVE, ALLOCATABLE :: Monthlyunit(:), Yearlyunit(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Nsegment_var_monthly(:, :), Nsegment_var_yearly(:, :)
 ! Parameters
@@ -180,20 +179,20 @@
      &             Yearlyunit(NsegmentOutVars) )
         Nsegment_var_yearly = 0.0D0
         Yearlyunit = 0
-        IF ( NsegmentOut_format==1 ) THEN
-          WRITE ( Output_fmt3, 9003 ) Nsegment
-        ELSEIF ( NsegmentOut_format==2 ) THEN
-          WRITE ( Output_fmt3, 9010 ) Nsegment
-        ELSEIF ( NsegmentOut_format==3 ) THEN
-          WRITE ( Output_fmt3, 9009 ) Nsegment
-        ELSEIF ( NsegmentOut_format==4 ) THEN
-          WRITE ( Output_fmt3, 9008 ) Nsegment
-        ELSEIF ( NsegmentOut_format==5 ) THEN
-          WRITE ( Output_fmt3, 9011 ) Nsegment
-        ENDIF
+        !IF ( NsegmentOut_format==1 ) THEN
+        !  WRITE ( Output_fmt3, 9003 ) Nsegment
+        !ELSEIF ( NsegmentOut_format==2 ) THEN
+        !  WRITE ( Output_fmt3, 9010 ) Nsegment
+        !ELSEIF ( NsegmentOut_format==3 ) THEN
+        !  WRITE ( Output_fmt3, 9009 ) Nsegment
+        !ELSEIF ( NsegmentOut_format==4 ) THEN
+        !  WRITE ( Output_fmt3, 9008 ) Nsegment
+        !ELSEIF ( NsegmentOut_format==5 ) THEN
+        !  WRITE ( Output_fmt3, 9011 ) Nsegment
+        !ENDIF
       ENDIF
       IF ( Monthly_flag==ACTIVE ) THEN
-        Monthdays = 0.0D0
+        Monthdays = 0
         ALLOCATE ( Nsegment_var_monthly(Nsegment, NsegmentOutVars), Monthlyunit(NsegmentOutVars) )
         Nsegment_var_monthly = 0.0D0
         Monthlyunit = 0
@@ -289,7 +288,8 @@
       INTEGER, EXTERNAL :: getvar
       EXTERNAL :: read_error
 ! Local Variables
-      INTEGER :: j, i, jj, write_month, last_day
+      INTEGER :: j, i, jj, write_month, last_day, save_year, save_month, save_day
+      DOUBLE PRECISION :: yeardays_dble, monthdays_dble
 !***********************************************************************
       IF ( Begin_results==OFF ) THEN
         IF ( Nowyear==Begyr .AND. Nowmonth==Start_month .AND. Nowday==Start_day ) THEN
@@ -308,12 +308,9 @@
         ELSEIF ( Nsegment_var_type(jj)==DBLE_TYPE ) THEN
           IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'double', Nsegment_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
-          DO i = 1, Nsegment
-            Nsegment_var_daily(i, jj) = SNGL( Nsegment_var_dble(i, jj) )
-          ENDDO
         ENDIF
         IF ( Daily_flag==ACTIVE ) WRITE ( Dailyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
-     &                                                               (Nsegment_var_daily(j,jj), j=1,Nsegment)
+     &                                                               (Nsegment_var_dble(j,jj), j=1,Nsegment)
       ENDDO
 
       write_month = OFF
@@ -322,13 +319,20 @@
         IF ( Nowyear==End_year .AND. Nowmonth==End_month .AND. Nowday==End_day ) last_day = ACTIVE
         IF ( Lastyear/=Nowyear .OR. last_day==ACTIVE ) THEN
           IF ( (Nowmonth==Start_month .AND. Nowday==Start_day) .OR. last_day==ACTIVE ) THEN
+            yeardays_dble = DBLE( Yeardays )
             DO jj = 1, NsegmentOutVars
               IF ( NsegmentOut_freq==MEAN_YEARLY ) THEN
                 DO i = 1, Nsegment
-                  Nsegment_var_yearly(i, jj) = Nsegment_var_yearly(i, jj)/Yeardays
+                  Nsegment_var_yearly(i, jj) = Nsegment_var_yearly(i, jj)/yeardays_dble
                 ENDDO
               ENDIF
-              WRITE ( Yearlyunit(jj), Output_fmt3) Lastyear, (Nsegment_var_yearly(j,jj), j=1,Nsegment)
+              IF ( last_day==ACTIVE ) THEN
+                save_year = Nowyear
+                save_month = Nowmonth
+                save_day = Nowday
+              ENDIF
+              !WRITE ( Yearlyunit(jj), Output_fmt3) last_year, (Nsegment_var_yearly(j,jj), j=1,Nsegment)
+              WRITE ( Yearlyunit(jj), Output_fmt) save_year, save_month, save_day, (Nsegment_var_yearly(j,jj), j=1,Nsegment)
             ENDDO
             Nsegment_var_yearly = 0.0D0
             Yeardays = 0
@@ -336,6 +340,9 @@
           ENDIF
         ENDIF
         Yeardays = Yeardays + 1
+        save_year = Nowyear
+        save_month = Nowmonth
+        save_day = Nowday
       ELSEIF ( Monthly_flag==ACTIVE ) THEN
         ! check for last day of month and simulation
         IF ( Nowday==Modays(Nowmonth) ) THEN
@@ -345,24 +352,25 @@
             IF ( Nowday==End_day ) write_month = ACTIVE
           ENDIF
         ENDIF
-        Monthdays = Monthdays + 1.0D0
+        Monthdays = Monthdays + 1
       ENDIF
 
       IF ( NsegmentOut_freq>MEAN_MONTHLY ) THEN
         DO jj = 1, NsegmentOutVars
           DO i = 1, Nsegment
-            Nsegment_var_yearly(i, jj) = Nsegment_var_yearly(i, jj) + DBLE( Nsegment_var_daily(i, jj) )
+            Nsegment_var_yearly(i, jj) = Nsegment_var_yearly(i, jj) + Nsegment_var_dble(i, jj)
           ENDDO
         ENDDO
         RETURN
       ENDIF
 
       IF ( Monthly_flag==ACTIVE ) THEN
+        monthdays_dble = DBLE( Monthdays )
         DO jj = 1, NsegmentOutVars
           DO i = 1, Nsegment
-            Nsegment_var_monthly(i, jj) = Nsegment_var_monthly(i, jj) + DBLE( Nsegment_var_daily(i, jj) )
+            Nsegment_var_monthly(i, jj) = Nsegment_var_monthly(i, jj) + Nsegment_var_dble(i, jj)
             IF ( write_month==ACTIVE ) THEN
-              IF ( NsegmentOut_freq==MEAN_MONTHLY ) Nsegment_var_monthly(i, jj) = Nsegment_var_monthly(i, jj)/Monthdays
+              IF ( NsegmentOut_freq==MEAN_MONTHLY ) Nsegment_var_monthly(i, jj) = Nsegment_var_monthly(i, jj)/monthdays_dble
             ENDIF
           ENDDO
         ENDDO
@@ -373,7 +381,7 @@
           WRITE ( Monthlyunit(jj), Output_fmt) Nowyear, Nowmonth, Nowday, &
      &                                         (Nsegment_var_monthly(j,jj), j=1,Nsegment)
         ENDDO
-        Monthdays = 0.0D0
+        Monthdays = 0
         Nsegment_var_monthly = 0.0D0
       ENDIF
 
