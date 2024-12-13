@@ -492,6 +492,9 @@
       ELSEIF ( DABS(basin_robal)>DTOOSMALL ) THEN
         WRITE ( BALUNT, 9003 ) 'possible srunoff basin water balance rounding issue', &
      &                         Nowyear, Nowmonth, Nowday, basin_robal, brobal, Basin_net_ppt, Basin_net_snow, Basin_net_rain
+        WRITE ( BALUNT, * ) Basin_sroff, Basin_infil, Basin_imperv_evap, &
+     &          Basin_imperv_stor, Basin_dprst_evap, Basin_dprst_seep, &
+     &          Basin_sroffp, Basin_sroffi, Basin_dprst_sroff, Basin_dunnian
         WRITE ( BALUNT, '(A,/)' ) '################################'
       ENDIF
 
