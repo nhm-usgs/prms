@@ -555,10 +555,14 @@ end module PRMS_IT0_VARS
      &       'acre-inches', Dprst_vol_clos)/=0 ) CALL read_error(3, 'dprst_vol_clos')
       ENDIF
 
-      ALLOCATE ( Pkwater_equiv(Nhru), It0_pkwater_equiv(Nhru) )
+      ALLOCATE ( Pkwater_equiv(Nhru) )
       IF ( declvar('snowcomp', 'pkwater_equiv', 'nhru', Nhru, 'double', &
      &     'Snowpack water equivalent on each HRU', &
      &     'inches', Pkwater_equiv)/=0 ) CALL read_error(3, 'pkwater_equiv')
+      ALLOCATE ( It0_pkwater_equiv(Nhru) )
+      IF ( declvar(MODNAME, 'It0_pkwater_equiv', 'nhru', Nhru, 'double', &
+     &     'Antecedent snowpack water equivalent on each HRU', &
+     &     'inches', It0_pkwater_equiv)/=0 ) CALL read_error(3, 'It0_pkwater_equiv')
 
 ! glacier variables
       IF ( Glacier_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
@@ -1459,6 +1463,7 @@ end module PRMS_IT0_VARS
         WRITE ( Restart_outunit ) Ssres_stor
         WRITE ( Restart_outunit ) Soil_rechr
         WRITE ( Restart_outunit ) Imperv_stor
+        WRITE ( Restart_outunit ) Pref_flow_stor
         WRITE ( Restart_outunit ) Gwres_stor
         IF ( Dprst_flag==ACTIVE ) THEN
           WRITE ( Restart_outunit ) Dprst_vol_open
@@ -1484,6 +1489,7 @@ end module PRMS_IT0_VARS
         READ ( Restart_inunit ) Ssres_stor
         READ ( Restart_inunit ) Soil_rechr
         READ ( Restart_inunit ) Imperv_stor
+        READ ( Restart_inunit ) Pref_flow_stor
         READ ( Restart_inunit ) Gwres_stor
         IF ( Dprst_flag==ACTIVE ) THEN
           READ ( Restart_inunit ) Dprst_vol_open

@@ -9,7 +9,7 @@
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
       character(len=*), parameter :: PRMS_versn = '2024-09-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 09/01/2024'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 12/13/2024'
       character(len=*), parameter :: githash = 'Github Commit Hash 265732eadc181e1632b4dcfc9fe08ac2d10e9abe'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -254,6 +254,13 @@
         ENDIF
       ENDIF
 
+! frost_date is a pre-process module
+      IF ( Model==FROST ) THEN
+        IF ( Process_flag==DECL ) CALL read_parameter_file_params()
+        ierr = frost_date()
+        RETURN
+      ENDIF
+
       IF ( Climate_precip_flag==OFF ) THEN
         IF ( Precip_combined_flag==ACTIVE ) THEN
           ierr = precip_1sta_laps()
@@ -266,12 +273,6 @@
 
       IF ( Model==CLIMATE ) THEN
         CALL summary_output()
-        RETURN
-      ENDIF
-
-! frost_date is a pre-process module
-      IF ( Model==FROST ) THEN
-        ierr = frost_date()
         RETURN
       ENDIF
 
@@ -384,7 +385,7 @@
      &                               Elapsed_time - FLOAT(Elapsed_time_minutes)*60.0, ' seconds'
         ENDIF
         IF ( Print_debug>DEBUG_minimum ) &
-     &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
+     &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time:', Elapsed_time_minutes, ' minutes', &
      &                                                     Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
         IF ( Print_debug>DEBUG_minimum ) CLOSE ( PRMS_output_unit )
         IF ( Save_vars_to_file==ACTIVE ) CLOSE ( Restart_outunit )

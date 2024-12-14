@@ -493,10 +493,9 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, smidx_module, carea_module, CASCADE_OFF
       USE PRMS_MODULE, ONLY: Nhru, Nlake, Init_vars_from_file, &
      &    Dprst_flag, Cascade_flag, Sroff_flag, Call_cascade, Frozen_flag !, Parameter_check_flag
-      USE PRMS_FLOWVARS, ONLY: Basin_sroff
+      USE PRMS_FLOWVARS, ONLY: Basin_sroff !, Soil_moist_max
       USE PRMS_SRUNOFF
       USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order
-      USE PRMS_FLOWVARS, ONLY: ! Soil_moist_max
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam
@@ -613,11 +612,10 @@
 !                  computations using antecedent soil moisture.
 !***********************************************************************
       INTEGER FUNCTION srunoffrun()
-      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, DEBUG_WB, LAKE, GLACIER, CASCADE_OFF, &
-     &                          SWALE, ZERO_SNOWPACK
+      USE PRMS_CONSTANTS, ONLY: NEARZERO, ACTIVE, OFF, DEBUG_WB, LAKE, GLACIER, CASCADE_OFF, SWALE
       USE PRMS_MODULE, ONLY: Print_debug, Dprst_flag, Cascade_flag, Call_cascade, Frozen_flag, Glacier_flag
       USE PRMS_SRUNOFF
-      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, &
+      USE PRMS_BASIN, ONLY: Active_hrus, Hru_route_order, Snowpack_threshold, &
      &    Hru_perv, Hru_imperv, Hru_frac_imperv, Hru_frac_perv, &
      &    Dprst_area_max, Hru_area, Hru_type, Basin_area_inv, &
      &    Dprst_area_clos_max, Dprst_area_open_max, Hru_area_dble, Imperv_flag
@@ -644,6 +642,7 @@
         Imperv_stor_ante = Hru_impervstor
         IF ( Dprst_flag==ACTIVE ) Dprst_stor_ante = Dprst_stor_hru
       ENDIF
+
       Basin_sroffp = 0.0D0
       Basin_sroff = 0.0D0
       Basin_infil = 0.0D0
@@ -745,7 +744,7 @@
 
 !******There was no snowmelt but a snowpack may exist.  If there is
 !******no snowpack then check for rain on a snowfree HRU.
-        ELSEIF ( Pkwater_equiv(i)<ZERO_SNOWPACK ) THEN
+        ELSEIF ( Pkwater_equiv(i)<Snowpack_threshold(i) ) THEN
 
 !      If no snowmelt and no snowpack but there was net snow then
 !      snowpack was small and was lost to sublimation.
@@ -846,7 +845,7 @@
           ! Srp and Sri can be reduced in dprst_comp, so compute here
           ! Sri and Srp = 0 for swales
           runoff = runoff + DBLE( Srp*perv_area + Sri*Hruarea_imperv )
-          srunoff = SNGL( runoff/Hruarea )
+          srunoff = SNGL( runoff/Hruarea_dble )
 
 !******Compute HRU weighted average (to units of inches/dt)
           IF ( Cascade_flag>CASCADE_OFF ) THEN

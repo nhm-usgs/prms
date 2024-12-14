@@ -21,7 +21,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Soilzone Computations'
       character(len=8), parameter :: MODNAME = 'soilzone'
-      character(len=*), parameter :: Version_soilzone = '2024-06-20'
+      character(len=*), parameter :: Version_soilzone = '2024-12-06'
       INTEGER, SAVE :: DBGUNT
       INTEGER, SAVE :: Max_gvrs, Et_type, Pref_flag
       REAL, SAVE, ALLOCATABLE :: Gvr2pfr(:), Swale_limit(:)
@@ -41,15 +41,15 @@
       DOUBLE PRECISION, SAVE :: Basin_cap_up_max
       DOUBLE PRECISION, SAVE :: Basin_soil_moist_tot
       DOUBLE PRECISION, SAVE :: Basin_soil_lower_stor_frac, Basin_soil_rechr_stor_frac, Basin_sz_stor_frac
-      DOUBLE PRECISION, SAVE :: Basin_cpr_stor_frac, Basin_gvr_stor_frac, Basin_pfr_stor_frac
+      DOUBLE PRECISION, SAVE :: Basin_cpr_stor_frac, Basin_pfr_stor_frac
       REAL, SAVE, ALLOCATABLE :: Perv_actet(:), Pref_flow_thrsh(:)
       REAL, SAVE, ALLOCATABLE :: Soil_moist_tot(:), Recharge(:), hru_perv_actet(:)
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Upslope_interflow(:), Upslope_dunnianflow(:), Lakein_sz(:)
       REAL, SAVE, ALLOCATABLE :: Dunnian_flow(:), Cap_infil_tot(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_infil(:), Pref_flow_in(:)
-      REAL, SAVE, ALLOCATABLE :: Hru_sz_cascadeflow(:), Swale_actet(:)
-      REAL, SAVE, ALLOCATABLE :: Hru_dunnian_cascadeflow(:), Hru_interflow_cascadeflow(:)
+      REAL, SAVE, ALLOCATABLE :: Swale_actet(:)
+      DOUBLE PRECISION, SAVE, ALLOCATABLE :: Hru_dunnian_cascadeflow(:), Hru_interflow_cascadeflow(:), Hru_sz_cascadeflow(:)
       REAL, SAVE, ALLOCATABLE :: Pref_flow_max(:), Snow_free(:)
       REAL, SAVE, ALLOCATABLE :: Cap_waterin(:), Soil_lower(:)
       REAL, SAVE, ALLOCATABLE :: Potet_lower(:), Potet_rechr(:), Soil_lower_ratio(:)
@@ -70,12 +70,11 @@
 !     Main soilzone routine
 !***********************************************************************
       INTEGER FUNCTION soilzone()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, READ_INIT, SAVE_INIT
-      USE PRMS_MODULE, ONLY: Process_flag, Save_vars_to_file, Init_vars_from_file
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT
+      USE PRMS_MODULE, ONLY: Process_flag
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: szdecl, szinit, szrun
-      EXTERNAL :: soilzone_restart
 !***********************************************************************
       soilzone = 0
 
@@ -84,10 +83,7 @@
       ELSEIF ( Process_flag==DECL ) THEN
         soilzone = szdecl()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Init_vars_from_file>OFF ) CALL soilzone_restart(READ_INIT)
         soilzone = szinit()
-      ELSEIF ( Process_flag==CLEAN ) THEN
-        IF ( Save_vars_to_file==ACTIVE ) CALL soilzone_restart(SAVE_INIT)
       ENDIF
 
       END FUNCTION soilzone
@@ -157,10 +153,6 @@
       IF ( declvar(MODNAME, 'basin_cpr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of capillary reservoir storage of the maximum storage', &
      &     'decimal fraction', Basin_cpr_stor_frac)/=0 ) CALL read_error(3, 'basin_cpr_stor_frac')
-
-      IF ( declvar(MODNAME, 'basin_gvr_stor_frac', 'one', 1, 'double', &
-     &     'Basin area-weighted average fraction of gravity reservoir storage of the maximum storage', &
-     &     'decimal fraction', Basin_gvr_stor_frac)/=0 ) CALL read_error(3, 'basin_gvr_stor_frac')
 
       IF ( declvar(MODNAME, 'basin_pfr_stor_frac', 'one', 1, 'double', &
      &     'Basin area-weighted average fraction of preferential-flow reservoir storage of the maximum storage', &
@@ -271,17 +263,17 @@
      &       'inches', Upslope_dunnianflow)/=0 ) CALL read_error(3, 'upslope_dunnianflow')
 
         ALLOCATE ( Hru_sz_cascadeflow(Nhru) )
-        IF ( declvar(MODNAME, 'hru_sz_cascadeflow', 'nhru', Nhru, 'real', &
+        IF ( declvar(MODNAME, 'hru_sz_cascadeflow', 'nhru', Nhru, 'double', &
      &       'Cascading interflow and Dunnian surface runoff from each HRU', &
      &       'inches', Hru_sz_cascadeflow)/=0 ) CALL read_error(3, 'hru_sz_cascadeflow')
 
         ALLOCATE ( Hru_dunnian_cascadeflow(Nhru) )
-        IF ( declvar(MODNAME, 'hru_dunnian_cascadeflow', 'nhru', Nhru, 'real', &
+        IF ( declvar(MODNAME, 'hru_dunnian_cascadeflow', 'nhru', Nhru, 'double', &
      &       'Cascading Dunnian surface runoff from each HRU', &
      &       'inches', Hru_dunnian_cascadeflow)/=0 ) CALL read_error(3, 'hru_dunnian_cascadeflow')
 
         ALLOCATE ( Hru_interflow_cascadeflow(Nhru) )
-        IF ( declvar(MODNAME, 'hru_interflow_cascadeflow', 'nhru', Nhru, 'real', &
+        IF ( declvar(MODNAME, 'hru_interflow_cascadeflow', 'nhru', Nhru, 'double', &
      &       'Cascading interflow from each HRU', &
      &       'inches', Hru_interflow_cascadeflow)/=0 ) CALL read_error(3, 'hru_interflow_cascadeflow')
 
@@ -378,8 +370,8 @@
      &     'none', Soil_saturated)/=0 ) CALL read_error(3, 'soil_saturated')
 
 ! Allocate arrays for local and variables from other modules
-      ALLOCATE ( Swale_limit(Nhru) )
-      ALLOCATE ( Grav_dunnian_flow(Nhru) )
+      ALLOCATE ( Gvr2pfr(Nhru), Swale_limit(Nhru) )
+      ALLOCATE ( Pfr_dunnian_flow(Nhru), Grav_dunnian_flow(Nhru) )
 
       IF ( Print_debug==7 ) CALL PRMS_open_module_file(DBGUNT, 'soilzone.dbg')
 
@@ -453,11 +445,11 @@
 
       ALLOCATE ( Ssr2gw_rate(Nhru) )
       IF ( declparam(MODNAME, 'ssr2gw_rate', 'nssr', 'real', &
-     &     '0.1', '0.0001', '999.0', &
+     &     '0.1', '0.0001', '1.0', &
      &     'Coefficient to route water from gravity reservoir to groundwater storage', &
      &     'Linear coefficient in equation used to route water from'// &
      &     ' the gravity reservoir to groundwater storage for each HRU', &
-     &     'inches/day')/=0 ) CALL read_error(1, 'ssr2gw_rate')
+     &     'fraction/day')/=0 ) CALL read_error(1, 'ssr2gw_rate')
 
       ALLOCATE ( Ssr2gw_exp(Nhru) )
       IF ( declparam(MODNAME, 'ssr2gw_exp', 'nssr', 'real', &
@@ -485,10 +477,10 @@
       USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, LAKE, SWALE, INACTIVE, GLACIER, CASCADE_OFF, MONTHS_PER_YEAR
       USE PRMS_MODULE, ONLY: Nhru, Nssr, Nlake, Dprst_flag, Init_vars_from_file, Cascade_flag
       USE PRMS_SOILZONE
-      USE PRMS_BASIN, ONLY: Hru_type, Hru_perv, Hru_storage, Hru_area, Hru_frac_perv
+      USE PRMS_BASIN, ONLY: Hru_type, Hru_storage, Hru_frac_perv
       USE PRMS_FLOWVARS, ONLY: Soil_moist_max, Soil_rechr_max, &
-     &    Ssres_stor, Slow_stor, Pref_flow_stor, Soil_zone_max, Soil_lower_stor_max, &
-     &    Soil_moist, Sat_threshold, Soil_rechr, Pkwater_equiv
+     &    Ssres_stor, Slow_stor, Soil_lower_stor_max, Basin_lakeevap, &
+     &    Soil_moist, Sat_threshold, Soil_rechr, Pkwater_equiv, Pref_flow_stor, Soil_zone_max
       USE PRMS_INTCP, ONLY: Hru_intcpstor
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Dprst_stor_hru
       IMPLICIT NONE
@@ -498,7 +490,6 @@
       INTRINSIC :: MIN, DBLE, maxval
 ! Local Variables
       INTEGER :: i
-      REAL :: hruarea, perv_area
 !***********************************************************************
       szinit = 0
 
@@ -508,7 +499,6 @@
       Pref_flag = OFF
       IF ( maxval(Pref_flow_den) > 0.0 ) THEN
         Pref_flag = ACTIVE
-        ALLOCATE ( Gvr2pfr(Nhru), Pfr_dunnian_flow(Nhru) )
         ALLOCATE ( Pref_flow_infil_frac(Nhru) )
         IF ( getparam(MODNAME, 'pref_flow_infil_frac', 'real', Nhru, Pref_flow_infil_frac)/=0 ) &
      &       CALL read_error(2, 'pref_flow_infil_frac')
@@ -535,10 +525,16 @@
       ENDIF
 
       Swale_limit = 0.0
+      Pfr_dunnian_flow = 0.0
       Grav_dunnian_flow = 0.0
       Soil_lower_ratio = 0.0
       Pref_flow_thrsh = 0.0
       Pref_flow_max = 0.0
+      Soil_moist_tot = 0.0
+      Soil_lower = 0.0
+      Soil_zone_max = 0.0
+      Soil_lower_stor_max = Soil_moist_max - Soil_rechr_max
+      Hru_storage = 0.0D0
 
       ! initialize because they are declared, no longer in init_basin_vars
       Basin_pref_stor = 0.0D0
@@ -547,6 +543,14 @@
       Basin_gvr2pfr = 0.0D0
       Basin_prefflow = 0.0D0
       Basin_pfr_stor_frac = 0.0D0
+      Basin_dninterflow = 0.0D0
+      Basin_dndunnianflow = 0.0D0
+      Basin_dncascadeflow = 0.0D0
+      Basin_lakeprecip = 0.0D0
+      Basin_lakeevap = 0.0D0
+      Basin_lakeinsz = 0.0D0
+      Basin_gvr2sm = 0.0D0
+      Basin_sz_gwin = 0.0D0
 
       DO i = 1, Nhru
 
@@ -564,12 +568,7 @@
           Soil_moist(i) = 0.0
           Ssres_stor(i) = 0.0
           Slow_stor(i) = 0.0
-          Pref_flow_stor(i) = 0.0
-          Soil_moist_tot(i) = 0.0
-          Soil_lower(i) = 0.0
-          Soil_zone_max(i) = 0.0
           Soil_lower_stor_max(i) = 0.0
-          Hru_storage(i) = 0.0
           CYCLE
         ENDIF
 
@@ -589,19 +588,13 @@
             IF ( Pref_flow_max(i)>0.0 ) THEN
               Slow_stor(i) = MIN( Ssres_stor(i), Pref_flow_thrsh(i) )
               Pref_flow_stor(i) = Ssres_stor(i) - Slow_stor(i)
-            ELSE
-              Pref_flow_stor(i) = 0.0
             ENDIF
             Ssres_stor(i) = Slow_stor(i) + Pref_flow_stor(i)
           ENDIF
         ENDIF
 
-        hruarea = Hru_area(i)
-        perv_area = Hru_perv(i)
         Soil_zone_max(i) = Sat_threshold(i) + Soil_moist_max(i)*Hru_frac_perv(i)
         Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*Hru_frac_perv(i)
-        Soil_lower(i) = Soil_moist(i) - Soil_rechr(i)
-        Soil_lower_stor_max(i) = Soil_moist_max(i) - Soil_rechr_max(i)
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
       ENDDO
@@ -615,6 +608,7 @@
       Pref_flow_infil = 0.0
       Pref_flow_in = 0.0
       Pref_flow = 0.0
+      Gvr2pfr = 0.0
       Swale_actet = 0.0
       Perv_actet = 0.0
       hru_perv_actet = 0.0
@@ -644,12 +638,11 @@
 ! WARNING!!! sroff and basin_sroff can be updated due to Dunnian flow
 ! WARNING!!! if frozen sroff and basin_sroff can be updated
       USE PRMS_FLOWVARS, ONLY: Basin_ssflow, Basin_actet, Hru_actet, &
-     &    Ssres_flow, Soil_to_gw, Basin_soil_to_gw, Ssr_to_gw, &
+     &    Ssres_flow, Soil_to_gw, Basin_soil_to_gw, Ssr_to_gw, Pref_flow_stor, &
      &    Soil_to_ssr, Basin_lakeevap, Basin_perv_et, Basin_swale_et, &
-     &    Sroff, Soil_moist_max, Infil, Soil_rechr_max, Ssres_in, &
+     &    Sroff, Soil_moist_max, Infil, Soil_rechr_max, Ssres_in, Soil_zone_max, &
      &    Basin_soil_moist, Basin_ssstor, Slow_stor, Slow_flow, Pkwater_equiv, &
-     &    Soil_lower_stor_max, Soil_zone_max, Pref_flow_stor, &
-     &    Ssres_stor, Soil_moist, Sat_threshold, Soil_rechr, Basin_sroff, Basin_lake_stor
+     &    Soil_lower_stor_max, Ssres_stor, Soil_moist, Sat_threshold, Soil_rechr, Basin_sroff, Basin_lake_stor
       USE PRMS_INTCP, ONLY: Hru_intcpstor, Hru_intcpevap
       USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Dprst_stor_hru
       USE PRMS_WATER_USE, ONLY: Soilzone_gain, Soilzone_gain_hru
@@ -665,7 +658,8 @@
 ! Local Variables
       INTEGER :: i, k, update_potet, compute_lateral
       REAL :: dunnianflw, interflow, perv_area, harea
-      REAL :: dnslowflow, dnpreflow, dndunn, availh2o, avail_potet, hruactet
+      DOUBLE PRECISION :: dnslowflow, dnpreflow, dndunn
+      REAL :: availh2o, avail_potet, hruactet
       REAL :: gvr_maxin, topfr !, tmp
       REAL :: dunnianflw_pfr, dunnianflw_gvr, pref_flow_maxin
       REAL :: perv_frac, capwater_maxin, ssresin, dunnianflw_frz
@@ -678,10 +672,13 @@
       IF ( Cascade_flag>CASCADE_OFF ) THEN
         Upslope_interflow = 0.0D0
         Upslope_dunnianflow = 0.0D0
-        Hru_sz_cascadeflow = 0.0
-        Hru_dunnian_cascadeflow = 0.0
-        Hru_interflow_cascadeflow = 0.0
-        Basin_lakeinsz = 0.0D0
+        Hru_sz_cascadeflow = 0.0D0
+        Hru_dunnian_cascadeflow = 0.0D0
+        Hru_interflow_cascadeflow = 0.0D0
+        IF ( Nlake>0 ) THEN
+          Lakein_sz = 0.0D0
+          Basin_lakeinsz = 0.0D0
+        ENDIF
         Basin_dninterflow = 0.0D0
         Basin_dndunnianflow = 0.0D0
         Basin_dncascadeflow = 0.0D0
@@ -705,10 +702,15 @@
       Potet_lower = 0.0
       Snow_free = 1.0 - Snowcov_area
       IF ( Pref_flag==ACTIVE ) THEN
+        Basin_pref_flow_infil = 0.0D0
+        Basin_dunnian_pfr = 0.0D0
+        Basin_gvr2pfr = 0.0D0
+        Basin_prefflow = 0.0D0
+        Basin_pref_stor = 0.0D0
+        Basin_pfr_stor_frac = 0.0D0
         Pfr_dunnian_flow = 0.0
         Pref_flow_infil = 0.0
         Pref_flow_in = 0.0
-        Gvr2pfr = 0.0
       ENDIF
       update_potet = OFF
       IF ( Soilzone_add_water_use==ACTIVE ) Soilzone_gain_hru = 0.0
@@ -892,7 +894,7 @@
                 topfr = topfr - dunnianflw_gvr
                 IF ( topfr<0.0 ) THEN
 !                  IF ( topfr<-NEARZERO .AND. Print_debug>DEBUG_less ) PRINT *, 'gvr2pfr<0', topfr, dunnianflw_gvr, &
-!     &                 Pref_flow_max(i), Pref_flow_stor(i), gvr_maxin
+!     &                 Pref_flow_max(i), Pref_flow_stor(i), Soil_to_ssr(i)
                   topfr = 0.0
                 ENDIF
               ENDIF
@@ -907,11 +909,11 @@
             ENDIF
             Basin_pref_stor = Basin_pref_stor + DBLE( Pref_flow_stor(i)*harea )
             Basin_pfr_stor_frac = Basin_pfr_stor_frac + DBLE( Pref_flow_stor(i)/Pref_flow_max(i)*harea )
-          ELSEIF ( compute_lateral==ACTIVE ) THEN
-            dunnianflw_gvr = topfr  !?? is this right
           ENDIF
-          Gvr2pfr(i) = topfr
+        ELSEIF ( .not.(Pref_flow_max(i)>0.0) ) THEN
+          IF ( compute_lateral==ACTIVE ) dunnianflw_gvr = topfr  !?? is this right
         ENDIF
+        Gvr2pfr(i) = topfr
 
         Basin_sm2gvr = Basin_sm2gvr + DBLE( Soil_to_ssr(i)*harea )
         Basin_dunnian_gvr = Basin_dunnian_gvr + DBLE( dunnianflw_gvr*harea )
@@ -925,45 +927,11 @@
      &                           Soil_type(i), Soil_moist(i), Soil_rechr(i), pervactet, avail_potet, &
      &                           Snow_free(i), Potet_rechr(i), Potet_lower(i), &
      &                           Potet(i), perv_frac, Soil_saturated(i), i)
-            ! sanity check
-!            IF ( pervactet>avail_potet ) THEN
-!              Soil_moist(i) = Soil_moist(i) + pervactet - avail_potet
-!              pervactet = avail_potet
-!              PRINT *, 'perv_et problem', pervactet, Avail_potet
-!            ENDIF
           ENDIF
         ENDIF
 
-        ! sanity check
-!        IF ( Soil_moist(i)<0.0 ) THEN
-!          IF ( Print_debug>-1 ) PRINT *, i, Soil_moist(i), ' negative'
-!          IF ( pervactet>=ABS(Soil_moist(i)) ) THEN
-!            pervactet = pervactet + Soil_moist(i)
-!            Soil_moist(i) = 0.0
-!          ENDIF
-!          IF ( Soil_moist(i)<-NEARZERO ) THEN
-!            IF ( Print_debug>-1 ) PRINT *, 'HRU:', i, ' soil_moist<0.0', Soil_moist(i)
-!          ENDIF
-!          Soil_moist(i) = 0.0
-!        ENDIF
-
         hru_perv_actet(i) = pervactet * perv_frac
         Hru_actet(i) = hruactet + hru_perv_actet(i)
-
-        ! sanity check
-!        IF ( avail_potet<0.0 ) THEN
-!          IF ( Print_debug>-1 ) THEN
-!            IF ( avail_potet<-NEARZERO ) PRINT *, 'hru_actet>potet', i, &
-!     &           Nowmonth, Nowday, Hru_actet(i), Potet(i), avail_potet
-!          ENDIF
-!          Hru_actet(i) = Potet(i)
-!          tmp = avail_potet/perv_frac
-!          pervactet = pervactet + tmp
-!          Soil_moist(i) = Soil_moist(i) - tmp
-!          Soil_rechr(i) = Soil_rechr(i) - tmp
-!          IF ( Soil_rechr(i)<0.0 ) Soil_rechr(i) = 0.0
-!          IF ( Soil_moist(i)<0.0 ) Soil_moist(i) = 0.0
-!        ENDIF
         Perv_actet(i) = pervactet
 
 ! soil_moist & soil_rechr multiplied by perv_area instead of harea
@@ -982,18 +950,18 @@
           IF ( Cascade_flag>CASCADE_OFF ) THEN
             IF ( Ncascade_hru(i)>0 ) THEN
               IF ( interflow+dunnianflw>cascade_min ) THEN
-                dnslowflow = 0.0
-                dnpreflow = 0.0
-                dndunn = 0.0
+                dnslowflow = 0.0D0
+                dnpreflow = 0.0D0
+                dndunn = 0.0D0
                 CALL compute_cascades(i, Ncascade_hru(i), Slow_flow(i), &
      &                                prefflow, Dunnian_flow(i), dnslowflow, &
      &                                dnpreflow, dndunn)
-                Basin_dninterflow = Basin_dninterflow + DBLE( (dnslowflow+dnpreflow)*harea )
-                Basin_dndunnianflow = Basin_dndunnianflow + DBLE( dndunn*harea )
+                Basin_dninterflow = Basin_dninterflow + (dnslowflow+dnpreflow)*Hru_area_dble(i)
+                Basin_dndunnianflow = Basin_dndunnianflow + dndunn*Hru_area_dble(i)
                 Hru_sz_cascadeflow(i) = dnslowflow + dnpreflow + dndunn
                 Hru_dunnian_cascadeflow(i) = dndunn
                 Hru_interflow_cascadeflow(i) = dnslowflow + dnpreflow
-                Basin_dncascadeflow = Basin_dncascadeflow + DBLE( Hru_sz_cascadeflow(i)*harea )
+                Basin_dncascadeflow = Basin_dncascadeflow + Hru_sz_cascadeflow(i)*Hru_area_dble(i)
               ENDIF
             ENDIF
           ENDIF
@@ -1048,7 +1016,6 @@
         Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*perv_frac
         Basin_soil_moist_tot = Basin_soil_moist_tot + DBLE( Soil_moist_tot(i)*harea )
         Basin_cpr_stor_frac = Basin_cpr_stor_frac + DBLE( Soil_moist(i)/Soil_moist_max(i)*perv_area )
-        IF ( Pref_flow_thrsh(i)>0.0 ) Basin_gvr_stor_frac = Basin_gvr_stor_frac + DBLE( Slow_stor(i)/Pref_flow_thrsh(i)*harea )
         Basin_sz_stor_frac = Basin_sz_stor_frac + DBLE( Soil_moist_tot(i)/Soil_zone_max(i)*harea )
         Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac + DBLE( Soil_lower_ratio(i)*perv_area )
         IF ( Soil_rechr_max(i)>0.0 ) Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac + &
@@ -1062,7 +1029,10 @@
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
 
-      ENDDO
+! ***************************************
+      ENDDO ! end HRU loop
+! ***************************************
+
       Basin_actet = Basin_actet*Basin_area_inv
       Basin_perv_et = Basin_perv_et*Basin_area_inv
       Basin_swale_et = Basin_swale_et*Basin_area_inv
@@ -1106,7 +1076,6 @@
       Basin_slowflow = Basin_slowflow*Basin_area_inv
       Basin_recharge = Basin_recharge*Basin_area_inv
       Basin_cpr_stor_frac = Basin_cpr_stor_frac*Basin_area_inv
-      Basin_gvr_stor_frac = Basin_gvr_stor_frac*Basin_area_inv
       Basin_sz_stor_frac = Basin_sz_stor_frac*Basin_area_inv
       Basin_soil_lower_stor_frac = Basin_soil_lower_stor_frac*Basin_area_inv
       Basin_soil_rechr_stor_frac = Basin_soil_rechr_stor_frac*Basin_area_inv
@@ -1394,7 +1363,7 @@
 ! Arguments
       INTEGER, INTENT(IN) :: Ihru, Ncascade_hru
       REAL, INTENT(INOUT) :: Dunnian, Slowflow, Preflow
-      REAL, INTENT(INOUT) :: Dnslowflow, Dnpreflow, Dndunnflow
+      DOUBLE PRECISION, INTENT(INOUT) :: Dnslowflow, Dnpreflow, Dndunnflow
 ! Local Variables
       INTEGER :: j, k
       REAL :: frac, fracwt
@@ -1407,9 +1376,9 @@
           fracwt = Hru_down_fracwt(k, Ihru)
           Upslope_interflow(j) = Upslope_interflow(j) + DBLE( (Slowflow+Preflow)*fracwt )
           Upslope_dunnianflow(j) = Upslope_dunnianflow(j) + DBLE( Dunnian*fracwt )
-          Dnslowflow = Dnslowflow + Slowflow*frac
-          Dnpreflow = Dnpreflow + Preflow*frac
-          Dndunnflow = Dndunnflow + Dunnian*frac
+          Dnslowflow = Dnslowflow + DBLE( Slowflow*frac )
+          Dnpreflow = Dnpreflow + DBLE( Preflow*frac )
+          Dndunnflow = Dndunnflow + DBLE( Dunnian*frac )
 ! if hru_down(k, Ihru) < 0, cascade contributes to a stream
         ELSEIF ( j<0 ) THEN
           j = IABS(j)
@@ -1431,7 +1400,6 @@
 !     Initialize basin variables
 !***********************************************************************
       SUBROUTINE init_basin_vars()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE
       USE PRMS_SOILZONE
       USE PRMS_FLOWVARS, ONLY: Basin_actet, Basin_perv_et, &
      &    Basin_swale_et, Basin_soil_to_gw, Basin_ssflow, Basin_sroff, &
@@ -1448,14 +1416,6 @@
       Basin_capwaterin = 0.0D0
       Basin_cap_infil_tot = 0.0D0
       Basin_cap_up_max = 0.0D0
-      IF ( Pref_flag == ACTIVE ) THEN
-        Basin_pref_flow_infil = 0.0D0
-        Basin_dunnian_pfr = 0.0D0
-        Basin_gvr2pfr = 0.0D0
-        Basin_prefflow = 0.0D0
-        Basin_pref_stor = 0.0D0
-        Basin_pfr_stor_frac = 0.0D0
-      ENDIF
       Basin_dunnian_gvr = 0.0D0
       Basin_slowflow = 0.0D0
       Basin_actet = 0.0D0
@@ -1473,32 +1433,5 @@
       Basin_soil_rechr_stor_frac = 0.0D0
       Basin_sz_stor_frac = 0.0D0
       Basin_cpr_stor_frac = 0.0D0
-      Basin_gvr_stor_frac = 0.0D0
 
       END SUBROUTINE init_basin_vars
-
-!***********************************************************************
-!     soilzone_restart - write or read soilzone restart file
-!***********************************************************************
-      SUBROUTINE soilzone_restart(In_out)
-      USE PRMS_CONSTANTS, ONLY: SAVE_INIT, ACTIVE
-      USE PRMS_MODULE, ONLY: Restart_outunit, Restart_inunit
-      USE PRMS_FLOWVARS, ONLY: Pref_flow_stor
-      USE PRMS_SOILZONE
-      IMPLICIT NONE
-      ! Argument
-      INTEGER, INTENT(IN) :: In_out
-      ! Function
-      EXTERNAL :: check_restart
-      ! Local Variable
-      CHARACTER(LEN=8) :: module_name
-!***********************************************************************
-      IF ( In_out==SAVE_INIT ) THEN
-        WRITE ( Restart_outunit ) MODNAME
-        WRITE ( Restart_outunit ) Pref_flow_stor
-      ELSE
-        READ ( Restart_inunit ) module_name
-        CALL check_restart(MODNAME, module_name)
-        READ ( Restart_inunit ) Pref_flow_stor
-      ENDIF
-      END SUBROUTINE soilzone_restart
