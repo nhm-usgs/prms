@@ -15,7 +15,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Output Summary'
       character(len=*), parameter :: MODNAME = 'subbasin'
-      character(len=*), parameter :: Version_subbasin = '2023-11-01'
+      character(len=*), parameter :: Version_subbasin = '2024-12-01'
       DOUBLE PRECISION, SAVE, ALLOCATABLE :: Qsub(:), Sub_area(:), Laststor(:)
       INTEGER, SAVE, ALLOCATABLE :: Tree(:, :)
 !   Declared Variables
@@ -233,17 +233,13 @@
       INTEGER FUNCTION subinit()
       USE PRMS_CONSTANTS, ONLY: ACTIVE, CFS2CMS_CONV, LAKE, DNEARZERO
       USE PRMS_MODULE, ONLY: Nsub, Print_debug, &
-     &    Inputerror_flag, Dprst_flag, Lake_route_flag, Cascade_flag
+     &    Inputerror_flag, Dprst_flag, Lake_route_flag
       USE PRMS_SUBBASIN
       USE PRMS_BASIN, ONLY: Hru_area_dble, Active_hrus, Hru_route_order, &
      &    Hru_type, Hru_frac_perv, Lake_hru_id, Hru_subbasin
-      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Sroff, Ssres_flow, Lake_vol
-      USE PRMS_SET_TIME, ONLY: Cfs_conv, Cfs2inches
+      USE PRMS_FLOWVARS, ONLY: Ssres_stor, Soil_moist, Pkwater_equiv, Gwres_stor, Lake_vol
       USE PRMS_INTCP, ONLY: Hru_intcpstor
-      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Hortonian_lakes, Dprst_stor_hru
-      USE PRMS_SOILZONE, ONLY: Lakein_sz
-      USE PRMS_GWFLOW, ONLY: Gwres_flow
-      USE PRMS_MUSKINGUM_LAKE, ONLY: Lake_outcfs
+      USE PRMS_SRUNOFF, ONLY: Hru_impervstor, Dprst_stor_hru
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: DBLE
@@ -251,7 +247,7 @@
       EXTERNAL :: read_error, PRMS_open_module_file
 ! Local Variables
       INTEGER :: i, j, k, kk, TREEUNIT
-      DOUBLE PRECISION :: harea, gwstor, soilstor, snowstor, landstor, srq, ssq, gwq
+      DOUBLE PRECISION :: harea, gwstor, soilstor, snowstor, landstor
 !***********************************************************************
       subinit = 0
 
@@ -305,15 +301,10 @@
         CLOSE ( TREEUNIT )
       ENDIF
 
-! added some code to allow for restart, but not climate states and fluxes and subinc_deltastor
-      Subinc_interflow = 0.0D0
-      Subinc_gwflow = 0.0D0
-      Subinc_sroff = 0.0D0
+! added some code to allow for restart
       Subinc_stor = 0.0D0
       Sub_area = 0.0D0
       gwstor = 0.0D0
-      gwq = 0.0D0
-      Qsub = 0.0D0
       DO i = 1, Active_hrus
         j = Hru_route_order(i)
         ! k indicates which HRU is in which subbasin
@@ -321,10 +312,7 @@
         IF ( k>0 ) THEN
           harea = Hru_area_dble(j)
           gwstor = Gwres_stor(j)*harea
-          gwq = DBLE(Gwres_flow(j))*harea
           IF ( Hru_type(j)/=LAKE ) THEN
-            srq = DBLE(Sroff(j))*harea
-            ssq = DBLE(Ssres_flow(j))*harea
             soilstor = DBLE(Soil_moist(j)*Hru_frac_perv(j) + Ssres_stor(j))*harea
             snowstor = Pkwater_equiv(j)*harea
             landstor = DBLE(Hru_intcpstor(j)+Hru_impervstor(j))*harea
@@ -334,22 +322,8 @@
             snowstor = 0.0D0
             landstor = 0.0D0
             ! wrong if multiple HRUs for any lake
-            IF ( Lake_route_flag==ACTIVE ) THEN
-              landstor = Lake_vol(Lake_hru_id(j))*12.0D0
-              srq = Lake_outcfs(Lake_hru_id(j))*Cfs2inches
-              ssq = 0.0D0
-            ELSEIF ( Cascade_flag>0 ) THEN
-              srq = Hortonian_lakes(j)*harea
-              ssq = Lakein_sz(j)*harea
-            ELSE
-              srq = 0.0D0
-              ssq = 0.0D0
-            ENDIF
+            IF ( Lake_route_flag==ACTIVE ) landstor = Lake_vol(Lake_hru_id(j))*12.0D0
           ENDIF
-          Qsub(k) = Qsub(k) + srq + ssq + gwq
-          Subinc_interflow(k) = Subinc_interflow(k) + ssq
-          Subinc_sroff(k) = Subinc_sroff(k) + srq
-          Subinc_gwflow(k) = Subinc_gwflow(k) + gwq
           Subinc_stor(k) = Subinc_stor(k) + soilstor + gwstor + snowstor + landstor
           Sub_area(k) = Sub_area(k) + harea
         ENDIF
@@ -362,29 +336,7 @@
         ELSE
           Subinc_stor(i) = Subinc_stor(i)/Sub_area(i)
         ENDIF
-        Sub_inq(i) = Qsub(i)*Cfs_conv
-        Subinc_interflow(i) = Subinc_interflow(i)*Cfs_conv
-        Subinc_gwflow(i) = Subinc_gwflow(i)*Cfs_conv
-        Subinc_sroff(i) = Subinc_sroff(i)*Cfs_conv
         ! water balance off if lake or muskingum routing
-      ENDDO
-
-! allow for possible restart
-      !get cumulative subbasin flows
-      DO j = 1, Nsub
-        Sub_gwflow(j) = Subinc_gwflow(j)
-        Sub_sroff(j) = Subinc_sroff(j)
-        Sub_interflow(j) = Subinc_interflow(j)
-        Sub_cfs(j) = Sub_inq(j)
-        DO k = 1, Nsub
-          IF ( Tree(j,k)/=0 ) THEN
-            Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)
-            Sub_sroff(j) = Sub_sroff(j) + Subinc_sroff(k)
-            Sub_interflow(j) = Sub_interflow(j) + Subinc_interflow(k)
-            Sub_cfs(j) = Sub_cfs(j) + Sub_inq(k)
-          ENDIF
-        ENDDO
-        Sub_cms(j) = Sub_cfs(j)*CFS2CMS_CONV
       ENDDO
 
  9001 FORMAT ('Initial Tree Structure for Internal Subbasins', /, &
@@ -543,10 +495,10 @@
       ENDDO
 
       !get cumulative subbasin flows
-      Sub_gwflow = Subinc_gwflow
       DO j = 1, Nsub
         Sub_sroff(j) = Subinc_sroff(j)
         Sub_interflow(j) = Subinc_interflow(j)
+        Sub_gwflow(j) = Subinc_gwflow(j)
         DO k = 1, Nsub
           IF ( Tree(j,k)/=0 ) THEN
             Sub_gwflow(j) = Sub_gwflow(j) + Subinc_gwflow(k)

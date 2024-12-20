@@ -8,8 +8,8 @@
      &          EQULS = '=========================================================================='
       character(len=*), parameter :: MODDESC = 'Computation Order'
       character(len=12), parameter :: MODNAME = 'call_modules'
-      character(len=*), parameter :: PRMS_versn = '2024-09-01'
-      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 12/13/2024'
+      character(len=*), parameter :: PRMS_versn = '2024-12-20'
+      character(len=*), parameter :: PRMS_VERSION = 'Version 6.0.0 12/20/2024'
       character(len=*), parameter :: githash = 'Github Commit Hash 265732eadc181e1632b4dcfc9fe08ac2d10e9abe'
       CHARACTER(LEN=8), SAVE :: Process
 ! Dimensions
@@ -85,7 +85,7 @@
       INTEGER, EXTERNAL :: stream_temp, glacr, dynamic_soil_param_read, strmflow_character
       EXTERNAL :: print_module, PRMS_open_output_file, precip_map, temp_map, segment_to_hru
       EXTERNAL :: call_modules_restart, water_balance, summary_output
-      EXTERNAL :: prms_summary, module_doc, convert_params, read_error
+      EXTERNAL :: prms_summary, module_doc, convert_params, read_error, input_error
 ! Local Variables
       INTEGER :: i, iret, nc, ierr
 !***********************************************************************
@@ -211,6 +211,7 @@
           CALL module_doc()
           RETURN
         ELSE
+          PRINT *, 'Files of parameters (*_par_name and *.param) and variables (*_var_name) produced (* = Control File name)'
           STOP
         ENDIF
       ENDIF
@@ -256,8 +257,8 @@
 
 ! frost_date is a pre-process module
       IF ( Model==FROST ) THEN
-        IF ( Process_flag==DECL ) CALL read_parameter_file_params()
         ierr = frost_date()
+        IF ( Inputerror_flag == 1 .OR. Parameter_check_flag==2 ) CALL input_error()
         RETURN
       ENDIF
 
@@ -272,6 +273,7 @@
       ENDIF
 
       IF ( Model==CLIMATE ) THEN
+        IF ( Inputerror_flag == 1 .OR. Parameter_check_flag==2 ) CALL input_error()
         CALL summary_output()
         RETURN
       ENDIF
@@ -291,6 +293,7 @@
       ENDIF
 
       IF ( Model==TRANSPIRE ) THEN
+        IF ( Inputerror_flag == 1 .OR. Parameter_check_flag==2 ) CALL input_error()
         CALL summary_output()
         RETURN
       ENDIF
@@ -315,10 +318,12 @@
 
       IF ( Model==WRITE_CLIMATE ) THEN
         ierr = write_climate_hru()
+        IF ( Inputerror_flag == 1 .OR. Parameter_check_flag==2 ) CALL input_error()
         RETURN
       ENDIF
 
       IF ( Model==POTET ) THEN
+        IF ( Inputerror_flag == 1 .OR. Parameter_check_flag==2 ) CALL input_error()
         CALL summary_output()
         RETURN
       ENDIF
@@ -396,21 +401,11 @@
         ENDIF
         IF ( Model==CONVERT ) CALL convert_params()
       ELSEIF ( Process_flag==INIT ) THEN
-        IF ( Inputerror_flag==1 ) THEN
-          PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
-     &          '  Set control parameter parameter_check_flag to 0 after', &
-     &          '  all parameter values are valid.'
-          PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
-     &          'If input errors are related to parameters used for automated', &
-     &          'calibration processes, with CAUTION, set control parameter', &
-     &          'parameter_check_flag to 0. After calibration set the', &
-     &          'parameter_check_flag to 1 to verify that those calibration', &
-     &          'parameters have valid and compatible values.'
-        ENDIF
         IF ( Parameter_check_flag==2 ) STOP
-        IF ( Inputerror_flag==1 ) ERROR STOP ERROR_param
+        IF ( Inputerror_flag==1 ) CALL input_error()
         IF ( Model==CONVERT ) THEN
           CALL convert_params()
+          PRINT *, 'File PRMS_4.params or PRMS_5.params contain the converted parameters'
           STOP
         ENDIF
         IF ( Print_debug>DEBUG_minimum ) &
@@ -1302,6 +1297,27 @@
       IF ( ierr==1 ) ERROR STOP ERROR_control
 
       END SUBROUTINE check_module_names
+
+!***********************************************************************
+      SUBROUTINE input_error()
+!***********************************************************************
+      USE PRMS_CONSTANTS, ONLY: ERROR_param
+      USE PRMS_MODULE, ONLY: Parameter_check_flag
+      IMPLICIT NONE
+!***********************************************************************
+      PRINT '(//,A,//,A,/,A,/,A)', '**Fix input errors in your Parameter File to continue**', &
+            '  Set control parameter parameter_check_flag to 0 after', &
+            '  all parameter values are valid.'
+      PRINT '(/,A,/,A,/,A,/,A,/,A,/)', &
+            'If input errors are related to parameters used for automated', &
+            'calibration processes, with CAUTION, set control parameter', &
+            'parameter_check_flag to 0. After calibration set the', &
+            'parameter_check_flag to 1 to verify that those calibration', &
+            'parameters have valid and compatible values.'
+      IF ( Parameter_check_flag==2 ) STOP
+      ERROR STOP ERROR_param
+
+      END SUBROUTINE input_error
 
 !***********************************************************************
 !     call_modules_restart - write or read restart file

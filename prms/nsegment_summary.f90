@@ -305,6 +305,7 @@
         IF ( Nsegment_var_type(jj)==REAL_TYPE ) THEN
           IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'real', Nsegment_var_daily(:, jj))/=0 ) &
      &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))
+          Nsegment_var_dble(:, jj) = DBLE( Nsegment_var_daily(:, jj) )
         ELSEIF ( Nsegment_var_type(jj)==DBLE_TYPE ) THEN
           IF ( getvar(MODNAME, NsegmentOutVar_names(jj)(:Nc_vars(jj)), Nsegment, 'double', Nsegment_var_dble(:, jj))/=0 ) &
      &         CALL read_error(4, NsegmentOutVar_names(jj)(:Nc_vars(jj)))

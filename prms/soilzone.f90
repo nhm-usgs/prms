@@ -510,7 +510,6 @@
         IF ( getparam(MODNAME, 'fastcoef_lin', Nhru, 'real', Fastcoef_lin)/=0 ) CALL read_error(2, 'fastcoef_lin')
         IF ( getparam(MODNAME, 'fastcoef_sq', Nhru, 'real', Fastcoef_sq)/=0 ) CALL read_error(2, 'fastcoef_sq')
       ENDIF
-
       IF ( getparam(MODNAME, 'ssr2gw_rate', Nssr, 'real', Ssr2gw_rate)/=0 ) CALL read_error(2, 'ssr2gw_rate')
       IF ( getparam(MODNAME, 'ssr2gw_exp', Nssr, 'real', Ssr2gw_exp)/=0 ) CALL read_error(2, 'ssr2gw_exp')
       IF ( getparam(MODNAME, 'soil_type', Nhru, 'integer', Soil_type)/=0 ) CALL read_error(2, 'soil_type')
@@ -530,11 +529,7 @@
       Soil_lower_ratio = 0.0
       Pref_flow_thrsh = 0.0
       Pref_flow_max = 0.0
-      Soil_moist_tot = 0.0
-      Soil_lower = 0.0
-      Soil_zone_max = 0.0
       Soil_lower_stor_max = Soil_moist_max - Soil_rechr_max
-      Hru_storage = 0.0D0
 
       ! initialize because they are declared, no longer in init_basin_vars
       Basin_pref_stor = 0.0D0
@@ -549,8 +544,6 @@
       Basin_lakeprecip = 0.0D0
       Basin_lakeevap = 0.0D0
       Basin_lakeinsz = 0.0D0
-      Basin_gvr2sm = 0.0D0
-      Basin_sz_gwin = 0.0D0
 
       DO i = 1, Nhru
 
@@ -568,7 +561,12 @@
           Soil_moist(i) = 0.0
           Ssres_stor(i) = 0.0
           Slow_stor(i) = 0.0
+          Pref_flow_stor(i) = 0.0
+          Soil_moist_tot(i) = 0.0
+          Soil_lower(i) = 0.0
+          Soil_zone_max(i) = 0.0
           Soil_lower_stor_max(i) = 0.0
+          Hru_storage(i) = 0.0
           CYCLE
         ENDIF
 
@@ -588,6 +586,8 @@
             IF ( Pref_flow_max(i)>0.0 ) THEN
               Slow_stor(i) = MIN( Ssres_stor(i), Pref_flow_thrsh(i) )
               Pref_flow_stor(i) = Ssres_stor(i) - Slow_stor(i)
+            ELSE
+              Pref_flow_stor(i) = 0.0
             ENDIF
             Ssres_stor(i) = Slow_stor(i) + Pref_flow_stor(i)
           ENDIF
@@ -595,6 +595,7 @@
 
         Soil_zone_max(i) = Sat_threshold(i) + Soil_moist_max(i)*Hru_frac_perv(i)
         Soil_moist_tot(i) = Ssres_stor(i) + Soil_moist(i)*Hru_frac_perv(i)
+        Soil_lower(i) = Soil_moist(i) - Soil_rechr(i)
         Hru_storage(i) = DBLE( Soil_moist_tot(i) + Hru_intcpstor(i) + Hru_impervstor(i) ) + Pkwater_equiv(i)
         IF ( Dprst_flag==ACTIVE ) Hru_storage(i) = Hru_storage(i) + Dprst_stor_hru(i)
       ENDDO

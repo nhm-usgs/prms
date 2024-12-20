@@ -94,7 +94,7 @@
       REAL, SAVE :: Max_gldepth
       REAL, SAVE, ALLOCATABLE :: Glacrva_coef(:), Glacrva_exp(:), Hru_length(:), Hru_width(:)
       REAL, SAVE, ALLOCATABLE :: Stor_ice(:,:), Stor_snow(:,:), Stor_firn(:,:)
-      REAL, SAVE, ALLOCATABLE :: Abl_elev_range(:)
+      REAL, SAVE, ALLOCATABLE :: Hru_slope(:), Abl_elev_range(:)
 
       END MODULE PRMS_GLACR
 
@@ -371,6 +371,13 @@
      &     ' glacier melt flows, for non-glacier HRUs that do not flow to another HRU enter 0', &
      &     'none')/=0 ) CALL read_error(1, 'tohru')
 
+      ALLOCATE ( Hru_slope(Nhru) )
+      IF ( declparam(MODNAME, 'hru_slope', 'nhru', 'real', &
+     &     '0.0', '0.0', '10.0', &
+     &     'HRU slope', &
+     &     'Slope of each HRU, specified as change in vertical length divided by change in horizontal length', &
+     &     'decimal fraction')/=0 ) CALL read_error(1, 'hru_slope')
+
       IF ( declparam(MODNAME, 'max_gldepth', 'one', 'real', &
            '1.5', '0.1', '3.0', &
            'Upper bound on glacier thickness, thickest glacier measured is Taku at 1.5 km, ice sheet 3 km', &
@@ -445,7 +452,6 @@
       USE PRMS_BASIN, ONLY: Hru_area_dble, Hru_elev_ts, Active_hrus, Hru_route_order, &
      &    Hru_type, Basin_area_inv, Hru_elev_meters
       USE PRMS_FLOWVARS, ONLY: Glacier_frac, Alt_above_ela, Glrette_frac
-      USE PRMS_SOLTAB, ONLY: Hru_slope
       IMPLICIT NONE
 ! Functions
       INTEGER, EXTERNAL :: getparam, get_ftnunit, compute_ela_aar
@@ -477,6 +483,7 @@
       IF ( getparam(MODNAME, 'hru_width', Nhru, 'real', Hru_width)/=0 ) CALL read_error(2, 'hru_width')
       IF ( getparam(MODNAME, 'abl_elev_range', Nhru, 'real', Abl_elev_range)/=0 ) CALL read_error(2, 'abl_elev_range')
       IF ( getparam(MODNAME, 'tohru', Nhru, 'integer', Tohru)/=0 ) CALL read_error(2, 'tohru')
+      IF ( getparam(MODNAME, 'hru_slope', Nhru, 'real', Hru_slope)/=0 ) CALL read_error(2, 'hru_slope')
       IF ( Init_vars_from_file==0 ) THEN
         Alt_above_ela = 0.0
         Prev_out = 0.0
@@ -514,6 +521,7 @@
         Basin_gl_storstart = 0.0D0
         Basin_gl_storvol = 0.0D0
       ENDIF
+      DEALLOCATE ( Hru_slope )
 
       Glac_HRUnum_down = 1 ! 1 is the way Weasel delineation was designed
       ! 1 is terminus is smallest ID and top is largest. IDs are stacked.
