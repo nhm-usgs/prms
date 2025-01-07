@@ -934,8 +934,8 @@ Size      : 1
 Type      : long
 Units     : none
 Width     : 4
-Max       : 2
-Min       : 0
+Max       : 8
+Min       : 1
 Default   : 1
 
 Name      : potet_sublim
@@ -1094,8 +1094,8 @@ Default   : 1
 
 Name      : psta_x
 Module    : ide_dist
-Descr     : X for each precipitation station (albers)
-Help      : Longitude (X) for each precipitation measurement station in albers projection
+Descr     : X for each precipitation station (Albers)
+Help      : Longitude (X) for each precipitation measurement station in Albers projection
 Ndimen    : 1
 Dimensions: nrain - 26
 Size      : 26
@@ -1108,8 +1108,8 @@ Default   : 0.000000
 
 Name      : psta_y
 Module    : ide_dist
-Descr     : Y for each precipitation station (albers)
-Help      : Latitude (Y) for each precipitation measurement station in albers projection
+Descr     : Y for each precipitation station (Albers)
+Help      : Latitude (Y) for each precipitation measurement station in Albers projection
 Ndimen    : 1
 Dimensions: nrain - 26
 Size      : 26
@@ -1506,9 +1506,9 @@ Ndimen    : 1
 Dimensions: nssr - 90
 Size      : 90
 Type      : float
-Units     : inches/day
+Units     : fraction/day
 Width     : 0
-Max       : 999.000000
+Max       : 1.000000
 Min       : 0.000100
 Default   : 0.100000
 
@@ -1738,8 +1738,8 @@ Default   : 1
 
 Name      : tsta_x
 Module    : ide_dist
-Descr     : X for each temperature station (albers)
-Help      : Longitude (X) for each air-temperature-measurement station in albers projection
+Descr     : X for each temperature station (Albers)
+Help      : Longitude (X) for each air-temperature-measurement station in Albers projection
 Ndimen    : 1
 Dimensions: ntemp - 26
 Size      : 26
@@ -1752,8 +1752,8 @@ Default   : 0.000000
 
 Name      : tsta_y
 Module    : ide_dist
-Descr     : Y for each temperature station (albers)
-Help      : Latitude (Y) for each air-temperature-measurement station in albers projection
+Descr     : Y for each temperature station (Albers)
+Help      : Latitude (Y) for each air-temperature-measurement station in Albers projection
 Ndimen    : 1
 Dimensions: ntemp - 26
 Size      : 26

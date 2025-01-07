@@ -991,8 +991,8 @@ Size      : 1
 Type      : long
 Units     : none
 Width     : 4
-Max       : 2
-Min       : 0
+Max       : 8
+Min       : 1
 Default   : 1
 
 Name      : potet_cbh_adj
@@ -1493,9 +1493,9 @@ Ndimen    : 1
 Dimensions: nssr - 258
 Size      : 258
 Type      : float
-Units     : inches/day
+Units     : fraction/day
 Width     : 0
-Max       : 999.000000
+Max       : 1.000000
 Min       : 0.000100
 Default   : 0.100000
 

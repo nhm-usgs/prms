@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 09/01/2024
+                        Version 6.0.0 12/20/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,14 +36,14 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 265732eadc181e1632b4dcfc9fe08ac2d10e9abe
+Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-09-01
+Computation Order               call_modules        2024-12-20
 Basin Definition                basin               2024-08-09
 Cascading Flow                  cascade             2023-11-01
 Common States and Fluxes        climateflow         2024-08-09
@@ -57,14 +57,14 @@ Solar Radiation Distribution    ddsolrad            2023-10-04
 Transpiration Distribution      transp_tindex       2023-11-01
 Potential Evapotranspiration    potet_jh            2021-08-13
 Canopy Interception             intcp               2024-04-04
-Snow Dynamics                   snowcomp            2024-04-30
+Snow Dynamics                   snowcomp            2024-09-01
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-06-20
-Groundwater                     gwflow              2024-05-30
+Soilzone Computations           soilzone            2024-12-06
+Groundwater                     gwflow              2024-12-01
 Streamflow Routing              strmflow            2020-08-03
-Output Summary                  basin_sum           2024-04-30
-Output Summary                  subbasin            2023-11-01
-Output Summary                  basin_summary       2021-08-13
+Output Summary                  basin_sum           2024-12-01
+Output Summary                  subbasin            2024-12-01
+Output Summary                  basin_summary       2024-09-01
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
@@ -693,7 +693,7 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1982    5   27    0.000    0.314    33.036    0.550    0.397    0.000    0.000
    1982    5   28    0.000    0.182    32.518    0.336    0.351   -0.000    0.000
    1982    5   29    0.000    0.182    31.997    0.338    0.316    0.000    0.000
-   1982    5   30    0.000    0.176    31.511    0.310    0.295   -0.000    0.000
+   1982    5   30    0.000    0.176    31.511    0.310    0.295    0.000    0.000
    1982    5   31    0.000    0.220    30.947    0.344    0.281    0.000    0.000
    1982    6    1    0.000    0.053    30.710    0.184    0.263   -0.000    0.000
    1982    6    2    0.000    0.064    30.443    0.202    0.246   -0.000    0.000
@@ -721,7 +721,7 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1982    6   24    0.000    0.243    22.123    0.179    0.144    0.000    0.000
    1982    6   25    0.000    0.214    21.749    0.160    0.137   -0.000    0.000
    1982    6   26    0.000    0.206    21.395    0.149    0.130    0.000    0.000
-   1982    6   27    0.000    0.183    21.073    0.138    0.126   -0.000    0.000
+   1982    6   27    0.000    0.183    21.073    0.138    0.126    0.000    0.000
    1982    6   28    0.000    0.156    20.783    0.134    0.123    0.000    0.000
    1982    6   29    0.051    0.061    20.663    0.110    0.123    0.000    0.000
    1982    6   30    0.166    0.057    20.640    0.132    0.119   -0.000    0.000
@@ -1050,7 +1050,7 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1983    5   19    0.000    0.189    52.835    0.286    0.330    0.000    0.000
    1983    5   20    0.000    0.193    52.311    0.330    0.368   -0.000    0.000
    1983    5   21    0.000    0.200    51.723    0.388    0.421    0.000    0.000
-   1983    5   22    0.000    0.219    51.054    0.451    0.449   -0.000    0.000
+   1983    5   22    0.000    0.219    51.054    0.451    0.449    0.000    0.000
    1983    5   23    0.000    0.236    50.307    0.511    0.477   -0.000    0.000
    1983    5   24    0.000    0.247    49.503    0.556    0.498    0.000    0.000
    1983    5   25    0.000    0.261    48.631    0.611    0.512    0.000    0.000
@@ -1304,5 +1304,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1984    1   28    0.000    0.066    39.756    0.018    0.035    0.000    0.000
    1984    1   29    0.000    0.064    39.674    0.018    0.035    0.000    0.000
    1984    1   30    0.000    0.073    39.583    0.018    0.035   -0.000    0.000
-Execution elapsed time    0 minutes  0.29 seconds
+Execution elapsed time:    0 minutes  0.35 seconds
 

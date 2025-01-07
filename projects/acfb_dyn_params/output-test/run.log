@@ -2,7 +2,7 @@
 
                          U.S. Geological Survey
                Precipitation-Runoff Modeling System (PRMS)
-                        Version 6.0.0 09/01/2024
+                        Version 6.0.0 12/20/2024
 
 --------------------------------------------------------------------
         Process            Available Modules
@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash 265732eadc181e1632b4dcfc9fe08ac2d10e9abe
+Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -48,7 +48,7 @@ Please give careful consideration to fixing all ERROR and WARNING messages
 --------------------------------------------------------------------
         Process                    Module         Version Date
 ==============================================================
-Computation Order               call_modules        2024-09-01
+Computation Order               call_modules        2024-12-20
 Basin Definition                basin               2024-08-09
 Common States and Fluxes        climateflow         2024-08-09
 Potential Solar Radiation       soltab              2024-01-22
@@ -62,14 +62,14 @@ Solar Radiation Distribution    climate_hru         2024-08-09
 Potential Evapotranspiration    climate_hru         2024-08-09
 Transpiration Distribution      transp_tindex       2023-11-01
 Canopy Interception             intcp               2024-04-04
-Snow Dynamics                   snowcomp            2024-04-30
+Snow Dynamics                   snowcomp            2024-09-01
 Surface Runoff                  srunoff_smidx       2024-04-04
-Soilzone Computations           soilzone            2024-06-20
-Groundwater                     gwflow              2024-05-30
+Soilzone Computations           soilzone            2024-12-06
+Groundwater                     gwflow              2024-12-01
 Streamflow Routing Init         routing             2024-08-13
 Streamflow Routing              muskingum           2023-11-01
-Output Summary                  basin_sum           2024-04-30
-Output Summary                  nhru_summary        2024-04-04
+Output Summary                  basin_sum           2024-12-01
+Output Summary                  nhru_summary        2024-09-01
 Output Summary                  prms_summary        2024-04-30
 ==============================================================
 
@@ -95,10 +95,10 @@ Simulation time period: 1980/01/01 - 1999/12/31
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2024/09/23 13:26:40
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 11:54:52
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2024/09/23 13:26:41
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 11:54:52
 
-Execution elapsed time    0 minutes  0.79 seconds
+Execution elapsed time    0 minutes  0.77 seconds
 
