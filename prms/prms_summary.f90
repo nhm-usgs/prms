@@ -13,7 +13,7 @@
         DOUBLE PRECISION, SAVE, ALLOCATABLE :: Segmentout(:) !, Gageout(:)
         CHARACTER(LEN=40), ALLOCATABLE :: Streamflow_pairs(:)
         CHARACTER(LEN=4), ALLOCATABLE :: Cfs_strings(:)
-!        CHARACTER(LEN=8), ALLOCATABLE :: Cfs_strings2(:)
+        CHARACTER(LEN=8), ALLOCATABLE :: Cfs_strings2(:)
         CHARACTER(LEN=24) :: Fmt
         CHARACTER(LEN=40), SAVE :: Fmt2
         ! Declared Variables
@@ -25,7 +25,7 @@
       END MODULE PRMS_PRMS_SUMMARY
 
       SUBROUTINE prms_summary()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ACTIVE, OFF, ERROR_open_out, DOCUMENTATION
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, INIT, CLEAN, ERROR_open_out, DOCUMENTATION !, ACTIVE
       USE PRMS_MODULE, ONLY: Model, Process_flag, Nobs, Nsegment, Npoigages, &
      &    Csv_output_file, Inputerror_flag, Parameter_check_flag, CsvON_OFF, Nowyear, Nowmonth, Nowday
       USE PRMS_PRMS_SUMMARY
@@ -67,8 +67,8 @@
      &                        Basin_imperv_stor + Basin_lake_stor + Basin_dprst_volop + Basin_dprst_volcl
         Basin_surface_storage = Basin_intcp_stor + Basin_pweqv + Basin_imperv_stor + Basin_lake_stor + &
      &                          Basin_dprst_volop + Basin_dprst_volcl
-        IF ( CsvON_OFF==ACTIVE ) THEN
-          WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
+        WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
+        IF ( CsvON_OFF==1 ) THEN
           WRITE ( Iunit, Fmt2 ) chardate, &
      &            Basin_potet, Basin_actet, Basin_dprst_evap, Basin_imperv_evap, Basin_intcp_evap, Basin_lakeevap, &
      &            Basin_perv_et, Basin_snowevap, Basin_swrad, Basin_ppt, Basin_pk_precip, &
@@ -83,15 +83,14 @@
      &            Basin_stflow_in, Basin_stflow_out, Basin_gwflow, Basin_dnflow, &
      &            Basin_gwstor_minarea_wb, &
      &            Basin_cfs, Basin_gwflow_cfs, Basin_sroff_cfs, Basin_ssflow_cfs, gageflow, &
-     &            (Segmentout(i), i = 1, Npoigages)
+     &            (Segmentout(i), Streamflow_cfs(i), i = 1, Npoigages)
 !     &            (Segmentout(i), Gageout(i), i = 1, Npoigages)
+!     &            (Segmentout(i), i = 1, Npoigages)
         ELSEIF ( CsvON_OFF==3 ) THEN
-          WRITE ( chardate, '(I4.4,2("-",I2.2))' ) Nowyear, Nowmonth, Nowday
           WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
         ELSE
-          WRITE ( chardate, '(I4.4,2(1X,I2.2))' ) Nowyear, Nowmonth, Nowday
-!          WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), Streamflow_cfs(i), i = 1, Npoigages)
-          WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
+          WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), Streamflow_cfs(i), i = 1, Npoigages)
+!          WRITE ( Iunit, Fmt2 ) chardate, (Segmentout(i), i = 1, Npoigages)
         ENDIF
 
 ! Declare procedure
@@ -135,17 +134,12 @@
       ELSEIF ( Process_flag==INIT ) THEN
         idim = MAX(1, Npoigages)
         ALLOCATE ( Streamflow_pairs(idim), Cfs_strings(idim), Segmentout(idim), Gageid_len(idim) )
+        ALLOCATE ( Cfs_strings2(idim) )
+        Cfs_strings = ',cfs'
+        Cfs_strings2 = ',cfs,cfs'
         Gageid_len = 1
 !        ALLOCATE ( Gageout(idim) )
         Streamflow_pairs = ' '
-        IF ( CsvON_OFF==ACTIVE .OR. CsvON_OFF==3 ) THEN
-          Cfs_strings = ',cfs'
-!          Cfs_strings = ',cfs,cfs'
-        ELSE
-!          ALLOCATE ( Cfs_strings2(idim) )
-          Cfs_strings = ' cfs'
-!          Cfs_strings2 = ' cfs cfs'
-        ENDIF
 
         IF ( Npoigages>0 ) THEN
 !          IF ( getparam(MODNAME, 'parent_poigages', Npoigages, 'integer', Parent_poigages)/=0 ) &
@@ -171,11 +165,11 @@
             IF ( Gageid_len(i)<1 ) Gageid_len(i) = 0
             IF ( Gageid_len(i)>0 ) THEN
               IF ( Gageid_len(i)>15 ) Gageid_len(i) = 15
-              IF ( CsvON_OFF==ACTIVE .OR. CsvON_OFF==3 ) THEN
-                WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ',seg_outflow_', Poi_gage_segment(i), '_gage_', &
+              IF ( CsvON_OFF==1 .OR. CsvON_OFF==3 ) THEN
+                WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ',seg_outflow_', Poi_gage_segment(i), ',gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
               ELSE
-                WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ' seg_outflow_', Poi_gage_segment(i), '_gage_', &
+                WRITE (Streamflow_pairs(i), '(A,I0,2A)' ) ',seg_outflow_', Poi_gage_segment(i), ',gage_', &
      &                                                    Poi_gage_id(i)(:Gageid_len(i))
               ENDIF
               IF ( Poi_gage_segment(i)>9 ) Gageid_len(i) = Gageid_len(i) + 1
@@ -193,7 +187,7 @@
           ENDDO
         ENDIF
 
-        IF ( CsvON_OFF==ACTIVE ) THEN
+        IF ( CsvON_OFF==1 ) THEN
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+14, 'A )'
           WRITE ( Iunit, Fmt ) 'Date,', &
      &            'basin_potet,basin_actet,basin_dprst_evap,basin_imperv_evap,basin_intcp_evap,basin_lakeevap,', &
@@ -209,7 +203,7 @@
      &            'basin_stflow_in,basin_stflow_out,basin_gwflow,basin_dnflow,', &
      &            'basin_gwstor_minarea_wb,', &
      &            'basin_cfs,basin_gwflow_cfs,basin_sroff_cfs,basin_ssflow_cfs,runoff_cfs', &
-     &            (Streamflow_pairs(i)(:Gageid_len(i)+23), i = 1, Npoigages)
+     &            (Streamflow_pairs(i)(:Gageid_len(i)+20), i = 1, Npoigages)
 
           WRITE ( Iunit, Fmt ) 'year-month-day,', &
      &            'inches/day,inches/day,inches/day,inches/day,inches/day,inches/day,', &
@@ -225,9 +219,9 @@
      &            'inches/day,inches/day,inches/day,inches/day,', &
      &            'inches,', &
      &            'cfs,cfs,cfs,cfs,cfs', &
-     &            (Cfs_strings(i), i = 1, Npoigages)
+     &            (Cfs_strings2(i), i = 1, Npoigages)
 
-          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages+NVARS, '(",",F0.4) )'
+          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages+NVARS, '(",",F0.4) )'
 !        WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages+NVARS, '(",",SPES10.3) )'
         ELSEIF ( CsvON_OFF==3 ) THEN
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+1, 'A )'
@@ -239,10 +233,10 @@
           WRITE ( Fmt, '(A,I0,A)' ) '( ', Npoigages+1, 'A )'
           WRITE ( Iunit, Fmt ) 'Date', &
      &            (Streamflow_pairs(i)(:Gageid_len(i)+20), i = 1, Npoigages)
-          WRITE ( Iunit, Fmt ) 'year month day', (Cfs_strings(i), i = 1, Npoigages)
-          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages, '(1X,F0.4) )'
-!          WRITE ( Iunit, Fmt ) 'year month day', (Cfs_strings2(i), i = 1, Npoigages)
-!          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages, '(1X,F0.4) )'
+!          WRITE ( Iunit, Fmt ) 'year month day', (Cfs_strings(i), i = 1, Npoigages)
+          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', 2*Npoigages, '(",",F0.4) )'
+!          WRITE ( Fmt2, '(A,I0,A)' )  '( A,', Npoigages, '(1X,F0.4) )'
+           WRITE ( Iunit, Fmt ) 'year-month-day', (Cfs_strings2(i), i = 1, Npoigages)
         ENDIF
 
       ELSEIF ( Process_flag==CLEAN ) THEN
