@@ -94,7 +94,7 @@
       IF ( declparam(MODNAME, 'maxday_prec', 'one', 'real', &
      &     '15.0', '0.0', '20.0', &
      &     'Maximum daily precipitation for any weather site', &
-     &     'Maximum measured precipitation value above which precipitation is assumed to be in error', &
+     &     'Maximum measured precipitation value above which precipitation is assumed to be an error', &
      &     'precip_units')/=0 ) CALL read_error(1, 'maxday_prec')
 
 !      ALLOCATE ( Maxmon_prec(MONTHS_PER_YEAR) )

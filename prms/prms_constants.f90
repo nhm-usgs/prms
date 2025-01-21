@@ -101,7 +101,6 @@ MODULE PRMS_CONSTANTS
 
     ! model_mode
     integer, parameter :: PRMS = 1
-    integer, parameter :: PRMS6 = 6
     integer, parameter :: DOCUMENTATION = 99
     integer, parameter :: RUN = 0
     integer, parameter :: DECL = 1

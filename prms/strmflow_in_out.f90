@@ -2,7 +2,7 @@
 ! Routes water between segments in the system as inflow equals outflow
 !***********************************************************************
       INTEGER FUNCTION strmflow_in_out()
-      USE PRMS_CONSTANTS, ONLY: RUN, DECL, DEBUG_less, OUTFLOW_SEGMENT, CFS2CMS_CONV, ACTIVE
+      USE PRMS_CONSTANTS, ONLY: RUN, DECL, DEBUG_less, OUTFLOW_SEGMENT, CFS2CMS_CONV, ACTIVE, ERROR_streamflow
       USE PRMS_MODULE, ONLY: Nsegment, Process_flag, Print_debug
       USE PRMS_SET_TIME, ONLY: Cfs_conv
       USE PRMS_BASIN, ONLY: Active_area
@@ -17,7 +17,7 @@
       USE PRMS_OBS, ONLY: Streamflow_cfs
       IMPLICIT NONE
 ! Functions
-      EXTERNAL :: print_module
+      EXTERNAL :: print_module, error_stop
 ! Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing'
       character(len=*), parameter :: MODNAME = 'strmflow_in_out'
@@ -49,7 +49,12 @@
           iorder = Segment_order(i)
           toseg = Tosegment(iorder)
           segtype = Segment_type(iorder)
-          IF ( Obsin_segment(iorder)>0 ) Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
+
+          IF ( Obsin_segment(iorder)>0 ) THEN
+            IF ( .not.(Streamflow_cfs(Obsin_segment(iorder))<0.0)) &
+                 CALL error_stop('negative replacement streamflow in muskingum', ERROR_streamflow)
+            Seg_upstream_inflow(iorder) = Streamflow_cfs(Obsin_segment(iorder))
+          ENDIF
           Seg_inflow(iorder) = Seg_upstream_inflow(iorder) + Seg_lateral_inflow(iorder)
           IF ( Obsout_segment(iorder)>0 ) THEN
             Seg_outflow(iorder) = Streamflow_cfs(Obsout_segment(iorder))

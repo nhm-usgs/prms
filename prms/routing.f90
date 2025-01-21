@@ -143,7 +143,7 @@
         IF ( declparam(MODNAME, 'seg_depth', 'nsegment', 'real', &
      &       '1.0', '0.03', '250.0', &
      &       'Segment river depth', &
-     &       'Segment river depth at bankfull; shallowest depth from Blackburn-Lynch (2017);'//&
+     &       'Segment river depth at bankfull; shallowest depth from Blackburn-Lynch (2017); '//&
      &       'Congo is deepest at 250 m but in the US it is probably the Hudson at 66 m', &
      &       'meters')/=0 ) CALL read_error(1, 'seg_depth')
       ENDIF

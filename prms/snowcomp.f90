@@ -868,7 +868,7 @@
       USE PRMS_CONSTANTS, ONLY: LAKE, LAND, GLACIER, SHRUBS, FEET, &
      &    INCH2M, FEET2METERS, ACTIVE, OFF, DEBUG_less, DAYS_YR
       USE PRMS_MODULE, ONLY: Nhru, Print_debug, Glacier_flag, Start_year, &
-     &    Nowyear, Nowmonth, Albedo_cbh_flag, snow_cloudcover_flag, PRMS6_flag
+     &    Nowyear, Nowmonth, Albedo_cbh_flag, snow_cloudcover_flag, bias_adjust_flag
       USE PRMS_SNOW
       USE PRMS_SOLTAB, ONLY: Soltab_horad_potsw, Soltab_potsw, Hru_cossl
       USE PRMS_CLIMATE_HRU, ONLY: Albedo_hru
@@ -976,7 +976,7 @@
         ! - reset the counter for the number of days a snowpack is at 0 deg Celsius
         !rsr, do we want to reset all HRUs, what about Southern Hemisphere
         IF ( Julwater==1 ) THEN
-          IF ( PRMS6_flag==ACTIVE ) THEN
+          IF ( bias_adjust_flag==ACTIVE ) THEN
             Pss(i) = It0_pkwater_equiv(i) ! [inches]
           ELSE
             Pss(i) = 0.0D0 ! [inches]
@@ -1479,7 +1479,7 @@
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, &
      &           Freeh2o_cap, Tmax_allrain_c, Ihru_gl)
       USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE, OFF, DEBUG_less
-      USE PRMS_MODULE, ONLY: PRMS6_flag, Print_debug
+      USE PRMS_MODULE, ONLY: bias_adjust_flag, Print_debug
       USE PRMS_SNOW, ONLY: Ihru
       IMPLICIT NONE
 ! Functions
@@ -1507,7 +1507,7 @@
       IF ( Pptmix==ACTIVE ) THEN
         ! If there is any rain, the rain temperature is halfway between the maximum
         ! temperature and the allsnow temperature
-        IF ( PRMS6_flag==ACTIVE ) THEN
+        IF ( bias_adjust_flag==ACTIVE ) THEN
           train = (Tavgc+Tmax_allrain_c)*0.5 ! [degrees C]
         ELSE
           train = (Tmaxc+Tmax_allsnow_c)*0.5 ! [degrees C]
@@ -1539,7 +1539,7 @@
         ! temperature is halfway between the maximum daily temperature
         ! and maximum temperature for which all precipitation is snow
         IF ( train<CLOSEZERO ) THEN
-          IF ( PRMS6_flag==ACTIVE ) THEN
+          IF ( bias_adjust_flag==ACTIVE ) THEN
             train = (Tavgc+Tmax_allrain_c)*0.5 ! [degrees C]
           ELSE
             train = (Tmaxc+Tmax_allsnow_c)*0.5 ! [degrees C]
