@@ -212,7 +212,7 @@
         ALLOCATE ( Glacr_pk_def(Nhru) )
         IF ( declvar(MODNAME, 'glacr_pk_def', 'nhru', Nhru, 'real', &
      &       'Heat deficit, amount of heat necessary to make the glacier'// &
-     &       ' or or glacierette snowpack isothermal at 0 degrees Celsius', &
+     &       ' or glacierette snowpack isothermal at 0 degrees Celsius', &
      &       'Langleys', Glacr_pk_def)/=0 ) CALL read_error(3, 'glacr_pk_def')
 
         ALLOCATE ( Glacr_pk_den(Nhru) )
