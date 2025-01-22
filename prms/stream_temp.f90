@@ -7,7 +7,7 @@
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
       character(len=*), parameter :: Version_stream_temp = '2023-10-04'
-      INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:), Seg_close(:)
+      INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
 
@@ -24,7 +24,7 @@
       REAL, SAVE, ALLOCATABLE :: hru_area_sum(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_count(:)
       INTEGER, SAVE, ALLOCATABLE :: upstream_idx(:,:)
-      INTEGER, SAVE ::  gw_index, ss_index
+      INTEGER, SAVE, ALLOCATABLE ::  gw_index(:), ss_index(:)
 
 !   Declared Variables
       REAL, SAVE, ALLOCATABLE :: Seg_tave_water(:), seg_tave_upstream(:), Seg_daylight(:)
@@ -38,7 +38,7 @@
       INTEGER, SAVE:: Maxiter_sntemp
       REAL, SAVE, ALLOCATABLE :: Seg_humidity(:, :)
       REAL, SAVE, ALLOCATABLE :: lat_temp_adj(:, :)
-      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:)
+      INTEGER, SAVE, ALLOCATABLE :: Seg_humidity_sta(:), seg_close(:)
 !   Shade Parameters needed if stream_temp_shade_flag = 0
       REAL, SAVE, ALLOCATABLE :: Azrh(:), Alte(:), Altw(:), Vce(:)
       REAL, SAVE, ALLOCATABLE :: Vdemx(:), Vhe(:), Voe(:), Vcw(:), Vdwmx(:), Vhw(:), Vow(:)
@@ -96,7 +96,7 @@
       IMPLICIT NONE
 ! Functions
       INTRINSIC :: INDEX
-      INTEGER, EXTERNAL :: declparam, declvar, getdim, control_integer
+      INTEGER, EXTERNAL :: declparam, declvar, control_integer
       EXTERNAL :: read_error, print_module
 !***********************************************************************
       stream_temp_decl = 0
@@ -180,9 +180,11 @@
       ALLOCATE (Press(Nsegment) )
       ALLOCATE ( Seg_hru_count(Nsegment) )
       ALLOCATE (Seg_carea_inv(Nsegment) )
-      ALLOCATE ( Seg_close(Nsegment) )
       ALLOCATE (gw_sum(Nsegment), ss_sum(Nsegment))
       ALLOCATE (gw_silo(nsegment,DAYS_PER_YEAR), ss_silo(nsegment,DAYS_PER_YEAR))
+! markstro
+      ALLOCATE (gw_index(nsegment), ss_index(nsegment))
+
       ALLOCATE (hru_area_sum(nsegment))
 
       IF ( declparam( MODNAME, 'albedo', 'one', 'real', &
@@ -196,7 +198,7 @@
      &     '0.0', '-5.0', '5.0', &
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
-     &     'decimal fraction')/=0 ) CALL read_error(1, 'lat_temp_adj')
+     &     'degrees Celsius')/=0 ) CALL read_error(1, 'lat_temp_adj')
 
       ALLOCATE ( Seg_length(Nsegment) )
       IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
@@ -347,6 +349,17 @@
      &     'Maximum number of Newton-Raphson iterations to compute stream temperature', &
      &     'none')/=0 ) CALL read_error(1, 'maxiter_sntemp')
 
+      ! If a segment does not have any HRUs, need to find the closest one for elevation and latitude info
+      ! NOTE: seg_close variable can go upstream, downstream, or offstream looking for the "closest" segment with
+      ! an HRU. This is not approprite to use in a situation where computed values are going to be taken from
+      ! the closest HRU (i.e. flow).
+      ALLOCATE ( seg_close(Nsegment) )
+      IF ( declparam(MODNAME, 'seg_close', 'nsegment', 'integer', &
+     &     '-1', '9999999', 'nsegment', &
+     &     'Index of closest segment from elevation and latitude for each a segment', &
+     &     'Index of closest segment from elevation and latitude for each a segment', &
+     &     'none')/=0 ) CALL read_error(1, 'seg_close')
+
       IF ( Strmtemp_humidity_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN  ! specified constant
          ALLOCATE ( Seg_humidity(Nsegment, MONTHS_PER_YEAR) )
          IF ( declparam( MODNAME, 'seg_humidity', 'nsegment,nmonths', 'real', &
@@ -448,6 +461,7 @@
       IF ( getparam( MODNAME, 'gw_tau', Nsegment, 'integer', Gw_tau)/=0 ) CALL read_error(2, 'Gw_tau')
       IF ( getparam( MODNAME, 'melt_temp', 1, 'real', Melt_temp)/=0 ) CALL read_error(2, 'melt_temp')
       IF ( getparam( MODNAME, 'maxiter_sntemp', 1, 'real', Maxiter_sntemp)/=0 ) CALL read_error(2, 'maxiter_sntemp')
+      IF ( getparam( MODNAME, 'seg_close', Nsegment, 'integer', seg_close)/=0 ) CALL read_error(2, 'seg_close')
 
       ierr = 0
       IF ( Strmtemp_humidity_flag==1 ) THEN
@@ -476,13 +490,13 @@
         Seg_tave_water = Stream_tave_init
       ENDIF
       IF ( Init_vars_from_file == 0 ) THEN
-         gw_silo =  0.0
-         ss_silo =  0.0
+         gw_silo =  -99.9
+         ss_silo =  -99.9
          gw_sum = 0.0
          ss_sum = 0.0
 ! these are set to zero because they will be incremented to 1 down in the run function
-         gw_index = 0
-         ss_index = 0
+         gw_index = 1
+         ss_index = 1
       ENDIF
 
       Seg_daylight = 12.0
@@ -496,7 +510,8 @@
          ALLOCATE ( Sin_alrs(MAX_DAYS_PER_YEAR,Nsegment) )
          Shade_jday = 0.0
          Svi_jday = 0.0
-         Seg_lat = 0.0
+! DANGER markstro why is seg_lat zeroed out?
+!         Seg_lat = 0.0
       ENDIF
 
 ! Figure out how many HRUs are connected to each segment
@@ -526,17 +541,13 @@
          RETURN
       ENDIF
 
-      Seg_close = Segment_up ! assign upstream values
+      if ( seg_close(1)==-1 ) then
+          seg_close = Segment_up
+          print *, 'WARNING, seg_close not specified so setting to segment_up'
+      endif
       DO j = 1, Nsegment ! set values based on routing order for segments without associated HRUs
          i = Segment_order(j)
 
-      ! If a segment does not have any HRUs, need to find the closest one for elevation and latitude info
-      ! NOTE: seg_close variable can go upstream, downstream, or offstream looking for the "closest" segment with
-      ! an HRU. This is not approprite to use in a situation where computed values are going to be taken from
-      ! the closest HRU (i.e. flow).
-      !
-      ! This does work for NHM network (most comprehensive test).
-      !
          IF ( Seg_hru_count(i)==0 ) THEN
             IF ( Segment_up(i)==0 ) THEN
                IF ( Tosegment(i)>0 ) THEN ! assign downstream values
@@ -575,7 +586,11 @@
          IF ( Stream_temp_shade_flag==0 ) THEN
 !  LATITUDE TRIGONOMETRIC PARAMETERS
             Cos_seg_lat(i) = COS(Seg_lat(i)) ! coso
+
+! markstro - this is in the original code.  Not sure why because the only time the cos of the latitude
+! is zero is at the north or south pole.
             IF ( Cos_seg_lat(i) < NEARZERO ) Cos_Seg_lat(i) = NEARZERO
+
             Sin_seg_lat(i) = SIN(Seg_lat(i)) ! sino
             tano = Sin_seg_lat(i) / Cos_seg_lat(i)
             DO k = 1, MAX_DAYS_PER_YEAR
@@ -583,7 +598,13 @@
                decl = 0.40928 * COS(((2.0 * PI) / DAYS_YR) * (172.0 - k))
                cos_d = COS(decl)
                Sin_declination(k, i) = SIN(decl) ! sin_d
-               IF ( cos_d < NEARZERO ) cos_d = NEARZERO
+
+! DANGER markstro this check is not in the original sntemp code.
+! There can be a divide by zero problem if solar declination
+! changes from negative to positive or positive to negative
+! which it does on winter/summer solstice.
+!               IF ( cos_d < NEARZERO ) cos_d = NEARZERO
+               IF ( cos_d == 0.0 ) cos_d = NEARZERO
                tan_d = Sin_declination(k, i) / cos_d
 !
 !  JOINT LATITUDE & DECLINATION TRIGONOMETRIC PARAMETERS
@@ -695,6 +716,8 @@
 
       END FUNCTION stream_temp_init
 
+
+
 !***********************************************************************
 !     stream_temp_run - Computes stream temperatures
 !***********************************************************************
@@ -715,8 +738,9 @@
 
       IMPLICIT NONE
 ! Functions
-      INTRINSIC :: DBLE
+      INTRINSIC :: DBLE, sngl
       REAL, EXTERNAL :: twavg, twmax, get_segwidth
+      EXTERNAL :: compute_running_ave_air_temp
       EXTERNAL :: equilb, lat_inflow, shday
 ! Local Variables
       REAL :: harea, svi, fs
@@ -740,7 +764,8 @@
             Seg_humid(i) = Humidity(Seg_humidity_sta(i)) * 0.01
          ENDDO
       ELSE
-         Seg_humid = 0.0
+!         Seg_humid = 0.0
+
       ENDIF
 
       Seg_potet = 0.0D0
@@ -757,7 +782,7 @@
 ! DANGER HACK
 ! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as
 ! this results in divide by 0.0
-         if (Soltab_potsw(jday, j) <= 10.0) then
+         if (Soltab_potsw(jday, j) <= 10.0D0) then
             ccov = 1.0 - (Swrad(j) / 10.0 * sngl(Hru_cossl(j)))
          else
             ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
@@ -783,7 +808,7 @@
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
-            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)*harea
+            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)/100.0*harea
          endif
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.
@@ -855,18 +880,14 @@
       ENDDO
 
 
-! Compute the running averages for groundwater and subsurface temperatures.
-      if (gw_index >= gw_tau(i)) then
-         gw_index = 1
-      else
-         gw_index = gw_index + 1
-      endif
+! debugging version of the loop begins here
+      DO j = 1, Nsegment
+         i = Segment_order(j)
 
-      if (ss_index >= ss_tau(i)) then
-         ss_index = 1
-      else
-         ss_index = ss_index + 1
-      endif
+! Compute temperatures of components of flow from HRUs
+         CALL compute_running_ave_air_temp(i)
+
+      ENDDO
 
       ! Mark all of the upstream segment temperatures as not having been computed yet.
       ! If the value is something other than -100.0, then I know that it has been computed.
@@ -898,18 +919,6 @@
             cycle
          endif
 
-! GW moving average
-         gw_sum(i) = gw_sum(i) - gw_silo(i, gw_index)
-         gw_silo(i, gw_index) = Seg_tave_air(i)
-         gw_sum(i) = gw_sum(i) + gw_silo(i, gw_index)
-         seg_tave_gw(i) = gw_sum(i) / gw_tau(i)
-
-! SS moving average
-         ss_sum(i) = ss_sum(i) - ss_silo(i, ss_index)
-         ss_silo(i, ss_index) = Seg_tave_air(i)
-         ss_sum(i) = ss_sum(i) + ss_silo(i, ss_index)
-         seg_tave_ss(i) = ss_sum(i) / ss_tau(i)
-
 ! Find upstream intitial inflow temperature for segment i
 ! i is the current segment
 ! kk is the upstream segment
@@ -937,7 +946,7 @@
 !      &        fs, " seg_tave_water = ", Seg_tave_water(i), " troff = " , Seg_tave_air(i), " up_temp = ", up_temp
 !         endif
 
-         if (.not.(seg_outflow(i)>0.0)) then
+         if (.not.(seg_outflow(i)>0.0D0)) then
             if (Seg_tave_water(i) > -99.0) then
                ! This segment has upstream HRUs somewhere, but the current day's flow is zero
                Seg_tave_water(i) = NOFLOW_TEMP
@@ -1060,6 +1069,75 @@
 
       ENDDO
       END FUNCTION stream_temp_run
+
+
+!*********************************************************************************
+! To compute the average of the last n days, keep an array with n values.
+! Always write todays temperature into the array position containing the
+! value for n days back.  All of the other values need to be included in
+! the running mean, just replace the oldest value with the newest value
+! so that the values don't need to be continuously shifted in array position
+! as time is passing.  This should be the fastest because of this, but the
+! array position for the oldest value (the one to drop on this timestep)
+! must be maintained as the timestep is looping.
+!*********************************************************************************
+       SUBROUTINE compute_running_ave_air_temp(ii)
+           USE PRMS_STRMTEMP, ONLY: seg_tave_gw, seg_tave_air, gw_tau, gw_index, gw_silo
+           USE PRMS_STRMTEMP, ONLY: seg_tave_ss, seg_tave_air, ss_tau, ss_index, ss_silo
+           IMPLICIT NONE
+           INTEGER, INTENT(IN) :: ii
+
+! local vars
+           INTEGER j
+           REAL at_sum, at_cnt
+
+! Put the new air temperature value into the silo at the index location
+           gw_silo(ii,gw_index(ii)) = seg_tave_air(ii)
+           ss_silo(ii,ss_index(ii)) = seg_tave_air(ii)
+
+! compute the gw running average
+           at_sum = 0.0
+           at_cnt = 0
+           do j = 1, gw_tau(ii)
+               if (gw_silo(ii,j) > -98.0) then
+                   at_sum = at_sum + gw_silo(ii,j)
+                   at_cnt = at_cnt + 1
+               endif
+           enddo
+
+! The average air temperature is the average of the values in the silo
+           seg_tave_gw(ii) = at_sum / at_cnt
+
+! compute the ss running average
+           at_sum = 0.0
+           at_cnt = 0
+           do  j = 1, ss_tau(ii)
+               if (ss_silo(ii,j) > -98.0) then
+                   at_sum = at_sum + ss_silo(ii,j)
+                   at_cnt = at_cnt + 1
+               endif
+           enddo
+
+! The average air temperature is the average of the values in the silo
+           seg_tave_ss(ii) = at_sum / at_cnt
+
+! If the index is at the last position of the silo, reset the index to 0
+           if (gw_index(ii) < gw_tau(ii)) then
+               gw_index(ii) = gw_index(ii) + 1
+           else
+               gw_index(ii) = 1
+           endif
+
+! If the index is at the last position of the silo, reset the index to 0
+           if (ss_index(ii) < ss_tau(ii)) then
+               ss_index(ii) = ss_index(ii) + 1
+           else
+               ss_index(ii) = 1
+           endif
+
+      END SUBROUTINE compute_running_ave_air_temp
+
+
 !
 !*********************************************************************************
 ! Compute the flow-weighted average temperature and a total sum of lateral inflows
@@ -1113,6 +1191,7 @@
       Tl_avg = weight_roff * troff + weight_ss * tss + weight_gw * tave_gw
 
       END SUBROUTINE lat_inflow
+
 
 !***********************************************************************************************
       REAL FUNCTION twavg(qup, T0, Qlat, Tl_avg, Te, Ak1, Ak2, width, length)
@@ -1220,7 +1299,6 @@
 ! Functions
       INTRINSIC :: EXP, SQRT, ABS, SNGL, DBLE
       EXTERNAL :: teak1
-      REAL, EXTERNAL :: sat_vapor_press_poly
 ! Arguments:
       REAL, INTENT(OUT) :: Ted
       REAL, INTENT(OUT) :: Ak1d, Ak2d
@@ -1231,7 +1309,7 @@
       DOUBLE PRECISION :: ha, hv, taabs
       REAL :: hf, hs, b, c, d, delt, del_ht, ltnt_ht, bow_coeff
       REAL :: hnet, vp_sat, sw_power, evap, q_init
-      REAL, PARAMETER :: AKZ = 1.65, A = 5.40E-8, RAD_CONVERT = 41840.0/86400.0
+      REAL, PARAMETER :: AKZ = 1.65, A = 5.40E-8 !, RAD_CONVERT = 41840.0/86400.0
       REAL :: foo
 ! *******************************************************************************
 
@@ -1280,7 +1358,6 @@
       b = bow_coeff * evap * (ltnt_ht + (del_ht * t_o)) + AKZ - (del_ht * evap)
       c = bow_coeff * del_ht * evap
       d = (SNGL(ha + hv) + hf + hs) + (ltnt_ht * evap * ((bow_coeff * t_o) - 1.0) + (seg_tave_gw(Seg_id) * AKZ))
-
 !
 ! DETERMINE EQUILIBRIUM TEMPERATURE & 1ST ORDER THERMAL EXCHANGE COEF.
       Ted = t_o
@@ -1584,6 +1661,7 @@
          ENDIF
 
          Seg_daylight(Seg_id) = (hrss - hrsr) * RADTOHOUR
+
          sti = 1.0 - ((((hrss - hrsr) * sinod) + ((SIN(hrss) - SIN(hrsr)) * cosod)) / (totsh))
          Svi = ((rprnvg(hrsr, hrrh, hrss, sino, coso, sin_d, cosod, sinod, Seg_id)) / (Seg_width(Seg_id)*totsh))
 !
