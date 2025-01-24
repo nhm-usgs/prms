@@ -8,8 +8,9 @@
       character(len=11), parameter :: MODNAME = 'stream_temp'
       character(len=*), parameter :: Version_stream_temp = '2023-10-04'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:)
-      REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), Seg_carea_inv(:), seg_tave_sroff(:), seg_tave_lat(:)
+      REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), seg_tave_sroff(:), seg_tave_lat(:) !, Seg_carea_inv(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
+      integer, save, allocatable :: seg_close_flag
 
       ! next variables only needed if strm_temp_shade_flag = 0
       REAL, SAVE, ALLOCATABLE :: Shade_jday(:, :), Svi_jday(:, :)
@@ -179,7 +180,7 @@
 
       ALLOCATE (Press(Nsegment) )
       ALLOCATE ( Seg_hru_count(Nsegment) )
-      ALLOCATE (Seg_carea_inv(Nsegment) )
+      !ALLOCATE (Seg_carea_inv(Nsegment) )
       ALLOCATE (gw_sum(Nsegment), ss_sum(Nsegment))
       ALLOCATE (gw_silo(nsegment,DAYS_PER_YEAR), ss_silo(nsegment,DAYS_PER_YEAR))
 ! markstro
@@ -355,7 +356,7 @@
       ! the closest HRU (i.e. flow).
       ALLOCATE ( seg_close(Nsegment) )
       IF ( declparam(MODNAME, 'seg_close', 'nsegment', 'integer', &
-     &     '-1', '9999999', 'nsegment', &
+     &     '-1', '-1', '9999999', &
      &     'Index of closest segment from elevation and latitude for each a segment', &
      &     'Index of closest segment from elevation and latitude for each a segment', &
      &     'none')/=0 ) CALL read_error(1, 'seg_close')
@@ -385,7 +386,7 @@
 
       ALLOCATE (seg_elev(nsegment))
       IF (declparam(MODNAME, 'seg_elev', 'nsegment', 'real', &
-     &     '0.0', '-1000.0', '30000.0', &
+     &     '30000.0', '-1000.0', '30000.0', &
      &     'Segment elevation at midpoint', 'Segment elevation at midpoint', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_elev')
 
@@ -417,7 +418,7 @@
       REAL, EXTERNAL :: solalt
       EXTERNAL :: read_error, checkdim_param_limits, error_stop
 ! Local Variables
-      INTEGER :: i, j, k, iseg, ierr, ii, this_seg
+      INTEGER :: i, j, k, ierr, this_seg
       REAL :: tan_d, tano, sinhro, temp, decl, cos_d, tanod, alrs
 !***********************************************************************
       stream_temp_init = 0
@@ -432,6 +433,7 @@
       seg_lat = seg_lat * DEG_TO_RAD
 
       IF (getparam(MODNAME, 'seg_elev', Nsegment, 'real', Seg_elev)/=0 ) CALL read_error(2, 'seg_elev')
+      if ( seg_elev(1) == 30000.0 ) CALL error_stop('seg_elev is not specified', ERROR_param)
 
 ! convert stream length in meters to km
       Seg_length = Seg_length / 1000.0
@@ -523,7 +525,13 @@
          Seg_hru_count(i) = Seg_hru_count(i) + 1
       ENDDO
 
-! find segments that are too short and print them out as they are found
+! find segments that are too short or bad seg_close value and print them out as they are found
+      seg_close_flag = 0
+      if ( seg_close(1)==-1 ) then
+          seg_close = Segment_up
+          seg_close_flag = 1
+          print *, 'WARNING, seg_close not specified so setting to segment_up or other segment if no segment_up'
+      endif
       DO i = 1, Nsegment
          IF ( Seg_length(i)<NEARZERO ) THEN
             PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
@@ -533,51 +541,36 @@
             IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
             Seg_slope(i) = 0.0000001
          ENDIF
+         IF ( Seg_hru_count(i)==0 ) THEN
+            if ( seg_close_flag == 1 ) then
+              print *, 'segment', i, 'does not have associated HRUs when seg_close is specified'
+              ierr = 1
+            endif
+         ENDIF
       ENDDO
 
-! exit if there are any segments that are too short
+! exit if there are any segments that are too short or seg_close specified with error
       IF ( ierr==1 ) THEN
          Inputerror_flag = ierr
          RETURN
       ENDIF
 
-      if ( seg_close(1)==-1 ) then
-          seg_close = Segment_up
-          print *, 'WARNING, seg_close not specified so setting to segment_up'
-      endif
       DO j = 1, Nsegment ! set values based on routing order for segments without associated HRUs
          i = Segment_order(j)
 
          IF ( Seg_hru_count(i)==0 ) THEN
-            IF ( Segment_up(i)==0 ) THEN
-               IF ( Tosegment(i)>0 ) THEN ! assign downstream values
-                  Seg_close(i) = Tosegment(i) ! don't have a value yet, need to fix
-               ELSE ! no upstream or downstream segment
-                  IF ( j>1 ) THEN
-                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
-                  ELSE
-                     Seg_close(i) = Segment_order(j+1) ! assume at least 2 segments
-                  ENDIF
-               ENDIF
-            ENDIF
-            IF ( Seg_elev(Seg_close(i))==30000.0 ) THEN ! need different segment
-               iseg = -1
-               DO k = j+1, Nsegment ! find first segment with valid values
-                  ii = Segment_order(k)
-                  IF ( Seg_hru_count(ii)>0 ) THEN
-                     Seg_close(i) = ii
-                     EXIT
-                  ENDIF
-               ENDDO
-               IF ( iseg==-1 ) THEN
-                  IF ( j>1 ) THEN
-                     Seg_close(i) = Segment_order(j-1) ! set to previous segment id
-                  ELSE ! this is a problem, shouldn't happen
-                     CALL error_stop('segments do not have associated HRUs', ERROR_param)
-                    ! Seg_close(i) = Segment_order(1) ! set to first segment id
-                  ENDIF
-               ENDIF
-            ENDIF
+            if ( seg_close_flag == 0 ) then
+              IF ( Segment_up(i)==0 ) THEN
+                 IF ( j>1 ) THEN
+                    seg_close(i) = Segment_order(j-1) ! set to previous segment id
+                    print *, 'WARNING, segment_up = 0 without associated HRU for segment:', i
+                    print *, '         will use previous segment in route order to set segment values'
+                 ELSE
+                    print *, 'Cannot set associted segment for segment without associated HRU for segment:', i
+                    CALL error_stop('must specify seg_close for this case', ERROR_param)
+                 ENDIF
+              ENDIF
+            endif
          ENDIF
 
          ! Compute atmospheric pressure based on segment elevation.
@@ -763,9 +756,6 @@
          DO i = 1, Nsegment
             Seg_humid(i) = Humidity(Seg_humidity_sta(i)) * 0.01
          ENDDO
-      ELSE
-!         Seg_humid = 0.0
-
       ENDIF
 
       Seg_potet = 0.0D0
@@ -808,7 +798,8 @@
 
 ! Compute segment humidity if info is specified in CBH as time series by HRU
          IF ( Strmtemp_humidity_flag==0 ) then
-            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j)/100.0*harea
+! humidity_hru is supposed to be percentage
+            Seg_humid(i) = Seg_humid(i) + Humidity_hru(j) * 0.01 * harea
          endif
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.
@@ -829,27 +820,18 @@
             Seg_tave_air(i) = Seg_tave_air(i) / hru_area_sum(i)
             Seg_melt(i) = Seg_melt(i) / hru_area_sum(i)
             Seg_rain(i) = Seg_rain(i) / hru_area_sum(i)
-            IF ( Strmtemp_humidity_flag==0 ) then
-               Seg_humid(i) = Seg_humid(i) / hru_area_sum(i)
-
-! DANGER potential hack here: Should CBH humidity data be converted to decimal fraction in
-! the CBH file? Probably so. For now, convert it here.
-! Humidity coming from CBH is in percent, not decimal fraction
-               Seg_humid(i) = Seg_humid(i) * 0.01
-            endif
+            IF ( Strmtemp_humidity_flag==0 ) Seg_humid(i) = Seg_humid(i) / hru_area_sum(i)
          ELSE
 ! This block for segments that don't have contributing HRUs
-            iseg = Seg_close(i) ! doesn't work if upstream segment
+            iseg = Seg_close(i)
             Seg_tave_air(i) = Seg_tave_air(iseg)
             Seg_ccov(i) = Seg_ccov(iseg)
             Seg_potet(i) = Seg_potet(iseg)
             Seg_melt(i) = Seg_melt(iseg)
             Seg_rain(i) = Seg_rain(iseg)
             IF ( Strmtemp_humidity_flag==0 ) then
-               Seg_humid(i) = Seg_humid(iseg)*Seg_carea_inv(iseg) ! ??
-! DANGER Humidity coming from CBH is in percent, not decimal fraction
-! Same as comment in above block
-               Seg_humid(i) = Seg_humid(i) * 0.01
+!              ! Seg_humid(i) = Seg_humid(iseg)*Seg_carea_inv(iseg) ! ??
+               Seg_humid(i) = Seg_humid(iseg) ! seg_humid could be from previuos timestep
             endif
          ENDIF
 
