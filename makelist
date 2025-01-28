@@ -25,7 +25,7 @@ LDFLAGS	=$(OPTLEVEL)
 ##########################################################
 #for gfortran
 #FFLAGS= $(OPTLEVEL) -fbounds-check -fno-second-underscore -Wall
-FFLAGS= $(OPTLEVEL) -fno-second-underscore
+FFLAGS= $(OPTLEVEL) -fno-second-underscore -fallow-argument-mismatch
 #for ifort
 #FFLAGS= $(OPTLEVEL) -warn all -fltconsistency
 #FFLAGS= $(OPTLEVEL) -fp-model source
