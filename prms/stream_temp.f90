@@ -210,9 +210,9 @@
 
       ALLOCATE ( Seg_slope(Nsegment) )
       IF ( declparam( MODNAME, 'seg_slope', 'nsegment', 'real', &
-     &     '0.015', '0.0001', '2.0', &
-     &     'Bed slope of each segment', &
-     &     'Bed slope of each segment', &
+     &     '0.0001', '0.0000001', '2.0', &
+     &     'Surface slope of each segment', &
+     &     'Surface slope of each segment as approximation for bed slope of stream', &
      &     'decimal fraction')/=0 ) CALL read_error(1, 'seg_slope')
 
       IF ( Stream_temp_shade_flag==OFF .OR. Model==DOCUMENTATION ) THEN
@@ -386,7 +386,7 @@
 
       ALLOCATE (seg_elev(nsegment))
       IF (declparam(MODNAME, 'seg_elev', 'nsegment', 'real', &
-     &     '30000.0', '-1000.0', '30000.0', &
+     &     '0.0', '-1000.0', '30000.0', &
      &     'Segment elevation at midpoint', 'Segment elevation at midpoint', &
      &     'meters')/=0 ) CALL read_error(1, 'seg_elev')
 
@@ -418,7 +418,7 @@
       REAL, EXTERNAL :: solalt
       EXTERNAL :: read_error, checkdim_param_limits, error_stop
 ! Local Variables
-      INTEGER :: i, j, k, ierr, this_seg
+      INTEGER :: i, j, k, ierr, this_seg, ierr_sta
       REAL :: tan_d, tano, sinhro, temp, decl, cos_d, tanod, alrs
 !***********************************************************************
       stream_temp_init = 0
@@ -427,13 +427,22 @@
       IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*MONTHS_PER_YEAR, 'real', lat_temp_adj)/=0 ) &
      &     CALL read_error(2, 'lat_temp_adj')
       IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
+      DO i = 1, Nsegment
+         IF ( Seg_length(i)<1.0 ) THEN
+           IF ( Seg_length(i)<NEARZERO ) THEN
+              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+              ierr = 1
+           ELSEIF ( Print_debug < DEBUG_LESS )THEN
+              PRINT *, 'WARNING, seg_length < 1.0 for segment:', i, ', value:', Seg_length(i)
+           ENDIF
+        ENDIF
+      ENDDO
 
       IF (getparam(MODNAME, 'seg_lat', Nsegment, 'real', Seg_lat)/=0 ) CALL read_error(2, 'seg_lat')
 !     Convert latitude from degrees to radians
       seg_lat = seg_lat * DEG_TO_RAD
 
       IF (getparam(MODNAME, 'seg_elev', Nsegment, 'real', Seg_elev)/=0 ) CALL read_error(2, 'seg_elev')
-      if ( seg_elev(1) == 30000.0 ) CALL error_stop('seg_elev is not specified', ERROR_param)
 
 ! convert stream length in meters to km
       Seg_length = Seg_length / 1000.0
@@ -465,15 +474,16 @@
       IF ( getparam( MODNAME, 'maxiter_sntemp', 1, 'real', Maxiter_sntemp)/=0 ) CALL read_error(2, 'maxiter_sntemp')
       IF ( getparam( MODNAME, 'seg_close', Nsegment, 'integer', seg_close)/=0 ) CALL read_error(2, 'seg_close')
 
-      ierr = 0
       IF ( Strmtemp_humidity_flag==1 ) THEN
          IF ( getparam( MODNAME, 'seg_humidity', Nsegment*MONTHS_PER_YEAR, 'real', Seg_humidity)/=0 ) &
      &      CALL read_error(2, 'seg_humidity')
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
          IF ( getparam(MODNAME, 'seg_humidity_sta', Nsegment, 'integer', Seg_humidity_sta)/=0 ) &
      &      CALL read_error(2, 'seg_humidity_sta')
+         ierr_sta = 0
          DO i = 1, Nsegment
-            CALL checkdim_param_limits(i, 'seg_humidity_sta', 'nhumid', Seg_humidity_sta(i), 1, Nhumid, ierr)
+            CALL checkdim_param_limits(i, 'seg_humidity_sta', 'nhumid', Seg_humidity_sta(i), 1, Nhumid, ierr_sta)
+            IF ( ierr_sta>0 ) ierr = ierr + 1
          ENDDO
       ENDIF
 
@@ -823,14 +833,14 @@
             IF ( Strmtemp_humidity_flag==0 ) Seg_humid(i) = Seg_humid(i) / hru_area_sum(i)
          ELSE
 ! This block for segments that don't have contributing HRUs
-            iseg = Seg_close(i)
+            iseg = Seg_close(i) ! doesn't work if upstream segment
             Seg_tave_air(i) = Seg_tave_air(iseg)
             Seg_ccov(i) = Seg_ccov(iseg)
             Seg_potet(i) = Seg_potet(iseg)
             Seg_melt(i) = Seg_melt(iseg)
             Seg_rain(i) = Seg_rain(iseg)
             IF ( Strmtemp_humidity_flag==0 ) then
-!              ! Seg_humid(i) = Seg_humid(iseg)*Seg_carea_inv(iseg) ! ??
+!               Seg_humid(i) = Seg_humid(iseg)*Seg_carea_inv(iseg) ! ??
                Seg_humid(i) = Seg_humid(iseg) ! seg_humid could be from previuos timestep
             endif
          ENDIF

@@ -139,7 +139,7 @@
 
         ALLOCATE ( Seg_length(Nsegment) )
         IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
-     &       '1000.0', '1.0', '100000.0', &
+     &       '1000.0', '0.001', '200000.0', &
      &       'Length of each segment', &
      &       'Length of each segment', &
      &       'meters')/=0 ) CALL read_error(1, 'seg_length')
@@ -625,7 +625,7 @@
           IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c2 < 0, set to 0, c1 set to c1 + c2'
             PRINT *, '        old c2:', C2(i), '; old c1:', C1(i), '; new c1:', C1(i) + C2(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i), '; segment:', i
           ENDIF
           C1(i) = C1(i) + C2(i)
           C2(i) = 0.0
@@ -636,7 +636,7 @@
           IF ( Parameter_check_flag>0 ) THEN
             PRINT '(/,A)', 'WARNING, c0 < 0, set to 0, c0 set to c1 + c0'
             PRINT *, '      old c0:', C0(i), 'old c1:', C1(i), 'new c1:', C1(i) + C0(i)
-            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i)
+            PRINT *, '        K_coef:', K_coef(i), '; x_coef:', x_coef(i), '; segment:', i
           ENDIF
           C1(i) = C1(i) + C0(i)
           C0(i) = 0.0
@@ -652,13 +652,12 @@
 !     route_run - Computes segment flow states and fluxes
 !***********************************************************************
       INTEGER FUNCTION route_run()
-      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, FT2_PER_ACRE, &
-     &    NEARZERO, DNEARZERO, OUTFLOW_SEGMENT, ERROR_param, &
+      USE PRMS_CONSTANTS, ONLY: ACTIVE, OFF, NEARZERO, OUTFLOW_SEGMENT, GLACIER, &
      &    strmflow_muskingum_mann_module, strmflow_muskingum_lake_module, &
-     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT
+     &    strmflow_muskingum_module, strmflow_in_out_module, CASCADE_OFF, CASCADE_HRU_SEGMENT !, FT2_PER_ACRE
       USE PRMS_MODULE, ONLY: Nsegment, Cascade_flag, Glacier_flag
       USE PRMS_ROUTING
-      USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus
+      USE PRMS_BASIN, ONLY: Hru_area, Hru_route_order, Active_hrus, Hru_type
       USE PRMS_CLIMATEVARS, ONLY: Swrad, Potet
       USE PRMS_SET_TIME, ONLY: Timestep_seconds, Cfs_conv
       USE PRMS_FLOWVARS, ONLY: Ssres_flow, Sroff, Seg_lateral_inflow !, Seg_outflow
@@ -676,7 +675,7 @@
 !***********************************************************************
       route_run = 0
 
-      Cfs2acft = Timestep_seconds/FT2_PER_ACRE
+!      Cfs2acft = Timestep_seconds/FT2_PER_ACRE
 
 ! seg variables are not computed if cascades are active as hru_segment is ignored
       IF ( Hru_seg_cascades==ACTIVE ) THEN
@@ -702,7 +701,9 @@
         Hru_outflow(j) = DBLE( (Sroff(j) + Ssres_flow(j) + Gwres_flow(j)) )*tocfs
         ! Note: glacr_flow (from glacier or snowfield) is added as a gain, outside stream network addition
         ! glacr_flow in inch^3, 1728=12^3
-        IF ( Glacier_flag==ACTIVE ) Hru_outflow(j) = Hru_outflow(j) + Glacr_flow(j)/1728.0/Timestep_seconds
+        IF ( Glacier_flag==ACTIVE ) THEN
+          IF ( Hru_type(j)==GLACIER ) Hru_outflow(j) = Hru_outflow(j) + DBLE( Glacr_flow(j) ) / 1728.0D0 / Timestep_seconds
+        ENDIF
         IF ( Hru_seg_cascades==ACTIVE ) THEN
           i = Hru_segment(j)
           IF ( i>0 ) THEN
