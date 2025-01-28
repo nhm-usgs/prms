@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
+Github Commit Hash 19bcb879f3e826eb9116fda28c7079d8b9f71f35
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -65,7 +65,7 @@ Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-12-01
 Output Summary                  subbasin            2024-12-01
 Output Summary                  basin_summary       2024-09-01
-Output Summary                  prms_summary        2024-04-30
+Output Summary                  prms_summary        2024-12-01
 ==============================================================
 
 Using Control File: .\control\prms.control
@@ -147,5 +147,5 @@ Fraction impervious:        0.0000    Fraction pervious:       1.0000
    1984    1   28    0.000    0.066    39.756    0.018    0.035    0.000  -52.323
    1984    1   29    0.000    0.064    39.674    0.018    0.035    0.000  -52.323
    1984    1   30    0.000    0.073    39.583    0.018    0.035   -0.000  -52.323
-Execution elapsed time:    0 minutes  0.09 seconds
+Execution elapsed time:    0 minutes  0.08 seconds
 

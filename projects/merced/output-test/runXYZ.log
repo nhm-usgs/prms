@@ -32,7 +32,7 @@ Soilzone Computations           soilzone            2024-12-06
 Groundwater                     gwflow              2024-12-01
 Streamflow Routing              strmflow            2020-08-03
 Output Summary                  basin_sum           2024-12-01
-Output Summary                  prms_summary        2024-04-30
+Output Summary                  prms_summary        2024-12-01
 ==============================================================
 
 Writing PRMS Water Budget File: .\output\prmsXYZ.out

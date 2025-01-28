@@ -1739,7 +1739,7 @@ Ndimen: 1
 Dimensions: nhru - 178
 Size: 178
 Type: float
-Desc: Heat deficit, amount of heat necessary to make the glacier or or glacierette snowpack isothermal at 0 degrees Celsius
+Desc: Heat deficit, amount of heat necessary to make the glacier or glacierette snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
 Name: glacr_pk_den

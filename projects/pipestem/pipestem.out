@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
+Github Commit Hash 19bcb879f3e826eb9116fda28c7079d8b9f71f35
 
 --------------------------------------------------------------------
     Active modules listed in the order in which they are called
@@ -65,7 +65,7 @@ Streamflow Routing              muskingum           2023-11-01
 Output Summary                  basin_sum           2024-12-01
 Water Balance Computations      water_balance       2024-12-15
 Output Summary                  nhru_summary        2024-09-01
-Output Summary                  prms_summary        2024-04-30
+Output Summary                  prms_summary        2024-12-01
 ==============================================================
 
 Using Control File: pipestem.control
@@ -78,9 +78,9 @@ End time:   2016/09/30 00:00:00
 
 
 Model domain area:       419193.44    Active basin area:    419193.44
-Fraction impervious:        0.0000    Fraction pervious:       0.9648
-DPRST area:               14741.23    Fraction DPRST:          0.0352
+Fraction impervious:        0.0000    Fraction pervious:       1.0000
+DPRST area:                   0.00    Fraction DPRST:          0.0000
 
 
-Execution elapsed time:    0 minutes  1.19 seconds
+Execution elapsed time:    0 minutes  1.14 seconds
 

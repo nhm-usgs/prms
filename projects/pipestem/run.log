@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
+Github Commit Hash 19bcb879f3e826eb9116fda28c7079d8b9f71f35
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -70,7 +70,7 @@ Streamflow Routing              muskingum           2023-11-01
 Output Summary                  basin_sum           2024-12-01
 Water Balance Computations      water_balance       2024-12-15
 Output Summary                  nhru_summary        2024-09-01
-Output Summary                  prms_summary        2024-04-30
+Output Summary                  prms_summary        2024-12-01
 ==============================================================
 
 Using Control File: pipestem.control
@@ -80,6 +80,63 @@ Using Parameter File: pipestem.param
 Writing var_save_file: prms_ic.out
 
 Writing PRMS Water Budget File: pipestem.out
+
+WARNING, HRU: 1 soil_rechr_max > soil_moist_max,    1.500000000    1.031388044
+         soil_rechr_max set to soil_moist_max
+
+WARNING, HRU: 1 soil_moist_init > soil_moist_max,    3.000000000    1.031388044
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 3 soil_moist_init > soil_moist_max,    3.000000000    1.924785018
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 4 soil_rechr_max > soil_moist_max,    1.500000000    0.897871971
+         soil_rechr_max set to soil_moist_max
+
+WARNING, HRU: 4 soil_rechr_init > soil_rechr_max,    1.000000000    0.897871971
+         soil_rechr set to soil_rechr_max
+
+WARNING, HRU: 4 soil_moist_init > soil_moist_max,    3.000000000    0.897871971
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 5 soil_rechr_max > soil_moist_max,    1.500000000    0.559208989
+         soil_rechr_max set to soil_moist_max
+
+WARNING, HRU: 5 soil_rechr_init > soil_rechr_max,    1.000000000    0.559208989
+         soil_rechr set to soil_rechr_max
+
+WARNING, HRU: 5 soil_moist_init > soil_moist_max,    3.000000000    0.559208989
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 6 soil_moist_init > soil_moist_max,    3.000000000    2.324604034
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 8 soil_moist_init > soil_moist_max,    3.000000000    1.666546941
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 9 soil_moist_init > soil_moist_max,    3.000000000    2.104517937
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 10 soil_moist_init > soil_moist_max,    3.000000000    1.855574012
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 11 soil_rechr_max > soil_moist_max,    1.500000000    1.301834941
+         soil_rechr_max set to soil_moist_max
+
+WARNING, HRU: 11 soil_moist_init > soil_moist_max,    3.000000000    1.301834941
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 12 soil_moist_init > soil_moist_max,    3.000000000    2.284137011
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 13 soil_rechr_max > soil_moist_max,    1.500000000    1.065322042
+         soil_rechr_max set to soil_moist_max
+
+WARNING, HRU: 13 soil_moist_init > soil_moist_max,    3.000000000    1.065322042
+         soil_moist set to soil_moist_max
+
+WARNING, HRU: 14 soil_moist_init > soil_moist_max,    3.000000000    2.053025007
+         soil_moist set to soil_moist_max
 
 Simulation time period: 1980/10/01 - 2016/09/30
 
@@ -91,10 +148,10 @@ Simulation time period: 1980/10/01 - 2016/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 12:05:22
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2025/01/28 14:22:56
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 12:05:23
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2025/01/28 14:22:57
 
-Execution elapsed time    0 minutes  1.19 seconds
+Execution elapsed time    0 minutes  1.14 seconds
 

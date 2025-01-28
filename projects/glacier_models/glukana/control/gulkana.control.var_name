@@ -14,6 +14,15 @@ End time          : 00:00:00  09/30/2015
 Current time      : 00:00:00  00/00/0000
 Current time step :        0
 
+Name: It0_pkwater_equiv
+Module: climateflow
+Ndimen: 1
+Dimensions: nhru - 78
+Size: 78
+Type: double
+Desc: Antecedent snowpack water equivalent on each HRU
+Units: inches
+
 Name: ai
 Module: snowcomp
 Ndimen: 1
@@ -364,15 +373,6 @@ Size: 1
 Type: double
 Desc: Basin area-weighted average excess flow to preferential-flow reservoir storage from gravity reservoirs
 Units: inches
-
-Name: basin_gvr_stor_frac
-Module: soilzone
-Ndimen: 1
-Dimensions: one - 1
-Size: 1
-Type: double
-Desc: Basin area-weighted average fraction of gravity reservoir storage of the maximum storage
-Units: decimal fraction
 
 Name: basin_gwflow
 Module: gwflow
@@ -1739,7 +1739,7 @@ Ndimen: 1
 Dimensions: nhru - 78
 Size: 78
 Type: float
-Desc: Heat deficit, amount of heat necessary to make the glacier or or glacierette snowpack isothermal at 0 degrees Celsius
+Desc: Heat deficit, amount of heat necessary to make the glacier or glacierette snowpack isothermal at 0 degrees Celsius
 Units: Langleys
 
 Name: glacr_pk_den

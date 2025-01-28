@@ -36,7 +36,7 @@ Stream Temperature: stream_temp
      Preprocessing: write_climate_hru, frost_date
 --------------------------------------------------------------------
 
-Github Commit Hash b6cbbc595f2634d020e2db7093b24ce4f8a7967a
+Github Commit Hash 19bcb879f3e826eb9116fda28c7079d8b9f71f35
 
 ==========================================================================
 Please give careful consideration to fixing all ERROR and WARNING messages
@@ -68,7 +68,7 @@ Groundwater                     gwflow              2024-12-01
 Streamflow Routing Init         routing             2024-08-13
 Streamflow Routing              muskingum           2023-11-01
 Output Summary                  basin_sum           2024-12-01
-Output Summary                  prms_summary        2024-04-30
+Output Summary                  prms_summary        2024-12-01
 ==============================================================
 
 Using Control File: .\control\Tazlina.control
@@ -621,10 +621,10 @@ Simulation time period: 1950/10/01 - 2015/09/30
                           =========================
 
 
-Execution start date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 12:12:08
+Execution start date and time (yyyy/mm/dd hh:mm:ss) 2025/01/28 14:24:45
 
 
-Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2025/01/07 12:12:13
+Execution end   date and time (yyyy/mm/dd hh:mm:ss) 2025/01/28 14:24:50
 
-Execution elapsed time    0 minutes  4.61 seconds
+Execution elapsed time    0 minutes  4.56 seconds
 
