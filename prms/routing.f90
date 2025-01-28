@@ -151,7 +151,7 @@
       IF ( Strmflow_flag==strmflow_muskingum_mann_module .OR. Stream_temp_flag==ACTIVE .OR. Model==DOCUMENTATION ) THEN
         ALLOCATE ( Seg_length(Nsegment) )
         IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
-     &       '1000.0', '1.0', '100000.0', &
+     &       '1000.0', '0.001', '200000.0', &
      &       'Length of each segment', &
      &       'Length of each segment', &
      &       'meters')/=0 ) CALL read_error(1, 'seg_length')
