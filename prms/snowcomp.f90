@@ -21,7 +21,7 @@
       !   Local Variables
       character(len=*), parameter :: MODDESC = 'Snow Dynamics'
       character(len=8), parameter :: MODNAME = 'snowcomp'
-      character(len=*), parameter :: Version_snowcomp = '2024-09-01'
+      character(len=*), parameter :: Version_snowcomp = '2025-01-28'
       INTEGER, SAVE :: Active_glacier, Ihru
       INTEGER, SAVE, ALLOCATABLE :: Int_alb(:)
       REAL, SAVE :: Acum(MAXALB), Amlt(MAXALB)
@@ -1060,14 +1060,22 @@
         ! Skip the HRU if there is no snowpack and no new snow and not a glacier
         IF ( Active_glacier==OFF ) THEN
           IF ( Pkwater_equiv(i)<Snowpack_threshold(i) .AND. .not.(Net_snow(i)>0.0) ) THEN
-            IF ( Pkwater_equiv(i) > 0.0D0 ) Snow_evap(i) = Snow_evap(i) + SNGL( Pkwater_equiv(i) ) ! [inches]
-            CALL snow_states_to_zero()
+            IF ( Pkwater_equiv(i) > 0.0D0 ) THEN
+              Snow_evap(i) = Snow_evap(i) + SNGL( Pkwater_equiv(i) ) ! [inches]
+              CALL snow_states_to_zero()
+            ENDIF
             CYCLE
           ENDIF
         ENDIF
 
         ! If there is no existing snow pack and there is new snow, the
         ! initial snow covered area is complete (1)
+        IF ( Pkwater_equiv(i)<Snowpack_threshold(i) ) THEN
+          IF ( Pkwater_equiv(i) > 0.0D0 ) THEN
+            Snow_evap(i) = Snow_evap(i) + SNGL( Pkwater_equiv(i) ) ! [inches]
+            CALL snow_states_to_zero()
+          ENDIF
+        ENDIF
         IF ( Net_snow(i)>0.0 .AND. Pkwater_equiv(i)<Snowpack_threshold(i) ) Snowcov_area(i) = 1.0 ! [fraction of area]
         IF ( Active_glacier==1 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glacier_frac(i)
         IF ( Active_glacier==2 ) Glacrcov_area(i) =(1.0-Snowcov_area(i))*Glrette_frac(i)
@@ -1227,7 +1235,7 @@
             ! The snow depth depends on the previous snow pack water
             ! equivalent plus the new net snow
             Pss(i) = Pss(i) + DBLE( Net_snow(i) ) ! [inches]
-            dpt_before_settle = Pk_depth(i) + DBLE(Net_snow(i)/Den_init(i))
+            dpt_before_settle = Pk_depth(i) + DBLE( Net_snow(i)/Den_init(i) )
             dpt1 = dpt_before_settle + DBLE(Settle_const(i)) * ((Pss(i)/DBLE(Den_max(i))) - dpt_before_settle)
 !            dpt1 = Pk_depth(i) + DBLE(Net_snow(i)/Den_init(i)) + &
 !                   DBLE(Settle_const(i)) * ((Pss(i)/DBLE(Den_max(i))) - Pk_depth(i))
@@ -1478,7 +1486,7 @@
      &           Freeh2o, Snowcov_area, Snowmelt, Pk_depth, Pss, Pst, &
      &           Net_snow, Pk_den, Pptmix_nopack, Pk_precip, Tmax_allsnow_c, &
      &           Freeh2o_cap, Tmax_allrain_c, Ihru_gl)
-      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE, OFF, DEBUG_less
+      USE PRMS_CONSTANTS, ONLY: CLOSEZERO, INCH2CM, ACTIVE, OFF, DEBUG_LESS
       USE PRMS_MODULE, ONLY: bias_adjust_flag, Print_debug
       USE PRMS_SNOW, ONLY: Ihru
       IMPLICIT NONE
@@ -1738,7 +1746,7 @@
 !        heat energy has occurred.
 !***********************************************************************
       SUBROUTINE caloss(Cal, Pkwater_equiv, Pk_def, Pk_temp, Pk_ice, Freeh2o, Ihru_gl)
-      USE PRMS_CONSTANTS, ONLY: OFF, DEBUG_LESS
+      USE PRMS_CONSTANTS, ONLY: DEBUG_LESS
       USE PRMS_MODULE, ONLY: Print_debug
       USE PRMS_SNOW, ONLY: Ihru
       IMPLICIT NONE
