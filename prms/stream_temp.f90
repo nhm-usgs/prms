@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Stream Temperature'
       character(len=11), parameter :: MODNAME = 'stream_temp'
-      character(len=*), parameter :: Version_stream_temp = '2024-12-04'
+      character(len=*), parameter :: Version_stream_temp = '2025-01-30'
       INTEGER, SAVE, ALLOCATABLE :: Seg_hru_count(:)
       REAL, SAVE, ALLOCATABLE ::  seg_tave_ss(:), seg_tave_sroff(:), seg_tave_lat(:) !, Seg_carea_inv(:)
       REAL, SAVE, ALLOCATABLE :: seg_tave_gw(:), Flowsum(:)
@@ -1023,7 +1023,7 @@
 
 !             Compute the daily mean water temperature
               ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
-              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length_km(i))
+              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), Seg_length_km(i))
 
           else
               ! bad t_o value

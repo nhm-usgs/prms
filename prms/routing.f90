@@ -6,7 +6,7 @@
 !   Local Variables
       character(len=*), parameter :: MODDESC = 'Streamflow Routing Init'
       character(len=7), parameter :: MODNAME = 'routing'
-      character(len=*), parameter :: Version_routing = '2024-08-13'
+      character(len=*), parameter :: Version_routing = '2025-01-30'
       DOUBLE PRECISION, SAVE :: Cfs2acft
       DOUBLE PRECISION, SAVE :: Segment_area
       INTEGER, SAVE :: Use_transfer_segment, Noarea_flag, Hru_seg_cascades, special_seg_type_flag
@@ -419,9 +419,13 @@
 ! find segments that are too short and print them out as they are found
         ierr = 0
         DO i = 1, Nsegment
-           IF ( Seg_length(i)<NEARZERO ) THEN
-              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
-              ierr = 1
+           IF ( Seg_length(i)<1.0 ) THEN
+             IF ( Seg_length(i)<NEARZERO ) THEN
+                PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+                ierr = 1
+             ELSEIF ( Print_debug < DEBUG_LESS )THEN
+                PRINT *, 'WARNING, seg_length < 1.0 for segment:', i, ', value:', Seg_length(i)
+             ENDIF
            ENDIF
            IF ( Seg_slope(i)<0.0000001 ) THEN
              IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
