@@ -33,7 +33,7 @@
       REAL, SAVE, ALLOCATABLE :: Seg_tave_air(:), Seg_melt(:), Seg_rain(:)
       DOUBLE PRECISION, ALLOCATABLE :: Seg_potet(:)
 !   Segment Parameters
-      REAL, SAVE, ALLOCATABLE :: Seg_length(:) !, Mann_n(:)
+      REAL, SAVE, ALLOCATABLE :: Seg_length_km(:) !, Mann_n(:)
       REAL, SAVE, ALLOCATABLE :: Seg_slope(:)
       REAL, SAVE, ALLOCATABLE :: Stream_tave_init(:)
       INTEGER, SAVE:: Maxiter_sntemp
@@ -201,7 +201,7 @@
      &     'Correction factor to adjust the bias of the temperature of the lateral inflow', &
      &     'degrees Celsius')/=0 ) CALL read_error(1, 'lat_temp_adj')
 
-      ALLOCATE ( Seg_length(Nsegment) )
+      ALLOCATE ( Seg_length_km(Nsegment) )
       IF ( declparam( MODNAME, 'seg_length', 'nsegment', 'real', &
      &     '1000.0', '0.001', '200000.0', &
      &     'Length of each segment', &
@@ -418,7 +418,7 @@
       REAL, EXTERNAL :: solalt
       EXTERNAL :: read_error, checkdim_param_limits, error_stop
 ! Local Variables
-      INTEGER :: i, j, k, ierr, this_seg, ierr_sta
+      INTEGER :: i, j, k, ierr, this_seg
       REAL :: tan_d, tano, sinhro, temp, decl, cos_d, tanod, alrs
 !***********************************************************************
       stream_temp_init = 0
@@ -426,28 +426,32 @@
       IF ( getparam( MODNAME, 'albedo', 1, 'real', Albedo)/=0 ) CALL read_error(2, 'albedo')
       IF ( getparam( MODNAME, 'lat_temp_adj', Nsegment*MONTHS_PER_YEAR, 'real', lat_temp_adj)/=0 ) &
      &     CALL read_error(2, 'lat_temp_adj')
-      IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length)/=0 ) CALL read_error(2, 'seg_length')
+      IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
+      IF ( getparam( MODNAME, 'seg_length', Nsegment, 'real', Seg_length_km)/=0 ) CALL read_error(2, 'seg_length')
+      ierr = 0
       DO i = 1, Nsegment
-         IF ( Seg_length(i)<1.0 ) THEN
-           IF ( Seg_length(i)<NEARZERO ) THEN
-              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
+         IF ( Seg_length_km(i)<1.0 ) THEN
+           IF ( Seg_length_km(i)<NEARZERO ) THEN
+              PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length_km(i)
               ierr = 1
            ELSEIF ( Print_debug < DEBUG_LESS )THEN
-              PRINT *, 'WARNING, seg_length < 1.0 for segment:', i, ', value:', Seg_length(i)
+              PRINT *, 'WARNING, seg_length < 1.0 for segment:', i, ', value:', Seg_length_km(i)
            ENDIF
-        ENDIF
+         ENDIF
+         IF ( Seg_slope(i)<0.0000001 ) THEN
+            IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
+            Seg_slope(i) = 0.0000001
+         ENDIF
       ENDDO
+
+! convert stream length in meters to km
+      Seg_length_km = Seg_length_km / 1000.0
 
       IF (getparam(MODNAME, 'seg_lat', Nsegment, 'real', Seg_lat)/=0 ) CALL read_error(2, 'seg_lat')
 !     Convert latitude from degrees to radians
       seg_lat = seg_lat * DEG_TO_RAD
 
       IF (getparam(MODNAME, 'seg_elev', Nsegment, 'real', Seg_elev)/=0 ) CALL read_error(2, 'seg_elev')
-
-! convert stream length in meters to km
-      Seg_length = Seg_length / 1000.0
-
-      IF ( getparam( MODNAME, 'seg_slope', Nsegment, 'real', Seg_slope)/=0 ) CALL read_error(2, 'seg_slope')
 
       IF ( Stream_temp_shade_flag==OFF ) THEN
          IF ( getparam( MODNAME, 'azrh', Nsegment, 'real', Azrh)/=0 ) CALL read_error(2, 'azrh')
@@ -480,10 +484,8 @@
       ELSEIF ( Strmtemp_humidity_flag==2 ) THEN ! use station data
          IF ( getparam(MODNAME, 'seg_humidity_sta', Nsegment, 'integer', Seg_humidity_sta)/=0 ) &
      &      CALL read_error(2, 'seg_humidity_sta')
-         ierr_sta = 0
          DO i = 1, Nsegment
-            CALL checkdim_param_limits(i, 'seg_humidity_sta', 'nhumid', Seg_humidity_sta(i), 1, Nhumid, ierr_sta)
-            IF ( ierr_sta>0 ) ierr = ierr + 1
+            CALL checkdim_param_limits(i, 'seg_humidity_sta', 'nhumid', Seg_humidity_sta(i), 1, Nhumid, ierr)
          ENDDO
       ENDIF
 
@@ -536,28 +538,22 @@
       ENDDO
 
 ! find segments that are too short or bad seg_close value and print them out as they are found
-      seg_close_flag = 0
+      seg_close_flag = 1
       if ( seg_close(1)==-1 ) then
           seg_close = Segment_up
-          seg_close_flag = 1
+          seg_close_flag = 0
           print *, 'WARNING, seg_close not specified so setting to segment_up or other segment if no segment_up'
       endif
-      DO i = 1, Nsegment
-         IF ( Seg_length(i)<NEARZERO ) THEN
-            PRINT *, 'ERROR, seg_length too small for segment:', i, ', value:', Seg_length(i)
-            ierr = 1
-         ENDIF
-         IF ( Seg_slope(i)<0.0000001 ) THEN
-            IF ( Print_debug>DEBUG_LESS ) PRINT *, 'WARNING, seg_slope < 0.0000001, set to 0.0000001', i, Seg_slope(i)
-            Seg_slope(i) = 0.0000001
-         ENDIF
-         IF ( Seg_hru_count(i)==0 ) THEN
-            if ( seg_close_flag == 1 ) then
-              print *, 'segment', i, 'does not have associated HRUs when seg_close is specified'
-              ierr = 1
-            endif
-         ENDIF
-      ENDDO
+      if ( seg_close_flag == 1 ) then
+        DO i = 1, Nsegment
+           IF ( Seg_hru_count(i)==0 ) THEN
+              if ( seg_close(i)==0 ) then
+                print *, 'segment', i, 'does not have associated HRUs when seg_close is specified'
+                ierr = 1
+              endif
+           ENDIF
+        ENDDO
+      endif
 
 ! exit if there are any segments that are too short or seg_close specified with error
       IF ( ierr==1 ) THEN
@@ -1048,7 +1044,7 @@
 
 !             Compute the daily mean water temperature
               ! In: t_o, qlat, seg_tave_lat(i), te, ak1, ak2, i, seg_width, seg_length
-              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), seg_length(i))
+              Seg_tave_water(i) = twavg(fs, t_o, qlat, seg_tave_lat(i), te, ak1, ak2, seg_width(i), Seg_length_km(i))
 
           else
               ! bad t_o value
@@ -1206,7 +1202,7 @@
       Ql = SNGL( Qlat )
 
 ! This is confused logic coment out here and compute the terms as needed below
-!      b = (Ql / Seg_length) + ((Ak1 * Seg_width) / 4182.0E03)
+!      b = (Ql / Seg_length_km) + ((Ak1 * Seg_width) / 4182.0E03)
 !      IF ( b < NEARZERO ) b = NEARZERO ! rsr, don't know what value this should be to avoid divide by 0
 !      r = 1.0 + (Ql / q_init)
 !      IF ( r < NEARZERO ) r = NEARZERO
