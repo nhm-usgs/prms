@@ -517,20 +517,22 @@
       ENDDO
 
 ! find segments that are too short or bad seg_close value and print them out as they are found
-      seg_close_flag = 0
+      seg_close_flag = 1
       if ( seg_close(1)==-1 ) then
           seg_close = Segment_up
-          seg_close_flag = 1
+          seg_close_flag = 0
           print *, 'WARNING, seg_close not specified so setting to segment_up or other segment if no segment_up'
       endif
-      DO i = 1, Nsegment
-         IF ( Seg_hru_count(i)==0 ) THEN
-            if ( seg_close_flag == 1 ) then
-              print *, 'segment', i, 'does not have associated HRUs when seg_close is specified'
-              ierr = 1
-            endif
-         ENDIF
-      ENDDO
+      if ( seg_close_flag == 1 ) then
+        DO i = 1, Nsegment
+           IF ( Seg_hru_count(i)==0 ) THEN
+              if ( seg_close(i)==0 ) then
+                print *, 'segment', i, 'does not have associated HRUs when seg_close is specified'
+                ierr = 1
+              endif
+           ENDIF
+        ENDDO
+      endif
 
 ! exit if there are any segments that are too short or seg_close specified with error
       IF ( ierr==1 ) THEN
