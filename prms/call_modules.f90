@@ -84,9 +84,11 @@
       INTEGER, EXTERNAL :: stream_temp
       EXTERNAL :: module_error, print_module, PRMS_open_output_file
       EXTERNAL :: call_modules_restart, water_balance, basin_summary, nsegment_summary
-      EXTERNAL :: prms_summary, nhru_summary, module_doc, convert_params, read_error, nsub_summary
+      EXTERNAL :: prms_summary, nhru_ncf, nsegment_ncf, module_doc, convert_params, read_error, nsub_summary
 ! Local Variables
       INTEGER :: i, iret, nc
+      external :: inquire
+      logical :: itsopen
 !***********************************************************************
       call_modules = 1
 
@@ -134,8 +136,8 @@
      &        '                    muskingum_lake, muskingum_mann', /, &
      &        'Stream Temperature: stream_temp', /, &
      &        '    Output Summary: basin_sum, subbasin, map_results, prms_summary,', /, &
-     &        '                    nhru_summary, nsub_summary, water_balance', /, &
-     &        '                    basin_summary, nsegment_summary', /, &
+     &        '                    nhru_ncf, nsub_summary, water_balance', /, &
+     &        '                    basin_summary, nsegment_ncf', /, &
      &        '     Preprocessing: write_climate_hru, frost_date', /, 68('-'))
   16  FORMAT (//, 4X, 'Active modules listed in the order in which they are called', //, 8X, 'Process', 19X, &
      &        'Module', 16X, 'Version Date', /, A)
@@ -380,13 +382,15 @@
         IF ( call_modules/=0 ) CALL module_error('subbasin', Arg, call_modules)
       ENDIF
 
-      IF ( NhruOutON_OFF>0 ) CALL nhru_summary()
+!      IF ( NhruOutON_OFF>0 ) CALL nhru_summary()
+      IF ( NhruOutON_OFF>0 ) CALL nhru_ncf()
 
       IF ( NsubOutON_OFF==1 ) CALL nsub_summary()
 
       IF ( BasinOutON_OFF==1 ) CALL basin_summary()
 
-      IF ( NsegmentOutON_OFF>0 ) CALL nsegment_summary()
+!      IF ( NsegmentOutON_OFF>0 ) CALL nsegment_summary()
+      IF ( NsegmentOutON_OFF>0 ) CALL nsegment_ncf()
 
       IF ( CsvON_OFF>0 ) CALL prms_summary()
 
@@ -408,7 +412,17 @@
         IF ( Print_debug>-2 ) &
      &       WRITE ( PRMS_output_unit,'(A,I5,A,F6.2,A,/)') 'Execution elapsed time', Elapsed_time_minutes, ' minutes', &
      &                                                     Elapsed_time - Elapsed_time_minutes*60.0, ' seconds'
-        IF ( Print_debug>-2 ) CLOSE ( PRMS_output_unit )
+
+!marks        IF ( Print_debug>-2 ) CLOSE ( PRMS_output_unit )
+
+        IF (Print_debug>-2) then
+           inquire(unit=prms_output_unit, opened=itsopen) 
+           if (itsopen) then
+!marks don't know what is up with closing this file. just comment out for now
+!               close(PRMS_output_unit)
+           endif
+        endif
+
         IF ( Save_vars_to_file>0 ) CLOSE ( Restart_outunit )
       ELSEIF ( Process_flag==1 ) THEN
         IF ( Print_debug>-2 ) THEN
@@ -1063,7 +1077,7 @@
       INTEGER, EXTERNAL :: strmflow, subbasin, basin_sum, map_results, strmflow_in_out
       INTEGER, EXTERNAL :: write_climate_hru, muskingum, muskingum_lake
       INTEGER, EXTERNAL :: stream_temp
-      EXTERNAL :: nhru_summary, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
+      EXTERNAL :: nhru_ncf, nsegment_ncf, prms_summary, water_balance, nsub_summary, basin_summary, nsegment_summary
       INTEGER, EXTERNAL :: dynamic_param_read, water_use_read, setup, potet_pm_sta
 ! Local variable
       INTEGER :: test
@@ -1110,9 +1124,11 @@
       test = stream_temp()
       test = basin_sum()
       test = map_results()
-      CALL nhru_summary()
+!      CALL nhru_summary()
+      CALL nhru_ncf()
       CALL nsub_summary()
       CALL basin_summary()
+!      CALL nsegment_summary()
       CALL nsegment_summary()
       CALL prms_summary()
       CALL water_balance()
