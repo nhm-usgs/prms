@@ -757,9 +757,24 @@
       hru_area_sum = 0.0
 
       ! Compute segment lateral inflow temperatures and segment meteorological values
+
       DO k = 1, Active_hrus
          j = Hru_route_order(k)
-         ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
+
+! DANGER HACK
+! On restart, sometimes soltab_potsw comes in as zero. It should never be zero as 
+! this results in divide by 0.0
+         if (Soltab_potsw(jday, j) <= 10.0) then
+            ccov = 1.0 - (Swrad(j) / sngl(10.0) * sngl(Hru_cossl(j)))
+         else
+            ccov = 1.0 - (Swrad(j) / sngl(Soltab_potsw(jday, j)) * sngl(Hru_cossl(j)))
+         endif
+
+         if (ccov .ne. ccov) then
+             write(*,*) "ccov is nan", j, Swrad(j), Soltab_potsw(jday, j), Hru_cossl(j)
+         endif
+      
+
          IF ( ccov<NEARZERO ) THEN
             ccov = 0.0
          ELSEIF ( ccov>1.0 ) THEN
@@ -781,6 +796,7 @@
 
 ! Figure out the contributions of the HRUs to each segment for these drivers.
          Seg_ccov(i) = Seg_ccov(i) + ccov*harea
+
          Seg_potet(i) = Seg_potet(i) + DBLE( Potet(j)*harea )
          Seg_melt(i) = Seg_melt(i) + Snowmelt(j)*harea
          Seg_rain(i) = Seg_rain(i) + Hru_rain(j)*harea
@@ -819,7 +835,33 @@
                Seg_humid(i) = Seg_humid(i) * 0.01
             endif
          ENDIF
+
+!         if (Seg_tave_air(i) .ne. Seg_tave_air(i)) then
+!            write(*,*) "Seg_tave_air is nan", i
+!         endif
+!
+!         if (Seg_ccov(i) .ne. Seg_ccov(i)) then
+!            write(*,*) "Seg_ccov is nan", i
+!         endif
+!
+!         if (Seg_potet(i) .ne. Seg_potet(i)) then
+!            write(*,*) "Seg_potet is nan", i
+!         endif
+!
+!         if (Seg_melt(i) .ne. Seg_melt(i)) then
+!            write(*,*) "Seg_melt is nan", i
+!         endif
+!             
+!         if (Seg_rain(i) .ne. Seg_rain(i)) then
+!            write(*,*) "Seg_rain is nan", i
+!         endif
+!             
+!         if (Seg_humid(i) .ne. Seg_humid(i)) then
+!            write(*,*) "Seg_humid is nan", i
+!         endif
+ 
       ENDDO
+
 
 ! Compute the running averages for groundwater and subsurface temperatures.
       if (gw_index >= gw_tau(i)) then
@@ -1015,6 +1057,11 @@
               ! bad t_o value
               Seg_tave_water(i) = -98.9
           endif
+
+          if (Seg_tave_water(i) .ne. Seg_tave_water(i)) then
+             write(*,*) "seg_tave_water is NaN", i, qlat, seg_tave_lat(i), te, ak1, ak2,seg_shade(i), svi, i, t_o
+          endif
+
       ENDDO
       END FUNCTION stream_temp_run
 !
@@ -1244,6 +1291,12 @@
       Ted = t_o
 
       CALL teak1(A, b, c, d, Ted, Ak1d)
+
+!      if (ted .ne. ted) then
+!         write(*,*) "   ted is NaN in equilib ", seg_id, A, b, c, d, Ted, Ak1d
+!         write(*,*) "   ", seg_id, ha, hv, hf, hs, ltnt_ht, evap, bow_coeff, seg_tave_gw(Seg_id), AKZ
+!         write(*,*) "   ha components ",  Seg_humid(Seg_id), vp_sat, Sh, Seg_ccov(Seg_id), taabs
+!      endif
 
 !
 ! DETERMINE 2ND ORDER THERMAL EXCHANGE COEFFICIENT
